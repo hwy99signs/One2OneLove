@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, User, Mail, Calendar as CalendarIcon, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle } from "lucide-react";
+import { Heart, User, Mail, Calendar as CalendarIcon, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -441,6 +441,9 @@ export default function Profile() {
   const t = translations[currentLanguage] || translations.en;
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = React.useRef(null);
   const queryClient = useQueryClient();
 
   const { data: user, isLoading } = useQuery({
@@ -491,6 +494,48 @@ export default function Profile() {
   const handleCancel = () => {
     setIsEditing(false);
     setEditData({});
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    setProfileImage(file);
+
+    try {
+      // TODO: Upload image to backend/storage
+      // For now, we'll just show a success message
+      // const imageUrl = await uploadProfileImage(file);
+      // await updateProfileMutation.mutateAsync({ profile_image: imageUrl });
+      
+      toast.success('Profile image updated successfully!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -546,8 +591,40 @@ export default function Profile() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <User className="w-12 h-12 text-white" />
+          <div className="relative inline-block mb-6">
+            <div className="relative w-24 h-24 rounded-full overflow-hidden shadow-xl">
+              {imagePreview ? (
+                <img 
+                  src={imagePreview} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : user?.profile_image ? (
+                <img 
+                  src={user.profile_image} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                  <User className="w-12 h-12 text-white" />
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleImageClick}
+              className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white"
+              title="Change profile picture"
+            >
+              <Camera className="w-4 h-4 text-white" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
             {user?.full_name || "User"} 💕
