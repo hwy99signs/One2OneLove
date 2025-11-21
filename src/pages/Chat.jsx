@@ -599,19 +599,24 @@ export default function Chat() {
             // await base44.entities.ChatMessage.delete(messageId, { delete_type: deleteType });
           }}
           onMarkAsUnread={handleMarkAsUnread}
-          onPin={handlePin}
-          onUnpin={handleUnpin}
-          onArchive={handleArchive}
-          onPopOut={handlePopOut}
-          onUnpin={(messageId) => {
+          onPin={(messageId, isPinned, expiryDate) => {
             setMessages((prev) => ({
               ...prev,
               [selectedChatId]: prev[selectedChatId].map((msg) =>
-                msg.id === messageId ? { ...msg, isPinned: false, pinExpiry: null } : msg
+                msg.id === messageId
+                  ? { ...msg, isPinned, pinExpiryDate: expiryDate }
+                  : msg
               ),
             }));
-            toast.success('Message unpinned');
+            if (isPinned) {
+              toast.success('Message pinned');
+            } else {
+              toast.success('Message unpinned');
+            }
           }}
+          onUnpin={handleUnpin}
+          onArchive={handleArchive}
+          onPopOut={handlePopOut}
           onEditMessage={(messageId, newText) => {
             setMessages((prev) => ({
               ...prev,
