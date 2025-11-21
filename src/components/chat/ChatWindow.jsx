@@ -308,8 +308,9 @@ export default function ChatWindow({
                     console.log('Star:', msg, isStarred);
                   }}
                   onPin={(msg, isPinned, expiryDate) => {
-                    // TODO: Implement pin functionality
-                    console.log('Pin:', msg, isPinned, expiryDate);
+                    if (onPin) {
+                      onPin(msg.id, isPinned, expiryDate);
+                    }
                   }}
                   onDelete={(msg, deleteType) => {
                     if (onDeleteMessage) {
