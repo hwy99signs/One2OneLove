@@ -12,13 +12,17 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [isRecordingVideo, setIsRecordingVideo] = useState(false);
   const [stream, setStream] = useState(null);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [recordedChunks, setRecordedChunks] = useState([]);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const recordTimeoutRef = useRef(null);
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
@@ -80,7 +84,7 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user' }, 
-        audio: false 
+        audio: true // Enable audio for video recording
       });
       setStream(mediaStream);
       setShowCamera(true);
@@ -101,15 +105,22 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
   };
 
   const stopCamera = () => {
+    // Stop video recording if active
+    if (mediaRecorder && isRecordingVideo) {
+      mediaRecorder.stop();
+      setIsRecordingVideo(false);
+    }
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+    setMediaRecorder(null);
+    setRecordedChunks([]);
     setShowCamera(false);
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current && stream) {
+    if (videoRef.current && canvasRef.current && stream && !isRecordingVideo) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       
@@ -144,14 +155,98 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
     }
   };
 
+  const startVideoRecording = () => {
+    if (!stream || isRecordingVideo) return;
+
+    try {
+      const chunks = [];
+      setRecordedChunks(chunks);
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp8,opus'
+      });
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        if (blob.size > 0 && onSendFile) {
+          onSendFile(blob, 'video');
+          toast.success('Video recorded!');
+        } else {
+          toast.error('Failed to record video');
+        }
+        setRecordedChunks([]);
+        setIsRecordingVideo(false);
+        stopCamera();
+      };
+
+      recorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event);
+        toast.error('Error recording video');
+        setIsRecordingVideo(false);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecordingVideo(true);
+      toast.info('Recording...');
+    } catch (error) {
+      console.error('Error starting video recording:', error);
+      toast.error('Could not start video recording');
+    }
+  };
+
+  const stopVideoRecording = () => {
+    if (mediaRecorder && isRecordingVideo) {
+      mediaRecorder.stop();
+    }
+  };
+
+  const handleCapturePress = () => {
+    // Start video recording on press
+    recordTimeoutRef.current = setTimeout(() => {
+      startVideoRecording();
+    }, 300); // 300ms delay to distinguish from tap
+  };
+
+  const handleCaptureRelease = () => {
+    // Clear timeout if it hasn't fired yet (quick tap = photo)
+    if (recordTimeoutRef.current) {
+      clearTimeout(recordTimeoutRef.current);
+      recordTimeoutRef.current = null;
+      
+      // If we were recording video, stop it
+      if (isRecordingVideo) {
+        stopVideoRecording();
+      } else {
+        // Quick tap = capture photo
+        capturePhoto();
+      }
+    } else if (isRecordingVideo) {
+      // Release after recording started
+      stopVideoRecording();
+    }
+  };
+
   // Cleanup camera stream on unmount
   useEffect(() => {
     return () => {
+      if (recordTimeoutRef.current) {
+        clearTimeout(recordTimeoutRef.current);
+      }
+      if (mediaRecorder && isRecordingVideo) {
+        mediaRecorder.stop();
+      }
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [stream]);
+  }, [stream, mediaRecorder, isRecordingVideo]);
 
   if (showVoiceRecorder) {
     return (
@@ -192,18 +287,38 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-6 z-10">
           <button
             onClick={stopCamera}
-            className="w-14 h-14 bg-gray-600/80 hover:bg-gray-700/80 rounded-full flex items-center justify-center transition-colors backdrop-blur-sm"
+            disabled={isRecordingVideo}
+            className="w-14 h-14 bg-gray-600/80 hover:bg-gray-700/80 rounded-full flex items-center justify-center transition-colors backdrop-blur-sm disabled:opacity-50"
           >
             <X className="w-6 h-6 text-white" />
           </button>
           <button
-            onClick={capturePhoto}
+            onMouseDown={handleCapturePress}
+            onMouseUp={handleCaptureRelease}
+            onTouchStart={handleCapturePress}
+            onTouchEnd={handleCaptureRelease}
             disabled={!stream}
-            className="w-20 h-20 bg-white rounded-full flex items-center justify-center border-4 border-gray-300 shadow-2xl hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-20 h-20 rounded-full flex items-center justify-center border-4 shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecordingVideo 
+                ? 'bg-red-500 border-red-300 scale-110' 
+                : 'bg-white border-gray-300 hover:scale-105'
+            }`}
           >
-            <div className="w-14 h-14 bg-white rounded-full border-2 border-gray-400"></div>
+            <div className={`w-14 h-14 rounded-full border-2 ${
+              isRecordingVideo 
+                ? 'bg-red-600 border-red-400' 
+                : 'bg-white border-gray-400'
+            }`}></div>
           </button>
         </div>
+        {isRecordingVideo && (
+          <div className="absolute top-8 left-0 right-0 flex justify-center z-10">
+            <div className="bg-red-500/90 text-white px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-sm">
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+              <span className="text-sm font-semibold">Recording...</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
