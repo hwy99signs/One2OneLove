@@ -145,29 +145,29 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
 
   if (showCamera) {
     return (
-      <div className="border-t border-gray-200 p-4 bg-black">
-        <div className="relative">
+      <div className="fixed inset-0 z-50 bg-black flex flex-col">
+        <div className="flex-1 relative flex items-center justify-center">
           <video
             ref={videoRef}
             autoPlay
             playsInline
-            className="w-full max-h-96 object-contain rounded-lg"
+            className="w-full h-full object-cover"
           />
           <canvas ref={canvasRef} className="hidden" />
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-            <button
-              onClick={stopCamera}
-              className="w-12 h-12 bg-gray-600 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
-            >
-              <X className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={capturePhoto}
-              className="w-16 h-16 bg-white rounded-full flex items-center justify-center border-4 border-gray-300 shadow-lg hover:scale-105 transition-transform"
-            >
-              <div className="w-12 h-12 bg-white rounded-full border-2 border-gray-400"></div>
-            </button>
-          </div>
+        </div>
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-6 z-10">
+          <button
+            onClick={stopCamera}
+            className="w-14 h-14 bg-gray-600/80 hover:bg-gray-700/80 rounded-full flex items-center justify-center transition-colors backdrop-blur-sm"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <button
+            onClick={capturePhoto}
+            className="w-20 h-20 bg-white rounded-full flex items-center justify-center border-4 border-gray-300 shadow-2xl hover:scale-105 transition-transform"
+          >
+            <div className="w-14 h-14 bg-white rounded-full border-2 border-gray-400"></div>
+          </button>
         </div>
       </div>
     );
