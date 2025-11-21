@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Phone, Video, MoreVertical, ArrowLeft, Search, MessageSquare, Pin, PinOff, Archive, Trash2, Maximize2, X } from 'lucide-react';
+import { Phone, Video, MoreVertical, ArrowLeft, Search, MessageSquare, Pin, PinOff, Archive, Trash2, Maximize2, X, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import UserProfile from './UserProfile';
