@@ -256,6 +256,12 @@ export default function ChatWindow({
                     // TODO: Implement copy functionality
                     console.log('Copy:', msg);
                   }}
+                  onEdit={(msg, newText) => {
+                    // TODO: Implement edit functionality
+                    console.log('Edit:', msg, newText);
+                    // Update message in messages state
+                    // This would typically update the message in the backend
+                  }}
                 />
               );
             })

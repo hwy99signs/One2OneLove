@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
-import { Check, CheckCheck, Clock, Play, Pause, Download, MapPin, FileText, Image as ImageIcon, Reply, Copy, Save, Forward, Star, Pin, Trash2, CheckSquare, Share2, Info, MoreVertical, Plus } from 'lucide-react';
+import { Check, CheckCheck, Clock, Play, Pause, Download, MapPin, FileText, Image as ImageIcon, Reply, Copy, Save, Forward, Star, Pin, Trash2, CheckSquare, Share2, Info, MoreVertical, Plus, Edit, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -193,12 +193,15 @@ export default function ChatMessage({
   onSelect,
   onShare,
   onReact,
-  onCopy
+  onCopy,
+  onEdit
 }) {
   const [reactions, setReactions] = useState(message.reactions || []);
   const [isStarred, setIsStarred] = useState(message.isStarred || false);
   const [isPinned, setIsPinned] = useState(message.isPinned || false);
   const [showReactions, setShowReactions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.text || '');
 
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
@@ -296,6 +299,26 @@ export default function ChatMessage({
     }
   };
 
+  const handleEdit = () => {
+    if (message.type === 'text' && isOwn) {
+      setIsEditing(true);
+      setEditText(message.text || '');
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (editText.trim() && editText !== message.text) {
+      onEdit?.(message, editText.trim());
+      toast.success('Message edited');
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditText(message.text || '');
+  };
+
   return (
     <div className={cn("flex gap-2 px-4 py-1 group hover:bg-gray-50/50 transition-colors relative", isOwn && "flex-row-reverse")}>
       {showAvatar && !isOwn && (
@@ -334,6 +357,12 @@ export default function ChatMessage({
                   <Reply className="w-4 h-4 mr-2" />
                   Reply
                 </DropdownMenuItem>
+                {isOwn && message.type === 'text' && (
+                  <DropdownMenuItem onClick={handleEdit} className="hover:bg-gray-800">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleCopy} className="hover:bg-gray-800">
                   <Copy className="w-4 h-4 mr-2" />
                   Copy
@@ -396,8 +425,50 @@ export default function ChatMessage({
             </div>
           )}
           {/* Text Message */}
-          {message.type === 'text' && message.text && (
-            <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+          {message.type === 'text' && (
+            <>
+              {isEditing ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSaveEdit();
+                      }
+                      if (e.key === 'Escape') {
+                        handleCancelEdit();
+                      }
+                    }}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                    rows={Math.min(editText.split('\n').length, 5)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSaveEdit}
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+                  {message.isEdited && (
+                    <span className="text-xs text-gray-500 italic">(edited)</span>
+                  )}
+                </>
+              )}
+            </>
           )}
 
           {/* Voice Note */}
