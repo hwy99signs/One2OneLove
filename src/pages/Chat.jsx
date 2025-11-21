@@ -92,6 +92,7 @@ const mockMessages = {
 export default function Chat() {
   const { currentLanguage } = useLanguage();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [conversations, setConversations] = useState(mockConversations);
   const [messages, setMessages] = useState({});
@@ -105,6 +106,56 @@ export default function Chat() {
   });
   const wsRef = useRef(null);
   const currentUserId = 'current'; // Replace with actual user ID from auth
+
+  // Handle URL parameters to open a specific chat
+  useEffect(() => {
+    const userId = searchParams.get('user');
+    const userName = searchParams.get('name');
+
+    if (userId && userName) {
+      // Check if conversation already exists
+      const existingChat = conversations.find((conv) => conv.id === userId);
+      
+      if (existingChat) {
+        // Select existing chat
+        setSelectedChatId(userId);
+        // Load messages if not loaded
+        if (!messages[userId]) {
+          setMessages((prev) => ({
+            ...prev,
+            [userId]: [],
+          }));
+        }
+      } else {
+        // Create new conversation
+        const newChat = {
+          id: userId,
+          name: decodeURIComponent(userName),
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName)}`,
+          lastMessage: '',
+          lastMessageTime: new Date().toISOString(),
+          unreadCount: 0,
+          isOnline: true,
+          isMuted: false,
+          isPinned: false,
+          isArchived: false,
+        };
+
+        setConversations((prev) => [newChat, ...prev]);
+        setSelectedChatId(userId);
+        setMessages((prev) => ({
+          ...prev,
+          [userId]: [],
+        }));
+
+        toast.success(`Started new chat with ${decodeURIComponent(userName)}`);
+      }
+
+      // Clean up URL parameters after processing
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   // Initialize WebSocket connection for real-time messaging
   useEffect(() => {
