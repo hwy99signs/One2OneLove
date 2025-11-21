@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, MapPin, Image as ImageIcon, FileText, X } from 'lucide-react';
+import { Send, Paperclip, Mic, MapPin, Image as ImageIcon, FileText, X, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import EmojiPicker from './EmojiPicker';
@@ -13,6 +13,7 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
@@ -128,16 +129,13 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
                 <span className="text-sm text-gray-700">Location</span>
               </button>
               <button
-                onClick={() => {
-                  setShowVoiceRecorder(true);
-                  setIsRecording(true);
-                }}
+                onClick={() => videoInputRef.current?.click()}
                 className="flex flex-col items-center gap-2 p-3 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Mic className="w-6 h-6 text-red-600" />
+                  <Video className="w-6 h-6 text-red-600" />
                 </div>
-                <span className="text-sm text-gray-700">Voice Note</span>
+                <span className="text-sm text-gray-700">Video</span>
               </button>
             </div>
           </PopoverContent>
@@ -156,6 +154,13 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
           type="file"
           className="hidden"
           onChange={(e) => handleFileSelect(e, 'document')}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={(e) => handleFileSelect(e, 'video')}
         />
 
         {/* Message Input */}
