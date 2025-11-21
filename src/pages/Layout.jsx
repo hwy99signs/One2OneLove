@@ -2,9 +2,10 @@
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Heart, Home, ChevronDown, User, LogIn, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift } from "lucide-react";
+import { Heart, Home, ChevronDown, User, LogIn, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -100,6 +101,33 @@ function LanguageContent({ children, currentPageName }) {
   const closeTimeoutRef = useRef(null);
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
+
+  // Check if user is authenticated
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      try {
+        // Check localStorage first (for mock auth)
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        if (isAuthenticated === 'true') {
+          // Try to get user from API
+          try {
+            return await base44.auth.me();
+          } catch {
+            // If API fails, return mock user
+            return { email: localStorage.getItem('userEmail') || 'user@example.com' };
+          }
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    initialData: null,
+    retry: false,
+  });
+
+  const isAuthenticated = !!currentUser;
 
   const handleMouseEnter = () => {
     if (closeTimeoutRef.current) {
@@ -331,31 +359,51 @@ function LanguageContent({ children, currentPageName }) {
 
             {/* Right side buttons */}
             <div className="flex items-center gap-2">
-              <Link to={createPageUrl("Invite")} className="hidden md:block">
-                <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap" title={t.nav.invite}>
-                  <UserCheck className="w-4 h-4 mr-1" />
-                  <span className="hidden xl:inline">{t.nav.invite}</span>
-                </Button>
-              </Link>
-              <Button 
-                size="sm" 
-                className="hidden md:flex bg-white/20 hover:bg-white/30 text-white border border-white/30 whitespace-nowrap"
-                onClick={handleSignUp}
-                title={t.nav.signUp}
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                <span className="hidden xl:inline">{t.nav.signUp}</span>
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
-                onClick={handleSignIn}
-                title={t.nav.signIn}
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                <span className="hidden xl:inline">{t.nav.signIn}</span>
-              </Button>
+              {/* Chat Icon - Only show when authenticated */}
+              {isAuthenticated && (
+                <Link to={createPageUrl("Chat")} className="hidden md:block">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
+                    title="Chat"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="hidden xl:inline ml-2">Chat</span>
+                  </Button>
+                </Link>
+              )}
+
+              {/* Show Invite, Sign In/Sign Up only when NOT authenticated */}
+              {!isAuthenticated && (
+                <>
+                  <Link to={createPageUrl("Invite")} className="hidden md:block">
+                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap" title={t.nav.invite}>
+                      <UserCheck className="w-4 h-4 mr-1" />
+                      <span className="hidden xl:inline">{t.nav.invite}</span>
+                    </Button>
+                  </Link>
+                  <Button 
+                    size="sm" 
+                    className="hidden md:flex bg-white/20 hover:bg-white/30 text-white border border-white/30 whitespace-nowrap"
+                    onClick={handleSignUp}
+                    title={t.nav.signUp}
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    <span className="hidden xl:inline">{t.nav.signUp}</span>
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
+                    onClick={handleSignIn}
+                    title={t.nav.signIn}
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    <span className="hidden xl:inline">{t.nav.signIn}</span>
+                  </Button>
+                </>
+              )}
               
               <Select value={currentLanguage} onValueChange={changeLanguage}>
                 <SelectTrigger className="w-[120px] h-9 bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm">
@@ -473,34 +521,52 @@ function LanguageContent({ children, currentPageName }) {
                   {t.nav.developer}
                 </Link>
                 <div className="border-t border-white/20 my-2"></div>
-                <Link
-                  to={createPageUrl("Invite")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <UserCheck className="w-5 h-5" />
-                  {t.nav.invite}
-                </Link>
-                <button
-                  onClick={() => {
-                    handleSignUp();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg transition-all font-semibold"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  {t.nav.signUp}
-                </button>
-                <button
-                  onClick={() => {
-                    handleSignIn();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                >
-                  <LogIn className="w-5 h-5" />
-                  {t.nav.signIn}
-                </button>
+                
+                {/* Chat - Only show when authenticated */}
+                {isAuthenticated && (
+                  <Link
+                    to={createPageUrl("Chat")}
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Chat
+                  </Link>
+                )}
+                
+                {/* Show Invite, Sign In/Sign Up only when NOT authenticated */}
+                {!isAuthenticated && (
+                  <>
+                    <Link
+                      to={createPageUrl("Invite")}
+                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <UserCheck className="w-5 h-5" />
+                      {t.nav.invite}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleSignUp();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg transition-all font-semibold"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                      {t.nav.signUp}
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleSignIn();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    >
+                      <LogIn className="w-5 h-5" />
+                      {t.nav.signIn}
+                    </button>
+                  </>
+                )}
               </nav>
             </div>
           )}
