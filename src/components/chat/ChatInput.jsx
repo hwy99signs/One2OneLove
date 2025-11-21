@@ -221,28 +221,37 @@ export default function ChatInput({ onSendMessage, onSendFile, onSendLocation, d
 
   const handleCapturePress = (e) => {
     e.preventDefault();
-    // Start video recording immediately on press (no delay)
-    startVideoRecording();
+    // Start a timer - if released quickly, take photo; if held, start video
+    recordTimeoutRef.current = setTimeout(() => {
+      // Long press detected - start video recording
+      startVideoRecording();
+    }, 150); // 150ms to distinguish tap from long press
   };
 
   const handleCaptureRelease = (e) => {
     e.preventDefault();
     
-    // If we were recording video, stop it
-    if (isRecordingVideo && mediaRecorder) {
+    // Clear the timeout if it hasn't fired yet
+    if (recordTimeoutRef.current) {
+      clearTimeout(recordTimeoutRef.current);
+      recordTimeoutRef.current = null;
+      
+      // If we were recording video, stop it
+      if (isRecordingVideo && mediaRecorder) {
+        stopVideoRecording();
+      } else {
+        // Quick tap = capture photo
+        capturePhoto();
+      }
+    } else if (isRecordingVideo && mediaRecorder) {
+      // Release after recording started - stop recording
       stopVideoRecording();
-    } else {
-      // Quick tap = capture photo (if recording didn't start)
-      capturePhoto();
     }
   };
 
   const handleCaptureClick = (e) => {
+    // Prevent click from firing if we already handled it via press/release
     e.preventDefault();
-    // Single click = capture photo
-    if (!isRecordingVideo) {
-      capturePhoto();
-    }
   };
 
   // Cleanup camera stream on unmount
