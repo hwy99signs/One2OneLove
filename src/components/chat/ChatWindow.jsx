@@ -33,6 +33,8 @@ export default function ChatWindow({
   const messagesEndRef = useRef(null);
   const scrollAreaRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [pinnedMessages, setPinnedMessages] = useState([]);
+  const [showPinnedDropdown, setShowPinnedDropdown] = useState(false);
 
   useEffect(() => {
     scrollToBottom();
@@ -216,12 +218,12 @@ export default function ChatWindow({
                 new Date(message.timestamp) - new Date(messages[index + 1].timestamp) > 300000; // 5 minutes
 
               return (
-                <ChatMessage
-                  key={message.id || index}
-                  message={message}
-                  isOwn={isOwn}
-                  showAvatar={showAvatar}
-                  showTime={showTime}
+                <div key={message.id || index} data-message-id={message.id}>
+                  <ChatMessage
+                    message={message}
+                    isOwn={isOwn}
+                    showAvatar={showAvatar}
+                    showTime={showTime}
                   onReply={(msg) => {
                     // TODO: Implement reply functionality
                     console.log('Reply to:', msg);

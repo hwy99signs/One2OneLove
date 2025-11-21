@@ -603,6 +603,15 @@ export default function Chat() {
           onUnpin={handleUnpin}
           onArchive={handleArchive}
           onPopOut={handlePopOut}
+          onUnpin={(messageId) => {
+            setMessages((prev) => ({
+              ...prev,
+              [selectedChatId]: prev[selectedChatId].map((msg) =>
+                msg.id === messageId ? { ...msg, isPinned: false, pinExpiry: null } : msg
+              ),
+            }));
+            toast.success('Message unpinned');
+          }}
           onEditMessage={(messageId, newText) => {
             setMessages((prev) => ({
               ...prev,
