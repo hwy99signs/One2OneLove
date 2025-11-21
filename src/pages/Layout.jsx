@@ -94,6 +94,7 @@ function LanguageContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [actionOpen, setActionOpen] = useState(false);
+  const [mobileActionOpen, setMobileActionOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
@@ -474,6 +475,147 @@ function LanguageContent({ children, currentPageName }) {
                   <Home className="w-5 h-5" />
                   {t.nav.home}
                 </Link>
+
+                {/* Action Dropdown for Mobile */}
+                <div className="relative">
+                  <button
+                    onClick={() => setMobileActionOpen(!mobileActionOpen)}
+                    className="flex items-center justify-between w-full text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-5 h-5" />
+                      {t.nav.action}
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileActionOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {mobileActionOpen && (
+                    <div className="mt-1 bg-white/10 rounded-lg overflow-hidden">
+                      <Link
+                        to={createPageUrl("LoveNotes")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {t.actionMenu.sendLoveNote}
+                      </Link>
+                      <Link
+                        to={createPageUrl("LGBTQSupport")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Rainbow className="w-5 h-5" />
+                        {t.actionMenu.lgbtqSupport}
+                      </Link>
+                      <Link
+                        to={createPageUrl("RelationshipCoach")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Sparkles className="w-5 h-5" />
+                        AI Relationship Coach
+                      </Link>
+                      <Link
+                        to={createPageUrl("CoupleSupport")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Users className="w-5 h-5" />
+                        {t.actionMenu.coupleSupport}
+                      </Link>
+                      <Link
+                        to={createPageUrl("RelationshipQuizzes")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {t.actionMenu.relationshipQuizzes}
+                      </Link>
+                      <Link
+                        to={createPageUrl("RelationshipMilestones")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {t.actionMenu.relationshipMilestones}
+                      </Link>
+                      <Link
+                        to={createPageUrl("RelationshipGoals")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Target className="w-5 h-5" />
+                        {t.actionMenu.relationshipGoals}
+                      </Link>
+                      <Link
+                        to={createPageUrl("DateIdeas")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {t.actionMenu.dateIdeas}
+                      </Link>
+                      <Link
+                        to={createPageUrl("MemoryLane")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-5 h-5" />
+                        {t.actionMenu.memoryLane}
+                      </Link>
+                      <Link
+                        to={createPageUrl("AIContentCreator")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Sparkles className="w-5 h-5" />
+                        {t.actionMenu.aiCreator}
+                      </Link>
+                      <Link
+                        to={createPageUrl("WinACruise")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Gift className="w-5 h-5" />
+                        {t.actionMenu.winCruise}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
                 <Link
                   to={createPageUrl("Community")}
                   className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
@@ -489,14 +631,6 @@ function LanguageContent({ children, currentPageName }) {
                 >
                   <Rainbow className="w-5 h-5" />
                   {t.nav.lgbtq}
-                </Link>
-                <Link
-                  to={createPageUrl("AIContentCreator")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Heart className="w-5 h-5" />
-                  {t.nav.aiCreator}
                 </Link>
                 <Link
                   to={createPageUrl("Profile")}
