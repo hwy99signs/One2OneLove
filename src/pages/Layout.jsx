@@ -354,20 +354,6 @@ function LanguageContent({ children, currentPageName }) {
                 </Link>
               )}
 
-              {/* Sign Out Button - Only show when authenticated */}
-              {isAuthenticated && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
-                  onClick={handleSignOut}
-                  title="Sign Out"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span className="hidden xl:inline">Sign Out</span>
-                </Button>
-              )}
-
               {/* Show Invite, Sign In/Sign Up only when NOT authenticated */}
               {!isAuthenticated && (
                 <>
