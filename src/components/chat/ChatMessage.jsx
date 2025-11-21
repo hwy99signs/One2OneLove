@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
-import { Check, CheckCheck, Clock, Play, Pause, Download, MapPin, FileText, Image as ImageIcon } from 'lucide-react';
+import { Check, CheckCheck, Clock, Play, Pause, Download, MapPin, FileText, Image as ImageIcon, Reply, Copy, Save, Forward, Star, Pin, Trash2, CheckSquare, Share2, Info, MoreVertical, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 const MessageStatus = ({ status, isRead }) => {
   if (status === 'sending') {
@@ -176,7 +178,28 @@ const LocationMessage = ({ latitude, longitude, address }) => {
   );
 };
 
-export default function ChatMessage({ message, isOwn, showAvatar = true, showTime = true }) {
+const REACTIONS = ['👍', '❤️', '😂', '😮', '😥', '🙏'];
+
+export default function ChatMessage({ 
+  message, 
+  isOwn, 
+  showAvatar = true, 
+  showTime = true,
+  onReply,
+  onForward,
+  onStar,
+  onPin,
+  onDelete,
+  onSelect,
+  onShare,
+  onReact,
+  onCopy
+}) {
+  const [reactions, setReactions] = useState(message.reactions || []);
+  const [isStarred, setIsStarred] = useState(message.isStarred || false);
+  const [isPinned, setIsPinned] = useState(message.isPinned || false);
+  const [showReactions, setShowReactions] = useState(false);
+
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -189,8 +212,92 @@ export default function ChatMessage({ message, isOwn, showAvatar = true, showTim
     return format(date, 'MMM d, HH:mm');
   };
 
+  const handleCopy = () => {
+    if (message.text) {
+      navigator.clipboard.writeText(message.text);
+      toast.success('Message copied to clipboard');
+      onCopy?.(message);
+    } else {
+      toast.info('Nothing to copy');
+    }
+  };
+
+  const handleSave = () => {
+    if (message.type === 'image' && message.imageUrl) {
+      const link = document.createElement('a');
+      link.href = message.imageUrl;
+      link.download = `image-${message.id}.jpg`;
+      link.click();
+      toast.success('Image saved');
+    } else if (message.type === 'document' && message.fileUrl) {
+      const link = document.createElement('a');
+      link.href = message.fileUrl;
+      link.download = message.fileName || 'document';
+      link.click();
+      toast.success('File saved');
+    } else {
+      toast.info('This message cannot be saved');
+    }
+  };
+
+  const handleReact = (emoji) => {
+    const newReactions = reactions.includes(emoji)
+      ? reactions.filter(r => r !== emoji)
+      : [...reactions, emoji];
+    setReactions(newReactions);
+    onReact?.(message, emoji);
+    setShowReactions(false);
+  };
+
+  const handleStar = () => {
+    setIsStarred(!isStarred);
+    onStar?.(message, !isStarred);
+    toast.success(isStarred ? 'Removed from starred' : 'Starred');
+  };
+
+  const handlePin = () => {
+    setIsPinned(!isPinned);
+    onPin?.(message, !isPinned);
+    toast.success(isPinned ? 'Unpinned' : 'Pinned');
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this message?')) {
+      onDelete?.(message);
+      toast.success('Message deleted');
+    }
+  };
+
+  const handleForward = () => {
+    onForward?.(message);
+    toast.info('Select a chat to forward to');
+  };
+
+  const handleReply = () => {
+    onReply?.(message);
+  };
+
+  const handleSelect = () => {
+    onSelect?.(message);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      const shareData = {
+        title: 'Message from chat',
+        text: message.text || 'Check this out',
+        url: message.imageUrl || message.fileUrl || window.location.href,
+      };
+      navigator.share(shareData).catch(() => {
+        toast.error('Failed to share');
+      });
+    } else {
+      onShare?.(message);
+    }
+  };
+
   return (
-    <div className={cn("flex gap-2 px-4 py-1 group hover:bg-gray-50/50 transition-colors", isOwn && "flex-row-reverse")}>
+    <div className={cn("flex gap-2 px-4 py-1 group hover:bg-gray-50/50 transition-colors relative", isOwn && "flex-row-reverse")}>
       {showAvatar && !isOwn && (
         <Avatar className="w-8 h-8 flex-shrink-0">
           <AvatarImage src={message.senderAvatar} alt={message.senderName} />
@@ -198,19 +305,96 @@ export default function ChatMessage({ message, isOwn, showAvatar = true, showTim
         </Avatar>
       )}
       
-      <div className={cn("flex flex-col max-w-[70%]", isOwn && "items-end")}>
+      <div className={cn("flex flex-col max-w-[70%] relative", isOwn && "items-end")}>
         {!isOwn && showAvatar && (
           <span className="text-xs text-gray-500 mb-1 px-1">{message.senderName}</span>
         )}
         
         <div
           className={cn(
-            "rounded-lg px-3 py-2 shadow-sm",
+            "rounded-lg px-3 py-2 shadow-sm relative",
             isOwn
               ? "bg-[#DCF8C6] text-gray-900"
               : "bg-white text-gray-900 border border-gray-200"
           )}
         >
+          {/* Message Actions - Visible on hover */}
+          <div className={cn(
+            "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity z-10",
+            isOwn ? "-left-12" : "-right-12"
+          )}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1.5 hover:bg-gray-200 rounded-full transition-colors">
+                  <MoreVertical className="w-4 h-4 text-gray-600" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isOwn ? "end" : "start"} className="w-48 bg-gray-900 text-white border-gray-700">
+                <DropdownMenuItem onClick={handleReply} className="hover:bg-gray-800">
+                  <Reply className="w-4 h-4 mr-2" />
+                  Reply
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopy} className="hover:bg-gray-800">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </DropdownMenuItem>
+                {(message.type === 'image' || message.type === 'document') && (
+                  <DropdownMenuItem onClick={handleSave} className="hover:bg-gray-800">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save as...
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleForward} className="hover:bg-gray-800">
+                  <Forward className="w-4 h-4 mr-2" />
+                  Forward
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleStar} className="hover:bg-gray-800">
+                  <Star className={cn("w-4 h-4 mr-2", isStarred && "fill-yellow-400 text-yellow-400")} />
+                  {isStarred ? 'Unstar' : 'Star'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePin} className="hover:bg-gray-800">
+                  <Pin className={cn("w-4 h-4 mr-2", isPinned && "fill-blue-400 text-blue-400")} />
+                  {isPinned ? 'Unpin' : 'Pin'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-700" />
+                <DropdownMenuItem onClick={handleDelete} className="hover:bg-gray-800 text-red-400">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSelect} className="hover:bg-gray-800">
+                  <CheckSquare className="w-4 h-4 mr-2" />
+                  Select
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleShare} className="hover:bg-gray-800">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-gray-800">
+                  <Info className="w-4 h-4 mr-2" />
+                  Info
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Reactions */}
+          {reactions.length > 0 && (
+            <div className={cn(
+              "flex flex-wrap gap-1 mt-1 mb-1",
+              isOwn ? "justify-end" : "justify-start"
+            )}>
+              {reactions.map((reaction, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleReact(reaction)}
+                  className="text-lg hover:scale-110 transition-transform"
+                  title="Click to remove"
+                >
+                  {reaction}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Text Message */}
           {message.type === 'text' && message.text && (
             <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
@@ -260,6 +444,30 @@ export default function ChatMessage({ message, isOwn, showAvatar = true, showTim
           {isOwn && (
             <MessageStatus status={message.status || 'sent'} isRead={message.isRead} />
           )}
+        </div>
+
+        {/* Quick Reactions - Visible on hover */}
+        <div className={cn(
+          "absolute top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity z-10",
+          isOwn ? "right-0" : "left-0"
+        )}>
+          <div className="flex items-center gap-1 bg-gray-900 rounded-full px-2 py-1 shadow-lg">
+            {REACTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => handleReact(emoji)}
+                className="text-lg hover:scale-125 transition-transform px-1"
+              >
+                {emoji}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowReactions(!showReactions)}
+              className="text-white hover:bg-gray-700 rounded-full p-1 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

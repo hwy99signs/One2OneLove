@@ -220,6 +220,42 @@ export default function ChatWindow({
                   isOwn={isOwn}
                   showAvatar={showAvatar}
                   showTime={showTime}
+                  onReply={(msg) => {
+                    // TODO: Implement reply functionality
+                    console.log('Reply to:', msg);
+                  }}
+                  onForward={(msg) => {
+                    // TODO: Implement forward functionality
+                    console.log('Forward:', msg);
+                  }}
+                  onStar={(msg, isStarred) => {
+                    // TODO: Implement star functionality
+                    console.log('Star:', msg, isStarred);
+                  }}
+                  onPin={(msg, isPinned) => {
+                    // TODO: Implement pin functionality
+                    console.log('Pin:', msg, isPinned);
+                  }}
+                  onDelete={(msg) => {
+                    // TODO: Implement delete functionality
+                    console.log('Delete:', msg);
+                  }}
+                  onSelect={(msg) => {
+                    // TODO: Implement select functionality
+                    console.log('Select:', msg);
+                  }}
+                  onShare={(msg) => {
+                    // TODO: Implement share functionality
+                    console.log('Share:', msg);
+                  }}
+                  onReact={(msg, emoji) => {
+                    // TODO: Implement reaction functionality
+                    console.log('React:', msg, emoji);
+                  }}
+                  onCopy={(msg) => {
+                    // TODO: Implement copy functionality
+                    console.log('Copy:', msg);
+                  }}
                 />
               );
             })
