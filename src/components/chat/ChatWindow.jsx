@@ -193,6 +193,76 @@ export default function ChatWindow({
         </div>
       </div>
 
+      {/* Pinned Messages Section */}
+      {messages.filter(msg => msg.isPinned && !msg.deletedForMe).length > 0 && (
+        <div className="bg-gray-100 border-b border-gray-200 px-4 py-2">
+          {messages
+            .filter(msg => msg.isPinned && !msg.deletedForMe)
+            .slice(0, 1) // Show only the most recent pinned message
+            .map((pinnedMsg) => {
+              const isOwn = pinnedMsg.senderId === currentUserId;
+              return (
+                <div key={pinnedMsg.id} className="flex items-center gap-2 group">
+                  <Pin className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm text-gray-600 font-medium">
+                    {isOwn ? 'You:' : `${pinnedMsg.senderName || 'User'}:`}
+                  </span>
+                  <span className="text-sm text-gray-700 flex-1 truncate">
+                    {pinnedMsg.type === 'text' 
+                      ? pinnedMsg.text 
+                      : pinnedMsg.type === 'image' 
+                      ? '📷 Photo' 
+                      : pinnedMsg.type === 'video'
+                      ? '🎥 Video'
+                      : pinnedMsg.type === 'document'
+                      ? '📄 Document'
+                      : pinnedMsg.type === 'location'
+                      ? '📍 Location'
+                      : 'Media'}
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity">
+                        <ChevronDown className="w-4 h-4 text-gray-600" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 bg-gray-900 text-white border-gray-700">
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          onPin?.(pinnedMsg, false, null);
+                          toast.success('Message unpinned');
+                        }}
+                        className="hover:bg-gray-800"
+                      >
+                        <PinOff className="w-4 h-4 mr-2" />
+                        Unpin
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          // Scroll to message
+                          const messageElement = document.querySelector(`[data-message-id="${pinnedMsg.id}"]`);
+                          if (messageElement) {
+                            messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // Highlight the message briefly
+                            messageElement.classList.add('bg-yellow-100');
+                            setTimeout(() => {
+                              messageElement.classList.remove('bg-yellow-100');
+                            }, 2000);
+                          }
+                        }}
+                        className="hover:bg-gray-800"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Go to message
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-1">
