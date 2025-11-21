@@ -223,12 +223,7 @@ function PagesContent() {
     
     // Chat page should be full view without Layout
     if (isChatPage) {
-        return (
-            <Routes>
-                <Route path="/Chat" element={<Chat />} />
-                <Route path="/chat" element={<Chat />} />
-            </Routes>
-        );
+        return <Chat />;
     }
     
     return (
