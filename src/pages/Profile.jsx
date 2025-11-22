@@ -1,7 +1,6 @@
 
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, User, Mail, Calendar as CalendarIcon, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +11,8 @@ import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
 
 const translations = {
   en: {
@@ -443,43 +444,35 @@ export default function Profile() {
   const [editData, setEditData] = useState({});
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
+  const { user, isLoading } = useAuth();
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch {
-        return null;
-      }
-    },
-    initialData: null
-  });
-
-  const { data: memories } = useQuery({
-    queryKey: ['memories'],
-    queryFn: () => base44.entities.Memory.list('-created_date', 5),
-    initialData: [],
-  });
+  // Mock memories data for now (can be replaced with actual query later)
+  const memories = [];
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: async (data) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return await updateUserProfile(user.id, data);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['user', user?.id] });
       setIsEditing(false);
       toast.success("Profile updated successfully!");
+      // Refresh user data
+      window.location.reload(); // Simple refresh - can be improved with context update
     },
-    onError: () => {
-      toast.error("Failed to update profile");
+    onError: (error) => {
+      toast.error(error.message || "Failed to update profile");
     }
   });
 
   const handleEdit = () => {
     setEditData({
       location: user?.location || "",
-      partner_name: user?.partner_name || "",
+      partner_email: user?.partner_email || "",
       anniversary_date: user?.anniversary_date || "",
       love_language: user?.love_language || "",
       relationship_status: user?.relationship_status || ""
@@ -504,6 +497,11 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!user?.id) {
+      toast.error('Please sign in to upload a profile picture');
+      return;
+    }
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
@@ -524,17 +522,26 @@ export default function Profile() {
     reader.readAsDataURL(file);
 
     setProfileImage(file);
+    setUploadingImage(true);
 
     try {
-      // TODO: Upload image to backend/storage
-      // For now, we'll just show a success message
-      // const imageUrl = await uploadProfileImage(file);
-      // await updateProfileMutation.mutateAsync({ profile_image: imageUrl });
+      // Upload image to Supabase Storage
+      const imageUrl = await uploadProfilePicture(file, user.id);
+      
+      // Update user profile with new image URL
+      await updateUserProfile(user.id, { avatar_url: imageUrl });
       
       toast.success('Profile image updated successfully!');
+      
+      // Refresh user data
+      window.location.reload(); // Simple refresh - can be improved with context update
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Failed to upload image. Please try again.');
+      toast.error(error.message || 'Failed to upload image. Please try again.');
+      setImagePreview(null);
+      setProfileImage(null);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -549,7 +556,20 @@ export default function Profile() {
     );
   }
 
-  const joinDate = user?.created_date ? new Date(user.created_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Please sign in to view your profile</p>
+          <Link to={createPageUrl("SignIn")}>
+            <Button>Sign In</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
 
   const quickActions = [
     { icon: Heart, label: t.profile.actions.sendLoveNote, color: "from-pink-500 to-rose-500", link: "LoveNotes" },
@@ -599,9 +619,9 @@ export default function Profile() {
                   alt="Profile" 
                   className="w-full h-full object-cover"
                 />
-              ) : user?.profile_image ? (
+              ) : user?.avatar_url ? (
                 <img 
-                  src={user.profile_image} 
+                  src={user.avatar_url} 
                   alt="Profile" 
                   className="w-full h-full object-cover"
                 />
@@ -613,10 +633,15 @@ export default function Profile() {
             </div>
             <button
               onClick={handleImageClick}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white"
+              disabled={uploadingImage}
+              className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white disabled:opacity-50 disabled:cursor-not-allowed"
               title="Change profile picture"
             >
-              <Camera className="w-4 h-4 text-white" />
+              {uploadingImage ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Camera className="w-4 h-4 text-white" />
+              )}
             </button>
             <input
               ref={fileInputRef}
@@ -627,7 +652,7 @@ export default function Profile() {
             />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-            {user?.full_name || "User"} 💕
+            {user?.name || user?.email?.split('@')[0] || "User"} 💕
           </h1>
           <p className="text-gray-600">{t.profile.memberSince} {joinDate}</p>
         </motion.div>
@@ -777,12 +802,13 @@ export default function Profile() {
                     <p className="text-sm text-gray-500">{t.profile.partner}</p>
                     {isEditing ? (
                       <Input
-                        value={editData.partner_name}
-                        onChange={(e) => setEditData({...editData, partner_name: e.target.value})}
-                        placeholder="Partner's name"
+                        value={editData.partner_email}
+                        onChange={(e) => setEditData({...editData, partner_email: e.target.value})}
+                        placeholder="Partner's email"
+                        type="email"
                       />
                     ) : (
-                      <p className="font-medium text-gray-900">{user?.partner_name || t.profile.notSet}</p>
+                      <p className="font-medium text-gray-900">{user?.partner_email || t.profile.notSet}</p>
                     )}
                   </div>
                 </div>
