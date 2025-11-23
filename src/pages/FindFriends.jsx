@@ -48,12 +48,17 @@ export default function FindFriends() {
   // Fetch users and sent requests on mount
   useEffect(() => {
     const fetchData = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
       try {
-        // Fetch all users
-        const usersData = await getAllUsers(user.id, { limit: 50 });
+        console.log('Fetching users for user:', user.id);
+        // Fetch all users (increased limit to 100)
+        const usersData = await getAllUsers(user.id, { limit: 100 });
+        console.log('Fetched users:', usersData.length);
         
         // Fetch sent requests to know which users we've already sent requests to
         const sentRequestsData = await getSentBuddyRequests(user.id);
@@ -66,7 +71,7 @@ export default function FindFriends() {
         setSentRequests(requestsMap);
       } catch (error) {
         console.error('Error fetching users:', error);
-        toast.error('Failed to load users');
+        toast.error(error.message || 'Failed to load users');
       } finally {
         setLoading(false);
       }
@@ -87,10 +92,12 @@ export default function FindFriends() {
       (u) =>
         u.name?.toLowerCase().includes(lowerQuery) ||
         u.email?.toLowerCase().includes(lowerQuery) ||
+        u.location?.toLowerCase().includes(lowerQuery) ||
         u.bio?.toLowerCase().includes(lowerQuery) ||
         u.relationship_status?.toLowerCase().includes(lowerQuery)
     );
     setFilteredUsers(filtered);
+    console.log(`Search for "${query}" returned ${filtered.length} results`);
   };
 
   const handleSendRequest = async (toUserId) => {
@@ -215,6 +222,12 @@ export default function FindFriends() {
                     )}
 
                     <div className="space-y-2 mb-4">
+                      {userData.location && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4" />
+                          <span>{userData.location}</span>
+                        </div>
+                      )}
                       {userData.relationship_status && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Heart className="w-4 h-4" />

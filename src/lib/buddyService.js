@@ -15,7 +15,7 @@ export const getAllUsers = async (currentUserId, options = {}) => {
   try {
     let query = supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio, relationship_status, user_type, created_at')
+      .select('id, name, email, avatar_url, bio, relationship_status, user_type, location, interests, partner_email, created_at')
       .neq('id', currentUserId); // Exclude current user
 
     // Filter by user type (only show regular users by default)
@@ -25,9 +25,10 @@ export const getAllUsers = async (currentUserId, options = {}) => {
       query = query.eq('user_type', 'regular');
     }
 
-    // Search filter
+    // Search filter - search across name, email, location, and bio
     if (options.searchQuery) {
-      query = query.or(`name.ilike.%${options.searchQuery}%,email.ilike.%${options.searchQuery}%`);
+      const searchTerm = options.searchQuery;
+      query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`);
     }
 
     // Apply sorting
@@ -35,10 +36,9 @@ export const getAllUsers = async (currentUserId, options = {}) => {
     const sortOrder = options.sortOrder || 'desc';
     query = query.order(sortBy, { ascending: sortOrder === 'asc' });
 
-    // Limit results
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
+    // Limit results (default to 100 to show more users)
+    const limit = options.limit || 100;
+    query = query.limit(limit);
 
     const { data, error } = await query;
 
@@ -60,12 +60,12 @@ export const searchUsers = async (currentUserId, searchQuery) => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio, relationship_status, user_type, created_at')
+      .select('id, name, email, avatar_url, bio, relationship_status, user_type, location, interests, partner_email, created_at')
       .neq('id', currentUserId)
       .eq('user_type', 'regular')
-      .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,bio.ilike.%${searchQuery}%`)
+      .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%,bio.ilike.%${searchQuery}%`)
       .order('name', { ascending: true })
-      .limit(50);
+      .limit(100);
 
     if (error) throw error;
     return data || [];
