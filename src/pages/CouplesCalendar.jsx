@@ -1,16 +1,23 @@
 import React, { useState, useMemo } from "react";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar as CalendarIcon, Plus, List, Grid3x3, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
+import { toast } from "sonner";
 
 import CalendarEventForm from "../components/calendar/CalendarEventForm";
 import CalendarEventCard from "../components/calendar/CalendarEventCard";
 import CalendarGrid from "../components/calendar/CalendarGrid";
+import { 
+  getCalendarEvents, 
+  createCalendarEvent, 
+  updateCalendarEvent, 
+  deleteCalendarEvent 
+} from "@/lib/calendarService";
 
 const translations = {
   en: {
@@ -152,6 +159,7 @@ const translations = {
 
 export default function CouplesCalendar() {
   const { currentLanguage } = useLanguage();
+  const { user } = useAuth();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
 
@@ -161,40 +169,63 @@ export default function CouplesCalendar() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  // Fetch calendar events from Supabase
   const { data: events, isLoading } = useQuery({
-    queryKey: ['calendarEvents'],
-    queryFn: () => base44.entities.CalendarEvent.list('-event_date'),
+    queryKey: ['calendarEvents', user?.id],
+    queryFn: () => {
+      if (!user?.id) return [];
+      return getCalendarEvents(user.id, { sortBy: 'event_date', sortOrder: 'asc' });
+    },
+    enabled: !!user?.id,
     initialData: []
   });
 
-  const { data: milestones } = useQuery({
-    queryKey: ['milestones'],
-    queryFn: () => base44.entities.Milestone.list(),
-    initialData: []
-  });
-
+  // Create event mutation
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.CalendarEvent.create(data),
+    mutationFn: (data) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return createCalendarEvent(user.id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setShowForm(false);
       setEditingEvent(null);
+      toast.success(t.eventAdded);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create event');
     }
   });
 
+  // Update event mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.CalendarEvent.update(id, data),
+    mutationFn: ({ id, data }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return updateCalendarEvent(id, user.id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setShowForm(false);
       setEditingEvent(null);
+      toast.success(t.eventUpdated);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update event');
     }
   });
 
+  // Delete event mutation
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CalendarEvent.delete(id),
+    mutationFn: (id) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return deleteCalendarEvent(id, user.id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      toast.success(t.eventDeleted);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete event');
     }
   });
 
@@ -212,7 +243,7 @@ export default function CouplesCalendar() {
   };
 
   const handleDelete = (id) => {
-    if (confirm('Are you sure you want to delete this event?')) {
+    if (window.confirm('Are you sure you want to delete this event?')) {
       deleteMutation.mutate(id);
     }
   };
