@@ -100,6 +100,8 @@ import Chat from "./Chat";
 
 import FindFriends from "./FindFriends";
 
+import FriendRequests from "./FriendRequests";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -203,6 +205,8 @@ const PAGES = {
     Chat: Chat,
     
     FindFriends: FindFriends,
+    
+    FriendRequests: FriendRequests,
     
 }
 
@@ -334,6 +338,8 @@ function PagesContent() {
                 <Route path="/Chat" element={<Chat />} />
                 
                 <Route path="/FindFriends" element={<FindFriends />} />
+                
+                <Route path="/FriendRequests" element={<FriendRequests />} />
                 
             </Routes>
         </Layout>
