@@ -2,19 +2,31 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Check, X, MessageCircle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Users, Check, X, MessageCircle, Mail, MapPin, Heart } from "lucide-react";
 
 export default function BuddyCard({ buddy, onAccept, onDecline, showActions = false }) {
+  // Handle both old format (user2_name) and new format (name) from Supabase
+  const buddyName = buddy.name || buddy.user2_name || buddy.user1_name || 'Unknown';
+  const buddyEmail = buddy.email;
+  const buddyAvatar = buddy.avatar_url;
+  const buddyLocation = buddy.location;
+  const buddyBio = buddy.bio;
+  const buddyRelationshipStatus = buddy.relationship_status;
+  
   return (
-    <Card className="hover:shadow-xl transition-all duration-300">
-      <CardHeader>
+    <Card className="hover:shadow-xl transition-all duration-300 border-2 border-purple-100">
+      <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            {buddy.user2_name?.charAt(0) || buddy.user1_name?.charAt(0)}
-          </div>
+          <Avatar className="w-14 h-14 border-2 border-purple-300">
+            <AvatarImage src={buddyAvatar} />
+            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white font-bold text-lg">
+              {buddyName?.charAt(0)?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1">
             <CardTitle className="text-lg font-bold text-gray-900">
-              {buddy.user2_name || buddy.user1_name}
+              {buddyName}
             </CardTitle>
             {buddy.status === 'active' && (
               <Badge className="bg-green-100 text-green-800 mt-1">
@@ -30,7 +42,7 @@ export default function BuddyCard({ buddy, onAccept, onDecline, showActions = fa
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <p className="text-sm text-gray-600 mb-3">{buddy.match_reason}</p>
         
         {buddy.shared_interests && buddy.shared_interests.length > 0 && (
