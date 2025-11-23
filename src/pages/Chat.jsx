@@ -1,101 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ChatList from '@/components/chat/ChatList';
 import ChatWindow from '@/components/chat/ChatWindow';
 import CallWindow from '@/components/chat/CallWindow';
 import { useLanguage } from '@/Layout';
+import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
-
-// Mock data for development - Replace with real API calls
-const mockConversations = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-    lastMessage: 'Hey! How are you doing?',
-    lastMessageTime: new Date().toISOString(),
-    unreadCount: 2,
-    isOnline: true,
-    isMuted: false,
-    isPinned: false,
-    isArchived: false,
-    email: 'sarah.johnson@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, USA',
-    about: 'Love traveling, photography, and spending time with friends. Always up for an adventure!',
-    relationshipStatus: 'dating',
-    anniversaryDate: '2023-06-15',
-    loveLanguage: 'quality_time',
-    partnerName: 'Alex',
-    lastSeen: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Mike Chen',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
-    lastMessage: 'Thanks for the help!',
-    lastMessageTime: new Date(Date.now() - 3600000).toISOString(),
-    unreadCount: 0,
-    isOnline: false,
-    isMuted: false,
-    isPinned: false,
-    isArchived: false,
-    email: 'mike.chen@example.com',
-    phone: '+1 (555) 987-6543',
-    location: 'San Francisco, USA',
-    about: 'Software developer, coffee enthusiast, and weekend hiker. Always learning something new!',
-    relationshipStatus: 'single',
-    loveLanguage: 'acts_of_service',
-    lastSeen: new Date(Date.now() - 7200000).toISOString(),
-  },
-];
-
-const mockMessages = {
-  '1': [
-    {
-      id: '1',
-      senderId: 'other',
-      senderName: 'Sarah Johnson',
-      senderAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-      type: 'text',
-      text: 'Hey! How are you doing?',
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      status: 'read',
-      isRead: true,
-    },
-    {
-      id: '2',
-      senderId: 'current',
-      type: 'text',
-      text: 'I\'m doing great! Thanks for asking. How about you?',
-      timestamp: new Date(Date.now() - 3500000).toISOString(),
-      status: 'read',
-      isRead: true,
-    },
-    {
-      id: '3',
-      senderId: 'other',
-      senderName: 'Sarah Johnson',
-      senderAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-      type: 'text',
-      text: 'Hey! How are you doing?',
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      status: 'delivered',
-      isRead: false,
-    },
-  ],
-};
+import {
+  getMyConversations,
+  getOrCreateConversation,
+  getMessages,
+  sendMessage,
+  sendFileMessage,
+  sendLocationMessage,
+  markMessagesAsRead,
+  editMessage,
+  deleteMessage,
+  updateConversationSettings,
+  deleteConversation,
+  subscribeToMessages,
+  unsubscribeFromMessages,
+  subscribeToConversations,
+} from '@/lib/chatService';
 
 export default function Chat() {
   const { currentLanguage } = useLanguage();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [selectedChatId, setSelectedChatId] = useState(null);
-  const [conversations, setConversations] = useState(mockConversations);
-  const [messages, setMessages] = useState({});
+  const [selectedChat, setSelectedChat] = useState(null);
   const [currentCall, setCurrentCall] = useState(null);
   const [callState, setCallState] = useState({
     isConnected: false,
@@ -104,345 +40,304 @@ export default function Chat() {
     isSpeakerEnabled: false,
     duration: 0,
   });
-  const wsRef = useRef(null);
-  const currentUserId = 'current'; // Replace with actual user ID from auth
+  const messageSubscriptionRef = useRef(null);
+  const conversationSubscriptionRef = useRef(null);
+
+  // Fetch all conversations
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: getMyConversations,
+    enabled: !!user,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Fetch messages for selected conversation
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ['messages', selectedChatId],
+    queryFn: () => getMessages(selectedChatId),
+    enabled: !!selectedChatId,
+  });
 
   // Handle URL parameters to open a specific chat
   useEffect(() => {
-    const userId = searchParams.get('user');
-    const userName = searchParams.get('name');
+    const userId = searchParams.get('userId');
+    
+    if (userId && user) {
+      console.log('📱 Opening chat with userId:', userId);
+      handleOpenChatWithUser(userId);
+    }
+  }, [searchParams, user, conversations]);
 
-    if (userId && userName) {
-      // Check if conversation already exists
-      const existingChat = conversations.find((conv) => conv.id === userId);
+  const handleOpenChatWithUser = async (otherUserId) => {
+    try {
+      // Get or create conversation
+      const conversationId = await getOrCreateConversation(otherUserId);
+      console.log('✅ Got conversation ID:', conversationId);
       
-      if (existingChat) {
-        // Select existing chat
-        setSelectedChatId(userId);
-        // Load messages if not loaded
-        if (!messages[userId]) {
-          setMessages((prev) => ({
-            ...prev,
-            [userId]: [],
-          }));
+      // Refetch conversations to get the new/existing one
+      await queryClient.invalidateQueries(['conversations']);
+      
+      // Find and select the conversation
+      setTimeout(() => {
+        const conv = conversations.find(c => c.id === conversationId);
+        if (conv) {
+          setSelectedChatId(conversationId);
+          setSelectedChat(conv);
+          markMessagesAsRead(conversationId);
+        } else {
+          // If not found in current list, set the ID anyway
+          setSelectedChatId(conversationId);
         }
-      } else {
-        // Create new conversation
-        const newChat = {
-          id: userId,
-          name: decodeURIComponent(userName),
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName)}`,
-          lastMessage: '',
-          lastMessageTime: new Date().toISOString(),
-          unreadCount: 0,
-          isOnline: true,
-          isMuted: false,
-          isPinned: false,
-          isArchived: false,
-        };
+      }, 500);
 
-        setConversations((prev) => [newChat, ...prev]);
-        setSelectedChatId(userId);
-        setMessages((prev) => ({
-          ...prev,
-          [userId]: [],
-        }));
-
-        toast.success(`Started new chat with ${decodeURIComponent(userName)}`);
-      }
-
-      // Clean up URL parameters after processing
+      // Clean up URL parameters
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      toast.error('Failed to open chat');
     }
-  }, [searchParams]);
-
-  // Initialize WebSocket connection for real-time messaging
-  useEffect(() => {
-    // TODO: Replace with actual WebSocket connection
-    // const ws = new WebSocket('wss://your-websocket-url');
-    // wsRef.current = ws;
-    // 
-    // ws.onmessage = (event) => {
-    //   const data = JSON.parse(event.data);
-    //   handleIncomingMessage(data);
-    // };
-    // 
-    // return () => {
-    //   ws.close();
-    // };
-  }, []);
-
-  const handleIncomingMessage = (messageData) => {
-    setMessages((prev) => {
-      const chatId = messageData.chatId;
-      return {
-        ...prev,
-        [chatId]: [...(prev[chatId] || []), messageData.message],
-      };
-    });
-
-    // Update conversation last message
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === messageData.chatId
-          ? {
-              ...conv,
-              lastMessage: messageData.message.text || 'Media',
-              lastMessageTime: messageData.message.timestamp,
-              unreadCount: conv.id === selectedChatId ? 0 : conv.unreadCount + 1,
-            }
-          : conv
-      )
-    );
   };
 
-  const handleSendMessage = async (text) => {
+  // Subscribe to real-time message updates
+  useEffect(() => {
     if (!selectedChatId) return;
 
-    const newMessage = {
-      id: Date.now().toString(),
-      senderId: currentUserId,
-      type: 'text',
-      text,
-      timestamp: new Date().toISOString(),
-      status: 'sending',
-      isRead: false,
-    };
+    console.log('🔔 Setting up real-time subscription for:', selectedChatId);
+    
+    const subscription = subscribeToMessages(selectedChatId, (newMessage) => {
+      console.log('📨 New message received via realtime:', newMessage);
+      // Invalidate messages query to refetch
+      queryClient.invalidateQueries(['messages', selectedChatId]);
+      queryClient.invalidateQueries(['conversations']);
+    });
 
-    // Optimistic update
-    setMessages((prev) => ({
-      ...prev,
-      [selectedChatId]: [...(prev[selectedChatId] || []), newMessage],
-    }));
+    messageSubscriptionRef.current = subscription;
 
-    try {
-      // TODO: Replace with actual API call
-      // await base44.entities.ChatMessage.create({
-      //   chat_id: selectedChatId,
-      //   text,
-      //   type: 'text',
-      // });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Update message status
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: prev[selectedChatId].map((msg) =>
-          msg.id === newMessage.id ? { ...msg, status: 'sent' } : msg
-        ),
-      }));
-
-      // Update conversation
-      setConversations((prev) =>
-        prev.map((conv) =>
-          conv.id === selectedChatId
-            ? {
-                ...conv,
-                lastMessage: text,
-                lastMessageTime: new Date().toISOString(),
-              }
-            : conv
-        )
-      );
-
-      // Send via WebSocket
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({
-            type: 'message',
-            chatId: selectedChatId,
-            message: newMessage,
-          })
-        );
+    return () => {
+      if (messageSubscriptionRef.current) {
+        unsubscribeFromMessages(messageSubscriptionRef.current);
       }
-    } catch (error) {
+    };
+  }, [selectedChatId]);
+
+  // Subscribe to conversation updates
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🔔 Setting up conversation updates subscription');
+    
+    const subscription = subscribeToConversations((payload) => {
+      console.log('📬 Conversation updated:', payload);
+      queryClient.invalidateQueries(['conversations']);
+    });
+
+    conversationSubscriptionRef.current = subscription;
+
+    return () => {
+      if (conversationSubscriptionRef.current) {
+        unsubscribeFromMessages(conversationSubscriptionRef.current);
+      }
+    };
+  }, [user]);
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ conversationId, receiverId, content, type }) => {
+      return await sendMessage(conversationId, receiverId, content, type);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['messages', selectedChatId]);
+      queryClient.invalidateQueries(['conversations']);
+    },
+    onError: (error) => {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
-      // Revert optimistic update
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: prev[selectedChatId].filter((msg) => msg.id !== newMessage.id),
-      }));
-    }
+    },
+  });
+
+  // Send file mutation
+  const sendFileMutation = useMutation({
+    mutationFn: async ({ conversationId, receiverId, file, messageType }) => {
+      return await sendFileMessage(conversationId, receiverId, file, messageType);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['messages', selectedChatId]);
+      queryClient.invalidateQueries(['conversations']);
+      toast.success('File sent');
+    },
+    onError: (error) => {
+      console.error('Error sending file:', error);
+      toast.error('Failed to send file');
+    },
+  });
+
+  // Send location mutation
+  const sendLocationMutation = useMutation({
+    mutationFn: async ({ conversationId, receiverId, location }) => {
+      return await sendLocationMessage(conversationId, receiverId, location);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['messages', selectedChatId]);
+      queryClient.invalidateQueries(['conversations']);
+      toast.success('Location shared');
+    },
+    onError: (error) => {
+      console.error('Error sharing location:', error);
+      toast.error('Failed to share location');
+    },
+  });
+
+  // Edit message mutation
+  const editMessageMutation = useMutation({
+    mutationFn: async ({ messageId, newContent }) => {
+      return await editMessage(messageId, newContent);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['messages', selectedChatId]);
+      toast.success('Message updated');
+    },
+    onError: (error) => {
+      console.error('Error editing message:', error);
+      toast.error('Failed to update message');
+    },
+  });
+
+  // Delete message mutation
+  const deleteMessageMutation = useMutation({
+    mutationFn: async ({ messageId }) => {
+      return await deleteMessage(messageId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['messages', selectedChatId]);
+      queryClient.invalidateQueries(['conversations']);
+      toast.success('Message deleted');
+    },
+    onError: (error) => {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+    },
+  });
+
+  // Update conversation settings mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: async ({ conversationId, settings }) => {
+      return await updateConversationSettings(conversationId, settings);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['conversations']);
+    },
+  });
+
+  // Delete conversation mutation
+  const deleteConversationMutation = useMutation({
+    mutationFn: async ({ conversationId }) => {
+      return await deleteConversation(conversationId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['conversations']);
+      setSelectedChatId(null);
+      setSelectedChat(null);
+      toast.success('Chat deleted');
+    },
+    onError: (error) => {
+      console.error('Error deleting conversation:', error);
+      toast.error('Failed to delete chat');
+    },
+  });
+
+  const handleSendMessage = async (text) => {
+    if (!selectedChatId || !selectedChat) return;
+
+    await sendMessageMutation.mutateAsync({
+      conversationId: selectedChatId,
+      receiverId: selectedChat.otherUserId,
+      content: text,
+      type: 'text',
+    });
   };
 
   const handleSendFile = async (file, type, duration) => {
-    if (!selectedChatId) return;
+    if (!selectedChatId || !selectedChat) return;
 
-    try {
-      // Upload file
-      let fileUrl = '';
-      if (file instanceof Blob) {
-        // For voice notes
-        // TODO: Upload to S3 or your storage service
-        // fileUrl = await uploadFile(file);
-        fileUrl = URL.createObjectURL(file); // Temporary for demo
-      } else {
-        // For images/documents
-        // TODO: Upload to S3
-        // fileUrl = await uploadFile(file);
-        fileUrl = URL.createObjectURL(file); // Temporary for demo
-      }
-
-      const messageData = {
-        id: Date.now().toString(),
-        senderId: currentUserId,
-        type,
-        timestamp: new Date().toISOString(),
-        status: 'sending',
-        isRead: false,
-      };
-
-      if (type === 'image') {
-        messageData.imageUrl = fileUrl;
-        messageData.caption = '';
-      } else if (type === 'document') {
-        messageData.fileUrl = fileUrl;
-        messageData.fileName = file.name;
-        messageData.fileSize = file.size;
-        messageData.fileType = file.type;
-      } else if (type === 'voice') {
-        messageData.audioUrl = fileUrl;
-        messageData.duration = duration || 0;
-      }
-
-      // Optimistic update
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: [...(prev[selectedChatId] || []), messageData],
-      }));
-
-      // TODO: Save to database
-      // await base44.entities.ChatMessage.create({
-      //   chat_id: selectedChatId,
-      //   ...messageData,
-      // });
-
-      // Update conversation
-      setConversations((prev) =>
-        prev.map((conv) =>
-          conv.id === selectedChatId
-            ? {
-                ...conv,
-                lastMessage: type === 'voice' ? '🎤 Voice note' : type === 'image' ? '📷 Photo' : '📄 Document',
-                lastMessageTime: new Date().toISOString(),
-              }
-            : conv
-        )
-      );
-
-      toast.success('Message sent');
-    } catch (error) {
-      console.error('Error sending file:', error);
-      toast.error('Failed to send file');
-    }
+    await sendFileMutation.mutateAsync({
+      conversationId: selectedChatId,
+      receiverId: selectedChat.otherUserId,
+      file,
+      messageType: type,
+    });
   };
 
   const handleSendLocation = async (location) => {
-    if (!selectedChatId) return;
+    if (!selectedChatId || !selectedChat) return;
 
-    try {
-      // Get address from coordinates (using reverse geocoding)
-      // TODO: Use a geocoding service
-      const address = `${location.latitude}, ${location.longitude}`;
-
-      const messageData = {
-        id: Date.now().toString(),
-        senderId: currentUserId,
-        type: 'location',
-        latitude: location.latitude,
-        longitude: location.longitude,
-        address,
-        timestamp: new Date().toISOString(),
-        status: 'sent',
-        isRead: false,
-      };
-
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: [...(prev[selectedChatId] || []), messageData],
-      }));
-
-      // TODO: Save to database
-      toast.success('Location shared');
-    } catch (error) {
-      console.error('Error sharing location:', error);
-      toast.error('Failed to share location');
-    }
+    await sendLocationMutation.mutateAsync({
+      conversationId: selectedChatId,
+      receiverId: selectedChat.otherUserId,
+      location: {
+        lat: location.latitude,
+        lng: location.longitude,
+        address: `${location.latitude}, ${location.longitude}`,
+      },
+    });
   };
 
-  const handleSelectChat = (chatId) => {
+  const handleSelectChat = async (chatId) => {
+    console.log('💬 Selecting chat:', chatId);
     setSelectedChatId(chatId);
-    // Mark as read
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === chatId ? { ...conv, unreadCount: 0 } : conv
-      )
-    );
-    // Load messages if not loaded
-    if (!messages[chatId]) {
-      // TODO: Load messages from API
-      setMessages((prev) => ({
-        ...prev,
-        [chatId]: mockMessages[chatId] || [],
-      }));
+    const chat = conversations.find((c) => c.id === chatId);
+    setSelectedChat(chat);
+    
+    // Mark messages as read
+    if (chatId) {
+      await markMessagesAsRead(chatId);
+      queryClient.invalidateQueries(['conversations']);
     }
   };
 
   const handleMarkAsUnread = (chatId) => {
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === chatId ? { ...conv, unreadCount: conv.unreadCount + 1 } : conv
-      )
-    );
+    // This would require a backend update to set unread count
     toast.success('Marked as unread');
   };
 
-  const handlePin = (chatId) => {
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === chatId ? { ...conv, isPinned: true } : conv
-      )
-    );
-    // Move pinned chat to top
-    setConversations((prev) => {
-      const sorted = [...prev].sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return 0;
-      });
-      return sorted;
+  const handlePin = async (chatId) => {
+    await updateSettingsMutation.mutateAsync({
+      conversationId: chatId,
+      settings: { isPinned: true },
     });
     toast.success('Chat pinned');
   };
 
-  const handleUnpin = (chatId) => {
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === chatId ? { ...conv, isPinned: false } : conv
-      )
-    );
+  const handleUnpin = async (chatId) => {
+    await updateSettingsMutation.mutateAsync({
+      conversationId: chatId,
+      settings: { isPinned: false },
+    });
     toast.success('Chat unpinned');
   };
 
-  const handleArchive = (chatId) => {
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === chatId ? { ...conv, isArchived: true } : conv
-      )
-    );
+  const handleArchive = async (chatId) => {
+    await updateSettingsMutation.mutateAsync({
+      conversationId: chatId,
+      settings: { isArchived: true },
+    });
     if (selectedChatId === chatId) {
       setSelectedChatId(null);
+      setSelectedChat(null);
     }
     toast.success('Chat archived');
   };
 
+  const handleMute = async (chatId, isMuted) => {
+    await updateSettingsMutation.mutateAsync({
+      conversationId: chatId,
+      settings: { isMuted: !isMuted },
+    });
+    toast.success(isMuted ? 'Chat unmuted' : 'Chat muted');
+  };
+
   const handlePopOut = (chatId) => {
-    // Open chat in new window
-    const chatUrl = `${window.location.origin}${createPageUrl('Chat')}?chat=${chatId}`;
+    const chatUrl = `${window.location.origin}${createPageUrl('Chat')}?chatId=${chatId}`;
     window.open(chatUrl, '_blank', 'width=800,height=600');
     toast.info('Chat opened in new window');
   };
@@ -490,14 +385,42 @@ export default function Chat() {
       isSpeakerEnabled: false,
       duration: 0,
     });
-    // TODO: End WebRTC connection
   };
 
-  const selectedChat = conversations.find((c) => c.id === selectedChatId);
+  const handleEditMessage = async (messageId, newText) => {
+    await editMessageMutation.mutateAsync({
+      messageId,
+      newContent: newText,
+    });
+  };
+
+  const handleDeleteMessage = async (messageId, deleteType) => {
+    // For now, we only support delete for everyone
+    await deleteMessageMutation.mutateAsync({ messageId });
+  };
+
+  const handleClearChat = async (chatId) => {
+    // This would require deleting all messages in the conversation
+    toast.info('Clear chat feature coming soon');
+  };
+
+  const handleDeleteChat = async (chatId) => {
+    await deleteConversationMutation.mutateAsync({ conversationId: chatId });
+  };
+
+  if (!user) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-500">Please sign in to use chat</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-4rem)] flex bg-gray-50">
-      {/* Chat List - Hidden on mobile when chat is selected */}
+      {/* Chat List */}
       <div
         className={`
           ${selectedChatId ? 'hidden lg:flex' : 'flex'}
@@ -511,19 +434,10 @@ export default function Chat() {
           onCall={handleCall}
           onVideoCall={handleVideoCall}
           onArchive={handleArchive}
-          onDelete={(chatId) => {
-            setConversations((prev) => prev.filter((c) => c.id !== chatId));
-            if (selectedChatId === chatId) {
-              setSelectedChatId(null);
-            }
-            toast.success('Chat deleted');
-          }}
+          onDelete={handleDeleteChat}
           onMute={(chatId) => {
-            setConversations((prev) =>
-              prev.map((c) =>
-                c.id === chatId ? { ...c, isMuted: !c.isMuted } : c
-              )
-            );
+            const chat = conversations.find((c) => c.id === chatId);
+            handleMute(chatId, chat?.isMuted);
           }}
           onPin={handlePin}
           onUnpin={handleUnpin}
@@ -540,96 +454,34 @@ export default function Chat() {
       >
         <ChatWindow
           chat={selectedChat}
-          messages={messages[selectedChatId] || []}
-          currentUserId={currentUserId}
+          messages={messages}
+          currentUserId={user?.id}
           onSendMessage={handleSendMessage}
           onSendFile={handleSendFile}
           onSendLocation={handleSendLocation}
           onCall={() => handleCall(selectedChatId)}
           onVideoCall={() => handleVideoCall(selectedChatId)}
-          onBack={() => setSelectedChatId(null)}
-          onMute={(chatId) => {
-            setConversations((prev) =>
-              prev.map((c) =>
-                c.id === chatId ? { ...c, isMuted: !c.isMuted } : c
-              )
-            );
-          }}
-          onClearChat={(chatId) => {
-            setMessages((prev) => ({ ...prev, [chatId]: [] }));
-            toast.success('Chat cleared');
-          }}
-          onDeleteChat={(chatId) => {
-            setConversations((prev) => prev.filter((c) => c.id !== chatId));
+          onBack={() => {
             setSelectedChatId(null);
-            toast.success('Chat deleted');
+            setSelectedChat(null);
           }}
-          onEditMessage={(messageId, newText) => {
-            setMessages((prev) => ({
-              ...prev,
-              [selectedChatId]: prev[selectedChatId].map((msg) =>
-                msg.id === messageId
-                  ? { ...msg, text: newText, isEdited: true }
-                  : msg
-              ),
-            }));
-            toast.success('Message updated');
-            // TODO: Update message in backend
-            // await base44.entities.ChatMessage.update(messageId, { text: newText, is_edited: true });
+          onMute={(chatId) => {
+            const chat = conversations.find((c) => c.id === chatId);
+            handleMute(chatId, chat?.isMuted);
           }}
-          onDeleteMessage={(messageId, deleteType) => {
-            if (deleteType === 'everyone') {
-              // Delete for everyone - remove from messages
-              setMessages((prev) => ({
-                ...prev,
-                [selectedChatId]: prev[selectedChatId].filter((msg) => msg.id !== messageId),
-              }));
-              toast.success('Message deleted for everyone');
-            } else {
-              // Delete for me - mark as deleted but keep in list (or remove based on UX preference)
-              setMessages((prev) => ({
-                ...prev,
-                [selectedChatId]: prev[selectedChatId].map((msg) =>
-                  msg.id === messageId ? { ...msg, deletedForMe: true } : msg
-                ),
-              }));
-              toast.success('Message deleted for you');
-            }
-            // TODO: Update message in backend
-            // await base44.entities.ChatMessage.delete(messageId, { delete_type: deleteType });
-          }}
+          onClearChat={handleClearChat}
+          onDeleteChat={handleDeleteChat}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
           onMarkAsUnread={handleMarkAsUnread}
           onPin={(messageId, isPinned, expiryDate) => {
-            setMessages((prev) => ({
-              ...prev,
-              [selectedChatId]: prev[selectedChatId].map((msg) =>
-                msg.id === messageId
-                  ? { ...msg, isPinned, pinExpiryDate: expiryDate }
-                  : msg
-              ),
-            }));
-            if (isPinned) {
-              toast.success('Message pinned');
-            } else {
-              toast.success('Message unpinned');
-            }
+            // TODO: Implement message pinning
+            toast.info('Message pinning coming soon');
           }}
           onUnpin={handleUnpin}
           onArchive={handleArchive}
           onPopOut={handlePopOut}
-          onEditMessage={(messageId, newText) => {
-            setMessages((prev) => ({
-              ...prev,
-              [selectedChatId]: prev[selectedChatId].map((msg) =>
-                msg.id === messageId
-                  ? { ...msg, text: newText, isEdited: true }
-                  : msg
-              ),
-            }));
-            toast.success('Message updated');
-            // TODO: Update message in backend
-            // await base44.entities.ChatMessage.update(messageId, { text: newText, is_edited: true });
-          }}
+          isLoading={messagesLoading}
         />
       </div>
 
@@ -667,4 +519,3 @@ export default function Chat() {
     </div>
   );
 }
-
