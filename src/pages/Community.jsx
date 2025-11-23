@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ForumCard from "../components/community/ForumCard";
 import ForumPostCard from "../components/community/ForumPostCard";
+import { useAuth } from "@/contexts/AuthContext";
+import { getMyBuddies } from "@/lib/buddyService";
 import StoryCard from "../components/community/StoryCard";
 import BuddyCard from "../components/community/BuddyCard";
 import PostStoryForm from "../components/community/PostStoryForm";
@@ -53,6 +55,7 @@ export default function Community() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
+  const { user } = useAuth(); // Get current user from Supabase
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('forums');
@@ -79,36 +82,28 @@ export default function Community() {
     initialData: [],
   });
 
+  // Fetch REAL buddies from Supabase
   const { data: myBuddies = [] } = useQuery({
-    queryKey: ['myBuddies', currentUser?.email],
+    queryKey: ['myBuddies', user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+      console.log('📋 Fetching buddies for user:', user.id);
       try {
-      const buddies = await base44.entities.BuddyMatch.list();
-      return buddies.filter(b => 
-        b.user1_email === currentUser?.email || b.user2_email === currentUser?.email
-      );
-      } catch {
-        // Return mock data for development
-        return [
-          {
-            id: '1',
-            user2_name: 'Sarah Johnson',
-            user1_name: currentUser?.name || 'You',
-            status: 'active',
-            match_reason: 'Matched based on shared interests in photography and travel',
-            shared_interests: ['Photography', 'Travel', 'Cooking'],
-            accountability_goal: 'Weekly check-ins on relationship goals',
-          },
-        ];
+        const buddies = await getMyBuddies(user.id);
+        console.log('✅ Fetched buddies:', buddies);
+        return buddies;
+      } catch (error) {
+        console.error('❌ Error fetching buddies:', error);
+        return [];
       }
     },
-    enabled: !!currentUser,
+    enabled: !!user?.id,
     initialData: [],
   });
 
-  // Filter buddies to show only active friends
-  const activeBuddies = myBuddies.filter(b => b.status === 'active');
-  const pendingBuddies = myBuddies.filter(b => b.status === 'pending');
+  // Filter buddies - accepted friends only (from Supabase)
+  const activeBuddies = myBuddies;
+  const pendingBuddies = []; // No pending here, those are in FriendRequests page
 
   const { data: forumPosts = [] } = useQuery({
     queryKey: ['forumPosts', selectedForum?.id],
