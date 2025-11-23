@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Check, X, MessageCircle, Mail, MapPin, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function BuddyCard({ buddy, onAccept, onDecline, showActions = false }) {
   // Handle both old format (user2_name) and new format (name) from Supabase
@@ -118,10 +120,12 @@ export default function BuddyCard({ buddy, onAccept, onDecline, showActions = fa
             </Button>
           </div>
         ) : (
-          <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 mt-2">
-            <MessageCircle className="w-4 h-4 mr-2" />
-            Message {buddyName.split(' ')[0]}
-          </Button>
+          <Link to={`${createPageUrl("Chat")}?userId=${buddy.user_id || buddy.id}`}>
+            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 mt-2">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Message {buddyName.split(' ')[0]}
+            </Button>
+          </Link>
         )}
       </CardContent>
     </Card>
