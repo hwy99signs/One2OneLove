@@ -100,7 +100,7 @@ const ImageMessage = ({ imageUrl, caption }) => {
   const [imageError, setImageError] = React.useState(false);
 
   return (
-    <div className="rounded-lg overflow-hidden">
+    <div className="rounded-lg overflow-hidden max-w-sm">
       {imageError ? (
         <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
           <ImageIcon className="w-8 h-8 text-gray-400" />
@@ -109,8 +109,10 @@ const ImageMessage = ({ imageUrl, caption }) => {
         <img
           src={imageUrl}
           alt={caption || 'Image'}
-          className="max-w-full h-auto rounded-lg"
+          className="max-w-full max-h-80 h-auto rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
           onError={() => setImageError(true)}
+          onClick={() => window.open(imageUrl, '_blank')}
+          title="Click to view full size"
         />
       )}
       {caption && (
