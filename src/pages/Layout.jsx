@@ -669,6 +669,18 @@ function LanguageContent({ children, currentPageName }) {
                 </Link>
                 <div className="border-t border-white/20 my-2"></div>
                 
+                {/* Friend Requests - Only show when authenticated */}
+                {isAuthenticated && (
+                  <Link
+                    to={createPageUrl("FriendRequests")}
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Bell className="w-5 h-5" />
+                    Friend Requests
+                  </Link>
+                )}
+
                 {/* Chat - Only show when authenticated */}
                 {isAuthenticated && (
                   <Link
