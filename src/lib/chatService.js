@@ -64,6 +64,15 @@ export const getMyConversations = async () => {
       const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
       const otherUser = usersMap[otherUserId] || { id: otherUserId, email: 'Unknown' };
       
+      console.log(`💬 Conversation ${conv.id}:`, {
+        currentUserId: user.id,
+        user1_id: conv.user1_id,
+        user2_id: conv.user2_id,
+        isUser1,
+        otherUserId,
+        otherUserName: otherUser.name
+      });
+      
       return {
         id: conv.id,
         otherUserId: otherUser.id,
@@ -81,6 +90,8 @@ export const getMyConversations = async () => {
         updatedAt: conv.updated_at,
       };
     }) || [];
+    
+    console.log('✅ Final transformed conversations:', transformedConversations);
 
     return transformedConversations;
   } catch (error) {

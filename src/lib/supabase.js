@@ -27,11 +27,26 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: true,
       storage: window.localStorage,
-      storageKey: 'one2one-love-auth',
-      flowType: 'pkce'
+      storageKey: 'sb-one2one-auth-token',
+      flowType: 'pkce',
+      debug: true // Enable debug mode
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'one2one-love'
+      }
     }
   }
 );
+
+// Force session restoration on page load
+window.addEventListener('load', () => {
+  supabase.auth.getSession().then(({ data, error }) => {
+    if (data.session) {
+      console.log('🔄 Session restored on page load:', data.session.user.email);
+    }
+  });
+});
 
 // Log session status for debugging
 if (isSupabaseConfigured()) {
