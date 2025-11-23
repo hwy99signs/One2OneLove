@@ -178,15 +178,40 @@ export const getSentBuddyRequests = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('buddy_requests')
-      .select(`
-        *,
-        to_user:users!to_user_id(id, name, email, avatar_url, bio)
-      `)
+      .select('*')
       .eq('from_user_id', userId)
       .eq('status', 'pending');
 
     if (error) throw error;
-    return data || [];
+
+    // Get user IDs
+    const userIds = data?.map(req => req.to_user_id) || [];
+    
+    if (userIds.length === 0) return [];
+
+    // Fetch user data
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email, avatar_url, bio')
+      .in('id', userIds);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+    }
+
+    // Create map
+    const usersMap = {};
+    users?.forEach(u => {
+      usersMap[u.id] = u;
+    });
+
+    // Combine data
+    const requests = data.map(req => ({
+      ...req,
+      to_user: usersMap[req.to_user_id] || { id: req.to_user_id, email: 'Unknown' }
+    }));
+
+    return requests;
   } catch (error) {
     console.error('Error fetching sent requests:', error);
     throw new Error(handleSupabaseError(error));
@@ -202,15 +227,40 @@ export const getReceivedBuddyRequests = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('buddy_requests')
-      .select(`
-        *,
-        from_user:users!from_user_id(id, name, email, avatar_url, bio)
-      `)
+      .select('*')
       .eq('to_user_id', userId)
       .eq('status', 'pending');
 
     if (error) throw error;
-    return data || [];
+
+    // Get user IDs
+    const userIds = data?.map(req => req.from_user_id) || [];
+    
+    if (userIds.length === 0) return [];
+
+    // Fetch user data
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email, avatar_url, bio')
+      .in('id', userIds);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+    }
+
+    // Create map
+    const usersMap = {};
+    users?.forEach(u => {
+      usersMap[u.id] = u;
+    });
+
+    // Combine data
+    const requests = data.map(req => ({
+      ...req,
+      from_user: usersMap[req.from_user_id] || { id: req.from_user_id, email: 'Unknown' }
+    }));
+
+    return requests;
   } catch (error) {
     console.error('Error fetching received requests:', error);
     throw new Error(handleSupabaseError(error));
