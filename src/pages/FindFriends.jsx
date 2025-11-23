@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from '@/Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllUsers, sendBuddyRequest, getSentBuddyRequests } from '@/lib/buddyService';
+import { getAllUsers, sendBuddyRequest, getSentBuddyRequests, cancelBuddyRequest } from '@/lib/buddyService';
 
 const translations = {
   en: {
@@ -130,11 +130,10 @@ export default function FindFriends() {
 
   const handleCancelRequest = async (toUserId) => {
     const requestId = sentRequests.get(toUserId);
-    if (!requestId) return;
+    if (!requestId || !user?.id) return;
 
     try {
-      // Note: We'll need to implement cancelBuddyRequest in buddyService
-      // For now, just remove from UI
+      await cancelBuddyRequest(requestId, user.id);
       setSentRequests((prev) => {
         const newMap = new Map(prev);
         newMap.delete(toUserId);
@@ -143,7 +142,7 @@ export default function FindFriends() {
       toast.success(t.requestCancelled);
     } catch (error) {
       console.error('Error cancelling request:', error);
-      toast.error('Failed to cancel request');
+      toast.error(error.message || 'Failed to cancel request');
     }
   };
 
