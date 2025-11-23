@@ -13,9 +13,12 @@ import { supabase, handleSupabaseError } from './supabase';
  */
 export const getAllUsers = async (currentUserId, options = {}) => {
   try {
+    console.log('getAllUsers called with userId:', currentUserId);
+    
+    // Try to select only fields that definitely exist
     let query = supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio, relationship_status, user_type, location, interests, partner_email, created_at')
+      .select('id, name, email, avatar_url, bio, relationship_status, user_type, created_at')
       .neq('id', currentUserId); // Exclude current user
 
     // Filter by user type (only show regular users by default)
@@ -25,10 +28,10 @@ export const getAllUsers = async (currentUserId, options = {}) => {
       query = query.eq('user_type', 'regular');
     }
 
-    // Search filter - search across name, email, location, and bio
+    // Search filter - search across name, email, and bio only
     if (options.searchQuery) {
       const searchTerm = options.searchQuery;
-      query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`);
+      query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`);
     }
 
     // Apply sorting
@@ -40,9 +43,15 @@ export const getAllUsers = async (currentUserId, options = {}) => {
     const limit = options.limit || 100;
     query = query.limit(limit);
 
+    console.log('Executing query...');
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw error;
+    }
+    
+    console.log('Query successful, returned users:', data?.length || 0);
     return data || [];
   } catch (error) {
     console.error('Error fetching users:', error);
