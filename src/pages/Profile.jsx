@@ -652,7 +652,7 @@ export default function Profile() {
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                  <User className="w-12 h-12 text-white" />
+            <User className="w-12 h-12 text-white" />
                 </div>
               )}
             </div>

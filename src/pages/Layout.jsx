@@ -126,8 +126,8 @@ function LanguageContent({ children, currentPageName }) {
     navigate(createPageUrl("SignUp"));
   };
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await logout();
     navigate(createPageUrl("Home"));
   };
 

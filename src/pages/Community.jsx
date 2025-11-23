@@ -83,10 +83,10 @@ export default function Community() {
     queryKey: ['myBuddies', currentUser?.email],
     queryFn: async () => {
       try {
-        const buddies = await base44.entities.BuddyMatch.list();
-        return buddies.filter(b => 
-          b.user1_email === currentUser?.email || b.user2_email === currentUser?.email
-        );
+      const buddies = await base44.entities.BuddyMatch.list();
+      return buddies.filter(b => 
+        b.user1_email === currentUser?.email || b.user2_email === currentUser?.email
+      );
       } catch {
         // Return mock data for development
         return [
@@ -314,10 +314,10 @@ export default function Community() {
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-600">{t.buddiesDesc}</p>
               <Link to={createPageUrl("FindFriends")}>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
-                  <UserPlus className="w-5 h-5 mr-2" />
-                  {t.findBuddy}
-                </Button>
+              <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
+                <UserPlus className="w-5 h-5 mr-2" />
+                {t.findBuddy}
+              </Button>
               </Link>
             </div>
 
@@ -343,17 +343,17 @@ export default function Community() {
             {pendingBuddies.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Pending Requests</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {pendingBuddies.map((buddy) => (
-                    <BuddyCard
-                      key={buddy.id}
-                      buddy={buddy}
-                      onAccept={handleAcceptBuddy}
-                      onDecline={handleDeclineBuddy}
+                <BuddyCard
+                  key={buddy.id}
+                  buddy={buddy}
+                  onAccept={handleAcceptBuddy}
+                  onDecline={handleDeclineBuddy}
                       showActions={true}
-                    />
-                  ))}
-                </div>
+                />
+              ))}
+            </div>
               </div>
             )}
 
@@ -363,10 +363,10 @@ export default function Community() {
                 <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">You don't have any buddies yet</p>
                 <Link to={createPageUrl("FindFriends")}>
-                  <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
-                    <UserPlus className="w-5 h-5 mr-2" />
-                    Find Your First Buddy
-                  </Button>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
+                  <UserPlus className="w-5 h-5 mr-2" />
+                  Find Your First Buddy
+                </Button>
                 </Link>
               </div>
             )}

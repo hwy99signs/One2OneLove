@@ -81,7 +81,7 @@ export default function InfluencerSignup() {
     if (!file) return null;
 
     try {
-      setUploadingPhoto(true);
+        setUploadingPhoto(true);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `influencer-profiles/${fileName}`;
@@ -99,13 +99,13 @@ export default function InfluencerSignup() {
         .getPublicUrl(filePath);
 
       return publicUrl;
-    } catch (error) {
+        } catch (error) {
       console.error('Error uploading photo:', error);
       toast.error("Failed to upload photo. You can add it later.");
       return null;
-    } finally {
-      setUploadingPhoto(false);
-    }
+        } finally {
+          setUploadingPhoto(false);
+        }
   };
 
   const handleSubmit = async (e) => {
@@ -170,7 +170,7 @@ export default function InfluencerSignup() {
           contentCategories,
           collaborationTypes,
           mediaKitUrl,
-          bio: influencerBio,
+      bio: influencerBio,
           profilePhotoUrl: photoUrl,
           emailVerified,
           phoneVerified,

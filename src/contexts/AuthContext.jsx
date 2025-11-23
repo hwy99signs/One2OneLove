@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, handleSupabaseError } from '@/lib/supabase';
+import { supabase, handleSupabaseError, isSupabaseConfigured } from '@/lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -29,16 +29,25 @@ export function AuthProvider({ children }) {
   };
 
   const ensureUserProfile = async (authUser) => {
-    if (!authUser) return null;
+    if (!authUser) {
+      console.log('ensureUserProfile: No authUser provided');
+      return null;
+    }
+
+    console.log('ensureUserProfile: Starting for user:', authUser.id);
 
     try {
+      console.log('ensureUserProfile: Fetching profile from database...');
       const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single();
 
+      console.log('ensureUserProfile: Profile query result:', { profile, profileError });
+
       if (profileError && profileError.code === 'PGRST116') {
+        console.log('ensureUserProfile: Profile not found, creating new profile...');
         const { data: newProfile, error: createError } = await supabase
           .from('users')
           .insert({
@@ -54,20 +63,25 @@ export function AuthProvider({ children }) {
 
         if (createError) {
           console.error('Error creating missing profile:', createError);
+          console.log('ensureUserProfile: Returning user data without profile');
           return buildUserData(authUser);
         }
 
+        console.log('ensureUserProfile: New profile created successfully');
         return buildUserData(authUser, newProfile);
       }
 
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
+        console.log('ensureUserProfile: Returning user data without profile due to error');
         return buildUserData(authUser);
       }
 
+      console.log('ensureUserProfile: Profile found successfully');
       return buildUserData(authUser, profile);
     } catch (error) {
-      console.error('ensureUserProfile error:', error);
+      console.error('ensureUserProfile unexpected error:', error);
+      console.log('ensureUserProfile: Returning user data after catch');
       return buildUserData(authUser);
     }
   };
@@ -138,6 +152,13 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       console.log('Attempting login for:', email);
+      
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured()) {
+        const errorMsg = 'Application is not properly configured. Please contact support or configure Supabase credentials in your .env file.';
+        console.error('❌ Supabase not configured');
+        return { success: false, error: errorMsg };
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,

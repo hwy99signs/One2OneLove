@@ -10,8 +10,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Pages />
-        <Toaster />
+      <Pages />
+      <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   )

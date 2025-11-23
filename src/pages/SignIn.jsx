@@ -44,6 +44,8 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('🔥 SignIn.jsx - UPDATED VERSION 2.0 - Code is fresh!');
+    
     if (!email || !password) {
       toast.error("Please enter both email and password");
       return;
@@ -60,7 +62,7 @@ export default function SignIn() {
         toast.success("Successfully signed in!");
         // Small delay to ensure state is updated
         setTimeout(() => {
-          navigate(createPageUrl("Dashboard"));
+          navigate(createPageUrl("Profile"));
         }, 100);
       } else {
         const errorMessage = result?.error || "Invalid email or password. Please try again.";
