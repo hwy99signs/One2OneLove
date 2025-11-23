@@ -447,7 +447,8 @@ export default function Profile() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, refreshUserProfile } = useAuth();
+  const isRegularUser = !user?.user_type || user.user_type === "regular";
 
   // Mock memories data for now (can be replaced with actual query later)
   const memories = [];
@@ -455,14 +456,14 @@ export default function Profile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       if (!user?.id) throw new Error('User not authenticated');
+      if (!isRegularUser) throw new Error('Profile updates are available for regular users only');
       return await updateUserProfile(user.id, data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['user', user?.id] });
+      await refreshUserProfile();
       setIsEditing(false);
       toast.success("Profile updated successfully!");
-      // Refresh user data
-      window.location.reload(); // Simple refresh - can be improved with context update
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update profile");
@@ -502,6 +503,11 @@ export default function Profile() {
       return;
     }
 
+    if (!isRegularUser) {
+      toast.error('Profile photos are currently available for regular users only');
+      return;
+    }
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
@@ -530,11 +536,11 @@ export default function Profile() {
       
       // Update user profile with new image URL
       await updateUserProfile(user.id, { avatar_url: imageUrl });
+      await refreshUserProfile();
       
       toast.success('Profile image updated successfully!');
-      
-      // Refresh user data
-      window.location.reload(); // Simple refresh - can be improved with context update
+      setImagePreview(null);
+      setProfileImage(null);
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error(error.message || 'Failed to upload image. Please try again.');
@@ -563,6 +569,25 @@ export default function Profile() {
           <p className="text-gray-600 mb-4">Please sign in to view your profile</p>
           <Link to={createPageUrl("SignIn")}>
             <Button>Sign In</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (user && !isRegularUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="max-w-lg bg-white rounded-3xl shadow-xl p-8 text-center">
+          <Heart className="w-10 h-10 text-pink-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile coming soon</h2>
+          <p className="text-gray-600 mb-6">
+            Profile management is currently available for regular members only. Please use your dedicated portal to update your professional details.
+          </p>
+          <Link to={createPageUrl("Home")}>
+            <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+              Back to Home
+            </Button>
           </Link>
         </div>
       </div>

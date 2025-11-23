@@ -7,6 +7,93 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const buildUserData = (authUser, profileData = null) => {
+    if (!authUser) return null;
+
+    const safeProfile =
+      profileData && typeof profileData === 'object' ? profileData : {};
+
+    return {
+      id: authUser.id,
+      email: authUser.email,
+      ...safeProfile,
+      name:
+        safeProfile?.name ||
+        authUser.user_metadata?.name ||
+        authUser.email?.split('@')[0],
+      user_type:
+        safeProfile?.user_type ||
+        authUser.user_metadata?.user_type ||
+        'regular',
+    };
+  };
+
+  const ensureUserProfile = async (authUser) => {
+    if (!authUser) return null;
+
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') {
+        const { data: newProfile, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: authUser.id,
+            email: authUser.email,
+            name: authUser.user_metadata?.name || authUser.email?.split('@')[0],
+            user_type: authUser.user_metadata?.user_type || 'regular',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating missing profile:', createError);
+          return buildUserData(authUser);
+        }
+
+        return buildUserData(authUser, newProfile);
+      }
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return buildUserData(authUser);
+      }
+
+      return buildUserData(authUser, profile);
+    } catch (error) {
+      console.error('ensureUserProfile error:', error);
+      return buildUserData(authUser);
+    }
+  };
+
+  const refreshUserProfile = async () => {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error refreshing user profile:', error);
+        return null;
+      }
+
+      if (!data?.user) {
+        setUser(null);
+        return null;
+      }
+
+      const userData = await ensureUserProfile(data.user);
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error('refreshUserProfile error:', error);
+      return null;
+    }
+  };
+
   // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -21,26 +108,7 @@ export function AuthProvider({ children }) {
         }
 
         if (session?.user) {
-          // Fetch user profile from database
-          const { data: profile, error: profileError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError && profileError.code !== 'PGRST116') {
-            console.error('Error fetching user profile:', profileError);
-          }
-
-          // Combine auth user with profile data
-          const userData = {
-            id: session.user.id,
-            email: session.user.email,
-            ...profile,
-            // Fallback to auth metadata if profile doesn't exist yet
-            name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
-          };
-
+          const userData = await ensureUserProfile(session.user);
           setUser(userData);
         }
       } catch (error) {
@@ -55,47 +123,8 @@ export function AuthProvider({ children }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        // Fetch user profile
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        // If profile doesn't exist, create it
-        if (profileError && profileError.code === 'PGRST116') {
-          // Profile doesn't exist, create it
-          const { data: newProfile } = await supabase
-            .from('users')
-            .insert({
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-              user_type: session.user.user_metadata?.user_type || 'regular',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .select()
-            .single();
-
-          const userData = {
-            id: session.user.id,
-            email: session.user.email,
-            ...newProfile,
-            name: newProfile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
-          };
-
-          setUser(userData);
-        } else if (profile) {
-          const userData = {
-            id: session.user.id,
-            email: session.user.email,
-            ...profile,
-            name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
-          };
-
-          setUser(userData);
-        }
+        const userData = await ensureUserProfile(session.user);
+        setUser(userData);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
@@ -127,75 +156,7 @@ export function AuthProvider({ children }) {
 
       console.log('Auth successful, fetching profile for user:', data.user.id);
 
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      // If profile doesn't exist, create it
-      if (profileError && profileError.code === 'PGRST116') {
-        console.log('Profile not found, creating new profile');
-        // Profile doesn't exist, create it
-        const { data: newProfile, error: createError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
-            user_type: data.user.user_metadata?.user_type || 'regular',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating missing profile:', createError);
-          // Still allow login even if profile creation fails
-          const userData = {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
-            user_type: data.user.user_metadata?.user_type || 'regular',
-          };
-          setUser(userData);
-          console.log('Login successful (profile creation failed)');
-          return { success: true, user: userData };
-        }
-
-        const userData = {
-          id: data.user.id,
-          email: data.user.email,
-          ...newProfile,
-          name: newProfile?.name || data.user.user_metadata?.name || data.user.email?.split('@')[0],
-        };
-
-        setUser(userData);
-        console.log('Login successful (profile created)');
-        return { success: true, user: userData };
-      } else if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        // Still allow login with basic user data
-        const userData = {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.name || data.user.email?.split('@')[0],
-          user_type: data.user.user_metadata?.user_type || 'regular',
-        };
-        setUser(userData);
-        console.log('Login successful (profile fetch failed)');
-        return { success: true, user: userData };
-      }
-
-      const userData = {
-        id: data.user.id,
-        email: data.user.email,
-        ...profile,
-        name: profile?.name || data.user.user_metadata?.name || data.user.email?.split('@')[0],
-      };
-
+      const userData = await ensureUserProfile(data.user);
       setUser(userData);
       console.log('Login successful');
       return { success: true, user: userData };
@@ -531,6 +492,7 @@ export function AuthProvider({ children }) {
     registerTherapist,
     registerInfluencer,
     registerProfessional,
+    refreshUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,41 @@
 import { supabase, handleSupabaseError } from './supabase';
 
 /**
+ * Ensure the current user is allowed to use the profile backend
+ * Only regular users (or legacy users without a user_type) are permitted
+ * @param {string} userId
+ * @param {string} [columns='user_type']
+ * @returns {Promise<Object>} Selected user columns
+ */
+const ensureRegularUserAccess = async (userId, columns = 'user_type') => {
+  try {
+    let selection = columns || 'user_type';
+
+    if (selection !== '*' && !selection.split(',').map((col) => col.trim()).includes('user_type')) {
+      selection = `user_type,${selection}`;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select(selection)
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.user_type && data.user_type !== 'regular') {
+      throw new Error('Profile management is currently available for regular users only.');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Upload profile picture to Supabase Storage
  * @param {File} file - The image file to upload
  * @param {string} userId - The user's ID
@@ -8,6 +43,8 @@ import { supabase, handleSupabaseError } from './supabase';
  */
 export const uploadProfilePicture = async (file, userId) => {
   try {
+    await ensureRegularUserAccess(userId);
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       throw new Error('File must be an image');
@@ -71,14 +108,8 @@ export const uploadProfilePicture = async (file, userId) => {
  */
 export const getUserProfile = async (userId) => {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) throw error;
-    return data;
+    const profile = await ensureRegularUserAccess(userId, '*');
+    return profile;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw new Error(handleSupabaseError(error));
@@ -93,6 +124,8 @@ export const getUserProfile = async (userId) => {
  */
 export const updateUserProfile = async (userId, updates) => {
   try {
+    await ensureRegularUserAccess(userId);
+
     // Prepare update data
     const updateData = {
       updated_at: new Date().toISOString(),
@@ -128,6 +161,8 @@ export const updateUserProfile = async (userId, updates) => {
  */
 export const deleteProfilePicture = async (userId) => {
   try {
+    await ensureRegularUserAccess(userId);
+
     // List all files for this user
     const { data: files, error: listError } = await supabase.storage
       .from('profile-pictures')
