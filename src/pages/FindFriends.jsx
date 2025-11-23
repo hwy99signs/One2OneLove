@@ -84,20 +84,32 @@ export default function FindFriends() {
     setSearchQuery(query);
     if (!query.trim()) {
       setFilteredUsers(users);
+      console.log(`Showing all ${users.length} users`);
       return;
     }
 
     const lowerQuery = query.toLowerCase();
-    const filtered = users.filter(
-      (u) =>
-        u.name?.toLowerCase().includes(lowerQuery) ||
-        u.email?.toLowerCase().includes(lowerQuery) ||
-        u.location?.toLowerCase().includes(lowerQuery) ||
-        u.bio?.toLowerCase().includes(lowerQuery) ||
-        u.relationship_status?.toLowerCase().includes(lowerQuery)
-    );
+    const filtered = users.filter((u) => {
+      // Search in name (required field)
+      if (u.name?.toLowerCase().includes(lowerQuery)) return true;
+      
+      // Search in email (required field)
+      if (u.email?.toLowerCase().includes(lowerQuery)) return true;
+      
+      // Search in location (optional field - only if exists)
+      if (u.location && u.location.toLowerCase().includes(lowerQuery)) return true;
+      
+      // Search in bio (optional field - only if exists)
+      if (u.bio && u.bio.toLowerCase().includes(lowerQuery)) return true;
+      
+      // Search in relationship status (optional field)
+      if (u.relationship_status && u.relationship_status.toLowerCase().includes(lowerQuery)) return true;
+      
+      return false;
+    });
+    
     setFilteredUsers(filtered);
-    console.log(`Search for "${query}" returned ${filtered.length} results`);
+    console.log(`Search for "${query}" returned ${filtered.length} results out of ${users.length} total users`);
   };
 
   const handleSendRequest = async (toUserId) => {
@@ -222,22 +234,27 @@ export default function FindFriends() {
                     )}
 
                     <div className="space-y-2 mb-4">
+                      {/* Location is optional - only show if exists */}
                       {userData.location && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <MapPin className="w-4 h-4" />
                           <span>{userData.location}</span>
                         </div>
                       )}
+                      {/* Relationship status is optional - only show if exists */}
                       {userData.relationship_status && (
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Heart className="w-4 h-4" />
                           <span className="capitalize">{userData.relationship_status}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Users className="w-4 h-4" />
-                        <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
-                      </div>
+                      {/* Always show member since */}
+                      {userData.created_at && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Users className="w-4 h-4" />
+                          <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2 mt-4">

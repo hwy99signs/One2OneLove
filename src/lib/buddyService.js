@@ -15,10 +15,10 @@ export const getAllUsers = async (currentUserId, options = {}) => {
   try {
     console.log('getAllUsers called with userId:', currentUserId);
     
-    // Try to select only fields that definitely exist
+    // Select all user fields including optional location
     let query = supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio, relationship_status, user_type, created_at')
+      .select('*')
       .neq('id', currentUserId); // Exclude current user
 
     // Filter by user type (only show regular users by default)
@@ -28,11 +28,8 @@ export const getAllUsers = async (currentUserId, options = {}) => {
       query = query.eq('user_type', 'regular');
     }
 
-    // Search filter - search across name, email, and bio only
-    if (options.searchQuery) {
-      const searchTerm = options.searchQuery;
-      query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`);
-    }
+    // NO search filter applied in the query - we'll filter in the frontend
+    // This is because OR with NULL values can cause issues
 
     // Apply sorting
     const sortBy = options.sortBy || 'created_at';
