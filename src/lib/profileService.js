@@ -189,3 +189,123 @@ export const deleteProfilePicture = async (userId) => {
   }
 };
 
+/**
+ * Refresh profile completion status
+ * This triggers the database trigger to recalculate completion
+ * @param {string} userId - The user's ID
+ * @returns {Promise<Object>} Updated profile with completion data
+ */
+export const refreshProfileCompletion = async (userId) => {
+  try {
+    await ensureRegularUserAccess(userId);
+
+    // Trigger completion update by doing a minimal update
+    // The database trigger will automatically recalculate completion
+    const { data, error } = await supabase
+      .from('users')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', userId)
+      .select('profile_completion_percentage, profile_completed_fields, profile_total_fields')
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error refreshing profile completion:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+
+/**
+ * Get profile completion data
+ * @param {string} userId - The user's ID
+ * @returns {Promise<Object>} Profile completion data
+ */
+export const getProfileCompletion = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('profile_completion_percentage, profile_completed_fields, profile_total_fields')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    return {
+      percentage: data.profile_completion_percentage || 0,
+      completedFields: data.profile_completed_fields || 0,
+      totalFields: data.profile_total_fields || 14
+    };
+  } catch (error) {
+    console.error('Error fetching profile completion:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+
+/**
+ * Save love language quiz result
+ * Maps quiz results to database values
+ * @param {string} userId - The user's ID
+ * @param {string} loveLanguageId - The love language ID from quiz (words, quality, gifts, service, touch)
+ * @returns {Promise<Object>} Updated user profile
+ */
+export const saveLoveLanguage = async (userId, loveLanguageId) => {
+  try {
+    await ensureRegularUserAccess(userId);
+
+    // Map quiz IDs to database values
+    const languageMap = {
+      'words': 'words_of_affirmation',
+      'quality': 'quality_time',
+      'gifts': 'receiving_gifts',
+      'service': 'acts_of_service',
+      'touch': 'physical_touch'
+    };
+
+    const dbValue = languageMap[loveLanguageId] || loveLanguageId;
+
+    // Validate the value
+    const validValues = ['words_of_affirmation', 'quality_time', 'receiving_gifts', 'acts_of_service', 'physical_touch'];
+    if (!validValues.includes(dbValue)) {
+      throw new Error('Invalid love language value');
+    }
+
+    // Update the user's love language
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        love_language: dbValue,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error saving love language:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+
+/**
+ * Get user's love language
+ * @param {string} userId - The user's ID
+ * @returns {Promise<string|null>} User's love language
+ */
+export const getUserLoveLanguage = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('love_language')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    return data.love_language;
+  } catch (error) {
+    console.error('Error fetching love language:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+

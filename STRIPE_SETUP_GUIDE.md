@@ -24,7 +24,7 @@ Before implementing the payment system, you need:
 
 ## 🌐 Step 2: Add Keys to Environment Variables
 
-Add to your `.env` file:
+Add to your `.env` file:VITE_STRIPE_PUBLISHABLE_KEY=pk_test_PLACEHOLDER_WILL_ADD_REAL_KEY_LATER
 
 ```env
 # Stripe Keys (Frontend)

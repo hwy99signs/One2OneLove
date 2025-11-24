@@ -15,6 +15,8 @@ const tiers = [
     price: 0,
     period: null,
     description: 'Perfect for couples just starting out',
+    icon: '💝',
+    gradient: 'from-blue-400 to-blue-600',
     features: [
       'Access to 50+ Love Notes Library',
       'Basic Relationship Quizzes',
@@ -33,6 +35,8 @@ const tiers = [
     price: 19.99,
     period: 'month',
     description: 'For couples ready to grow together',
+    icon: '💖',
+    gradient: 'from-purple-400 to-pink-500',
     features: [
       'Everything in Basis, plus:',
       'Access to 1000+ Love Notes Library',
@@ -46,14 +50,16 @@ const tiers = [
       'Early Access to New Features',
     ],
     popular: true,
-    priceId: 'price_premiere', // Replace with actual Stripe Price ID
+    priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_premiere', // Set in .env or Stripe Dashboard
   },
   {
     name: 'Exclusive',
     tagline: 'Ultimate Experience',
-    price: 39.99,
+    price: 34.99,
     period: 'month',
     description: 'The complete relationship toolkit',
+    icon: '👑',
+    gradient: 'from-yellow-400 to-orange-500',
     features: [
       'Everything in Premiere, plus:',
       'Unlimited Love Notes Library',
@@ -67,7 +73,7 @@ const tiers = [
       'Lifetime Access to Premium Content',
     ],
     popular: false,
-    priceId: 'price_exclusive', // Replace with actual Stripe Price ID
+    priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_exclusive', // Set in .env or Stripe Dashboard
   },
 ];
 

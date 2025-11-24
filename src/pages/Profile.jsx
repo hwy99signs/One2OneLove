@@ -597,26 +597,62 @@ export default function Profile() {
 
   const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
 
-  // Calculate profile completion
-  const profileFields = [
-    user?.name,
-    user?.email,
-    user?.location,
-    user?.partner_email,
-    user?.anniversary_date,
-    user?.love_language,
-    user?.relationship_status,
-    user?.avatar_url,
-    user?.date_frequency,
-    user?.communication_style,
-    user?.conflict_resolution,
-    user?.interests,
-    user?.bio,
-    user?.partner_name
-  ];
-  const completedFields = profileFields.filter(field => field).length;
-  const totalFields = profileFields.length;
-  const completionPercentage = Math.round((completedFields / totalFields) * 100);
+  // Get profile completion from backend (automatically calculated by database trigger)
+  // Fallback to frontend calculation if backend values are not available
+  const completionPercentage = user?.profile_completion_percentage ?? 
+    (() => {
+      const profileFields = [
+        user?.name,
+        user?.email,
+        user?.location,
+        user?.partner_email,
+        user?.anniversary_date,
+        user?.love_language,
+        user?.relationship_status,
+        user?.avatar_url,
+        user?.date_frequency,
+        user?.communication_style,
+        user?.conflict_resolution,
+        user?.interests,
+        user?.bio,
+        user?.partner_name
+      ];
+      const completed = profileFields.filter(field => {
+        if (Array.isArray(field) || (typeof field === 'object' && field !== null)) {
+          return Array.isArray(field) ? field.length > 0 : Object.keys(field).length > 0;
+        }
+        return field !== null && field !== undefined && field !== '';
+      }).length;
+      return Math.round((completed / profileFields.length) * 100);
+    })();
+  
+  const completedFields = user?.profile_completed_fields ?? 
+    (() => {
+      const profileFields = [
+        user?.name,
+        user?.email,
+        user?.location,
+        user?.partner_email,
+        user?.anniversary_date,
+        user?.love_language,
+        user?.relationship_status,
+        user?.avatar_url,
+        user?.date_frequency,
+        user?.communication_style,
+        user?.conflict_resolution,
+        user?.interests,
+        user?.bio,
+        user?.partner_name
+      ];
+      return profileFields.filter(field => {
+        if (Array.isArray(field) || (typeof field === 'object' && field !== null)) {
+          return Array.isArray(field) ? field.length > 0 : Object.keys(field).length > 0;
+        }
+        return field !== null && field !== undefined && field !== '';
+      }).length;
+    })();
+  
+  const totalFields = user?.profile_total_fields ?? 14;
 
   const quickActions = [
     { icon: Heart, label: "Send Love Note", color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "LoveNotes" },
@@ -703,7 +739,38 @@ export default function Profile() {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
             {user?.name || user?.email?.split('@')[0] || "User"} 💕
           </h1>
-          <p className="text-gray-600">{t.profile.memberSince} {joinDate}</p>
+          <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
+          
+          {/* Profile Completion */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="max-w-md mx-auto mb-8"
+          >
+            <Card className="shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-purple-600" />
+                    <span className="font-semibold text-gray-900">Profile Completion</span>
+                  </div>
+                  <span className="text-2xl font-bold text-purple-600">{completionPercentage}%</span>
+                </div>
+                <div className="mb-2">
+                  <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${completionPercentage}%` }}
+                      transition={{ duration: 1, delay: 0.4 }}
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                    />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">{completedFields}/{totalFields} Complete</p>
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
 
         {/* Quick Actions */}
@@ -1197,37 +1264,6 @@ export default function Profile() {
             </Button>
           </motion.div>
         )}
-
-        {/* Profile Completion */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mb-12"
-        >
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-purple-600" />
-                  <span className="font-semibold text-gray-900">Profile Completion</span>
-                </div>
-                <span className="text-2xl font-bold text-purple-600">{completionPercentage}%</span>
-              </div>
-              <div className="mb-2">
-                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${completionPercentage}%` }}
-                    transition={{ duration: 1, delay: 0.7 }}
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-                  />
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">{completedFields}/{totalFields} Complete</p>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         {!isEditing && (
           <motion.div

@@ -21,21 +21,37 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
       setIsProcessing(true);
       
       try {
-        const result = await handleSubscriptionCheckout(tier);
+        // Ensure tier has all required properties
+        const planData = {
+          name: tier.name,
+          price: tier.price || 0,
+          priceId: tier.priceId || `price_${tier.name.toLowerCase()}`,
+          isFree: tier.isFree || tier.price === 0
+        };
+
+        const result = await handleSubscriptionCheckout(planData);
         
         if (!result.success) {
           toast.error(result.error || 'Failed to process payment');
+          setIsProcessing(false);
+          return;
         }
+        
         // Note: For successful paid checkout, user will be redirected to Stripe
         // For free plan, user stays on page and sees success message
-        if (tier.isFree) {
+        if (planData.isFree || planData.price === 0) {
           toast.success('Successfully subscribed to Basis plan!');
           // Reload to refresh user data
           setTimeout(() => window.location.reload(), 1000);
+        } else {
+          // For paid plans, redirect happens in handleSubscriptionCheckout
+          // Show a brief message before redirect
+          toast.success('Redirecting to Stripe checkout...');
+          // The redirect happens automatically in stripeService.js
         }
       } catch (error) {
         console.error('Checkout error:', error);
-        toast.error('An error occurred. Please try again.');
+        toast.error(error.message || 'An error occurred. Please try again.');
       } finally {
         setIsProcessing(false);
       }

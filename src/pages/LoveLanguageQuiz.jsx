@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Heart, MessageCircle, Gift, Clock, Hand, ChevronRight, ChevronLeft, Share2, RotateCcw } from "lucide-react";
+import { Heart, MessageCircle, Gift, Clock, Hand, ChevronRight, ChevronLeft, Share2, RotateCcw, Save, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveLoveLanguage } from "@/lib/profileService";
+import { toast } from "sonner";
 
 const translations = {
   en: {
@@ -299,7 +302,10 @@ export default function LoveLanguageQuiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const { currentLanguage } = useLanguage();
+  const { user, refreshUserProfile } = useAuth();
   const t = translations[currentLanguage] || translations.en;
 
   const loveLanguages = [
@@ -379,6 +385,33 @@ export default function LoveLanguageQuiz() {
     setCurrentQuestion(0);
     setAnswers({});
     setShowResults(false);
+    setIsSaved(false);
+  };
+
+  const handleSaveResult = async () => {
+    if (!user) {
+      toast.error('Please log in to save your results');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const topLanguage = getTopLanguage();
+      await saveLoveLanguage(user.id, topLanguage.id);
+      
+      // Refresh user profile to update completion percentage
+      await refreshUserProfile();
+      
+      setIsSaved(true);
+      toast.success('Love language saved to your profile!', {
+        description: 'Your profile completion has been updated'
+      });
+    } catch (error) {
+      console.error('Error saving love language:', error);
+      toast.error('Failed to save love language. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (showResults) {
@@ -430,6 +463,34 @@ export default function LoveLanguageQuiz() {
                 </div>
 
                 <div className="flex flex-wrap gap-4 justify-center">
+                  {user && !isSaved ? (
+                    <Button
+                      onClick={handleSaveResult}
+                      disabled={isSaving}
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8 py-6 text-lg"
+                    >
+                      {isSaving ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5 mr-2" />
+                          Save to Profile
+                        </>
+                      )}
+                    </Button>
+                  ) : user && isSaved ? (
+                    <Button
+                      disabled
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-6 text-lg"
+                    >
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Saved to Profile
+                    </Button>
+                  ) : null}
+                  
                   <Button
                     onClick={resetQuiz}
                     className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-8 py-6 text-lg"
@@ -437,6 +498,7 @@ export default function LoveLanguageQuiz() {
                     <RotateCcw className="w-5 h-5 mr-2" />
                     {t.quiz.takeAgain}
                   </Button>
+                  
                   <Button
                     variant="outline"
                     className="px-8 py-6 text-lg"

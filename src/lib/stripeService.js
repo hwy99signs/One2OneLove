@@ -120,7 +120,16 @@ export const handleSubscriptionCheckout = async (plan) => {
     }
 
     // Redirect to Stripe Checkout
-    await redirectToCheckout(result.sessionId);
+    // Use URL directly if available (more reliable), otherwise use sessionId
+    if (result.url) {
+      console.log('Redirecting to Stripe checkout:', result.url);
+      window.location.href = result.url;
+    } else if (result.sessionId) {
+      console.log('Redirecting to Stripe checkout with session ID:', result.sessionId);
+      await redirectToCheckout(result.sessionId);
+    } else {
+      throw new Error('No checkout URL or session ID received from Stripe');
+    }
 
     return { success: true };
   } catch (error) {
