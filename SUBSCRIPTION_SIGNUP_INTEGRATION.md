@@ -89,8 +89,8 @@ Click "Regular User" → Choose Subscription Plan → Fill Form → Sign Up
 
 ### Subscription Plans
 
-**Basis - $9.99/month**
-- Access to 500+ Love Notes Library
+**Basis - FREE**
+- Access to 50+ Love Notes Library
 - Basic Relationship Quizzes
 - Monthly Date Ideas (10 ideas)
 - Anniversary Reminders

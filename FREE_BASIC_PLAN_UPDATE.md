@@ -85,7 +85,7 @@ Updated `supabase-add-subscription-fields.sql`:
 ## 📋 Basis Plan Features (FREE)
 
 Users get access to:
-- ✅ Access to 500+ Love Notes Library
+- ✅ Access to 50+ Love Notes Library
 - ✅ Basic Relationship Quizzes
 - ✅ Monthly Date Ideas (10 ideas)
 - ✅ Anniversary Reminders

@@ -18,7 +18,7 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
       popular: false,
       isFree: true,
       features: [
-        'Access to 500+ Love Notes Library',
+        'Access to 50+ Love Notes Library',
         'Basic Relationship Quizzes',
         'Monthly Date Ideas (10 ideas)',
         'Anniversary Reminders',
