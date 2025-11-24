@@ -129,7 +129,7 @@ export default function ChatWindow({
                 <MoreVertical className="w-5 h-5 text-gray-600" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 z-[1000]">
               <DropdownMenuItem onClick={() => setShowProfile(true)}>
                 <Search className="w-4 h-4 mr-2" />
                 View Profile

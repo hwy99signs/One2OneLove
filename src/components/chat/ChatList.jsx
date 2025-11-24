@@ -137,7 +137,7 @@ export default function ChatList({
                     <MoreVertical className="w-4 h-4 text-gray-600" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 z-[1000]">
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCall?.(chat.id); }}>
                     <Phone className="w-4 h-4 mr-2" />
                     Voice Call
