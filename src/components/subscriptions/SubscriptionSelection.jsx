@@ -20,7 +20,7 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
       features: [
         'Access to 50+ Love Notes Library',
         'Basic Relationship Quizzes',
-        'Monthly Date Ideas (10 ideas)',
+        'Monthly Date Ideas (5 ideas)',
         'Anniversary Reminders',
         'Digital Memory Timeline',
         'Mobile App Access',

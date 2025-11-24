@@ -87,7 +87,7 @@ Updated `supabase-add-subscription-fields.sql`:
 Users get access to:
 - ✅ Access to 50+ Love Notes Library
 - ✅ Basic Relationship Quizzes
-- ✅ Monthly Date Ideas (10 ideas)
+- ✅ Monthly Date Ideas (5 ideas)
 - ✅ Anniversary Reminders
 - ✅ Digital Memory Timeline
 - ✅ Mobile App Access
