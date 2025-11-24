@@ -386,7 +386,7 @@ export default function ChatMessage({
                   <MoreVertical className="w-4 h-4 text-gray-600" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align={isOwn ? "end" : "start"} className="w-48 bg-gray-900 text-white border-gray-700">
+              <DropdownMenuContent align={isOwn ? "end" : "start"} className="w-48 bg-gray-900 text-white border-gray-700 z-[1000]">
                 <DropdownMenuItem onClick={handleReply} className="hover:bg-gray-800">
                   <Reply className="w-4 h-4 mr-2" />
                   Reply
