@@ -161,7 +161,7 @@ const translations = {
   }
 };
 
-export default function RegularUserForm({ onBack }) {
+export default function RegularUserForm({ onBack, selectedPlan }) {
   const { currentLanguage } = useLanguage();
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -216,6 +216,8 @@ export default function RegularUserForm({ onBack }) {
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
         partnerEmail: formData.partnerEmail,
+        subscriptionPlan: selectedPlan ? selectedPlan.name : 'Basis', // Default to Basis if no plan selected
+        subscriptionPrice: selectedPlan ? selectedPlan.price : 9.99,
       });
 
       console.log('Register result:', result);
@@ -257,6 +259,25 @@ export default function RegularUserForm({ onBack }) {
           <CardTitle className="text-3xl">{t.title}</CardTitle>
         </div>
         <p className="text-gray-600">{t.subtitle}</p>
+        
+        {/* Display Selected Plan */}
+        {selectedPlan && (
+          <div className={`mt-4 p-4 rounded-lg bg-gradient-to-r ${selectedPlan.gradient} bg-opacity-10 border-2 border-purple-200`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{selectedPlan.icon}</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-600">Selected Plan</p>
+                  <p className="text-xl font-bold text-gray-900">{selectedPlan.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-gray-900">${selectedPlan.price}</p>
+                <p className="text-sm text-gray-600">per {selectedPlan.period}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">

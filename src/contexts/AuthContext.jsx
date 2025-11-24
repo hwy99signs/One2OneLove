@@ -301,7 +301,7 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     try {
       console.log('AuthContext.register: Starting registration...', { email: userData.email, name: userData.name });
-      const { email, password, name, relationshipStatus, anniversaryDate, partnerEmail } = userData;
+      const { email, password, name, relationshipStatus, anniversaryDate, partnerEmail, subscriptionPlan, subscriptionPrice } = userData;
 
       // Check if Supabase is configured
       if (!isSupabaseConfigured()) {
@@ -321,6 +321,8 @@ export function AuthProvider({ children }) {
             relationship_status: relationshipStatus,
             anniversary_date: anniversaryDate,
             partner_email: partnerEmail,
+            subscription_plan: subscriptionPlan || 'Basis',
+            subscription_price: subscriptionPrice || 9.99,
           },
         },
       });
@@ -346,6 +348,9 @@ export function AuthProvider({ children }) {
             relationship_status: relationshipStatus || null,
             anniversary_date: anniversaryDate || null,
             partner_email: partnerEmail || null,
+            subscription_plan: subscriptionPlan || 'Basis',
+            subscription_price: subscriptionPrice || 9.99,
+            subscription_status: 'active',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })

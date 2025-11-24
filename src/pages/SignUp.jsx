@@ -5,9 +5,12 @@ import { Heart, User, Users, Briefcase, Stethoscope, Mic, X, ArrowRight } from "
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import RegularUserForm from "@/components/signup/RegularUserForm";
+import SubscriptionSelection from "@/components/subscriptions/SubscriptionSelection";
 
 export default function SignUp() {
   const [selectedType, setSelectedType] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showSubscription, setShowSubscription] = useState(false);
   const navigate = useNavigate();
 
   const signupTypes = [
@@ -48,15 +51,44 @@ export default function SignUp() {
   const handleSelectType = (type) => {
     if (type.route) {
       navigate(type.route);
+    } else if (type.id === 'regular') {
+      // For regular users, show subscription selection first
+      setSelectedType(type);
+      setShowSubscription(true);
     } else {
       setSelectedType(type);
     }
   };
 
-  if (selectedType && selectedType.id === "regular") {
+  const handlePlanSelection = (plan) => {
+    setSelectedPlan(plan);
+    setShowSubscription(false);
+  };
+
+  const handleBackFromSubscription = () => {
+    setShowSubscription(false);
+    setSelectedType(null);
+    setSelectedPlan(null);
+  };
+
+  // Show subscription selection first for regular users
+  if (selectedType && selectedType.id === "regular" && showSubscription) {
+    return (
+      <SubscriptionSelection 
+        onBack={handleBackFromSubscription}
+        onSelectPlan={handlePlanSelection}
+      />
+    );
+  }
+
+  // After plan selection, show the registration form
+  if (selectedType && selectedType.id === "regular" && selectedPlan && !showSubscription) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
-        <RegularUserForm onBack={() => setSelectedType(null)} />
+        <RegularUserForm 
+          onBack={handleBackFromSubscription} 
+          selectedPlan={selectedPlan}
+        />
       </div>
     );
   }
