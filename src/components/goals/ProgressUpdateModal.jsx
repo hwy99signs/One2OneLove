@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
 
