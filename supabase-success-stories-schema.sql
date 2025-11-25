@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.success_stories (
   tags TEXT[], -- Array of tags
   
   -- Moderation
-  moderation_status TEXT NOT NULL DEFAULT 'pending' CHECK (moderation_status IN (
+  moderation_status TEXT NOT NULL DEFAULT 'approved' CHECK (moderation_status IN (
     'pending',
     'approved',
     'rejected'

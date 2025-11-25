@@ -17,31 +17,31 @@ import {
 
 const translations = {
   en: {
-    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev" },
+    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out" },
     actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" }
   },
   es: {
-    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev" },
+    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión" },
     actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" }
   },
   fr: {
-    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev" },
+    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter" },
     actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" }
   },
   it: {
-    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev" },
+    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci" },
     actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" }
   },
   de: {
-    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev" },
+    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden" },
     actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" }
   },
   nl: {
-    nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev" },
+    nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
     actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", aiCreator: "AI Content Maker", winCruise: "Win Prijzen!" }
   },
   pt: {
-    nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", aiCreator: "Criador de Conteúdo IA", lgbtq: "Apoio LGBTQ+", developer: "Dev" },
+    nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", aiCreator: "Criador de Conteúdo IA", lgbtq: "Apoio LGBTQ+", developer: "Dev", requests: "Solicitações", chat: "Chat", signOut: "Sair" },
     actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", aiCreator: "Criador de Conteúdo IA", winCruise: "Ganhe Prêmios!" }
   }
 };
@@ -139,16 +139,39 @@ function LanguageContent({ children, currentPageName }) {
     navigate(createPageUrl("SignUp"));
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     try {
       console.log('🔴 Sign out button clicked');
+      
+      // Call logout function
       await logout();
+      
+      // Clear any local storage items
+      try {
+        localStorage.removeItem('preferredLanguage');
+        // Don't remove other items as they might be needed
+      } catch (storageError) {
+        console.warn('⚠️ Error clearing localStorage:', storageError);
+      }
+      
       // Force a full page reload to clear all state and ensure clean logout
-      window.location.href = createPageUrl("Home");
+      // Use window.location.replace to prevent back button issues
+      // Redirect to sign in page after logout
+      window.location.replace(createPageUrl("SignIn"));
     } catch (error) {
       console.error('❌ Error during sign out:', error);
       // Still redirect even if there's an error
-      window.location.href = createPageUrl("Home");
+      // Clear user state manually
+      try {
+    await logout();
+      } catch (logoutError) {
+        console.error('❌ Error in fallback logout:', logoutError);
+      }
+      // Force redirect to sign in page
+      window.location.replace(createPageUrl("SignIn"));
     }
   };
 
@@ -370,10 +393,10 @@ function LanguageContent({ children, currentPageName }) {
                     size="sm" 
                     variant="ghost" 
                     className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
-                    title="Friend Requests"
+                    title={t.nav.requests}
                   >
                     <Bell className="w-5 h-5" />
-                    <span className="hidden xl:inline ml-2">Requests</span>
+                    <span className="hidden xl:inline ml-2">{t.nav.requests}</span>
                   </Button>
                 </Link>
               )}
@@ -385,10 +408,10 @@ function LanguageContent({ children, currentPageName }) {
                     size="sm" 
                     variant="ghost" 
                     className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
-                    title="Chat"
+                    title={t.nav.chat}
                   >
                     <MessageCircle className="w-5 h-5" />
-                    <span className="hidden xl:inline ml-2">Chat</span>
+                    <span className="hidden xl:inline ml-2">{t.nav.chat}</span>
                     {totalUnreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
                         {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
@@ -485,14 +508,15 @@ function LanguageContent({ children, currentPageName }) {
               {/* Sign Out Button - Only show when authenticated, after language dropdown */}
               {isAuthenticated && (
                 <Button
+                  type="button"
                   size="sm"
                   variant="ghost"
                   className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
                   onClick={handleSignOut}
-                  title="Sign Out"
+                  title={t.nav.signOut}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  <span className="hidden xl:inline">Sign Out</span>
+                  <span className="hidden xl:inline">{t.nav.signOut}</span>
                 </Button>
               )}
 
@@ -703,7 +727,7 @@ function LanguageContent({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Bell className="w-5 h-5" />
-                    Friend Requests
+                    {t.nav.requests}
                   </Link>
                 )}
 
@@ -715,7 +739,7 @@ function LanguageContent({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <MessageCircle className="w-5 h-5" />
-                    Chat
+                    {t.nav.chat}
                     {totalUnreadCount > 0 && (
                       <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
                         {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
@@ -727,14 +751,16 @@ function LanguageContent({ children, currentPageName }) {
                 {/* Sign Out - Only show when authenticated */}
                 {isAuthenticated && (
                   <button
-                    onClick={() => {
-                      handleSignOut();
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setMobileMenuOpen(false);
+                      handleSignOut(e);
                     }}
                     className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all w-full text-left"
                   >
                     <LogOut className="w-5 h-5" />
-                    Sign Out
+                    {t.nav.signOut}
                   </button>
                 )}
                 

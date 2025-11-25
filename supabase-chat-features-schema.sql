@@ -89,6 +89,11 @@ ALTER TABLE public.forwarded_messages ENABLE ROW LEVEL SECURITY;
 
 -- MESSAGE REACTIONS POLICIES
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view message reactions" ON public.message_reactions;
+DROP POLICY IF EXISTS "Users can add reactions" ON public.message_reactions;
+DROP POLICY IF EXISTS "Users can delete their reactions" ON public.message_reactions;
+
 -- Users can view reactions on their messages
 CREATE POLICY "Users can view message reactions"
 ON public.message_reactions
@@ -118,6 +123,11 @@ USING (auth.uid() = user_id);
 
 -- STARRED MESSAGES POLICIES
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their starred messages" ON public.starred_messages;
+DROP POLICY IF EXISTS "Users can star messages" ON public.starred_messages;
+DROP POLICY IF EXISTS "Users can unstar messages" ON public.starred_messages;
+
 -- Users can view their own starred messages
 CREATE POLICY "Users can view their starred messages"
 ON public.starred_messages
@@ -140,6 +150,11 @@ TO authenticated
 USING (auth.uid() = user_id);
 
 -- PINNED MESSAGES POLICIES
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view pinned messages" ON public.pinned_messages;
+DROP POLICY IF EXISTS "Users can pin messages" ON public.pinned_messages;
+DROP POLICY IF EXISTS "Users can unpin messages" ON public.pinned_messages;
 
 -- Users can view pinned messages in their conversations
 CREATE POLICY "Users can view pinned messages"
@@ -176,6 +191,10 @@ TO authenticated
 USING (auth.uid() = pinned_by);
 
 -- FORWARDED MESSAGES POLICIES
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view forwarded messages" ON public.forwarded_messages;
+DROP POLICY IF EXISTS "Users can create forward records" ON public.forwarded_messages;
 
 -- Users can view forwarding history of messages they have access to
 CREATE POLICY "Users can view forwarded messages"

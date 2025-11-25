@@ -161,7 +161,7 @@ const translations = {
   }
 };
 
-export default function RegularUserForm({ onBack, selectedPlan }) {
+export default function RegularUserForm({ onBack }) {
   const { currentLanguage } = useLanguage();
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -216,8 +216,8 @@ export default function RegularUserForm({ onBack, selectedPlan }) {
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
         partnerEmail: formData.partnerEmail,
-        subscriptionPlan: selectedPlan ? selectedPlan.name : 'Basis', // Default to Basis if no plan selected
-        subscriptionPrice: selectedPlan ? selectedPlan.price : 0, // Basis is now free
+        subscriptionPlan: 'Basis', // All new users start with free Basis plan
+        subscriptionPrice: 0, // Basis is free
       });
 
       console.log('Register result:', result);
@@ -259,31 +259,6 @@ export default function RegularUserForm({ onBack, selectedPlan }) {
           <CardTitle className="text-3xl">{t.title}</CardTitle>
         </div>
         <p className="text-gray-600">{t.subtitle}</p>
-        
-        {/* Display Selected Plan */}
-        {selectedPlan && (
-          <div className={`mt-4 p-4 rounded-lg bg-gradient-to-r ${selectedPlan.gradient} bg-opacity-10 border-2 border-purple-200`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{selectedPlan.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-600">Selected Plan</p>
-                  <p className="text-xl font-bold text-gray-900">{selectedPlan.name}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                {selectedPlan.isFree ? (
-                  <p className="text-2xl font-bold text-green-600">Free</p>
-                ) : (
-                  <>
-                    <p className="text-2xl font-bold text-gray-900">${selectedPlan.price}</p>
-                    <p className="text-sm text-gray-600">per {selectedPlan.period}</p>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">

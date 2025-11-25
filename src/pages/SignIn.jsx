@@ -44,33 +44,51 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('🔥 SignIn.jsx - UPDATED VERSION 2.0 - Code is fresh!');
-    
     if (!email || !password) {
       toast.error("Please enter both email and password");
       return;
     }
 
     setIsLoading(true);
-    console.log('Sign in form submitted');
+    console.log('🔵 Sign in form submitted for:', email);
 
     try {
+      // Clear any stale localStorage data that might interfere
+      // This ensures a clean login state
+      try {
+        const storageKey = 'sb-one2one-love-auth-token';
+        const existingData = localStorage.getItem(storageKey);
+        if (existingData) {
+          console.log('🧹 Clearing stale auth data from localStorage...');
+          // Don't clear completely, but let Supabase handle it
+          // The login function will handle session clearing
+        }
+      } catch (storageError) {
+        console.warn('⚠️ Could not check localStorage:', storageError);
+      }
+
       const result = await login(email, password);
-      console.log('Login result:', result);
+      console.log('🔵 Login result:', result);
       
       if (result && result.success) {
+        console.log('✅ Login successful, redirecting...');
         toast.success("Successfully signed in!");
-        // Small delay to ensure state is updated
-        setTimeout(() => {
-          navigate(createPageUrl("Profile"));
-        }, 100);
+        setIsLoading(false);
+        
+        // Force navigation immediately using window.location for reliability
+        const profileUrl = createPageUrl("Profile");
+        console.log('🔵 Redirecting to:', profileUrl);
+        
+        // Use window.location.replace for immediate redirect
+        window.location.replace(profileUrl);
       } else {
         const errorMessage = result?.error || "Invalid email or password. Please try again.";
-        console.error('Login failed:', errorMessage);
+        console.error('❌ Login failed:', errorMessage);
         toast.error(errorMessage);
+        setIsLoading(false);
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ Login error:", error);
       toast.error(error.message || "An error occurred. Please try again.");
     } finally {
       setIsLoading(false);

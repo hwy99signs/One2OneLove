@@ -8,6 +8,140 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useLanguage } from '@/Layout';
+
+const translations = {
+  en: {
+    reply: "Reply",
+    edit: "Edit",
+    copy: "Copy",
+    saveAs: "Save as...",
+    forward: "Forward",
+    star: "Star",
+    unstar: "Unstar",
+    pin: "Pin",
+    unpin: "Unpin",
+    delete: "Delete",
+    select: "Select",
+    share: "Share",
+    info: "Info",
+    starred: "Starred",
+    removedFromStarred: "Removed from starred",
+    unpinned: "Unpinned",
+    pinnedFor: "Pinned for",
+    hours24: "24 hours",
+    days7: "7 days",
+    days30: "30 days",
+    messageDeletedForYou: "Message deleted for you",
+    messageDeletedForEveryone: "Message deleted for everyone",
+    selectChatToForward: "Select a chat to forward to",
+    cannotBeSaved: "This message cannot be saved"
+  },
+  es: {
+    reply: "Responder",
+    edit: "Editar",
+    copy: "Copiar",
+    saveAs: "Guardar como...",
+    forward: "Reenviar",
+    star: "Marcar",
+    unstar: "Desmarcar",
+    pin: "Anclar",
+    unpin: "Desanclar",
+    delete: "Eliminar",
+    select: "Seleccionar",
+    share: "Compartir",
+    info: "Información",
+    starred: "Marcado",
+    removedFromStarred: "Eliminado de marcados",
+    unpinned: "Desanclado",
+    pinnedFor: "Anclado por",
+    hours24: "24 horas",
+    days7: "7 días",
+    days30: "30 días",
+    messageDeletedForYou: "Mensaje eliminado para ti",
+    messageDeletedForEveryone: "Mensaje eliminado para todos",
+    selectChatToForward: "Selecciona un chat para reenviar",
+    cannotBeSaved: "Este mensaje no se puede guardar"
+  },
+  fr: {
+    reply: "Répondre",
+    edit: "Modifier",
+    copy: "Copier",
+    saveAs: "Enregistrer sous...",
+    forward: "Transférer",
+    star: "Étoile",
+    unstar: "Retirer l'étoile",
+    pin: "Épingler",
+    unpin: "Désépingler",
+    delete: "Supprimer",
+    select: "Sélectionner",
+    share: "Partager",
+    info: "Informations",
+    starred: "Mis en vedette",
+    removedFromStarred: "Retiré des favoris",
+    unpinned: "Désépinglé",
+    pinnedFor: "Épinglé pour",
+    hours24: "24 heures",
+    days7: "7 jours",
+    days30: "30 jours",
+    messageDeletedForYou: "Message supprimé pour vous",
+    messageDeletedForEveryone: "Message supprimé pour tous",
+    selectChatToForward: "Sélectionnez un chat pour transférer",
+    cannotBeSaved: "Ce message ne peut pas être enregistré"
+  },
+  it: {
+    reply: "Rispondi",
+    edit: "Modifica",
+    copy: "Copia",
+    saveAs: "Salva come...",
+    forward: "Inoltra",
+    star: "Evidenzia",
+    unstar: "Rimuovi evidenziazione",
+    pin: "Appunta",
+    unpin: "Scollega",
+    delete: "Elimina",
+    select: "Seleziona",
+    share: "Condividi",
+    info: "Informazioni",
+    starred: "Evidenziato",
+    removedFromStarred: "Rimosso dagli evidenziati",
+    unpinned: "Scollegato",
+    pinnedFor: "Appuntato per",
+    hours24: "24 ore",
+    days7: "7 giorni",
+    days30: "30 giorni",
+    messageDeletedForYou: "Messaggio eliminato per te",
+    messageDeletedForEveryone: "Messaggio eliminato per tutti",
+    selectChatToForward: "Seleziona una chat per inoltrare",
+    cannotBeSaved: "Questo messaggio non può essere salvato"
+  },
+  de: {
+    reply: "Antworten",
+    edit: "Bearbeiten",
+    copy: "Kopieren",
+    saveAs: "Speichern unter...",
+    forward: "Weiterleiten",
+    star: "Markieren",
+    unstar: "Markierung entfernen",
+    pin: "Anheften",
+    unpin: "Lösen",
+    delete: "Löschen",
+    select: "Auswählen",
+    share: "Teilen",
+    info: "Informationen",
+    starred: "Markiert",
+    removedFromStarred: "Aus Markierungen entfernt",
+    unpinned: "Gelöst",
+    pinnedFor: "Angeheftet für",
+    hours24: "24 Stunden",
+    days7: "7 Tage",
+    days30: "30 Tage",
+    messageDeletedForYou: "Nachricht für dich gelöscht",
+    messageDeletedForEveryone: "Nachricht für alle gelöscht",
+    selectChatToForward: "Wähle einen Chat zum Weiterleiten",
+    cannotBeSaved: "Diese Nachricht kann nicht gespeichert werden"
+  }
+};
 
 const MessageStatus = ({ status, isRead }) => {
   if (status === 'sending') {
@@ -201,6 +335,8 @@ export default function ChatMessage({
   onCopy,
   onEdit
 }) {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
   const [reactions, setReactions] = useState(message.reactions || []);
   const [isStarred, setIsStarred] = useState(message.isStarred || false);
   const [isPinned, setIsPinned] = useState(message.isPinned || false);
@@ -247,7 +383,7 @@ export default function ChatMessage({
       link.click();
       toast.success('File saved');
     } else {
-      toast.info('This message cannot be saved');
+      toast.info(t.cannotBeSaved);
     }
   };
 
@@ -263,7 +399,7 @@ export default function ChatMessage({
   const handleStar = () => {
     setIsStarred(!isStarred);
     onStar?.(message, !isStarred);
-    toast.success(isStarred ? 'Removed from starred' : 'Starred');
+    toast.success(isStarred ? t.removedFromStarred : t.starred);
   };
 
   const handlePin = () => {
@@ -271,7 +407,7 @@ export default function ChatMessage({
       // Unpin directly
       setIsPinned(false);
       onPin?.(message, false, null);
-      toast.success('Unpinned');
+      toast.success(t.unpinned);
     } else {
       // Show pin duration dialog
       setShowPinDialog(true);
@@ -286,7 +422,7 @@ export default function ChatMessage({
     setIsPinned(true);
     onPin?.(message, true, expiryDate.toISOString());
     setShowPinDialog(false);
-    toast.success(`Pinned for ${pinDuration === '1' ? '24 hours' : pinDuration === '7' ? '7 days' : '30 days'}`);
+    toast.success(`${t.pinnedFor} ${pinDuration === '1' ? t.hours24 : pinDuration === '7' ? t.days7 : t.days30}`);
   };
 
   const handleDelete = () => {
@@ -296,18 +432,18 @@ export default function ChatMessage({
   const handleDeleteForMe = () => {
     onDelete?.(message, 'me');
     setShowDeleteDialog(false);
-    toast.success('Message deleted for you');
+    toast.success(t.messageDeletedForYou);
   };
 
   const handleDeleteForEveryone = () => {
     onDelete?.(message, 'everyone');
     setShowDeleteDialog(false);
-    toast.success('Message deleted for everyone');
+    toast.success(t.messageDeletedForEveryone);
   };
 
   const handleForward = () => {
     onForward?.(message);
-    toast.info('Select a chat to forward to');
+    toast.info(t.selectChatToForward);
   };
 
   const handleReply = () => {
@@ -389,52 +525,52 @@ export default function ChatMessage({
               <DropdownMenuContent align={isOwn ? "end" : "start"} className="w-48 bg-gray-900 text-white border-gray-700 z-[1000]">
                 <DropdownMenuItem onClick={handleReply} className="hover:bg-gray-800">
                   <Reply className="w-4 h-4 mr-2" />
-                  Reply
+                  {t.reply}
                 </DropdownMenuItem>
                 {isOwn && message.type === 'text' && (
                   <DropdownMenuItem onClick={handleEdit} className="hover:bg-gray-800">
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit
+                    {t.edit}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={handleCopy} className="hover:bg-gray-800">
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy
+                  {t.copy}
                 </DropdownMenuItem>
                 {(message.type === 'image' || message.type === 'document') && (
                   <DropdownMenuItem onClick={handleSave} className="hover:bg-gray-800">
                     <Save className="w-4 h-4 mr-2" />
-                    Save as...
+                    {t.saveAs}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={handleForward} className="hover:bg-gray-800">
                   <Forward className="w-4 h-4 mr-2" />
-                  Forward
+                  {t.forward}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleStar} className="hover:bg-gray-800">
                   <Star className={cn("w-4 h-4 mr-2", isStarred && "fill-yellow-400 text-yellow-400")} />
-                  {isStarred ? 'Unstar' : 'Star'}
+                  {isStarred ? t.unstar : t.star}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handlePin} className="hover:bg-gray-800">
                   <Pin className={cn("w-4 h-4 mr-2", isPinned && "fill-blue-400 text-blue-400")} />
-                  {isPinned ? 'Unpin' : 'Pin'}
+                  {isPinned ? t.unpin : t.pin}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-gray-700" />
                 <DropdownMenuItem onClick={handleDelete} className="hover:bg-gray-800 text-red-400">
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  {t.delete}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSelect} className="hover:bg-gray-800">
                   <CheckSquare className="w-4 h-4 mr-2" />
-                  Select
+                  {t.select}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleShare} className="hover:bg-gray-800">
                   <Share2 className="w-4 h-4 mr-2" />
-                  Share
+                  {t.share}
                 </DropdownMenuItem>
                 <DropdownMenuItem className="hover:bg-gray-800">
                   <Info className="w-4 h-4 mr-2" />
-                  Info
+                  {t.info}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, Bell, Repeat, X } from "lucide-react";
+import { toast } from "sonner";
 
 const translations = {
   en: {
@@ -146,7 +147,42 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    e.stopPropagation();
+    
+    console.log('📝 Form submit triggered with data:', formData);
+    
+    // Validate required fields
+    if (!formData.title || !formData.title.trim()) {
+      toast.error('Please enter an event title');
+      return;
+    }
+    
+    if (!formData.event_date) {
+      toast.error('Please select a date');
+      return;
+    }
+    
+    // Clean up form data - convert empty strings to null for optional fields
+    const cleanedData = {
+      ...formData,
+      title: formData.title.trim(),
+      description: formData.description?.trim() || null,
+      location: formData.location?.trim() || null,
+      notes: formData.notes?.trim() || null,
+      event_time: formData.event_time || null,
+      recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : null,
+    };
+    
+    console.log('📝 Cleaned form data being submitted:', cleanedData);
+    console.log('📝 onSubmit function:', onSubmit);
+    
+    // Submit the cleaned form data
+    if (onSubmit && typeof onSubmit === 'function') {
+      onSubmit(cleanedData);
+    } else {
+      console.error('❌ onSubmit is not a function:', onSubmit);
+      toast.error('Form submission error. Please refresh the page.');
+    }
   };
 
   return (

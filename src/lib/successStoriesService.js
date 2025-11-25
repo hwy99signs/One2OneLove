@@ -213,6 +213,7 @@ export async function createStory(storyData) {
     }
 
     // Prepare story data
+    // Stories are automatically approved and visible immediately (no moderation required)
     const newStory = {
       user_id: user.id,
       title: storyData.title,
@@ -222,7 +223,7 @@ export async function createStory(storyData) {
       is_anonymous: storyData.is_anonymous || false,
       relationship_length: storyData.relationship_length || null,
       tags: storyData.tags || [],
-      moderation_status: storyData.moderation_status || 'pending', // Auto-approve for now, change to 'pending' for moderation
+      moderation_status: 'approved', // Auto-approved - stories are immediately visible to all users
     };
 
     const { data: story, error } = await supabase

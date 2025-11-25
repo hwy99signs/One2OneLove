@@ -24,6 +24,7 @@ import {
   unsubscribeFromMessages,
   subscribeToConversations,
 } from '@/lib/chatService';
+import { pinMessage, unpinMessage } from '@/lib/chatFeaturesService';
 
 export default function Chat() {
   const { currentLanguage } = useLanguage();
@@ -339,6 +340,40 @@ export default function Chat() {
     toast.success('Chat unpinned');
   };
 
+  // Pin/Unpin message handlers
+  const handlePinMessage = async (messageId, isPinned, expiryDate) => {
+    if (!selectedChatId) return;
+    
+    try {
+      if (isPinned) {
+        await pinMessage(messageId, selectedChatId, expiryDate);
+        toast.success('Message pinned');
+      } else {
+        await unpinMessage(messageId, selectedChatId);
+        toast.success('Message unpinned');
+      }
+      // Invalidate pinned messages query to refresh the list
+      queryClient.invalidateQueries(['pinnedMessages', selectedChatId]);
+    } catch (error) {
+      console.error('Error pinning/unpinning message:', error);
+      toast.error('Failed to pin message');
+    }
+  };
+
+  const handleUnpinMessage = async (messageId) => {
+    if (!selectedChatId) return;
+    
+    try {
+      await unpinMessage(messageId, selectedChatId);
+      toast.success('Message unpinned');
+      // Invalidate pinned messages query to refresh the list
+      queryClient.invalidateQueries(['pinnedMessages', selectedChatId]);
+    } catch (error) {
+      console.error('Error unpinning message:', error);
+      toast.error('Failed to unpin message');
+    }
+  };
+
   const handleArchive = async (chatId) => {
     await updateSettingsMutation.mutateAsync({
       conversationId: chatId,
@@ -433,7 +468,7 @@ export default function Chat() {
 
   if (!user) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-50" style={{ top: '64px', zIndex: 999 }}>
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-50" style={{ top: '64px', zIndex: 40 }}>
         <div className="text-center">
           <p className="text-gray-500">Please sign in to use chat</p>
         </div>
@@ -442,7 +477,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="fixed inset-0 flex bg-gray-50" style={{ top: '64px', zIndex: 999 }}>
+    <div className="fixed inset-0 flex bg-gray-50" style={{ top: '64px', zIndex: 40 }}>
       {/* Chat List */}
       <div
         className={`
@@ -497,11 +532,8 @@ export default function Chat() {
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteMessage}
           onMarkAsUnread={handleMarkAsUnread}
-          onPin={(messageId, isPinned, expiryDate) => {
-            // TODO: Implement message pinning
-            toast.info('Message pinning coming soon');
-          }}
-          onUnpin={handleUnpin}
+          onPin={handlePinMessage}
+          onUnpin={handleUnpinMessage}
           onArchive={handleArchive}
           onPopOut={handlePopOut}
           isLoading={messagesLoading}

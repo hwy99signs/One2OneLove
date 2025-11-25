@@ -180,9 +180,47 @@ export const getMessages = async (conversationId) => {
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Get all reply_to_ids to fetch original messages
+    const replyToIds = messages?.filter(msg => msg.reply_to_id).map(msg => msg.reply_to_id);
+    let replyMessagesMap = {};
+    
+    if (replyToIds && replyToIds.length > 0) {
+      const { data: replyMessages } = await supabase
+        .from('messages')
+        .select('id, content, message_type, sender_id')
+        .in('id', replyToIds);
+      
+      replyMessages?.forEach(rm => {
+        replyMessagesMap[rm.id] = rm;
+      });
+    }
+
     // Transform messages to match expected format
     const transformedMessages = messages?.map(msg => {
       const sender = usersMap[msg.sender_id] || { id: msg.sender_id, email: 'Unknown' };
+      
+      // Get reply context if this message is a reply
+      let replyToMessage = null;
+      if (msg.reply_to_id && replyMessagesMap[msg.reply_to_id]) {
+        const originalMsg = replyMessagesMap[msg.reply_to_id];
+        const originalSender = usersMap[originalMsg.sender_id] || { id: originalMsg.sender_id, email: 'Unknown' };
+        replyToMessage = {
+          id: originalMsg.id,
+          content: originalMsg.content,
+          messageType: originalMsg.message_type,
+          senderId: originalMsg.sender_id,
+          senderName: originalSender.name || originalSender.email || 'Unknown',
+        };
+      }
+      
+      // Determine message status
+      let status = 'sent';
+      if (msg.delivered_at) {
+        status = 'delivered';
+      }
+      if (msg.read_at) {
+        status = 'read';
+      }
       
       const baseMessage = {
         id: msg.id,
@@ -204,12 +242,16 @@ export const getMessages = async (conversationId) => {
         isRead: msg.is_read,
         isEdited: msg.is_edited,
         replyToId: msg.reply_to_id,
+        replyToMessage: replyToMessage,
         timestamp: msg.created_at,
         createdAt: msg.created_at,
+        sentAt: msg.created_at,
+        deliveredAt: msg.delivered_at,
+        readAt: msg.read_at,
         updatedAt: msg.updated_at,
         // Determine if this is from current user or other user
         isOwn: msg.sender_id === user?.id,
-        status: msg.is_read ? 'read' : 'delivered',
+        status: status,
       };
       
       // Add type-specific fields for ChatMessage component compatibility
@@ -237,8 +279,13 @@ export const getMessages = async (conversationId) => {
 
 /**
  * Send a text message
+ * @param {string} conversationId - Conversation ID
+ * @param {string} receiverId - Receiver user ID
+ * @param {string} content - Message content
+ * @param {string} messageType - Message type (default: 'text')
+ * @param {string} replyToId - Optional: ID of message being replied to
  */
-export const sendMessage = async (conversationId, receiverId, content, messageType = 'text') => {
+export const sendMessage = async (conversationId, receiverId, content, messageType = 'text', replyToId = null) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -246,17 +293,24 @@ export const sendMessage = async (conversationId, receiverId, content, messageTy
       throw new Error('User not authenticated');
     }
 
-    console.log('📤 Sending message:', { conversationId, receiverId, messageType });
+    console.log('📤 Sending message:', { conversationId, receiverId, messageType, replyToId });
+
+    const messageData = {
+      conversation_id: conversationId,
+      sender_id: user.id,
+      receiver_id: receiverId,
+      content: content,
+      message_type: messageType,
+    };
+
+    // Add reply_to_id if replying to a message
+    if (replyToId) {
+      messageData.reply_to_id = replyToId;
+    }
 
     const { data: message, error } = await supabase
       .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        receiver_id: receiverId,
-        content: content,
-        message_type: messageType,
-      })
+      .insert(messageData)
       .select()
       .single();
 
@@ -390,12 +444,18 @@ export const markMessagesAsRead = async (conversationId) => {
     console.log('✅ Marking messages as read for conversation:', conversationId);
 
     // Mark all unread messages where current user is receiver
+    // Set both is_read and read_at timestamp
+    const now = new Date().toISOString();
     const { error: messagesError } = await supabase
       .from('messages')
-      .update({ is_read: true })
+      .update({ 
+        is_read: true,
+        read_at: now
+      })
       .eq('conversation_id', conversationId)
       .eq('receiver_id', user.id)
-      .eq('is_read', false);
+      .eq('is_read', false)
+      .is('read_at', null);
 
     if (messagesError) {
       console.error('Error marking messages as read:', messagesError);
@@ -429,6 +489,105 @@ export const markMessagesAsRead = async (conversationId) => {
     console.log('✅ Messages marked as read');
   } catch (error) {
     console.error('Error in markMessagesAsRead:', error);
+    throw error;
+  }
+};
+
+/**
+ * Mark a specific message as delivered
+ * @param {string} messageId - Message ID
+ */
+export const markMessageDelivered = async (messageId) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    console.log('📬 Marking message as delivered:', messageId);
+
+    // Only mark as delivered if current user is the receiver
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('messages')
+      .update({ 
+        delivered_at: now
+      })
+      .eq('id', messageId)
+      .eq('receiver_id', user.id)
+      .is('delivered_at', null);
+
+    if (error) {
+      console.error('Error marking message as delivered:', error);
+      throw error;
+    }
+
+    console.log('✅ Message marked as delivered');
+  } catch (error) {
+    console.error('Error in markMessageDelivered:', error);
+    throw error;
+  }
+};
+
+/**
+ * Mark a specific message as read
+ * @param {string} messageId - Message ID
+ */
+export const markMessageRead = async (messageId) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    console.log('✅ Marking message as read:', messageId);
+
+    // Only mark as read if current user is the receiver
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('messages')
+      .update({ 
+        is_read: true,
+        read_at: now
+      })
+      .eq('id', messageId)
+      .eq('receiver_id', user.id)
+      .is('read_at', null);
+
+    if (error) {
+      console.error('Error marking message as read:', error);
+      throw error;
+    }
+
+    console.log('✅ Message marked as read');
+  } catch (error) {
+    console.error('Error in markMessageRead:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get message with reply context (the original message being replied to)
+ * @param {string} messageId - Message ID
+ */
+export const getMessageWithReply = async (messageId) => {
+  try {
+    const { data: message, error } = await supabase
+      .from('messages')
+      .select('*, reply_to:messages!messages_reply_to_id_fkey(*)')
+      .eq('id', messageId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching message with reply:', error);
+      throw error;
+    }
+
+    return message;
+  } catch (error) {
+    console.error('Error in getMessageWithReply:', error);
     throw error;
   }
 };

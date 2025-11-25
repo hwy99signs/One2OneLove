@@ -1,8 +1,16 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from './supabase';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+// Initialize Stripe only if publishable key is available
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey && stripePublishableKey.trim() !== '' 
+  ? loadStripe(stripePublishableKey) 
+  : null;
+
+// Helper to check if Stripe is configured
+export const isStripeConfigured = () => {
+  return !!(stripePublishableKey && stripePublishableKey.trim() !== '');
+};
 
 /**
  * Create a Stripe checkout session for subscription
@@ -59,6 +67,10 @@ export const createCheckoutSession = async (priceId, planName, amount) => {
  */
 export const redirectToCheckout = async (sessionId) => {
   try {
+    if (!isStripeConfigured()) {
+      throw new Error('Stripe is not configured. Please add VITE_STRIPE_PUBLISHABLE_KEY to your .env file');
+    }
+
     const stripe = await stripePromise;
     
     if (!stripe) {
@@ -106,6 +118,15 @@ export const handleSubscriptionCheckout = async (plan) => {
       if (error) throw error;
 
       return { success: true };
+    }
+
+    // For paid plans, check if Stripe is configured
+    if (!isStripeConfigured()) {
+      console.warn('⚠️ Stripe is not configured. Payment processing unavailable.');
+      return {
+        success: false,
+        error: 'Payment processing is not available. Please contact support or configure Stripe.'
+      };
     }
 
     // For paid plans, create checkout session

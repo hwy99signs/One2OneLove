@@ -203,17 +203,29 @@ export default function CouplesCalendar() {
   // Create event mutation
   const createMutation = useMutation({
     mutationFn: (data) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      console.log('🔄 Mutation function called with:', { userId: user?.id, data });
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
       return createCalendarEvent(user.id, data);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Event created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setShowForm(false);
       setEditingEvent(null);
       toast.success(t.eventAdded);
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create event');
+      console.error('❌ Error creating event:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      const errorMessage = error.message || 'Failed to create event. Please check the console for details.';
+      toast.error(errorMessage);
     }
   });
 
@@ -250,9 +262,31 @@ export default function CouplesCalendar() {
   });
 
   const handleSubmit = (eventData) => {
+    console.log('📅 Submitting event data:', eventData);
+    console.log('👤 Current user:', user);
+    
+    // Validate required fields
+    if (!eventData.title || !eventData.title.trim()) {
+      toast.error('Please enter an event title');
+      return;
+    }
+    
+    if (!eventData.event_date) {
+      toast.error('Please select a date');
+      return;
+    }
+    
+    if (!user?.id) {
+      toast.error('You must be logged in to create events');
+      console.error('❌ No user ID available');
+      return;
+    }
+    
     if (editingEvent) {
+      console.log('✏️ Updating event:', editingEvent.id);
       updateMutation.mutate({ id: editingEvent.id, data: eventData });
     } else {
+      console.log('➕ Creating new event with user ID:', user.id);
       createMutation.mutate(eventData);
     }
   };

@@ -77,31 +77,55 @@ export const getCalendarEvent = async (eventId, userId) => {
  */
 export const createCalendarEvent = async (userId, eventData) => {
   try {
+    console.log('📅 Creating calendar event with data:', { userId, eventData });
+    
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    if (!eventData.title || !eventData.title.trim()) {
+      throw new Error('Event title is required');
+    }
+    
+    if (!eventData.event_date) {
+      throw new Error('Event date is required');
+    }
+    
+    const insertData = {
+      user_id: userId,
+      title: eventData.title.trim(),
+      description: eventData.description || null,
+      event_date: eventData.event_date,
+      event_time: eventData.event_time || null,
+      event_type: eventData.event_type || 'other',
+      location: eventData.location || null,
+      notes: eventData.notes || null,
+      color: eventData.color || 'pink',
+      reminder_enabled: eventData.reminder_enabled !== false,
+      reminder_days_before: eventData.reminder_days_before || 1,
+      is_recurring: eventData.is_recurring || false,
+      recurrence_pattern: eventData.recurrence_pattern || null,
+    };
+    
+    console.log('📤 Inserting into calendar_events:', insertData);
+    
     const { data, error } = await supabase
       .from('calendar_events')
-      .insert({
-        user_id: userId,
-        title: eventData.title,
-        description: eventData.description || null,
-        event_date: eventData.event_date,
-        event_time: eventData.event_time || null,
-        event_type: eventData.event_type || 'other',
-        location: eventData.location || null,
-        notes: eventData.notes || null,
-        color: eventData.color || 'pink',
-        reminder_enabled: eventData.reminder_enabled !== false,
-        reminder_days_before: eventData.reminder_days_before || 1,
-        is_recurring: eventData.is_recurring || false,
-        recurrence_pattern: eventData.recurrence_pattern || null,
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase error:', error);
+      throw error;
+    }
+    
+    console.log('✅ Event created successfully:', data);
     return data;
   } catch (error) {
-    console.error('Error creating calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+    console.error('❌ Error creating calendar event:', error);
+    const errorMessage = error.message || handleSupabaseError(error) || 'Failed to create event';
+    throw new Error(errorMessage);
   }
 };
 

@@ -6,6 +6,55 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { AvatarWithStatus } from '@/components/presence/UserPresenceIndicator';
+import { useLanguage } from '@/Layout';
+
+const translations = {
+  en: {
+    voiceCall: "Voice Call",
+    videoCall: "Video Call",
+    markAsUnread: "Mark as unread",
+    unpin: "Unpin",
+    pin: "Pin",
+    archive: "Archive",
+    delete: "Delete"
+  },
+  es: {
+    voiceCall: "Llamada de Voz",
+    videoCall: "Llamada de Video",
+    markAsUnread: "Marcar como no leído",
+    unpin: "Desanclar",
+    pin: "Anclar",
+    archive: "Archivar",
+    delete: "Eliminar"
+  },
+  fr: {
+    voiceCall: "Appel Vocal",
+    videoCall: "Appel Vidéo",
+    markAsUnread: "Marquer comme non lu",
+    unpin: "Désépingler",
+    pin: "Épingler",
+    archive: "Archiver",
+    delete: "Supprimer"
+  },
+  it: {
+    voiceCall: "Chiamata Vocale",
+    videoCall: "Chiamata Video",
+    markAsUnread: "Segna come non letto",
+    unpin: "Scollega",
+    pin: "Appunta",
+    archive: "Archivia",
+    delete: "Elimina"
+  },
+  de: {
+    voiceCall: "Sprachanruf",
+    videoCall: "Videoanruf",
+    markAsUnread: "Als ungelesen markieren",
+    unpin: "Lösen",
+    pin: "Anheften",
+    archive: "Archivieren",
+    delete: "Löschen"
+  }
+};
 
 export default function ChatList({ 
   conversations, 
@@ -21,6 +70,8 @@ export default function ChatList({
   onUnpin,
   onMarkAsUnread
 }) {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const handleSearch = (e) => {
@@ -140,34 +191,34 @@ export default function ChatList({
                 <DropdownMenuContent align="end" className="w-56 z-[1000]">
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCall?.(chat.id); }}>
                     <Phone className="w-4 h-4 mr-2" />
-                    Voice Call
+                    {t.voiceCall}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onVideoCall?.(chat.id); }}>
                     <Video className="w-4 h-4 mr-2" />
-                    Video Call
+                    {t.videoCall}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {onMarkAsUnread && (
                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMarkAsUnread(chat.id); }}>
                       <CheckCheck className="w-4 h-4 mr-2" />
-                      Mark as unread
+                      {t.markAsUnread}
                     </DropdownMenuItem>
                   )}
                   {chat.isPinned && onUnpin ? (
                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onUnpin(chat.id); }}>
                       <PinOff className="w-4 h-4 mr-2" />
-                      Unpin
+                      {t.unpin}
                     </DropdownMenuItem>
                   ) : onPin && (
                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onPin(chat.id); }}>
                       <Pin className="w-4 h-4 mr-2" />
-                      Pin
+                      {t.pin}
                     </DropdownMenuItem>
                   )}
                   {onArchive && (
                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(chat.id); }}>
                       <Archive className="w-4 h-4 mr-2" />
-                      Archive
+                      {t.archive}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -176,7 +227,7 @@ export default function ChatList({
                     className="text-red-600 focus:text-red-600"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
+                    {t.delete}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -3,10 +3,72 @@ import { Phone, Video, MoreVertical, ArrowLeft, Search, MessageSquare, Pin, PinO
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { useLanguage } from '@/Layout';
+import { useQuery } from '@tanstack/react-query';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import UserProfile from './UserProfile';
 import { UserPresenceBadge } from '@/components/presence/UserPresenceIndicator';
+import { getPinnedMessages } from '@/lib/chatFeaturesService';
+import { getMessages } from '@/lib/chatService';
+
+const translations = {
+  en: {
+    viewProfile: "View Profile",
+    search: "Search",
+    markAsUnread: "Mark as unread",
+    unpin: "Unpin",
+    pin: "Pin",
+    archive: "Archive",
+    clearMessages: "Clear messages",
+    delete: "Delete",
+    popOutChat: "Pop-out chat"
+  },
+  es: {
+    viewProfile: "Ver Perfil",
+    search: "Buscar",
+    markAsUnread: "Marcar como no leído",
+    unpin: "Desanclar",
+    pin: "Anclar",
+    archive: "Archivar",
+    clearMessages: "Limpiar mensajes",
+    delete: "Eliminar",
+    popOutChat: "Abrir chat en ventana"
+  },
+  fr: {
+    viewProfile: "Voir le Profil",
+    search: "Rechercher",
+    markAsUnread: "Marquer comme non lu",
+    unpin: "Désépingler",
+    pin: "Épingler",
+    archive: "Archiver",
+    clearMessages: "Effacer les messages",
+    delete: "Supprimer",
+    popOutChat: "Ouvrir le chat dans une fenêtre"
+  },
+  it: {
+    viewProfile: "Visualizza Profilo",
+    search: "Cerca",
+    markAsUnread: "Segna come non letto",
+    unpin: "Scollega",
+    pin: "Appunta",
+    archive: "Archivia",
+    clearMessages: "Cancella messaggi",
+    delete: "Elimina",
+    popOutChat: "Apri chat in finestra"
+  },
+  de: {
+    viewProfile: "Profil Anzeigen",
+    search: "Suchen",
+    markAsUnread: "Als ungelesen markieren",
+    unpin: "Lösen",
+    pin: "Anheften",
+    archive: "Archivieren",
+    clearMessages: "Nachrichten löschen",
+    delete: "Löschen",
+    popOutChat: "Chat in Fenster öffnen"
+  }
+};
 
 export default function ChatWindow({
   chat,
@@ -32,11 +94,53 @@ export default function ChatWindow({
   onDeleteMessage,
   isLoading = false
 }) {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
   const messagesEndRef = useRef(null);
   const scrollAreaRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [pinnedMessages, setPinnedMessages] = useState([]);
-  const [showPinnedDropdown, setShowPinnedDropdown] = useState(false);
+
+  // Fetch pinned messages for the current conversation
+  const { data: pinnedMessagesData = [] } = useQuery({
+    queryKey: ['pinnedMessages', chat?.id],
+    queryFn: () => getPinnedMessages(chat?.id),
+    enabled: !!chat?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Transform pinned messages to match the message format
+  const pinnedMessages = React.useMemo(() => {
+    if (!pinnedMessagesData || pinnedMessagesData.length === 0) return [];
+    
+    return pinnedMessagesData.map(msg => {
+      const isOwn = msg.sender_id === currentUserId;
+      return {
+        id: msg.id,
+        conversationId: msg.conversation_id,
+        senderId: msg.sender_id,
+        receiverId: msg.receiver_id,
+        senderName: isOwn ? 'You' : chat?.name || 'User',
+        type: msg.message_type,
+        text: msg.content,
+        content: msg.content,
+        fileUrl: msg.file_url,
+        fileName: msg.file_name,
+        fileSize: msg.file_size,
+        fileType: msg.file_type,
+        locationLat: msg.location_lat,
+        locationLng: msg.location_lng,
+        locationAddress: msg.location_address,
+        isRead: msg.is_read,
+        isEdited: msg.is_edited,
+        timestamp: msg.created_at,
+        createdAt: msg.created_at,
+        isOwn: isOwn,
+        isPinned: true,
+        pinned_at: msg.pinned_at,
+        pin_expires_at: msg.pin_expires_at,
+      };
+    });
+  }, [pinnedMessagesData, currentUserId, chat]);
 
   useEffect(() => {
     scrollToBottom();
@@ -132,43 +236,43 @@ export default function ChatWindow({
             <DropdownMenuContent align="end" className="w-56 z-[1000]">
               <DropdownMenuItem onClick={() => setShowProfile(true)}>
                 <Search className="w-4 h-4 mr-2" />
-                View Profile
+                {t.viewProfile}
               </DropdownMenuItem>
               {onSearch && (
                 <DropdownMenuItem onClick={() => onSearch(chat.id)}>
                   <Search className="w-4 h-4 mr-2" />
-                  Search
+                  {t.search}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               {onMarkAsUnread && (
                 <DropdownMenuItem onClick={() => onMarkAsUnread(chat.id)}>
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Mark as unread
+                  {t.markAsUnread}
                 </DropdownMenuItem>
               )}
               {chat.isPinned && onUnpin ? (
                 <DropdownMenuItem onClick={() => onUnpin(chat.id)}>
                   <PinOff className="w-4 h-4 mr-2" />
-                  Unpin
+                  {t.unpin}
                 </DropdownMenuItem>
               ) : onPin && (
                 <DropdownMenuItem onClick={() => onPin(chat.id)}>
                   <Pin className="w-4 h-4 mr-2" />
-                  Pin
+                  {t.pin}
                 </DropdownMenuItem>
               )}
               {onArchive && (
                 <DropdownMenuItem onClick={() => onArchive(chat.id)}>
                   <Archive className="w-4 h-4 mr-2" />
-                  Archive
+                  {t.archive}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               {onClearChat && (
                 <DropdownMenuItem onClick={() => onClearChat(chat.id)}>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Clear messages
+                  {t.clearMessages}
                 </DropdownMenuItem>
               )}
               {onDeleteChat && (
@@ -177,7 +281,7 @@ export default function ChatWindow({
                   className="text-red-600 focus:text-red-600"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  {t.delete}
                 </DropdownMenuItem>
               )}
               {onPopOut && (
@@ -185,7 +289,7 @@ export default function ChatWindow({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onPopOut(chat.id)}>
                     <Maximize2 className="w-4 h-4 mr-2" />
-                    Pop-out chat
+                    {t.popOutChat}
                   </DropdownMenuItem>
                 </>
               )}
@@ -194,53 +298,98 @@ export default function ChatWindow({
         </div>
       </div>
 
-      {/* Pinned Messages Section */}
-      {messages.filter(msg => msg.isPinned && !msg.deletedForMe).length > 0 && (
-        <div className="bg-gray-100 border-b border-gray-200 px-4 py-2">
-          {messages
-            .filter(msg => msg.isPinned && !msg.deletedForMe)
-            .slice(0, 1) // Show only the most recent pinned message
-            .map((pinnedMsg) => {
-              const isOwn = pinnedMsg.senderId === currentUserId;
+      {/* Pinned Messages Section - WhatsApp Style */}
+      {pinnedMessages && pinnedMessages.length > 0 && (
+        <div className="bg-[#f0f2f5] border-b border-gray-300">
+          <div className="px-4 py-2 space-y-0.5 max-h-32 overflow-y-auto">
+            {pinnedMessages.map((pinnedMsg) => {
+              const isOwn = pinnedMsg.isOwn;
+              const getMessagePreview = () => {
+                if (pinnedMsg.type === 'text') {
+                  const text = pinnedMsg.text || pinnedMsg.content || '';
+                  // Truncate long messages
+                  return text.length > 50 ? text.substring(0, 50) + '...' : text;
+                } else if (pinnedMsg.type === 'image') {
+                  return '📷 Photo';
+                } else if (pinnedMsg.type === 'video') {
+                  return '🎥 Video';
+                } else if (pinnedMsg.type === 'audio' || pinnedMsg.type === 'voice') {
+                  return '🎤 Audio';
+                } else if (pinnedMsg.type === 'document' || pinnedMsg.type === 'file') {
+                  const fileName = pinnedMsg.fileName || 'Document';
+                  return `📄 ${fileName.length > 30 ? fileName.substring(0, 30) + '...' : fileName}`;
+                } else if (pinnedMsg.type === 'location') {
+                  return '📍 Location';
+                } else {
+                  return 'Media';
+                }
+              };
+
               return (
-                <div key={pinnedMsg.id} className="flex items-center gap-2 group">
-                  <Pin className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  <span className="text-sm text-gray-600 font-medium">
-                    {isOwn ? 'You:' : `${pinnedMsg.senderName || 'User'}:`}
-                  </span>
-                  <span className="text-sm text-gray-700 flex-1 truncate">
-                    {pinnedMsg.type === 'text' 
-                      ? pinnedMsg.text 
-                      : pinnedMsg.type === 'image' 
-                      ? '📷 Photo' 
-                      : pinnedMsg.type === 'video'
-                      ? '🎥 Video'
-                      : pinnedMsg.type === 'document'
-                      ? '📄 Document'
-                      : pinnedMsg.type === 'location'
-                      ? '📍 Location'
-                      : 'Media'}
-                  </span>
+                <div 
+                  key={pinnedMsg.id} 
+                  className="flex items-center gap-2.5 group cursor-pointer hover:bg-gray-200/70 rounded-lg px-2.5 py-2 transition-colors"
+                  onClick={() => {
+                    // Scroll to message
+                    const messageElement = document.querySelector(`[data-message-id="${pinnedMsg.id}"]`);
+                    if (messageElement) {
+                      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      // Highlight the message briefly
+                      messageElement.classList.add('bg-yellow-100', 'transition-colors', 'duration-300');
+                      setTimeout(() => {
+                        messageElement.classList.remove('bg-yellow-100');
+                      }, 2000);
+                    } else {
+                      // If message not found, try scrolling to bottom and retry
+                      setTimeout(() => {
+                        const retryElement = document.querySelector(`[data-message-id="${pinnedMsg.id}"]`);
+                        if (retryElement) {
+                          retryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          retryElement.classList.add('bg-yellow-100');
+                          setTimeout(() => {
+                            retryElement.classList.remove('bg-yellow-100');
+                          }, 2000);
+                        }
+                      }, 500);
+                    }
+                  }}
+                >
+                  <Pin className="w-4 h-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="text-sm font-semibold text-[#25D366] whitespace-nowrap">
+                        {pinnedMsg.senderName || 'User'}:
+                      </span>
+                      <span className="text-sm text-gray-800 break-words">
+                        {getMessagePreview()}
+                      </span>
+                    </div>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity">
+                      <button 
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-300 rounded-full transition-opacity flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <ChevronDown className="w-4 h-4 text-gray-600" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 bg-gray-900 text-white border-gray-700">
                       <DropdownMenuItem 
-                        onClick={() => {
-                          if (onPin) {
-                            onPin(pinnedMsg.id, false, null);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onUnpin) {
+                            onUnpin(pinnedMsg.id);
                           }
                         }}
-                        className="hover:bg-gray-800"
+                        className="hover:bg-gray-800 cursor-pointer"
                       >
                         <PinOff className="w-4 h-4 mr-2" />
-                        Unpin
+                        {t.unpin}
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           // Scroll to message
                           const messageElement = document.querySelector(`[data-message-id="${pinnedMsg.id}"]`);
                           if (messageElement) {
@@ -252,16 +401,17 @@ export default function ChatWindow({
                             }, 2000);
                           }
                         }}
-                        className="hover:bg-gray-800"
+                        className="hover:bg-gray-800 cursor-pointer"
                       >
                         <MessageSquare className="w-4 h-4 mr-2" />
-                        Go to message
+                        {t.viewProfile === "View Profile" ? "Go to message" : "Ir al mensaje"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               );
             })}
+          </div>
         </div>
       )}
 

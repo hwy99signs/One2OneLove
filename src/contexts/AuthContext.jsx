@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase, handleSupabaseError, isSupabaseConfigured } from '@/lib/supabase';
 import { initializePresence, cleanupPresence } from '@/lib/presenceService';
 
@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isManualLoginRef = useRef(false);
 
   const buildUserData = (authUser, profileData = null) => {
     if (!authUser) return null;
@@ -39,11 +40,31 @@ export function AuthProvider({ children }) {
 
     try {
       console.log('ensureUserProfile: Fetching profile from database...');
-      const { data: profile, error: profileError } = await supabase
+      
+      // Add timeout to prevent hanging - wrap Supabase query properly
+      const profileQuery = supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
+      );
+      
+      // Race the query against timeout
+      let profile, profileError;
+      try {
+        const result = await Promise.race([
+          profileQuery,
+          timeoutPromise
+        ]);
+        profile = result?.data;
+        profileError = result?.error;
+      } catch (timeoutError) {
+        console.warn('⚠️ Profile fetch timed out, using basic user data');
+        return buildUserData(authUser);
+      }
 
       console.log('ensureUserProfile: Profile query result:', { profile, profileError });
 
@@ -117,6 +138,7 @@ export function AuthProvider({ children }) {
     let retryTimeout;
     let initTimeout;
     let sessionRestored = false;
+    let isManualLogin = false; // Track if login is being done manually
     
     // IMPORTANT: Set up listener FIRST to catch INITIAL_SESSION event immediately
     // Listen for auth state changes with improved handling
@@ -126,12 +148,35 @@ export function AuthProvider({ children }) {
       if (!mounted) return;
       
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in:', session.user.email);
-        const userData = await ensureUserProfile(session.user);
+        console.log('✅ User signed in (via listener):', session.user.email);
+        // If manual login is in progress, let it handle state setting
+        if (isManualLoginRef.current) {
+          console.log('🔄 Listener: Manual login in progress, skipping listener update');
+          return;
+        }
+        // Only update if user state is not already set (avoid race conditions)
         if (mounted) {
-          setUser(userData);
-          setIsLoading(false);
-          await initializePresence();
+          // Set basic user data immediately
+          const basicUserData = buildUserData(session.user);
+          setUser(basicUserData);
+          setIsLoading(false); // Clear loading immediately
+          
+          // Fetch full profile asynchronously (non-blocking)
+          ensureUserProfile(session.user)
+            .then(profileData => {
+              if (profileData && mounted) {
+                console.log('✅ Profile fetched, updating user state');
+                setUser(profileData);
+              }
+            })
+            .catch(err => {
+              console.warn('⚠️ Profile fetch failed in listener (non-critical):', err);
+              // User already has basic data, so continue
+            });
+          
+          initializePresence().catch(err => {
+            console.warn('⚠️ Presence init failed in listener:', err);
+          });
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
@@ -281,8 +326,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
+    // Set flag to prevent listener from interfering
+    isManualLoginRef.current = true;
+    
     try {
-      console.log('Attempting login for:', email);
+      console.log('🔵 Attempting login for:', email);
       
       // Check if Supabase is configured
       if (!isSupabaseConfigured()) {
@@ -291,34 +339,134 @@ export function AuthProvider({ children }) {
         return { success: false, error: errorMsg };
       }
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // IMPORTANT: Clear any stale session data before attempting new login
+      // This prevents conflicts with cached sessions that might interfere
+      console.log('🧹 Clearing any existing session before login...');
+      try {
+        // Get current session to check if it exists (with timeout)
+        const getSessionPromise = supabase.auth.getSession();
+        const sessionTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 2000)
+        );
+        
+        let existingSession;
+        try {
+          const sessionResult = await Promise.race([
+            getSessionPromise.then(r => ({ type: 'success', ...r })),
+            sessionTimeout.then(() => ({ type: 'timeout' }))
+          ]);
+          
+          if (sessionResult.type === 'timeout') {
+            console.warn('⚠️ Session check timed out (continuing)');
+            existingSession = null;
+          } else {
+            existingSession = sessionResult.data?.session;
+          }
+        } catch (sessionError) {
+          console.warn('⚠️ Session check failed (continuing):', sessionError);
+          existingSession = null;
+        }
+        
+        if (existingSession) {
+          console.log('⚠️ Found existing session, signing out first...');
+          // Sign out to clear stale session (with timeout)
+          const signOutPromise = supabase.auth.signOut();
+          const signOutTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Sign out timeout')), 2000)
+          );
+          
+          try {
+            await Promise.race([
+              signOutPromise.then(() => ({ type: 'success' })),
+              signOutTimeout.then(() => ({ type: 'timeout' }))
+            ]);
+            // Small delay to ensure session is cleared
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (signOutError) {
+            console.warn('⚠️ Sign out failed (continuing with login):', signOutError);
+          }
+        }
+      } catch (clearError) {
+        console.warn('⚠️ Error clearing existing session (continuing with login):', clearError);
+        // Continue with login even if clearing fails
+      }
+      
+      console.log('🔐 Attempting sign in with password...');
+      
+      // Add timeout to prevent hanging on signInWithPassword
+      const signInPromise = supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
+      const signInTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sign in timeout after 10 seconds')), 10000)
+      );
+      
+      let data, error;
+      try {
+        const result = await Promise.race([
+          signInPromise.then(r => ({ type: 'success', ...r })),
+          signInTimeout.then(() => ({ type: 'timeout' }))
+        ]);
+        
+        if (result.type === 'timeout') {
+          console.error('❌ Sign in timed out');
+          return { success: false, error: 'Sign in timed out. Please try again.' };
+        }
+        
+        data = result.data;
+        error = result.error;
+      } catch (timeoutError) {
+        console.error('❌ Sign in error:', timeoutError);
+        return { success: false, error: timeoutError.message || 'Sign in failed. Please try again.' };
+      }
 
       if (error) {
-        console.error('Supabase auth error:', error);
+        console.error('❌ Supabase auth error:', error);
         return { success: false, error: handleSupabaseError(error) };
       }
 
       if (!data?.user) {
-        console.error('No user data returned from Supabase');
+        console.error('❌ No user data returned from Supabase');
         return { success: false, error: 'Login failed: No user data received' };
       }
 
-      console.log('Auth successful, fetching profile for user:', data.user.id);
+      console.log('✅ Auth successful, fetching profile for user:', data.user.id);
 
-      const userData = await ensureUserProfile(data.user);
-      setUser(userData);
+      // Set basic user data immediately (don't wait for profile)
+      const basicUserData = buildUserData(data.user);
+      setUser(basicUserData);
       
-      // Initialize presence tracking for online/offline status
-      console.log('🟢 Initializing presence tracking...');
-      await initializePresence();
+      // Fetch profile asynchronously (non-blocking)
+      ensureUserProfile(data.user)
+        .then(profileData => {
+          if (profileData && isManualLoginRef.current) {
+            console.log('✅ Profile fetched, updating user state');
+            setUser(profileData);
+          }
+        })
+        .catch(err => {
+          console.warn('⚠️ Profile fetch failed (non-critical):', err);
+          // User is already set with basic data, so login can continue
+        });
       
-      console.log('Login successful');
-      return { success: true, user: userData };
+      // Initialize presence tracking asynchronously (don't block login)
+      console.log('🟢 Initializing presence tracking (non-blocking)...');
+      initializePresence().catch(err => {
+        console.warn('⚠️ Presence initialization failed (non-critical):', err);
+      });
+      
+      console.log('✅ Login successful - returning immediately');
+      // Clear manual login flag after a short delay
+      setTimeout(() => {
+        isManualLoginRef.current = false;
+      }, 2000);
+      
+      return { success: true, user: basicUserData };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
+      isManualLoginRef.current = false;
       return { success: false, error: error.message || handleSupabaseError(error) };
     }
   };
@@ -336,18 +484,38 @@ export function AuthProvider({ children }) {
         // Continue with logout even if presence cleanup fails
       }
       
+      // Clear user state first to prevent race conditions
+      setUser(null);
+      setIsLoading(false);
+      
       // Sign out from Supabase
       console.log('🔴 Signing out from Supabase...');
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('❌ Supabase signOut error:', error);
-        // Still clear user state even if signOut has an error
       } else {
         console.log('✅ Successfully signed out from Supabase');
       }
       
-      // Always clear user state
+      // Clear localStorage auth token to prevent stale sessions
+      try {
+        const storageKey = 'sb-one2one-love-auth-token';
+        localStorage.removeItem(storageKey);
+        console.log('🧹 Cleared auth token from localStorage');
+      } catch (storageError) {
+        console.warn('⚠️ Error clearing localStorage:', storageError);
+      }
+      
+      // Clear sessionStorage as well
+      try {
+        sessionStorage.clear();
+        console.log('🧹 Cleared sessionStorage');
+      } catch (storageError) {
+        console.warn('⚠️ Error clearing sessionStorage:', storageError);
+      }
+      
+      // Ensure user state is cleared (redundant but safe)
       setUser(null);
       setIsLoading(false);
       
@@ -357,6 +525,15 @@ export function AuthProvider({ children }) {
       // Ensure user state is cleared even on error
       setUser(null);
       setIsLoading(false);
+      
+      // Try to clear storage as fallback
+      try {
+        const storageKey = 'sb-one2one-love-auth-token';
+        localStorage.removeItem(storageKey);
+        sessionStorage.clear();
+      } catch (storageError) {
+        console.warn('⚠️ Error clearing storage in catch:', storageError);
+      }
     }
   };
 

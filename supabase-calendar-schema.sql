@@ -7,7 +7,7 @@
 -- Create calendar_events table
 CREATE TABLE IF NOT EXISTS public.calendar_events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   event_date DATE NOT NULL,

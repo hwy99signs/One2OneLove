@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/Layout';
 import {
   getReceivedBuddyRequests,
   getSentBuddyRequests,
@@ -17,7 +18,152 @@ import {
   cancelBuddyRequest,
 } from '@/lib/buddyService';
 
+const translations = {
+  en: {
+    back: "Back",
+    title: "Friend Requests",
+    subtitle: "Manage your beautiful friend connections",
+    received: "Received",
+    sent: "Sent",
+    loading: "Loading requests...",
+    noRequests: "No friend requests yet",
+    noRequestsDesc: "When someone sends you a friend request, it will appear here with love",
+    noSentRequests: "No pending sent requests",
+    noSentRequestsDesc: "Visit Find Buddies to send friend requests and connect with others",
+    findFriends: "Find Friends",
+    accept: "Accept",
+    reject: "Reject",
+    cancel: "Cancel",
+    pending: "Pending",
+    unknownUser: "Unknown User",
+    sentLabel: "Sent",
+    justNow: "Just now",
+    ago: "ago",
+    accepted: "Friend request accepted! 🎉",
+    rejected: "Friend request rejected",
+    cancelled: "Friend request cancelled",
+    errorLoading: "Failed to load friend requests. Please try again with love.",
+    errorAccept: "Failed to accept request. Please try again.",
+    errorReject: "Failed to reject request. Please try again.",
+    errorCancel: "Failed to cancel request. Please try again."
+  },
+  es: {
+    back: "Volver",
+    title: "Solicitudes de Amistad",
+    subtitle: "Gestiona tus hermosas conexiones de amistad",
+    received: "Recibidas",
+    sent: "Enviadas",
+    loading: "Cargando solicitudes...",
+    noRequests: "Aún no hay solicitudes de amistad",
+    noRequestsDesc: "Cuando alguien te envíe una solicitud de amistad, aparecerá aquí con amor",
+    noSentRequests: "No hay solicitudes enviadas pendientes",
+    noSentRequestsDesc: "Visita Encontrar Compañeros para enviar solicitudes de amistad y conectar con otros",
+    findFriends: "Encontrar Amigos",
+    accept: "Aceptar",
+    reject: "Rechazar",
+    cancel: "Cancelar",
+    pending: "Pendiente",
+    unknownUser: "Usuario Desconocido",
+    sentLabel: "Enviada",
+    justNow: "Ahora mismo",
+    ago: "hace",
+    accepted: "¡Solicitud de amistad aceptada! 🎉",
+    rejected: "Solicitud de amistad rechazada",
+    cancelled: "Solicitud de amistad cancelada",
+    errorLoading: "No se pudieron cargar las solicitudes de amistad. Por favor, inténtalo de nuevo con amor.",
+    errorAccept: "No se pudo aceptar la solicitud. Por favor, inténtalo de nuevo.",
+    errorReject: "No se pudo rechazar la solicitud. Por favor, inténtalo de nuevo.",
+    errorCancel: "No se pudo cancelar la solicitud. Por favor, inténtalo de nuevo."
+  },
+  fr: {
+    back: "Retour",
+    title: "Demandes d'Amitié",
+    subtitle: "Gérez vos belles connexions d'amitié",
+    received: "Reçues",
+    sent: "Envoyées",
+    loading: "Chargement des demandes...",
+    noRequests: "Pas encore de demandes d'amitié",
+    noRequestsDesc: "Lorsque quelqu'un vous envoie une demande d'amitié, elle apparaîtra ici avec amour",
+    noSentRequests: "Aucune demande envoyée en attente",
+    noSentRequestsDesc: "Visitez Trouver des Compagnons pour envoyer des demandes d'amitié et vous connecter avec d'autres",
+    findFriends: "Trouver des Amis",
+    accept: "Accepter",
+    reject: "Refuser",
+    cancel: "Annuler",
+    pending: "En Attente",
+    unknownUser: "Utilisateur Inconnu",
+    sentLabel: "Envoyée",
+    justNow: "À l'instant",
+    ago: "il y a",
+    accepted: "Demande d'amitié acceptée ! 🎉",
+    rejected: "Demande d'amitié refusée",
+    cancelled: "Demande d'amitié annulée",
+    errorLoading: "Échec du chargement des demandes d'amitié. Veuillez réessayer avec amour.",
+    errorAccept: "Échec de l'acceptation de la demande. Veuillez réessayer.",
+    errorReject: "Échec du refus de la demande. Veuillez réessayer.",
+    errorCancel: "Échec de l'annulation de la demande. Veuillez réessayer."
+  },
+  it: {
+    back: "Indietro",
+    title: "Richieste di Amicizia",
+    subtitle: "Gestisci le tue bellissime connessioni di amicizia",
+    received: "Ricevute",
+    sent: "Inviate",
+    loading: "Caricamento richieste...",
+    noRequests: "Nessuna richiesta di amicizia ancora",
+    noRequestsDesc: "Quando qualcuno ti invia una richiesta di amicizia, apparirà qui con amore",
+    noSentRequests: "Nessuna richiesta inviata in sospeso",
+    noSentRequestsDesc: "Visita Trova Compagni per inviare richieste di amicizia e connetterti con altri",
+    findFriends: "Trova Amici",
+    accept: "Accetta",
+    reject: "Rifiuta",
+    cancel: "Annulla",
+    pending: "In Attesa",
+    unknownUser: "Utente Sconosciuto",
+    sentLabel: "Inviata",
+    justNow: "Proprio ora",
+    ago: "fa",
+    accepted: "Richiesta di amicizia accettata! 🎉",
+    rejected: "Richiesta di amicizia rifiutata",
+    cancelled: "Richiesta di amicizia annullata",
+    errorLoading: "Impossibile caricare le richieste di amicizia. Per favore, riprova con amore.",
+    errorAccept: "Impossibile accettare la richiesta. Per favore, riprova.",
+    errorReject: "Impossibile rifiutare la richiesta. Per favore, riprova.",
+    errorCancel: "Impossibile annullare la richiesta. Per favore, riprova."
+  },
+  de: {
+    back: "Zurück",
+    title: "Freundschaftsanfragen",
+    subtitle: "Verwalte deine wunderschönen Freundschaftsverbindungen",
+    received: "Erhalten",
+    sent: "Gesendet",
+    loading: "Anfragen werden geladen...",
+    noRequests: "Noch keine Freundschaftsanfragen",
+    noRequestsDesc: "Wenn dir jemand eine Freundschaftsanfrage sendet, erscheint sie hier mit Liebe",
+    noSentRequests: "Keine ausstehenden gesendeten Anfragen",
+    noSentRequestsDesc: "Besuche Freunde Finden, um Freundschaftsanfragen zu senden und dich mit anderen zu verbinden",
+    findFriends: "Freunde Finden",
+    accept: "Annehmen",
+    reject: "Ablehnen",
+    cancel: "Abbrechen",
+    pending: "Ausstehend",
+    unknownUser: "Unbekannter Benutzer",
+    sentLabel: "Gesendet",
+    justNow: "Gerade eben",
+    ago: "vor",
+    accepted: "Freundschaftsanfrage angenommen! 🎉",
+    rejected: "Freundschaftsanfrage abgelehnt",
+    cancelled: "Freundschaftsanfrage abgebrochen",
+    errorLoading: "Freundschaftsanfragen konnten nicht geladen werden. Bitte versuche es mit Liebe erneut.",
+    errorAccept: "Anfrage konnte nicht angenommen werden. Bitte versuche es erneut.",
+    errorReject: "Anfrage konnte nicht abgelehnt werden. Bitte versuche es erneut.",
+    errorCancel: "Anfrage konnte nicht abgebrochen werden. Bitte versuche es erneut."
+  }
+};
+
 export default function FriendRequests() {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -49,7 +195,7 @@ export default function FriendRequests() {
         setSentRequests(sent);
       } catch (error) {
         console.error('Error fetching requests:', error);
-        toast.error(error.message || 'Failed to load friend requests');
+        toast.error(error.message || t.errorLoading);
       } finally {
         setLoading(false);
       }
@@ -62,10 +208,10 @@ export default function FriendRequests() {
     try {
       await acceptBuddyRequest(requestId, user.id);
       setReceivedRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast.success('Friend request accepted! 🎉');
+      toast.success(t.accepted);
     } catch (error) {
       console.error('Error accepting request:', error);
-      toast.error(error.message || 'Failed to accept request');
+      toast.error(error.message || t.errorAccept);
     }
   };
 
@@ -73,10 +219,10 @@ export default function FriendRequests() {
     try {
       await rejectBuddyRequest(requestId, user.id);
       setReceivedRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast.success('Friend request rejected');
+      toast.success(t.rejected);
     } catch (error) {
       console.error('Error rejecting request:', error);
-      toast.error(error.message || 'Failed to reject request');
+      toast.error(error.message || t.errorReject);
     }
   };
 
@@ -84,10 +230,10 @@ export default function FriendRequests() {
     try {
       await cancelBuddyRequest(requestId, user.id);
       setSentRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast.success('Friend request cancelled');
+      toast.success(t.cancelled);
     } catch (error) {
       console.error('Error cancelling request:', error);
-      toast.error(error.message || 'Failed to cancel request');
+      toast.error(error.message || t.errorCancel);
     }
   };
 
@@ -99,10 +245,10 @@ export default function FriendRequests() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t.justNow;
+    if (diffMins < 60) return `${diffMins}m ${t.ago}`;
+    if (diffHours < 24) return `${diffHours}h ${t.ago}`;
+    if (diffDays < 7) return `${diffDays}d ${t.ago}`;
     return date.toLocaleDateString();
   };
 
@@ -117,26 +263,26 @@ export default function FriendRequests() {
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            {t.back}
           </Button>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
               <Mail className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900">Friend Requests</h1>
+            <h1 className="text-4xl font-bold text-gray-900">{t.title}</h1>
           </div>
-          <p className="text-gray-600 mt-2">Manage your friend connections</p>
+          <p className="text-gray-600 mt-2">{t.subtitle}</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="received" className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              Received ({receivedRequests.length})
+              {t.received} ({receivedRequests.length})
             </TabsTrigger>
             <TabsTrigger value="sent" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              Sent ({sentRequests.length})
+              {t.sent} ({sentRequests.length})
             </TabsTrigger>
           </TabsList>
 
@@ -145,14 +291,14 @@ export default function FriendRequests() {
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading requests...</p>
+                <p className="text-gray-600 mt-4">{t.loading}</p>
               </div>
             ) : receivedRequests.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent className="pt-6">
                   <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 text-lg">No friend requests yet</p>
-                  <p className="text-gray-400 mt-2">When someone sends you a friend request, it will appear here</p>
+                  <p className="text-gray-600 text-lg">{t.noRequests}</p>
+                  <p className="text-gray-400 mt-2">{t.noRequestsDesc}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -170,7 +316,7 @@ export default function FriendRequests() {
                         
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {request.from_user?.name || 'Unknown User'}
+                            {request.from_user?.name || t.unknownUser}
                           </h3>
                           <p className="text-sm text-gray-600">{request.from_user?.email}</p>
                           {request.from_user?.bio && (
@@ -192,7 +338,7 @@ export default function FriendRequests() {
                             className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
                           >
                             <UserCheck className="w-4 h-4 mr-2" />
-                            Accept
+                            {t.accept}
                           </Button>
                           <Button
                             variant="outline"
@@ -200,7 +346,7 @@ export default function FriendRequests() {
                             className="border-red-300 text-red-600 hover:bg-red-50"
                           >
                             <UserX className="w-4 h-4 mr-2" />
-                            Reject
+                            {t.reject}
                           </Button>
                         </div>
                       </div>
@@ -216,20 +362,20 @@ export default function FriendRequests() {
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading requests...</p>
+                <p className="text-gray-600 mt-4">{t.loading}</p>
               </div>
             ) : sentRequests.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent className="pt-6">
                   <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 text-lg">No pending sent requests</p>
-                  <p className="text-gray-400 mt-2">Visit Find Buddies to send friend requests</p>
+                  <p className="text-gray-600 text-lg">{t.noSentRequests}</p>
+                  <p className="text-gray-400 mt-2">{t.noSentRequestsDesc}</p>
                   <Button
                     onClick={() => navigate(createPageUrl('FindFriends'))}
                     className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500"
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    Find Friends
+                    {t.findFriends}
                   </Button>
                 </CardContent>
               </Card>
@@ -248,16 +394,16 @@ export default function FriendRequests() {
                         
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {request.to_user?.name || 'Unknown User'}
+                            {request.to_user?.name || t.unknownUser}
                           </h3>
                           <p className="text-sm text-gray-600">{request.to_user?.email}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <Clock className="w-4 h-4 text-gray-400" />
                             <span className="text-xs text-gray-500">
-                              Sent {formatDate(request.created_at)}
+                              {t.sentLabel} {formatDate(request.created_at)}
                             </span>
                             <Badge variant="secondary" className="ml-2">
-                              Pending
+                              {t.pending}
                             </Badge>
                           </div>
                         </div>
@@ -268,7 +414,7 @@ export default function FriendRequests() {
                           className="border-red-300 text-red-600 hover:bg-red-50"
                         >
                           <UserX className="w-4 h-4 mr-2" />
-                          Cancel
+                          {t.cancel}
                         </Button>
                       </div>
                     </CardContent>

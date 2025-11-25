@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+// Base44 removed - using Supabase instead
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -34,14 +34,19 @@ const translations = {
     buddies: "Buddy System",
     searchPlaceholder: "Search community...",
     createPost: "Create Post",
-    shareStory: "Share Story",
+    shareStory: "Share Your Love Story",
     findBuddy: "Find a Buddy",
-    forumsDesc: "Join discussions on topics that matter to you",
-    storiesDesc: "Read and share relationship journeys",
-    buddiesDesc: "Connect with others for mutual support",
+    forumsDesc: "Join heartfelt discussions on topics that matter to your relationship",
+    storiesDesc: "Read and share beautiful relationship journeys that inspire love",
+    buddiesDesc: "Connect with other couples for mutual support and friendship",
     noResults: "No results found",
-    storyShared: "Story shared successfully!",
+    storyShared: "Your beautiful story has been shared with the community! 💕",
     buddyRequested: "Buddy request sent!",
+    backToForums: "← Back to Forums",
+    noPostsYet: "No posts yet. Be the first to start a meaningful discussion!",
+    errorSharing: "Failed to share your story. Please try again with love.",
+    errorLike: "Failed to update like. Please try again.",
+    errorHelpful: "Failed to update helpful. Please try again.",
     categories: {
       long_distance: "Long Distance",
       premarital: "Pre-marital",
@@ -53,6 +58,142 @@ const translations = {
       intimacy: "Intimacy",
       communication: "Communication",
       general: "General"
+    }
+  },
+  es: {
+    title: "Comunidad",
+    subtitle: "Conéctate, comparte y crece junto con otras parejas",
+    forums: "Foros de Discusión",
+    stories: "Historias de Éxito",
+    buddies: "Sistema de Compañeros",
+    searchPlaceholder: "Buscar en la comunidad...",
+    createPost: "Crear Publicación",
+    shareStory: "Comparte Tu Historia de Amor",
+    findBuddy: "Encontrar un Compañero",
+    forumsDesc: "Únete a conversaciones sinceras sobre temas que importan a tu relación",
+    storiesDesc: "Lee y comparte hermosos viajes de relaciones que inspiran amor",
+    buddiesDesc: "Conéctate con otras parejas para apoyo mutuo y amistad",
+    noResults: "No se encontraron resultados",
+    storyShared: "¡Tu hermosa historia ha sido compartida con la comunidad! 💕",
+    buddyRequested: "¡Solicitud de compañero enviada!",
+    backToForums: "← Volver a los Foros",
+    noPostsYet: "Aún no hay publicaciones. ¡Sé el primero en iniciar una conversación significativa!",
+    errorSharing: "No se pudo compartir tu historia. Por favor, inténtalo de nuevo con amor.",
+    errorLike: "No se pudo actualizar el me gusta. Por favor, inténtalo de nuevo.",
+    errorHelpful: "No se pudo actualizar útil. Por favor, inténtalo de nuevo.",
+    categories: {
+      long_distance: "Distancia Larga",
+      premarital: "Pre-matrimonial",
+      marriage: "Matrimonio",
+      dating: "Citas",
+      lgbtq: "LGBTQ+",
+      parenting: "Paternidad",
+      conflict_resolution: "Resolución de Conflictos",
+      intimacy: "Intimidad",
+      communication: "Comunicación",
+      general: "General"
+    }
+  },
+  fr: {
+    title: "Communauté",
+    subtitle: "Connectez-vous, partagez et grandissez ensemble avec d'autres couples",
+    forums: "Forums de Discussion",
+    stories: "Histoires de Succès",
+    buddies: "Système de Compagnons",
+    searchPlaceholder: "Rechercher dans la communauté...",
+    createPost: "Créer une Publication",
+    shareStory: "Partagez Votre Histoire d'Amour",
+    findBuddy: "Trouver un Compagnon",
+    forumsDesc: "Rejoignez des discussions sincères sur des sujets qui comptent pour votre relation",
+    storiesDesc: "Lisez et partagez de beaux parcours relationnels qui inspirent l'amour",
+    buddiesDesc: "Connectez-vous avec d'autres couples pour un soutien mutuel et l'amitié",
+    noResults: "Aucun résultat trouvé",
+    storyShared: "Votre belle histoire a été partagée avec la communauté ! 💕",
+    buddyRequested: "Demande de compagnon envoyée !",
+    backToForums: "← Retour aux Forums",
+    noPostsYet: "Pas encore de publications. Soyez le premier à démarrer une discussion significative !",
+    errorSharing: "Échec du partage de votre histoire. Veuillez réessayer avec amour.",
+    errorLike: "Échec de la mise à jour du j'aime. Veuillez réessayer.",
+    errorHelpful: "Échec de la mise à jour utile. Veuillez réessayer.",
+    categories: {
+      long_distance: "Relation à Distance",
+      premarital: "Pré-matrimonial",
+      marriage: "Mariage",
+      dating: "Rencontres",
+      lgbtq: "LGBTQ+",
+      parenting: "Parentalité",
+      conflict_resolution: "Résolution de Conflits",
+      intimacy: "Intimité",
+      communication: "Communication",
+      general: "Général"
+    }
+  },
+  it: {
+    title: "Comunità",
+    subtitle: "Connettiti, condividi e cresci insieme ad altre coppie",
+    forums: "Forum di Discussione",
+    stories: "Storie di Successo",
+    buddies: "Sistema di Compagni",
+    searchPlaceholder: "Cerca nella comunità...",
+    createPost: "Crea Post",
+    shareStory: "Condividi la Tua Storia d'Amore",
+    findBuddy: "Trova un Compagno",
+    forumsDesc: "Unisciti a discussioni sincere su argomenti che contano per la tua relazione",
+    storiesDesc: "Leggi e condividi bellissimi viaggi di relazioni che ispirano l'amore",
+    buddiesDesc: "Connettiti con altre coppie per supporto reciproco e amicizia",
+    noResults: "Nessun risultato trovato",
+    storyShared: "La tua bellissima storia è stata condivisa con la comunità! 💕",
+    buddyRequested: "Richiesta di compagno inviata!",
+    backToForums: "← Torna ai Forum",
+    noPostsYet: "Nessun post ancora. Sii il primo a iniziare una discussione significativa!",
+    errorSharing: "Impossibile condividere la tua storia. Per favore, riprova con amore.",
+    errorLike: "Impossibile aggiornare il mi piace. Per favore, riprova.",
+    errorHelpful: "Impossibile aggiornare utile. Per favore, riprova.",
+    categories: {
+      long_distance: "Distanza Larga",
+      premarital: "Pre-matrimoniale",
+      marriage: "Matrimonio",
+      dating: "Appuntamenti",
+      lgbtq: "LGBTQ+",
+      parenting: "Genitorialità",
+      conflict_resolution: "Risoluzione dei Conflitti",
+      intimacy: "Intimità",
+      communication: "Comunicazione",
+      general: "Generale"
+    }
+  },
+  de: {
+    title: "Gemeinschaft",
+    subtitle: "Verbinde dich, teile und wachse gemeinsam mit anderen Paaren",
+    forums: "Diskussionsforen",
+    stories: "Erfolgsgeschichten",
+    buddies: "Buddy-System",
+    searchPlaceholder: "In der Gemeinschaft suchen...",
+    createPost: "Beitrag Erstellen",
+    shareStory: "Teile Deine Liebesgeschichte",
+    findBuddy: "Einen Buddy Finden",
+    forumsDesc: "Nimm an herzlichen Diskussionen über Themen teil, die für deine Beziehung wichtig sind",
+    storiesDesc: "Lies und teile wunderschöne Beziehungsreisen, die Liebe inspirieren",
+    buddiesDesc: "Verbinde dich mit anderen Paaren für gegenseitige Unterstützung und Freundschaft",
+    noResults: "Keine Ergebnisse gefunden",
+    storyShared: "Deine wunderschöne Geschichte wurde mit der Gemeinschaft geteilt! 💕",
+    buddyRequested: "Buddy-Anfrage gesendet!",
+    backToForums: "← Zurück zu den Foren",
+    noPostsYet: "Noch keine Beiträge. Sei der Erste, der eine bedeutsame Diskussion startet!",
+    errorSharing: "Geschichte konnte nicht geteilt werden. Bitte versuche es mit Liebe erneut.",
+    errorLike: "Like konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+    errorHelpful: "Hilfreich konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+    categories: {
+      long_distance: "Fernbeziehung",
+      premarital: "Voreheliche",
+      marriage: "Ehe",
+      dating: "Dating",
+      lgbtq: "LGBTQ+",
+      parenting: "Elternschaft",
+      conflict_resolution: "Konfliktlösung",
+      intimacy: "Intimität",
+      communication: "Kommunikation",
+      general: "Allgemein"
     }
   }
 };
@@ -70,12 +211,12 @@ export default function Community() {
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => Promise.resolve(null), // Base44 removed
   });
 
   const { data: forums = [] } = useQuery({
     queryKey: ['forums'],
-    queryFn: () => base44.entities.DiscussionForum.list(),
+    queryFn: () => Promise.resolve([]), // Base44 removed
     initialData: [],
   });
 
@@ -113,17 +254,14 @@ export default function Community() {
     queryKey: ['forumPosts', selectedForum?.id],
     queryFn: async () => {
       if (!selectedForum) return [];
-      return await base44.entities.ForumPost.filter({ forum_id: selectedForum.id });
+      return Promise.resolve([]); // Base44 removed
     },
     enabled: !!selectedForum,
     initialData: [],
   });
 
   const createStoryMutation = useMutation({
-    mutationFn: (data) => createStory({
-      ...data,
-      moderation_status: 'approved' // Auto-approve for now, change to 'pending' for moderation
-    }),
+    mutationFn: (data) => createStory(data), // Stories are auto-approved in the service
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stories'] });
       toast.success(t.storyShared);
@@ -131,7 +269,7 @@ export default function Community() {
     },
     onError: (error) => {
       console.error('Error creating story:', error);
-      toast.error('Failed to share story. Please try again.');
+      toast.error(t.errorSharing);
     }
   });
 
@@ -142,7 +280,7 @@ export default function Community() {
       queryClient.invalidateQueries({ queryKey: ['stories'] });
     } catch (error) {
       console.error('Error toggling like:', error);
-      toast.error('Failed to update like. Please try again.');
+      toast.error(t.errorLike);
     }
   };
 
@@ -153,7 +291,7 @@ export default function Community() {
       queryClient.invalidateQueries({ queryKey: ['stories'] });
     } catch (error) {
       console.error('Error toggling helpful:', error);
-      toast.error('Failed to update helpful. Please try again.');
+      toast.error(t.errorHelpful);
     }
   };
 
@@ -241,7 +379,7 @@ export default function Community() {
             {selectedForum ? (
               <div>
                 <Button onClick={() => setSelectedForum(null)} variant="outline" className="mb-6">
-                  ← Back to Forums
+                  {t.backToForums}
                 </Button>
                 <Card className="mb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                   <CardHeader>
@@ -265,7 +403,7 @@ export default function Community() {
                   {forumPosts.length === 0 && (
                     <div className="text-center py-12">
                       <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-600">No posts yet. Be the first to start a discussion!</p>
+                      <p className="text-gray-600">{t.noPostsYet}</p>
                     </div>
                   )}
                 </div>

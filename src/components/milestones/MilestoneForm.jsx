@@ -16,8 +16,8 @@ import { uploadMilestonePhotos } from "@/lib/milestonesService";
 
 const translations = {
   en: {
-    title: "Add Milestone",
-    editTitle: "Edit Milestone",
+    title: "Add a Milestone",
+    editTitle: "Edit Your Milestone",
     milestoneType: "Milestone Type",
     milestoneTitle: "Title",
     date: "Date",
@@ -28,7 +28,7 @@ const translations = {
     enableReminder: "Enable Reminder",
     uploadPhotos: "Upload Photos",
     cancel: "Cancel",
-    save: "Save Milestone",
+    save: "Save Your Milestone",
     types: {
       first_date: "First Date",
       first_kiss: "First Kiss",
@@ -42,15 +42,15 @@ const translations = {
       custom: "Custom Milestone"
     },
     placeholders: {
-      title: "e.g., Our First Date",
-      description: "Tell the story of this special moment...",
-      location: "e.g., Central Park, New York",
+      title: "e.g., Our Magical First Date",
+      description: "Tell the beautiful story of this precious moment that made your hearts flutter...",
+      location: "e.g., Central Park, New York - where love began",
       partnerEmail: "partner@example.com"
     }
   },
   es: {
-    title: "Agregar Hito",
-    editTitle: "Editar Hito",
+    title: "Agregar un Hito",
+    editTitle: "Editar Tu Hito",
     milestoneType: "Tipo de Hito",
     milestoneTitle: "Título",
     date: "Fecha",
@@ -61,7 +61,7 @@ const translations = {
     enableReminder: "Habilitar Recordatorio",
     uploadPhotos: "Subir Fotos",
     cancel: "Cancelar",
-    save: "Guardar Hito",
+    save: "Guardar Tu Hito",
     types: {
       first_date: "Primera Cita",
       first_kiss: "Primer Beso",
@@ -75,15 +75,15 @@ const translations = {
       custom: "Hito Personalizado"
     },
     placeholders: {
-      title: "ej., Nuestra Primera Cita",
-      description: "Cuenta la historia de este momento especial...",
-      location: "ej., Parque Central, Nueva York",
+      title: "ej., Nuestra Mágica Primera Cita",
+      description: "Cuenta la hermosa historia de este momento precioso que hizo latir vuestros corazones...",
+      location: "ej., Parque Central, Nueva York - donde comenzó el amor",
       partnerEmail: "pareja@ejemplo.com"
     }
   },
   fr: {
     title: "Ajouter un Jalon",
-    editTitle: "Modifier le Jalon",
+    editTitle: "Modifier Votre Jalon",
     milestoneType: "Type de Jalon",
     milestoneTitle: "Titre",
     date: "Date",
@@ -94,7 +94,7 @@ const translations = {
     enableReminder: "Activer le Rappel",
     uploadPhotos: "Télécharger des Photos",
     cancel: "Annuler",
-    save: "Enregistrer le Jalon",
+    save: "Enregistrer Votre Jalon",
     types: {
       first_date: "Premier Rendez-vous",
       first_kiss: "Premier Baiser",
@@ -108,15 +108,15 @@ const translations = {
       custom: "Jalon Personnalisé"
     },
     placeholders: {
-      title: "ex., Notre Premier Rendez-vous",
-      description: "Racontez l'histoire de ce moment spécial...",
-      location: "ex., Central Park, New York",
+      title: "ex., Notre Premier Rendez-vous Magique",
+      description: "Racontez la belle histoire de ce moment précieux qui a fait battre vos cœurs...",
+      location: "ex., Central Park, New York - où l'amour a commencé",
       partnerEmail: "partenaire@exemple.com"
     }
   },
   it: {
-    title: "Aggiungi Traguardo",
-    editTitle: "Modifica Traguardo",
+    title: "Aggiungi un Traguardo",
+    editTitle: "Modifica il Tuo Traguardo",
     milestoneType: "Tipo di Traguardo",
     milestoneTitle: "Titolo",
     date: "Data",
@@ -127,7 +127,7 @@ const translations = {
     enableReminder: "Abilita Promemoria",
     uploadPhotos: "Carica Foto",
     cancel: "Annulla",
-    save: "Salva Traguardo",
+    save: "Salva il Tuo Traguardo",
     types: {
       first_date: "Primo Appuntamento",
       first_kiss: "Primo Bacio",
@@ -141,15 +141,15 @@ const translations = {
       custom: "Traguardo Personalizzato"
     },
     placeholders: {
-      title: "es., Il Nostro Primo Appuntamento",
-      description: "Racconta la storia di questo momento speciale...",
-      location: "es., Central Park, New York",
+      title: "es., Il Nostro Primo Appuntamento Magico",
+      description: "Racconta la bellissima storia di questo momento prezioso che ha fatto battere i vostri cuori...",
+      location: "es., Central Park, New York - dove è iniziato l'amore",
       partnerEmail: "partner@esempio.com"
     }
   },
   de: {
-    title: "Meilenstein Hinzufügen",
-    editTitle: "Meilenstein Bearbeiten",
+    title: "Einen Meilenstein Hinzufügen",
+    editTitle: "Deinen Meilenstein Bearbeiten",
     milestoneType: "Meilenstein-Typ",
     milestoneTitle: "Titel",
     date: "Datum",
@@ -160,7 +160,7 @@ const translations = {
     enableReminder: "Erinnerung Aktivieren",
     uploadPhotos: "Fotos Hochladen",
     cancel: "Abbrechen",
-    save: "Meilenstein Speichern",
+    save: "Deinen Meilenstein Speichern",
     types: {
       first_date: "Erstes Date",
       first_kiss: "Erster Kuss",
@@ -174,9 +174,9 @@ const translations = {
       custom: "Benutzerdefinierter Meilenstein"
     },
     placeholders: {
-      title: "z.B., Unser Erstes Date",
-      description: "Erzähle die Geschichte dieses besonderen Moments...",
-      location: "z.B., Central Park, New York",
+      title: "z.B., Unser Magisches Erstes Date",
+      description: "Erzähle die wunderschöne Geschichte dieses kostbaren Moments, der eure Herzen höher schlagen ließ...",
+      location: "z.B., Central Park, New York - wo die Liebe begann",
       partnerEmail: "partner@beispiel.de"
     }
   }

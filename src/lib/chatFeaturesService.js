@@ -378,13 +378,14 @@ export const isMessagePinned = async (messageId, conversationId) => {
  * Forward a message to another conversation
  * @param {string} messageId - Original message ID
  * @param {string} toConversationId - Target conversation ID
+ * @param {string} toReceiverId - Optional: Receiver ID (will be determined if not provided)
  */
-export const forwardMessage = async (messageId, toConversationId) => {
+export const forwardMessage = async (messageId, toConversationId, toReceiverId = null) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    console.log('⏩ Forwarding message:', { messageId, toConversationId });
+    console.log('⏩ Forwarding message:', { messageId, toConversationId, toReceiverId });
 
     // Get the original message
     const { data: originalMessage, error: fetchError } = await supabase
@@ -396,17 +397,24 @@ export const forwardMessage = async (messageId, toConversationId) => {
     if (fetchError) throw fetchError;
 
     // Get the target conversation to find receiver
-    const { data: targetConv, error: convError } = await supabase
-      .from('conversations')
-      .select('user1_id, user2_id')
-      .eq('id', toConversationId)
-      .single();
+    let receiverId = toReceiverId;
+    if (!receiverId) {
+      const { data: targetConv, error: convError } = await supabase
+        .from('conversations')
+        .select('user1_id, user2_id')
+        .eq('id', toConversationId)
+        .single();
 
-    if (convError) throw convError;
+      if (convError) throw convError;
 
-    const receiverId = targetConv.user1_id === user.id ? targetConv.user2_id : targetConv.user1_id;
+      receiverId = targetConv.user1_id === user.id ? targetConv.user2_id : targetConv.user1_id;
+    }
 
-    // Create new message in target conversation
+    // Create new message in target conversation with forwarded indicator
+    const forwardedContent = originalMessage.content 
+      ? `Forwarded: ${originalMessage.content}`
+      : originalMessage.content;
+
     const { data: newMessage, error: insertError } = await supabase
       .from('messages')
       .insert({
@@ -414,10 +422,11 @@ export const forwardMessage = async (messageId, toConversationId) => {
         sender_id: user.id,
         receiver_id: receiverId,
         message_type: originalMessage.message_type,
-        content: originalMessage.content,
+        content: forwardedContent,
         file_url: originalMessage.file_url,
-        image_url: originalMessage.image_url,
-        audio_url: originalMessage.audio_url,
+        file_name: originalMessage.file_name,
+        file_size: originalMessage.file_size,
+        file_type: originalMessage.file_type,
         location_lat: originalMessage.location_lat,
         location_lng: originalMessage.location_lng,
         location_address: originalMessage.location_address,
@@ -442,9 +451,40 @@ export const forwardMessage = async (messageId, toConversationId) => {
     }
 
     console.log('✅ Message forwarded successfully');
-    return { success: true, newMessageId: newMessage.id };
+    return { success: true, newMessageId: newMessage.id, newMessage };
   } catch (error) {
     console.error('❌ Error forwarding message:', error);
+    throw error;
+  }
+};
+
+/**
+ * Forward a message to multiple conversations
+ * @param {string} messageId - Original message ID
+ * @param {Array<string>} conversationIds - Array of target conversation IDs
+ */
+export const forwardMessageToMultiple = async (messageId, conversationIds) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    console.log('⏩ Forwarding message to multiple conversations:', { messageId, conversationIds });
+
+    const results = [];
+    
+    for (const conversationId of conversationIds) {
+      try {
+        const result = await forwardMessage(messageId, conversationId);
+        results.push({ conversationId, success: true, ...result });
+      } catch (error) {
+        console.error(`❌ Error forwarding to conversation ${conversationId}:`, error);
+        results.push({ conversationId, success: false, error: error.message });
+      }
+    }
+
+    return { success: true, results };
+  } catch (error) {
+    console.error('❌ Error forwarding message to multiple:', error);
     throw error;
   }
 };
@@ -643,7 +683,7 @@ export const copyMessageContent = async (content) => {
 };
 
 /**
- * Get message info (metadata)
+ * Get message info (metadata) with full status tracking
  * @param {string} messageId - Message ID
  */
 export const getMessageInfo = async (messageId) => {
@@ -661,14 +701,21 @@ export const getMessageInfo = async (messageId) => {
     // Get sender info
     const { data: senderData } = await supabase
       .from('users')
-      .select('name, email')
+      .select('name, email, avatar_url')
       .eq('id', message.sender_id)
+      .single();
+
+    // Get receiver info
+    const { data: receiverData } = await supabase
+      .from('users')
+      .select('name, email, avatar_url')
+      .eq('id', message.receiver_id)
       .single();
 
     // Get reactions count
     const { data: reactions } = await supabase
       .from('message_reactions')
-      .select('emoji')
+      .select('emoji, user_id')
       .eq('message_id', messageId);
 
     // Check if starred
@@ -680,18 +727,69 @@ export const getMessageInfo = async (messageId) => {
     // Check if forwarded
     const { data: forwardData } = await supabase
       .from('forwarded_messages')
-      .select('original_message_id')
+      .select('original_message_id, forwarded_by, created_at')
       .eq('new_message_id', messageId)
       .single();
+
+    // Get reply context if this is a reply
+    let replyToMessage = null;
+    if (message.reply_to_id) {
+      const { data: replyMsg } = await supabase
+        .from('messages')
+        .select('id, content, message_type, sender_id, created_at')
+        .eq('id', message.reply_to_id)
+        .single();
+      
+      if (replyMsg) {
+        const { data: replySender } = await supabase
+          .from('users')
+          .select('name, email')
+          .eq('id', replyMsg.sender_id)
+          .single();
+        
+        replyToMessage = {
+          id: replyMsg.id,
+          content: replyMsg.content,
+          message_type: replyMsg.message_type,
+          sender_name: replySender?.name || replySender?.email || 'Unknown',
+          created_at: replyMsg.created_at,
+        };
+      }
+    }
+
+    // Determine message status
+    let status = 'sent';
+    if (message.delivered_at) {
+      status = 'delivered';
+    }
+    if (message.read_at) {
+      status = 'read';
+    }
 
     const info = {
       ...message,
       sender_name: senderData?.name || senderData?.email || 'Unknown',
+      sender_avatar: senderData?.avatar_url,
+      receiver_name: receiverData?.name || receiverData?.email || 'Unknown',
+      receiver_avatar: receiverData?.avatar_url,
       reactions_count: reactions?.length || 0,
+      reactions: reactions || [],
       is_starred: isStarred,
       is_pinned: isPinned,
       is_forwarded: !!forwardData,
       original_message_id: forwardData?.original_message_id,
+      forwarded_at: forwardData?.created_at,
+      forwarded_by: forwardData?.forwarded_by,
+      reply_to_message: replyToMessage,
+      // Status tracking timestamps
+      sent_at: message.created_at,
+      delivered_at: message.delivered_at,
+      read_at: message.read_at,
+      status: status,
+      // Formatted timestamps for display
+      sent_at_formatted: message.created_at ? new Date(message.created_at).toLocaleString() : null,
+      delivered_at_formatted: message.delivered_at ? new Date(message.delivered_at).toLocaleString() : null,
+      read_at_formatted: message.read_at ? new Date(message.read_at).toLocaleString() : null,
     };
 
     console.log('✅ Message info:', info);

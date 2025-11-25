@@ -1,61 +1,45 @@
-import { base44 } from './base44Client';
+// Base44 has been removed - all entities now use Supabase
+// This file is kept for backwards compatibility but exports empty stubs
 
+const createStub = (name) => ({
+  list: () => Promise.reject(new Error(`Base44 removed. ${name} now uses Supabase.`)),
+  filter: () => Promise.reject(new Error(`Base44 removed. ${name} now uses Supabase.`)),
+  create: () => Promise.reject(new Error(`Base44 removed. ${name} now uses Supabase.`)),
+  update: () => Promise.reject(new Error(`Base44 removed. ${name} now uses Supabase.`)),
+  delete: () => Promise.reject(new Error(`Base44 removed. ${name} now uses Supabase.`)),
+  get: () => Promise.reject(new Error(`Base44 removed. ${name} now uses Supabase.`)),
+});
 
-export const WaitlistSignup = base44.entities.WaitlistSignup;
+export const WaitlistSignup = createStub('WaitlistSignup');
+export const CoupleMembership = createStub('CoupleMembership');
+export const InfluencerProfile = createStub('InfluencerProfile');
+export const ProfessionalProfile = createStub('ProfessionalProfile');
+export const TherapistProfile = createStub('TherapistProfile');
+export const CoupleProfile = createStub('CoupleProfile');
+export const Memory = createStub('Memory');
+export const Milestone = createStub('Milestone');
+export const ScheduledLoveNote = createStub('ScheduledLoveNote');
+export const RelationshipGoal = createStub('RelationshipGoal');
+export const SharedJournal = createStub('SharedJournal');
+export const CooperativeGame = createStub('CooperativeGame');
+export const ActivityProgress = createStub('ActivityProgress');
+export const UserPreferences = createStub('UserPreferences');
+export const Badge = createStub('Badge');
+export const CoupleLeaderboard = createStub('CoupleLeaderboard');
+export const CalendarEvent = createStub('CalendarEvent');
+export const GamificationPoints = createStub('GamificationPoints');
+export const PremiumReward = createStub('PremiumReward');
+export const ContestParticipant = createStub('ContestParticipant');
+export const ContestWinner = createStub('ContestWinner');
+export const SentLoveNote = createStub('SentLoveNote');
+export const CustomDateIdea = createStub('CustomDateIdea');
+export const DiscussionForum = createStub('DiscussionForum');
+export const ForumPost = createStub('ForumPost');
+export const BuddyMatch = createStub('BuddyMatch');
+export const CommunityStory = createStub('CommunityStory');
 
-export const CoupleMembership = base44.entities.CoupleMembership;
-
-export const InfluencerProfile = base44.entities.InfluencerProfile;
-
-export const ProfessionalProfile = base44.entities.ProfessionalProfile;
-
-export const TherapistProfile = base44.entities.TherapistProfile;
-
-export const CoupleProfile = base44.entities.CoupleProfile;
-
-export const Memory = base44.entities.Memory;
-
-export const Milestone = base44.entities.Milestone;
-
-export const ScheduledLoveNote = base44.entities.ScheduledLoveNote;
-
-export const RelationshipGoal = base44.entities.RelationshipGoal;
-
-export const SharedJournal = base44.entities.SharedJournal;
-
-export const CooperativeGame = base44.entities.CooperativeGame;
-
-export const ActivityProgress = base44.entities.ActivityProgress;
-
-export const UserPreferences = base44.entities.UserPreferences;
-
-export const Badge = base44.entities.Badge;
-
-export const CoupleLeaderboard = base44.entities.CoupleLeaderboard;
-
-export const CalendarEvent = base44.entities.CalendarEvent;
-
-export const GamificationPoints = base44.entities.GamificationPoints;
-
-export const PremiumReward = base44.entities.PremiumReward;
-
-export const ContestParticipant = base44.entities.ContestParticipant;
-
-export const ContestWinner = base44.entities.ContestWinner;
-
-export const SentLoveNote = base44.entities.SentLoveNote;
-
-export const CustomDateIdea = base44.entities.CustomDateIdea;
-
-export const DiscussionForum = base44.entities.DiscussionForum;
-
-export const ForumPost = base44.entities.ForumPost;
-
-export const BuddyMatch = base44.entities.BuddyMatch;
-
-export const CommunityStory = base44.entities.CommunityStory;
-
-
-
-// auth sdk:
-export const User = base44.auth;
+// Auth stub
+export const User = {
+  me: () => Promise.reject(new Error('Base44 removed. Use Supabase auth instead.')),
+  updateMe: () => Promise.reject(new Error('Base44 removed. Use Supabase auth instead.')),
+};

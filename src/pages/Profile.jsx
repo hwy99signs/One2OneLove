@@ -75,7 +75,49 @@ const translations = {
         dating: "Dating",
         engaged: "Engaged",
         married: "Married"
-      }
+      },
+      profileComingSoon: "Profile coming soon",
+      profileComingSoonDesc: "Profile management is currently available for regular members only. Please use your dedicated portal to update your professional details.",
+      backToHome: "Back to Home",
+      pleaseSignIn: "Please sign in to view your profile",
+      signIn: "Sign In",
+      profileCompletion: "Profile Completion",
+      complete: "Complete",
+      changeProfilePicture: "Change profile picture",
+      enterLocation: "Enter location",
+      bio: "Bio",
+      tellUsAboutYourself: "Tell us about yourself...",
+      selectStatus: "Select status",
+      partnersEmail: "Partner's email",
+      selectLoveLanguage: "Select love language",
+      quickActionsTitle: "Quick Actions",
+      recentActivityTitle: "Recent Activity",
+      noRecentActivity: "No recent activity",
+      createMemory: "Create Memory",
+      activeGoalsTitle: "Active Goals",
+      noActiveGoalsYet: "No active goals yet",
+      setYourFirstGoal: "Set Your First Goal",
+      loadingGoals: "Loading goals...",
+      errorLoadingGoals: "Error loading goals",
+      viewGoals: "View Goals",
+      viewAllGoals: "View All {count} Goals",
+      percentComplete: "{percent}% complete",
+      preferencesStyle: "Preferences & Style",
+      preferredDateFrequency: "Preferred Date Frequency",
+      communicationStyle: "Communication Style",
+      conflictResolution: "Conflict Resolution",
+      interestsHobbies: "Interests & Hobbies",
+      suggestedImprovements: "Suggested Improvements",
+      addPersonalBio: "Add a personal bio",
+      addPersonalBioDesc: "Share more about yourself",
+      connectWithPartner: "Connect with your partner",
+      connectWithPartnerDesc: "Link your profiles together",
+      setRelationshipGoals: "Set relationship goals",
+      setRelationshipGoalsDesc: "Define what you want to achieve",
+      addYourInterests: "Add your interests",
+      addYourInterestsDesc: "Help us personalize your experience",
+      completePreferences: "Complete preferences",
+      completePreferencesDesc: "Set communication and date preferences"
     }
   },
   es: {
@@ -135,7 +177,49 @@ const translations = {
         dating: "Saliendo",
         engaged: "Comprometido/a",
         married: "Casado/a"
-      }
+      },
+      profileComingSoon: "Perfil próximamente",
+      profileComingSoonDesc: "La gestión de perfiles está disponible actualmente solo para miembros regulares. Por favor, use su portal dedicado para actualizar sus detalles profesionales.",
+      backToHome: "Volver al Inicio",
+      pleaseSignIn: "Por favor, inicie sesión para ver su perfil",
+      signIn: "Iniciar Sesión",
+      profileCompletion: "Finalización del Perfil",
+      complete: "Completo",
+      changeProfilePicture: "Cambiar foto de perfil",
+      enterLocation: "Ingrese ubicación",
+      bio: "Biografía",
+      tellUsAboutYourself: "Cuéntanos sobre ti...",
+      selectStatus: "Seleccionar estado",
+      partnersEmail: "Correo del compañero",
+      selectLoveLanguage: "Seleccionar lenguaje del amor",
+      quickActionsTitle: "Acciones Rápidas",
+      recentActivityTitle: "Actividad Reciente",
+      noRecentActivity: "No hay actividad reciente",
+      createMemory: "Crear Recuerdo",
+      activeGoalsTitle: "Metas Activas",
+      noActiveGoalsYet: "Aún no hay metas activas",
+      setYourFirstGoal: "Establece Tu Primera Meta",
+      loadingGoals: "Cargando metas...",
+      errorLoadingGoals: "Error al cargar metas",
+      viewGoals: "Ver Metas",
+      viewAllGoals: "Ver Todas las {count} Metas",
+      percentComplete: "{percent}% completo",
+      preferencesStyle: "Preferencias y Estilo",
+      preferredDateFrequency: "Frecuencia de Citas Preferida",
+      communicationStyle: "Estilo de Comunicación",
+      conflictResolution: "Resolución de Conflictos",
+      interestsHobbies: "Intereses y Pasatiempos",
+      suggestedImprovements: "Mejoras Sugeridas",
+      addPersonalBio: "Agregar una biografía personal",
+      addPersonalBioDesc: "Comparte más sobre ti",
+      connectWithPartner: "Conecta con tu pareja",
+      connectWithPartnerDesc: "Vincula tus perfiles juntos",
+      setRelationshipGoals: "Establecer metas de relación",
+      setRelationshipGoalsDesc: "Define lo que quieres lograr",
+      addYourInterests: "Agrega tus intereses",
+      addYourInterestsDesc: "Ayúdanos a personalizar tu experiencia",
+      completePreferences: "Completar preferencias",
+      completePreferencesDesc: "Establece preferencias de comunicación y citas"
     }
   },
   fr: {
@@ -195,7 +279,49 @@ const translations = {
         dating: "En Couple",
         engaged: "Fiancé(e)",
         married: "Marié(e)"
-      }
+      },
+      profileComingSoon: "Profil à venir",
+      profileComingSoonDesc: "La gestion des profils est actuellement disponible uniquement pour les membres réguliers. Veuillez utiliser votre portail dédié pour mettre à jour vos détails professionnels.",
+      backToHome: "Retour à l'Accueil",
+      pleaseSignIn: "Veuillez vous connecter pour voir votre profil",
+      signIn: "Se Connecter",
+      profileCompletion: "Achèvement du Profil",
+      complete: "Complet",
+      changeProfilePicture: "Changer la photo de profil",
+      enterLocation: "Entrez l'emplacement",
+      bio: "Biographie",
+      tellUsAboutYourself: "Parlez-nous de vous...",
+      selectStatus: "Sélectionner le statut",
+      partnersEmail: "E-mail du partenaire",
+      selectLoveLanguage: "Sélectionner le langage d'amour",
+      quickActionsTitle: "Actions Rapides",
+      recentActivityTitle: "Activité Récente",
+      noRecentActivity: "Aucune activité récente",
+      createMemory: "Créer un Souvenir",
+      activeGoalsTitle: "Objectifs Actifs",
+      noActiveGoalsYet: "Aucun objectif actif pour le moment",
+      setYourFirstGoal: "Définir Votre Premier Objectif",
+      loadingGoals: "Chargement des objectifs...",
+      errorLoadingGoals: "Erreur lors du chargement des objectifs",
+      viewGoals: "Voir les Objectifs",
+      viewAllGoals: "Voir Tous les {count} Objectifs",
+      percentComplete: "{percent}% complété",
+      preferencesStyle: "Préférences et Style",
+      preferredDateFrequency: "Fréquence de Rendez-vous Préférée",
+      communicationStyle: "Style de Communication",
+      conflictResolution: "Résolution des Conflits",
+      interestsHobbies: "Intérêts et Passe-temps",
+      suggestedImprovements: "Améliorations Suggérées",
+      addPersonalBio: "Ajouter une biographie personnelle",
+      addPersonalBioDesc: "Partagez-en plus sur vous",
+      connectWithPartner: "Connectez-vous avec votre partenaire",
+      connectWithPartnerDesc: "Liez vos profils ensemble",
+      setRelationshipGoals: "Définir des objectifs de relation",
+      setRelationshipGoalsDesc: "Définissez ce que vous voulez accomplir",
+      addYourInterests: "Ajoutez vos intérêts",
+      addYourInterestsDesc: "Aidez-nous à personnaliser votre expérience",
+      completePreferences: "Compléter les préférences",
+      completePreferencesDesc: "Définissez les préférences de communication et de rendez-vous"
     }
   },
   it: {
@@ -255,7 +381,49 @@ const translations = {
         dating: "Frequentazione",
         engaged: "Fidanzato/a",
         married: "Sposato/a"
-      }
+      },
+      profileComingSoon: "Profilo in arrivo",
+      profileComingSoonDesc: "La gestione del profilo è attualmente disponibile solo per i membri regolari. Si prega di utilizzare il portale dedicato per aggiornare i dettagli professionali.",
+      backToHome: "Torna alla Home",
+      pleaseSignIn: "Accedi per visualizzare il tuo profilo",
+      signIn: "Accedi",
+      profileCompletion: "Completamento Profilo",
+      complete: "Completo",
+      changeProfilePicture: "Cambia foto del profilo",
+      enterLocation: "Inserisci posizione",
+      bio: "Biografia",
+      tellUsAboutYourself: "Raccontaci di te...",
+      selectStatus: "Seleziona stato",
+      partnersEmail: "Email del partner",
+      selectLoveLanguage: "Seleziona linguaggio dell'amore",
+      quickActionsTitle: "Azioni Rapide",
+      recentActivityTitle: "Attività Recente",
+      noRecentActivity: "Nessuna attività recente",
+      createMemory: "Crea Ricordo",
+      activeGoalsTitle: "Obiettivi Attivi",
+      noActiveGoalsYet: "Nessun obiettivo attivo ancora",
+      setYourFirstGoal: "Imposta il Tuo Primo Obiettivo",
+      loadingGoals: "Caricamento obiettivi...",
+      errorLoadingGoals: "Errore nel caricamento degli obiettivi",
+      viewGoals: "Visualizza Obiettivi",
+      viewAllGoals: "Visualizza Tutti i {count} Obiettivi",
+      percentComplete: "{percent}% completato",
+      preferencesStyle: "Preferenze e Stile",
+      preferredDateFrequency: "Frequenza Appuntamenti Preferita",
+      communicationStyle: "Stile di Comunicazione",
+      conflictResolution: "Risoluzione dei Conflitti",
+      interestsHobbies: "Interessi e Hobby",
+      suggestedImprovements: "Miglioramenti Suggeriti",
+      addPersonalBio: "Aggiungi una biografia personale",
+      addPersonalBioDesc: "Condividi di più su di te",
+      connectWithPartner: "Connettiti con il tuo partner",
+      connectWithPartnerDesc: "Collega i tuoi profili insieme",
+      setRelationshipGoals: "Imposta obiettivi di relazione",
+      setRelationshipGoalsDesc: "Definisci cosa vuoi raggiungere",
+      addYourInterests: "Aggiungi i tuoi interessi",
+      addYourInterestsDesc: "Aiutaci a personalizzare la tua esperienza",
+      completePreferences: "Completa le preferenze",
+      completePreferencesDesc: "Imposta le preferenze di comunicazione e appuntamenti"
     }
   },
   de: {
@@ -315,7 +483,49 @@ const translations = {
         dating: "Dating",
         engaged: "Verlobt",
         married: "Verheiratet"
-      }
+      },
+      profileComingSoon: "Profil kommt bald",
+      profileComingSoonDesc: "Die Profilverwaltung ist derzeit nur für reguläre Mitglieder verfügbar. Bitte verwenden Sie Ihr dediziertes Portal, um Ihre beruflichen Details zu aktualisieren.",
+      backToHome: "Zurück zur Startseite",
+      pleaseSignIn: "Bitte melden Sie sich an, um Ihr Profil anzuzeigen",
+      signIn: "Anmelden",
+      profileCompletion: "Profilvollständigkeit",
+      complete: "Vollständig",
+      changeProfilePicture: "Profilbild ändern",
+      enterLocation: "Standort eingeben",
+      bio: "Biografie",
+      tellUsAboutYourself: "Erzählen Sie uns von sich...",
+      selectStatus: "Status auswählen",
+      partnersEmail: "E-Mail des Partners",
+      selectLoveLanguage: "Liebessprache auswählen",
+      quickActionsTitle: "Schnellaktionen",
+      recentActivityTitle: "Letzte Aktivität",
+      noRecentActivity: "Keine letzte Aktivität",
+      createMemory: "Erinnerung Erstellen",
+      activeGoalsTitle: "Aktive Ziele",
+      noActiveGoalsYet: "Noch keine aktiven Ziele",
+      setYourFirstGoal: "Setzen Sie Ihr Erstes Ziel",
+      loadingGoals: "Ziele werden geladen...",
+      errorLoadingGoals: "Fehler beim Laden der Ziele",
+      viewGoals: "Ziele Anzeigen",
+      viewAllGoals: "Alle {count} Ziele Anzeigen",
+      percentComplete: "{percent}% abgeschlossen",
+      preferencesStyle: "Präferenzen und Stil",
+      preferredDateFrequency: "Bevorzugte Date-Häufigkeit",
+      communicationStyle: "Kommunikationsstil",
+      conflictResolution: "Konfliktlösung",
+      interestsHobbies: "Interessen und Hobbys",
+      suggestedImprovements: "Vorgeschlagene Verbesserungen",
+      addPersonalBio: "Persönliche Biografie hinzufügen",
+      addPersonalBioDesc: "Teilen Sie mehr über sich mit",
+      connectWithPartner: "Mit Ihrem Partner verbinden",
+      connectWithPartnerDesc: "Verknüpfen Sie Ihre Profile",
+      setRelationshipGoals: "Beziehungsziele setzen",
+      setRelationshipGoalsDesc: "Definieren Sie, was Sie erreichen möchten",
+      addYourInterests: "Fügen Sie Ihre Interessen hinzu",
+      addYourInterestsDesc: "Helfen Sie uns, Ihre Erfahrung zu personalisieren",
+      completePreferences: "Präferenzen vervollständigen",
+      completePreferencesDesc: "Legen Sie Kommunikations- und Date-Präferenzen fest"
     }
   },
   nl: {
@@ -375,7 +585,49 @@ const translations = {
         dating: "Dating",
         engaged: "Verloofd",
         married: "Getrouwd"
-      }
+      },
+      profileComingSoon: "Profiel komt binnenkort",
+      profileComingSoonDesc: "Profielbeheer is momenteel alleen beschikbaar voor reguliere leden. Gebruik uw toegewijde portaal om uw professionele gegevens bij te werken.",
+      backToHome: "Terug naar Home",
+      pleaseSignIn: "Log in om uw profiel te bekijken",
+      signIn: "Inloggen",
+      profileCompletion: "Profiel Voltooiing",
+      complete: "Voltooid",
+      changeProfilePicture: "Profielafbeelding wijzigen",
+      enterLocation: "Locatie invoeren",
+      bio: "Biografie",
+      tellUsAboutYourself: "Vertel ons over uzelf...",
+      selectStatus: "Status selecteren",
+      partnersEmail: "E-mail van partner",
+      selectLoveLanguage: "Liefdetaal selecteren",
+      quickActionsTitle: "Snelle Acties",
+      recentActivityTitle: "Recente Activiteit",
+      noRecentActivity: "Geen recente activiteit",
+      createMemory: "Herinnering Maken",
+      activeGoalsTitle: "Actieve Doelen",
+      noActiveGoalsYet: "Nog geen actieve doelen",
+      setYourFirstGoal: "Stel Uw Eerste Doel In",
+      loadingGoals: "Doelen laden...",
+      errorLoadingGoals: "Fout bij het laden van doelen",
+      viewGoals: "Doelen Bekijken",
+      viewAllGoals: "Bekijk Alle {count} Doelen",
+      percentComplete: "{percent}% voltooid",
+      preferencesStyle: "Voorkeuren en Stijl",
+      preferredDateFrequency: "Gewenste Date Frequentie",
+      communicationStyle: "Communicatiestijl",
+      conflictResolution: "Conflictoplossing",
+      interestsHobbies: "Interesses en Hobby's",
+      suggestedImprovements: "Voorgestelde Verbeteringen",
+      addPersonalBio: "Persoonlijke biografie toevoegen",
+      addPersonalBioDesc: "Deel meer over uzelf",
+      connectWithPartner: "Verbinden met uw partner",
+      connectWithPartnerDesc: "Koppel uw profielen samen",
+      setRelationshipGoals: "Relatiedoelen instellen",
+      setRelationshipGoalsDesc: "Definieer wat u wilt bereiken",
+      addYourInterests: "Voeg uw interesses toe",
+      addYourInterestsDesc: "Help ons uw ervaring te personaliseren",
+      completePreferences: "Voorkeuren voltooien",
+      completePreferencesDesc: "Stel communicatie- en date-voorkeuren in"
     }
   },
   pt: {
@@ -435,7 +687,49 @@ const translations = {
         dating: "Namorando",
         engaged: "Noivo(a)",
         married: "Casado(a)"
-      }
+      },
+      profileComingSoon: "Perfil em breve",
+      profileComingSoonDesc: "O gerenciamento de perfil está atualmente disponível apenas para membros regulares. Por favor, use seu portal dedicado para atualizar seus detalhes profissionais.",
+      backToHome: "Voltar para Home",
+      pleaseSignIn: "Por favor, faça login para ver seu perfil",
+      signIn: "Entrar",
+      profileCompletion: "Conclusão do Perfil",
+      complete: "Completo",
+      changeProfilePicture: "Alterar foto do perfil",
+      enterLocation: "Digite a localização",
+      bio: "Biografia",
+      tellUsAboutYourself: "Conte-nos sobre você...",
+      selectStatus: "Selecionar status",
+      partnersEmail: "E-mail do parceiro",
+      selectLoveLanguage: "Selecionar linguagem do amor",
+      quickActionsTitle: "Ações Rápidas",
+      recentActivityTitle: "Atividade Recente",
+      noRecentActivity: "Nenhuma atividade recente",
+      createMemory: "Criar Memória",
+      activeGoalsTitle: "Metas Ativas",
+      noActiveGoalsYet: "Ainda não há metas ativas",
+      setYourFirstGoal: "Defina Sua Primeira Meta",
+      loadingGoals: "Carregando metas...",
+      errorLoadingGoals: "Erro ao carregar metas",
+      viewGoals: "Ver Metas",
+      viewAllGoals: "Ver Todas as {count} Metas",
+      percentComplete: "{percent}% completo",
+      preferencesStyle: "Preferências e Estilo",
+      preferredDateFrequency: "Frequência de Encontros Preferida",
+      communicationStyle: "Estilo de Comunicação",
+      conflictResolution: "Resolução de Conflitos",
+      interestsHobbies: "Interesses e Hobbies",
+      suggestedImprovements: "Melhorias Sugeridas",
+      addPersonalBio: "Adicionar uma biografia pessoal",
+      addPersonalBioDesc: "Compartilhe mais sobre você",
+      connectWithPartner: "Conectar com seu parceiro",
+      connectWithPartnerDesc: "Vincule seus perfis juntos",
+      setRelationshipGoals: "Definir metas de relacionamento",
+      setRelationshipGoalsDesc: "Defina o que você quer alcançar",
+      addYourInterests: "Adicione seus interesses",
+      addYourInterestsDesc: "Ajude-nos a personalizar sua experiência",
+      completePreferences: "Completar preferências",
+      completePreferencesDesc: "Defina preferências de comunicação e encontros"
     }
   }
 };
@@ -482,7 +776,7 @@ function ActiveGoalsCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="w-5 h-5" />
-          Active Goals
+          {t.profile.activeGoalsTitle}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -491,18 +785,18 @@ function ActiveGoalsCard() {
             <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Target className="w-10 h-10 text-gray-300 animate-pulse" />
             </div>
-            <p className="text-gray-500">Loading goals...</p>
+            <p className="text-gray-500">{t.profile.loadingGoals}</p>
           </div>
         ) : error ? (
           <div className="text-center py-8">
             <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Target className="w-10 h-10 text-gray-300" />
             </div>
-            <p className="text-red-500 mb-4">Error loading goals</p>
+            <p className="text-red-500 mb-4">{t.profile.errorLoadingGoals}</p>
             <p className="text-sm text-gray-400 mb-4">{error.message}</p>
             <Link to={createPageUrl("RelationshipGoals")}>
               <Button variant="outline" className="rounded-lg">
-                View Goals
+                {t.profile.viewGoals}
               </Button>
             </Link>
           </div>
@@ -511,10 +805,10 @@ function ActiveGoalsCard() {
             <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Target className="w-10 h-10 text-gray-300" />
             </div>
-            <p className="text-gray-500 mb-4">No active goals yet</p>
+            <p className="text-gray-500 mb-4">{t.profile.noActiveGoalsYet}</p>
             <Link to={createPageUrl("RelationshipGoals")}>
               <Button variant="outline" className="rounded-lg">
-                Set Your First Goal
+                {t.profile.setYourFirstGoal}
               </Button>
             </Link>
           </div>
@@ -530,7 +824,7 @@ function ActiveGoalsCard() {
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 mb-1">{goal.title}</h4>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span>{goal.progress}% complete</span>
+                      <span>{t.profile.percentComplete.replace('{percent}', goal.progress)}</span>
                       <span>•</span>
                       <span>{new Date(goal.target_date).toLocaleDateString()}</span>
                     </div>
@@ -544,10 +838,10 @@ function ActiveGoalsCard() {
                 </div>
               </Link>
             ))}
-            {goals.length > 3 && (
+            {activeGoals.length > 3 && (
               <Link to={createPageUrl("RelationshipGoals")}>
                 <Button variant="outline" className="w-full rounded-lg mt-2">
-                  View All {goals.length} Goals
+                  {t.profile.viewAllGoals.replace('{count}', activeGoals.length)}
                 </Button>
               </Link>
             )}
@@ -673,7 +967,9 @@ export default function Profile() {
     }
   };
 
-  if (isLoading) {
+  // Show loading only if we have no user data at all (not just loading state)
+  // This allows the page to render with basic user data even if profile fetch is slow
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -688,9 +984,9 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Please sign in to view your profile</p>
+          <p className="text-gray-600 mb-4">{t.profile.pleaseSignIn}</p>
           <Link to={createPageUrl("SignIn")}>
-            <Button>Sign In</Button>
+            <Button>{t.profile.signIn}</Button>
           </Link>
         </div>
       </div>
@@ -702,13 +998,13 @@ export default function Profile() {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
         <div className="max-w-lg bg-white rounded-3xl shadow-xl p-8 text-center">
           <Heart className="w-10 h-10 text-pink-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile coming soon</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.profile.profileComingSoon}</h2>
           <p className="text-gray-600 mb-6">
-            Profile management is currently available for regular members only. Please use your dedicated portal to update your professional details.
+            {t.profile.profileComingSoonDesc}
           </p>
           <Link to={createPageUrl("Home")}>
             <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-              Back to Home
+              {t.profile.backToHome}
             </Button>
           </Link>
         </div>
@@ -776,12 +1072,12 @@ export default function Profile() {
   const totalFields = user?.profile_total_fields ?? 14;
 
   const quickActions = [
-    { icon: Heart, label: "Send Love Note", color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "LoveNotes" },
-    { icon: BookOpen, label: "My Diary", color: "bg-gradient-to-br from-purple-500 to-indigo-500", link: "SharedJournals" },
-    { icon: Target, label: "Relationship Goals", color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "RelationshipGoals" },
-    { icon: CalendarDays, label: "Our Calendar", color: "bg-gradient-to-br from-purple-500 to-indigo-500", link: "CouplesCalendar" },
-    { icon: Sparkles, label: "AI Creator", color: "bg-gradient-to-br from-blue-500 to-cyan-500", link: "AIContentCreator" },
-    { icon: Gift, label: "Date Ideas", color: "bg-gradient-to-br from-orange-500 to-yellow-500", link: "DateIdeas" }
+    { icon: Heart, label: t.profile.actions.sendLoveNote, color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "LoveNotes" },
+    { icon: BookOpen, label: t.profile.actions.createMemory, color: "bg-gradient-to-br from-purple-500 to-indigo-500", link: "SharedJournals" },
+    { icon: Target, label: t.profile.actions.calendar, color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "RelationshipGoals" },
+    { icon: CalendarDays, label: t.profile.actions.calendar, color: "bg-gradient-to-br from-purple-500 to-indigo-500", link: "CouplesCalendar" },
+    { icon: Sparkles, label: t.profile.actions.aiCreator, color: "bg-gradient-to-br from-blue-500 to-cyan-500", link: "AIContentCreator" },
+    { icon: Gift, label: t.profile.actions.dateIdeas, color: "bg-gradient-to-br from-orange-500 to-yellow-500", link: "DateIdeas" }
   ];
 
   const stats = [
@@ -841,7 +1137,7 @@ export default function Profile() {
               onClick={handleImageClick}
               disabled={uploadingImage}
               className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Change profile picture"
+              title={t.profile.changeProfilePicture}
             >
               {uploadingImage ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -874,7 +1170,7 @@ export default function Profile() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <User className="w-5 h-5 text-purple-600" />
-                    <span className="font-semibold text-gray-900">Profile Completion</span>
+                    <span className="font-semibold text-gray-900">{t.profile.profileCompletion}</span>
                   </div>
                   <span className="text-2xl font-bold text-purple-600">{completionPercentage}%</span>
                 </div>
@@ -888,7 +1184,7 @@ export default function Profile() {
                     />
                   </div>
                 </div>
-                <p className="text-sm text-gray-600">{completedFields}/{totalFields} Complete</p>
+                <p className="text-sm text-gray-600">{completedFields}/{totalFields} {t.profile.complete}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -900,7 +1196,7 @@ export default function Profile() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.profile.quickActionsTitle}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
@@ -932,7 +1228,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  Recent Activity
+                  {t.profile.recentActivityTitle}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -940,10 +1236,10 @@ export default function Profile() {
                   <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <CalendarIcon className="w-10 h-10 text-gray-300" />
                   </div>
-                  <p className="text-gray-500 mb-4">No recent activity</p>
+                  <p className="text-gray-500 mb-4">{t.profile.noRecentActivity}</p>
                   <Link to={createPageUrl("MemoryLane")}>
                     <Button variant="outline" className="rounded-lg">
-                      Create Memory
+                      {t.profile.createMemory}
                     </Button>
                   </Link>
                 </div>
@@ -961,7 +1257,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5" />
-                  Active Goals
+                  {t.profile.activeGoalsTitle}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -969,10 +1265,10 @@ export default function Profile() {
                   <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Target className="w-10 h-10 text-gray-300" />
                   </div>
-                  <p className="text-gray-500 mb-4">No active goals yet</p>
+                  <p className="text-gray-500 mb-4">{t.profile.noActiveGoalsYet}</p>
                   <Link to={createPageUrl("RelationshipGoals")}>
                     <Button variant="outline" className="rounded-lg">
-                      Set Your First Goal
+                      {t.profile.setYourFirstGoal}
                     </Button>
                   </Link>
                 </div>
@@ -992,7 +1288,7 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="w-5 h-5" />
-                Preferences & Style
+                {t.profile.preferencesStyle}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1001,36 +1297,36 @@ export default function Profile() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-purple-600 mb-3">
                     <CalendarIcon className="w-5 h-5" />
-                    <span className="font-semibold">Preferred Date Frequency</span>
+                    <span className="font-semibold">{t.profile.preferredDateFrequency}</span>
                   </div>
-                  <p className="text-gray-500 text-sm">{user?.date_frequency || "Not set"}</p>
+                  <p className="text-gray-500 text-sm">{user?.date_frequency || t.profile.notSet}</p>
                 </div>
 
                 {/* Communication Style */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-purple-600 mb-3">
                     <MessageCircle className="w-5 h-5" />
-                    <span className="font-semibold">Communication Style</span>
+                    <span className="font-semibold">{t.profile.communicationStyle}</span>
                   </div>
-                  <p className="text-gray-500 text-sm">{user?.communication_style || "Not set"}</p>
+                  <p className="text-gray-500 text-sm">{user?.communication_style || t.profile.notSet}</p>
                 </div>
 
                 {/* Conflict Resolution */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-purple-600 mb-3">
                     <Users className="w-5 h-5" />
-                    <span className="font-semibold">Conflict Resolution</span>
+                    <span className="font-semibold">{t.profile.conflictResolution}</span>
                   </div>
-                  <p className="text-gray-500 text-sm">{user?.conflict_resolution || "Not set"}</p>
+                  <p className="text-gray-500 text-sm">{user?.conflict_resolution || t.profile.notSet}</p>
                 </div>
 
                 {/* Interests & Hobbies */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-purple-600 mb-3">
                     <Gift className="w-5 h-5" />
-                    <span className="font-semibold">Interests & Hobbies</span>
+                    <span className="font-semibold">{t.profile.interestsHobbies}</span>
                   </div>
-                  <p className="text-gray-500 text-sm">{user?.interests || "Not set"}</p>
+                  <p className="text-gray-500 text-sm">{user?.interests || t.profile.notSet}</p>
                 </div>
               </div>
             </CardContent>
@@ -1048,7 +1344,7 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <Lightbulb className="w-5 h-5" />
-                Suggested Improvements
+                {t.profile.suggestedImprovements}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1061,8 +1357,8 @@ export default function Profile() {
                         <Target className="w-5 h-5 text-orange-600" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Add a personal bio</h4>
-                        <p className="text-sm text-gray-600">Share more about yourself</p>
+                        <h4 className="font-semibold text-gray-900 mb-1">{t.profile.addPersonalBio}</h4>
+                        <p className="text-sm text-gray-600">{t.profile.addPersonalBioDesc}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1077,8 +1373,8 @@ export default function Profile() {
                           <Target className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900 mb-1">Connect with your partner</h4>
-                          <p className="text-sm text-gray-600">Link your profiles together</p>
+                          <h4 className="font-semibold text-gray-900 mb-1">{t.profile.connectWithPartner}</h4>
+                          <p className="text-sm text-gray-600">{t.profile.connectWithPartnerDesc}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1094,8 +1390,8 @@ export default function Profile() {
                           <Target className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900 mb-1">Set relationship goals</h4>
-                          <p className="text-sm text-gray-600">Define what you want to achieve</p>
+                          <h4 className="font-semibold text-gray-900 mb-1">{t.profile.setRelationshipGoals}</h4>
+                          <p className="text-sm text-gray-600">{t.profile.setRelationshipGoalsDesc}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1111,8 +1407,8 @@ export default function Profile() {
                           <Target className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900 mb-1">Add your interests</h4>
-                          <p className="text-sm text-gray-600">Help us personalize your experience</p>
+                          <h4 className="font-semibold text-gray-900 mb-1">{t.profile.addYourInterests}</h4>
+                          <p className="text-sm text-gray-600">{t.profile.addYourInterestsDesc}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1128,8 +1424,8 @@ export default function Profile() {
                           <Target className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900 mb-1">Complete preferences</h4>
-                          <p className="text-sm text-gray-600">Set communication and date preferences</p>
+                          <h4 className="font-semibold text-gray-900 mb-1">{t.profile.completePreferences}</h4>
+                          <p className="text-sm text-gray-600">{t.profile.completePreferencesDesc}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1203,7 +1499,7 @@ export default function Profile() {
                       <Input
                         value={editData.location}
                         onChange={(e) => setEditData({...editData, location: e.target.value})}
-                        placeholder="Enter location"
+                        placeholder={t.profile.enterLocation}
                       />
                     ) : (
                       <p className="font-medium text-gray-900">{user?.location || t.profile.notSet}</p>
@@ -1215,12 +1511,12 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <BookOpen className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">Bio</p>
+                    <p className="text-sm text-gray-500">{t.profile.bio}</p>
                     {isEditing ? (
                       <Textarea
                         value={editData.bio}
                         onChange={(e) => setEditData({...editData, bio: e.target.value})}
-                        placeholder="Tell us about yourself..."
+                        placeholder={t.profile.tellUsAboutYourself}
                         rows={4}
                         className="resize-none"
                       />
@@ -1256,7 +1552,7 @@ export default function Profile() {
                         onValueChange={(value) => setEditData({...editData, relationship_status: value})}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
+                          <SelectValue placeholder={t.profile.selectStatus} />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(t.profile.statuses).map(([key, label]) => (
@@ -1279,7 +1575,7 @@ export default function Profile() {
                       <Input
                         value={editData.partner_email}
                         onChange={(e) => setEditData({...editData, partner_email: e.target.value})}
-                        placeholder="Partner's email"
+                        placeholder={t.profile.partnersEmail}
                         type="email"
                       />
                     ) : (
@@ -1314,7 +1610,7 @@ export default function Profile() {
                         onValueChange={(value) => setEditData({...editData, love_language: value})}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select love language" />
+                          <SelectValue placeholder={t.profile.selectLoveLanguage} />
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(t.profile.loveLanguages).map(([key, label]) => (

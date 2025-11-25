@@ -1,5 +1,5 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+// Base44 removed - using Supabase instead
 import { useQuery } from "@tanstack/react-query";
 
 import HeroSection from "../components/home/HeroSection";
@@ -20,29 +20,22 @@ export default function Home() {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      // Fetch monthly leaderboard
-      const monthlyLeaderboard = await base44.entities.ContestParticipant.filter({
-        contest_type: 'monthly_love_notes',
-        period: currentPeriod
-      });
-      const monthlyTopUser = monthlyLeaderboard.sort((a, b) => b.score - a.score)[0];
+      // Fetch monthly leaderboard - Base44 removed
+      const monthlyLeaderboard = [];
+      const monthlyTopUser = null;
 
-      // Fetch yearly leaderboard
-      const yearlyLeaderboard = await base44.entities.ContestParticipant.filter({
-        contest_type: 'yearly_engagement',
-        period: currentYear
-      });
-      const yearlyTopUser = yearlyLeaderboard.sort((a, b) => b.score - a.score)[0];
+      // Fetch yearly leaderboard - Base44 removed
+      const yearlyLeaderboard = [];
+      const yearlyTopUser = null;
 
-      // Calculate weekly stats from monthly data (simplified - in production you'd have separate weekly tracking)
-      const weeklyTopUser = monthlyTopUser; // Using monthly data as proxy
+      // Calculate weekly stats - Base44 removed
+      const weeklyTopUser = null;
 
-      // Get total users count as happy couples (simplified)
-      const allUsers = await base44.entities.User.list();
-      const happyCouples = Math.floor(allUsers.length / 2);
+      // Get total users count - Base44 removed
+      const happyCouples = 0;
 
-      // Get total notes count from all monthly participants
-      const totalNotes = monthlyLeaderboard.reduce((sum, p) => sum + (p.score || 0), 0);
+      // Get total notes count - Base44 removed
+      const totalNotes = 0;
 
       return {
         notesCreated: totalNotes,

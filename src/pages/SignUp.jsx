@@ -5,12 +5,9 @@ import { Heart, User, Users, Briefcase, Stethoscope, Mic, X, ArrowRight } from "
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import RegularUserForm from "@/components/signup/RegularUserForm";
-import SubscriptionSelection from "@/components/subscriptions/SubscriptionSelection";
 
 export default function SignUp() {
   const [selectedType, setSelectedType] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [showSubscription, setShowSubscription] = useState(false);
   const navigate = useNavigate();
 
   const signupTypes = [
@@ -52,42 +49,23 @@ export default function SignUp() {
     if (type.route) {
       navigate(type.route);
     } else if (type.id === 'regular') {
-      // For regular users, show subscription selection first
+      // For regular users, show registration form directly (no subscription selection)
       setSelectedType(type);
-      setShowSubscription(true);
     } else {
       setSelectedType(type);
     }
   };
 
-  const handlePlanSelection = (plan) => {
-    setSelectedPlan(plan);
-    setShowSubscription(false);
-  };
-
-  const handleBackFromSubscription = () => {
-    setShowSubscription(false);
+  const handleBackFromForm = () => {
     setSelectedType(null);
-    setSelectedPlan(null);
   };
 
-  // Show subscription selection first for regular users
-  if (selectedType && selectedType.id === "regular" && showSubscription) {
-    return (
-      <SubscriptionSelection 
-        onBack={handleBackFromSubscription}
-        onSelectPlan={handlePlanSelection}
-      />
-    );
-  }
-
-  // After plan selection, show the registration form
-  if (selectedType && selectedType.id === "regular" && selectedPlan && !showSubscription) {
+  // Show registration form for regular users
+  if (selectedType && selectedType.id === "regular") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
         <RegularUserForm 
-          onBack={handleBackFromSubscription} 
-          selectedPlan={selectedPlan}
+          onBack={handleBackFromForm}
         />
       </div>
     );
@@ -120,10 +98,10 @@ export default function SignUp() {
             return (
               <Card
                 key={type.id}
-                className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-pink-300"
+                className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-pink-300 flex flex-col h-full"
                 onClick={() => handleSelectType(type)}
               >
-                <CardHeader>
+                <CardHeader className="flex-1">
                   <div className={`w-12 h-12 bg-gradient-to-br ${type.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
                     <Icon className="w-6 h-6 text-white" />
                   </div>
@@ -132,7 +110,7 @@ export default function SignUp() {
                     {type.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="mt-auto">
                   <Button
                     className={`w-full bg-gradient-to-r ${type.color} hover:opacity-90 text-white`}
                   >
