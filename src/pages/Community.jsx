@@ -18,6 +18,12 @@ import { getMyBuddies } from "@/lib/buddyService";
 import StoryCard from "../components/community/StoryCard";
 import BuddyCard from "../components/community/BuddyCard";
 import PostStoryForm from "../components/community/PostStoryForm";
+import { 
+  getStories, 
+  createStory, 
+  toggleLikeStory, 
+  toggleHelpfulStory 
+} from "@/lib/successStoriesService";
 
 const translations = {
   en: {
@@ -73,12 +79,10 @@ export default function Community() {
     initialData: [],
   });
 
+  // Fetch stories from Supabase
   const { data: stories = [] } = useQuery({
-    queryKey: ['stories'],
-    queryFn: async () => {
-      const allStories = await base44.entities.CommunityStory.filter({ moderation_status: 'approved' });
-      return allStories.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    },
+    queryKey: ['stories', searchQuery],
+    queryFn: () => getStories('-created_at', null, searchQuery || null),
     initialData: [],
   });
 
@@ -116,16 +120,42 @@ export default function Community() {
   });
 
   const createStoryMutation = useMutation({
-    mutationFn: (data) => base44.entities.CommunityStory.create({
+    mutationFn: (data) => createStory({
       ...data,
-      author_name: data.is_anonymous ? 'Anonymous' : currentUser?.full_name || 'User'
+      moderation_status: 'approved' // Auto-approve for now, change to 'pending' for moderation
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stories'] });
       toast.success(t.storyShared);
       setShowStoryForm(false);
+    },
+    onError: (error) => {
+      console.error('Error creating story:', error);
+      toast.error('Failed to share story. Please try again.');
     }
   });
+
+  // Handle story like
+  const handleLikeStory = async (story) => {
+    try {
+      await toggleLikeStory(story.id, story.userHasLiked);
+      queryClient.invalidateQueries({ queryKey: ['stories'] });
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast.error('Failed to update like. Please try again.');
+    }
+  };
+
+  // Handle story helpful
+  const handleMarkHelpful = async (story) => {
+    try {
+      await toggleHelpfulStory(story.id, story.userMarkedHelpful);
+      queryClient.invalidateQueries({ queryKey: ['stories'] });
+    } catch (error) {
+      console.error('Error toggling helpful:', error);
+      toast.error('Failed to update helpful. Please try again.');
+    }
+  };
 
   const updateBuddyMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.BuddyMatch.update(id, data),
@@ -155,10 +185,8 @@ export default function Community() {
     forum.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredStories = stories.filter(story =>
-    story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    story.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Stories are already filtered by searchQuery in the getStories function
+  const filteredStories = stories;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
@@ -291,8 +319,8 @@ export default function Community() {
                 <StoryCard
                   key={story.id}
                   story={story}
-                  onLike={() => {}}
-                  onMarkHelpful={() => {}}
+                  onLike={() => handleLikeStory(story)}
+                  onMarkHelpful={() => handleMarkHelpful(story)}
                 />
               ))}
             </div>

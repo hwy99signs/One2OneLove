@@ -140,8 +140,16 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignOut = async () => {
-    await logout();
-    navigate(createPageUrl("Home"));
+    try {
+      console.log('🔴 Sign out button clicked');
+      await logout();
+      // Force a full page reload to clear all state and ensure clean logout
+      window.location.href = createPageUrl("Home");
+    } catch (error) {
+      console.error('❌ Error during sign out:', error);
+      // Still redirect even if there's an error
+      window.location.href = createPageUrl("Home");
+    }
   };
 
   useEffect(() => {

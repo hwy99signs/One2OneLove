@@ -325,18 +325,38 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      // Clean up presence before logging out
-      console.log('🔴 Cleaning up presence tracking...');
-      await cleanupPresence();
+      console.log('🔴 Starting logout process...');
       
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Logout error:', error);
+      // Clean up presence before logging out (don't let errors block logout)
+      try {
+        console.log('🔴 Cleaning up presence tracking...');
+        await cleanupPresence();
+      } catch (presenceError) {
+        console.error('⚠️ Error cleaning up presence (continuing logout):', presenceError);
+        // Continue with logout even if presence cleanup fails
       }
+      
+      // Sign out from Supabase
+      console.log('🔴 Signing out from Supabase...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Supabase signOut error:', error);
+        // Still clear user state even if signOut has an error
+      } else {
+        console.log('✅ Successfully signed out from Supabase');
+      }
+      
+      // Always clear user state
       setUser(null);
+      setIsLoading(false);
+      
+      console.log('✅ Logout completed');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
+      // Ensure user state is cleared even on error
       setUser(null);
+      setIsLoading(false);
     }
   };
 
