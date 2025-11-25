@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import JournalForm from "../components/activities/JournalForm";
 import JournalEntry from "../components/activities/JournalEntry";
+import * as journalService from "@/lib/journalService";
 
 const translations = {
   en: {
@@ -45,34 +45,43 @@ export default function SharedJournals() {
   const [editingEntry, setEditingEntry] = useState(null);
   const [moodFilter, setMoodFilter] = useState('all');
 
-  const { data: entries } = useQuery({
+  const { data: entries = [], isLoading } = useQuery({
     queryKey: ['sharedJournals'],
-    queryFn: () => base44.entities.SharedJournal.list('-entry_date'),
+    queryFn: () => journalService.getJournalEntries('-entry_date'),
     initialData: []
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SharedJournal.create(data),
+    mutationFn: (data) => journalService.createJournalEntry(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedJournals'] });
       queryClient.invalidateQueries({ queryKey: ['activityProgress'] });
       setShowForm(false);
+    },
+    onError: (error) => {
+      console.error('Error creating journal entry:', error);
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SharedJournal.update(id, data),
+    mutationFn: ({ id, data }) => journalService.updateJournalEntry(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedJournals'] });
       setEditingEntry(null);
       setShowForm(false);
+    },
+    onError: (error) => {
+      console.error('Error updating journal entry:', error);
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SharedJournal.delete(id),
+    mutationFn: (id) => journalService.deleteJournalEntry(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedJournals'] });
+    },
+    onError: (error) => {
+      console.error('Error deleting journal entry:', error);
     }
   });
 

@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { useLanguage } from "@/Layout";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import * as journalService from "@/lib/journalService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -120,7 +121,7 @@ export default function CouplesDashboard() {
 
   const { data: journals } = useQuery({
     queryKey: ['journals'],
-    queryFn: () => base44.entities.SharedJournal.list(),
+    queryFn: () => journalService.getJournalEntries('-entry_date'),
     initialData: []
   });
 
