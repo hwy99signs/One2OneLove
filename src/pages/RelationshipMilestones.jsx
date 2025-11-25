@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, Sparkles, Gift, Link as LinkIcon, ArrowLeft } from "lucide-react";
@@ -13,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import MilestoneForm from "../components/milestones/MilestoneForm";
 import MilestoneCard from "../components/milestones/MilestoneCard";
 import CelebrationIdeas from "../components/milestones/CelebrationIdeas";
+import { getMilestones, createMilestone, updateMilestone, deleteMilestone } from "@/lib/milestonesService";
 
 const translations = {
   en: {
@@ -163,43 +163,46 @@ export default function RelationshipMilestones() {
 
   const { data: milestones = [], isLoading } = useQuery({
     queryKey: ['milestones'],
-    queryFn: () => base44.entities.Milestone.list('-date'),
+    queryFn: () => getMilestones('-date'),
     initialData: [],
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Milestone.create(data),
+    mutationFn: (data) => createMilestone(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['milestones'] });
       setShowForm(false);
       setEditingMilestone(null);
       toast.success(t.milestoneAdded);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Create error:', error);
       toast.error(t.errorAdding);
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Milestone.update(id, data),
+    mutationFn: ({ id, data }) => updateMilestone(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['milestones'] });
       setShowForm(false);
       setEditingMilestone(null);
       toast.success(t.milestoneUpdated);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Update error:', error);
       toast.error(t.errorUpdating);
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Milestone.delete(id),
+    mutationFn: (id) => deleteMilestone(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['milestones'] });
       toast.success(t.milestoneDeleted);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Delete error:', error);
       toast.error(t.errorDeleting);
     }
   });

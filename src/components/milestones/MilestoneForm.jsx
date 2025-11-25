@@ -12,7 +12,7 @@ import { Calendar as CalendarIcon, X, Upload, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+import { uploadMilestonePhotos } from "@/lib/milestonesService";
 
 const translations = {
   en: {
@@ -206,11 +206,8 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
 
     setUploading(true);
     try {
-      const uploadPromises = files.map(file => 
-        base44.integrations.Core.UploadFile({ file })
-      );
-      const results = await Promise.all(uploadPromises);
-      const urls = results.map(r => r.file_url);
+      // Upload files to Supabase Storage
+      const urls = await uploadMilestonePhotos(files, milestone?.id);
       
       setFormData(prev => ({
         ...prev,
@@ -218,6 +215,7 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
       }));
     } catch (error) {
       console.error('Upload error:', error);
+      alert('Failed to upload photos. Please try again.');
     } finally {
       setUploading(false);
     }

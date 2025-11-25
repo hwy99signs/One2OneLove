@@ -230,3 +230,118 @@ export const getEventsByType = async (userId, eventType) => {
   }
 };
 
+/**
+ * Get events for today
+ * @param {string} userId - The user's ID
+ * @returns {Promise<Array>} Array of events for today
+ */
+export const getTodayEvents = async (userId) => {
+  try {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('event_date', todayStr)
+      .order('event_time', { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching today events:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+
+/**
+ * Get events for this week
+ * @param {string} userId - The user's ID
+ * @returns {Promise<Array>} Array of events for this week
+ */
+export const getThisWeekEvents = async (userId) => {
+  try {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+    
+    const startDate = startOfWeek.toISOString().split('T')[0];
+    const endDate = endOfWeek.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('event_date', startDate)
+      .lte('event_date', endDate)
+      .order('event_date', { ascending: true })
+      .order('event_time', { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching this week events:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+
+/**
+ * Get events for this month
+ * @param {string} userId - The user's ID
+ * @returns {Promise<Array>} Array of events for this month
+ */
+export const getThisMonthEvents = async (userId) => {
+  try {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    const startDate = startOfMonth.toISOString().split('T')[0];
+    const endDate = endOfMonth.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('event_date', startDate)
+      .lte('event_date', endDate)
+      .order('event_date', { ascending: true })
+      .order('event_time', { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching this month events:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+
+/**
+ * Get upcoming events (future events only)
+ * @param {string} userId - The user's ID
+ * @returns {Promise<Array>} Array of upcoming events
+ */
+export const getUpcomingEventsFilter = async (userId) => {
+  try {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('event_date', todayStr)
+      .order('event_date', { ascending: true })
+      .order('event_time', { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    throw new Error(handleSupabaseError(error));
+  }
+};
+

@@ -114,60 +114,11 @@ export function AuthProvider({ children }) {
     console.log('🚀 AuthContext: Initializing...');
     let mounted = true;
     let refreshInterval;
+    let retryTimeout;
+    let initTimeout;
+    let sessionRestored = false;
     
-    const checkAuth = async () => {
-      try {
-        console.log('🔍 Checking for existing session...');
-        // Get current session from Supabase
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ Error getting session:', error);
-          if (mounted) setIsLoading(false);
-          return;
-        }
-
-        if (session?.user && mounted) {
-          console.log('✅ Session found for:', session.user.email);
-          const userData = await ensureUserProfile(session.user);
-          if (mounted) {
-            setUser(userData);
-            // Initialize presence for existing session
-            console.log('🟢 Initializing presence for existing session...');
-            await initializePresence();
-          }
-        } else {
-          console.log('⚠️ No active session found');
-        }
-      } catch (error) {
-        console.error('💥 Error checking auth:', error);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    // Set up periodic session check (every 5 minutes) to ensure session is valid
-    refreshInterval = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session && user && mounted) {
-          console.log('⚠️ Session expired, clearing user state');
-          setUser(null);
-        } else if (session && !user && mounted) {
-          console.log('🔄 Session recovered, restoring user state');
-          const userData = await ensureUserProfile(session.user);
-          if (mounted) {
-            setUser(userData);
-            await initializePresence();
-          }
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-
+    // IMPORTANT: Set up listener FIRST to catch INITIAL_SESSION event immediately
     // Listen for auth state changes with improved handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔔 Auth state changed:', event, session?.user?.email);
@@ -179,33 +130,122 @@ export function AuthProvider({ children }) {
         const userData = await ensureUserProfile(session.user);
         if (mounted) {
           setUser(userData);
+          setIsLoading(false);
           await initializePresence();
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
         if (mounted) {
           setUser(null);
+          setIsLoading(false);
           await cleanupPresence();
         }
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('🔄 Token refreshed for:', session?.user?.email);
-        // Keep session alive - no action needed
+        // Ensure user state is set if session exists (safety check)
+        if (session?.user && mounted) {
+          const userData = await ensureUserProfile(session.user);
+          if (mounted) {
+            setUser(userData);
+            // Presence should already be initialized, but ensure it's active
+            await initializePresence();
+          }
+        }
       } else if (event === 'USER_UPDATED') {
         console.log('📝 User updated:', session?.user?.email);
         if (session?.user && mounted) {
           const userData = await ensureUserProfile(session.user);
-          if (mounted) setUser(userData);
+          if (mounted) {
+            setUser(userData);
+            setIsLoading(false);
+          }
         }
-      } else if (event === 'INITIAL_SESSION' && session?.user) {
-        console.log('🔵 Initial session loaded:', session.user.email);
-        // Session restored from localStorage
-        const userData = await ensureUserProfile(session.user);
-        if (mounted) {
-          setUser(userData);
-          await initializePresence();
+      } else if (event === 'INITIAL_SESSION') {
+        // This event fires when Supabase restores session from localStorage
+        if (session?.user) {
+          console.log('🔵 Initial session loaded from storage:', session.user.email);
+          sessionRestored = true;
+          const userData = await ensureUserProfile(session.user);
+          if (mounted) {
+            setUser(userData);
+            setIsLoading(false);
+            await initializePresence();
+          }
+        } else {
+          console.log('🔵 Initial session check: No session in storage');
+          if (mounted) setIsLoading(false);
         }
       }
     });
+    
+    const checkAuth = async (retryCount = 0) => {
+      try {
+        console.log('🔍 Checking for existing session...', retryCount > 0 ? `(retry ${retryCount})` : '');
+        // Get current session from Supabase
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Error getting session:', error);
+          if (mounted && !sessionRestored) setIsLoading(false);
+          return;
+        }
+
+        if (session?.user && mounted) {
+          // Only set user if it hasn't been set by INITIAL_SESSION event
+          if (!sessionRestored) {
+            console.log('✅ Session found for:', session.user.email);
+            const userData = await ensureUserProfile(session.user);
+            if (mounted) {
+              setUser(userData);
+              // Initialize presence for existing session
+              console.log('🟢 Initializing presence for existing session...');
+              await initializePresence();
+              setIsLoading(false);
+            }
+          } else {
+            console.log('✅ Session already restored via INITIAL_SESSION event');
+            if (mounted) setIsLoading(false);
+          }
+        } else {
+          // If no session found and we haven't retried yet, wait a bit and retry
+          // This handles the case where Supabase hasn't finished restoring from localStorage
+          if (retryCount === 0 && mounted && !sessionRestored) {
+            console.log('⚠️ No active session found, retrying after short delay...');
+            retryTimeout = setTimeout(() => {
+              if (mounted) checkAuth(1);
+            }, 100);
+          } else {
+            console.log('⚠️ No active session found');
+            if (mounted && !sessionRestored) setIsLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('💥 Error checking auth:', error);
+        if (mounted && !sessionRestored) setIsLoading(false);
+      }
+    };
+
+    // Small delay to ensure Supabase has initialized and restored session from localStorage
+    // But the listener above should catch INITIAL_SESSION event first
+    initTimeout = setTimeout(() => {
+      if (!sessionRestored) {
+        checkAuth();
+      }
+    }, 100);
+
+    // Set up periodic session check (every 5 minutes) to ensure session is valid
+    refreshInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session && mounted) {
+          console.log('⚠️ Session expired, clearing user state');
+          setUser(null);
+        }
+        // Note: We don't need to restore user state here as the auth state change listener handles it
+      } catch (error) {
+        console.error('Error checking session:', error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
 
     // Handle page visibility changes to maintain session
     const handleVisibilityChange = async () => {
@@ -213,8 +253,8 @@ export function AuthProvider({ children }) {
         console.log('👀 Page became visible, checking session...');
         try {
           const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user && !user) {
-            console.log('🔄 Restoring session after visibility change');
+          if (session?.user && mounted) {
+            // Always ensure user state is set when page becomes visible and session exists
             const userData = await ensureUserProfile(session.user);
             if (mounted) {
               setUser(userData);
@@ -234,6 +274,8 @@ export function AuthProvider({ children }) {
       mounted = false;
       subscription.unsubscribe();
       if (refreshInterval) clearInterval(refreshInterval);
+      if (retryTimeout) clearTimeout(retryTimeout);
+      if (initTimeout) clearTimeout(initTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);

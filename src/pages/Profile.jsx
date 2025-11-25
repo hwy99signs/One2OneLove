@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useRef, useMemo, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, User, Mail, Calendar as CalendarIcon, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Camera, BookOpen, Target, CalendarDays, Palette, Users, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
+import goalsService from "@/lib/goalsService";
 
 const translations = {
   en: {
@@ -438,6 +439,124 @@ const translations = {
     }
   }
 };
+
+// Active Goals Card Component
+function ActiveGoalsCard() {
+  const { user } = useAuth();
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+
+  // Fetch active goals from database - use same query key as RelationshipGoals for cache sharing
+  const { data: allGoals = [], isLoading, error } = useQuery({
+    queryKey: ['relationship-goals'],
+    queryFn: () => {
+      if (!user?.id) return [];
+      return goalsService.getGoals('-created_at');
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: true,
+    initialData: []
+  });
+
+  // Filter for active goals (in_progress status)
+  const activeGoals = useMemo(() => {
+    if (!allGoals || allGoals.length === 0) return [];
+    const filtered = allGoals.filter(goal => {
+      // Check both possible status values
+      return goal.status === 'in_progress' || goal.status === 'in progress';
+    });
+    return filtered.slice(0, 3); // Show up to 3 active goals
+  }, [allGoals]);
+
+  // Debug logging (remove in production)
+  useEffect(() => {
+    if (allGoals && allGoals.length > 0) {
+      console.log('All goals:', allGoals);
+      console.log('Active goals filtered:', activeGoals);
+      console.log('Goal statuses:', allGoals.map(g => ({ title: g.title, status: g.status })));
+    }
+  }, [allGoals, activeGoals]);
+
+  return (
+    <Card className="shadow-lg h-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="w-5 h-5" />
+          Active Goals
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Target className="w-10 h-10 text-gray-300 animate-pulse" />
+            </div>
+            <p className="text-gray-500">Loading goals...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Target className="w-10 h-10 text-gray-300" />
+            </div>
+            <p className="text-red-500 mb-4">Error loading goals</p>
+            <p className="text-sm text-gray-400 mb-4">{error.message}</p>
+            <Link to={createPageUrl("RelationshipGoals")}>
+              <Button variant="outline" className="rounded-lg">
+                View Goals
+              </Button>
+            </Link>
+          </div>
+        ) : activeGoals.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Target className="w-10 h-10 text-gray-300" />
+            </div>
+            <p className="text-gray-500 mb-4">No active goals yet</p>
+            <Link to={createPageUrl("RelationshipGoals")}>
+              <Button variant="outline" className="rounded-lg">
+                Set Your First Goal
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activeGoals.map((goal) => (
+              <Link
+                key={goal.id}
+                to={createPageUrl("RelationshipGoals")}
+                className="block p-3 rounded-lg border border-gray-200 hover:border-pink-300 hover:bg-pink-50 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 mb-1">{goal.title}</h4>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <span>{goal.progress}% complete</span>
+                      <span>•</span>
+                      <span>{new Date(goal.target_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full transition-all"
+                        style={{ width: `${goal.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+            {goals.length > 3 && (
+              <Link to={createPageUrl("RelationshipGoals")}>
+                <Button variant="outline" className="w-full rounded-lg mt-2">
+                  View All {goals.length} Goals
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Profile() {
   const { currentLanguage } = useLanguage();

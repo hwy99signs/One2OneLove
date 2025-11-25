@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar as CalendarIcon, Plus, List, Grid3x3, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
+import { addMonths, subMonths } from "date-fns";
 import { toast } from "sonner";
 
 import CalendarEventForm from "../components/calendar/CalendarEventForm";
@@ -16,7 +16,11 @@ import {
   getCalendarEvents, 
   createCalendarEvent, 
   updateCalendarEvent, 
-  deleteCalendarEvent 
+  deleteCalendarEvent,
+  getTodayEvents,
+  getThisWeekEvents,
+  getThisMonthEvents,
+  getUpcomingEventsFilter
 } from "@/lib/calendarService";
 
 const translations = {
@@ -169,14 +173,30 @@ export default function CouplesCalendar() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Fetch calendar events from Supabase
-  const { data: events, isLoading } = useQuery({
-    queryKey: ['calendarEvents', user?.id],
+  // Fetch calendar events from Supabase based on selected filter
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['calendarEvents', user?.id, selectedFilter],
     queryFn: () => {
       if (!user?.id) return [];
-      return getCalendarEvents(user.id, { sortBy: 'event_date', sortOrder: 'asc' });
+      
+      // Query database based on selected filter for live data
+      switch (selectedFilter) {
+        case 'today':
+          return getTodayEvents(user.id);
+        case 'thisWeek':
+          return getThisWeekEvents(user.id);
+        case 'thisMonth':
+          return getThisMonthEvents(user.id);
+        case 'upcoming':
+          return getUpcomingEventsFilter(user.id);
+        case 'all':
+        default:
+          return getCalendarEvents(user.id, { sortBy: 'event_date', sortOrder: 'asc' });
+      }
     },
     enabled: !!user?.id,
+    refetchOnWindowFocus: true, // Refetch when window gains focus for live updates
+    refetchInterval: 30000, // Refetch every 30 seconds for live data
     initialData: []
   });
 
@@ -248,24 +268,8 @@ export default function CouplesCalendar() {
     }
   };
 
-  const filteredEvents = useMemo(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const monthEnd = endOfMonth(now);
-
-    return events.filter(event => {
-      const eventDate = new Date(event.event_date);
-
-      // Filter by time range
-      if (selectedFilter === 'today' && !isSameDay(eventDate, today)) return false;
-      if (selectedFilter === 'thisWeek' && (eventDate < today || eventDate > weekFromNow)) return false;
-      if (selectedFilter === 'thisMonth' && (eventDate < today || eventDate > monthEnd)) return false;
-      if (selectedFilter === 'upcoming' && eventDate < today) return false;
-
-      return true;
-    });
-  }, [events, selectedFilter]);
+  // Events are already filtered by the database query, so we can use them directly
+  const filteredEvents = events;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
@@ -369,7 +373,7 @@ export default function CouplesCalendar() {
         {viewMode === 'calendar' ? (
           <CalendarGrid
             currentMonth={currentMonth}
-            events={events}
+            events={filteredEvents}
             onEventClick={handleEdit}
             onPrevMonth={() => setCurrentMonth(subMonths(currentMonth, 1))}
             onNextMonth={() => setCurrentMonth(addMonths(currentMonth, 1))}
