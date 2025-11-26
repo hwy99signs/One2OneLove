@@ -16,6 +16,7 @@ import {
   sendFileMessage,
   sendLocationMessage,
   markMessagesAsRead,
+  markMessageDelivered,
   editMessage,
   deleteMessage,
   updateConversationSettings,
@@ -24,6 +25,7 @@ import {
   unsubscribeFromMessages,
   subscribeToConversations,
 } from '@/lib/chatService';
+import { supabase } from '@/lib/supabase';
 import { pinMessage, unpinMessage } from '@/lib/chatFeaturesService';
 
 export default function Chat() {
@@ -50,6 +52,8 @@ export default function Chat() {
     queryFn: getMyConversations,
     enabled: !!user,
     refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   // Fetch messages for selected conversation
@@ -57,28 +61,48 @@ export default function Chat() {
     queryKey: ['messages', selectedChatId],
     queryFn: () => getMessages(selectedChatId),
     enabled: !!selectedChatId,
+    refetchOnWindowFocus: true, // Refetch when window gains focus to get status updates
   });
 
-  // Mark messages as read when chat is viewed
+  // Mark messages as delivered and read when chat is viewed
   useEffect(() => {
-    if (selectedChatId && user) {
-      // Small delay to ensure messages are loaded
-      const timer = setTimeout(() => {
-        // Mark all unread messages as read when viewing the chat
-        markMessagesAsRead(selectedChatId)
-          .then(() => {
-            // Invalidate queries to update UI (badge, checkmarks, etc.)
-            queryClient.invalidateQueries(['messages', selectedChatId]);
-            queryClient.invalidateQueries(['conversations']);
-          })
-          .catch(error => {
-            console.error('Error marking messages as read:', error);
-          });
-      }, 500); // Small delay to ensure messages are loaded
+    console.log('🔵 Chat page useEffect triggered', { 
+      selectedChatId, 
+      userId: user?.id,
+      hasUser: !!user 
+    });
 
-      return () => clearTimeout(timer);
+    if (!selectedChatId || !user) {
+      console.log('⏸️ Chat page: Missing selectedChatId or user');
+      return;
     }
-  }, [selectedChatId, user]);
+
+    console.log('🔵 Chat page: Starting mark as read for conversation:', selectedChatId);
+
+    const markAsRead = async () => {
+      try {
+        console.log('📬 STEP 1: Calling markMessagesAsRead');
+        await markMessagesAsRead(selectedChatId);
+        console.log('✅ STEP 1 COMPLETE: markMessagesAsRead finished');
+
+        console.log('🔄 STEP 2: Refetching queries');
+        // Force immediate refetch of everything
+        await Promise.all([
+          queryClient.refetchQueries(['messages', selectedChatId], { type: 'active' }),
+          queryClient.refetchQueries(['conversations'], { type: 'active' }),
+        ]);
+        console.log('✅ STEP 2 COMPLETE: Queries refetched');
+
+        console.log('✅✅✅ Chat page: Messages marked as read - UI refreshed');
+      } catch (error) {
+        console.error('❌❌❌ Chat page ERROR:', error);
+        console.error('Error details:', error.message, error.stack);
+      }
+    };
+
+    // Run immediately when chat is selected
+    markAsRead();
+  }, [selectedChatId, user?.id, queryClient]);
 
   // Handle URL parameters to open a specific chat
   useEffect(() => {
@@ -89,6 +113,13 @@ export default function Chat() {
       handleOpenChatWithUser(userId);
     }
   }, [searchParams, user]);
+
+  // Refetch conversations when Chat page is mounted to ensure badge is up to date
+  useEffect(() => {
+    if (user) {
+      queryClient.refetchQueries(['conversations']);
+    }
+  }, [user, queryClient]);
 
   const handleOpenChatWithUser = async (otherUserId) => {
     try {
@@ -137,13 +168,38 @@ export default function Chat() {
 
   // Subscribe to real-time message updates
   useEffect(() => {
-    if (!selectedChatId) return;
+    if (!selectedChatId || !user) return;
 
     console.log('🔔 Setting up real-time subscription for:', selectedChatId);
     
-    const subscription = subscribeToMessages(selectedChatId, (newMessage) => {
-      console.log('📨 New message received via realtime:', newMessage);
-      // Invalidate messages query to refetch
+    const subscription = subscribeToMessages(selectedChatId, async (messageData) => {
+      console.log('📨 Real-time message event:', messageData);
+      
+      // If this is a new message for current user and chat is open, mark as delivered and read IMMEDIATELY
+      if (messageData.receiver_id === user.id) {
+        console.log('📬 New message received - marking as delivered and read IMMEDIATELY');
+        try {
+          // Mark as delivered first (if not already)
+          if (!messageData.delivered_at) {
+            await markMessageDelivered(messageData.id);
+            console.log('✅ Message marked as delivered');
+          }
+          
+          // Mark ALL messages in conversation as read (including this new one)
+          await markMessagesAsRead(selectedChatId);
+          console.log('✅ All messages marked as read - badge should clear');
+          
+          // Force immediate UI refresh
+          await Promise.all([
+            queryClient.refetchQueries(['messages', selectedChatId], { type: 'active' }),
+            queryClient.refetchQueries(['conversations'], { type: 'active' }),
+          ]);
+        } catch (error) {
+          console.error('❌ Error auto-marking message:', error);
+        }
+      }
+      
+      // Always invalidate to update UI (for status changes on sent messages)
       queryClient.invalidateQueries(['messages', selectedChatId]);
       queryClient.invalidateQueries(['conversations']);
     });
@@ -155,7 +211,7 @@ export default function Chat() {
         unsubscribeFromMessages(messageSubscriptionRef.current);
       }
     };
-  }, [selectedChatId]);
+  }, [selectedChatId, user, queryClient]);
 
   // Subscribe to conversation updates
   useEffect(() => {
@@ -176,6 +232,71 @@ export default function Chat() {
       }
     };
   }, [user]);
+
+  // CRITICAL: Global subscription to mark ALL incoming messages as delivered
+  // This ensures senders see double ticks even if receiver's chat isn't open
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🔔 Setting up GLOBAL message delivery subscription for user:', user.id);
+
+    // Subscribe to ALL new messages where current user is receiver
+    const globalSubscription = supabase
+      .channel(`global-messages-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const newMessage = payload.new;
+          console.log('📬 GLOBAL: New message received for you:', newMessage.id);
+          
+          // Mark as delivered immediately (even if chat isn't open)
+          try {
+            if (!newMessage.delivered_at) {
+              await markMessageDelivered(newMessage.id);
+              console.log('✅ GLOBAL: Message marked as delivered - sender will see double ticks');
+            }
+            
+            // CRITICAL: If chat is open, mark as read immediately and recalculate count
+            if (selectedChatId === newMessage.conversation_id) {
+              console.log('📬 GLOBAL: Chat is open, marking as read immediately');
+              await markMessagesAsRead(newMessage.conversation_id);
+              
+              // Force immediate recalculation
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                const { error: recalcError } = await supabase
+                  .rpc('recalculate_unread_count', {
+                    p_conversation_id: newMessage.conversation_id,
+                    p_user_id: user.id
+                  });
+                
+                if (recalcError) {
+                  console.warn('⚠️ Could not recalculate:', recalcError);
+                }
+              }
+            }
+            
+            // Invalidate queries to update UI
+            queryClient.invalidateQueries(['messages']);
+            queryClient.invalidateQueries(['conversations']);
+          } catch (error) {
+            console.error('❌ GLOBAL: Error processing new message:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔕 Unsubscribing from global message delivery');
+      supabase.removeChannel(globalSubscription);
+    };
+  }, [user, queryClient]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -324,16 +445,26 @@ export default function Chat() {
     const chat = conversations.find((c) => c.id === chatId);
     setSelectedChat(chat);
     
-    // Mark messages as read and refresh conversations immediately
+    // Immediately mark messages as read and force UI update
     if (chatId) {
       try {
+        // Mark as read first
         await markMessagesAsRead(chatId);
-        // Refetch both messages and conversations to update UI
+        console.log('✅ Messages marked as read for chat:', chatId);
+        
+        // Force aggressive refetch to clear badge immediately
         await Promise.all([
           queryClient.invalidateQueries(['messages', chatId]),
-          queryClient.invalidateQueries(['conversations'])
+          queryClient.invalidateQueries(['conversations']),
         ]);
-        console.log('✅ Chat selected and messages marked as read');
+        
+        // Force another immediate refetch of conversations to ensure badge updates
+        await queryClient.refetchQueries(['conversations'], { 
+          type: 'active',
+          exact: false 
+        });
+        
+        console.log('✅ UI updated - badge should be cleared');
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }

@@ -4,13 +4,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useLanguage } from '@/Layout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import UserProfile from './UserProfile';
 import { UserPresenceBadge } from '@/components/presence/UserPresenceIndicator';
 import { getPinnedMessages } from '@/lib/chatFeaturesService';
-import { getMessages } from '@/lib/chatService';
+import { getMessages, markMessagesAsRead, markMessageDelivered } from '@/lib/chatService';
 
 const translations = {
   en: {
@@ -99,6 +99,7 @@ export default function ChatWindow({
   const messagesEndRef = useRef(null);
   const scrollAreaRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch pinned messages for the current conversation
   const { data: pinnedMessagesData = [] } = useQuery({
@@ -141,6 +142,77 @@ export default function ChatWindow({
       };
     });
   }, [pinnedMessagesData, currentUserId, chat]);
+
+  // CRITICAL: Mark messages as delivered and read when chat window opens
+  useEffect(() => {
+    // Always log to verify this runs
+    console.log('🔵 ChatWindow useEffect triggered', { 
+      chatId: chat?.id, 
+      userId: currentUserId,
+      hasMessages: messages?.length > 0 
+    });
+
+    if (!chat?.id || !currentUserId) {
+      console.log('⏸️ ChatWindow: Missing chat.id or currentUserId');
+      return;
+    }
+
+    console.log('🔵 ChatWindow: Starting mark as read process for chat:', chat.id);
+
+    const markAsDeliveredAndRead = async () => {
+      try {
+        console.log('📬 STEP 1: Calling markMessagesAsRead for conversation:', chat.id);
+        
+        // Mark ALL messages as delivered and read
+        const result = await markMessagesAsRead(chat.id);
+        console.log('✅ STEP 1 COMPLETE: markMessagesAsRead returned', result);
+
+        console.log('🔄 STEP 2: Invalidating all message and conversation queries');
+        // Invalidate everything
+        queryClient.invalidateQueries(['messages']);
+        queryClient.invalidateQueries(['conversations']);
+        
+        console.log('🔄 STEP 3: Refetching messages for chat:', chat.id);
+        // Refetch messages
+        const messagesResult = await queryClient.refetchQueries({
+          queryKey: ['messages', chat.id],
+          type: 'active'
+        });
+        console.log('✅ STEP 3 COMPLETE: Messages refetched', messagesResult);
+        
+        console.log('🔄 STEP 4: Refetching conversations to update badge');
+        // CRITICAL: Refetch conversations to get updated unread count (should be 0)
+        const convsResult = await queryClient.refetchQueries({
+          queryKey: ['conversations'],
+          type: 'active'
+        });
+        console.log('✅ STEP 4 COMPLETE: Conversations refetched - badge should show 0', convsResult);
+
+        // Double-check: Refetch one more time after a short delay to ensure badge clears
+        setTimeout(async () => {
+          console.log('🔄 STEP 5: Final refetch to ensure badge is cleared');
+          await queryClient.refetchQueries({
+            queryKey: ['conversations'],
+            type: 'active'
+          });
+          console.log('✅✅✅ FINAL: Badge should definitely be cleared now');
+        }, 500);
+
+        console.log('✅✅✅ ALL STEPS COMPLETE: Messages marked as read - badge should be cleared NOW');
+      } catch (error) {
+        console.error('❌❌❌ ERROR in markAsDeliveredAndRead:', error);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        toast.error('Failed to mark messages as read: ' + error.message);
+      }
+    };
+
+    // Run immediately
+    markAsDeliveredAndRead();
+  }, [chat?.id, currentUserId, queryClient]);
 
   useEffect(() => {
     scrollToBottom();

@@ -865,6 +865,16 @@ export default function Profile() {
   const { user, isLoading, refreshUserProfile } = useAuth();
   const isRegularUser = !user?.user_type || user.user_type === "regular";
 
+  // Force refresh of profile data when page loads
+  useEffect(() => {
+    if (user?.id) {
+      // Invalidate all queries to get fresh data
+      queryClient.invalidateQueries({ queryKey: ['user', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['relationship-goals'] });
+      refreshUserProfile();
+    }
+  }, [user?.id, queryClient, refreshUserProfile]);
+
   // Mock memories data for now (can be replaced with actual query later)
   const memories = [];
 

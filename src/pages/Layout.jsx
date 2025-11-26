@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { getMyConversations } from "@/lib/chatService";
+import { supabase } from "@/lib/supabase";
 import {
   Select,
   SelectContent,
@@ -108,15 +109,58 @@ function LanguageContent({ children, currentPageName }) {
   const { isAuthenticated, logout, user } = useAuth();
 
   // Fetch conversations to get unread message count
-  const { data: conversations = [] } = useQuery({
+  const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: getMyConversations,
     enabled: !!user && isAuthenticated,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 3000, // Refetch every 3 seconds for faster badge updates
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Refetch when component mounts
+    staleTime: 0, // Always consider data stale to force fresh fetches
+    cacheTime: 0, // Don't cache to ensure fresh data
   });
 
+  // Subscribe to real-time conversation updates to update badge immediately
+  useEffect(() => {
+    if (!user || !isAuthenticated) return;
+
+    console.log('🔔 Setting up real-time subscription for conversation updates (badge)');
+    
+    // Subscribe to conversation updates where user is either user1 or user2
+    const subscription = supabase
+      .channel(`conversations-badge-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations',
+          // This will trigger for any conversation where user is involved
+          // We can't filter by OR in Supabase realtime, so we subscribe to all and filter in callback
+        },
+        (payload) => {
+          const conv = payload.new;
+          // Only process if this conversation involves the current user
+          if (conv.user1_id === user.id || conv.user2_id === user.id) {
+            console.log('📬 Conversation updated (badge refresh):', conv.id);
+            // Immediately refetch conversations to update badge
+            refetchConversations();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔕 Unsubscribing from conversation badge updates');
+      supabase.removeChannel(subscription);
+    };
+  }, [user, isAuthenticated, refetchConversations]);
+
   // Calculate total unread messages count
-  const totalUnreadCount = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+  const totalUnreadCount = conversations.reduce((total, conv) => {
+    const count = conv.unreadCount || 0;
+    return total + count;
+  }, 0);
 
   const handleMouseEnter = () => {
     if (closeTimeoutRef.current) {

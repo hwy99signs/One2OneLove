@@ -424,12 +424,38 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error('❌ Supabase auth error:', error);
+        
+        // Allow sign in even if email is not confirmed
+        if (error.message && error.message.includes('email not confirmed')) {
+          console.log('⚠️ Email not confirmed, but allowing sign in anyway');
+          // Try to get the user session anyway
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user) {
+            console.log('✅ Got user session despite email confirmation error');
+            const basicUserData = buildUserData(sessionData.session.user);
+            setUser(basicUserData);
+            ensureUserProfile(sessionData.session.user)
+              .then(profileData => {
+                if (profileData && isManualLoginRef.current) {
+                  setUser(profileData);
+                }
+              })
+              .catch(err => console.warn('⚠️ Profile fetch failed:', err));
+            return { success: true, user: basicUserData };
+          }
+        }
+        
         return { success: false, error: handleSupabaseError(error) };
       }
 
       if (!data?.user) {
         console.error('❌ No user data returned from Supabase');
         return { success: false, error: 'Login failed: No user data received' };
+      }
+      
+      // Log email confirmation status (but don't block sign in)
+      if (data.user.email_confirmed_at === null) {
+        console.log('⚠️ User email not confirmed, but allowing sign in');
       }
 
       console.log('✅ Auth successful, fetching profile for user:', data.user.id);
@@ -551,10 +577,17 @@ export function AuthProvider({ children }) {
 
       // Sign up with Supabase Auth
       console.log('Calling supabase.auth.signUp...');
+      
+      // Get the current URL for redirect (works for both localhost and Vercel)
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/callback`
+        : 'https://one2-one-love.vercel.app/auth/callback';
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             name: name,
             relationship_status: relationshipStatus,
@@ -575,6 +608,15 @@ export function AuthProvider({ children }) {
 
       if (authData?.user) {
         console.log('User created in auth, creating profile in database...');
+        
+        // Check if email is confirmed (might be null if confirmation is disabled)
+        const isEmailConfirmed = authData.user.email_confirmed_at !== null;
+        console.log('Email confirmation status:', { 
+          email: authData.user.email, 
+          confirmed: isEmailConfirmed,
+          confirmed_at: authData.user.email_confirmed_at 
+        });
+        
         // Create user profile in database
         // user_type defaults to 'regular' for regular user signups
         const { data: profile, error: profileError } = await supabase
@@ -590,6 +632,7 @@ export function AuthProvider({ children }) {
             subscription_plan: subscriptionPlan || 'Basis',
             subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0, // Basis is now free
             subscription_status: 'active',
+            email_verified: isEmailConfirmed, // Track email verification status
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -615,11 +658,18 @@ export function AuthProvider({ children }) {
           relationship_status: relationshipStatus,
           anniversary_date: anniversaryDate,
           partner_email: partnerEmail,
+          email_verified: isEmailConfirmed,
           ...profile,
         };
 
         console.log('Setting user state and returning success');
         setUser(newUser);
+        
+        // If email is not confirmed, show a message but still allow sign in
+        if (!isEmailConfirmed) {
+          console.log('⚠️ User signed up but email not confirmed (this is OK - allowing access)');
+        }
+        
         return { success: true, user: newUser };
       }
 

@@ -139,6 +139,11 @@ export const getMessages = async (conversationId) => {
   try {
     console.log('💬 Fetching messages for conversation:', conversationId);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data: messages, error } = await supabase
       .from('messages')
       .select('*')
@@ -152,6 +157,40 @@ export const getMessages = async (conversationId) => {
     }
 
     console.log(`✅ Found ${messages?.length || 0} messages`);
+
+    // CRITICAL: Auto-mark undelivered messages as delivered when fetching
+    // This ensures senders see double ticks when receiver's app loads messages
+    if (messages && messages.length > 0) {
+      const undeliveredMessages = messages.filter(
+        msg => msg.receiver_id === user.id && !msg.delivered_at
+      );
+
+      if (undeliveredMessages.length > 0) {
+        console.log(`📬 Auto-marking ${undeliveredMessages.length} messages as delivered on fetch`);
+        const now = new Date().toISOString();
+        
+        // Mark all undelivered messages as delivered in batch
+        const messageIds = undeliveredMessages.map(m => m.id);
+        const { error: deliveredError } = await supabase
+          .from('messages')
+          .update({ delivered_at: now })
+          .in('id', messageIds)
+          .eq('receiver_id', user.id)
+          .is('delivered_at', null);
+
+        if (deliveredError) {
+          console.error('Error auto-marking as delivered:', deliveredError);
+        } else {
+          console.log('✅ Messages auto-marked as delivered - updating local data');
+          // Update local messages array with delivered_at
+          messages.forEach(msg => {
+            if (undeliveredMessages.find(um => um.id === msg.id)) {
+              msg.delivered_at = now;
+            }
+          });
+        }
+      }
+    }
 
     // Get unique user IDs from messages
     const userIds = new Set();
@@ -177,8 +216,6 @@ export const getMessages = async (conversationId) => {
         usersMap[u.id] = u;
       });
     }
-
-    const { data: { user } } = await supabase.auth.getUser();
 
     // Get all reply_to_ids to fetch original messages
     const replyToIds = messages?.filter(msg => msg.reply_to_id).map(msg => msg.reply_to_id);
@@ -213,13 +250,23 @@ export const getMessages = async (conversationId) => {
         };
       }
       
-      // Determine message status
+      // Determine message status - IMPORTANT: Check read_at first, then delivered_at
+      // Also check is_read flag as fallback
       let status = 'sent';
-      if (msg.delivered_at) {
-        status = 'delivered';
+      if (msg.read_at || (msg.is_read && msg.delivered_at)) {
+        status = 'read';  // If read, show blue ticks
+      } else if (msg.delivered_at) {
+        status = 'delivered';  // If delivered but not read, show gray double ticks
       }
-      if (msg.read_at) {
-        status = 'read';
+      
+      // Debug logging for YOUR sent messages to track status
+      if (msg.sender_id === user?.id) {
+        console.log(`📊 YOUR Message "${msg.content?.substring(0, 20)}..." status:`, {
+          status,
+          delivered_at: msg.delivered_at ? 'SET' : 'NULL',
+          read_at: msg.read_at ? 'SET' : 'NULL',
+          is_read: msg.is_read
+        });
       }
       
       const baseMessage = {
@@ -320,6 +367,29 @@ export const sendMessage = async (conversationId, receiverId, content, messageTy
     }
 
     console.log('✅ Message sent:', message.id);
+    
+    // CRITICAL: After sending a message, recalculate unread count for receiver
+    // This ensures the count is accurate even if trigger increments it
+    try {
+      // Wait a bit for trigger to run first
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Recalculate unread count for the receiver
+      const { data: recalcCount, error: recalcError } = await supabase
+        .rpc('recalculate_unread_count', {
+          p_conversation_id: conversationId,
+          p_user_id: receiverId
+        });
+      
+      if (recalcError) {
+        console.warn('⚠️ Could not recalculate after send, will be fixed on next read:', recalcError);
+      } else {
+        console.log(`✅ Recalculated unread count for receiver: ${recalcCount}`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error recalculating after send:', error);
+    }
+    
     return message;
   } catch (error) {
     console.error('Error in sendMessage:', error);
@@ -443,10 +513,27 @@ export const markMessagesAsRead = async (conversationId) => {
 
     console.log('✅ Marking messages as read for conversation:', conversationId);
 
-    // Mark all unread messages where current user is receiver
-    // Set both is_read and read_at timestamp
     const now = new Date().toISOString();
-    const { error: messagesError } = await supabase
+
+    // FIRST: Mark all undelivered messages as delivered (where current user is receiver)
+    const { error: deliveredError } = await supabase
+      .from('messages')
+      .update({ 
+        delivered_at: now
+      })
+      .eq('conversation_id', conversationId)
+      .eq('receiver_id', user.id)
+      .is('delivered_at', null); // Only update if not already delivered
+
+    if (deliveredError) {
+      console.error('Error marking messages as delivered:', deliveredError);
+    } else {
+      console.log('✅ Messages marked as delivered');
+    }
+
+    // THEN: Mark ALL unread messages as read (where current user is receiver)
+    // Remove the is_read check to ensure we update even if there's a mismatch
+    const { data: updatedMessages, error: messagesError } = await supabase
       .from('messages')
       .update({ 
         is_read: true,
@@ -454,39 +541,100 @@ export const markMessagesAsRead = async (conversationId) => {
       })
       .eq('conversation_id', conversationId)
       .eq('receiver_id', user.id)
-      .eq('is_read', false)
-      .is('read_at', null);
+      .or('is_read.eq.false,read_at.is.null') // Mark if either condition is true
+      .select('id'); // Return IDs to verify update
 
     if (messagesError) {
-      console.error('Error marking messages as read:', messagesError);
+      console.error('❌ Error marking messages as read:', messagesError);
       throw messagesError;
+    } else {
+      console.log(`✅ Marked ${updatedMessages?.length || 0} messages as read`);
     }
 
     // Get conversation to determine which field to update
-    const { data: conv } = await supabase
+    const { data: conv, error: convError } = await supabase
       .from('conversations')
-      .select('user1_id, user2_id')
+      .select('user1_id, user2_id, user1_unread_count, user2_unread_count')
       .eq('id', conversationId)
       .single();
 
-    if (conv) {
+    if (convError) {
+      console.error('Error fetching conversation:', convError);
+    } else if (conv) {
       const isUser1 = conv.user1_id === user.id;
       const updateField = isUser1 ? 'user1_unread_count' : 'user2_unread_count';
+      const currentCount = isUser1 ? conv.user1_unread_count : conv.user2_unread_count;
       
-      // Reset unread count to 0
-      const { error: updateError } = await supabase
-        .from('conversations')
-        .update({ [updateField]: 0 })
-        .eq('id', conversationId);
+      console.log(`📊 Current unread count for ${updateField}:`, currentCount);
+      
+      // CRITICAL: Always recalculate unread count based on actual unread messages
+      // This ensures accuracy even if trigger increments it incorrectly
+      
+      // Count actual unread messages
+      const { count: actualUnreadCount } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('conversation_id', conversationId)
+        .eq('receiver_id', user.id)
+        .or('is_read.eq.false,read_at.is.null');
 
-      if (updateError) {
-        console.error('Error resetting unread count:', updateError);
+      const newCount = actualUnreadCount || 0;
+      
+      // Try using RPC function first (if SQL fix was applied)
+      const { error: recalcError } = await supabase
+        .rpc('recalculate_unread_count', {
+          p_conversation_id: conversationId,
+          p_user_id: user.id
+        });
+
+      if (recalcError) {
+        // Fallback: Manual update if RPC function doesn't exist
+        console.log('⚠️ RPC function not available, using manual update');
+        const { error: updateError } = await supabase
+          .from('conversations')
+          .update({ 
+            [updateField]: newCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversationId);
+
+        if (updateError) {
+          console.error('❌ Error resetting unread count:', updateError);
+        } else {
+          console.log(`✅✅✅ Reset ${updateField} from ${currentCount} to ${newCount} (manual)`);
+        }
       } else {
-        console.log(`✅ Reset ${updateField} to 0 for conversation:`, conversationId);
+        console.log(`✅✅✅ Recalculated ${updateField} to ${newCount} using database function`);
       }
+      
+      // CRITICAL: Double-check and force update if needed (race condition protection)
+      // Wait a moment for any triggers to finish
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Verify and force correct count one more time
+      const { data: verifyConv } = await supabase
+        .from('conversations')
+        .select(`${updateField}`)
+        .eq('id', conversationId)
+        .single();
+      
+      const verifiedCount = verifyConv?.[updateField] || 0;
+      if (verifiedCount !== newCount) {
+        console.log(`⚠️ Count mismatch detected (${verifiedCount} vs ${newCount}), forcing correction`);
+        await supabase
+          .from('conversations')
+          .update({ 
+            [updateField]: newCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversationId);
+        console.log(`✅✅✅ Forced ${updateField} to ${newCount}`);
+      }
+    } else {
+      console.warn('⚠️ Conversation not found:', conversationId);
     }
 
-    console.log('✅ Messages marked as read');
+    console.log('✅ All messages marked as delivered and read');
   } catch (error) {
     console.error('Error in markMessagesAsRead:', error);
     throw error;
