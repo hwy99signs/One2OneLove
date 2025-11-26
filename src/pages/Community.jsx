@@ -296,7 +296,16 @@ export default function Community() {
   };
 
   const updateBuddyMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.BuddyMatch.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const { data: result, error } = await supabase
+        .from('buddy_matches')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBuddies'] });
     }

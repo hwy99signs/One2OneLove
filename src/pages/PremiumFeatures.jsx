@@ -1,5 +1,6 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Unlock, Sparkles, Trophy, Crown, Star, TrendingUp, Heart, Calendar, Brain, Palette, Headphones, ArrowLeft, Zap } from "lucide-react";
@@ -175,26 +176,38 @@ export default function PremiumFeatures() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const { user: currentUser } = useAuth();
 
   const { data: userPoints = [] } = useQuery({
-    queryKey: ['userPoints', currentUser?.email],
-    queryFn: () => base44.entities.GamificationPoints.filter({ created_by: currentUser?.email }),
-    enabled: !!currentUser,
+    queryKey: ['userPoints', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const { data, error } = await supabase
+        .from('gamification_points')
+        .select('*')
+        .eq('user_id', currentUser.id);
+      if (error) {
+        console.error('Error fetching points:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!currentUser?.id,
     initialData: [],
   });
 
   const { data: unlockedRewards = [] } = useQuery({
-    queryKey: ['premiumRewards', currentUser?.email],
-    queryFn: () => base44.entities.PremiumReward.filter({ created_by: currentUser?.email, is_active: true }),
-    enabled: !!currentUser,
+    queryKey: ['premiumRewards', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      // TODO: Implement premium rewards service
+      return [];
+    },
+    enabled: !!currentUser?.id,
     initialData: [],
   });
 
-  const totalPoints = userPoints.reduce((sum, p) => sum + (p.points_earned || 0), 0);
+  const totalPoints = userPoints.reduce((sum, p) => sum + (p.points_earned || p.points || 0), 0);
   const level = Math.floor(totalPoints / 100) + 1;
 
   const isFeatureUnlocked = (feature) => {

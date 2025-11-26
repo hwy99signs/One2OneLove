@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { Sparkles, Heart, MessageCircle, Gift, Calendar, Loader2, Copy, Check, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -211,12 +212,18 @@ export default function AIContentCreator() {
       
       Make it heartfelt, genuine, and personal. Use beautiful language and emotional depth.`;
 
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt
-      });
-
-      setGeneratedContent(result);
-      toast.success("Content generated successfully!");
+      // TODO: Implement AI content generation with Supabase Edge Functions or external AI service (OpenAI, Anthropic, etc.)
+      // This requires setting up an Edge Function that calls an AI API
+      throw new Error('AI Content Creator feature requires implementation with Supabase Edge Functions or external AI service');
+      
+      // Example implementation would be:
+      // const { data, error } = await supabase.functions.invoke('generate-content', {
+      //   body: { prompt, contentType, tone, length, partnerName, details }
+      // });
+      // if (error) throw error;
+      // setGeneratedContent(data.content);
+      
+      toast.error('AI Content Creator feature requires implementation');
     } catch (error) {
       toast.error("Failed to generate content. Please try again.");
       console.error(error);

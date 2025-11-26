@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,9 +41,16 @@ export default function CooperativeGames() {
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
 
-  const { data: games } = useQuery({
-    queryKey: ['cooperativeGames'],
-    queryFn: () => base44.entities.CooperativeGame.list('-date_played'),
+  const { user } = useAuth();
+
+  const { data: games = [] } = useQuery({
+    queryKey: ['cooperativeGames', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      // TODO: Implement cooperative games service
+      return [];
+    },
+    enabled: !!user?.id,
     initialData: []
   });
 

@@ -1,5 +1,6 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,15 +117,38 @@ export default function ScheduledNotesManager() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: scheduledNotes = [] } = useQuery({
-    queryKey: ['scheduledNotes'],
-    queryFn: () => base44.entities.ScheduledLoveNote.filter({ status: 'scheduled' }, '-scheduled_date'),
+    queryKey: ['scheduledNotes', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('scheduled_love_notes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'scheduled')
+        .order('scheduled_date', { ascending: true });
+      if (error) {
+        console.error('Error fetching scheduled notes:', error);
+        return [];
+      }
+      return data || [];
+    },
     initialData: [],
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (id) => base44.entities.ScheduledLoveNote.update(id, { status: 'cancelled' }),
+    mutationFn: async (id) => {
+      const { data, error } = await supabase
+        .from('scheduled_love_notes')
+        .update({ status: 'cancelled' })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
       toast.success(t.noteCancelled);

@@ -1,9 +1,12 @@
 
 import React, { useMemo } from "react";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import * as journalService from "@/lib/journalService";
+import * as goalsService from "@/lib/goalsService";
+import * as milestonesService from "@/lib/milestonesService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -89,51 +92,69 @@ export default function CouplesDashboard() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-    initialData: null
-  });
+  const { user } = useAuth();
 
-  const { data: activityProgress } = useQuery({
+  const { data: activityProgress = [] } = useQuery({
     queryKey: ['activityProgress'],
-    queryFn: () => base44.entities.ActivityProgress.list(),
+    queryFn: async () => {
+      // TODO: Implement activity progress service
+      return [];
+    },
     initialData: []
   });
 
-  const { data: badges } = useQuery({
+  const { data: badges = [] } = useQuery({
     queryKey: ['badges'],
-    queryFn: () => base44.entities.Badge.list('-earned_date'),
+    queryFn: async () => {
+      // TODO: Implement badges service
+      return [];
+    },
     initialData: []
   });
 
-  const { data: goals } = useQuery({
+  const { data: goals = [] } = useQuery({
     queryKey: ['goals'],
-    queryFn: () => base44.entities.RelationshipGoal.list(),
+    queryFn: () => goalsService.getGoals('-created_at'),
     initialData: []
   });
 
-  const { data: milestones } = useQuery({
+  const { data: milestones = [] } = useQuery({
     queryKey: ['milestones'],
-    queryFn: () => base44.entities.Milestone.list(),
+    queryFn: () => milestonesService.getMilestones('-created_at'),
     initialData: []
   });
 
-  const { data: journals } = useQuery({
+  const { data: journals = [] } = useQuery({
     queryKey: ['journals'],
     queryFn: () => journalService.getJournalEntries('-entry_date'),
     initialData: []
   });
 
-  const { data: games } = useQuery({
+  const { data: games = [] } = useQuery({
     queryKey: ['games'],
-    queryFn: () => base44.entities.CooperativeGame.list(),
+    queryFn: async () => {
+      // TODO: Implement cooperative games service
+      return [];
+    },
     initialData: []
   });
 
-  const { data: memories } = useQuery({
+  const { data: memories = [] } = useQuery({
     queryKey: ['memories'],
-    queryFn: () => base44.entities.Memory.list(),
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('memories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('memory_date', { ascending: false });
+      if (error) {
+        console.error('Error fetching memories:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user?.id,
     initialData: []
   });
 

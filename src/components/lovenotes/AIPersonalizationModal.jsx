@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+// AI personalization requires Supabase Edge Functions implementation
 import { toast } from "sonner";
 
 const personalityTraits = [
@@ -53,7 +53,13 @@ The note should:
 
 Return ONLY the love note text, no titles or extra formatting.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      // TODO: Implement AI personalization with Supabase Edge Functions
+      // const { data, error } = await supabase.functions.invoke('personalize-content', {
+      //   body: { content, partnerName, details }
+      // });
+      // if (error) throw error;
+      // const response = data;
+      throw new Error('AI personalization requires Supabase Edge Functions implementation');
         prompt: prompt,
         add_context_from_internet: false
       });

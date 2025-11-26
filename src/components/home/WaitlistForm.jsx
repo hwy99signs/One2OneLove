@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,15 @@ export default function WaitlistForm() {
   const queryClient = useQueryClient();
 
   const signupMutation = useMutation({
-    mutationFn: (data) => base44.entities.WaitlistSignup.create(data),
+    mutationFn: async (data) => {
+      const { data: result, error } = await supabase
+        .from('waitlist')
+        .insert(data)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['waitlist-signups'] });
       toast.success("🎉 You're on the waitlist!", {

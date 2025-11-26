@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -179,18 +180,27 @@ export default function CoupleActivities() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
-  const { data: progressData } = useQuery({
-    queryKey: ['activityProgress'],
-    queryFn: () => base44.entities.ActivityProgress.list(),
+  const { user } = useAuth();
+
+  const { data: progressData = [] } = useQuery({
+    queryKey: ['activityProgress', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      // TODO: Implement activity progress service
+      return [];
+    },
+    enabled: !!user?.id,
     initialData: []
   });
 
-  const { data: preferences } = useQuery({
-    queryKey: ['userPreferences'],
+  const { data: preferences = null } = useQuery({
+    queryKey: ['userPreferences', user?.id],
     queryFn: async () => {
-      const prefs = await base44.entities.UserPreferences.list();
-      return prefs[0] || null;
+      if (!user?.id) return null;
+      // TODO: Implement user preferences service
+      return null;
     },
+    enabled: !!user?.id,
     initialData: null
   });
 

@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -552,20 +553,26 @@ export default function LoveNotes() {
   const [specialPlace, setSpecialPlace] = useState(localStorage.getItem('specialPlace') || '');
 
   // Fetch current user
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-    staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
-    retry: false, // Do not retry if user is not logged in
-  });
+  const { user: currentUser } = useAuth();
 
   // Fetch user's partner identifier (email or phone) from profile or localStorage
-  const partnerIdentifier = currentUser?.profile?.partner_email || localStorage.getItem('partnerEmail') || '';
+  const partnerIdentifier = currentUser?.partner_email || localStorage.getItem('partnerEmail') || '';
 
   // Fetch sent love notes for limit tracking
   const { data: sentNotes = [] } = useQuery({
     queryKey: ['sentLoveNotes', currentUser?.id],
-    queryFn: () => base44.entities.SentLoveNote.filter({ created_by: currentUser?.id }),
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const { data, error } = await supabase
+        .from('sent_love_notes')
+        .select('*')
+        .eq('user_id', currentUser.id);
+      if (error) {
+        console.error('Error fetching sent notes:', error);
+        return [];
+      }
+      return data || [];
+    },
     enabled: !!currentUser?.id,
     initialData: [],
     staleTime: 60 * 1000,
@@ -591,14 +598,32 @@ export default function LoveNotes() {
   const socialPlatformsRemainingCount = Math.max(0, totalSocialPlatforms - distinctSocialPlatformsUsed.size);
 
   const sendNoteMutation = useMutation({
-    mutationFn: (data) => base44.entities.SentLoveNote.create(data),
+    mutationFn: async (data) => {
+      if (!currentUser?.id) throw new Error('User not authenticated');
+      const { data: result, error } = await supabase
+        .from('sent_love_notes')
+        .insert({ ...data, user_id: currentUser.id })
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
     }
   });
 
   const scheduleMutation = useMutation({
-    mutationFn: (data) => base44.entities.ScheduledLoveNote.create(data),
+    mutationFn: async (data) => {
+      if (!currentUser?.id) throw new Error('User not authenticated');
+      const { data: result, error } = await supabase
+        .from('scheduled_love_notes')
+        .insert({ ...data, user_id: currentUser.id })
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
       toast.success(t.scheduleSuccess);

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -223,7 +224,16 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
         const file = files[i];
         setUploadProgress(prev => [...prev, { name: file.name, status: 'uploading' }]);
         
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        // TODO: Implement file upload with Supabase Storage
+        // const { data, error } = await supabase.storage
+        //   .from('memories')
+        //   .upload(`${user.id}/${Date.now()}_${file.name}`, file);
+        // if (error) throw error;
+        // const { data: { publicUrl } } = supabase.storage
+        //   .from('memories')
+        //   .getPublicUrl(data.path);
+        // const file_url = publicUrl;
+        throw new Error('File upload requires Supabase Storage implementation');
         newUrls.push(file_url);
         
         setUploadProgress(prev => 

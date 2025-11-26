@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, MapPin, Filter, Grid, List, ArrowLeft } from "lucide-react";
@@ -119,14 +120,38 @@ export default function MemoryLane() {
 
   const queryClient = useQueryClient();
 
-  const { data: memories, isLoading } = useQuery({
-    queryKey: ['memories'],
-    queryFn: () => base44.entities.Memory.list('-memory_date'),
+  const { user } = useAuth();
+
+  const { data: memories = [], isLoading } = useQuery({
+    queryKey: ['memories', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('memories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('memory_date', { ascending: false });
+      if (error) {
+        console.error('Error fetching memories:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user?.id,
     initialData: [],
   });
 
   const createMemoryMutation = useMutation({
-    mutationFn: (memoryData) => base44.entities.Memory.create(memoryData),
+    mutationFn: async (memoryData) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      const { data: result, error } = await supabase
+        .from('memories')
+        .insert({ ...memoryData, user_id: user.id })
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
       setShowForm(false);
@@ -135,7 +160,16 @@ export default function MemoryLane() {
   });
 
   const updateMemoryMutation = useMutation({
-    mutationFn: ({ id, memoryData }) => base44.entities.Memory.update(id, memoryData),
+    mutationFn: async ({ id, memoryData }) => {
+      const { data: result, error } = await supabase
+        .from('memories')
+        .update(memoryData)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
       setShowForm(false);
@@ -144,7 +178,14 @@ export default function MemoryLane() {
   });
 
   const deleteMemoryMutation = useMutation({
-    mutationFn: (id) => base44.entities.Memory.delete(id),
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('memories')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return id;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
     },

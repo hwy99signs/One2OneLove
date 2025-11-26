@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, User, Mail, Calendar, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Users, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -372,25 +373,20 @@ export default function CouplesProfile() {
   const [editData, setEditData] = useState({});
   const queryClient = useQueryClient();
 
-  const { data: currentUser, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch {
-        return null;
-      }
-    },
-    initialData: null
-  });
+  const { user: currentUser, isLoading } = useAuth();
 
   const { data: partnerUser, isLoading: partnerLoading } = useQuery({
     queryKey: ['partnerUser', currentUser?.partner_email],
     queryFn: async () => {
       if (!currentUser?.partner_email) return null;
       try {
-        const users = await base44.entities.User.filter({ email: currentUser.partner_email });
-        return users[0] || null;
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', currentUser.partner_email)
+          .single();
+        if (error) return null;
+        return data;
       } catch {
         return null;
       }
@@ -399,14 +395,38 @@ export default function CouplesProfile() {
     initialData: null
   });
 
-  const { data: memories } = useQuery({
-    queryKey: ['memories'],
-    queryFn: () => base44.entities.Memory.list('-created_date', 5),
+  const { data: memories = [] } = useQuery({
+    queryKey: ['memories', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const { data, error } = await supabase
+        .from('memories')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) {
+        console.error('Error fetching memories:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!currentUser?.id,
     initialData: [],
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: async (data) => {
+      if (!currentUser?.id) throw new Error('User not authenticated');
+      const { data: result, error } = await supabase
+        .from('users')
+        .update(data)
+        .eq('id', currentUser.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       setIsEditing(false);

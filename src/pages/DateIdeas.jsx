@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
@@ -112,30 +113,58 @@ export default function DateIdeas() {
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'custom', 'saved'
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const { user: currentUser } = useAuth();
 
   const { data: customDates = [] } = useQuery({
-    queryKey: ['customDates', currentUser?.email],
-    queryFn: () => base44.entities.CustomDateIdea.filter({ created_by: currentUser?.email }),
-    enabled: !!currentUser,
+    queryKey: ['customDates', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const { data, error } = await supabase
+        .from('custom_date_ideas')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error fetching custom dates:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!currentUser?.id,
     initialData: [],
   });
 
   const { data: savedDates = [] } = useQuery({
-    queryKey: ['savedDates', currentUser?.email],
-    queryFn: () => base44.entities.CustomDateIdea.filter({ 
-      created_by: currentUser?.email,
-      is_favorite: true 
-    }),
-    enabled: !!currentUser,
+    queryKey: ['savedDates', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const { data, error } = await supabase
+        .from('custom_date_ideas')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('is_favorite', true)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error fetching saved dates:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!currentUser?.id,
     initialData: [],
   });
 
   const createDateMutation = useMutation({
-    mutationFn: (data) => base44.entities.CustomDateIdea.create(data),
+    mutationFn: async (data) => {
+      if (!currentUser?.id) throw new Error('User not authenticated');
+      const { data: result, error } = await supabase
+        .from('custom_date_ideas')
+        .insert({ ...data, user_id: currentUser.id })
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
       toast.success(t.customDateCreated);
@@ -144,7 +173,16 @@ export default function DateIdeas() {
   });
 
   const updateDateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.CustomDateIdea.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const { data: result, error } = await supabase
+        .from('custom_date_ideas')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
       queryClient.invalidateQueries({ queryKey: ['savedDates'] });

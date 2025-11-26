@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,22 +127,24 @@ export default function RelationshipCoach() {
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+  const { user } = useAuth();
+
   const { data: conversations = [] } = useQuery({
-    queryKey: ['coach-conversations'],
-    queryFn: () => base44.agents.listConversations({ agent_name: 'relationship_coach' }),
+    queryKey: ['coach-conversations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      // TODO: Implement AI coach conversations with Supabase Edge Functions or external AI service
+      // This requires setting up chat functionality with AI (OpenAI, Anthropic, etc.)
+      return [];
+    },
+    enabled: !!user?.id,
     initialData: [],
   });
 
   const createConversationMutation = useMutation({
     mutationFn: async () => {
-      const conv = await base44.agents.createConversation({
-        agent_name: 'relationship_coach',
-        metadata: {
-          name: 'Relationship Coaching Session',
-          language: currentLanguage
-        }
-      });
-      return conv;
+      // TODO: Implement conversation creation with Supabase
+      throw new Error('AI Coach feature requires implementation with Supabase Edge Functions or external AI service');
     },
     onSuccess: (newConv) => {
       queryClient.invalidateQueries({ queryKey: ['coach-conversations'] });
@@ -151,7 +154,10 @@ export default function RelationshipCoach() {
   });
 
   const deleteConversationMutation = useMutation({
-    mutationFn: (convId) => base44.agents.deleteConversation(convId),
+    mutationFn: async (convId) => {
+      // TODO: Implement conversation deletion with Supabase
+      throw new Error('AI Coach feature requires implementation');
+    },
     onSuccess: (_, deletedConvId) => {
       queryClient.invalidateQueries({ queryKey: ['coach-conversations'] });
       toast.success(t.conversationDeleted);
@@ -164,13 +170,8 @@ export default function RelationshipCoach() {
 
   useEffect(() => {
     if (!currentConversationId) return;
-
-    const unsubscribe = base44.agents.subscribeToConversation(currentConversationId, (data) => {
-      setMessages(data.messages || []);
-      setIsSending(false);
-    });
-
-    return () => unsubscribe();
+    // TODO: Implement realtime subscription for conversation messages
+    return () => {};
   }, [currentConversationId]);
 
   useEffect(() => {
@@ -178,36 +179,17 @@ export default function RelationshipCoach() {
   }, [messages]);
 
   const loadConversation = async (conversationId) => {
-    const conv = await base44.agents.getConversation(conversationId);
+    // TODO: Implement conversation loading from Supabase
     setCurrentConversationId(conversationId);
-    setMessages(conv.messages || []);
+    setMessages([]);
   };
 
   const handleSendMessage = async (messageText = inputMessage) => {
     if (!messageText.trim()) return;
-
-    if (!currentConversationId) {
-      const newConv = await createConversationMutation.mutateAsync();
-      setCurrentConversationId(newConv.id);
-      
-      setIsSending(true);
-      setInputMessage('');
-      
-      await base44.agents.addMessage(newConv, {
-        role: 'user',
-        content: messageText
-      });
-    } else {
-      const conv = await base44.agents.getConversation(currentConversationId);
-      
-      setIsSending(true);
-      setInputMessage('');
-      
-      await base44.agents.addMessage(conv, {
-        role: 'user',
-        content: messageText
-      });
-    }
+    
+    toast.error('AI Coach feature requires implementation with Supabase Edge Functions or external AI service');
+    setIsSending(false);
+    // TODO: Implement message sending with AI integration
   };
 
   const handleQuickPrompt = (prompt) => {

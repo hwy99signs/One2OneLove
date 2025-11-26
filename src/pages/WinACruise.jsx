@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 
 const translations = {
@@ -162,10 +163,7 @@ export default function WinACruise() {
   const t = translations[currentLanguage] || translations.en;
   const [email, setEmail] = useState("");
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
+  const { user: currentUser } = useAuth();
 
   // Get current period (YYYY-MM format)
   const currentPeriod = new Date().toISOString().slice(0, 7);
@@ -180,10 +178,16 @@ export default function WinACruise() {
   const { data: monthlyLeaderboard = [] } = useQuery({
     queryKey: ['monthlyLeaderboard', currentPeriod],
     queryFn: async () => {
-      const participants = await base44.entities.ContestParticipant.filter({
-        contest_type: 'monthly_love_notes',
-        period: currentPeriod
-      });
+      const { data, error } = await supabase
+        .from('contest_participants')
+        .select('*')
+        .eq('contest_type', 'monthly_love_notes')
+        .eq('period', currentPeriod);
+      if (error) {
+        console.error('Error fetching participants:', error);
+        return [];
+      }
+      const participants = data || [];
       return participants.sort((a, b) => b.score - a.score).slice(0, 5);
     },
     initialData: [],
@@ -193,10 +197,16 @@ export default function WinACruise() {
   const { data: yearlyLeaderboard = [] } = useQuery({
     queryKey: ['yearlyLeaderboard', currentYear],
     queryFn: async () => {
-      const participants = await base44.entities.ContestParticipant.filter({
-        contest_type: 'yearly_engagement',
-        period: currentYear
-      });
+      const { data, error } = await supabase
+        .from('contest_participants')
+        .select('*')
+        .eq('contest_type', 'yearly_engagement')
+        .eq('period', currentYear);
+      if (error) {
+        console.error('Error fetching participants:', error);
+        return [];
+      }
+      const participants = data || [];
       return participants.sort((a, b) => b.score - a.score).slice(0, 5);
     },
     initialData: [],
@@ -206,10 +216,16 @@ export default function WinACruise() {
   const { data: lastMonthWinner } = useQuery({
     queryKey: ['lastMonthWinner', lastMonthPeriod],
     queryFn: async () => {
-      const winners = await base44.entities.ContestWinner.filter({
-        contest_type: 'monthly_love_notes',
-        period: lastMonthPeriod
-      });
+      const { data, error } = await supabase
+        .from('contest_winners')
+        .select('*')
+        .eq('contest_type', 'monthly_love_notes')
+        .eq('period', lastMonthPeriod);
+      if (error) {
+        console.error('Error fetching winners:', error);
+        return null;
+      }
+      const winners = data || [];
       return winners[0] || null;
     },
   });
@@ -219,11 +235,18 @@ export default function WinACruise() {
     queryKey: ['userMonthlyRank', currentUser?.email, currentPeriod],
     queryFn: async () => {
       if (!currentUser) return null;
-      const participants = await base44.entities.ContestParticipant.filter({
-        contest_type: 'monthly_love_notes',
-        period: currentPeriod,
-        user_email: currentUser.email
-      });
+      if (!currentUser?.email) return null;
+      const { data, error } = await supabase
+        .from('contest_participants')
+        .select('*')
+        .eq('contest_type', 'monthly_love_notes')
+        .eq('period', currentPeriod)
+        .eq('user_email', currentUser.email);
+      if (error) {
+        console.error('Error fetching user rank:', error);
+        return null;
+      }
+      const participants = data || [];
       return participants[0] || null;
     },
     enabled: !!currentUser,
