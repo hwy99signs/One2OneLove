@@ -214,7 +214,7 @@ function LanguageContent({ children, currentPageName }) {
             {/* Logo */}
             <Link to={createPageUrl("Home")} className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
               <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/app-assets/logo.png" 
+                src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
                 alt="One2One Love Logo" 
                 className="h-10 w-auto"
                 onError={(e) => {

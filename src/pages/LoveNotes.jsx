@@ -868,7 +868,7 @@ export default function LoveNotes() {
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/app-assets/logo.png" 
+              src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
               alt="One2One Love Logo" 
               className="h-24 w-auto mb-4"
             />
