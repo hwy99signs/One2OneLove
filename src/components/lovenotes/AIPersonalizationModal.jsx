@@ -55,26 +55,26 @@ Return ONLY the love note text, no titles or extra formatting.`;
 
       // TODO: Implement AI personalization with Supabase Edge Functions
       // const { data, error } = await supabase.functions.invoke('personalize-content', {
-      //   body: { content, partnerName, details }
+      //   body: { prompt, partnerName, selectedTraits, sharedMemories, insideJokes, noteStyle, currentLanguage }
       // });
       // if (error) throw error;
-      // const response = data;
-      throw new Error('AI personalization requires Supabase Edge Functions implementation');
-        prompt: prompt,
-        add_context_from_internet: false
-      });
-
-      onNoteGenerated({
-        title: "AI-Personalized Love Note",
-        content: response,
-        category: noteStyle,
-        budget: "free",
-        tags: ["ai-generated", "personalized", ...selectedTraits.slice(0, 3)],
-        isAIGenerated: true
-      });
-
-      toast.success("Personalized note generated! 💕");
-      onClose();
+      // const response = data.content;
+      
+      // For now, show error message
+      toast.error('AI personalization feature requires Supabase Edge Functions implementation');
+      return;
+      
+      // Once implemented, uncomment below:
+      // onNoteGenerated({
+      //   title: "AI-Personalized Love Note",
+      //   content: response,
+      //   category: noteStyle,
+      //   budget: "free",
+      //   tags: ["ai-generated", "personalized", ...selectedTraits.slice(0, 3)],
+      //   isAIGenerated: true
+      // });
+      // toast.success("Personalized note generated! 💕");
+      // onClose();
     } catch (error) {
       console.error("Error generating note:", error);
       toast.error("Failed to generate note. Please try again.");
