@@ -640,7 +640,7 @@ export function AuthProvider({ children }) {
             subscription_plan: subscriptionPlan || 'Basic',
             subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0, // Basic is now free
             subscription_status: 'active',
-            email_verified: isEmailConfirmed, // Track email verification status
+            // email_verified removed - not needed, users can access platform without email verification
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -666,7 +666,6 @@ export function AuthProvider({ children }) {
           relationship_status: relationshipStatus,
           anniversary_date: anniversaryDate,
           partner_email: partnerEmail,
-          email_verified: isEmailConfirmed,
           ...profile,
         };
 
