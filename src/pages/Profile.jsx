@@ -992,6 +992,7 @@ export default function Profile() {
   };
 
   // Show loading only if we have no user data at all (not just loading state)
+  // Force fresh Vercel build with environment variables
   // This allows the page to render with basic user data even if profile fetch is slow
   // Add timeout to prevent infinite loading
   const [showLoading, setShowLoading] = useState(() => isLoading && !user);
