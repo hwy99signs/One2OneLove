@@ -112,27 +112,27 @@ export const getUserProfile = async (userId) => {
  */
 export const sendBuddyRequest = async (fromUserId, toUserId) => {
   try {
-    // Check if request already exists
+    // Check if request already exists in friend_requests
     const { data: existing, error: checkError } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .select('id, status')
-      .or(`and(from_user_id.eq.${fromUserId},to_user_id.eq.${toUserId}),and(from_user_id.eq.${toUserId},to_user_id.eq.${fromUserId})`)
+      .or(`and(sender_id.eq.${fromUserId},receiver_id.eq.${toUserId}),and(sender_id.eq.${toUserId},receiver_id.eq.${fromUserId})`)
       .single();
 
     if (existing) {
       if (existing.status === 'pending') {
-        throw new Error('A buddy request already exists');
+        throw new Error('A friend request already exists');
       } else if (existing.status === 'accepted') {
-        throw new Error('You are already buddies');
+        throw new Error('You are already friends');
       }
     }
 
-    // Create new request
+    // Create new friend request
     const { data, error } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .insert({
-        from_user_id: fromUserId,
-        to_user_id: toUserId,
+        sender_id: fromUserId,
+        receiver_id: toUserId,
         status: 'pending',
         created_at: new Date().toISOString(),
       })
@@ -142,7 +142,7 @@ export const sendBuddyRequest = async (fromUserId, toUserId) => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error sending buddy request:', error);
+    console.error('Error sending friend request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -156,15 +156,15 @@ export const sendBuddyRequest = async (fromUserId, toUserId) => {
 export const cancelBuddyRequest = async (requestId, userId) => {
   try {
     const { error } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .delete()
       .eq('id', requestId)
-      .eq('from_user_id', userId)
+      .eq('sender_id', userId)
       .eq('status', 'pending');
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error cancelling buddy request:', error);
+    console.error('Error cancelling friend request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -177,15 +177,15 @@ export const cancelBuddyRequest = async (requestId, userId) => {
 export const getSentBuddyRequests = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .select('*')
-      .eq('from_user_id', userId)
+      .eq('sender_id', userId)
       .eq('status', 'pending');
 
     if (error) throw error;
 
     // Get user IDs
-    const userIds = data?.map(req => req.to_user_id) || [];
+    const userIds = data?.map(req => req.receiver_id) || [];
     
     if (userIds.length === 0) return [];
 
@@ -208,7 +208,7 @@ export const getSentBuddyRequests = async (userId) => {
     // Combine data
     const requests = data.map(req => ({
       ...req,
-      to_user: usersMap[req.to_user_id] || { id: req.to_user_id, email: 'Unknown' }
+      to_user: usersMap[req.receiver_id] || { id: req.receiver_id, email: 'Unknown' }
     }));
 
     return requests;
@@ -226,15 +226,15 @@ export const getSentBuddyRequests = async (userId) => {
 export const getReceivedBuddyRequests = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .select('*')
-      .eq('to_user_id', userId)
+      .eq('receiver_id', userId)
       .eq('status', 'pending');
 
     if (error) throw error;
 
     // Get user IDs
-    const userIds = data?.map(req => req.from_user_id) || [];
+    const userIds = data?.map(req => req.sender_id) || [];
     
     if (userIds.length === 0) return [];
 
@@ -257,7 +257,7 @@ export const getReceivedBuddyRequests = async (userId) => {
     // Combine data
     const requests = data.map(req => ({
       ...req,
-      from_user: usersMap[req.from_user_id] || { id: req.from_user_id, email: 'Unknown' }
+      from_user: usersMap[req.sender_id] || { id: req.sender_id, email: 'Unknown' }
     }));
 
     return requests;
@@ -276,20 +276,20 @@ export const getReceivedBuddyRequests = async (userId) => {
 export const acceptBuddyRequest = async (requestId, userId) => {
   try {
     const { data, error } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .update({
         status: 'accepted',
         updated_at: new Date().toISOString(),
       })
       .eq('id', requestId)
-      .eq('to_user_id', userId)
+      .eq('receiver_id', userId)
       .select()
       .single();
 
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error accepting buddy request:', error);
+    console.error('Error accepting friend request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -303,46 +303,47 @@ export const acceptBuddyRequest = async (requestId, userId) => {
 export const rejectBuddyRequest = async (requestId, userId) => {
   try {
     const { error} = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .update({
         status: 'rejected',
         updated_at: new Date().toISOString(),
       })
       .eq('id', requestId)
-      .eq('to_user_id', userId);
+      .eq('receiver_id', userId);
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error rejecting buddy request:', error);
+    console.error('Error rejecting friend request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
 
 /**
- * Get accepted buddies for current user
+ * Get accepted buddies for current user (same as friends)
  * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of buddies
+ * @returns {Promise<Array>} Array of buddies/friends
  */
 export const getMyBuddies = async (userId) => {
   try {
-    console.log('👥 Fetching buddies for user:', userId);
+    console.log('👥 Fetching buddies (friends) for user:', userId);
     
-    // Fetch buddy requests without joins
+    // Fetch from friend_requests table (not buddy_requests)
+    // Buddies = Friends in the platform
     const { data, error } = await supabase
-      .from('buddy_requests')
+      .from('friend_requests')
       .select('*')
       .eq('status', 'accepted')
-      .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`);
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
 
     if (error) throw error;
 
-    console.log('✅ Found buddy requests:', data);
+    console.log('✅ Found friend requests:', data);
 
-    // Get unique user IDs
+    // Get unique user IDs (friend_requests uses sender_id and receiver_id)
     const userIds = new Set();
     data?.forEach(request => {
-      userIds.add(request.from_user_id);
-      userIds.add(request.to_user_id);
+      userIds.add(request.sender_id);
+      userIds.add(request.receiver_id);
     });
 
     // Fetch all user data in one query
@@ -364,14 +365,15 @@ export const getMyBuddies = async (userId) => {
     });
 
     // Transform data to return the other user's info
+    // friend_requests uses sender_id and receiver_id (not from_user_id/to_user_id)
     const buddies = (data || []).map(request => {
-      const isFromUser = request.from_user_id === userId;
-      const otherUserId = isFromUser ? request.to_user_id : request.from_user_id;
+      const isSender = request.sender_id === userId;
+      const otherUserId = isSender ? request.receiver_id : request.sender_id;
       const buddy = usersMap[otherUserId] || { id: otherUserId, email: 'Unknown' };
       
-      console.log('🎴 Processing buddy:', { 
+      console.log('🎴 Processing buddy/friend:', { 
         requestId: request.id, 
-        isFromUser, 
+        isSender, 
         otherUserId, 
         buddyName: buddy.name 
       });
