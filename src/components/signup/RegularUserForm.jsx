@@ -223,12 +223,14 @@ export default function RegularUserForm({ onBack }) {
       console.log('Register result:', result);
 
       if (result.success) {
-        // Store the email and show dialog
-        setRegisteredEmail(formData.email);
-        setShowEmailDialog(true);
+        // Show success message
+        toast.success("Account created successfully! Welcome to One 2 One Love!");
         
-        // Also show a toast for good measure
-        toast.success("Account created successfully! Please check your email.");
+        // Immediate redirect to profile/dashboard
+        console.log('✅ Registration successful, redirecting to profile...');
+        setTimeout(() => {
+          navigate(createPageUrl("Profile"));
+        }, 500); // Small delay to show toast
       } else {
         console.error('Registration failed:', result.error);
         toast.error(result.error || "Something went wrong. Please try again.");
