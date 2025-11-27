@@ -228,9 +228,9 @@ export default function RegularUserForm({ onBack }) {
         
         // Immediate redirect to profile/dashboard
         console.log('✅ Registration successful, redirecting to profile...');
-        setTimeout(() => {
-          navigate(createPageUrl("Profile"));
-        }, 500); // Small delay to show toast
+        
+        // Redirect immediately - no delay needed
+        navigate(createPageUrl("Profile"), { replace: true });
       } else {
         console.error('Registration failed:', result.error);
         toast.error(result.error || "Something went wrong. Please try again.");
