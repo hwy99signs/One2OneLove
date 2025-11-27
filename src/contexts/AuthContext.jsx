@@ -572,7 +572,7 @@ export function AuthProvider({ children }) {
     isManualLoginRef.current = true;
     
     try {
-      console.log('AuthContext.register: Starting registration...', { email: userData.email, name: userData.name });
+      console.log('🚀 AuthContext.register: Starting registration (NO email verification required)...', { email: userData.email, name: userData.name });
       const { email, password, name, relationshipStatus, anniversaryDate, partnerEmail, subscriptionPlan, subscriptionPrice } = userData;
 
       // Check if Supabase is configured
