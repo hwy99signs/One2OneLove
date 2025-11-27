@@ -568,6 +568,9 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (userData) => {
+    // Prevent auth listener from interfering during registration
+    isManualLoginRef.current = true;
+    
     try {
       console.log('AuthContext.register: Starting registration...', { email: userData.email, name: userData.name });
       const { email, password, name, relationshipStatus, anniversaryDate, partnerEmail, subscriptionPlan, subscriptionPrice } = userData;
@@ -576,6 +579,7 @@ export function AuthProvider({ children }) {
       if (!isSupabaseConfigured()) {
         const errorMsg = 'Application is not properly configured. Please contact support or configure Supabase credentials.';
         console.error('❌ Supabase not configured');
+        isManualLoginRef.current = false;
         return { success: false, error: errorMsg };
       }
 
@@ -674,14 +678,25 @@ export function AuthProvider({ children }) {
           console.log('⚠️ User signed up but email not confirmed (this is OK - allowing access)');
         }
         
+        console.log('🎉 REGISTRATION COMPLETE - Returning success to form');
+        
+        // Clear the manual login flag after a short delay
+        setTimeout(() => {
+          isManualLoginRef.current = false;
+        }, 2000);
+        
         return { success: true, user: newUser };
       }
 
-      console.error('No user data in authData');
+      console.error('❌ No user data in authData');
+      isManualLoginRef.current = false;
       return { success: false, error: 'Registration failed' };
     } catch (error) {
-      console.error('Registration error (caught):', error);
+      console.error('❌ Registration error (caught):', error);
+      isManualLoginRef.current = false;
       return { success: false, error: handleSupabaseError(error) };
+    } finally {
+      console.log('🏁 Register function completed');
     }
   };
 
