@@ -922,7 +922,28 @@ export default function Profile() {
   };
 
   const handleSave = () => {
-    updateProfileMutation.mutate(editData);
+    // Clean up the data before sending
+    const cleanedData = { ...editData };
+    
+    // Convert empty strings to null for date fields
+    if (cleanedData.anniversary_date === '') {
+      cleanedData.anniversary_date = null;
+    }
+    
+    // Convert empty strings to null for optional fields
+    if (cleanedData.partner_email === '') {
+      cleanedData.partner_email = null;
+    }
+    
+    if (cleanedData.location === '') {
+      cleanedData.location = null;
+    }
+    
+    if (cleanedData.bio === '') {
+      cleanedData.bio = null;
+    }
+    
+    updateProfileMutation.mutate(cleanedData);
   };
 
   const handleCancel = () => {
