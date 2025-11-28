@@ -106,7 +106,13 @@ export default function Subscription() {
     }
   }, [user]);
 
-  const currentPlan = user?.subscription_plan || 'Basic';
+  // Normalize 'Basis' to 'Basic' for display
+  const normalizePlan = (plan) => {
+    if (!plan) return 'Basic';
+    return plan === 'Basis' ? 'Basic' : plan;
+  };
+  
+  const currentPlan = normalizePlan(user?.subscription_plan) || 'Basic';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -138,7 +144,7 @@ export default function Subscription() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Plan</p>
-                  <p className="text-lg font-bold text-gray-900">{currentSubscription.subscription_plan}</p>
+                  <p className="text-lg font-bold text-gray-900">{normalizePlan(currentSubscription.subscription_plan)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Status</p>
@@ -205,7 +211,7 @@ export default function Subscription() {
                           {format(new Date(payment.created_at), 'MMM dd, yyyy')}
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-900">
-                          {payment.subscription_plan}
+                          {normalizePlan(payment.subscription_plan)}
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-900">
                           ${payment.amount.toFixed(2)} {payment.currency.toUpperCase()}

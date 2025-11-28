@@ -20,20 +20,6 @@ const planFeatures = {
       'Email Support'
     ]
   },
-  // Keep 'Basis' for backward compatibility
-  'Basis': {
-    icon: '💝',
-    gradient: 'from-blue-400 to-blue-600',
-    features: [
-      'Access to 50+ Love Notes Library',
-      'Basic Relationship Quizzes',
-      'Monthly Date Ideas (5 ideas)',
-      'Anniversary Reminders',
-      'Digital Memory Timeline',
-      'Mobile App Access',
-      'Email Support'
-    ]
-  },
   'Premiere': {
     icon: '💖',
     gradient: 'from-purple-400 to-pink-500',
@@ -122,15 +108,20 @@ const translations = {
 
 export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const t = translations[currentLanguage] || translations.en;
-  const userPlan = user?.subscription_plan || 'Basic';
+  // Normalize 'Basis' to 'Basic' for display
+  const normalizePlan = (plan) => {
+    if (!plan) return 'Basic';
+    return plan === 'Basis' ? 'Basic' : plan;
+  };
+  const userPlan = normalizePlan(user?.subscription_plan) || 'Basic';
   // Safely get plan info with proper fallback
-  const planInfo = planFeatures[userPlan] || planFeatures['Basic'] || planFeatures['Basis'] || {
+  const planInfo = planFeatures[userPlan] || planFeatures['Basic'] || {
     icon: '💝',
     gradient: 'from-blue-400 to-blue-600',
     features: ['Basic features included']
   };
   const priceInfo = planPrices[userPlan] || planPrices['Basic'] || { price: 0, period: 'month', label: 'FREE' };
-  const isFree = userPlan === 'Basic' || userPlan === 'Basis' || !userPlan;
+  const isFree = userPlan === 'Basic' || !userPlan;
 
   return (
     <motion.div

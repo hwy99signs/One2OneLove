@@ -39,7 +39,7 @@ export const useHasPaidPlan = () => {
 export const useCanUpgrade = () => {
   const { user } = useAuth();
   
-  const plan = user?.subscription_plan || 'Basis';
+  const plan = user?.subscription_plan || 'Basic';
   
   // Can upgrade if on Basic or Premiere
   return plan === 'Basic' || plan === 'Premiere';
@@ -52,7 +52,7 @@ export const useCanUpgrade = () => {
 export const useFeatureLimits = () => {
   const { user } = useAuth();
   
-  const plan = user?.subscription_plan || 'Basis';
+  const plan = user?.subscription_plan || 'Basic';
   
   const limits = {
     Basic: {

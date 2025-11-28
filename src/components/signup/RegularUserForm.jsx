@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import EmailVerificationDialog from "./EmailVerificationDialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -180,8 +179,6 @@ export default function RegularUserForm({ onBack }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -428,16 +425,6 @@ export default function RegularUserForm({ onBack }) {
         </form>
       </CardContent>
     </Card>
-    
-    {/* Email Verification Dialog */}
-    <EmailVerificationDialog
-      isOpen={showEmailDialog}
-      onClose={() => {
-        setShowEmailDialog(false);
-        navigate(createPageUrl("SignIn"));
-      }}
-      email={registeredEmail}
-    />
     </>
   );
 }
