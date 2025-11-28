@@ -91,7 +91,10 @@ export default function Subscription() {
           getPaymentHistory(),
         ]);
 
-        setCurrentSubscription(subscription);
+        setCurrentSubscription({
+          ...subscription,
+          subscription_plan: normalizePlan(subscription.subscription_plan),
+        });
         setPaymentHistory(payments);
       } catch (error) {
         console.error('Error loading subscription data:', error);
@@ -132,7 +135,7 @@ export default function Subscription() {
         </div>
 
         {/* Current Subscription Info */}
-        {currentSubscription && currentSubscription.subscription_status === 'active' && currentPlan !== 'Basic' && (
+        {currentSubscription && currentSubscription.subscription_status === 'active' && (
           <Card className="mb-8 border-2 border-purple-200 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
