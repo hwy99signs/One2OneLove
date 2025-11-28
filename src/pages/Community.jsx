@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Heart, Users, MessageCircle, TrendingUp, Plus, Search, X, UserPlus, BookOpen, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -228,10 +228,13 @@ export default function Community() {
   });
 
   // Fetch REAL buddies from Supabase
-  const { data: myBuddies = [] } = useQuery({
+  const { data: myBuddies = [], refetch: refetchBuddies } = useQuery({
     queryKey: ['myBuddies', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('⚠️ No user.id available, skipping buddy fetch');
+        return [];
+      }
       console.log('📋 Fetching buddies for user:', user.id);
       try {
         const buddies = await getMyBuddies(user.id);
@@ -243,8 +246,18 @@ export default function Community() {
       }
     },
     enabled: !!user?.id,
-    initialData: [],
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
+
+  // Refetch buddies when user changes (fixes race condition)
+  useEffect(() => {
+    if (user?.id && selectedTab === 'buddies') {
+      console.log('🔄 User or tab changed, refetching buddies...');
+      refetchBuddies();
+    }
+  }, [user?.id, selectedTab, refetchBuddies]);
 
   // Filter buddies - accepted friends only (from Supabase)
   const activeBuddies = myBuddies;
