@@ -34,6 +34,7 @@ const translations = {
     buddies: "Buddy System",
     searchPlaceholder: "Search community...",
     createPost: "Create Post",
+    createCommunity: "Create Community",
     shareStory: "Share Your Love Story",
     findBuddy: "Find a Buddy",
     forumsDesc: "Join heartfelt discussions on topics that matter to your relationship",
@@ -68,6 +69,7 @@ const translations = {
     buddies: "Sistema de Compañeros",
     searchPlaceholder: "Buscar en la comunidad...",
     createPost: "Crear Publicación",
+    createCommunity: "Crear Comunidad",
     shareStory: "Comparte Tu Historia de Amor",
     findBuddy: "Encontrar un Compañero",
     forumsDesc: "Únete a conversaciones sinceras sobre temas que importan a tu relación",
@@ -102,6 +104,7 @@ const translations = {
     buddies: "Système de Compagnons",
     searchPlaceholder: "Rechercher dans la communauté...",
     createPost: "Créer une Publication",
+    createCommunity: "Créer une Communauté",
     shareStory: "Partagez Votre Histoire d'Amour",
     findBuddy: "Trouver un Compagnon",
     forumsDesc: "Rejoignez des discussions sincères sur des sujets qui comptent pour votre relation",
@@ -136,6 +139,7 @@ const translations = {
     buddies: "Sistema di Compagni",
     searchPlaceholder: "Cerca nella comunità...",
     createPost: "Crea Post",
+    createCommunity: "Crea Comunità",
     shareStory: "Condividi la Tua Storia d'Amore",
     findBuddy: "Trova un Compagno",
     forumsDesc: "Unisciti a discussioni sincere su argomenti che contano per la tua relazione",
@@ -170,6 +174,7 @@ const translations = {
     buddies: "Buddy-System",
     searchPlaceholder: "In der Gemeinschaft suchen...",
     createPost: "Beitrag Erstellen",
+    createCommunity: "Gemeinschaft Erstellen",
     shareStory: "Teile Deine Liebesgeschichte",
     findBuddy: "Einen Buddy Finden",
     forumsDesc: "Nimm an herzlichen Diskussionen über Themen teil, die für deine Beziehung wichtig sind",
@@ -452,7 +457,16 @@ export default function Community() {
               </div>
             ) : (
               <>
-                <p className="text-center text-gray-600 mb-6">{t.forumsDesc}</p>
+                <div className="flex justify-between items-center mb-6">
+                  <p className="text-gray-600">{t.forumsDesc}</p>
+                  <Button
+                    onClick={() => toast.info('Create Community feature coming soon!')}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    {t.createCommunity || 'Create Community'}
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {filteredForums.map((forum) => (
                     <ForumCard
