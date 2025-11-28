@@ -221,11 +221,31 @@ export default function Community() {
   });
 
   // Fetch stories from Supabase
-  const { data: stories = [] } = useQuery({
+  const { data: stories = [], error: storiesError, isLoading: storiesLoading } = useQuery({
     queryKey: ['stories', searchQuery],
-    queryFn: () => getStories('-created_at', null, searchQuery || null),
-    initialData: [],
+    queryFn: async () => {
+      console.log('📚 Fetching success stories...');
+      try {
+        const fetchedStories = await getStories('-created_at', null, searchQuery || null);
+        console.log('✅ Success stories fetched:', fetchedStories?.length || 0, 'stories');
+        console.log('📖 Stories data:', fetchedStories);
+        return fetchedStories || [];
+      } catch (error) {
+        console.error('❌ Error fetching success stories:', error);
+        throw error;
+      }
+    },
+    staleTime: 30000,
+    refetchOnMount: true,
   });
+
+  // Log stories error if any
+  useEffect(() => {
+    if (storiesError) {
+      console.error('❌ Stories query error:', storiesError);
+      toast.error('Failed to load success stories');
+    }
+  }, [storiesError]);
 
   // Fetch REAL buddies from Supabase
   const { data: myBuddies = [], refetch: refetchBuddies } = useQuery({
