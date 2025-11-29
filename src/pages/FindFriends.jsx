@@ -219,7 +219,7 @@ export default function FindFriends() {
               const initials = userData.name?.charAt(0).toUpperCase() || '?';
 
               return (
-                <Card key={userData.id} className="hover:shadow-xl transition-shadow">
+                <Card key={userData.id} className="hover:shadow-xl transition-shadow flex flex-col h-full">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -238,38 +238,40 @@ export default function FindFriends() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    {userData.bio && (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {userData.bio}
-                      </p>
-                    )}
+                  <CardContent className="flex flex-col h-full">
+                    <div className="flex-1">
+                      {userData.bio && (
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                          {userData.bio}
+                        </p>
+                      )}
 
-                    <div className="space-y-2 mb-4">
-                      {/* Location is optional - only show if exists */}
-                      {userData.location && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          <span>{userData.location}</span>
-                        </div>
-                      )}
-                      {/* Relationship status is optional - only show if exists */}
-                      {userData.relationship_status && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Heart className="w-4 h-4" />
-                          <span className="capitalize">{userData.relationship_status}</span>
-                        </div>
-                      )}
-                      {/* Always show member since */}
-                      {userData.created_at && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Users className="w-4 h-4" />
-                          <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
-                        </div>
-                      )}
+                      <div className="space-y-2 mb-4">
+                        {/* Location is optional - only show if exists */}
+                        {userData.location && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <MapPin className="w-4 h-4" />
+                            <span>{userData.location}</span>
+                          </div>
+                        )}
+                        {/* Relationship status is optional - only show if exists */}
+                        {userData.relationship_status && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Heart className="w-4 h-4" />
+                            <span className="capitalize">{userData.relationship_status}</span>
+                          </div>
+                        )}
+                        {/* Always show member since */}
+                        {userData.created_at && (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Users className="w-4 h-4" />
+                            <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-auto pt-4">
                       {hasSentRequest ? (
                         <Button
                           variant="outline"
