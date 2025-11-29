@@ -44,8 +44,20 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast.error("Please enter both email and password");
+    // Validate email format
+    if (!email || !email.trim()) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!password) {
+      toast.error("Please enter your password");
       return;
     }
 
@@ -98,7 +110,7 @@ export default function SignIn() {
       }
     } catch (error) {
       console.error("❌ Login error:", error);
-      const errorMessage = error.message || "An error occurred. Please try again.";
+      const errorMessage = error?.message || error?.error || "An unexpected error occurred. Please try again.";
       toast.error(errorMessage);
       setIsLoading(false);
     }
