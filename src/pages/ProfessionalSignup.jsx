@@ -187,11 +187,16 @@ export default function ProfessionalSignup() {
         toast.success("🎉 Professional application submitted successfully!");
         // Note: In production, you'd send a password setup email here
       } else {
-        toast.error(result.error || "Failed to submit application. Please try again.");
+        // Display the specific error message from the backend
+        const errorMessage = result.error || "Failed to submit application. Please try again.";
+        toast.error(errorMessage);
+        console.error('Professional registration failed:', result.error);
       }
     } catch (error) {
       console.error('Signup error:', error);
-      toast.error("Something went wrong. Please try again.");
+      // Try to extract a meaningful error message
+      const errorMessage = error?.message || error?.error || "An unexpected error occurred. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

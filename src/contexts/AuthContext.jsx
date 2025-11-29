@@ -584,6 +584,16 @@ export function AuthProvider({ children }) {
         return { success: false, error: handleSupabaseError(authError) };
       }
 
+      // Check if user already exists (Supabase returns user but with empty identities array)
+      if (authData?.user && (!authData.user.identities || authData.user.identities.length === 0)) {
+        console.warn('⚠️ User already exists - identities array is empty');
+        isManualLoginRef.current = false;
+        return { 
+          success: false, 
+          error: 'This email is already registered. Please use a different email or try signing in.' 
+        };
+      }
+
       if (authData?.user) {
         console.log('User created in auth, creating profile in database...');
         
@@ -676,6 +686,14 @@ export function AuthProvider({ children }) {
         return { success: false, error: handleSupabaseError(authError) };
       }
 
+      // Check if user already exists (Supabase returns user but with empty identities array)
+      if (authData?.user && (!authData.user.identities || authData.user.identities.length === 0)) {
+        return { 
+          success: false, 
+          error: 'This email is already registered. Please use a different email or try signing in.' 
+        };
+      }
+
       if (authData?.user) {
         // Create user profile in database with therapist type
         const { data: userProfile, error: profileError } = await supabase
@@ -753,6 +771,14 @@ export function AuthProvider({ children }) {
         return { success: false, error: handleSupabaseError(authError) };
       }
 
+      // Check if user already exists (Supabase returns user but with empty identities array)
+      if (authData?.user && (!authData.user.identities || authData.user.identities.length === 0)) {
+        return { 
+          success: false, 
+          error: 'This email is already registered. Please use a different email or try signing in.' 
+        };
+      }
+
       if (authData?.user) {
         // Create user profile in database with influencer type
         const { data: userProfile, error: profileError } = await supabase
@@ -828,6 +854,14 @@ export function AuthProvider({ children }) {
 
       if (authError) {
         return { success: false, error: handleSupabaseError(authError) };
+      }
+
+      // Check if user already exists (Supabase returns user but with empty identities array)
+      if (authData?.user && (!authData.user.identities || authData.user.identities.length === 0)) {
+        return { 
+          success: false, 
+          error: 'This email is already registered. Please use a different email or try signing in.' 
+        };
       }
 
       if (authData?.user) {

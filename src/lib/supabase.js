@@ -74,15 +74,51 @@ export const recoverSession = async () => {
 export const handleSupabaseError = (error) => {
   if (!error) return 'An unknown error occurred';
   
-  // Common Supabase error messages
+  // Handle error message strings
   if (error.message) {
+    const lowerMessage = error.message.toLowerCase();
+    
+    // Check for specific error patterns in message
+    if (lowerMessage.includes('user already registered') || 
+        lowerMessage.includes('email already exists') ||
+        lowerMessage.includes('duplicate key value') ||
+        lowerMessage.includes('unique constraint')) {
+      return 'This email is already registered. Please use a different email or try signing in.';
+    }
+    
+    if (lowerMessage.includes('invalid login credentials') || 
+        lowerMessage.includes('invalid password') ||
+        lowerMessage.includes('invalid email or password')) {
+      return 'Invalid email or password';
+    }
+    
+    if (lowerMessage.includes('email not confirmed')) {
+      // Don't block sign in - allow users to use app without email confirmation
+      return null; // Return null to allow the sign in to proceed
+    }
+    
+    if (lowerMessage.includes('weak password') || 
+        lowerMessage.includes('password is too short')) {
+      return 'Password is too weak. Please use at least 8 characters.';
+    }
+    
+    if (lowerMessage.includes('invalid email')) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (lowerMessage.includes('rate limit')) {
+      return 'Too many attempts. Please try again later.';
+    }
+    
+    // Return the actual message if no pattern matches
     return error.message;
   }
   
+  // Handle error codes
   if (error.code) {
     switch (error.code) {
-      case '23505': // Unique violation
-        return 'This email is already registered';
+      case '23505': // Unique violation (PostgreSQL)
+        return 'This email is already registered. Please use a different email or try signing in.';
       case '23503': // Foreign key violation
         return 'Invalid reference data';
       case 'PGRST116': // Not found
@@ -93,24 +129,19 @@ export const handleSupabaseError = (error) => {
         // Don't show error - allow sign in even without email confirmation
         return null; // Return null to allow the sign in to proceed
       case 'too_many_requests':
-        return 'Too many login attempts. Please try again later';
+      case 'over_request_rate_limit':
+        return 'Too many attempts. Please try again later';
+      case 'weak_password':
+        return 'Password is too weak. Please use at least 8 characters.';
+      case 'invalid_email':
+        return 'Please enter a valid email address';
+      case 'user_already_exists':
+        return 'This email is already registered. Please use a different email or try signing in.';
       default:
         return error.message || 'An error occurred';
     }
   }
   
-  // Handle common Supabase auth error messages
-  if (error.message) {
-    const lowerMessage = error.message.toLowerCase();
-    if (lowerMessage.includes('invalid login credentials') || lowerMessage.includes('invalid password')) {
-      return 'Invalid email or password';
-    }
-    if (lowerMessage.includes('email not confirmed')) {
-      // Don't block sign in - allow users to use app without email confirmation
-      return null; // Return null to allow the sign in to proceed
-    }
-  }
-  
-  return 'An error occurred';
+  return 'An error occurred. Please try again.';
 };
 

@@ -179,6 +179,7 @@ export default function RegularUserForm({ onBack }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -192,8 +193,41 @@ export default function RegularUserForm({ onBack }) {
       agreeToTerms: formData.agreeToTerms 
     });
     
+    // Validate required fields
+    if (!formData.fullName || !formData.fullName.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+
+    if (!formData.email || !formData.email.trim()) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!formData.password) {
+      toast.error("Please enter a password");
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (!formData.confirmPassword) {
+      toast.error("Please confirm your password");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords don't match!");
+      toast.error("Passwords don't match! Please make sure both passwords are the same.");
       return;
     }
 
@@ -230,11 +264,14 @@ export default function RegularUserForm({ onBack }) {
         navigate(createPageUrl("Profile"), { replace: true });
       } else {
         console.error('Registration failed:', result.error);
+        // Display the specific error message from the backend
         toast.error(result.error || "Something went wrong. Please try again.");
       }
     } catch (err) {
       console.error('Registration error caught:', err);
-      toast.error("Something went wrong. Please try again.");
+      // Try to extract a meaningful error message
+      const errorMessage = err?.message || err?.error || "An unexpected error occurred. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -304,7 +341,10 @@ export default function RegularUserForm({ onBack }) {
               <Input
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, password: e.target.value});
+                  setPasswordError(""); // Clear error when user types
+                }}
                 placeholder={t.passwordPlaceholder}
                 className="pl-12 pr-12"
                 required
@@ -318,6 +358,11 @@ export default function RegularUserForm({ onBack }) {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            {formData.password && formData.password.length < 8 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Password must be at least 8 characters
+              </p>
+            )}
           </div>
 
           <div>
@@ -329,9 +374,12 @@ export default function RegularUserForm({ onBack }) {
               <Input
                 type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, confirmPassword: e.target.value});
+                  setPasswordError(""); // Clear error when user types
+                }}
                 placeholder={t.confirmPasswordPlaceholder}
-                className="pl-12 pr-12"
+                className={`pl-12 pr-12 ${passwordError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                 required
                 minLength={8}
               />
@@ -343,6 +391,21 @@ export default function RegularUserForm({ onBack }) {
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            {passwordError && (
+              <p className="text-xs text-red-600 mt-1">
+                {passwordError}
+              </p>
+            )}
+            {formData.confirmPassword && formData.password && formData.password !== formData.confirmPassword && (
+              <p className="text-xs text-red-600 mt-1">
+                Passwords do not match
+              </p>
+            )}
+            {formData.confirmPassword && formData.password && formData.password === formData.confirmPassword && formData.password.length >= 8 && (
+              <p className="text-xs text-green-600 mt-1">
+                ✓ Passwords match
+              </p>
+            )}
           </div>
 
           <div>
