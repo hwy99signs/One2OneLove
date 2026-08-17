@@ -14,6 +14,7 @@ create table if not exists public.love_note_invitations (
   token_hash text,
   token_expires_at timestamptz,
   scheduled_for timestamptz,
+  schedule_timezone text check (schedule_timezone is null or char_length(schedule_timezone) <= 80),
   status text not null default 'queued' check (
     status in ('queued', 'scheduled', 'sent', 'delivered', 'revealed', 'failed', 'canceled')
   ),
