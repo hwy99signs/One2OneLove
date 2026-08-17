@@ -4,6 +4,7 @@ import { ArrowLeft, Check, Heart, LockKeyhole, MessageCircleHeart, Save, Sparkle
 import { createPageUrl } from "@/utils";
 
 const fallbackPreview = {
+  senderName: "Someone who loves you",
   recipientName: "",
   message: "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️",
 };
@@ -14,6 +15,7 @@ const loadPreview = () => {
     if (!stored) return fallbackPreview;
     const parsed = JSON.parse(stored);
     return {
+      senderName: typeof parsed?.senderName === "string" && parsed.senderName.trim() ? parsed.senderName.trim() : fallbackPreview.senderName,
       recipientName: typeof parsed?.recipientName === "string" ? parsed.recipientName : "",
       message: typeof parsed?.message === "string" && parsed.message.trim() ? parsed.message.trim() : fallbackPreview.message,
     };
@@ -54,10 +56,12 @@ export default function LoveNoteRevealDemo() {
                 </div>
                 <div className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-violet-600">A private message is waiting</div>
                 <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-                  {preview.recipientName ? `${preview.recipientName}, someone sent you a Love Note.` : "Someone sent you a Love Note."}
+                  {preview.recipientName
+                    ? `${preview.recipientName}, ${preview.senderName} sent you a Love Note.`
+                    : `${preview.senderName} sent you a Love Note.`}
                 </h1>
                 <p className="mt-4 max-w-md text-sm leading-6 text-slate-600">
-                  The invitation does not expose the message. In the live version, a secure invitation token will connect this reveal to the intended recipient after sign-in or free-account creation.
+                  The invitation tells you who sent it, but it does not expose their private message. In the live version, a secure invitation token will connect this reveal to the intended recipient after sign-in or free-account creation.
                 </p>
                 <button
                   type="button"
@@ -77,13 +81,14 @@ export default function LoveNoteRevealDemo() {
                     One2OneLove
                   </div>
                   <p className="mt-6 text-center text-lg font-semibold leading-8 text-slate-800">{preview.message}</p>
-                  <div className="mt-6 text-right text-sm font-bold text-slate-600">— Someone who loves you 💕</div>
+                  <div className="mt-6 text-right text-sm font-bold text-slate-600">— {preview.senderName} 💕</div>
+                  <div className="mt-2 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Sent privately through One2OneLove</div>
                 </div>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
                   <Link to="/LoveNoteSendDemo" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
                     <MessageCircleHeart className="h-4 w-4" />
-                    Reply with a Love Note
+                    Reply to {preview.senderName}
                   </Link>
                   <button
                     type="button"
@@ -96,7 +101,7 @@ export default function LoveNoteRevealDemo() {
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                  <span className="font-black">Growth loop:</span> the recipient can reveal, save, reply, or send another Love Note without leaving One2OneLove. This preview now carries the sender’s drafted note into the recipient experience; secure invitation tokens and persistence will replace this temporary preview state at the backend stage.
+                  <span className="font-black">Sender identity:</span> the Love Note belongs to the person who sent it. One2OneLove is identified as the private delivery platform, not as the author. The recipient can reveal, save, reply, or send another Love Note without leaving One2OneLove.
                 </div>
               </div>
             )}
