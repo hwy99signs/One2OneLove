@@ -49,6 +49,12 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await userClient.auth.getUser()
     if (userError || !user) return json({ error: 'Sign in is required to reveal this Love Note.' }, 401)
+    if (!user.email_confirmed_at && !user.confirmed_at) {
+      return json({
+        error: 'Confirm your email before revealing a Love Note.',
+        code: 'EMAIL_NOT_CONFIRMED',
+      }, 403)
+    }
 
     const body = await req.json()
     const token = clean(body?.token, 128)
@@ -82,14 +88,14 @@ serve(async (req) => {
     }
 
     // Email invitations are additionally bound to the authenticated account email.
-    // SMS invitations rely on possession of the high-entropy private token plus sign-in,
-    // because One2OneLove does not currently require a verified phone number on every account.
+    // SMS invitations rely on possession of the high-entropy private token plus a
+    // verified One2OneLove account because the product does not require a verified
+    // phone number on every account.
     if (invitation.delivery_method === 'email') {
       const invitedEmail = normalizeEmail(invitation.recipient_contact)
       const accountEmail = normalizeEmail(user.email)
-      const emailConfirmed = Boolean(user.email_confirmed_at || user.confirmed_at)
 
-      if (!emailConfirmed || !accountEmail || accountEmail !== invitedEmail) {
+      if (!accountEmail || accountEmail !== invitedEmail) {
         return json({
           error: 'Sign in with the verified email address that received this Love Note invitation.'
         }, 403)
@@ -97,8 +103,6 @@ serve(async (req) => {
     }
 
     if (!invitation.recipient_user_id) {
-      // Claim atomically. If another account wins the race first, the update returns
-      // no row and this request must not reveal the note content.
       const { data: claimed, error: claimError } = await serviceClient
         .from('love_note_invitations')
         .update({
