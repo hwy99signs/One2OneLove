@@ -25,6 +25,8 @@ const sha256 = async (value: string) => {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
+const normalizeEmail = (value: unknown) => clean(value, 160).toLowerCase()
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
@@ -55,7 +57,7 @@ serve(async (req) => {
     const tokenHash = await sha256(token)
     const { data: invitation, error: lookupError } = await serviceClient
       .from('love_note_invitations')
-      .select('id, sender_name, recipient_name, recipient_user_id, note_content, status, token_expires_at, revealed_at')
+      .select('id, sender_name, recipient_name, recipient_contact, delivery_method, recipient_user_id, note_content, status, token_expires_at, revealed_at')
       .eq('token_hash', tokenHash)
       .maybeSingle()
 
@@ -79,8 +81,25 @@ serve(async (req) => {
       return json({ error: 'This Love Note has already been claimed by another account.' }, 403)
     }
 
+    // Email invitations are additionally bound to the authenticated account email.
+    // SMS invitations rely on possession of the high-entropy private token plus sign-in,
+    // because One2OneLove does not currently require a verified phone number on every account.
+    if (invitation.delivery_method === 'email') {
+      const invitedEmail = normalizeEmail(invitation.recipient_contact)
+      const accountEmail = normalizeEmail(user.email)
+      const emailConfirmed = Boolean(user.email_confirmed_at || user.confirmed_at)
+
+      if (!emailConfirmed || !accountEmail || accountEmail !== invitedEmail) {
+        return json({
+          error: 'Sign in with the verified email address that received this Love Note invitation.'
+        }, 403)
+      }
+    }
+
     if (!invitation.recipient_user_id) {
-      const { error: claimError } = await serviceClient
+      // Claim atomically. If another account wins the race first, the update returns
+      // no row and this request must not reveal the note content.
+      const { data: claimed, error: claimError } = await serviceClient
         .from('love_note_invitations')
         .update({
           recipient_user_id: user.id,
@@ -89,10 +108,16 @@ serve(async (req) => {
         })
         .eq('id', invitation.id)
         .is('recipient_user_id', null)
+        .select('recipient_user_id')
+        .maybeSingle()
 
       if (claimError) {
         console.error('Love Note claim failed:', claimError)
         return json({ error: 'Unable to claim this Love Note right now.' }, 409)
+      }
+
+      if (!claimed || claimed.recipient_user_id !== user.id) {
+        return json({ error: 'This Love Note was just claimed by another account.' }, 409)
       }
     } else if (invitation.status !== 'revealed') {
       await serviceClient
