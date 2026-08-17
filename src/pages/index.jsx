@@ -138,6 +138,7 @@ const ROUTES = [
   ["/MemoryLane", MemoryLane],
   ["/LoveNotes", LoveNotes],
   ["/LoveNotesCollection", LoveNotesCollection],
+  ["/LoveNotes/Send", LoveNoteSendDemo],
   ["/LoveNoteSendDemo", LoveNoteSendDemo],
   ["/LoveNoteRevealDemo", LoveNoteRevealDemo],
   ["/LoveNoteReveal", LoveNoteReveal],
