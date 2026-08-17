@@ -16,27 +16,33 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_NOTE = "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️";
 
-const loadDraftMessage = () => {
+const loadDraft = () => {
   try {
     const stored = sessionStorage.getItem("o2ol-love-note-draft");
-    if (!stored) return DEFAULT_NOTE;
+    if (!stored) return { source: "new", recipientName: "", message: DEFAULT_NOTE };
     const parsed = JSON.parse(stored);
-    return typeof parsed?.message === "string" && parsed.message.trim()
-      ? parsed.message.trim().slice(0, 500)
-      : DEFAULT_NOTE;
+    const source = typeof parsed?.source === "string" ? parsed.source : "new";
+    const recipientName = typeof parsed?.recipientName === "string" ? parsed.recipientName.trim().slice(0, 80) : "";
+    const providedMessage = typeof parsed?.message === "string" ? parsed.message.trim().slice(0, 500) : "";
+    return {
+      source,
+      recipientName,
+      message: source === "reply" ? providedMessage : providedMessage || DEFAULT_NOTE,
+    };
   } catch {
-    return DEFAULT_NOTE;
+    return { source: "new", recipientName: "", message: DEFAULT_NOTE };
   }
 };
 
 export default function LoveNoteSendDemo() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [initialDraft] = useState(loadDraft);
   const [senderName, setSenderName] = useState(user?.name || "");
-  const [recipientName, setRecipientName] = useState("");
+  const [recipientName, setRecipientName] = useState(initialDraft.recipientName);
   const [delivery, setDelivery] = useState("text");
   const [contact, setContact] = useState("");
-  const [message, setMessage] = useState(loadDraftMessage);
+  const [message, setMessage] = useState(initialDraft.message);
   const [deliveryTime, setDeliveryTime] = useState("now");
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
@@ -52,12 +58,13 @@ export default function LoveNoteSendDemo() {
 
   const senderLabel = senderName.trim() || "Your name";
   const recipientLabel = recipientName.trim() || "your person";
-  const canContinue = senderName.trim() && contact.trim() && message.trim();
+  const canContinue = Boolean(senderName.trim() && recipientName.trim() && contact.trim() && message.trim());
   const scheduleLabel = useMemo(() => {
     if (deliveryTime === "now") return "Send now";
     if (!scheduleDate || !scheduleTime) return "Choose date & time";
     return `${scheduleDate} at ${scheduleTime}`;
   }, [deliveryTime, scheduleDate, scheduleTime]);
+  const today = new Date().toISOString().slice(0, 10);
 
   const previewRecipient = () => {
     sessionStorage.setItem(
@@ -99,6 +106,13 @@ export default function LoveNoteSendDemo() {
                 <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">Make it personal. Keep the reveal private.</h1>
               </div>
             </div>
+
+            {initialDraft.source === "reply" && initialDraft.recipientName && (
+              <div className="mt-6 rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm leading-6 text-violet-900">
+                <div className="flex items-center gap-2 font-black"><MessageCircleHeart className="h-4 w-4" />Replying with a Love Note</div>
+                <p className="mt-1">We carried {initialDraft.recipientName}'s name over for you. Write your reply, choose how their invitation should arrive, and review it before sending.</p>
+              </div>
+            )}
 
             <div className="mt-7 flex flex-wrap gap-2">
               {[1, 2, 3].map((item) => (
@@ -178,6 +192,7 @@ export default function LoveNoteSendDemo() {
                     value={message}
                     onChange={(event) => setMessage(event.target.value.slice(0, 500))}
                     rows={6}
+                    placeholder={initialDraft.source === "reply" ? `Write your reply to ${recipientLabel}…` : "Write your Love Note…"}
                     className="mt-2 w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 leading-7 outline-none transition focus:border-pink-300 focus:ring-4 focus:ring-pink-100"
                   />
                   <div className="mt-1 text-right text-xs font-bold text-slate-400">{message.length}/500</div>
@@ -221,6 +236,7 @@ export default function LoveNoteSendDemo() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <input
                       type="date"
+                      min={today}
                       value={scheduleDate}
                       onChange={(event) => setScheduleDate(event.target.value)}
                       className="rounded-2xl border border-slate-200 px-4 py-3"
@@ -260,7 +276,7 @@ export default function LoveNoteSendDemo() {
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">From</div><div className="mt-1 font-black">{senderLabel}</div></div>
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Recipient</div><div className="mt-1 font-black">{recipientLabel}</div></div>
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Delivery</div><div className="mt-1 font-black">{delivery === "text" ? "Text message" : "Email"}</div></div>
-                    <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Contact</div><div className="mt-1 font-black break-all">{contact}</div></div>
+                    <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Contact</div><div className="mt-1 break-all font-black">{contact}</div></div>
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">When</div><div className="mt-1 font-black">{scheduleLabel}</div></div>
                   </div>
                 </div>
