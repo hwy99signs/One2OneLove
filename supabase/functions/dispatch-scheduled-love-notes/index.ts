@@ -31,13 +31,40 @@ const buildCopy = (senderName: string, revealUrl: string) => ({
   emailBody: `${senderName} sent you a private Love Note on One2OneLove.\n\nYour message is being kept private until you open it.\n\nReveal your Love Note: ${revealUrl}`,
 })
 
-const deliver = async ({ method, to, invitationId, copy }: any) => {
-  const endpoint = method === 'sms'
-    ? Deno.env.get('LOVE_NOTE_SMS_ENDPOINT')
-    : Deno.env.get('LOVE_NOTE_EMAIL_ENDPOINT')
-  const providerKey = Deno.env.get('LOVE_NOTE_DELIVERY_PROVIDER_KEY')
+const deliverEmailWithResend = async ({ to, invitationId, copy }: any) => {
+  const apiKey = Deno.env.get('RESEND_API_KEY') || ''
+  const from = Deno.env.get('RESEND_FROM_EMAIL') || ''
+  if (!apiKey || !from) throw new Error('Resend email delivery is not configured')
 
-  if (!endpoint || !providerKey) throw new Error(`${String(method).toUpperCase()} delivery provider is not configured`)
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'One2OneLove/1.0',
+      'Idempotency-Key': `love-note-${invitationId}`,
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject: copy.emailSubject,
+      text: copy.emailBody,
+    }),
+  })
+
+  if (!response.ok) {
+    const detail = clean(await response.text(), 500)
+    throw new Error(`Resend returned ${response.status}${detail ? `: ${detail}` : ''}`)
+  }
+
+  const payload = await response.json()
+  return clean(payload?.id, 200) || null
+}
+
+const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: any) => {
+  const endpoint = Deno.env.get('LOVE_NOTE_SMS_ENDPOINT') || ''
+  const providerKey = Deno.env.get('LOVE_NOTE_SMS_PROVIDER_KEY') || ''
+  if (!endpoint || !providerKey) throw new Error('SMS delivery provider is not configured')
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -46,15 +73,14 @@ const deliver = async ({ method, to, invitationId, copy }: any) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      channel: method,
+      channel: 'sms',
       to,
-      subject: method === 'email' ? copy.emailSubject : undefined,
-      text: method === 'email' ? copy.emailBody : copy.sms,
+      text: copy.sms,
       metadata: { invitation_id: invitationId, product: 'one2onelove_love_notes' },
     }),
   })
 
-  if (!response.ok) throw new Error(`Delivery provider returned ${response.status}`)
+  if (!response.ok) throw new Error(`SMS provider returned ${response.status}`)
 
   try {
     const payload = await response.json()
@@ -81,9 +107,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
-    if (!supabaseUrl || !serviceRoleKey || !siteUrl) {
-      return json({ error: 'Server configuration is incomplete' }, 500)
-    }
+    if (!supabaseUrl || !serviceRoleKey || !siteUrl) return json({ error: 'Server configuration is incomplete' }, 500)
 
     const serviceClient = createClient(supabaseUrl, serviceRoleKey)
     const now = new Date().toISOString()
@@ -104,7 +128,6 @@ serve(async (req) => {
     const results: Array<{ id: string; status: string }> = []
 
     for (const row of due || []) {
-      // Atomic claim prevents duplicate delivery if two scheduler invocations overlap.
       const { data: claimed, error: claimError } = await serviceClient
         .from('love_note_invitations')
         .update({ status: 'queued' })
@@ -123,8 +146,6 @@ serve(async (req) => {
       const copy = buildCopy(claimed.sender_name, revealUrl)
 
       try {
-        // Persist only the token hash before delivery so the reveal endpoint can
-        // validate the link immediately if the recipient opens it quickly.
         const { error: tokenError } = await serviceClient
           .from('love_note_invitations')
           .update({ token_hash: tokenHash, token_expires_at: tokenExpiresAt })
@@ -133,21 +154,13 @@ serve(async (req) => {
 
         if (tokenError) throw tokenError
 
-        const providerMessageId = await deliver({
-          method: claimed.delivery_method,
-          to: claimed.recipient_contact,
-          invitationId: claimed.id,
-          copy,
-        })
+        const providerMessageId = claimed.delivery_method === 'email'
+          ? await deliverEmailWithResend({ to: claimed.recipient_contact, invitationId: claimed.id, copy })
+          : await deliverSmsThroughConfiguredAdapter({ to: claimed.recipient_contact, invitationId: claimed.id, copy })
 
         await serviceClient
           .from('love_note_invitations')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            provider_message_id: providerMessageId,
-            failure_reason: null,
-          })
+          .update({ status: 'sent', sent_at: new Date().toISOString(), provider_message_id: providerMessageId, failure_reason: null })
           .eq('id', claimed.id)
           .eq('status', 'queued')
 
@@ -156,10 +169,7 @@ serve(async (req) => {
         console.error('Scheduled Love Note delivery failed:', claimed.id, error)
         await serviceClient
           .from('love_note_invitations')
-          .update({
-            status: 'failed',
-            failure_reason: clean(error instanceof Error ? error.message : String(error), 500),
-          })
+          .update({ status: 'failed', failure_reason: clean(error instanceof Error ? error.message : String(error), 500) })
           .eq('id', claimed.id)
 
         results.push({ id: claimed.id, status: 'failed' })
