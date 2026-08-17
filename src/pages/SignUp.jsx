@@ -1,14 +1,24 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Heart, User, Users, Briefcase, Stethoscope, Mic, X, ArrowRight } from "lucide-react";
+import { Heart, Briefcase, Stethoscope, Mic, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import RegularUserForm from "@/components/signup/RegularUserForm";
 
+const safeReturnTo = (value) => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  return value;
+};
+
 export default function SignUp() {
   const [selectedType, setSelectedType] = useState(null);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
+  const signInUrl = returnTo
+    ? `${createPageUrl("SignIn")}?returnTo=${encodeURIComponent(returnTo)}`
+    : createPageUrl("SignIn");
 
   const signupTypes = [
     {
@@ -17,7 +27,7 @@ export default function SignUp() {
       description: "Join as a couple or individual to strengthen your relationship",
       icon: Heart,
       color: "from-pink-500 to-rose-500",
-      route: null // Will show form inline
+      route: null
     },
     {
       id: "therapist",
@@ -47,25 +57,26 @@ export default function SignUp() {
 
   const handleSelectType = (type) => {
     if (type.route) {
-      navigate(type.route);
-    } else if (type.id === 'regular') {
-      // For regular users, show registration form directly (no subscription selection)
-      setSelectedType(type);
-    } else {
-      setSelectedType(type);
+      const destination = returnTo
+        ? `${type.route}?returnTo=${encodeURIComponent(returnTo)}`
+        : type.route;
+      navigate(destination);
+      return;
     }
+
+    setSelectedType(type);
   };
 
   const handleBackFromForm = () => {
     setSelectedType(null);
   };
 
-  // Show registration form for regular users
   if (selectedType && selectedType.id === "regular") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
-        <RegularUserForm 
+        <RegularUserForm
           onBack={handleBackFromForm}
+          returnTo={returnTo}
         />
       </div>
     );
@@ -75,7 +86,7 @@ export default function SignUp() {
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4 relative">
       <div className="w-full max-w-4xl">
         <Link to={createPageUrl("Home")}>
-          <button className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors z-10">
+          <button className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors z-10" aria-label="Close signup">
             <X size={24} />
           </button>
         </Link>
@@ -85,11 +96,16 @@ export default function SignUp() {
             <Heart className="w-8 h-8 text-white fill-white" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-            Join One 2 One Love
+            Join One2OneLove
           </h1>
           <p className="text-xl text-gray-600">
             Choose how you'd like to join our community
           </p>
+          {returnTo && (
+            <p className="mt-3 text-sm font-semibold text-pink-700">
+              After you verify and sign in, we’ll bring you back to the conversation you chose.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -111,9 +127,7 @@ export default function SignUp() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                  <Button
-                    className={`w-full bg-gradient-to-r ${type.color} hover:opacity-90 text-white`}
-                  >
+                  <Button className={`w-full bg-gradient-to-r ${type.color} hover:opacity-90 text-white`}>
                     Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -126,7 +140,7 @@ export default function SignUp() {
         <div className="mt-8 text-center">
           <p className="text-gray-600">
             Already have an account?{" "}
-            <Link to={createPageUrl("SignIn")} className="text-pink-600 hover:text-pink-700 font-semibold">
+            <Link to={signInUrl} className="text-pink-600 hover:text-pink-700 font-semibold">
               Sign In
             </Link>
           </p>
@@ -135,4 +149,3 @@ export default function SignUp() {
     </div>
   );
 }
-
