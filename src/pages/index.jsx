@@ -7,6 +7,7 @@ import TherapistSignup from "./TherapistSignup";
 import AboutUs from "./AboutUs";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
+import AuthCallback from "./AuthCallback";
 import MemoryLane from "./MemoryLane";
 import LoveNotes from "./LoveNotes";
 import CoupleSupport from "./CoupleSupport";
@@ -64,6 +65,7 @@ const PAGES = {
   AboutUs,
   SignIn,
   SignUp,
+  AuthCallback,
   MemoryLane,
   LoveNotes,
   CoupleSupport,
@@ -124,6 +126,7 @@ const ROUTES = [
   ["/login", SignIn],
   ["/SignUp", SignUp],
   ["/signup", SignUp],
+  ["/auth/callback", AuthCallback],
   ["/MemoryLane", MemoryLane],
   ["/LoveNotes", LoveNotes],
   ["/CoupleSupport", CoupleSupport],
