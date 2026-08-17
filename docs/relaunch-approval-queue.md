@@ -23,6 +23,8 @@ Production remains untouched. This file tracks anything that must wait for expli
 ## Needs explicit approval before execution
 
 - Love Notes SMS provider / paid SMS activation, including Twilio or any A2P-related costs.
+- Saved Love Notes migration: `supabase/migrations/20260817_love_note_saves.sql`. The migration and client service are staged only; do not apply or wire the live Save button until approved.
+- Final numerical sending/rate-limit policy for Love Notes and Live Rooms. Technical rate limiting is a launch requirement, but the actual per-hour/per-day member limits should be approved as a product decision before enforcement.
 - Live Room moderation migration: `supabase/migrations/20260817_live_room_moderation.sql`.
 - Production security migrations or RLS/policy changes affecting live data.
 - Any merge from `relaunch-homepage` into production/default branch.
@@ -56,6 +58,10 @@ Production remains untouched. This file tracks anything that must wait for expli
 - Added `/LoveNotes/Send` as the launch-ready sender route while retaining the old demo route as a compatibility alias.
 - Added recipient-name handoff for Love Note replies.
 - Added multilingual sender and reveal experiences for English, Spanish, French, Italian, German, and Dutch.
+- Added progressive loading to the 365-note collection so the page does not render the entire library at once.
+- Added multilingual Live Community room names, topics, activity labels, and landing-page copy.
+- Staged the secure Saved Love Notes schema and client service without applying it to production.
+- Added a relaunch safety-check script (`npm run relaunch:check`) to flag known security/consistency blockers in the codebase.
 - Added a confirmed-email check at the Sign In boundary as defense in depth while final AuthContext hardening remains on the launch-blocker list.
 
 Last updated during the August 17, 2026 relaunch build session.
