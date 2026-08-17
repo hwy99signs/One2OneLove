@@ -22,8 +22,9 @@ Production remains untouched. This file tracks anything that must wait for expli
 
 ## Needs explicit approval before execution
 
-- Love Notes SMS provider / paid SMS activation, including Twilio or any A2P-related costs.
+- Love Notes SMS provider / paid SMS activation, including Twilio or any A2P-related costs. The prepared backend now has an independent `LOVE_NOTE_SMS_ENABLED` kill switch so email activation cannot accidentally activate SMS.
 - Saved Love Notes migration: `supabase/migrations/20260817_love_note_saves.sql`. The migration and client service are staged only; do not apply or wire the live Save button until approved.
+- Live Room sender-identity hardening migration: `supabase/migrations/20260817_live_room_identity_hardening.sql`. This would make the database derive member identity instead of trusting a browser-supplied display name.
 - Final numerical sending/rate-limit policy for Love Notes and Live Rooms. Technical rate limiting is a launch requirement, but the actual per-hour/per-day member limits should be approved as a product decision before enforcement.
 - Live Room moderation migration: `supabase/migrations/20260817_live_room_moderation.sql`.
 - Production security migrations or RLS/policy changes affecting live data.
@@ -32,7 +33,8 @@ Production remains untouched. This file tracks anything that must wait for expli
 
 ## Launch blockers to review in one batch
 
-- Verify and remove any remaining unconfirmed-email authentication bypass. The Sign In page now performs an additional confirmed-email check on the development branch, but the underlying AuthContext still needs final hardening/retest.
+- Retest the newly hardened AuthContext across regular sign-in, sign-up confirmation callback, password reset, and professional application flows before production. Unconfirmed-email sessions are now rejected in development rather than intentionally allowed.
+- Remove/replace legacy mock verification in `TherapistSignup.jsx`, `InfluencerSignup.jsx`, and `ProfessionalSignup.jsx`. Those pages currently display and accept the hard-coded code `123456` for email and phone verification. They must not launch that way. Decide whether to connect real verification now or keep those application routes out of the initial public launch.
 - Harden `users` RLS so sensitive profile fields are not publicly selectable.
 - Enable RLS on `waitlist_signups` and review grants.
 - Review pairwise `messages` update permissions so receivers cannot alter message content.
@@ -60,8 +62,11 @@ Production remains untouched. This file tracks anything that must wait for expli
 - Added multilingual sender and reveal experiences for English, Spanish, French, Italian, German, and Dutch.
 - Added progressive loading to the 365-note collection so the page does not render the entire library at once.
 - Added multilingual Live Community room names, topics, activity labels, and landing-page copy.
+- Minimized Realtime Presence data: room clients now receive an aggregate presence record with a one-way pseudonymous key rather than member names/account UUIDs.
+- Hardened Love Note send/reveal Edge Function code so both require verified accounts; SMS now has a second independent kill switch.
+- Rebuilt AuthContext on the development branch so unconfirmed-email sessions are rejected instead of intentionally allowed.
 - Staged the secure Saved Love Notes schema and client service without applying it to production.
+- Staged Live Room sender-identity hardening without applying it to production.
 - Added a relaunch safety-check script (`npm run relaunch:check`) to flag known security/consistency blockers in the codebase.
-- Added a confirmed-email check at the Sign In boundary as defense in depth while final AuthContext hardening remains on the launch-blocker list.
 
 Last updated during the August 17, 2026 relaunch build session.
