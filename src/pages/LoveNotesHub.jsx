@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/Layout";
 import { loveNotesData } from "@/components/lovenotes/LoveNotesData";
-import { createPageUrl } from "@/utils";
 
 const copy = {
   en: {
@@ -206,7 +205,7 @@ export default function LoveNotesHub() {
                 </div>
                 <div className="mt-8 rounded-2xl border border-white bg-white/80 p-4 text-center shadow-sm">
                   <div className="text-sm font-black text-slate-900">{t.previewLabel}</div>
-                  <button type="button" className="mt-3 w-full rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">{t.reveal}</button>
+                  <Link to="/LoveNoteRevealDemo" className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">{t.reveal}</Link>
                 </div>
               </div>
             </div>
