@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const translations = {
   en: {
@@ -18,7 +19,7 @@ const translations = {
     signIn: { title: "Se Connecter", subtitle: "Rejoignez des conversations en direct, envoyez des mots d’amour et accédez à vos outils relationnels", email: "Adresse E-mail", password: "Mot de Passe", emailPlaceholder: "Entrez votre e-mail", passwordPlaceholder: "Entrez votre mot de passe", signInButton: "Se Connecter", forgotPassword: "Mot de passe oublié?", invite: "Inviter des Amis", newHere: "Nouveau sur One2OneLove ?", createAccount: "Créer un compte gratuit" }
   },
   it: {
-    signIn: { title: "Accedi", subtitle: "Partecipa alle conversazioni dal vivo, invia note d’amore e usa i tuoi strumenti di relazione", email: "Indirizzo Email", password: "Password", emailPlaceholder: "Inserisci la tua email", passwordPlaceholder: "Inserisci la tua password", signInButton: "Accedi", forgotPassword: "Password dimenticata?", invite: "Invita Amici", newHere: "Nuovo su One2OneLove?", createAccount: "Crea un account gratuito" }
+    signIn: { title: "Accedi", subtitle: "Partecipa alle conversazioni dal vivo, invia note d’amore e usa i tuoi strumenti di relazione", email: "Indirizzo Email", password: "Password", emailPlaceholder: "Inserisci la tua email", passwordPlaceholder: "Inserisci la password", signInButton: "Accedi", forgotPassword: "Password dimenticata?", invite: "Invita Amici", newHere: "Nuovo su One2OneLove?", createAccount: "Crea un account gratuito" }
   },
   de: {
     signIn: { title: "Anmelden", subtitle: "Nimm an Live-Gesprächen teil, sende Liebesbotschaften und nutze deine Beziehungstools", email: "E-Mail-Adresse", password: "Passwort", emailPlaceholder: "Geben Sie Ihre E-Mail ein", passwordPlaceholder: "Geben Sie Ihr Passwort ein", signInButton: "Anmelden", forgotPassword: "Passwort vergessen?", invite: "Freunde Einladen", newHere: "Neu bei One2OneLove?", createAccount: "Kostenloses Konto erstellen" }
@@ -43,7 +44,7 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const { currentLanguage } = useLanguage();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const t = translations[currentLanguage] || translations.en;
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
   const signupUrl = returnTo
@@ -69,6 +70,23 @@ export default function SignIn() {
       const result = await Promise.race([loginPromise, timeoutPromise]);
 
       if (result && result.success) {
+        const { data: authCheck, error: authCheckError } = await supabase.auth.getUser();
+        const authenticatedUser = authCheck?.user;
+
+        if (authCheckError || !authenticatedUser) {
+          await logout();
+          toast.error("We could not verify your account session. Please sign in again.");
+          setIsLoading(false);
+          return;
+        }
+
+        if (!authenticatedUser.email_confirmed_at) {
+          await logout();
+          toast.error("Please confirm your email before signing in.");
+          setIsLoading(false);
+          return;
+        }
+
         toast.success("Successfully signed in!");
         setIsLoading(false);
 
