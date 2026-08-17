@@ -135,6 +135,7 @@ serve(async (req) => {
     const noteContent = clean(body?.note_content, 500)
     const deliveryTime = body?.delivery_time === 'schedule' ? 'schedule' : 'now'
     const scheduledFor = clean(body?.scheduled_for, 80)
+    const scheduleTimezone = clean(body?.schedule_timezone, 80) || 'UTC'
 
     if (!recipientContact || !noteContent) {
       return json({ error: 'Recipient contact and Love Note content are required.' }, 400)
@@ -170,9 +171,10 @@ serve(async (req) => {
           token_hash: null,
           token_expires_at: null,
           scheduled_for: scheduledAt,
+          schedule_timezone: scheduleTimezone,
           status: 'scheduled',
         })
-        .select('id, status, scheduled_for, created_at')
+        .select('id, status, scheduled_for, schedule_timezone, created_at')
         .single()
 
       if (insertError || !invitation) {
@@ -185,6 +187,7 @@ serve(async (req) => {
         invitation_id: invitation.id,
         status: 'scheduled',
         scheduled_for: invitation.scheduled_for,
+        schedule_timezone: invitation.schedule_timezone,
         sender_name: senderName,
         invitation_preview: deliveryMethod === 'email' ? previewCopy.emailBody : previewCopy.sms,
       })
@@ -207,6 +210,7 @@ serve(async (req) => {
         token_hash: tokenHash,
         token_expires_at: tokenExpiresAt,
         scheduled_for: null,
+        schedule_timezone: null,
         status: 'queued',
       })
       .select('id, status, created_at')
