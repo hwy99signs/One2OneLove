@@ -8,6 +8,7 @@ import AboutUs from "./AboutUs";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import AuthCallback from "./AuthCallback";
+import ResetPassword from "./ResetPassword";
 import MemoryLane from "./MemoryLane";
 import LoveNotes from "./LoveNotesHub";
 import LoveNotesCollection from "./LoveNotesCollectionRelaunch";
@@ -70,6 +71,7 @@ const PAGES = {
   SignIn,
   SignUp,
   AuthCallback,
+  ResetPassword,
   MemoryLane,
   LoveNotes,
   LoveNotesCollection,
@@ -135,6 +137,7 @@ const ROUTES = [
   ["/SignUp", SignUp],
   ["/signup", SignUp],
   ["/auth/callback", AuthCallback],
+  ["/ResetPassword", ResetPassword],
   ["/MemoryLane", MemoryLane],
   ["/LoveNotes", LoveNotes],
   ["/LoveNotesCollection", LoveNotesCollection],
