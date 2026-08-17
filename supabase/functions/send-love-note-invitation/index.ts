@@ -151,14 +151,49 @@ serve(async (req) => {
 
     // Sender identity comes from the authenticated account, not browser-supplied text.
     const senderName = await getSenderName(serviceClient, user)
-    const rawToken = randomToken()
-    const tokenHash = await sha256(rawToken)
     const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
     if (!siteUrl) return json({ error: 'SITE_URL is not configured' }, 500)
 
+    // For scheduled delivery, do NOT generate the reveal token yet. The future
+    // delivery worker creates it at send time, hashes it, stores only the hash,
+    // then immediately embeds the one-time raw token in the outbound invitation.
+    if (deliveryTime === 'schedule') {
+      const { data: invitation, error: insertError } = await serviceClient
+        .from('love_note_invitations')
+        .insert({
+          sender_user_id: user.id,
+          sender_name: senderName,
+          recipient_name: recipientName || null,
+          recipient_contact: recipientContact,
+          delivery_method: deliveryMethod,
+          note_content: noteContent,
+          token_hash: null,
+          token_expires_at: null,
+          scheduled_for: scheduledAt,
+          status: 'scheduled',
+        })
+        .select('id, status, scheduled_for, created_at')
+        .single()
+
+      if (insertError || !invitation) {
+        console.error('Scheduled Love Note invitation insert failed:', insertError)
+        return json({ error: 'Unable to schedule Love Note invitation.' }, 500)
+      }
+
+      const previewCopy = buildCopy(senderName, '[secure reveal link created at delivery time]')
+      return json({
+        invitation_id: invitation.id,
+        status: 'scheduled',
+        scheduled_for: invitation.scheduled_for,
+        sender_name: senderName,
+        invitation_preview: deliveryMethod === 'email' ? previewCopy.emailBody : previewCopy.sms,
+      })
+    }
+
+    const rawToken = randomToken()
+    const tokenHash = await sha256(rawToken)
     const revealUrl = `${siteUrl}/LoveNoteReveal?token=${encodeURIComponent(rawToken)}`
     const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    const initialStatus = deliveryTime === 'schedule' ? 'scheduled' : 'queued'
 
     const { data: invitation, error: insertError } = await serviceClient
       .from('love_note_invitations')
@@ -171,10 +206,10 @@ serve(async (req) => {
         note_content: noteContent,
         token_hash: tokenHash,
         token_expires_at: tokenExpiresAt,
-        scheduled_for: scheduledAt,
-        status: initialStatus,
+        scheduled_for: null,
+        status: 'queued',
       })
-      .select('id, status, scheduled_for, created_at')
+      .select('id, status, created_at')
       .single()
 
     if (insertError || !invitation) {
@@ -183,19 +218,6 @@ serve(async (req) => {
     }
 
     const copy = buildCopy(senderName, revealUrl)
-
-    if (deliveryTime === 'schedule') {
-      // A scheduled worker will deliver this later. The raw reveal token is returned
-      // to that worker through a separate secure handoff design before launch; it is
-      // intentionally not persisted in plaintext here.
-      return json({
-        invitation_id: invitation.id,
-        status: 'scheduled',
-        scheduled_for: invitation.scheduled_for,
-        sender_name: senderName,
-        invitation_preview: deliveryMethod === 'email' ? copy.emailBody : copy.sms,
-      })
-    }
 
     try {
       const providerMessageId = await deliverThroughConfiguredAdapter({
