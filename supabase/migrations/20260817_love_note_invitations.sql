@@ -4,6 +4,7 @@
 create table if not exists public.love_note_invitations (
   id uuid primary key default gen_random_uuid(),
   sender_user_id uuid not null references auth.users(id) on delete cascade,
+  recipient_user_id uuid references auth.users(id) on delete set null,
   sender_name text not null check (char_length(sender_name) between 1 and 80),
   recipient_name text check (recipient_name is null or char_length(recipient_name) <= 80),
   recipient_contact text not null check (char_length(recipient_contact) between 1 and 160),
@@ -38,25 +39,29 @@ create unique index if not exists love_note_invitations_token_hash_uidx
 create index if not exists love_note_invitations_sender_idx
   on public.love_note_invitations(sender_user_id, created_at desc);
 
+create index if not exists love_note_invitations_recipient_idx
+  on public.love_note_invitations(recipient_user_id, revealed_at desc)
+  where recipient_user_id is not null;
+
 create index if not exists love_note_invitations_status_idx
   on public.love_note_invitations(status, scheduled_for)
   where status in ('queued', 'scheduled');
 
 alter table public.love_note_invitations enable row level security;
 
--- Members may see only the invitations they created. Recipient reveal is handled
--- server-side by an Edge Function after validating the private token; recipient
--- contact information and note text are never exposed through a public SELECT.
+-- Members may see only invitations they sent or invitations that have already
+-- been securely claimed by their account. Recipient reveal itself is handled
+-- server-side by an Edge Function after validating the private token.
 drop policy if exists "love_note_sender_select_own" on public.love_note_invitations;
 create policy "love_note_sender_select_own"
   on public.love_note_invitations
   for select
   to authenticated
-  using (sender_user_id = auth.uid());
+  using (sender_user_id = auth.uid() or recipient_user_id = auth.uid());
 
 -- No direct INSERT/UPDATE/DELETE policy is granted to browser clients.
--- The authenticated Edge Function performs writes using the service role after
--- verifying the caller. This prevents clients from forging delivery/reveal state.
+-- Authenticated Edge Functions perform writes using the service role after
+-- verifying the caller and reveal token. This prevents forged delivery state.
 
 create or replace function public.set_love_note_invitation_updated_at()
 returns trigger
