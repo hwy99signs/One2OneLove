@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -7,11 +7,13 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Users,
 } from "lucide-react";
 import { getLiveCommunityRoom, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
 import { joinRoomPresence } from "@/lib/roomPresenceService";
 import {
+  deleteOwnRoomMessage,
   getRoomMessages,
   REACTIONS,
   sendRoomMessage,
@@ -20,6 +22,8 @@ import {
 } from "@/lib/liveRoomMessageService";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPageUrl } from "@/utils";
+
+const HOST_IDLE_MS = 90_000;
 
 const timeLabel = (value) =>
   new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
@@ -39,6 +43,7 @@ function ReactionBar({ message, userId, onToggle }) {
         const selected = (message.room_message_reactions || []).some(
           (reaction) => reaction.user_id === userId && reaction.emoji === emoji
         );
+
         return (
           <button
             key={emoji}
@@ -69,7 +74,14 @@ export default function LiveRoom() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [messageError, setMessageError] = useState("");
+  const [clock, setClock] = useState(() => Date.now());
+  const messagesEndRef = useRef(null);
   const activityLabel = getRoomActivityLabel(activeCount);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     setActiveCount(0);
@@ -105,6 +117,18 @@ export default function LiveRoom() {
     return subscribeToRoomMessages(room.slug, loadMessages);
   }, [backendReady, loadMessages, room.slug, user?.id]);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages.length]);
+
+  const lastMessageAt = messages.length
+    ? new Date(messages[messages.length - 1].created_at).getTime()
+    : 0;
+  const roomHasGoneQuiet = backendReady === true && messages.length > 0 && clock - lastMessageAt >= HOST_IDLE_MS;
+  const showHostPrompt = !backendReady || messages.length === 0 || roomHasGoneQuiet;
+
   const handleSend = async (event) => {
     event.preventDefault();
     if (!backendReady || !user?.id || !draft.trim()) return;
@@ -114,6 +138,7 @@ export default function LiveRoom() {
     try {
       await sendRoomMessage(room.slug, user, draft);
       setDraft("");
+      setClock(Date.now());
       await loadMessages();
     } catch (error) {
       console.error("Failed to send room message:", error);
@@ -133,7 +158,19 @@ export default function LiveRoom() {
     }
   };
 
-  const showHostPrompt = !backendReady || messages.length === 0;
+  const handleDelete = async (message) => {
+    if (!user?.id || message.user_id !== user.id) return;
+    const confirmed = window.confirm("Delete this message from the room?");
+    if (!confirmed) return;
+
+    try {
+      await deleteOwnRoomMessage(message.id, user.id);
+      await loadMessages();
+    } catch (error) {
+      console.error("Failed to delete room message:", error);
+      setMessageError("Your message could not be deleted.");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -170,7 +207,7 @@ export default function LiveRoom() {
             </div>
           </div>
 
-          <div className="min-h-[31rem] bg-gradient-to-b from-white to-slate-50 p-5 sm:p-7">
+          <div className="max-h-[65vh] min-h-[31rem] overflow-y-auto bg-gradient-to-b from-white to-slate-50 p-5 sm:p-7">
             {showHostPrompt && (
               <div className="mx-auto max-w-2xl rounded-[1.5rem] border border-violet-200 bg-violet-50 p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-700">
@@ -179,29 +216,43 @@ export default function LiveRoom() {
                 </div>
                 <p className="mt-3 text-lg font-bold leading-7 text-violet-950">“{room.topic}”</p>
                 <div className="mt-4 text-sm leading-6 text-violet-800/80">
-                  A conversation is always waiting here. Once members start talking, the host moves into the background.
+                  {roomHasGoneQuiet
+                    ? "The room has been quiet for a bit, so the host offers one invitation back into the conversation. Once members begin talking again, the host steps away."
+                    : "A conversation is always waiting here. Once members start talking, the host moves into the background."}
                 </div>
               </div>
             )}
 
             {user && backendReady === true && messages.length > 0 && (
-              <div className="mx-auto mt-2 max-w-3xl space-y-4">
+              <div className="mx-auto mt-5 max-w-3xl space-y-4">
                 {messages.map((message) => {
                   const mine = message.user_id === user.id;
                   return (
                     <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-sm ${mine ? "bg-pink-600 text-white" : "border border-slate-200 bg-white text-slate-800"}`}>
+                      <div className={`group max-w-[88%] rounded-2xl px-4 py-3 shadow-sm ${mine ? "bg-pink-600 text-white" : "border border-slate-200 bg-white text-slate-800"}`}>
                         <div className={`flex items-center gap-2 text-xs font-black ${mine ? "text-pink-100" : "text-slate-500"}`}>
                           <span>{mine ? "You" : message.sender_name}</span>
                           <span>·</span>
                           <span>{timeLabel(message.created_at)}</span>
+                          {mine && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(message)}
+                              className="ml-auto rounded-full p-1 opacity-70 transition hover:bg-white/15 hover:opacity-100"
+                              aria-label="Delete your message"
+                              title="Delete your message"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
-                        <div className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.content}</div>
+                        <div className="mt-1 whitespace-pre-wrap break-words text-sm leading-6">{message.content}</div>
                         <ReactionBar message={message} userId={user.id} onToggle={handleReaction} />
                       </div>
                     </div>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </div>
             )}
 
@@ -210,7 +261,7 @@ export default function LiveRoom() {
                 <MessageCircleHeart className="mx-auto h-7 w-7 text-amber-600" />
                 <div className="mt-3 font-black text-slate-900">Group messaging is built and waiting for database activation.</div>
                 <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                  The interface, realtime message service, reactions, and security rules are prepared on the development branch. No production database changes have been made.
+                  The interface, realtime message service, reactions, message deletion, and security rules are prepared on the development branch. The approved database migration has not been applied yet.
                 </p>
               </div>
             )}
@@ -220,24 +271,30 @@ export default function LiveRoom() {
 
           <div className="border-t border-slate-200 bg-white p-4 sm:p-5">
             {user ? (
-              <form onSubmit={handleSend} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <input
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  disabled={!backendReady || sending}
-                  maxLength={2000}
-                  placeholder={backendReady ? "Say something to the room…" : "Messaging will unlock after the secure room tables are activated."}
-                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
-                />
-                <button
-                  type="submit"
-                  disabled={!backendReady || sending || !draft.trim()}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-600 text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                  aria-label="Send message"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </form>
+              <div>
+                <form onSubmit={handleSend} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <input
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    disabled={!backendReady || sending}
+                    maxLength={2000}
+                    placeholder={backendReady ? "Say something to the room…" : "Messaging will unlock after the secure room tables are activated."}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!backendReady || sending || !draft.trim()}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-600 text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                    aria-label="Send message"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+                <div className="mt-2 flex justify-between px-1 text-[11px] font-semibold text-slate-400">
+                  <span>Be real. Be respectful. Tell the story, not the person.</span>
+                  <span>{draft.length}/2000</span>
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col gap-3 rounded-2xl border border-pink-100 bg-pink-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -273,6 +330,14 @@ export default function LiveRoom() {
             </div>
             <p className="mt-4 text-sm font-semibold leading-6 text-slate-700">Tell the story. Don’t expose the person.</p>
             <p className="mt-2 text-sm leading-6 text-slate-500">No doxxing, targeted humiliation, threats, or turning a relationship discussion into a public attack.</p>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-violet-100 bg-violet-50 p-5">
+            <div className="flex items-center gap-2 font-black text-violet-950">
+              <Sparkles className="h-5 w-5 text-violet-600" />
+              AI Host rhythm
+            </div>
+            <p className="mt-3 text-sm leading-6 text-violet-900/75">Humans talking: host listens. About 90 seconds of quiet: host invites. Conversation resumes: host disappears again.</p>
           </div>
 
           <div className="rounded-[1.5rem] bg-gradient-to-br from-pink-600 to-violet-600 p-5 text-white shadow-lg">
