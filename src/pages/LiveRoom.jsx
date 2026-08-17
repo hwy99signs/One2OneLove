@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { getLiveCommunityRoom, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
+import { joinRoomPresence } from "@/lib/roomPresenceService";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPageUrl } from "@/utils";
 
@@ -17,7 +18,15 @@ export default function LiveRoom() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const room = getLiveCommunityRoom(searchParams.get("room"));
-  const activityLabel = getRoomActivityLabel(room);
+  const [activeCount, setActiveCount] = useState(0);
+  const activityLabel = getRoomActivityLabel(activeCount);
+
+  useEffect(() => {
+    setActiveCount(0);
+    if (!user?.id) return undefined;
+
+    return joinRoomPresence(room.slug, user, setActiveCount);
+  }, [room.slug, user?.id]);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -72,7 +81,7 @@ export default function LiveRoom() {
               <MessageCircleHeart className="mx-auto h-7 w-7 text-pink-500" />
               <div className="mt-3 font-black text-slate-800">Live member conversation will appear here.</div>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
-                This preview is the room shell only. The next backend step will connect real room presence, messages, reactions, and the active-member counter without touching production while we build.
+                The room counter is now connected to realtime presence. Persistent group messages and reactions are the next backend layer and remain disabled until their secure data rules are in place.
               </p>
             </div>
           </div>
@@ -82,7 +91,7 @@ export default function LiveRoom() {
               <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <input
                   disabled
-                  placeholder="Room messaging will be enabled after the live backend is connected."
+                  placeholder="Room messaging will be enabled after the secure group-message backend is added."
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-500 outline-none disabled:cursor-not-allowed"
                 />
                 <button disabled className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 text-slate-400" aria-label="Send message">
@@ -111,7 +120,9 @@ export default function LiveRoom() {
               Room activity
             </div>
             <div className="mt-4 text-sm leading-6 text-slate-600">
-              When members are actively chatting, this area will show the real count. When they are not, the host topic takes its place instead of showing “0”.
+              {activityLabel
+                ? `${activityLabel}. This count reflects signed-in members currently inside this room.`
+                : "When signed-in members are inside this room, their real count appears here. Otherwise the host topic takes its place instead of showing ‘0’."}
             </div>
           </div>
 
