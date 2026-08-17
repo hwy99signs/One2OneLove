@@ -15,12 +15,14 @@ create index if not exists love_note_saves_user_created_idx
 
 alter table public.love_note_saves enable row level security;
 
+drop policy if exists "Recipients can view their saved Love Notes" on public.love_note_saves;
 create policy "Recipients can view their saved Love Notes"
   on public.love_note_saves
   for select
   to authenticated
   using (user_id = auth.uid());
 
+drop policy if exists "Recipients can save revealed Love Notes" on public.love_note_saves;
 create policy "Recipients can save revealed Love Notes"
   on public.love_note_saves
   for insert
@@ -36,8 +38,12 @@ create policy "Recipients can save revealed Love Notes"
     )
   );
 
+drop policy if exists "Recipients can remove their own saved Love Notes" on public.love_note_saves;
 create policy "Recipients can remove their own saved Love Notes"
   on public.love_note_saves
   for delete
   to authenticated
   using (user_id = auth.uid());
+
+comment on table public.love_note_saves is
+  'Saved private Love Notes. A recipient may save only invitations securely claimed by their authenticated account.';
