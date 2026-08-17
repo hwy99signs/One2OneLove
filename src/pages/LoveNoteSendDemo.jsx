@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -12,11 +12,14 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_NOTE = "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️";
 
 export default function LoveNoteSendDemo() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [senderName, setSenderName] = useState(user?.name || "");
   const [recipientName, setRecipientName] = useState("");
   const [delivery, setDelivery] = useState("text");
   const [contact, setContact] = useState("");
@@ -26,8 +29,13 @@ export default function LoveNoteSendDemo() {
   const [scheduleTime, setScheduleTime] = useState("");
   const [step, setStep] = useState(1);
 
+  useEffect(() => {
+    if (!senderName.trim() && user?.name) setSenderName(user.name);
+  }, [user?.name, senderName]);
+
+  const senderLabel = senderName.trim() || "Your name";
   const recipientLabel = recipientName.trim() || "your person";
-  const canContinue = contact.trim() && message.trim();
+  const canContinue = senderName.trim() && contact.trim() && message.trim();
   const scheduleLabel = useMemo(() => {
     if (deliveryTime === "now") return "Send now";
     if (!scheduleDate || !scheduleTime) return "Choose date & time";
@@ -38,6 +46,7 @@ export default function LoveNoteSendDemo() {
     sessionStorage.setItem(
       "o2ol-love-note-preview",
       JSON.stringify({
+        senderName: senderName.trim(),
         recipientName: recipientName.trim(),
         message: message.trim(),
         delivery,
@@ -90,6 +99,17 @@ export default function LoveNoteSendDemo() {
 
             {step === 1 && (
               <div className="mt-8 space-y-5">
+                <div>
+                  <label className="text-sm font-black text-slate-700">Your name <span className="font-semibold text-slate-400">(shown to recipient)</span></label>
+                  <input
+                    value={senderName}
+                    onChange={(event) => setSenderName(event.target.value.slice(0, 80))}
+                    placeholder="e.g., Alex"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-pink-300 focus:ring-4 focus:ring-pink-100"
+                  />
+                  <p className="mt-2 text-xs leading-5 text-slate-500">The invitation and revealed Love Note identify the individual who sent it. One2OneLove appears as the delivery platform, not as the sender.</p>
+                </div>
+
                 <div>
                   <label className="text-sm font-black text-slate-700">Recipient name</label>
                   <input
@@ -199,7 +219,7 @@ export default function LoveNoteSendDemo() {
 
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
                   <div className="flex items-center gap-2 font-black"><LockKeyhole className="h-4 w-4" />Private by design</div>
-                  <p className="mt-1">The invitation says a Love Note is waiting. The actual message stays hidden until the recipient opens the secure reveal experience.</p>
+                  <p className="mt-1">The invitation identifies {senderLabel} but does not expose the Love Note itself. The message stays hidden until the recipient opens the secure reveal experience.</p>
                 </div>
 
                 <div className="flex gap-3">
@@ -220,6 +240,7 @@ export default function LoveNoteSendDemo() {
               <div className="mt-8 space-y-5">
                 <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
                   <div className="grid gap-4 sm:grid-cols-2">
+                    <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">From</div><div className="mt-1 font-black">{senderLabel}</div></div>
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Recipient</div><div className="mt-1 font-black">{recipientLabel}</div></div>
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Delivery</div><div className="mt-1 font-black">{delivery === "text" ? "Text message" : "Email"}</div></div>
                     <div><div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Contact</div><div className="mt-1 font-black break-all">{contact}</div></div>
@@ -255,7 +276,8 @@ export default function LoveNoteSendDemo() {
                 <div className="mx-auto mt-8 max-w-[19rem] -rotate-2 rounded-sm border border-yellow-300 bg-yellow-100 p-6 shadow-xl">
                   <div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600"><Heart className="h-4 w-4 fill-pink-500" /> Love Note</div>
                   <p className="mt-5 text-center text-lg font-semibold leading-8 text-slate-800">{message || "Your note will appear here."}</p>
-                  <div className="mt-5 text-right text-sm font-bold text-slate-600">— With love 💕</div>
+                  <div className="mt-5 text-right text-sm font-bold text-slate-600">— {senderLabel} 💕</div>
+                  <div className="mt-2 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Sent through One2OneLove</div>
                 </div>
 
                 <div className="mt-8 rounded-2xl border border-white bg-white/85 p-5 shadow-sm">
@@ -263,7 +285,7 @@ export default function LoveNoteSendDemo() {
                     <MessageCircleHeart className="mt-0.5 h-5 w-5 text-pink-600" />
                     <div>
                       <div className="font-black text-slate-950">What {recipientLabel} receives first</div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">“You have a private Love Note waiting for you on One2OneLove.”</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">“💕 {senderLabel} sent you a private Love Note on One2OneLove. Tap to reveal it.”</p>
                       <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2 text-xs font-black text-white"><LockKeyhole className="h-3.5 w-3.5" /> Reveal my Love Note</div>
                     </div>
                   </div>
