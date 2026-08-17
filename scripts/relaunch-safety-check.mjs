@@ -16,6 +16,8 @@ const requiredFiles = [
   'src/pages/LoveNoteSendDemo.jsx',
   'src/pages/LoveNoteReveal.jsx',
   'src/lib/loveNoteInvitationService.js',
+  'src/pages/ForgotPassword.jsx',
+  'src/pages/ResetPassword.jsx',
   'supabase/migrations/20260817_love_note_invitations.sql',
   'supabase/functions/send-love-note-invitation/index.ts',
   'supabase/functions/reveal-love-note/index.ts',
@@ -27,6 +29,7 @@ for (const file of requiredFiles) {
 
 const index = exists('src/pages/index.jsx') ? read('src/pages/index.jsx') : '';
 check('launch-ready Love Notes send route', index.includes('["/LoveNotes/Send", LoveNoteSendDemo]'), 'Expected /LoveNotes/Send route.');
+check('password reset completion route exists', index.includes('["/ResetPassword", ResetPassword]'), 'Expected /ResetPassword route.');
 
 const legacyLoveNotes = exists('src/pages/LoveNotes.jsx') ? read('src/pages/LoveNotes.jsx') : '';
 check('legacy Love Notes local SMS removed', !legacyLoveNotes.includes('sms:'), 'Legacy collection must not expose the note body through sms:.');
@@ -49,6 +52,14 @@ check('AuthContext email-confirmation bypass removed', !hasUnconfirmedBypass, ha
 
 const signIn = exists('src/pages/SignIn.jsx') ? read('src/pages/SignIn.jsx') : '';
 check('Sign In confirms authenticated email', signIn.includes('email_confirmed_at'), 'Defense-in-depth check should remain at the sign-in boundary.');
+
+const forgotPassword = exists('src/pages/ForgotPassword.jsx') ? read('src/pages/ForgotPassword.jsx') : '';
+check('Forgot Password uses Supabase reset email', forgotPassword.includes('resetPasswordForEmail'), 'Forgot Password must not simulate a successful reset email.');
+check('Forgot Password does not simulate provider success', !forgotPassword.includes('setTimeout(resolve => setTimeout') && !/simulate the API call/i.test(forgotPassword), 'Password reset must not present a fake success state.');
+
+const resetPassword = exists('src/pages/ResetPassword.jsx') ? read('src/pages/ResetPassword.jsx') : '';
+check('Reset Password updates through Supabase Auth', resetPassword.includes('supabase.auth.updateUser({ password })'), 'Reset page must update the authenticated recovery session through Supabase Auth.');
+check('Reset Password requires a recovery session', resetPassword.includes('supabase.auth.getSession()') && resetPassword.includes('PASSWORD_RECOVERY'), 'Reset page should reject invalid/expired links rather than expose an unauthenticated password form.');
 
 const professionalSignupFiles = [
   'src/pages/TherapistSignup.jsx',
