@@ -115,7 +115,7 @@ export default function LoveNotesCollectionRelaunch() {
         title: note?.title || "Love Note",
       })
     );
-    navigate("/LoveNoteSendDemo");
+    navigate("/LoveNotes/Send");
   };
 
   const surpriseMe = () => {
