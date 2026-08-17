@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Heart, LockKeyhole, MessageCircleHeart, Save, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { revealLoveNote } from "@/lib/loveNoteRevealService";
 
 export default function LoveNoteReveal() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isLoading } = useAuth();
   const token = (searchParams.get("token") || "").trim();
@@ -33,6 +34,18 @@ export default function LoveNoteReveal() {
     } finally {
       setIsRevealing(false);
     }
+  };
+
+  const replyWithLoveNote = () => {
+    sessionStorage.setItem(
+      "o2ol-love-note-draft",
+      JSON.stringify({
+        source: "reply",
+        recipientName: revealed?.sender_name || "",
+        message: "",
+      })
+    );
+    navigate("/LoveNoteSendDemo");
   };
 
   return (
@@ -103,10 +116,10 @@ export default function LoveNoteReveal() {
                 </div>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  <Link to="/LoveNoteSendDemo" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
+                  <button type="button" onClick={replyWithLoveNote} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
                     <MessageCircleHeart className="h-4 w-4" />
                     Reply with a Love Note
-                  </Link>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSaved(true)}
