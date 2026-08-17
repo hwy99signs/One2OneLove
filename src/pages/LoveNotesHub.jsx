@@ -21,6 +21,7 @@ const copy = {
     browse: "Browse Love Notes",
     write: "Write Your Own",
     continueToSend: "Continue to send",
+    sendThisNote: "Send this Love Note",
     schedule: "Send now or schedule it",
     private: "Designed for a private reveal",
     privateText: "The recipient gets the invitation first. The note itself is revealed inside One2OneLove after they sign in or create a free account.",
@@ -43,6 +44,7 @@ const copy = {
     browse: "Ver Notas de Amor",
     write: "Escribe la Tuya",
     continueToSend: "Continuar para enviar",
+    sendThisNote: "Enviar esta Nota de Amor",
     schedule: "Envía ahora o programa",
     private: "Diseñado para una revelación privada",
     privateText: "El destinatario recibe primero la invitación. La nota se revela dentro de One2OneLove después de iniciar sesión o crear una cuenta gratis.",
@@ -65,6 +67,7 @@ const copy = {
     browse: "Voir les Mots d’Amour",
     write: "Écrire le Vôtre",
     continueToSend: "Continuer pour envoyer",
+    sendThisNote: "Envoyer ce Mot d’Amour",
     schedule: "Envoyer maintenant ou programmer",
     private: "Conçu pour une révélation privée",
     privateText: "Le destinataire reçoit d’abord l’invitation. Le mot est révélé dans One2OneLove après connexion ou création d’un compte gratuit.",
@@ -87,6 +90,7 @@ const copy = {
     browse: "Sfoglia le Note d’Amore",
     write: "Scrivi la Tua",
     continueToSend: "Continua per inviare",
+    sendThisNote: "Invia questa Nota d’Amore",
     schedule: "Invia ora o programma",
     private: "Pensato per una rivelazione privata",
     privateText: "Il destinatario riceve prima l’invito. La nota viene rivelata in One2OneLove dopo l’accesso o la creazione di un account gratuito.",
@@ -109,6 +113,7 @@ const copy = {
     browse: "Liebesnotizen ansehen",
     write: "Eigene schreiben",
     continueToSend: "Weiter zum Senden",
+    sendThisNote: "Diese Liebesnotiz senden",
     schedule: "Jetzt senden oder planen",
     private: "Für eine private Enthüllung gedacht",
     privateText: "Der Empfänger erhält zuerst die Einladung. Die Notiz wird in One2OneLove nach Anmeldung oder Erstellung eines kostenlosen Kontos enthüllt.",
@@ -131,6 +136,7 @@ const copy = {
     browse: "Bekijk Liefdesbriefjes",
     write: "Schrijf Je Eigen",
     continueToSend: "Doorgaan met verzenden",
+    sendThisNote: "Dit Liefdesbriefje verzenden",
     schedule: "Nu sturen of plannen",
     private: "Ontworpen voor een privé-onthulling",
     privateText: "De ontvanger krijgt eerst de uitnodiging. Het briefje wordt in One2OneLove onthuld na inloggen of het maken van een gratis account.",
@@ -165,13 +171,13 @@ export default function LoveNotesHub() {
   const [selectedSample, setSelectedSample] = useState(0);
   const previewText = draft.trim() || samples[selectedSample]?.content || "You crossed my mind, and that felt like a good reason to remind you that you are loved.";
 
-  const continueToSend = () => {
+  const continueToSend = (source = draft.trim() ? "custom" : "collection") => {
+    const message = source === "custom" ? draft.trim() : previewText.trim();
+    if (!message) return;
+
     sessionStorage.setItem(
       "o2ol-love-note-draft",
-      JSON.stringify({
-        message: previewText.trim(),
-        source: draft.trim() ? "custom" : "collection",
-      })
+      JSON.stringify({ message, source })
     );
     navigate("/LoveNoteSendDemo");
   };
@@ -192,12 +198,10 @@ export default function LoveNotesHub() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/LoveNotesCollection" className="inline-flex items-center gap-2 rounded-2xl bg-pink-600 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-pink-700">
-                {t.browse}
-                <ArrowRight className="h-4 w-4" />
+                {t.browse}<ArrowRight className="h-4 w-4" />
               </Link>
               <a href="#write-your-own" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50">
-                <PenLine className="h-4 w-4" />
-                {t.write}
+                <PenLine className="h-4 w-4" />{t.write}
               </a>
             </div>
 
@@ -211,13 +215,10 @@ export default function LoveNotesHub() {
             <div className="rounded-[2.25rem] bg-slate-950 p-4 shadow-2xl">
               <div className="rounded-[1.8rem] bg-gradient-to-br from-pink-50 via-violet-50 to-blue-50 p-6">
                 <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.15em] text-slate-500">
-                  <span>One2OneLove</span>
-                  <span>{t.preview}</span>
+                  <span>One2OneLove</span><span>{t.preview}</span>
                 </div>
                 <div className="mx-auto mt-8 max-w-[18rem] -rotate-2 rounded-sm border border-yellow-300 bg-yellow-100 p-6 shadow-xl">
-                  <div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600">
-                    <Heart className="h-4 w-4 fill-pink-500" /> Love Note
-                  </div>
+                  <div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600"><Heart className="h-4 w-4 fill-pink-500" /> Love Note</div>
                   <p className="mt-5 text-center text-lg font-semibold leading-8 text-slate-800">{previewText}</p>
                   <div className="mt-5 text-right text-sm font-bold text-slate-600">— From you 💕</div>
                 </div>
@@ -243,10 +244,7 @@ export default function LoveNotesHub() {
               <button
                 key={`${note.title}-${index}`}
                 type="button"
-                onClick={() => {
-                  setSelectedSample(index);
-                  setDraft("");
-                }}
+                onClick={() => { setSelectedSample(index); setDraft(""); }}
                 className={`rounded-[1.75rem] border p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${selectedSample === index && !draft.trim() ? "border-pink-300 bg-pink-50" : "border-slate-200 bg-white"}`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -260,16 +258,10 @@ export default function LoveNotesHub() {
           </div>
 
           <div className="mt-7 flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              onClick={continueToSend}
-              className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white shadow-sm"
-            >
+            <button type="button" onClick={() => continueToSend("collection")} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white shadow-sm">
               <Send className="h-4 w-4" />{t.continueToSend}
             </button>
-            <Link to="/LoveNotesCollection" className="inline-flex items-center gap-2 text-sm font-black text-pink-700">
-              {t.all}<ArrowRight className="h-4 w-4" />
-            </Link>
+            <Link to="/LoveNotesCollection" className="inline-flex items-center gap-2 text-sm font-black text-pink-700">{t.all}<ArrowRight className="h-4 w-4" /></Link>
           </div>
         </div>
       </section>
@@ -290,6 +282,14 @@ export default function LoveNotesHub() {
               <span>{draft.length}/500</span>
               <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" />Live preview</span>
             </div>
+            <button
+              type="button"
+              onClick={() => continueToSend("custom")}
+              disabled={!draft.trim()}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-600 px-5 py-3.5 text-sm font-black text-white shadow-lg transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+            >
+              <Send className="h-4 w-4" />{t.sendThisNote}
+            </button>
           </div>
 
           <div className="rounded-[2rem] border border-pink-100 bg-gradient-to-br from-pink-50 to-violet-50 p-7 shadow-lg">
@@ -300,10 +300,10 @@ export default function LoveNotesHub() {
             </div>
             <button
               type="button"
-              onClick={continueToSend}
+              onClick={() => continueToSend(draft.trim() ? "custom" : "collection")}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white"
             >
-              <Send className="h-4 w-4" />{t.continueToSend}
+              <Send className="h-4 w-4" />{draft.trim() ? t.sendThisNote : t.continueToSend}
             </button>
           </div>
         </div>
