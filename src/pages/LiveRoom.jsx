@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getLiveCommunityRoom, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
 import { joinRoomPresence } from "@/lib/roomPresenceService";
+import { getLiveRoomHostPrompt } from "@/lib/liveRoomHostService";
 import {
   deleteOwnRoomMessage,
   getRoomMessages,
@@ -134,17 +135,35 @@ export default function LiveRoom() {
   const [sending, setSending] = useState(false);
   const [messageError, setMessageError] = useState("");
   const [clock, setClock] = useState(() => Date.now());
+  const [hostPrompt, setHostPrompt] = useState(room.topic);
+  const [hostSource, setHostSource] = useState("fallback");
   const [reportTarget, setReportTarget] = useState(null);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [reportStatus, setReportStatus] = useState("");
   const messagesEndRef = useRef(null);
+  const hostEpisodeRef = useRef("");
   const activityLabel = getRoomActivityLabel(activeCount);
+
+  const lastMessageAt = messages.length
+    ? new Date(messages[messages.length - 1].created_at).getTime()
+    : 0;
+  const roomHasGoneQuiet = backendReady === true && messages.length > 0 && clock - lastMessageAt >= HOST_IDLE_MS;
+  const showHostPrompt = !backendReady || messages.length === 0 || roomHasGoneQuiet;
+  const roomReturnTo = `/LiveRoom?room=${encodeURIComponent(room.slug)}`;
+  const signInUrl = `${createPageUrl("SignIn")}?returnTo=${encodeURIComponent(roomReturnTo)}`;
+  const signUpUrl = `${createPageUrl("SignUp")}?returnTo=${encodeURIComponent(roomReturnTo)}`;
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(Date.now()), 15_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    setHostPrompt(room.topic);
+    setHostSource("fallback");
+    hostEpisodeRef.current = "";
+  }, [room.slug, room.topic]);
 
   useEffect(() => {
     setActiveCount(0);
@@ -186,11 +205,28 @@ export default function LiveRoom() {
     }
   }, [messages.length]);
 
-  const lastMessageAt = messages.length
-    ? new Date(messages[messages.length - 1].created_at).getTime()
-    : 0;
-  const roomHasGoneQuiet = backendReady === true && messages.length > 0 && clock - lastMessageAt >= HOST_IDLE_MS;
-  const showHostPrompt = !backendReady || messages.length === 0 || roomHasGoneQuiet;
+  useEffect(() => {
+    if (!user?.id || backendReady !== true || !showHostPrompt) return undefined;
+
+    const reason = messages.length === 0 ? "room_empty" : "room_quiet";
+    const episodeKey = `${room.slug}:${reason}:${reason === "room_quiet" ? lastMessageAt : "empty"}`;
+    if (hostEpisodeRef.current === episodeKey) return undefined;
+
+    hostEpisodeRef.current = episodeKey;
+    setHostPrompt(room.topic);
+    setHostSource("fallback");
+    let cancelled = false;
+
+    getLiveRoomHostPrompt(room.slug, messages, reason).then((result) => {
+      if (cancelled || !result?.prompt) return;
+      setHostPrompt(result.prompt);
+      setHostSource(result.source);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [backendReady, lastMessageAt, messages, room.slug, room.topic, showHostPrompt, user?.id]);
 
   const handleSend = async (event) => {
     event.preventDefault();
@@ -303,8 +339,9 @@ export default function LiveRoom() {
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-700">
                   <Sparkles className="h-4 w-4" />
                   O2OL Host
+                  {hostSource === "ai" && <span className="ml-auto rounded-full bg-violet-100 px-2 py-1 text-[10px] tracking-normal text-violet-600">live prompt</span>}
                 </div>
-                <p className="mt-3 text-lg font-bold leading-7 text-violet-950">“{room.topic}”</p>
+                <p className="mt-3 text-lg font-bold leading-7 text-violet-950">“{hostPrompt || room.topic}”</p>
                 <div className="mt-4 text-sm leading-6 text-violet-800/80">
                   {roomHasGoneQuiet
                     ? "The room has been quiet for a bit, so the host offers one invitation back into the conversation. Once members begin talking again, the host steps away."
@@ -362,7 +399,7 @@ export default function LiveRoom() {
                 <MessageCircleHeart className="mx-auto h-7 w-7 text-amber-600" />
                 <div className="mt-3 font-black text-slate-900">Group messaging is built and waiting for database activation.</div>
                 <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                  The realtime interface, reactions, member message deletion, and reporting controls are prepared on the development branch. The approved messaging migration has not been applied yet.
+                  The realtime interface, reactions, member message deletion, reporting controls, and AI-host handoff are prepared on the development branch. The approved messaging migration has not been applied yet.
                 </p>
               </div>
             )}
@@ -400,11 +437,11 @@ export default function LiveRoom() {
               <div className="flex flex-col gap-3 rounded-2xl border border-pink-100 bg-pink-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="font-black text-slate-900">Want to join this conversation?</div>
-                  <div className="mt-1 text-sm text-slate-600">Sign in or create a free account to participate.</div>
+                  <div className="mt-1 text-sm text-slate-600">Sign in or create a free account to participate. We’ll bring you back to this room.</div>
                 </div>
                 <div className="flex gap-2">
-                  <Link to={createPageUrl("SignIn")} className="rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-black text-pink-700">Sign in</Link>
-                  <Link to={createPageUrl("SignUp")} className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-black text-white">Join free</Link>
+                  <Link to={signInUrl} className="rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-black text-pink-700">Sign in</Link>
+                  <Link to={signUpUrl} className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-black text-white">Join free</Link>
                 </div>
               </div>
             )}
