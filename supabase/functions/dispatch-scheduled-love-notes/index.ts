@@ -62,6 +62,10 @@ const deliverEmailWithResend = async ({ to, invitationId, copy }: any) => {
 }
 
 const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: any) => {
+  if (Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
+    throw new Error('SMS delivery is not enabled')
+  }
+
   const endpoint = Deno.env.get('LOVE_NOTE_SMS_ENDPOINT') || ''
   const providerKey = Deno.env.get('LOVE_NOTE_SMS_PROVIDER_KEY') || ''
   if (!endpoint || !providerKey) throw new Error('SMS delivery provider is not configured')
@@ -111,10 +115,11 @@ serve(async (req) => {
 
     const serviceClient = createClient(supabaseUrl, serviceRoleKey)
     const now = new Date().toISOString()
+    const smsEnabled = Deno.env.get('LOVE_NOTE_SMS_ENABLED') === 'true'
 
     const { data: due, error: dueError } = await serviceClient
       .from('love_note_invitations')
-      .select('id')
+      .select('id, delivery_method')
       .eq('status', 'scheduled')
       .lte('scheduled_for', now)
       .order('scheduled_for', { ascending: true })
@@ -128,6 +133,13 @@ serve(async (req) => {
     const results: Array<{ id: string; status: string }> = []
 
     for (const row of due || []) {
+      // Email can be activated independently. SMS records remain scheduled and
+      // untouched until the account owner explicitly enables the SMS channel.
+      if (row.delivery_method === 'sms' && !smsEnabled) {
+        results.push({ id: row.id, status: 'sms_disabled' })
+        continue
+      }
+
       const { data: claimed, error: claimError } = await serviceClient
         .from('love_note_invitations')
         .update({ status: 'queued' })
