@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Flag,
   Heart,
   MessageCircleHeart,
   Send,
@@ -9,6 +10,7 @@ import {
   Sparkles,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
 import { getLiveCommunityRoom, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
 import { joinRoomPresence } from "@/lib/roomPresenceService";
@@ -16,6 +18,8 @@ import {
   deleteOwnRoomMessage,
   getRoomMessages,
   REACTIONS,
+  REPORT_REASONS,
+  reportRoomMessage,
   sendRoomMessage,
   subscribeToRoomMessages,
   toggleRoomReaction,
@@ -64,6 +68,61 @@ function ReactionBar({ message, userId, onToggle }) {
   );
 }
 
+function ReportDialog({ message, reason, details, status, onReason, onDetails, onClose, onSubmit }) {
+  if (!message) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4" role="presentation">
+      <div className="w-full max-w-lg rounded-[1.75rem] bg-white p-6 shadow-2xl" role="dialog" aria-modal="true" aria-label="Report message">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-pink-600">Community safety</div>
+            <h2 className="mt-2 text-2xl font-black text-slate-950">Report this message</h2>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Close report dialog">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <div className="font-black text-slate-800">{message.sender_name}</div>
+          <div className="mt-1 line-clamp-3">{message.content}</div>
+        </div>
+
+        <label className="mt-5 block text-sm font-black text-slate-800">Why are you reporting it?</label>
+        <select
+          value={reason}
+          onChange={(event) => onReason(event.target.value)}
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none focus:border-pink-300"
+        >
+          <option value="">Select a reason</option>
+          {REPORT_REASONS.map((item) => (
+            <option key={item.value} value={item.value}>{item.label}</option>
+          ))}
+        </select>
+
+        <label className="mt-4 block text-sm font-black text-slate-800">Additional details <span className="font-semibold text-slate-400">(optional)</span></label>
+        <textarea
+          value={details}
+          onChange={(event) => onDetails(event.target.value)}
+          maxLength={500}
+          rows={4}
+          placeholder="Add context that will help us review the report."
+          className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none focus:border-pink-300"
+        />
+        <div className="mt-1 text-right text-[11px] font-semibold text-slate-400">{details.length}/500</div>
+
+        {status && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">{status}</div>}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-600">Cancel</button>
+          <button type="button" onClick={onSubmit} disabled={!reason} className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400">Submit report</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LiveRoom() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -75,6 +134,10 @@ export default function LiveRoom() {
   const [sending, setSending] = useState(false);
   const [messageError, setMessageError] = useState("");
   const [clock, setClock] = useState(() => Date.now());
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportStatus, setReportStatus] = useState("");
   const messagesEndRef = useRef(null);
   const activityLabel = getRoomActivityLabel(activeCount);
 
@@ -172,6 +235,33 @@ export default function LiveRoom() {
     }
   };
 
+  const openReport = (message) => {
+    setReportTarget(message);
+    setReportReason("");
+    setReportDetails("");
+    setReportStatus("");
+  };
+
+  const closeReport = () => {
+    setReportTarget(null);
+    setReportReason("");
+    setReportDetails("");
+    setReportStatus("");
+  };
+
+  const submitReport = async () => {
+    if (!reportTarget || !user?.id || !reportReason) return;
+    setReportStatus("");
+    try {
+      await reportRoomMessage(reportTarget.id, user.id, reportReason, reportDetails);
+      setReportStatus("Report submitted for review.");
+      window.setTimeout(closeReport, 900);
+    } catch (error) {
+      console.error("Failed to report room message:", error);
+      setReportStatus(error?.message || "Report could not be submitted.");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="border-b border-slate-200 bg-white">
@@ -234,7 +324,7 @@ export default function LiveRoom() {
                           <span>{mine ? "You" : message.sender_name}</span>
                           <span>·</span>
                           <span>{timeLabel(message.created_at)}</span>
-                          {mine && (
+                          {mine ? (
                             <button
                               type="button"
                               onClick={() => handleDelete(message)}
@@ -243,6 +333,17 @@ export default function LiveRoom() {
                               title="Delete your message"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openReport(message)}
+                              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black text-slate-400 transition hover:bg-slate-100 hover:text-red-600"
+                              aria-label="Report message"
+                              title="Report message"
+                            >
+                              <Flag className="h-3 w-3" />
+                              Report
                             </button>
                           )}
                         </div>
@@ -261,7 +362,7 @@ export default function LiveRoom() {
                 <MessageCircleHeart className="mx-auto h-7 w-7 text-amber-600" />
                 <div className="mt-3 font-black text-slate-900">Group messaging is built and waiting for database activation.</div>
                 <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                  The interface, realtime message service, reactions, message deletion, and security rules are prepared on the development branch. The approved database migration has not been applied yet.
+                  The realtime interface, reactions, member message deletion, and reporting controls are prepared on the development branch. The approved messaging migration has not been applied yet.
                 </p>
               </div>
             )}
@@ -329,7 +430,7 @@ export default function LiveRoom() {
               Room standard
             </div>
             <p className="mt-4 text-sm font-semibold leading-6 text-slate-700">Tell the story. Don’t expose the person.</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">No doxxing, targeted humiliation, threats, or turning a relationship discussion into a public attack.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">No doxxing, targeted humiliation, threats, or turning a relationship discussion into a public attack. Members can report another member’s message for review.</p>
           </div>
 
           <div className="rounded-[1.5rem] border border-violet-100 bg-violet-50 p-5">
@@ -347,6 +448,17 @@ export default function LiveRoom() {
           </div>
         </aside>
       </section>
+
+      <ReportDialog
+        message={reportTarget}
+        reason={reportReason}
+        details={reportDetails}
+        status={reportStatus}
+        onReason={setReportReason}
+        onDetails={setReportDetails}
+        onClose={closeReport}
+        onSubmit={submitReport}
+      />
     </main>
   );
 }
