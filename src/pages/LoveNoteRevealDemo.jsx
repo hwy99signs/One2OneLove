@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, Heart, LockKeyhole, MessageCircleHeart, Save, Sparkles } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -25,9 +25,22 @@ const loadPreview = () => {
 };
 
 export default function LoveNoteRevealDemo() {
+  const navigate = useNavigate();
   const [preview] = useState(loadPreview);
   const [revealed, setRevealed] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const replyWithLoveNote = () => {
+    sessionStorage.setItem(
+      "o2ol-love-note-draft",
+      JSON.stringify({
+        source: "reply",
+        recipientName: preview.senderName,
+        message: "",
+      })
+    );
+    navigate("/LoveNoteSendDemo");
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-violet-50 to-blue-50 px-5 py-10 text-slate-900 sm:px-8">
@@ -86,10 +99,10 @@ export default function LoveNoteRevealDemo() {
                 </div>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  <Link to="/LoveNoteSendDemo" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
+                  <button type="button" onClick={replyWithLoveNote} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
                     <MessageCircleHeart className="h-4 w-4" />
                     Reply to {preview.senderName}
-                  </Link>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSaved(true)}
