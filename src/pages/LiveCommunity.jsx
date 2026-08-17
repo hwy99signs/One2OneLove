@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { LIVE_COMMUNITY_ROOMS, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
+import { observeRoomPresence } from "@/lib/roomPresenceService";
 
 const roomStyles = {
   rose: "from-rose-50 to-orange-50 border-rose-100",
@@ -28,8 +29,8 @@ const roomIconStyles = {
   emerald: "bg-emerald-100 text-emerald-700",
 };
 
-function RoomActivity({ room }) {
-  const activityLabel = getRoomActivityLabel(room);
+function RoomActivity({ room, activeCount }) {
+  const activityLabel = getRoomActivityLabel(activeCount);
 
   if (activityLabel) {
     return (
@@ -54,6 +55,18 @@ function RoomActivity({ room }) {
 }
 
 export default function LiveCommunity() {
+  const [roomCounts, setRoomCounts] = useState({});
+
+  useEffect(() => {
+    const cleanups = LIVE_COMMUNITY_ROOMS.map((room) =>
+      observeRoomPresence(room.slug, (count) => {
+        setRoomCounts((current) => ({ ...current, [room.slug]: count }));
+      })
+    );
+
+    return () => cleanups.forEach((cleanup) => cleanup?.());
+  }, []);
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <section className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-br from-rose-50 via-white to-cyan-50">
@@ -90,7 +103,7 @@ export default function LiveCommunity() {
               <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Where do you want to talk?</h2>
             </div>
             <div className="max-w-md text-sm leading-6 text-slate-500">
-              Active rooms will show a real “chatting now” count. Quiet rooms will show the host’s current topic instead — never a fake number.
+              Active rooms show the real number of signed-in members currently inside. Quiet rooms show the host’s current topic instead — never a fake number.
             </div>
           </div>
 
@@ -108,7 +121,7 @@ export default function LiveCommunity() {
                 <h3 className="mt-6 text-xl font-black leading-tight text-slate-950">{room.name}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{room.description}</p>
 
-                <RoomActivity room={room} />
+                <RoomActivity room={room} activeCount={roomCounts[room.slug] || 0} />
 
                 <div className="mt-auto pt-6">
                   <div className="inline-flex items-center gap-2 text-sm font-black text-slate-900">
