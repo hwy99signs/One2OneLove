@@ -80,6 +80,10 @@ const deliverEmailWithResend = async ({ to, invitationId, copy }: any) => {
 }
 
 const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: any) => {
+  if (Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
+    throw new Error('SMS delivery is not enabled')
+  }
+
   const endpoint = Deno.env.get('LOVE_NOTE_SMS_ENDPOINT') || ''
   const providerKey = Deno.env.get('LOVE_NOTE_SMS_PROVIDER_KEY') || ''
   if (!endpoint || !providerKey) throw new Error('SMS delivery provider is not configured')
@@ -130,9 +134,16 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await userClient.auth.getUser()
     if (userError || !user) return json({ error: 'Authentication required' }, 401)
+    if (!user.email_confirmed_at && !user.confirmed_at) {
+      return json({ error: 'Confirm your email before sending a Love Note.', code: 'EMAIL_NOT_CONFIRMED' }, 403)
+    }
 
     const body = await req.json()
     const deliveryMethod = body?.delivery_method === 'email' ? 'email' : 'sms'
+    if (deliveryMethod === 'sms' && Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
+      return json({ error: 'Love Note SMS delivery is not enabled yet.', code: 'SMS_DISABLED' }, 503)
+    }
+
     const recipientName = clean(body?.recipient_name, 80)
     const recipientContact = clean(body?.recipient_contact, 160)
     const noteContent = clean(body?.note_content, 500)
