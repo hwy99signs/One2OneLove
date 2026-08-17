@@ -50,6 +50,23 @@ check('AuthContext email-confirmation bypass removed', !hasUnconfirmedBypass, ha
 const signIn = exists('src/pages/SignIn.jsx') ? read('src/pages/SignIn.jsx') : '';
 check('Sign In confirms authenticated email', signIn.includes('email_confirmed_at'), 'Defense-in-depth check should remain at the sign-in boundary.');
 
+const professionalSignupFiles = [
+  'src/pages/TherapistSignup.jsx',
+  'src/pages/InfluencerSignup.jsx',
+  'src/pages/ProfessionalSignup.jsx',
+];
+for (const file of professionalSignupFiles) {
+  const source = exists(file) ? read(file) : '';
+  const containsMockVerification = source.includes('123456') || /Use code:/i.test(source);
+  check(
+    `${path.basename(file)} has no mock verification code`,
+    !containsMockVerification,
+    containsMockVerification
+      ? 'LAUNCH BLOCKER: this application page still displays/accepts a hard-coded verification code.'
+      : 'No hard-coded verification code found.'
+  );
+}
+
 const presence = exists('src/lib/roomPresenceService.js') ? read('src/lib/roomPresenceService.js') : '';
 const tracksRawPresenceIdentity = /channel\.track\(\{[\s\S]{0,200}(user_id|name:)/.test(presence);
 check('Live Room presence does not broadcast account identity', !tracksRawPresenceIdentity, 'Presence should carry only aggregate-count metadata, not member IDs or names.');
