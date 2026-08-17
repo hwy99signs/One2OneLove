@@ -1,9 +1,10 @@
 import { supabase } from './supabase';
 
+// Keep AI-host context minimal: recent public room text only, no member names or profile fields.
 const normalizeRecentMessages = (messages = []) =>
-  messages.slice(-12).map((message) => ({
-    sender_name: message.sender_name || 'Member',
-    content: String(message.content || '').slice(0, 500),
+  messages.slice(-8).map((message) => ({
+    sender_name: 'Member',
+    content: String(message.content || '').slice(0, 400),
   }));
 
 export async function getLiveRoomHostPrompt(roomSlug, recentMessages = [], reason = 'room_empty') {
