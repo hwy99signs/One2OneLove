@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,22 +11,129 @@ import {
 } from "lucide-react";
 import { getLiveCommunityRoom, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
 import { joinRoomPresence } from "@/lib/roomPresenceService";
+import {
+  getRoomMessages,
+  REACTIONS,
+  sendRoomMessage,
+  subscribeToRoomMessages,
+  toggleRoomReaction,
+} from "@/lib/liveRoomMessageService";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPageUrl } from "@/utils";
+
+const timeLabel = (value) =>
+  new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+
+function ReactionBar({ message, userId, onToggle }) {
+  const counts = useMemo(() => {
+    const result = {};
+    (message.room_message_reactions || []).forEach((reaction) => {
+      result[reaction.emoji] = (result[reaction.emoji] || 0) + 1;
+    });
+    return result;
+  }, [message.room_message_reactions]);
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {REACTIONS.map((emoji) => {
+        const selected = (message.room_message_reactions || []).some(
+          (reaction) => reaction.user_id === userId && reaction.emoji === emoji
+        );
+        return (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => onToggle(message, emoji)}
+            className={`rounded-full border px-2.5 py-1 text-xs transition ${
+              selected
+                ? "border-pink-300 bg-pink-50 text-pink-800"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+            aria-label={`React ${emoji}`}
+          >
+            {emoji}{counts[emoji] ? ` ${counts[emoji]}` : ""}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function LiveRoom() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const room = getLiveCommunityRoom(searchParams.get("room"));
   const [activeCount, setActiveCount] = useState(0);
+  const [messages, setMessages] = useState([]);
+  const [backendReady, setBackendReady] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [messageError, setMessageError] = useState("");
   const activityLabel = getRoomActivityLabel(activeCount);
 
   useEffect(() => {
     setActiveCount(0);
     if (!user?.id) return undefined;
-
     return joinRoomPresence(room.slug, user, setActiveCount);
   }, [room.slug, user?.id]);
+
+  const loadMessages = useCallback(async () => {
+    if (!user?.id) {
+      setMessages([]);
+      setBackendReady(null);
+      return;
+    }
+
+    try {
+      const result = await getRoomMessages(room.slug);
+      setBackendReady(result.ready);
+      setMessages(result.messages);
+      setMessageError("");
+    } catch (error) {
+      console.error("Failed to load room messages:", error);
+      setBackendReady(false);
+      setMessageError("The room message service could not load yet.");
+    }
+  }, [room.slug, user?.id]);
+
+  useEffect(() => {
+    loadMessages();
+  }, [loadMessages]);
+
+  useEffect(() => {
+    if (!backendReady || !user?.id) return undefined;
+    return subscribeToRoomMessages(room.slug, loadMessages);
+  }, [backendReady, loadMessages, room.slug, user?.id]);
+
+  const handleSend = async (event) => {
+    event.preventDefault();
+    if (!backendReady || !user?.id || !draft.trim()) return;
+
+    setSending(true);
+    setMessageError("");
+    try {
+      await sendRoomMessage(room.slug, user, draft);
+      setDraft("");
+      await loadMessages();
+    } catch (error) {
+      console.error("Failed to send room message:", error);
+      setMessageError(error?.message || "Message could not be sent.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleReaction = async (message, emoji) => {
+    try {
+      await toggleRoomReaction(message, user?.id, emoji);
+      await loadMessages();
+    } catch (error) {
+      console.error("Failed to update reaction:", error);
+      setMessageError("Reaction could not be updated.");
+    }
+  };
+
+  const showHostPrompt = !backendReady || messages.length === 0;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -64,7 +171,7 @@ export default function LiveRoom() {
           </div>
 
           <div className="min-h-[31rem] bg-gradient-to-b from-white to-slate-50 p-5 sm:p-7">
-            {!activityLabel && (
+            {showHostPrompt && (
               <div className="mx-auto max-w-2xl rounded-[1.5rem] border border-violet-200 bg-violet-50 p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-violet-700">
                   <Sparkles className="h-4 w-4" />
@@ -72,32 +179,65 @@ export default function LiveRoom() {
                 </div>
                 <p className="mt-3 text-lg font-bold leading-7 text-violet-950">“{room.topic}”</p>
                 <div className="mt-4 text-sm leading-6 text-violet-800/80">
-                  The host opens with a real discussion topic so the room never has to advertise that it is empty. As soon as members begin talking, the host steps back.
+                  A conversation is always waiting here. Once members start talking, the host moves into the background.
                 </div>
               </div>
             )}
 
-            <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-white/70 px-5 py-8 text-center">
-              <MessageCircleHeart className="mx-auto h-7 w-7 text-pink-500" />
-              <div className="mt-3 font-black text-slate-800">Live member conversation will appear here.</div>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
-                The room counter is now connected to realtime presence. Persistent group messages and reactions are the next backend layer and remain disabled until their secure data rules are in place.
-              </p>
-            </div>
+            {user && backendReady === true && messages.length > 0 && (
+              <div className="mx-auto mt-2 max-w-3xl space-y-4">
+                {messages.map((message) => {
+                  const mine = message.user_id === user.id;
+                  return (
+                    <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-sm ${mine ? "bg-pink-600 text-white" : "border border-slate-200 bg-white text-slate-800"}`}>
+                        <div className={`flex items-center gap-2 text-xs font-black ${mine ? "text-pink-100" : "text-slate-500"}`}>
+                          <span>{mine ? "You" : message.sender_name}</span>
+                          <span>·</span>
+                          <span>{timeLabel(message.created_at)}</span>
+                        </div>
+                        <div className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.content}</div>
+                        <ReactionBar message={message} userId={user.id} onToggle={handleReaction} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {user && backendReady === false && (
+              <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-6 text-center">
+                <MessageCircleHeart className="mx-auto h-7 w-7 text-amber-600" />
+                <div className="mt-3 font-black text-slate-900">Group messaging is built and waiting for database activation.</div>
+                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
+                  The interface, realtime message service, reactions, and security rules are prepared on the development branch. No production database changes have been made.
+                </p>
+              </div>
+            )}
+
+            {messageError && <div className="mx-auto mt-4 max-w-2xl text-center text-sm font-semibold text-red-600">{messageError}</div>}
           </div>
 
           <div className="border-t border-slate-200 bg-white p-4 sm:p-5">
             {user ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <form onSubmit={handleSend} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <input
-                  disabled
-                  placeholder="Room messaging will be enabled after the secure group-message backend is added."
-                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-500 outline-none disabled:cursor-not-allowed"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  disabled={!backendReady || sending}
+                  maxLength={2000}
+                  placeholder={backendReady ? "Say something to the room…" : "Messaging will unlock after the secure room tables are activated."}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
                 />
-                <button disabled className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 text-slate-400" aria-label="Send message">
+                <button
+                  type="submit"
+                  disabled={!backendReady || sending || !draft.trim()}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-600 text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                  aria-label="Send message"
+                >
                   <Send className="h-4 w-4" />
                 </button>
-              </div>
+              </form>
             ) : (
               <div className="flex flex-col gap-3 rounded-2xl border border-pink-100 bg-pink-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
