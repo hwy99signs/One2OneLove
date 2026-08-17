@@ -34,7 +34,7 @@ Production remains untouched. This file tracks anything that must wait for expli
 ## Launch blockers to review in one batch
 
 - Retest the newly hardened AuthContext across regular sign-in, sign-up confirmation callback, password reset, and professional application flows before production. Unconfirmed-email sessions are now rejected in development rather than intentionally allowed.
-- Remove/replace legacy mock verification in `TherapistSignup.jsx`, `InfluencerSignup.jsx`, and `ProfessionalSignup.jsx`. Those pages currently display and accept the hard-coded code `123456` for email and phone verification. They must not launch that way. Decide whether to connect real verification now or keep those application routes out of the initial public launch.
+- Remove/replace legacy mock verification in `TherapistSignup.jsx`, `InfluencerSignup.jsx`, and `ProfessionalSignup.jsx`. Those pages currently display and accept the hard-coded code `123456` for email and phone verification. They must not launch that way. Decide whether to connect real verification now or keep those application routes out of the initial public launch. Options are documented in `docs/professional-verification-options.md`.
 - Harden `users` RLS so sensitive profile fields are not publicly selectable.
 - Enable RLS on `waitlist_signups` and review grants.
 - Review pairwise `messages` update permissions so receivers cannot alter message content.
@@ -61,12 +61,16 @@ Production remains untouched. This file tracks anything that must wait for expli
 - Added recipient-name handoff for Love Note replies.
 - Added multilingual sender and reveal experiences for English, Spanish, French, Italian, German, and Dutch.
 - Added progressive loading to the 365-note collection so the page does not render the entire library at once.
-- Added multilingual Live Community room names, topics, activity labels, and landing-page copy.
+- Added multilingual Live Community room names, topics, activity labels, landing-page copy, full room UI, reporting UI, and room-status copy.
 - Minimized Realtime Presence data: room clients now receive an aggregate presence record with a one-way pseudonymous key rather than member names/account UUIDs.
 - Hardened Love Note send/reveal Edge Function code so both require verified accounts; SMS now has a second independent kill switch.
 - Rebuilt AuthContext on the development branch so unconfirmed-email sessions are rejected instead of intentionally allowed.
+- Updated regular signup so profile-table creation is deferred until the account is actually confirmed; signup details are preserved in Supabase Auth metadata and used when the confirmed profile is first created.
+- Hardened the auth callback so it never reports confirmation merely because a session object exists.
+- Localized and clarified the regular-account confirmation dialog for English, Spanish, French, Italian, German, and Dutch.
 - Staged the secure Saved Love Notes schema and client service without applying it to production.
 - Staged Live Room sender-identity hardening without applying it to production.
-- Added a relaunch safety-check script (`npm run relaunch:check`) to flag known security/consistency blockers in the codebase.
+- Added a relaunch safety-check script (`npm run relaunch:check`) to flag known security/consistency blockers, including the three hard-coded professional verification flows.
+- Added controlled-rollout documentation for Love Notes and decision documentation for professional verification.
 
 Last updated during the August 17, 2026 relaunch build session.
