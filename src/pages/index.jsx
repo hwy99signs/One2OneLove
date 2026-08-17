@@ -10,7 +10,7 @@ import SignUp from "./SignUp";
 import AuthCallback from "./AuthCallback";
 import MemoryLane from "./MemoryLane";
 import LoveNotes from "./LoveNotesHub";
-import LoveNotesCollection from "./LoveNotes";
+import LoveNotesCollection from "./LoveNotesCollectionRelaunch";
 import LoveNoteSendDemo from "./LoveNoteSendDemo";
 import LoveNoteRevealDemo from "./LoveNoteRevealDemo";
 import LoveNoteReveal from "./LoveNoteReveal";
