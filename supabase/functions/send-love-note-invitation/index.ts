@@ -49,25 +49,40 @@ const buildCopy = (senderName: string, revealUrl: string) => ({
   emailBody: `${senderName} sent you a private Love Note on One2OneLove.\n\nYour message is being kept private until you open it.\n\nReveal your Love Note: ${revealUrl}`,
 })
 
-const deliverThroughConfiguredAdapter = async ({
-  method,
-  to,
-  invitationId,
-  copy,
-}: {
-  method: 'sms' | 'email'
-  to: string
-  invitationId: string
-  copy: ReturnType<typeof buildCopy>
-}) => {
-  const endpoint = method === 'sms'
-    ? Deno.env.get('LOVE_NOTE_SMS_ENDPOINT')
-    : Deno.env.get('LOVE_NOTE_EMAIL_ENDPOINT')
-  const providerKey = Deno.env.get('LOVE_NOTE_DELIVERY_PROVIDER_KEY')
+const deliverEmailWithResend = async ({ to, invitationId, copy }: any) => {
+  const apiKey = Deno.env.get('RESEND_API_KEY') || ''
+  const from = Deno.env.get('RESEND_FROM_EMAIL') || ''
+  if (!apiKey || !from) throw new Error('Resend email delivery is not configured')
 
-  if (!endpoint || !providerKey) {
-    throw new Error(`${method.toUpperCase()} delivery provider is not configured`)
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'One2OneLove/1.0',
+      'Idempotency-Key': `love-note-${invitationId}`,
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject: copy.emailSubject,
+      text: copy.emailBody,
+    }),
+  })
+
+  if (!response.ok) {
+    const detail = clean(await response.text(), 500)
+    throw new Error(`Resend returned ${response.status}${detail ? `: ${detail}` : ''}`)
   }
+
+  const payload = await response.json()
+  return clean(payload?.id, 200) || null
+}
+
+const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: any) => {
+  const endpoint = Deno.env.get('LOVE_NOTE_SMS_ENDPOINT') || ''
+  const providerKey = Deno.env.get('LOVE_NOTE_SMS_PROVIDER_KEY') || ''
+  if (!endpoint || !providerKey) throw new Error('SMS delivery provider is not configured')
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -76,26 +91,21 @@ const deliverThroughConfiguredAdapter = async ({
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      channel: method,
+      channel: 'sms',
       to,
-      subject: method === 'email' ? copy.emailSubject : undefined,
-      text: method === 'email' ? copy.emailBody : copy.sms,
+      text: copy.sms,
       metadata: { invitation_id: invitationId, product: 'one2onelove_love_notes' },
     }),
   })
 
-  if (!response.ok) {
-    throw new Error(`Delivery provider returned ${response.status}`)
-  }
+  if (!response.ok) throw new Error(`SMS provider returned ${response.status}`)
 
-  let payload: any = {}
   try {
-    payload = await response.json()
+    const payload = await response.json()
+    return clean(payload?.id || payload?.message_id, 200) || null
   } catch {
-    // Provider response body is optional.
+    return null
   }
-
-  return clean(payload?.id || payload?.message_id, 200) || null
 }
 
 serve(async (req) => {
@@ -104,10 +114,7 @@ serve(async (req) => {
 
   try {
     if (Deno.env.get('LOVE_NOTE_DELIVERY_ENABLED') !== 'true') {
-      return json({
-        error: 'Love Note delivery is not enabled yet.',
-        code: 'DELIVERY_DISABLED',
-      }, 503)
+      return json({ error: 'Love Note delivery is not enabled yet.', code: 'DELIVERY_DISABLED' }, 503)
     }
 
     const authHeader = req.headers.get('Authorization')
@@ -116,13 +123,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      return json({ error: 'Server configuration is incomplete' }, 500)
-    }
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) return json({ error: 'Server configuration is incomplete' }, 500)
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    })
+    const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } })
     const serviceClient = createClient(supabaseUrl, serviceRoleKey)
 
     const { data: { user }, error: userError } = await userClient.auth.getUser()
@@ -137,9 +140,7 @@ serve(async (req) => {
     const scheduledFor = clean(body?.scheduled_for, 80)
     const scheduleTimezone = clean(body?.schedule_timezone, 80) || 'UTC'
 
-    if (!recipientContact || !noteContent) {
-      return json({ error: 'Recipient contact and Love Note content are required.' }, 400)
-    }
+    if (!recipientContact || !noteContent) return json({ error: 'Recipient contact and Love Note content are required.' }, 400)
 
     let scheduledAt: string | null = null
     if (deliveryTime === 'schedule') {
@@ -150,14 +151,10 @@ serve(async (req) => {
       scheduledAt = parsed.toISOString()
     }
 
-    // Sender identity comes from the authenticated account, not browser-supplied text.
     const senderName = await getSenderName(serviceClient, user)
     const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
     if (!siteUrl) return json({ error: 'SITE_URL is not configured' }, 500)
 
-    // For scheduled delivery, do NOT generate the reveal token yet. The future
-    // delivery worker creates it at send time, hashes it, stores only the hash,
-    // then immediately embeds the one-time raw token in the outbound invitation.
     if (deliveryTime === 'schedule') {
       const { data: invitation, error: insertError } = await serviceClient
         .from('love_note_invitations')
@@ -182,15 +179,7 @@ serve(async (req) => {
         return json({ error: 'Unable to schedule Love Note invitation.' }, 500)
       }
 
-      const previewCopy = buildCopy(senderName, '[secure reveal link created at delivery time]')
-      return json({
-        invitation_id: invitation.id,
-        status: 'scheduled',
-        scheduled_for: invitation.scheduled_for,
-        schedule_timezone: invitation.schedule_timezone,
-        sender_name: senderName,
-        invitation_preview: deliveryMethod === 'email' ? previewCopy.emailBody : previewCopy.sms,
-      })
+      return json({ invitation_id: invitation.id, status: 'scheduled', scheduled_for: invitation.scheduled_for, schedule_timezone: invitation.schedule_timezone, sender_name: senderName })
     }
 
     const rawToken = randomToken()
@@ -224,36 +213,21 @@ serve(async (req) => {
     const copy = buildCopy(senderName, revealUrl)
 
     try {
-      const providerMessageId = await deliverThroughConfiguredAdapter({
-        method: deliveryMethod,
-        to: recipientContact,
-        invitationId: invitation.id,
-        copy,
-      })
+      const providerMessageId = deliveryMethod === 'email'
+        ? await deliverEmailWithResend({ to: recipientContact, invitationId: invitation.id, copy })
+        : await deliverSmsThroughConfiguredAdapter({ to: recipientContact, invitationId: invitation.id, copy })
 
       await serviceClient
         .from('love_note_invitations')
-        .update({
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-          provider_message_id: providerMessageId,
-          failure_reason: null,
-        })
+        .update({ status: 'sent', sent_at: new Date().toISOString(), provider_message_id: providerMessageId, failure_reason: null })
         .eq('id', invitation.id)
 
-      return json({
-        invitation_id: invitation.id,
-        status: 'sent',
-        sender_name: senderName,
-      })
+      return json({ invitation_id: invitation.id, status: 'sent', sender_name: senderName })
     } catch (deliveryError) {
       console.error('Love Note delivery failed:', deliveryError)
       await serviceClient
         .from('love_note_invitations')
-        .update({
-          status: 'failed',
-          failure_reason: clean(deliveryError instanceof Error ? deliveryError.message : String(deliveryError), 500),
-        })
+        .update({ status: 'failed', failure_reason: clean(deliveryError instanceof Error ? deliveryError.message : String(deliveryError), 500) })
         .eq('id', invitation.id)
 
       return json({ error: 'The Love Note invitation could not be delivered.' }, 502)
