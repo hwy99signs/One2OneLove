@@ -56,17 +56,36 @@ export function AuthProvider({ children }) {
       const profileError = result?.error;
 
       if (profileError?.code === 'PGRST116') {
+        const metadata = authUser.user_metadata || {};
+        const userType = metadata.user_type || 'regular';
+        const profilePayload = {
+          id: authUser.id,
+          email: authUser.email,
+          name: metadata.name || authUser.email?.split('@')[0],
+          user_type: userType,
+          email_verified: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Regular-user signup details are preserved in Supabase Auth metadata while
+        // the account waits for email confirmation. Once the confirmed session is
+        // established, create the profile with those values instead of attempting
+        // an unauthenticated pre-confirmation table insert.
+        if (userType === 'regular') {
+          Object.assign(profilePayload, {
+            relationship_status: metadata.relationship_status || null,
+            anniversary_date: metadata.anniversary_date || null,
+            partner_email: metadata.partner_email || null,
+            subscription_plan: metadata.subscription_plan || 'Basic',
+            subscription_price: metadata.subscription_price !== undefined ? metadata.subscription_price : 0,
+            subscription_status: 'active',
+          });
+        }
+
         const { data: newProfile, error: createError } = await supabase
           .from('users')
-          .insert({
-            id: authUser.id,
-            email: authUser.email,
-            name: authUser.user_metadata?.name || authUser.email?.split('@')[0],
-            user_type: authUser.user_metadata?.user_type || 'regular',
-            email_verified: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .insert(profilePayload)
           .select()
           .single();
 
@@ -383,26 +402,32 @@ export function AuthProvider({ children }) {
       if (authError) return { success: false, error: handleSupabaseError(authError) };
       if (!authData?.user) return { success: false, error: 'Registration failed.' };
 
-      const { profile, profileError, confirmed } = await createBaseProfile({
-        authUser: authData.user,
-        email,
-        name,
-        userType: 'regular',
-        extra: {
-          relationship_status: relationshipStatus || null,
-          anniversary_date: anniversaryDate || null,
-          partner_email: partnerEmail || null,
-          subscription_plan: subscriptionPlan || 'Basic',
-          subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0,
-          subscription_status: 'active',
-        },
-      });
+      const confirmed = emailIsConfirmed(authData.user);
+      let profile = null;
 
-      if (profileError) {
-        return {
-          success: false,
-          error: `Account created but profile setup failed: ${handleSupabaseError(profileError)}. Please contact support.`,
-        };
+      if (confirmed && authData.session) {
+        const profileResult = await createBaseProfile({
+          authUser: authData.user,
+          email,
+          name,
+          userType: 'regular',
+          extra: {
+            relationship_status: relationshipStatus || null,
+            anniversary_date: anniversaryDate || null,
+            partner_email: partnerEmail || null,
+            subscription_plan: subscriptionPlan || 'Basic',
+            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0,
+            subscription_status: 'active',
+          },
+        });
+
+        if (profileResult.profileError) {
+          return {
+            success: false,
+            error: `Account created but profile setup failed: ${handleSupabaseError(profileResult.profileError)}. Please contact support.`,
+          };
+        }
+        profile = profileResult.profile;
       }
 
       const newUser = {
@@ -413,7 +438,7 @@ export function AuthProvider({ children }) {
         anniversary_date: anniversaryDate,
         partner_email: partnerEmail,
         email_verified: confirmed,
-        ...profile,
+        ...(profile || {}),
       };
 
       return finalizeRegistration({ authData, userData: newUser });
