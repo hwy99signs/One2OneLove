@@ -9,7 +9,8 @@ import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import AuthCallback from "./AuthCallback";
 import MemoryLane from "./MemoryLane";
-import LoveNotes from "./LoveNotes";
+import LoveNotes from "./LoveNotesHub";
+import LoveNotesCollection from "./LoveNotes";
 import CoupleSupport from "./CoupleSupport";
 import LoveLanguageQuiz from "./LoveLanguageQuiz";
 import DateIdeas from "./DateIdeas";
@@ -68,6 +69,7 @@ const PAGES = {
   AuthCallback,
   MemoryLane,
   LoveNotes,
+  LoveNotesCollection,
   CoupleSupport,
   LoveLanguageQuiz,
   DateIdeas,
@@ -129,6 +131,7 @@ const ROUTES = [
   ["/auth/callback", AuthCallback],
   ["/MemoryLane", MemoryLane],
   ["/LoveNotes", LoveNotes],
+  ["/LoveNotesCollection", LoveNotesCollection],
   ["/CoupleSupport", CoupleSupport],
   ["/LoveLanguageQuiz", LoveLanguageQuiz],
   ["/DateIdeas", DateIdeas],
