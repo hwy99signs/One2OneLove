@@ -24,23 +24,36 @@ export function prepareLoveNoteInvitationPayload({
   scheduleDate = '',
   scheduleTime = '',
 } = {}) {
+  const mode = deliveryTime === 'schedule' ? 'schedule' : 'now';
+  const date = clean(scheduleDate, 20);
+  const time = clean(scheduleTime, 20);
+  let scheduledFor = '';
+
+  if (mode === 'schedule') {
+    if (!date || !time) throw new Error('Scheduled delivery requires a date and time.');
+    const localDateTime = new Date(`${date}T${time}`);
+    if (Number.isNaN(localDateTime.getTime()) || localDateTime.getTime() <= Date.now()) {
+      throw new Error('Scheduled delivery must be a valid future date/time.');
+    }
+    scheduledFor = localDateTime.toISOString();
+  }
+
   const payload = {
+    // sender_name remains useful for the local preview, but the server deliberately
+    // replaces it with the authenticated account/profile name before delivery.
     sender_name: clean(senderName, 80),
     recipient_name: clean(recipientName, 80),
     delivery_method: deliveryMethod === 'email' ? 'email' : 'sms',
     recipient_contact: clean(recipientContact, 160),
     note_content: clean(noteContent, 500),
-    delivery_time: deliveryTime === 'schedule' ? 'schedule' : 'now',
-    schedule_date: clean(scheduleDate, 20),
-    schedule_time: clean(scheduleTime, 20),
+    delivery_time: mode,
+    scheduled_for: scheduledFor,
+    schedule_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   };
 
   if (!payload.sender_name) throw new Error('Sender name is required.');
   if (!payload.recipient_contact) throw new Error('Recipient contact is required.');
   if (!payload.note_content) throw new Error('Love Note content is required.');
-  if (payload.delivery_time === 'schedule' && (!payload.schedule_date || !payload.schedule_time)) {
-    throw new Error('Scheduled delivery requires a date and time.');
-  }
 
   return payload;
 }
