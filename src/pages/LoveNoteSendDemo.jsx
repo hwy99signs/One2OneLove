@@ -16,6 +16,19 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_NOTE = "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️";
 
+const loadDraftMessage = () => {
+  try {
+    const stored = sessionStorage.getItem("o2ol-love-note-draft");
+    if (!stored) return DEFAULT_NOTE;
+    const parsed = JSON.parse(stored);
+    return typeof parsed?.message === "string" && parsed.message.trim()
+      ? parsed.message.trim().slice(0, 500)
+      : DEFAULT_NOTE;
+  } catch {
+    return DEFAULT_NOTE;
+  }
+};
+
 export default function LoveNoteSendDemo() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -23,7 +36,7 @@ export default function LoveNoteSendDemo() {
   const [recipientName, setRecipientName] = useState("");
   const [delivery, setDelivery] = useState("text");
   const [contact, setContact] = useState("");
-  const [message, setMessage] = useState(DEFAULT_NOTE);
+  const [message, setMessage] = useState(loadDraftMessage);
   const [deliveryTime, setDeliveryTime] = useState("now");
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
@@ -32,6 +45,10 @@ export default function LoveNoteSendDemo() {
   useEffect(() => {
     if (!senderName.trim() && user?.name) setSenderName(user.name);
   }, [user?.name, senderName]);
+
+  useEffect(() => {
+    sessionStorage.removeItem("o2ol-love-note-draft");
+  }, []);
 
   const senderLabel = senderName.trim() || "Your name";
   const recipientLabel = recipientName.trim() || "your person";
