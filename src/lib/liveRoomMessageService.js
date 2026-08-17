@@ -46,6 +46,19 @@ export async function sendRoomMessage(roomSlug, user, content) {
   return data;
 }
 
+export async function deleteOwnRoomMessage(messageId, userId) {
+  if (!messageId || !userId) throw new Error("Unable to delete this message.");
+
+  const { error } = await supabase
+    .from("room_messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("user_id", userId)
+    .eq("message_type", "member");
+
+  if (error) throw error;
+}
+
 export async function toggleRoomReaction(message, userId, emoji) {
   if (!REACTIONS.includes(emoji)) throw new Error("Unsupported reaction.");
   if (!userId) throw new Error("Sign in to react.");
