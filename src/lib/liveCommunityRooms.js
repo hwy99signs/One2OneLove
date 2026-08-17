@@ -5,7 +5,8 @@ export const LIVE_COMMUNITY_ROOMS = [
     description: "Say what you need to say — without turning people into targets.",
     topic: "When you need to vent about your relationship, what do you actually want from the other person: advice, validation, or just somebody to listen?",
     accent: "rose",
-    activeCount: null,
+    activeCount: 12,
+    isCounterPreview: true,
   },
   {
     slug: "modern-dating-unfiltered",
@@ -47,7 +48,9 @@ export function getLiveCommunityRoom(slug) {
 
 export function getRoomActivityLabel(room) {
   if (typeof room.activeCount === "number" && room.activeCount > 0) {
-    return `${room.activeCount} chatting now`;
+    return room.isCounterPreview
+      ? `${room.activeCount} chatting now · sample`
+      : `${room.activeCount} chatting now`;
   }
 
   return null;
