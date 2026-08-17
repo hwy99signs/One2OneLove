@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   CalendarHeart,
@@ -20,6 +20,7 @@ const copy = {
     intro: "Pick a note, make it yours, and send a little love when it matters — or when there is no special reason at all.",
     browse: "Browse Love Notes",
     write: "Write Your Own",
+    continueToSend: "Continue to send",
     schedule: "Send now or schedule it",
     private: "Designed for a private reveal",
     privateText: "The recipient gets the invitation first. The note itself is revealed inside One2OneLove after they sign in or create a free account.",
@@ -41,6 +42,7 @@ const copy = {
     intro: "Elige una nota, hazla tuya y envía un poco de amor cuando importe — o simplemente porque sí.",
     browse: "Ver Notas de Amor",
     write: "Escribe la Tuya",
+    continueToSend: "Continuar para enviar",
     schedule: "Envía ahora o programa",
     private: "Diseñado para una revelación privada",
     privateText: "El destinatario recibe primero la invitación. La nota se revela dentro de One2OneLove después de iniciar sesión o crear una cuenta gratis.",
@@ -62,6 +64,7 @@ const copy = {
     intro: "Choisissez un mot, personnalisez-le et envoyez un peu d’amour quand cela compte — ou simplement sans raison particulière.",
     browse: "Voir les Mots d’Amour",
     write: "Écrire le Vôtre",
+    continueToSend: "Continuer pour envoyer",
     schedule: "Envoyer maintenant ou programmer",
     private: "Conçu pour une révélation privée",
     privateText: "Le destinataire reçoit d’abord l’invitation. Le mot est révélé dans One2OneLove après connexion ou création d’un compte gratuit.",
@@ -83,6 +86,7 @@ const copy = {
     intro: "Scegli una nota, rendila tua e manda un po’ d’amore quando conta — o semplicemente senza un motivo speciale.",
     browse: "Sfoglia le Note d’Amore",
     write: "Scrivi la Tua",
+    continueToSend: "Continua per inviare",
     schedule: "Invia ora o programma",
     private: "Pensato per una rivelazione privata",
     privateText: "Il destinatario riceve prima l’invito. La nota viene rivelata in One2OneLove dopo l’accesso o la creazione di un account gratuito.",
@@ -104,6 +108,7 @@ const copy = {
     intro: "Wähle eine Notiz, mach sie zu deiner und schicke ein bisschen Liebe, wenn es zählt — oder einfach so.",
     browse: "Liebesnotizen ansehen",
     write: "Eigene schreiben",
+    continueToSend: "Weiter zum Senden",
     schedule: "Jetzt senden oder planen",
     private: "Für eine private Enthüllung gedacht",
     privateText: "Der Empfänger erhält zuerst die Einladung. Die Notiz wird in One2OneLove nach Anmeldung oder Erstellung eines kostenlosen Kontos enthüllt.",
@@ -125,6 +130,7 @@ const copy = {
     intro: "Kies een briefje, maak het persoonlijk en stuur wat liefde wanneer het telt — of gewoon zomaar.",
     browse: "Bekijk Liefdesbriefjes",
     write: "Schrijf Je Eigen",
+    continueToSend: "Doorgaan met verzenden",
     schedule: "Nu sturen of plannen",
     private: "Ontworpen voor een privé-onthulling",
     privateText: "De ontvanger krijgt eerst de uitnodiging. Het briefje wordt in One2OneLove onthuld na inloggen of het maken van een gratis account.",
@@ -150,6 +156,7 @@ const flattenNotes = (language) => {
 };
 
 export default function LoveNotesHub() {
+  const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
   const notes = useMemo(() => flattenNotes(currentLanguage), [currentLanguage]);
@@ -157,6 +164,17 @@ export default function LoveNotesHub() {
   const [draft, setDraft] = useState("");
   const [selectedSample, setSelectedSample] = useState(0);
   const previewText = draft.trim() || samples[selectedSample]?.content || "You crossed my mind, and that felt like a good reason to remind you that you are loved.";
+
+  const continueToSend = () => {
+    sessionStorage.setItem(
+      "o2ol-love-note-draft",
+      JSON.stringify({
+        message: previewText.trim(),
+        source: draft.trim() ? "custom" : "collection",
+      })
+    );
+    navigate("/LoveNoteSendDemo");
+  };
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -201,7 +219,7 @@ export default function LoveNotesHub() {
                     <Heart className="h-4 w-4 fill-pink-500" /> Love Note
                   </div>
                   <p className="mt-5 text-center text-lg font-semibold leading-8 text-slate-800">{previewText}</p>
-                  <div className="mt-5 text-right text-sm font-bold text-slate-600">— Someone who loves you 💕</div>
+                  <div className="mt-5 text-right text-sm font-bold text-slate-600">— From you 💕</div>
                 </div>
                 <div className="mt-8 rounded-2xl border border-white bg-white/80 p-4 text-center shadow-sm">
                   <div className="text-sm font-black text-slate-900">{t.previewLabel}</div>
@@ -225,8 +243,11 @@ export default function LoveNotesHub() {
               <button
                 key={`${note.title}-${index}`}
                 type="button"
-                onClick={() => setSelectedSample(index)}
-                className={`rounded-[1.75rem] border p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${selectedSample === index ? "border-pink-300 bg-pink-50" : "border-slate-200 bg-white"}`}
+                onClick={() => {
+                  setSelectedSample(index);
+                  setDraft("");
+                }}
+                className={`rounded-[1.75rem] border p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${selectedSample === index && !draft.trim() ? "border-pink-300 bg-pink-50" : "border-slate-200 bg-white"}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-pink-700 shadow-sm">{note.category}</span>
@@ -238,7 +259,14 @@ export default function LoveNotesHub() {
             ))}
           </div>
 
-          <div className="mt-7">
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={continueToSend}
+              className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white shadow-sm"
+            >
+              <Send className="h-4 w-4" />{t.continueToSend}
+            </button>
             <Link to="/LoveNotesCollection" className="inline-flex items-center gap-2 text-sm font-black text-pink-700">
               {t.all}<ArrowRight className="h-4 w-4" />
             </Link>
@@ -268,11 +296,15 @@ export default function LoveNotesHub() {
             <div className="flex items-center gap-2 text-sm font-black text-pink-700"><MessageCircleHeart className="h-5 w-5" />Love Note preview</div>
             <div className="mt-6 rounded-sm border border-yellow-300 bg-yellow-100 p-7 shadow-xl">
               <p className="text-lg font-semibold leading-8 text-slate-800">{previewText}</p>
-              <div className="mt-6 text-right text-sm font-bold text-slate-600">— With love 💕</div>
+              <div className="mt-6 text-right text-sm font-bold text-slate-600">— From you 💕</div>
             </div>
-            <Link to="/LoveNotesCollection" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
-              <Send className="h-4 w-4" />{t.browse}
-            </Link>
+            <button
+              type="button"
+              onClick={continueToSend}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white"
+            >
+              <Send className="h-4 w-4" />{t.continueToSend}
+            </button>
           </div>
         </div>
       </section>
