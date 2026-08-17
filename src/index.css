@@ -156,3 +156,39 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+/* One2OneLove relaunch homepage hierarchy adjustments.
+   Scoped to the relaunch hero so the rest of the site is untouched. */
+main > section.relative.isolate img[alt="One2OneLove"] {
+  height: clamp(7rem, 11vw, 9.5rem) !important;
+}
+
+main > section.relative.isolate img[alt="One2OneLove"] + div > div:first-child {
+  font-size: clamp(2rem, 3vw, 2.8rem) !important;
+  line-height: 1 !important;
+}
+
+main > section.relative.isolate img[alt="One2OneLove"] + div > div:last-child {
+  margin-top: 0.35rem;
+  font-size: clamp(1rem, 1.5vw, 1.25rem) !important;
+  line-height: 1.25 !important;
+}
+
+main > section.relative.isolate h1 {
+  font-size: clamp(3rem, 5vw, 4rem) !important;
+  line-height: 1.04 !important;
+}
+
+@media (max-width: 639px) {
+  main > section.relative.isolate img[alt="One2OneLove"] {
+    height: 7rem !important;
+  }
+
+  main > section.relative.isolate img[alt="One2OneLove"] + div > div:first-child {
+    font-size: 2rem !important;
+  }
+
+  main > section.relative.isolate img[alt="One2OneLove"] + div > div:last-child {
+    font-size: 1rem !important;
+  }
+}
