@@ -14,7 +14,7 @@ import { createPageUrl } from "@/utils";
 const translations = {
   en: {
     title: "Create Your Account",
-    subtitle: "Join thousands of couples strengthening their relationships",
+    subtitle: "Join One2OneLove and build stronger relationships",
     fullName: "Full Name",
     fullNamePlaceholder: "Enter your full name",
     email: "Email Address",
@@ -35,7 +35,7 @@ const translations = {
   },
   es: {
     title: "Crea Tu Cuenta",
-    subtitle: "Únete a miles de parejas fortaleciendo sus relaciones",
+    subtitle: "Únete a One2OneLove y fortalece tus relaciones",
     fullName: "Nombre Completo",
     fullNamePlaceholder: "Ingresa tu nombre completo",
     email: "Correo Electrónico",
@@ -56,7 +56,7 @@ const translations = {
   },
   fr: {
     title: "Créez Votre Compte",
-    subtitle: "Rejoignez des milliers de couples renforçant leurs relations",
+    subtitle: "Rejoignez One2OneLove et renforcez vos relations",
     fullName: "Nom Complet",
     fullNamePlaceholder: "Entrez votre nom complet",
     email: "Adresse E-mail",
@@ -77,7 +77,7 @@ const translations = {
   },
   it: {
     title: "Crea Il Tuo Account",
-    subtitle: "Unisciti a migliaia di coppie che rafforzano le loro relazioni",
+    subtitle: "Unisciti a One2OneLove e rafforza le tue relazioni",
     fullName: "Nome Completo",
     fullNamePlaceholder: "Inserisci il tuo nome completo",
     email: "Indirizzo Email",
@@ -98,7 +98,7 @@ const translations = {
   },
   de: {
     title: "Erstellen Sie Ihr Konto",
-    subtitle: "Treten Sie Tausenden von Paaren bei, die ihre Beziehungen stärken",
+    subtitle: "Treten Sie One2OneLove bei und stärken Sie Ihre Beziehungen",
     fullName: "Vollständiger Name",
     fullNamePlaceholder: "Geben Sie Ihren vollständigen Namen ein",
     email: "E-Mail-Adresse",
@@ -119,7 +119,7 @@ const translations = {
   },
   nl: {
     title: "Maak Je Account Aan",
-    subtitle: "Sluit je aan bij duizenden koppels die hun relaties versterken",
+    subtitle: "Word lid van One2OneLove en versterk je relaties",
     fullName: "Volledige Naam",
     fullNamePlaceholder: "Voer je volledige naam in",
     email: "E-mailadres",
@@ -140,7 +140,7 @@ const translations = {
   },
   pt: {
     title: "Crie Sua Conta",
-    subtitle: "Junte-se a milhares de casais fortalecendo seus relacionamentos",
+    subtitle: "Junte-se ao One2OneLove e fortaleça seus relacionamentos",
     fullName: "Nome Completo",
     fullNamePlaceholder: "Digite seu nome completo",
     email: "Endereço de E-mail",
@@ -161,11 +161,14 @@ const translations = {
   }
 };
 
-export default function RegularUserForm({ onBack }) {
+export default function RegularUserForm({ onBack, returnTo = null }) {
   const { currentLanguage } = useLanguage();
   const { register } = useAuth();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
+  const signInUrl = returnTo
+    ? `${createPageUrl("SignIn")}?returnTo=${encodeURIComponent(returnTo)}`
+    : createPageUrl("SignIn");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -185,16 +188,7 @@ export default function RegularUserForm({ onBack }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    console.log('🔥 SignUp Form - Submission started');
-    console.log('Form data:', { 
-      name: formData.fullName, 
-      email: formData.email, 
-      hasPassword: !!formData.password,
-      relationshipStatus: formData.relationshipStatus,
-      agreeToTerms: formData.agreeToTerms 
-    });
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords don't match!");
       return;
@@ -206,9 +200,14 @@ export default function RegularUserForm({ onBack }) {
     }
 
     setIsLoading(true);
-    
+
     try {
-      console.log('Calling register function...');
+      if (returnTo) {
+        localStorage.setItem('o2ol-return-after-auth', returnTo);
+      } else {
+        localStorage.removeItem('o2ol-return-after-auth');
+      }
+
       const result = await register({
         name: formData.fullName,
         email: formData.email,
@@ -216,25 +215,19 @@ export default function RegularUserForm({ onBack }) {
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
         partnerEmail: formData.partnerEmail,
-        subscriptionPlan: 'Basic', // All new users start with free Basic plan
-        subscriptionPrice: 0, // Basic is free
+        subscriptionPlan: 'Basic',
+        subscriptionPrice: 0,
       });
 
-      console.log('Register result:', result);
-
       if (result.success) {
-        // Store the email and show dialog
         setRegisteredEmail(formData.email);
         setShowEmailDialog(true);
-        
-        // Also show a toast for good measure
         toast.success("Account created successfully! Please check your email.");
       } else {
-        console.error('Registration failed:', result.error);
         toast.error(result.error || "Something went wrong. Please try again.");
       }
     } catch (err) {
-      console.error('Registration error caught:', err);
+      console.error('Registration error:', err);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -258,7 +251,7 @@ export default function RegularUserForm({ onBack }) {
           </div>
           <CardTitle className="text-3xl">{t.title}</CardTitle>
         </div>
-        <p className="text-gray-600">{t.subtitle}</p>
+        <p className="text-gray-600">{returnTo ? "Create your free account, verify your email, and we’ll bring you back to the room you chose." : t.subtitle}</p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -274,6 +267,7 @@ export default function RegularUserForm({ onBack }) {
                 onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                 placeholder={t.fullNamePlaceholder}
                 className="pl-12"
+                autoComplete="name"
                 required
               />
             </div>
@@ -291,6 +285,7 @@ export default function RegularUserForm({ onBack }) {
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 placeholder={t.emailPlaceholder}
                 className="pl-12"
+                autoComplete="email"
                 required
               />
             </div>
@@ -308,6 +303,7 @@ export default function RegularUserForm({ onBack }) {
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 placeholder={t.passwordPlaceholder}
                 className="pl-12 pr-12"
+                autoComplete="new-password"
                 required
                 minLength={8}
               />
@@ -315,6 +311,7 @@ export default function RegularUserForm({ onBack }) {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -333,6 +330,7 @@ export default function RegularUserForm({ onBack }) {
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                 placeholder={t.confirmPasswordPlaceholder}
                 className="pl-12 pr-12"
+                autoComplete="new-password"
                 required
                 minLength={8}
               />
@@ -340,6 +338,7 @@ export default function RegularUserForm({ onBack }) {
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -391,6 +390,7 @@ export default function RegularUserForm({ onBack }) {
                 onChange={(e) => setFormData({...formData, partnerEmail: e.target.value})}
                 placeholder={t.partnerEmailPlaceholder}
                 className="pl-12"
+                autoComplete="email"
               />
             </div>
           </div>
@@ -426,13 +426,12 @@ export default function RegularUserForm({ onBack }) {
         </form>
       </CardContent>
     </Card>
-    
-    {/* Email Verification Dialog */}
+
     <EmailVerificationDialog
       isOpen={showEmailDialog}
       onClose={() => {
         setShowEmailDialog(false);
-        navigate(createPageUrl("SignIn"));
+        navigate(signInUrl);
       }}
       email={registeredEmail}
     />
