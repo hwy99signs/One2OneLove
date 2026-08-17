@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Heart, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Heart, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { createPageUrl } from '@/utils';
 
@@ -8,56 +8,80 @@ const safeReturnTo = (value) => {
   return value;
 };
 
+const isConfirmedUser = (user) => Boolean(user?.email_confirmed_at || user?.confirmed_at);
+
 export default function AuthCallback() {
   const [status, setStatus] = useState('Confirming your email…');
+  const [state, setState] = useState('loading');
 
   useEffect(() => {
     let cancelled = false;
+    let redirectTimer;
+
+    const scheduleRedirect = (url, delay) => {
+      redirectTimer = window.setTimeout(() => window.location.replace(url), delay);
+    };
 
     const finishConfirmation = async () => {
       const storedReturnTo = safeReturnTo(localStorage.getItem('o2ol-return-after-auth'));
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const queryParams = new URLSearchParams(window.location.search);
       const authError = queryParams.get('error_description') || hashParams.get('error_description');
+      const signInUrl = storedReturnTo
+        ? `${createPageUrl('SignIn')}?returnTo=${encodeURIComponent(storedReturnTo)}`
+        : createPageUrl('SignIn');
 
       if (authError) {
-        if (!cancelled) setStatus('We could not confirm that email link. Please sign in or request a new link.');
-        const signInUrl = storedReturnTo
-          ? `${createPageUrl('SignIn')}?returnTo=${encodeURIComponent(storedReturnTo)}`
-          : createPageUrl('SignIn');
-        window.setTimeout(() => window.location.replace(signInUrl), 1800);
+        if (!cancelled) {
+          setState('error');
+          setStatus('We could not confirm that email link. Please sign in or request a new link.');
+        }
+        scheduleRedirect(signInUrl, 1800);
         return;
       }
 
       let session = null;
-      for (let attempt = 0; attempt < 6 && !session && !cancelled; attempt += 1) {
+      for (let attempt = 0; attempt < 8 && !session && !cancelled; attempt += 1) {
         const { data } = await supabase.auth.getSession();
         session = data?.session || null;
-        if (!session) await new Promise((resolve) => window.setTimeout(resolve, 350));
+        if (!session) await new Promise((resolve) => window.setTimeout(resolve, 300));
       }
 
       if (cancelled) return;
 
-      if (session?.user) {
+      if (session?.user && isConfirmedUser(session.user)) {
         localStorage.removeItem('o2ol-return-after-auth');
+        setState('success');
         setStatus('Email confirmed. Taking you back to One2OneLove…');
-        window.setTimeout(() => {
-          window.location.replace(storedReturnTo || createPageUrl('Profile'));
-        }, 700);
+        scheduleRedirect(storedReturnTo || createPageUrl('Profile'), 700);
         return;
       }
 
-      const signInUrl = storedReturnTo
-        ? `${createPageUrl('SignIn')}?returnTo=${encodeURIComponent(storedReturnTo)}`
-        : createPageUrl('SignIn');
+      // Never call an account confirmed merely because a session object exists.
+      // The AuthContext and protected backend paths use the same confirmation rule.
+      if (session?.user && !isConfirmedUser(session.user)) {
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          console.warn('Unable to clear unconfirmed callback session:', error);
+        }
+        if (cancelled) return;
+        setState('error');
+        setStatus('That link did not finish confirming your email. Please request a new confirmation link.');
+        scheduleRedirect(signInUrl, 1800);
+        return;
+      }
+
       localStorage.removeItem('o2ol-return-after-auth');
+      setState('success');
       setStatus('Email confirmed. Please sign in to continue.');
-      window.setTimeout(() => window.location.replace(signInUrl), 900);
+      scheduleRedirect(signInUrl, 900);
     };
 
-    finishConfirmation();
+    void finishConfirmation();
     return () => {
       cancelled = true;
+      if (redirectTimer) window.clearTimeout(redirectTimer);
     };
   }, []);
 
@@ -69,7 +93,7 @@ export default function AuthCallback() {
         </div>
         <h1 className="mt-6 text-3xl font-black text-slate-950">One2OneLove</h1>
         <div className="mt-5 flex items-center justify-center gap-2 text-sm font-bold text-slate-600">
-          {status.startsWith('Email confirmed') ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <Loader2 className="h-5 w-5 animate-spin text-pink-500" />}
+          {state === 'success' ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : state === 'error' ? <AlertCircle className="h-5 w-5 text-amber-500" /> : <Loader2 className="h-5 w-5 animate-spin text-pink-500" />}
           <span>{status}</span>
         </div>
       </div>
