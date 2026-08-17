@@ -9,8 +9,10 @@ create table if not exists public.love_note_invitations (
   recipient_contact text not null check (char_length(recipient_contact) between 1 and 160),
   delivery_method text not null check (delivery_method in ('sms', 'email')),
   note_content text not null check (char_length(note_content) between 1 and 500),
-  token_hash text not null unique,
-  token_expires_at timestamptz not null,
+  -- Scheduled notes receive a reveal token only when the delivery worker sends them,
+  -- so plaintext tokens never have to be stored while waiting for a future date.
+  token_hash text,
+  token_expires_at timestamptz,
   scheduled_for timestamptz,
   status text not null default 'queued' check (
     status in ('queued', 'scheduled', 'sent', 'delivered', 'revealed', 'failed', 'canceled')
@@ -21,8 +23,16 @@ create table if not exists public.love_note_invitations (
   delivered_at timestamptz,
   revealed_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint love_note_token_pair check (
+    (token_hash is null and token_expires_at is null)
+    or (token_hash is not null and token_expires_at is not null)
+  )
 );
+
+create unique index if not exists love_note_invitations_token_hash_uidx
+  on public.love_note_invitations(token_hash)
+  where token_hash is not null;
 
 create index if not exists love_note_invitations_sender_idx
   on public.love_note_invitations(sender_user_id, created_at desc);
@@ -65,4 +75,4 @@ before update on public.love_note_invitations
 for each row execute function public.set_love_note_invitation_updated_at();
 
 comment on table public.love_note_invitations is
-  'Private Love Notes delivery records. Raw reveal tokens are never stored; only a SHA-256 hash is persisted.';
+  'Private Love Notes delivery records. Raw reveal tokens are never stored; only a SHA-256 hash is persisted after a note is actually sent.';
