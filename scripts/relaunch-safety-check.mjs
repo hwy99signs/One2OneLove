@@ -34,8 +34,14 @@ check('legacy Love Notes local mailto removed', !legacyLoveNotes.includes('mailt
 
 const senderFunction = exists('supabase/functions/send-love-note-invitation/index.ts') ? read('supabase/functions/send-love-note-invitation/index.ts') : '';
 check('real delivery kill switch exists', senderFunction.includes("LOVE_NOTE_DELIVERY_ENABLED') !== 'true'"), 'Real Love Note delivery must remain gated.');
+check('SMS has independent kill switch', senderFunction.includes("LOVE_NOTE_SMS_ENABLED') !== 'true'"), 'Email activation must not implicitly activate paid SMS delivery.');
+check('Love Note send requires verified account', senderFunction.includes('EMAIL_NOT_CONFIRMED'), 'The server-side sender path must reject unconfirmed accounts.');
 check('Resend key remains server-side', senderFunction.includes("Deno.env.get('RESEND_API_KEY')"), 'Resend key must be read from Edge Function secrets.');
 check('raw note is not inserted into provider copy', !/emailBody:[^\n]*noteContent|sms:[^\n]*noteContent/.test(senderFunction), 'Invitation provider copy must not contain note_content.');
+
+const revealFunction = exists('supabase/functions/reveal-love-note/index.ts') ? read('supabase/functions/reveal-love-note/index.ts') : '';
+check('Love Note reveal requires verified account', revealFunction.includes('EMAIL_NOT_CONFIRMED'), 'The server-side reveal path must reject unconfirmed accounts.');
+check('email reveal binds invited address', revealFunction.includes('accountEmail !== invitedEmail'), 'Email invitations must be claimed by the verified email address that received them.');
 
 const authContext = exists('src/contexts/AuthContext.jsx') ? read('src/contexts/AuthContext.jsx') : '';
 const hasUnconfirmedBypass = /allowing sign in anyway|allowing sign in|allowing access/i.test(authContext);
@@ -43,6 +49,11 @@ check('AuthContext email-confirmation bypass removed', !hasUnconfirmedBypass, ha
 
 const signIn = exists('src/pages/SignIn.jsx') ? read('src/pages/SignIn.jsx') : '';
 check('Sign In confirms authenticated email', signIn.includes('email_confirmed_at'), 'Defense-in-depth check should remain at the sign-in boundary.');
+
+const presence = exists('src/lib/roomPresenceService.js') ? read('src/lib/roomPresenceService.js') : '';
+const tracksRawPresenceIdentity = /channel\.track\(\{[\s\S]{0,200}(user_id|name:)/.test(presence);
+check('Live Room presence does not broadcast account identity', !tracksRawPresenceIdentity, 'Presence should carry only aggregate-count metadata, not member IDs or names.');
+check('Live Room presence key is pseudonymous', presence.includes('SHA-256') && presence.includes('one2onelove-room-presence:'), 'Use a deterministic one-way key instead of broadcasting the account UUID.');
 
 const home = exists('src/pages/Home.jsx') ? read('src/pages/Home.jsx') : '';
 const homeMayImplyLiveHumans = /ROOM OPEN|People are talking now|SALA ABIERTA|SALON OUVERT|STANZA APERTA|RAUM OFFEN/.test(home);
