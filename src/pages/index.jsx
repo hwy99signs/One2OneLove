@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import Layout from "./Layout.jsx";
 import Home from "./Home";
 import InfluencerSignup from "./InfluencerSignup";
@@ -175,7 +176,6 @@ const ROUTES = [
 
 function _getCurrentPage(url) {
   if (url.endsWith("/")) url = url.slice(0, -1);
-
   let urlLastPart = url.split("/").pop();
   if (urlLastPart.includes("?")) urlLastPart = urlLastPart.split("?")[0];
 
@@ -186,18 +186,31 @@ function _getCurrentPage(url) {
   return pageName || "Home";
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname, search]);
+
+  return null;
+}
+
 function PagesContent() {
   const location = useLocation();
   const currentPage = _getCurrentPage(location.pathname);
 
   return (
-    <Layout currentPageName={currentPage}>
-      <Routes>
-        {ROUTES.map(([path, Component]) => (
-          <Route key={path} path={path} element={<Component />} />
-        ))}
-      </Routes>
-    </Layout>
+    <>
+      <ScrollToTop />
+      <Layout currentPageName={currentPage}>
+        <Routes>
+          {ROUTES.map(([path, Component]) => (
+            <Route key={path} path={path} element={<Component />} />
+          ))}
+        </Routes>
+      </Layout>
+    </>
   );
 }
 
