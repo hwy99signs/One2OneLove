@@ -39,7 +39,7 @@ export default function LoveNoteRevealDemo() {
         message: "",
       })
     );
-    navigate("/LoveNoteSendDemo");
+    navigate("/LoveNotes/Send");
   };
 
   return (
