@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Heart, Mail, Lock, Eye, EyeOff, X, UserCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,26 +9,31 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const translations = {
   en: {
-    signIn: { title: "Sign In", subtitle: "Sign in to access your love notes and games", email: "Email Address", password: "Password", emailPlaceholder: "Enter your email", passwordPlaceholder: "Enter your password", signInButton: "Sign In", forgotPassword: "Forgot Password?", invite: "Invite Friends" }
+    signIn: { title: "Sign In", subtitle: "Join live conversations, send Love Notes, and access your relationship tools", email: "Email Address", password: "Password", emailPlaceholder: "Enter your email", passwordPlaceholder: "Enter your password", signInButton: "Sign In", forgotPassword: "Forgot Password?", invite: "Invite Friends", newHere: "New to One2OneLove?", createAccount: "Create a free account" }
   },
   es: {
-    signIn: { title: "Iniciar Sesión", subtitle: "Inicia sesión para acceder a tus notas de amor y juegos", email: "Correo Electrónico", password: "Contraseña", emailPlaceholder: "Ingresa tu correo electrónico", passwordPlaceholder: "Ingresa tu contraseña", signInButton: "Iniciar Sesión", forgotPassword: "¿Olvidaste tu contraseña?", invite: "Invitar Amigos" }
+    signIn: { title: "Iniciar Sesión", subtitle: "Únete a conversaciones en vivo, envía notas de amor y accede a tus herramientas de relación", email: "Correo Electrónico", password: "Contraseña", emailPlaceholder: "Ingresa tu correo electrónico", passwordPlaceholder: "Ingresa tu contraseña", signInButton: "Iniciar Sesión", forgotPassword: "¿Olvidaste tu contraseña?", invite: "Invitar Amigos", newHere: "¿Nuevo en One2OneLove?", createAccount: "Crea una cuenta gratis" }
   },
   fr: {
-    signIn: { title: "Se Connecter", subtitle: "Connectez-vous pour accéder à vos notes d'amour et jeux", email: "Adresse E-mail", password: "Mot de Passe", emailPlaceholder: "Entrez votre e-mail", passwordPlaceholder: "Entrez votre mot de passe", signInButton: "Se Connecter", forgotPassword: "Mot de passe oublié?", invite: "Inviter des Amis" }
+    signIn: { title: "Se Connecter", subtitle: "Rejoignez des conversations en direct, envoyez des mots d’amour et accédez à vos outils relationnels", email: "Adresse E-mail", password: "Mot de Passe", emailPlaceholder: "Entrez votre e-mail", passwordPlaceholder: "Entrez votre mot de passe", signInButton: "Se Connecter", forgotPassword: "Mot de passe oublié?", invite: "Inviter des Amis", newHere: "Nouveau sur One2OneLove ?", createAccount: "Créer un compte gratuit" }
   },
   it: {
-    signIn: { title: "Accedi", subtitle: "Accedi per accedere alle tue note d'amore e giochi", email: "Indirizzo Email", password: "Password", emailPlaceholder: "Inserisci la tua email", passwordPlaceholder: "Inserisci la tua password", signInButton: "Accedi", forgotPassword: "Password dimenticata?", invite: "Invita Amici" }
+    signIn: { title: "Accedi", subtitle: "Partecipa alle conversazioni dal vivo, invia note d’amore e usa i tuoi strumenti di relazione", email: "Indirizzo Email", password: "Password", emailPlaceholder: "Inserisci la tua email", passwordPlaceholder: "Inserisci la tua password", signInButton: "Accedi", forgotPassword: "Password dimenticata?", invite: "Invita Amici", newHere: "Nuovo su One2OneLove?", createAccount: "Crea un account gratuito" }
   },
   de: {
-    signIn: { title: "Anmelden", subtitle: "Melden Sie sich an, um auf Ihre Liebesbotschaften und Spiele zuzugreifen", email: "E-Mail-Adresse", password: "Passwort", emailPlaceholder: "Geben Sie Ihre E-Mail ein", passwordPlaceholder: "Geben Sie Ihr Passwort ein", signInButton: "Anmelden", forgotPassword: "Passwort vergessen?", invite: "Freunde Einladen" }
+    signIn: { title: "Anmelden", subtitle: "Nimm an Live-Gesprächen teil, sende Liebesbotschaften und nutze deine Beziehungstools", email: "E-Mail-Adresse", password: "Passwort", emailPlaceholder: "Geben Sie Ihre E-Mail ein", passwordPlaceholder: "Geben Sie Ihr Passwort ein", signInButton: "Anmelden", forgotPassword: "Passwort vergessen?", invite: "Freunde Einladen", newHere: "Neu bei One2OneLove?", createAccount: "Kostenloses Konto erstellen" }
   },
   nl: {
-    signIn: { title: "Inloggen", subtitle: "Log in om toegang te krijgen tot je liefdebriefjes en spelletjes", email: "E-mailadres", password: "Wachtwoord", emailPlaceholder: "Voer je e-mail in", passwordPlaceholder: "Voer je wachtwoord in", signInButton: "Inloggen", forgotPassword: "Wachtwoord vergeten?", invite: "Vrienden Uitnodigen" }
+    signIn: { title: "Inloggen", subtitle: "Doe mee aan live gesprekken, stuur liefdesbriefjes en gebruik je relatietools", email: "E-mailadres", password: "Wachtwoord", emailPlaceholder: "Voer je e-mail in", passwordPlaceholder: "Voer je wachtwoord in", signInButton: "Inloggen", forgotPassword: "Wachtwoord vergeten?", invite: "Vrienden Uitnodigen", newHere: "Nieuw bij One2OneLove?", createAccount: "Maak een gratis account" }
   },
   pt: {
-    signIn: { title: "Entrar", subtitle: "Entre para acessar suas notas de amor e jogos", email: "Endereço de E-mail", password: "Senha", emailPlaceholder: "Digite seu e-mail", passwordPlaceholder: "Digite sua senha", signInButton: "Entrar", forgotPassword: "Esqueceu a senha?", invite: "Convidar Amigos" }
+    signIn: { title: "Entrar", subtitle: "Participe de conversas ao vivo, envie notas de amor e acesse suas ferramentas de relacionamento", email: "Endereço de E-mail", password: "Senha", emailPlaceholder: "Digite seu e-mail", passwordPlaceholder: "Digite sua senha", signInButton: "Entrar", forgotPassword: "Esqueceu a senha?", invite: "Convidar Amigos", newHere: "Novo no One2OneLove?", createAccount: "Crie uma conta grátis" }
   }
+};
+
+const safeReturnTo = (value) => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  return value;
 };
 
 export default function SignIn() {
@@ -36,68 +41,46 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { currentLanguage } = useLanguage();
   const { login } = useAuth();
   const t = translations[currentLanguage] || translations.en;
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
+  const signupUrl = returnTo
+    ? `${createPageUrl("SignUp")}?returnTo=${encodeURIComponent(returnTo)}`
+    : createPageUrl("SignUp");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error("Please enter both email and password");
       return;
     }
 
     setIsLoading(true);
-    console.log('🔵 Sign in form submitted for:', email);
 
     try {
-      // Clear any stale localStorage data that might interfere
-      // This ensures a clean login state
-      try {
-        const storageKey = 'sb-one2one-love-auth-token';
-        const existingData = localStorage.getItem(storageKey);
-        if (existingData) {
-          console.log('🧹 Clearing stale auth data from localStorage...');
-          // Don't clear completely, but let Supabase handle it
-          // The login function will handle session clearing
-        }
-      } catch (storageError) {
-        console.warn('⚠️ Could not check localStorage:', storageError);
-      }
-
-      // Add timeout to prevent infinite loading
       const loginPromise = login(email, password);
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Login timeout after 15 seconds')), 15000)
       );
-      
+
       const result = await Promise.race([loginPromise, timeoutPromise]);
-      console.log('🔵 Login result:', result);
-      
+
       if (result && result.success) {
-        console.log('✅ Login successful, redirecting...');
         toast.success("Successfully signed in!");
-        
-        // Set loading to false before redirect
         setIsLoading(false);
-        
-        // Small delay to ensure state updates, then redirect
+
         setTimeout(() => {
-          const profileUrl = createPageUrl("Profile");
-          console.log('🔵 Redirecting to:', profileUrl);
-          // Use window.location.replace for immediate redirect
-          window.location.replace(profileUrl);
+          window.location.replace(returnTo || createPageUrl("Profile"));
         }, 100);
       } else {
         const errorMessage = result?.error || "Invalid email or password. Please try again.";
-        console.error('❌ Login failed:', errorMessage);
         toast.error(errorMessage);
         setIsLoading(false);
       }
     } catch (error) {
-      console.error("❌ Login error:", error);
       const errorMessage = error.message || "An error occurred. Please try again.";
       toast.error(errorMessage);
       setIsLoading(false);
@@ -108,7 +91,7 @@ export default function SignIn() {
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 relative">
         <Link to={createPageUrl("Home")}>
-          <button className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
+          <button className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close sign in">
             <X size={24} />
           </button>
         </Link>
@@ -137,6 +120,7 @@ export default function SignIn() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t.signIn.emailPlaceholder}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none text-gray-700 placeholder-gray-400"
+                autoComplete="email"
                 required
               />
             </div>
@@ -154,12 +138,14 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t.signIn.passwordPlaceholder}
                 className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none text-gray-700 placeholder-gray-400"
+                autoComplete="current-password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -187,6 +173,13 @@ export default function SignIn() {
             )}
           </Button>
         </form>
+
+        <div className="mt-6 rounded-2xl bg-pink-50 p-4 text-center">
+          <span className="text-sm text-gray-600">{t.signIn.newHere} </span>
+          <Link to={signupUrl} className="text-sm font-bold text-pink-600 hover:text-pink-700">
+            {t.signIn.createAccount}
+          </Link>
+        </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
           <Link to={createPageUrl("Invite")}>
