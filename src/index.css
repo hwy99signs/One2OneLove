@@ -184,6 +184,33 @@ main > section.relative.isolate > div:last-child > div:first-child > div:first-c
   display: none !important;
 }
 
+/* Reserve a visible activity-status area on every homepage room card.
+   During preview it shows the honest quiet-room fallback. Once live presence is
+   connected, this is replaced by the real active-member count in React. */
+main > section.relative.isolate + section .mt-12.grid > a {
+  position: relative;
+  padding-top: 4.25rem !important;
+}
+
+main > section.relative.isolate + section .mt-12.grid > a::before {
+  content: "✦ O2OL Host topic ready";
+  position: absolute;
+  top: 1.15rem;
+  left: 1.25rem;
+  right: 1.25rem;
+  display: block;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(139, 92, 246, 0.16);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: rgb(109, 40, 217);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
 @media (min-width: 1024px) {
   main > section.relative.isolate > div:last-child {
     grid-template-columns: minmax(0, 1.08fr) minmax(24rem, 0.78fr) !important;
