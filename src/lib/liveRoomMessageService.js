@@ -1,11 +1,18 @@
 import { supabase } from "./supabase";
 
 const REACTIONS = ["❤️", "👍", "😂", "👏", "🤔"];
+export const REPORT_REASONS = [
+  { value: "harassment", label: "Harassment or targeted humiliation" },
+  { value: "personal_information", label: "Sharing private or identifying information" },
+  { value: "threats", label: "Threats or unsafe behavior" },
+  { value: "spam", label: "Spam or disruptive posting" },
+  { value: "other", label: "Something else" },
+];
 
 const isMissingRoomBackend = (error) =>
   error?.code === "PGRST205" ||
   error?.code === "42P01" ||
-  /room_messages|room_message_reactions/i.test(error?.message || "");
+  /room_messages|room_message_reactions|room_message_reports/i.test(error?.message || "");
 
 export async function getRoomMessages(roomSlug, limit = 80) {
   const { data, error } = await supabase
@@ -57,6 +64,29 @@ export async function deleteOwnRoomMessage(messageId, userId) {
     .eq("message_type", "member");
 
   if (error) throw error;
+}
+
+export async function reportRoomMessage(messageId, reporterId, reason, details = "") {
+  if (!messageId || !reporterId) throw new Error("Sign in to report a message.");
+  if (!REPORT_REASONS.some((item) => item.value === reason)) throw new Error("Choose a report reason.");
+  if (details.length > 500) throw new Error("Report details can be up to 500 characters.");
+
+  const { error } = await supabase.from("room_message_reports").insert({
+    message_id: messageId,
+    reporter_id: reporterId,
+    reason,
+    details: details.trim() || null,
+  });
+
+  if (error) {
+    if (isMissingRoomBackend(error)) {
+      const unavailable = new Error("Reporting is prepared but the moderation database layer is not active yet.");
+      unavailable.code = "ROOM_REPORTING_NOT_READY";
+      throw unavailable;
+    }
+    if (error.code === "23505") throw new Error("You already reported this message.");
+    throw error;
+  }
 }
 
 export async function toggleRoomReaction(message, userId, emoji) {
