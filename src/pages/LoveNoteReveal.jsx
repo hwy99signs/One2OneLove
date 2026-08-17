@@ -45,7 +45,7 @@ export default function LoveNoteReveal() {
         message: "",
       })
     );
-    navigate("/LoveNoteSendDemo");
+    navigate("/LoveNotes/Send");
   };
 
   return (
