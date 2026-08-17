@@ -14,6 +14,7 @@ Production remains untouched. This file tracks anything that must wait for expli
 
 - Existing Supabase `RESEND_API_KEY`: a secret already exists. Do not replace it until the existing waitlist/email usage is verified. A newly created Resend key is being held separately by the account owner.
 - `RESEND_FROM_EMAIL`, `SITE_URL`, scheduler secret, and `LOVE_NOTE_DELIVERY_ENABLED`: configure only as part of the controlled Love Notes deployment sequence. Keep real delivery disabled until the backend and test path are ready.
+- Password reset now uses a real Supabase recovery flow and redirects to `/ResetPassword`. Before controlled testing, verify the applicable One2OneLove origin(s) and `/ResetPassword` are allowed by Supabase Auth redirect-url configuration. Do not change production Auth settings while upstream service stability is uncertain.
 - GitHub, Vercel, and Supabase have been intermittently affected by upstream service issues during this build session. Do not interpret missing/pending deployment status as an application failure without a successful retry after service recovery.
 
 ## Visual checkpoint for owner review
@@ -25,7 +26,7 @@ Production remains untouched. This file tracks anything that must wait for expli
 - Love Notes SMS provider / paid SMS activation, including Twilio or any A2P-related costs. The prepared backend now has an independent `LOVE_NOTE_SMS_ENABLED` kill switch so email activation cannot accidentally activate SMS.
 - Saved Love Notes migration: `supabase/migrations/20260817_love_note_saves.sql`. The migration and client service are staged only; do not apply or wire the live Save button until approved.
 - Live Room sender-identity hardening migration: `supabase/migrations/20260817_live_room_identity_hardening.sql`. This would make the database derive member identity instead of trusting a browser-supplied display name.
-- Final numerical sending/rate-limit policy for Love Notes and Live Rooms. Technical rate limiting is a launch requirement, but the actual per-hour/per-day member limits should be approved as a product decision before enforcement.
+- Final numerical sending/rate-limit policy for Love Notes and Live Rooms. Technical rate limiting is a launch requirement, but the actual per-hour/per-day member limits should be approved as a product decision before enforcement. Options are documented in `docs/rate-limit-options.md`.
 - Live Room moderation migration: `supabase/migrations/20260817_live_room_moderation.sql`.
 - Production security migrations or RLS/policy changes affecting live data.
 - Any merge from `relaunch-homepage` into production/default branch.
@@ -39,7 +40,7 @@ Production remains untouched. This file tracks anything that must wait for expli
 - Enable RLS on `waitlist_signups` and review grants.
 - Review pairwise `messages` update permissions so receivers cannot alter message content.
 - Review `community_members` admin policy for recursion risk.
-- Review public views (including `user_presence_view`) for email/sensitive-data exposure and security-invoker/grant behavior.
+- Review public views (including `user_presence_view`) for email/sensitive-data exposure and security-invoker/grant behavior. Frontend presence queries now request only status fields, but database/view permissions still need production hardening.
 - Add server-side rate limits / abuse controls for Live Rooms and Love Notes before public launch.
 
 ## Controlled test sequence after upstream services stabilize
@@ -49,9 +50,10 @@ Production remains untouched. This file tracks anything that must wait for expli
 3. Deploy `send-love-note-invitation` and `reveal-love-note` with JWT verification.
 4. Configure the approved email-only Resend path; leave SMS disabled.
 5. Keep `LOVE_NOTE_DELIVERY_ENABLED` off until configuration is verified.
-6. Run one controlled Love Note email test to an owner-controlled address.
+6. Run one controlled Love Note email test to an owner-controlled email address.
 7. Verify sign-in/free-account return-to, secure reveal, sender identity, reply, and save behavior.
-8. Only then consider enabling broader Love Notes email delivery.
+8. Verify the password-recovery redirect and new-password flow with an owner-controlled test account.
+9. Only then consider enabling broader Love Notes email delivery.
 
 ## Development work completed while approvals are held
 
@@ -62,15 +64,16 @@ Production remains untouched. This file tracks anything that must wait for expli
 - Added multilingual sender and reveal experiences for English, Spanish, French, Italian, German, and Dutch.
 - Added progressive loading to the 365-note collection so the page does not render the entire library at once.
 - Added multilingual Live Community room names, topics, activity labels, landing-page copy, full room UI, reporting UI, and room-status copy.
-- Minimized Realtime Presence data: room clients now receive an aggregate presence record with a one-way pseudonymous key rather than member names/account UUIDs.
+- Minimized Realtime Presence data: Live Rooms use one-way pseudonymous presence keys instead of member names/account UUIDs; the global presence service now requests only required status fields and avoids unreliable unload-time auth calls.
 - Hardened Love Note send/reveal Edge Function code so both require verified accounts; SMS now has a second independent kill switch.
 - Rebuilt AuthContext on the development branch so unconfirmed-email sessions are rejected instead of intentionally allowed.
 - Updated regular signup so profile-table creation is deferred until the account is actually confirmed; signup details are preserved in Supabase Auth metadata and used when the confirmed profile is first created.
 - Hardened the auth callback so it never reports confirmation merely because a session object exists.
-- Localized and clarified the regular-account confirmation dialog for English, Spanish, French, Italian, German, and Dutch.
+- Replaced the simulated Forgot Password behavior with Supabase `resetPasswordForEmail` and added `/ResetPassword` to complete the recovery flow with `supabase.auth.updateUser`.
+- Localized and clarified the regular-account confirmation and password-recovery experiences.
 - Staged the secure Saved Love Notes schema and client service without applying it to production.
 - Staged Live Room sender-identity hardening without applying it to production.
-- Added a relaunch safety-check script (`npm run relaunch:check`) to flag known security/consistency blockers, including the three hard-coded professional verification flows.
-- Added controlled-rollout documentation for Love Notes and decision documentation for professional verification.
+- Added a relaunch safety-check script (`npm run relaunch:check`) to flag known security/consistency blockers, including the three hard-coded professional verification flows and password-reset wiring.
+- Added controlled-rollout documentation for Love Notes, rate-limit options, professional verification options, and public-route review.
 
 Last updated during the August 17, 2026 relaunch build session.
