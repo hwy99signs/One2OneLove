@@ -1,10 +1,31 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Heart, LockKeyhole, MessageCircleHeart, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Heart, LockKeyhole, MessageCircleHeart, Save, Sparkles } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
+const fallbackPreview = {
+  recipientName: "",
+  message: "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️",
+};
+
+const loadPreview = () => {
+  try {
+    const stored = sessionStorage.getItem("o2ol-love-note-preview");
+    if (!stored) return fallbackPreview;
+    const parsed = JSON.parse(stored);
+    return {
+      recipientName: typeof parsed?.recipientName === "string" ? parsed.recipientName : "",
+      message: typeof parsed?.message === "string" && parsed.message.trim() ? parsed.message.trim() : fallbackPreview.message,
+    };
+  } catch {
+    return fallbackPreview;
+  }
+};
+
 export default function LoveNoteRevealDemo() {
+  const [preview] = useState(loadPreview);
   const [revealed, setRevealed] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-violet-50 to-blue-50 px-5 py-10 text-slate-900 sm:px-8">
@@ -32,9 +53,11 @@ export default function LoveNoteRevealDemo() {
                   <LockKeyhole className="h-7 w-7" />
                 </div>
                 <div className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-violet-600">A private message is waiting</div>
-                <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">Someone sent you a Love Note.</h1>
+                <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  {preview.recipientName ? `${preview.recipientName}, someone sent you a Love Note.` : "Someone sent you a Love Note."}
+                </h1>
                 <p className="mt-4 max-w-md text-sm leading-6 text-slate-600">
-                  In the live version, the recipient reaches this screen from a secure invitation after signing in or creating a free One2OneLove account. The message stays hidden until the reveal.
+                  The invitation does not expose the message. In the live version, a secure invitation token will connect this reveal to the intended recipient after sign-in or free-account creation.
                 </p>
                 <button
                   type="button"
@@ -53,25 +76,27 @@ export default function LoveNoteRevealDemo() {
                     <Heart className="h-4 w-4 fill-pink-500" />
                     One2OneLove
                   </div>
-                  <p className="mt-6 text-center text-lg font-semibold leading-8 text-slate-800">
-                    You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️
-                  </p>
+                  <p className="mt-6 text-center text-lg font-semibold leading-8 text-slate-800">{preview.message}</p>
                   <div className="mt-6 text-right text-sm font-bold text-slate-600">— Someone who loves you 💕</div>
                 </div>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  <Link to="/LoveNotesCollection" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
+                  <Link to="/LoveNoteSendDemo" className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-black text-white">
                     <MessageCircleHeart className="h-4 w-4" />
                     Reply with a Love Note
                   </Link>
-                  <button type="button" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
-                    <Save className="h-4 w-4" />
-                    Save this note
+                  <button
+                    type="button"
+                    onClick={() => setSaved(true)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-black ${saved ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}
+                  >
+                    {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                    {saved ? "Saved" : "Save this note"}
                   </button>
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
-                  <span className="font-black">Growth loop:</span> the recipient can reply, save the note, or send another Love Note without leaving One2OneLove. This demo shows the experience only; secure invitation tokens and persistence will be connected when the backend migration stage is available.
+                  <span className="font-black">Growth loop:</span> the recipient can reveal, save, reply, or send another Love Note without leaving One2OneLove. This preview now carries the sender’s drafted note into the recipient experience; secure invitation tokens and persistence will replace this temporary preview state at the backend stage.
                 </div>
               </div>
             )}
