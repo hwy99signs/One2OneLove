@@ -28,10 +28,12 @@ const translations = {
     freeToJoin: "Free to join",
     inclusive: "Inclusive community",
     languages: "5 languages",
-    previewTitle: "Live conversation, without the noise",
-    previewStatus: "ROOM OPEN",
+    previewTitle: "What a room conversation can feel like",
+    previewStatus: "EXAMPLE CONVERSATION",
     previewRoom: "Love Talk",
-    previewPeople: "People are talking now",
+    previewPeople: "Illustrative preview — not live activity",
+    previewMemberA: "Member A",
+    previewMemberB: "Member B",
     previewMessage1: "What actually makes you feel connected after a long week?",
     previewMessage2: "For me, it's when we put the phones down and really talk.",
     previewHost: "O2OL AI Host",
@@ -49,13 +51,17 @@ const translations = {
     hostRule2: "Short prompts — never lectures",
     hostRule3: "Built to encourage people, not replace them",
     hostCta: "See the Community",
+    hostExample: "EXAMPLE HOST RHYTHM",
+    hostExample1: "Conversation flowing — host stays quiet.",
+    hostExample2: "Room goes quiet — host offers one prompt.",
+    hostExample3: "Members respond — host steps back.",
     notesEyebrow: "365 LOVE NOTES",
     notesTitle: "One for every day of the year — plus your own words.",
     notesCopy:
-      "Choose a ready-to-send note or write your own. Make it personal, schedule it for later, and turn a simple message into a meaningful moment.",
+      "Choose a ready-to-send note or write your own. Make it personal and keep the recipient reveal private. Optional member scheduling is staged for the relaunch membership tools.",
     curated: "365 curated notes",
     custom: "Write your own",
-    scheduled: "Schedule for later",
+    scheduled: "Member scheduling — staged",
     private: "Private recipient reveal",
     notesCta: "Explore Love Notes",
     toolsEyebrow: "START WITH SOMETHING SIMPLE",
@@ -65,7 +71,8 @@ const translations = {
     dateTitle: "Date Ideas",
     dateCopy: "Find an easy way to spend intentional time together.",
     goalsTitle: "Relationship Goals",
-    goalsCopy: "Turn good intentions into shared habits you can actually track.",
+    goalsCopy: "Membership tool: turn good intentions into private goals and progress you can track.",
+    membership: "Membership",
     openTool: "Open tool",
     finalTitle: "Relationships deserve more than a swipe.",
     finalCopy:
@@ -85,10 +92,12 @@ const translations = {
     freeToJoin: "Gratis para unirse",
     inclusive: "Comunidad inclusiva",
     languages: "5 idiomas",
-    previewTitle: "Conversación en vivo, sin el ruido",
-    previewStatus: "SALA ABIERTA",
+    previewTitle: "Cómo puede sentirse una conversación en una sala",
+    previewStatus: "CONVERSACIÓN DE EJEMPLO",
     previewRoom: "Hablemos de Amor",
-    previewPeople: "La conversación está activa",
+    previewPeople: "Vista ilustrativa — no es actividad en vivo",
+    previewMemberA: "Miembro A",
+    previewMemberB: "Miembro B",
     previewMessage1: "¿Qué te hace sentir conectado después de una semana larga?",
     previewMessage2: "Para mí, es cuando dejamos los teléfonos y hablamos de verdad.",
     previewHost: "Anfitrión IA O2OL",
@@ -106,13 +115,17 @@ const translations = {
     hostRule2: "Mensajes cortos — nunca sermones",
     hostRule3: "Hecho para animar a las personas, no reemplazarlas",
     hostCta: "Ver la Comunidad",
+    hostExample: "RITMO DE EJEMPLO DEL ANFITRIÓN",
+    hostExample1: "La conversación fluye — el anfitrión permanece en silencio.",
+    hostExample2: "La sala se queda quieta — el anfitrión ofrece una pregunta.",
+    hostExample3: "Los miembros responden — el anfitrión se aparta.",
     notesEyebrow: "365 NOTAS DE AMOR",
     notesTitle: "Una para cada día del año — más tus propias palabras.",
     notesCopy:
-      "Elige una nota lista para enviar o escribe la tuya. Personalízala, prográmala para después y convierte un mensaje sencillo en un momento especial.",
+      "Elige una nota lista o escribe la tuya. Hazla personal y mantén privada la revelación al destinatario. La programación para miembros está preparada para las herramientas de membresía del relanzamiento.",
     curated: "365 notas seleccionadas",
     custom: "Escribe la tuya",
-    scheduled: "Programa para después",
+    scheduled: "Programación de membresía — preparada",
     private: "Revelación privada al destinatario",
     notesCta: "Explorar Notas de Amor",
     toolsEyebrow: "EMPIEZA CON ALGO SENCILLO",
@@ -122,7 +135,8 @@ const translations = {
     dateTitle: "Ideas para Citas",
     dateCopy: "Encuentra una forma sencilla de pasar tiempo intencional juntos.",
     goalsTitle: "Metas de Relación",
-    goalsCopy: "Convierte buenas intenciones en hábitos compartidos que puedan seguir.",
+    goalsCopy: "Herramienta de membresía: convierte buenas intenciones en metas privadas y progreso que puedas seguir.",
+    membership: "Membresía",
     openTool: "Abrir herramienta",
     finalTitle: "Las relaciones merecen más que deslizar una pantalla.",
     finalCopy:
@@ -142,10 +156,12 @@ const translations = {
     freeToJoin: "Inscription gratuite",
     inclusive: "Communauté inclusive",
     languages: "5 langues",
-    previewTitle: "Des conversations en direct, sans le bruit",
-    previewStatus: "SALON OUVERT",
+    previewTitle: "À quoi peut ressembler une conversation de salon",
+    previewStatus: "CONVERSATION D’EXEMPLE",
     previewRoom: "Parlons d'Amour",
-    previewPeople: "La conversation est en cours",
+    previewPeople: "Aperçu illustratif — pas une activité en direct",
+    previewMemberA: "Membre A",
+    previewMemberB: "Membre B",
     previewMessage1: "Qu'est-ce qui vous fait vraiment sentir proches après une longue semaine ?",
     previewMessage2: "Pour moi, c'est quand on pose les téléphones et qu'on parle vraiment.",
     previewHost: "Hôte IA O2OL",
@@ -163,13 +179,17 @@ const translations = {
     hostRule2: "Des messages courts — jamais de longs discours",
     hostRule3: "Conçu pour encourager les gens, pas les remplacer",
     hostCta: "Voir la Communauté",
+    hostExample: "RYTHME D’EXEMPLE DE L’HÔTE",
+    hostExample1: "La conversation avance — l’hôte reste silencieux.",
+    hostExample2: "Le salon devient calme — l’hôte propose une question.",
+    hostExample3: "Les membres répondent — l’hôte s’efface.",
     notesEyebrow: "365 NOTES D'AMOUR",
     notesTitle: "Une pour chaque jour de l'année — plus vos propres mots.",
     notesCopy:
-      "Choisissez une note prête à envoyer ou écrivez la vôtre. Personnalisez-la, programmez-la et transformez un simple message en vrai moment de connexion.",
+      "Choisissez une note prête ou écrivez la vôtre. Rendez-la personnelle et gardez la révélation privée. La planification pour membres est préparée pour les outils d’adhésion de la relance.",
     curated: "365 notes sélectionnées",
     custom: "Écrivez la vôtre",
-    scheduled: "Programmez pour plus tard",
+    scheduled: "Planification membre — préparée",
     private: "Révélation privée au destinataire",
     notesCta: "Explorer les Notes d'Amour",
     toolsEyebrow: "COMMENCEZ SIMPLEMENT",
@@ -179,7 +199,8 @@ const translations = {
     dateTitle: "Idées de Rendez-vous",
     dateCopy: "Trouvez une façon simple de passer du temps intentionnel ensemble.",
     goalsTitle: "Objectifs de Relation",
-    goalsCopy: "Transformez les bonnes intentions en habitudes communes que vous pouvez suivre.",
+    goalsCopy: "Outil d’adhésion : transformez vos intentions en objectifs privés et en progrès que vous pouvez suivre.",
+    membership: "Adhésion",
     openTool: "Ouvrir l'outil",
     finalTitle: "Les relations méritent plus qu'un swipe.",
     finalCopy:
@@ -199,10 +220,12 @@ const translations = {
     freeToJoin: "Iscrizione gratuita",
     inclusive: "Community inclusiva",
     languages: "5 lingue",
-    previewTitle: "Conversazione dal vivo, senza rumore",
-    previewStatus: "STANZA APERTA",
+    previewTitle: "Come può apparire una conversazione nella stanza",
+    previewStatus: "CONVERSAZIONE DI ESEMPIO",
     previewRoom: "Parliamo d'Amore",
-    previewPeople: "La conversazione è attiva",
+    previewPeople: "Anteprima illustrativa — non è attività live",
+    previewMemberA: "Membro A",
+    previewMemberB: "Membro B",
     previewMessage1: "Cosa ti fa sentire davvero connesso dopo una lunga settimana?",
     previewMessage2: "Per me, quando mettiamo via i telefoni e parliamo davvero.",
     previewHost: "Host IA O2OL",
@@ -220,13 +243,17 @@ const translations = {
     hostRule2: "Spunti brevi — mai lezioni",
     hostRule3: "Creato per incoraggiare le persone, non sostituirle",
     hostCta: "Vedi la Community",
+    hostExample: "RITMO DI ESEMPIO DELL’HOST",
+    hostExample1: "La conversazione scorre — l’host resta in silenzio.",
+    hostExample2: "La stanza si quieta — l’host propone una domanda.",
+    hostExample3: "I membri rispondono — l’host si fa da parte.",
     notesEyebrow: "365 NOTE D'AMORE",
     notesTitle: "Una per ogni giorno dell'anno — più le tue parole.",
     notesCopy:
-      "Scegli una nota pronta o scrivi la tua. Personalizzala, programmala e trasforma un semplice messaggio in un momento significativo.",
+      "Scegli una nota pronta o scrivi la tua. Rendila personale e mantieni privata la rivelazione. La programmazione per membri è preparata per gli strumenti di abbonamento del rilancio.",
     curated: "365 note selezionate",
     custom: "Scrivi la tua",
-    scheduled: "Programma per dopo",
+    scheduled: "Programmazione membri — preparata",
     private: "Rivelazione privata al destinatario",
     notesCta: "Esplora le Note d'Amore",
     toolsEyebrow: "INIZIA DA QUALCOSA DI SEMPLICE",
@@ -236,7 +263,8 @@ const translations = {
     dateTitle: "Idee per Appuntamenti",
     dateCopy: "Trova un modo semplice per passare tempo intenzionale insieme.",
     goalsTitle: "Obiettivi di Relazione",
-    goalsCopy: "Trasforma le buone intenzioni in abitudini condivise che potete seguire.",
+    goalsCopy: "Strumento in abbonamento: trasforma le buone intenzioni in obiettivi privati e progressi che puoi monitorare.",
+    membership: "Abbonamento",
     openTool: "Apri strumento",
     finalTitle: "Le relazioni meritano più di uno swipe.",
     finalCopy:
@@ -256,10 +284,12 @@ const translations = {
     freeToJoin: "Kostenlos beitreten",
     inclusive: "Inklusive Community",
     languages: "5 Sprachen",
-    previewTitle: "Live-Gespräche, ohne den Lärm",
-    previewStatus: "RAUM OFFEN",
+    previewTitle: "So kann sich ein Raumgespräch anfühlen",
+    previewStatus: "BEISPIELGESPRÄCH",
     previewRoom: "Love Talk",
-    previewPeople: "Hier wird gerade gesprochen",
+    previewPeople: "Beispielansicht — keine Live-Aktivität",
+    previewMemberA: "Mitglied A",
+    previewMemberB: "Mitglied B",
     previewMessage1: "Was lässt euch nach einer langen Woche wieder echte Nähe spüren?",
     previewMessage2: "Für mich ist es, wenn wir die Handys weglegen und wirklich reden.",
     previewHost: "O2OL KI-Host",
@@ -277,13 +307,17 @@ const translations = {
     hostRule2: "Kurze Impulse — keine Vorträge",
     hostRule3: "Für Menschen gemacht, nicht als Ersatz für sie",
     hostCta: "Community ansehen",
+    hostExample: "BEISPIEL FÜR DEN HOST-RHYTHMUS",
+    hostExample1: "Gespräch läuft — der Host bleibt still.",
+    hostExample2: "Der Raum wird ruhig — der Host gibt einen Impuls.",
+    hostExample3: "Mitglieder antworten — der Host tritt zurück.",
     notesEyebrow: "365 LIEBESBOTSCHAFTEN",
     notesTitle: "Eine für jeden Tag des Jahres — plus eure eigenen Worte.",
     notesCopy:
-      "Wählt eine fertige Nachricht oder schreibt eure eigene. Personalisiert sie, plant sie für später und macht aus einer kleinen Nachricht einen besonderen Moment.",
+      "Wählt eine fertige Nachricht oder schreibt eure eigene. Macht sie persönlich und haltet die Enthüllung privat. Die Mitglieder-Planung ist für die Relaunch-Mitgliedschaft vorbereitet.",
     curated: "365 ausgewählte Nachrichten",
     custom: "Eigene Nachricht schreiben",
-    scheduled: "Für später planen",
+    scheduled: "Mitglieder-Planung — vorbereitet",
     private: "Private Empfänger-Enthüllung",
     notesCta: "Liebesbotschaften entdecken",
     toolsEyebrow: "EINFACH ANFANGEN",
@@ -293,7 +327,8 @@ const translations = {
     dateTitle: "Date-Ideen",
     dateCopy: "Findet eine einfache Idee für bewusste gemeinsame Zeit.",
     goalsTitle: "Beziehungsziele",
-    goalsCopy: "Macht aus guten Absichten gemeinsame Gewohnheiten, die ihr verfolgen könnt.",
+    goalsCopy: "Mitgliedschaftstool: Macht aus guten Absichten private Ziele und nachvollziehbaren Fortschritt.",
+    membership: "Mitgliedschaft",
     openTool: "Tool öffnen",
     finalTitle: "Beziehungen verdienen mehr als einen Swipe.",
     finalCopy:
@@ -424,29 +459,20 @@ export default function Home() {
             <div className="absolute -inset-5 -z-10 rounded-[2.5rem] bg-gradient-to-br from-pink-200/50 via-violet-100/50 to-cyan-200/50 blur-2xl" />
             <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-2xl shadow-slate-900/10">
               <div className="border-b border-slate-100 bg-slate-950 px-5 py-4 text-white sm:px-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-xs font-bold tracking-[0.18em] text-emerald-300">{t.previewStatus}</div>
-                    <div className="mt-1 text-xl font-black">{t.previewRoom}</div>
-                  </div>
-                  <div className="flex -space-x-2">
-                    {["A", "M", "J", "+8"].map((label, index) => (
-                      <div key={label} className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-950 bg-white text-xs font-black text-slate-700" style={{ zIndex: 4 - index }}>
-                        {label}
-                      </div>
-                    ))}
-                  </div>
+                <div>
+                  <div className="text-xs font-bold tracking-[0.18em] text-amber-300">{t.previewStatus}</div>
+                  <div className="mt-1 text-xl font-black">{t.previewRoom}</div>
                 </div>
                 <div className="mt-2 text-sm text-slate-300">{t.previewPeople}</div>
               </div>
 
               <div className="space-y-4 bg-gradient-to-b from-white to-slate-50 p-5 sm:p-6">
                 <div className="rounded-2xl rounded-tl-md bg-slate-100 px-4 py-3 text-sm leading-6 text-slate-700">
-                  <span className="mb-1 block text-xs font-black text-slate-900">Maya</span>
+                  <span className="mb-1 block text-xs font-black text-slate-900">{t.previewMemberA}</span>
                   {t.previewMessage1}
                 </div>
                 <div className="ml-auto max-w-[88%] rounded-2xl rounded-tr-md bg-pink-500 px-4 py-3 text-sm leading-6 text-white shadow-sm">
-                  <span className="mb-1 block text-xs font-black text-pink-50">Daniel</span>
+                  <span className="mb-1 block text-xs font-black text-pink-50">{t.previewMemberB}</span>
                   {t.previewMessage2}
                 </div>
                 <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm leading-6 text-violet-950">
@@ -458,7 +484,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="border-t border-slate-100 bg-white px-5 py-4 sm:px-6">
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400">
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
                   <MessageCircleHeart className="h-5 w-5 text-pink-400" />
                   {t.previewTitle}
                 </div>
@@ -511,10 +537,11 @@ export default function Home() {
               <blockquote className="mt-4 text-2xl font-bold leading-9 sm:text-3xl">
                 “If humans are talking, listen. If humans stop talking, invite. If the invitation works, disappear again.”
               </blockquote>
-              <div className="mt-8 space-y-3 text-sm text-slate-300">
-                <div className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">9:42 PM · Room conversation flowing — host stays quiet.</div>
-                <div className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">9:47 PM · Room goes quiet — host offers one prompt.</div>
-                <div className="rounded-2xl bg-emerald-400/10 px-4 py-3 text-emerald-100 ring-1 ring-emerald-300/15">9:48 PM · Members respond — host steps back.</div>
+              <div className="mt-8 text-xs font-black tracking-[0.18em] text-slate-400">{t.hostExample}</div>
+              <div className="mt-3 space-y-3 text-sm text-slate-300">
+                <div className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">{t.hostExample1}</div>
+                <div className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">{t.hostExample2}</div>
+                <div className="rounded-2xl bg-emerald-400/10 px-4 py-3 text-emerald-100 ring-1 ring-emerald-300/15">{t.hostExample3}</div>
               </div>
             </div>
           </div>
@@ -598,8 +625,13 @@ export default function Home() {
               const copy = key === "quiz" ? t.quizCopy : key === "date" ? t.dateCopy : t.goalsCopy;
               return (
                 <Link key={key} to={createPageUrl(page)} className="group rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent}`}>
-                    <Icon className="h-6 w-6" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent}`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    {key === "goals" && (
+                      <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-black uppercase tracking-wide text-purple-700">{t.membership}</span>
+                    )}
                   </div>
                   <h3 className="mt-6 text-xl font-black text-slate-950">{title}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{copy}</p>
