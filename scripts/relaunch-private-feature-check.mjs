@@ -13,8 +13,14 @@ const files = {
   chatStorage: 'supabase/migrations/20260818_chat_attachment_privacy.sql',
   messageInsert: 'supabase/migrations/20260817_message_insert_hardening.sql',
   chatService: 'src/lib/chatService.js',
+  chatPage: 'src/pages/Chat.jsx',
   chatList: 'src/components/chat/ChatList.jsx',
+  chatWindow: 'src/components/chat/ChatWindow.jsx',
+  chatMessage: 'src/components/chat/ChatMessageRelaunch.jsx',
+  chatComposer: 'src/components/chat/ChatComposerRelaunch.jsx',
   indexCss: 'src/index.css',
+  buildChecks: 'scripts/relaunch-build-checks.mjs',
+  packageJson: 'package.json',
   membershipConfig: 'src/lib/membershipConfig.js',
   premiumAiMigration: 'supabase/migrations/20260818_premium_ai_tools.sql',
   coachFunction: 'supabase/functions/relationship-coach/index.ts',
@@ -31,8 +37,14 @@ const loveNoteFlow = exists(files.loveNoteFlow) ? read(files.loveNoteFlow) : '';
 const chatStorage = exists(files.chatStorage) ? read(files.chatStorage) : '';
 const messageInsert = exists(files.messageInsert) ? read(files.messageInsert) : '';
 const chatService = exists(files.chatService) ? read(files.chatService) : '';
+const chatPage = exists(files.chatPage) ? read(files.chatPage) : '';
 const chatList = exists(files.chatList) ? read(files.chatList) : '';
+const chatWindow = exists(files.chatWindow) ? read(files.chatWindow) : '';
+const chatMessage = exists(files.chatMessage) ? read(files.chatMessage) : '';
+const chatComposer = exists(files.chatComposer) ? read(files.chatComposer) : '';
 const indexCss = exists(files.indexCss) ? read(files.indexCss) : '';
+const buildChecks = exists(files.buildChecks) ? read(files.buildChecks) : '';
+const packageJson = exists(files.packageJson) ? read(files.packageJson) : '';
 const membershipConfig = exists(files.membershipConfig) ? read(files.membershipConfig) : '';
 const premiumAiMigration = exists(files.premiumAiMigration) ? read(files.premiumAiMigration) : '';
 const coachFunction = exists(files.coachFunction) ? read(files.coachFunction) : '';
@@ -189,11 +201,70 @@ check(
   'A visible search field must perform a real local filter instead of acting like an inert prototype.'
 );
 check(
+  'relaunch chat page contains no prototype calling or fake actions',
+  !chatPage.includes('CallWindow')
+    && !chatPage.includes('currentCall')
+    && !chatPage.includes('Initialize WebRTC')
+    && !chatPage.includes('Marked as unread')
+    && !chatPage.includes('Clear chat feature coming soon')
+    && !chatPage.includes('window.open(chatUrl'),
+  'Hidden prototype code should not remain wired behind the relaunch Chat surface.'
+);
+check(
+  'relaunch chat page exposes only real conversation actions',
+  chatPage.includes('onArchive={handleArchive}')
+    && chatPage.includes('onPin={handlePin}')
+    && chatPage.includes('onUnpin={handleUnpin}')
+    && !chatPage.includes('onVideoCall=')
+    && !chatPage.includes('onMarkAsUnread='),
+  'The page should pass only actions with actual persistence semantics.'
+);
+check(
+  'relaunch chat window uses real-only message and composer layers',
+  chatWindow.includes("import ChatMessageRelaunch from './ChatMessageRelaunch'")
+    && chatWindow.includes("import ChatComposerRelaunch from './ChatComposerRelaunch'")
+    && !chatWindow.includes("import ChatMessage from './ChatMessage'")
+    && !chatWindow.includes("import ChatInput from './ChatInput'"),
+  'Legacy message/composer prototypes must not be rendered by relaunch Chat.'
+);
+check(
+  'relaunch chat message menu omits fake state and private-link sharing',
+  !chatMessage.includes('Forward')
+    && !chatMessage.includes('Star')
+    && !chatMessage.includes('Share2')
+    && !chatMessage.includes('onReact')
+    && !chatMessage.includes('navigator.share')
+    && chatMessage.includes('Delete message'),
+  'Do not expose local-only reactions/stars/forward/share or leak signed attachment URLs.'
+);
+check(
+  'relaunch composer uses supported private attachment message types',
+  chatComposer.includes("sendSelectedFile(event, 'file')")
+    && !chatComposer.includes("sendSelectedFile(event, 'document')")
+    && chatComposer.includes("onSendFile(voiceFileFromBlob(blob), 'voice', duration)"),
+  'Documents must use the database-supported file type and voice blobs need stable filenames.'
+);
+check(
   'legacy chat header call buttons are hidden until real calling exists',
   indexCss.includes('button[title="Voice Call"]')
     && indexCss.includes('button[title="Video Call"]')
     && indexCss.includes('display: none !important'),
-  'Do not present WebRTC-looking controls before signaling/media infrastructure is actually built and tested.'
+  'Defense in depth: old call controls stay hidden if a legacy component is accidentally reintroduced.'
+);
+
+check(
+  'preview policy checks do not hide actual application compile results',
+  buildChecks.includes("vercelEnvironment === 'production'")
+    && buildChecks.includes("process.argv.includes('--strict')")
+    && buildChecks.includes('PREVIEW/ADVISORY')
+    && packageJson.includes('node scripts/relaunch-build-checks.mjs && vite build'),
+  'Vercel Preview may report policy blockers while still reaching Vite; production remains strict.'
+);
+check(
+  'explicit relaunch preflight remains strict',
+  packageJson.includes('node scripts/relaunch-build-checks.mjs --strict')
+    && buildChecks.includes('if (strict)'),
+  'There must be a deterministic strict gate before production.'
 );
 
 check(
