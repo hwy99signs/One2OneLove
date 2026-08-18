@@ -4,24 +4,16 @@ import { supabase, handleSupabaseError } from './supabase';
  * Buddy/Friend System Service
  * Handles member discovery and buddy requests.
  *
- * Privacy rule: member discovery reads only from public.member_directory. The relaunch
- * projection contains only regular-member discovery fields: name, avatar, short bio,
- * general location, relationship status and member-since date. Account email, partner
- * data, interests, role/account type and billing data are not requested here.
+ * Relaunch privacy rule: ordinary member discovery is intentionally minimal. Other
+ * authenticated members receive only name, optional avatar, short bio and member-since
+ * date. Account email, location, relationship status, partner data, interests, role,
+ * verification and billing data are not requested here.
+ *
  * Mutation rule: the acting user is always derived from Supabase Auth, never trusted
  * from a caller-supplied user ID.
  */
 
-const PUBLIC_MEMBER_FIELDS = [
-  'id',
-  'name',
-  'avatar_url',
-  'bio',
-  'relationship_status',
-  'location',
-  'created_at',
-].join(',');
-
+const PUBLIC_MEMBER_FIELDS = 'id,name,avatar_url,bio,created_at';
 const BASIC_MEMBER_FIELDS = 'id,name,avatar_url,bio';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -80,7 +72,7 @@ export const searchUsers = async (currentUserId, searchQuery) => {
       .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
       .neq('id', user.id)
-      .or(`name.ilike.%${safeTerm}%,location.ilike.%${safeTerm}%,bio.ilike.%${safeTerm}%,relationship_status.ilike.%${safeTerm}%`)
+      .or(`name.ilike.%${safeTerm}%,bio.ilike.%${safeTerm}%`)
       .order('name', { ascending: true })
       .limit(100);
 
@@ -160,7 +152,7 @@ export const cancelBuddyRequest = async (requestId, userId) => {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error cancelling request:', error);
+    console.error('Error cancelling buddy request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -287,7 +279,7 @@ export const getMyBuddies = async (userId) => {
     if (otherUserIds.length) {
       const { data: users, error: usersError } = await supabase
         .from('member_directory')
-        .select('id,name,avatar_url,bio,relationship_status,location')
+        .select(BASIC_MEMBER_FIELDS)
         .in('id', otherUserIds);
 
       if (usersError) throw usersError;
