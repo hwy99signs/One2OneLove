@@ -1,596 +1,320 @@
-import React, { useState } from "react";
-import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-import { useLanguage } from "@/Layout";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import CustomDateForm from "../components/dateideas/CustomDateForm";
+import React, { useMemo, useState } from 'react';
+import { ArrowLeft, Bookmark, Check, Coffee, Film, Heart, MapPin, Music, Pencil, Plus, Sparkles, Star, Trash2, Utensils, Waves, Mountain, ChevronDown, ChevronUp } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CustomDateForm from '@/components/dateideas/CustomDateForm';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/Layout';
+import { createPageUrl } from '@/utils';
+import { getBuiltInDateIdeas } from '@/lib/dateIdeasCatalog';
+import {
+  createMyDateIdea,
+  deleteMyDateIdea,
+  listMyDateIdeas,
+  saveBuiltInDateIdea,
+  updateMyDateIdea,
+} from '@/lib/dateIdeasService';
 
 const translations = {
   en: {
-    title: "Date Ideas for Couples",
-    subtitle: "Discover creative and romantic ways to spend quality time together",
-    back: "Back",
-    categoryLabel: "Category",
-    budgetLabel: "Budget",
-    locationLabel: "Location",
-    occasionLabel: "Occasion",
-    stageLabel: "Relationship Stage",
-    showingIdeas: "Showing",
-    ideas: "date ideas",
-    difficulty: "Difficulty",
-    duration: "Duration",
-    budget: "Budget",
-    getDetails: "Get Details",
-    noIdeasFound: "No date ideas found",
-    tryAdjusting: "Try adjusting your filters",
-    createCustom: "Create Custom Date",
-    myCustomDates: "My Custom Dates",
-    allDates: "All Date Ideas",
-    savedDates: "Saved Dates",
-    markComplete: "Mark as Done",
-    addToSaved: "Save",
-    shareWithPartner: "Share",
-    dateSaved: "Date idea saved!",
-    dateShared: "Shared with partner!",
-    dateCompleted: "Marked as completed!",
-    customDateCreated: "Custom date created!",
-    categories: {
-      all: "All Ideas",
-      romantic: "Romantic",
-      adventure: "Adventure",
-      relaxing: "Relaxing",
-      indoor: "Indoor",
-      outdoor: "Outdoor",
-      creative: "Creative"
-    },
-    budgetOptions: {
-      all: "All Budgets",
-      free: "Free",
-      low: "Low ($)",
-      medium: "Medium ($$)",
-      high: "High ($$$)"
-    },
-    locationOptions: {
-      all: "All Locations",
-      home: "Home",
-      outdoor: "Outdoor",
-      restaurant: "Restaurant",
-      activity_center: "Activity Center",
-      cultural: "Cultural",
-      nature: "Nature",
-      urban: "Urban"
-    },
-    occasionOptions: {
-      all: "All Occasions",
-      regular: "Regular Date",
-      anniversary: "Anniversary",
-      birthday: "Birthday",
-      valentines: "Valentine's Day",
-      special: "Special",
-      apology: "Apology",
-      celebration: "Celebration"
-    },
-    stageOptions: {
-      all: "All Stages",
-      new: "New Relationship",
-      dating: "Dating",
-      committed: "Committed",
-      married: "Married",
-      long_term: "Long-term"
-    },
-    dateIdeas: {
-      stargazing: { title: "Stargazing Picnic", description: "Pack a basket with your favorite foods, find a quiet spot away from city lights, and spend the evening watching the stars together.", difficulty: "Easy", duration: "2-3 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      cookingClass: { title: "Cooking Class Together", description: "Take a cooking class and learn to make a new cuisine together. Then enjoy the delicious meal you created!", difficulty: "Medium", duration: "3-4 hours", location_type: "activity_center", occasion: "regular", relationship_stage: "any" },
-      coffeeHopping: { title: "Coffee Shop Hopping", description: "Visit 3-4 local coffee shops, try different drinks at each, and enjoy conversations in cozy atmospheres.", difficulty: "Easy", duration: "3-4 hours", location_type: "urban", occasion: "regular", relationship_stage: "any" },
-      movieMarathon: { title: "Movie Marathon at Home", description: "Create a cozy fort with blankets and pillows, make popcorn, and binge-watch your favorite movie series.", difficulty: "Easy", duration: "4-6 hours", location_type: "home", occasion: "regular", relationship_stage: "any" },
-      liveMusic: { title: "Live Music Night", description: "Find a local venue with live music, enjoy the performance together, and maybe even dance a little!", difficulty: "Easy", duration: "3-4 hours", location_type: "cultural", occasion: "special", relationship_stage: "any" },
-      hiking: { title: "Hiking Adventure", description: "Choose a scenic trail, pack water and snacks, and enjoy nature together while getting some exercise.", difficulty: "Medium", duration: "3-5 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      beachSunset: { title: "Beach Sunset", description: "Visit the beach in the evening, walk along the shore, and watch the sunset together.", difficulty: "Easy", duration: "2-3 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      paintSip: { title: "Paint and Sip Night", description: "Set up at home with canvases, paints, wine, and create artwork together while enjoying each other's company.", difficulty: "Easy", duration: "2-3 hours", location_type: "home", occasion: "regular", relationship_stage: "any" },
-      exploreNeighborhood: { title: "Explore a New Neighborhood", description: "Pick a neighborhood you've never been to and explore together - try local shops, cafes, and restaurants.", difficulty: "Easy", duration: "4-5 hours", location_type: "urban", occasion: "regular", relationship_stage: "any" }
-    }
-  }
+    title: 'Date Ideas', subtitle: 'Simple ways to spend intentional time together.', back: 'Back', explore: 'Explore Ideas', mine: 'My Ideas', saved: 'Saved', create: 'Create Your Own', signInHint: 'Browse freely. Sign in only when you want to save or create an idea.', signIn: 'Sign in to save', accountUnavailable: 'Your saved Date Ideas are temporarily unavailable, but you can still browse the built-in ideas.', noIdeas: 'No Date Ideas match those filters.', filters: 'Filters', all: 'All', category: 'Category', budget: 'Budget', location: 'Location', occasion: 'Occasion', stage: 'Relationship stage', duration: 'Suggested time', save: 'Save', savedLabel: 'Saved', details: 'Details', hideDetails: 'Hide details', favorite: 'Favorite', removeFavorite: 'Remove favorite', done: 'Mark done', undoDone: 'Mark not done', edit: 'Edit', delete: 'Delete', created: 'Date Idea saved!', updated: 'Date Idea updated!', deleted: 'Date Idea deleted', complete: 'Nice — marked done!', categories: { romantic: 'Romantic', adventure: 'Adventure', relaxing: 'Relaxing', indoor: 'Indoor', outdoor: 'Outdoor', creative: 'Creative' }, budgets: { free: 'Free', low: 'Low ($)', medium: 'Medium ($$)', high: 'High ($$$)' }, locations: { home: 'Home', outdoor: 'Outdoor', restaurant: 'Restaurant', activity_center: 'Activity Center', cultural: 'Cultural', nature: 'Nature', urban: 'Urban' }, occasions: { regular: 'Regular Date', anniversary: 'Anniversary', birthday: 'Birthday', valentines: "Valentine's Day", special: 'Special', apology: 'Reconnection', celebration: 'Celebration' }, stages: { new: 'New Relationship', dating: 'Dating', committed: 'Committed', married: 'Married', long_term: 'Long-term', any: 'Any Stage' },
+  },
+  es: {
+    title: 'Ideas para Citas', subtitle: 'Formas sencillas de pasar tiempo de calidad juntos.', back: 'Volver', explore: 'Explorar Ideas', mine: 'Mis Ideas', saved: 'Guardadas', create: 'Crear la Tuya', signInHint: 'Explora libremente. Inicia sesión solo cuando quieras guardar o crear una idea.', signIn: 'Inicia sesión para guardar', accountUnavailable: 'Tus ideas guardadas no están disponibles temporalmente, pero puedes seguir explorando.', noIdeas: 'Ninguna idea coincide con esos filtros.', filters: 'Filtros', all: 'Todas', category: 'Categoría', budget: 'Presupuesto', location: 'Lugar', occasion: 'Ocasión', stage: 'Etapa de la relación', duration: 'Tiempo sugerido', save: 'Guardar', savedLabel: 'Guardada', details: 'Detalles', hideDetails: 'Ocultar detalles', favorite: 'Favorita', removeFavorite: 'Quitar favorita', done: 'Marcar hecha', undoDone: 'Marcar no hecha', edit: 'Editar', delete: 'Eliminar', created: '¡Idea guardada!', updated: '¡Idea actualizada!', deleted: 'Idea eliminada', complete: '¡Listo, marcada como hecha!', categories: { romantic: 'Romántica', adventure: 'Aventura', relaxing: 'Relajante', indoor: 'Interior', outdoor: 'Exterior', creative: 'Creativa' }, budgets: { free: 'Gratis', low: 'Bajo ($)', medium: 'Medio ($$)', high: 'Alto ($$$)' }, locations: { home: 'Casa', outdoor: 'Exterior', restaurant: 'Restaurante', activity_center: 'Centro de actividades', cultural: 'Cultural', nature: 'Naturaleza', urban: 'Urbano' }, occasions: { regular: 'Cita normal', anniversary: 'Aniversario', birthday: 'Cumpleaños', valentines: 'San Valentín', special: 'Especial', apology: 'Reconexión', celebration: 'Celebración' }, stages: { new: 'Relación nueva', dating: 'Saliendo', committed: 'Comprometida', married: 'Casados', long_term: 'Largo plazo', any: 'Cualquier etapa' },
+  },
+  fr: {
+    title: 'Idées de Rendez-vous', subtitle: 'Des façons simples de passer un moment intentionnel ensemble.', back: 'Retour', explore: 'Explorer', mine: 'Mes Idées', saved: 'Enregistrées', create: 'Créer la Vôtre', signInHint: 'Explorez librement. Connectez-vous seulement pour enregistrer ou créer une idée.', signIn: 'Se connecter pour enregistrer', accountUnavailable: 'Vos idées enregistrées sont temporairement indisponibles, mais vous pouvez continuer à explorer.', noIdeas: 'Aucune idée ne correspond à ces filtres.', filters: 'Filtres', all: 'Toutes', category: 'Catégorie', budget: 'Budget', location: 'Lieu', occasion: 'Occasion', stage: 'Étape de la relation', duration: 'Durée suggérée', save: 'Enregistrer', savedLabel: 'Enregistrée', details: 'Détails', hideDetails: 'Masquer', favorite: 'Favorite', removeFavorite: 'Retirer des favorites', done: 'Marquer faite', undoDone: 'Marquer non faite', edit: 'Modifier', delete: 'Supprimer', created: 'Idée enregistrée !', updated: 'Idée mise à jour !', deleted: 'Idée supprimée', complete: 'Parfait — marquée comme faite !', categories: { romantic: 'Romantique', adventure: 'Aventure', relaxing: 'Détente', indoor: 'Intérieur', outdoor: 'Extérieur', creative: 'Créatif' }, budgets: { free: 'Gratuit', low: 'Bas ($)', medium: 'Moyen ($$)', high: 'Élevé ($$$)' }, locations: { home: 'Maison', outdoor: 'Extérieur', restaurant: 'Restaurant', activity_center: "Centre d'activités", cultural: 'Culturel', nature: 'Nature', urban: 'Urbain' }, occasions: { regular: 'Rendez-vous habituel', anniversary: 'Anniversaire', birthday: 'Anniversaire de naissance', valentines: 'Saint-Valentin', special: 'Spécial', apology: 'Reconnexion', celebration: 'Célébration' }, stages: { new: 'Nouvelle relation', dating: 'Fréquentation', committed: 'Engagés', married: 'Mariés', long_term: 'Long terme', any: 'Toutes les étapes' },
+  },
+  it: {
+    title: 'Idee per Appuntamenti', subtitle: 'Modi semplici per trascorrere tempo intenzionale insieme.', back: 'Indietro', explore: 'Esplora Idee', mine: 'Le Mie Idee', saved: 'Salvate', create: 'Crea la Tua', signInHint: 'Esplora liberamente. Accedi solo quando vuoi salvare o creare un’idea.', signIn: 'Accedi per salvare', accountUnavailable: 'Le tue idee salvate non sono disponibili al momento, ma puoi continuare a esplorare.', noIdeas: 'Nessuna idea corrisponde a questi filtri.', filters: 'Filtri', all: 'Tutte', category: 'Categoria', budget: 'Budget', location: 'Luogo', occasion: 'Occasione', stage: 'Fase della relazione', duration: 'Tempo suggerito', save: 'Salva', savedLabel: 'Salvata', details: 'Dettagli', hideDetails: 'Nascondi dettagli', favorite: 'Preferita', removeFavorite: 'Rimuovi preferita', done: 'Segna fatta', undoDone: 'Segna non fatta', edit: 'Modifica', delete: 'Elimina', created: 'Idea salvata!', updated: 'Idea aggiornata!', deleted: 'Idea eliminata', complete: 'Fatto — segnata come completata!', categories: { romantic: 'Romantico', adventure: 'Avventura', relaxing: 'Rilassante', indoor: 'Al chiuso', outdoor: 'All’aperto', creative: 'Creativo' }, budgets: { free: 'Gratis', low: 'Basso ($)', medium: 'Medio ($$)', high: 'Alto ($$$)' }, locations: { home: 'Casa', outdoor: 'All’aperto', restaurant: 'Ristorante', activity_center: 'Centro attività', cultural: 'Culturale', nature: 'Natura', urban: 'Urbano' }, occasions: { regular: 'Appuntamento normale', anniversary: 'Anniversario', birthday: 'Compleanno', valentines: 'San Valentino', special: 'Speciale', apology: 'Riconnessione', celebration: 'Celebrazione' }, stages: { new: 'Nuova relazione', dating: 'Frequentazione', committed: 'Impegnati', married: 'Sposati', long_term: 'Lungo termine', any: 'Qualsiasi fase' },
+  },
+  de: {
+    title: 'Date-Ideen', subtitle: 'Einfache Möglichkeiten, bewusst Zeit miteinander zu verbringen.', back: 'Zurück', explore: 'Ideen Entdecken', mine: 'Meine Ideen', saved: 'Gespeichert', create: 'Eigene Idee', signInHint: 'Stöbern Sie frei. Melden Sie sich erst an, wenn Sie speichern oder erstellen möchten.', signIn: 'Zum Speichern anmelden', accountUnavailable: 'Ihre gespeicherten Date-Ideen sind vorübergehend nicht verfügbar; die eingebauten Ideen können Sie weiter ansehen.', noIdeas: 'Keine Date-Idee passt zu diesen Filtern.', filters: 'Filter', all: 'Alle', category: 'Kategorie', budget: 'Budget', location: 'Ort', occasion: 'Anlass', stage: 'Beziehungsphase', duration: 'Empfohlene Zeit', save: 'Speichern', savedLabel: 'Gespeichert', details: 'Details', hideDetails: 'Details ausblenden', favorite: 'Favorit', removeFavorite: 'Favorit entfernen', done: 'Als erledigt markieren', undoDone: 'Als nicht erledigt markieren', edit: 'Bearbeiten', delete: 'Löschen', created: 'Date-Idee gespeichert!', updated: 'Date-Idee aktualisiert!', deleted: 'Date-Idee gelöscht', complete: 'Erledigt — als gemacht markiert!', categories: { romantic: 'Romantisch', adventure: 'Abenteuer', relaxing: 'Entspannt', indoor: 'Drinnen', outdoor: 'Draußen', creative: 'Kreativ' }, budgets: { free: 'Kostenlos', low: 'Niedrig ($)', medium: 'Mittel ($$)', high: 'Hoch ($$$)' }, locations: { home: 'Zuhause', outdoor: 'Draußen', restaurant: 'Restaurant', activity_center: 'Aktivitätszentrum', cultural: 'Kulturell', nature: 'Natur', urban: 'Städtisch' }, occasions: { regular: 'Normales Date', anniversary: 'Jahrestag', birthday: 'Geburtstag', valentines: 'Valentinstag', special: 'Besonders', apology: 'Wiederannäherung', celebration: 'Feier' }, stages: { new: 'Neue Beziehung', dating: 'Dating', committed: 'Fest', married: 'Verheiratet', long_term: 'Langfristig', any: 'Jede Phase' },
+  },
+  nl: {
+    title: 'Date-ideeën', subtitle: 'Eenvoudige manieren om bewust tijd samen door te brengen.', back: 'Terug', explore: 'Ontdek Ideeën', mine: 'Mijn Ideeën', saved: 'Opgeslagen', create: 'Maak Je Eigen Idee', signInHint: 'Blader vrij rond. Log pas in wanneer je een idee wilt opslaan of maken.', signIn: 'Log in om op te slaan', accountUnavailable: 'Je opgeslagen Date-ideeën zijn tijdelijk niet beschikbaar, maar je kunt de ingebouwde ideeën blijven bekijken.', noIdeas: 'Geen Date-idee past bij deze filters.', filters: 'Filters', all: 'Alle', category: 'Categorie', budget: 'Budget', location: 'Locatie', occasion: 'Gelegenheid', stage: 'Relatiefase', duration: 'Aanbevolen tijd', save: 'Opslaan', savedLabel: 'Opgeslagen', details: 'Details', hideDetails: 'Details verbergen', favorite: 'Favoriet', removeFavorite: 'Favoriet verwijderen', done: 'Markeer gedaan', undoDone: 'Markeer niet gedaan', edit: 'Bewerken', delete: 'Verwijderen', created: 'Date-idee opgeslagen!', updated: 'Date-idee bijgewerkt!', deleted: 'Date-idee verwijderd', complete: 'Mooi — gemarkeerd als gedaan!', categories: { romantic: 'Romantisch', adventure: 'Avontuur', relaxing: 'Ontspannen', indoor: 'Binnen', outdoor: 'Buiten', creative: 'Creatief' }, budgets: { free: 'Gratis', low: 'Laag ($)', medium: 'Gemiddeld ($$)', high: 'Hoog ($$$)' }, locations: { home: 'Thuis', outdoor: 'Buiten', restaurant: 'Restaurant', activity_center: 'Activiteitencentrum', cultural: 'Cultureel', nature: 'Natuur', urban: 'Stedelijk' }, occasions: { regular: 'Gewone date', anniversary: 'Jubileum', birthday: 'Verjaardag', valentines: 'Valentijnsdag', special: 'Speciaal', apology: 'Opnieuw verbinden', celebration: 'Viering' }, stages: { new: 'Nieuwe relatie', dating: 'Daten', committed: 'Vaste relatie', married: 'Getrouwd', long_term: 'Langdurig', any: 'Elke fase' },
+  },
 };
+
+const ICONS = { star: Star, utensils: Utensils, coffee: Coffee, film: Film, music: Music, mountain: Mountain, waves: Waves, sparkles: Sparkles, map: MapPin };
 
 export default function DateIdeas() {
   const { currentLanguage } = useLanguage();
-  const t = translations[currentLanguage] || translations.en;
+  const language = translations[currentLanguage] ? currentLanguage : 'en';
+  const t = translations[language];
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedBudget, setSelectedBudget] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [selectedOccasion, setSelectedOccasion] = useState('all');
-  const [selectedStage, setSelectedStage] = useState('all');
+  const [view, setView] = useState('explore');
   const [showCustomForm, setShowCustomForm] = useState(false);
-  const [viewMode, setViewMode] = useState('all'); // 'all', 'custom', 'saved'
+  const [editingIdea, setEditingIdea] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [filters, setFilters] = useState({ category: 'all', budget: 'all', location_type: 'all', occasion: 'all', relationship_stage: 'all' });
 
-  const { user: currentUser } = useAuth();
+  const builtIns = useMemo(() => getBuiltInDateIdeas(language), [language]);
 
-  const { data: customDates = [] } = useQuery({
-    queryKey: ['customDates', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('custom_date_ideas')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error fetching custom dates:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!currentUser?.id,
-    initialData: [],
+  const myIdeasQuery = useQuery({
+    queryKey: ['dateIdeas', user?.id],
+    queryFn: listMyDateIdeas,
+    enabled: Boolean(isAuthenticated && user?.id),
+    retry: 1,
   });
 
-  const { data: savedDates = [] } = useQuery({
-    queryKey: ['savedDates', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('custom_date_ideas')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('is_favorite', true)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error fetching saved dates:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!currentUser?.id,
-    initialData: [],
-  });
+  const myIdeas = myIdeasQuery.data || [];
+  const savedIdeas = myIdeas.filter((idea) => idea.is_favorite);
 
-  const createDateMutation = useMutation({
-    mutationFn: async (data) => {
-      if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('custom_date_ideas')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+  const requireAccount = () => {
+    if (isAuthenticated && user?.id) return true;
+    navigate(`/SignIn?returnTo=${encodeURIComponent('/DateIdeas')}`);
+    return false;
+  };
+
+  const refreshMine = () => queryClient.invalidateQueries({ queryKey: ['dateIdeas'] });
+
+  const createMutation = useMutation({
+    mutationFn: createMyDateIdea,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customDates'] });
-      toast.success(t.customDateCreated);
+      void refreshMine();
       setShowCustomForm(false);
-    }
+      setEditingIdea(null);
+      setView('mine');
+      toast.success(t.created);
+    },
+    onError: (error) => toast.error(error?.message || t.accountUnavailable),
   });
 
-  const updateDateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const { data: result, error } = await supabase
-        .from('custom_date_ideas')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+  const updateMutation = useMutation({
+    mutationFn: ({ id, patch }) => updateMyDateIdea(id, patch),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customDates'] });
-      queryClient.invalidateQueries({ queryKey: ['savedDates'] });
-    }
+      void refreshMine();
+      setShowCustomForm(false);
+      setEditingIdea(null);
+      toast.success(t.updated);
+    },
+    onError: (error) => toast.error(error?.message || t.accountUnavailable),
   });
 
-  const categories = [
-    { id: 'all', name: t.categories.all, icon: Heart },
-    { id: 'romantic', name: t.categories.romantic, icon: Heart },
-    { id: 'adventure', name: t.categories.adventure, icon: Mountain },
-    { id: 'relaxing', name: t.categories.relaxing, icon: Waves },
-    { id: 'indoor', name: t.categories.indoor, icon: Home },
-    { id: 'outdoor', name: t.categories.outdoor, icon: TreePine },
-    { id: 'creative', name: t.categories.creative, icon: Sparkles },
-  ];
-
-  const predefinedDateIdeas = [
-    {
-      id: 1,
-      title: t.dateIdeas.stargazing.title,
-      description: t.dateIdeas.stargazing.description,
-      category: 'romantic',
-      budget: 'free',
-      icon: Star,
-      color: 'from-purple-500 to-pink-500',
-      difficulty: t.dateIdeas.stargazing.difficulty,
-      duration: t.dateIdeas.stargazing.duration,
-      location_type: t.dateIdeas.stargazing.location_type,
-      occasion: t.dateIdeas.stargazing.occasion,
-      relationship_stage: t.dateIdeas.stargazing.relationship_stage
+  const deleteMutation = useMutation({
+    mutationFn: deleteMyDateIdea,
+    onSuccess: () => {
+      void refreshMine();
+      toast.success(t.deleted);
     },
-    {
-      id: 2,
-      title: t.dateIdeas.cookingClass.title,
-      description: t.dateIdeas.cookingClass.description,
-      category: 'creative',
-      budget: 'medium',
-      icon: Utensils,
-      color: 'from-orange-500 to-red-500',
-      difficulty: t.dateIdeas.cookingClass.difficulty,
-      duration: t.dateIdeas.cookingClass.duration,
-      location_type: t.dateIdeas.cookingClass.location_type,
-      occasion: t.dateIdeas.cookingClass.occasion,
-      relationship_stage: t.dateIdeas.cookingClass.relationship_stage
-    },
-    {
-      id: 3,
-      title: t.dateIdeas.coffeeHopping.title,
-      description: t.dateIdeas.coffeeHopping.description,
-      category: 'relaxing',
-      budget: 'low',
-      icon: Coffee,
-      color: 'from-amber-500 to-orange-500',
-      difficulty: t.dateIdeas.coffeeHopping.difficulty,
-      duration: t.dateIdeas.coffeeHopping.duration,
-      location_type: t.dateIdeas.coffeeHopping.location_type,
-      occasion: t.dateIdeas.coffeeHopping.occasion,
-      relationship_stage: t.dateIdeas.coffeeHopping.relationship_stage
-    },
-    {
-      id: 4,
-      title: t.dateIdeas.movieMarathon.title,
-      description: t.dateIdeas.movieMarathon.description,
-      category: 'indoor',
-      budget: 'free',
-      icon: Film,
-      color: 'from-blue-500 to-purple-500',
-      difficulty: t.dateIdeas.movieMarathon.difficulty,
-      duration: t.dateIdeas.movieMarathon.duration,
-      location_type: t.dateIdeas.movieMarathon.location_type,
-      occasion: t.dateIdeas.movieMarathon.occasion,
-      relationship_stage: t.dateIdeas.movieMarathon.relationship_stage
-    },
-    {
-      id: 5,
-      title: t.dateIdeas.liveMusic.title,
-      description: t.dateIdeas.liveMusic.description,
-      category: 'romantic',
-      budget: 'medium',
-      icon: Music,
-      color: 'from-pink-500 to-rose-500',
-      difficulty: t.dateIdeas.liveMusic.difficulty,
-      duration: t.dateIdeas.liveMusic.duration,
-      location_type: t.dateIdeas.liveMusic.location_type,
-      occasion: t.dateIdeas.liveMusic.occasion,
-      relationship_stage: t.dateIdeas.liveMusic.relationship_stage
-    },
-    {
-      id: 6,
-      title: t.dateIdeas.hiking.title,
-      description: t.dateIdeas.hiking.description,
-      category: 'adventure',
-      budget: 'free',
-      icon: Mountain,
-      color: 'from-green-500 to-emerald-500',
-      difficulty: t.dateIdeas.hiking.difficulty,
-      duration: t.dateIdeas.hiking.duration,
-      location_type: t.dateIdeas.hiking.location_type,
-      occasion: t.dateIdeas.hiking.occasion,
-      relationship_stage: t.dateIdeas.hiking.relationship_stage
-    },
-    {
-      id: 7,
-      title: t.dateIdeas.beachSunset.title,
-      description: t.dateIdeas.beachSunset.description,
-      category: 'outdoor',
-      budget: 'free',
-      icon: Waves,
-      color: 'from-cyan-500 to-blue-500',
-      difficulty: t.dateIdeas.beachSunset.difficulty,
-      duration: t.dateIdeas.beachSunset.duration,
-      location_type: t.dateIdeas.beachSunset.location_type,
-      occasion: t.dateIdeas.beachSunset.occasion,
-      relationship_stage: t.dateIdeas.beachSunset.relationship_stage
-    },
-    {
-      id: 8,
-      title: t.dateIdeas.paintSip.title,
-      description: t.dateIdeas.paintSip.description,
-      category: 'creative',
-      budget: 'low',
-      icon: Sparkles,
-      color: 'from-purple-500 to-pink-500',
-      difficulty: t.dateIdeas.paintSip.difficulty,
-      duration: t.dateIdeas.paintSip.duration,
-      location_type: t.dateIdeas.paintSip.location_type,
-      occasion: t.dateIdeas.paintSip.occasion,
-      relationship_stage: t.dateIdeas.paintSip.relationship_stage
-    },
-    {
-      id: 9,
-      title: t.dateIdeas.exploreNeighborhood.title,
-      description: t.dateIdeas.exploreNeighborhood.description,
-      category: 'adventure',
-      budget: 'medium',
-      icon: MapPin,
-      color: 'from-teal-500 to-cyan-500',
-      difficulty: t.dateIdeas.exploreNeighborhood.difficulty,
-      duration: t.dateIdeas.exploreNeighborhood.duration,
-      location_type: t.dateIdeas.exploreNeighborhood.location_type,
-      occasion: t.dateIdeas.exploreNeighborhood.occasion,
-      relationship_stage: t.dateIdeas.exploreNeighborhood.relationship_stage
-    },
-  ];
-
-  const allIdeas = viewMode === 'custom' 
-    ? customDates 
-    : viewMode === 'saved'
-    ? [...savedDates, ...predefinedDateIdeas.filter(idea => savedDates.some(saved => saved.title === idea.title))]
-    : [...predefinedDateIdeas, ...customDates];
-
-  const filteredIdeas = allIdeas.filter(idea => {
-    const categoryMatch = selectedCategory === 'all' || idea.category === selectedCategory;
-    const budgetMatch = selectedBudget === 'all' || idea.budget === selectedBudget;
-    const locationMatch = selectedLocation === 'all' || idea.location_type === selectedLocation;
-    const occasionMatch = selectedOccasion === 'all' || idea.occasion === selectedOccasion;
-    const stageMatch = selectedStage === 'all' || idea.relationship_stage === selectedStage || idea.relationship_stage === 'any';
-    return categoryMatch && budgetMatch && locationMatch && occasionMatch && stageMatch;
+    onError: (error) => toast.error(error?.message || t.accountUnavailable),
   });
 
-  const handleSaveDate = async (idea) => {
-    if (idea.id && idea.created_by === currentUser?.email) {
-      await updateDateMutation.mutateAsync({
-        id: idea.id,
-        data: { ...idea, is_favorite: !idea.is_favorite }
-      });
-      toast.success(idea.is_favorite ? "Removed from saved" : t.dateSaved);
-    }
+  const saveBuiltInMutation = useMutation({
+    mutationFn: saveBuiltInDateIdea,
+    onSuccess: () => {
+      void refreshMine();
+      toast.success(t.created);
+    },
+    onError: (error) => toast.error(error?.message || t.accountUnavailable),
+  });
+
+  const openCreate = () => {
+    if (!requireAccount()) return;
+    setEditingIdea(null);
+    setShowCustomForm(true);
   };
 
-  const handleShareDate = async (idea) => {
-    const partnerEmail = localStorage.getItem('partnerEmail');
-    if (!partnerEmail) {
-      toast.error("Please set your partner's email in profile");
-      return;
-    }
-    
-    if (idea.id && idea.created_by === currentUser?.email) {
-      await updateDateMutation.mutateAsync({
-        id: idea.id,
-        data: { ...idea, partner_email: partnerEmail }
-      });
-      toast.success(t.dateShared);
-    }
+  const openEdit = (idea) => {
+    if (!requireAccount()) return;
+    setEditingIdea(idea);
+    setShowCustomForm(true);
   };
 
-  const handleCompleteDate = async (idea) => {
-    if (idea.id && idea.created_by === currentUser?.email) {
-      await updateDateMutation.mutateAsync({
-        id: idea.id,
-        data: { ...idea, completed: true, completed_date: new Date().toISOString() }
-      });
-      toast.success(t.dateCompleted);
-    }
+  const handleCustomSubmit = (values) => {
+    if (!requireAccount()) return;
+    if (editingIdea?.id) updateMutation.mutate({ id: editingIdea.id, patch: values });
+    else createMutation.mutate(values);
   };
+
+  const toggleFavorite = (idea) => {
+    if (!requireAccount()) return;
+    updateMutation.mutate({ id: idea.id, patch: { is_favorite: !idea.is_favorite } });
+  };
+
+  const toggleComplete = (idea) => {
+    if (!requireAccount()) return;
+    updateMutation.mutate({ id: idea.id, patch: { is_completed: !idea.is_completed } }, {
+      onSuccess: () => {
+        void refreshMine();
+        toast.success(!idea.is_completed ? t.complete : t.updated);
+      },
+    });
+  };
+
+  const removeIdea = (idea) => {
+    if (!requireAccount()) return;
+    if (!window.confirm(`${t.delete}: ${idea.title}?`)) return;
+    deleteMutation.mutate(idea.id);
+  };
+
+  const saveBuiltIn = (idea) => {
+    if (!requireAccount()) return;
+    saveBuiltInMutation.mutate(idea);
+  };
+
+  const sourceIdeas = view === 'explore' ? builtIns : view === 'saved' ? savedIdeas : myIdeas;
+  const filteredIdeas = sourceIdeas.filter((idea) => {
+    if (filters.category !== 'all' && idea.category !== filters.category) return false;
+    if (filters.budget !== 'all' && idea.budget !== filters.budget) return false;
+    if (filters.location_type !== 'all' && idea.location_type !== filters.location_type) return false;
+    if (filters.occasion !== 'all' && idea.occasion !== filters.occasion) return false;
+    if (filters.relationship_stage !== 'all' && idea.relationship_stage !== 'any' && idea.relationship_stage !== filters.relationship_stage) return false;
+    return true;
+  });
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link
-            to={createPageUrl("Home")}
-            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
+      <div className="mx-auto max-w-7xl px-4 py-10">
+        <Link to={createPageUrl('Home')} className="mb-6 inline-flex items-center rounded-xl px-4 py-2 text-gray-600 transition hover:bg-white/70 hover:text-purple-700"><ArrowLeft className="mr-2 h-5 w-5" />{t.back}</Link>
 
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Heart className="w-10 h-10 text-white fill-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-9 text-center">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 shadow-xl"><Heart className="h-10 w-10 fill-white text-white" /></div>
+          <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl">{t.title}</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-lg text-gray-600">{t.subtitle}</p>
+          {!isAuthenticated && <p className="mx-auto mt-3 max-w-xl text-sm text-gray-500">{t.signInHint}</p>}
         </motion.div>
 
-        <div className="mb-8 flex flex-wrap gap-4 justify-between items-center">
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setViewMode('all')}
-              variant={viewMode === 'all' ? 'default' : 'outline'}
-              className={viewMode === 'all' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
-            >
-              {t.allDates}
-            </Button>
-            <Button
-              onClick={() => setViewMode('custom')}
-              variant={viewMode === 'custom' ? 'default' : 'outline'}
-              className={viewMode === 'custom' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
-            >
-              {t.myCustomDates} ({customDates.length})
-            </Button>
-            <Button
-              onClick={() => setViewMode('saved')}
-              variant={viewMode === 'saved' ? 'default' : 'outline'}
-              className={viewMode === 'saved' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
-            >
-              <Bookmark className="w-4 h-4 mr-2" />
-              {t.savedDates} ({savedDates.length})
-            </Button>
+        <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Tab active={view === 'explore'} onClick={() => setView('explore')}>{t.explore}</Tab>
+            <Tab active={view === 'mine'} onClick={() => isAuthenticated ? setView('mine') : requireAccount()}>{t.mine}{isAuthenticated ? ` (${myIdeas.length})` : ''}</Tab>
+            <Tab active={view === 'saved'} onClick={() => isAuthenticated ? setView('saved') : requireAccount()}><Bookmark className="mr-2 h-4 w-4" />{t.saved}{isAuthenticated ? ` (${savedIdeas.length})` : ''}</Tab>
           </div>
-          <Button
-            onClick={() => setShowCustomForm(true)}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            {t.createCustom}
-          </Button>
+          <Button onClick={openCreate} className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"><Plus className="mr-2 h-4 w-4" />{t.create}</Button>
         </div>
 
         <AnimatePresence>
           {showCustomForm && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-8"
-            >
+            <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="mb-8">
               <CustomDateForm
-                onSubmit={(data) => createDateMutation.mutate(data)}
-                onCancel={() => setShowCustomForm(false)}
+                dateIdea={editingIdea}
+                onSubmit={handleCustomSubmit}
+                onCancel={() => { setShowCustomForm(false); setEditingIdea(null); }}
+                isSaving={isSaving}
               />
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="mb-8 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger><SelectValue placeholder={t.categoryLabel} /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(t.categories).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {isAuthenticated && myIdeasQuery.isError && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{t.accountUnavailable}</div>
+        )}
 
-            <Select value={selectedBudget} onValueChange={setSelectedBudget}>
-              <SelectTrigger><SelectValue placeholder={t.budgetLabel} /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(t.budgetOptions).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <Card className="mb-8 border-0 bg-white/80 shadow-sm">
+          <CardContent className="pt-5">
+            <div className="mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-600" /><span className="text-sm font-semibold text-gray-700">{t.filters}</span></div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <FilterSelect label={t.category} value={filters.category} options={t.categories} allLabel={t.all} onChange={(value) => setFilters((current) => ({ ...current, category: value }))} />
+              <FilterSelect label={t.budget} value={filters.budget} options={t.budgets} allLabel={t.all} onChange={(value) => setFilters((current) => ({ ...current, budget: value }))} />
+              <FilterSelect label={t.location} value={filters.location_type} options={t.locations} allLabel={t.all} onChange={(value) => setFilters((current) => ({ ...current, location_type: value }))} />
+              <FilterSelect label={t.occasion} value={filters.occasion} options={t.occasions} allLabel={t.all} onChange={(value) => setFilters((current) => ({ ...current, occasion: value }))} />
+              <FilterSelect label={t.stage} value={filters.relationship_stage} options={t.stages} allLabel={t.all} onChange={(value) => setFilters((current) => ({ ...current, relationship_stage: value }))} />
+            </div>
+          </CardContent>
+        </Card>
 
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger><SelectValue placeholder={t.locationLabel} /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(t.locationOptions).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedOccasion} onValueChange={setSelectedOccasion}>
-              <SelectTrigger><SelectValue placeholder={t.occasionLabel} /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(t.occasionOptions).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedStage} onValueChange={setSelectedStage}>
-              <SelectTrigger><SelectValue placeholder={t.stageLabel} /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(t.stageOptions).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="text-center mb-8">
-          <p className="text-gray-600">
-            {t.showingIdeas} <span className="font-bold text-pink-600">{filteredIdeas.length}</span> {t.ideas}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredIdeas.map((idea, index) => {
-            const Icon = idea.icon || Heart;
-            const isCustom = idea.created_by === currentUser?.email;
-            return (
-              <motion.div
-                key={idea.id || index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="h-full hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-pink-200">
-                  <CardHeader>
-                    <div className={`w-16 h-16 bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
-                      <Icon className="w-8 h-8 text-white" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold text-gray-900">
-                      {idea.title}
-                      {idea.completed && <Check className="inline-block w-5 h-5 text-green-600 ml-2" />}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4 leading-relaxed">{idea.description}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{t.difficulty}:</span>
-                        <span className="font-semibold text-gray-700">{idea.difficulty}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{t.duration}:</span>
-                        <span className="font-semibold text-gray-700">{idea.duration || `${idea.duration_hours}h`}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{t.budget}:</span>
-                        <span className="font-semibold text-gray-700 capitalize">{idea.budget}</span>
-                      </div>
-                    </div>
-
-                    {isCustom && (
-                      <div className="flex gap-2 mb-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSaveDate(idea)}
-                          className={idea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
-                        >
-                          <Bookmark className={`w-4 h-4 ${idea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleShareDate(idea)}>
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        {!idea.completed && (
-                          <Button size="sm" variant="outline" onClick={() => handleCompleteDate(idea)}>
-                            <Check className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
-
-                    <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                      {t.getDetails}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {filteredIdeas.length === 0 && (
-          <div className="text-center py-12">
-            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">{t.noIdeasFound}</h3>
-            <p className="text-gray-500">{t.tryAdjusting}</p>
+        {filteredIdeas.length === 0 ? (
+          <div className="py-14 text-center"><Heart className="mx-auto mb-4 h-14 w-14 text-gray-300" /><p className="text-gray-500">{t.noIdeas}</p></div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredIdeas.map((idea, index) => (
+              <DateIdeaCard
+                key={idea.id}
+                idea={idea}
+                index={index}
+                t={t}
+                expanded={expandedId === idea.id}
+                onToggleDetails={() => setExpandedId((current) => current === idea.id ? null : idea.id)}
+                onSaveBuiltIn={saveBuiltIn}
+                onFavorite={toggleFavorite}
+                onComplete={toggleComplete}
+                onEdit={openEdit}
+                onDelete={removeIdea}
+                busy={saveBuiltInMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
+              />
+            ))}
           </div>
         )}
       </div>
     </div>
   );
+}
+
+function Tab({ active, onClick, children }) {
+  return <Button type="button" variant={active ? 'default' : 'outline'} onClick={onClick} className={active ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}>{children}</Button>;
+}
+
+function FilterSelect({ label, value, options, allLabel, onChange }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-semibold text-gray-500">{label}</label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent><SelectItem value="all">{allLabel}</SelectItem>{Object.entries(options).map(([key, text]) => <SelectItem key={key} value={key}>{text}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function DateIdeaCard({ idea, index, t, expanded, onToggleDetails, onSaveBuiltIn, onFavorite, onComplete, onEdit, onDelete, busy }) {
+  const Icon = idea.source === 'builtin' ? (ICONS[idea.icon] || Heart) : Heart;
+  const custom = idea.source !== 'builtin' && !String(idea.id).startsWith('builtin-');
+
+  const option = (map, value) => map?.[value] || value || '—';
+
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: Math.min(index * 0.04, 0.3) }}>
+      <Card className="h-full overflow-hidden border-2 border-transparent transition hover:border-pink-200 hover:shadow-xl">
+        <CardHeader>
+          <div className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} shadow-lg`}><Icon className="h-7 w-7 text-white" /></div>
+          <CardTitle className="flex items-start gap-2 text-xl"><span className="flex-1">{idea.title}</span>{idea.is_completed && <Check className="mt-1 h-5 w-5 flex-shrink-0 text-green-600" />}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 leading-relaxed text-gray-600">{idea.description || '—'}</p>
+
+          <button type="button" onClick={onToggleDetails} className="mb-3 flex w-full items-center justify-between rounded-xl bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100">
+            <span>{expanded ? t.hideDetails : t.details}</span>{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+
+          {expanded && (
+            <div className="mb-4 space-y-2 rounded-xl border border-gray-100 bg-white p-3 text-sm">
+              <Meta label={t.category} value={option(t.categories, idea.category)} />
+              <Meta label={t.budget} value={option(t.budgets, idea.budget)} />
+              <Meta label={t.location} value={option(t.locations, idea.location_type)} />
+              <Meta label={t.occasion} value={option(t.occasions, idea.occasion)} />
+              <Meta label={t.stage} value={option(t.stages, idea.relationship_stage)} />
+              {idea.duration && <Meta label={t.duration} value={idea.duration} />}
+            </div>
+          )}
+
+          {idea.source === 'builtin' ? (
+            <Button type="button" onClick={() => onSaveBuiltIn(idea)} disabled={busy} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"><Bookmark className="mr-2 h-4 w-4" />{t.save}</Button>
+          ) : custom ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" onClick={() => onFavorite(idea)} disabled={busy}><Bookmark className={`mr-2 h-4 w-4 ${idea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />{idea.is_favorite ? t.removeFavorite : t.favorite}</Button>
+              <Button type="button" variant="outline" onClick={() => onComplete(idea)} disabled={busy}><Check className="mr-2 h-4 w-4" />{idea.is_completed ? t.undoDone : t.done}</Button>
+              <Button type="button" variant="outline" onClick={() => onEdit(idea)} disabled={busy}><Pencil className="mr-2 h-4 w-4" />{t.edit}</Button>
+              <Button type="button" variant="outline" onClick={() => onDelete(idea)} disabled={busy} className="text-red-600 hover:text-red-700"><Trash2 className="mr-2 h-4 w-4" />{t.delete}</Button>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function Meta({ label, value }) {
+  return <div className="flex items-start justify-between gap-3"><span className="text-gray-500">{label}</span><span className="text-right font-medium text-gray-700">{value}</span></div>;
 }
