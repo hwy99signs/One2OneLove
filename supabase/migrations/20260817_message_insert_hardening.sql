@@ -3,8 +3,8 @@
 --
 -- Browser code may propose message content, type and optional reply metadata, but the
 -- database derives sender/receiver from the authenticated conversation participants.
--- This prevents a member from forging a sender, injecting a third-party receiver, or
--- attaching a reply from another conversation.
+-- Attachment messages must point to a private chat-files object owned by this sender in
+-- this exact conversation: <conversation_uuid>/<sender_uuid>/<random_uuid>.<extension>.
 
 begin;
 
@@ -19,6 +19,7 @@ declare
   v_user1 uuid;
   v_user2 uuid;
   v_reply_conversation uuid;
+  v_expected_attachment_prefix text;
 begin
   if v_role is null or v_role = 'service_role' then
     return new;
@@ -47,6 +48,11 @@ begin
     raise exception 'You are not a participant in this conversation';
   end if;
 
+  new.message_type := lower(coalesce(nullif(btrim(new.message_type), ''), 'text'));
+  if new.message_type not in ('text', 'image', 'video', 'audio', 'voice', 'file', 'location') then
+    raise exception 'Unsupported message type';
+  end if;
+
   -- Browser clients cannot pre-mark their own outgoing message as read/deleted/edited
   -- or backdate delivery state.
   new.is_read := false;
@@ -72,6 +78,58 @@ begin
     raise exception 'Message content is too long';
   end if;
 
+  if new.message_type = 'text' then
+    if new.content is null or char_length(btrim(new.content)) = 0 then
+      raise exception 'Text message content is required';
+    end if;
+    new.file_url := null;
+    new.file_name := null;
+    new.file_size := null;
+    new.file_type := null;
+    new.location_lat := null;
+    new.location_lng := null;
+    new.location_address := null;
+  elsif new.message_type in ('image', 'video', 'audio', 'voice', 'file') then
+    v_expected_attachment_prefix := new.conversation_id::text || '/' || new.sender_id::text || '/';
+
+    if new.file_url is null
+       or position('://' in new.file_url) > 0
+       or new.file_url not like v_expected_attachment_prefix || '%' then
+      raise exception 'Attachment must use the private conversation storage path';
+    end if;
+
+    if new.file_size is null or new.file_size <= 0 or new.file_size > 10485760 then
+      raise exception 'Attachment size must be between 1 byte and 10 MiB';
+    end if;
+
+    if new.file_name is null or char_length(btrim(new.file_name)) = 0 or char_length(new.file_name) > 255 then
+      raise exception 'Attachment file name is invalid';
+    end if;
+
+    if new.file_type is not null and char_length(new.file_type) > 100 then
+      raise exception 'Attachment MIME type is invalid';
+    end if;
+
+    new.location_lat := null;
+    new.location_lng := null;
+    new.location_address := null;
+  elsif new.message_type = 'location' then
+    new.file_url := null;
+    new.file_name := null;
+    new.file_size := null;
+    new.file_type := null;
+
+    if new.location_lat is null or new.location_lng is null
+       or new.location_lat < -90 or new.location_lat > 90
+       or new.location_lng < -180 or new.location_lng > 180 then
+      raise exception 'Valid location coordinates are required';
+    end if;
+
+    if new.location_address is not null and char_length(new.location_address) > 500 then
+      raise exception 'Location address is too long';
+    end if;
+  end if;
+
   return new;
 end;
 $$;
@@ -86,6 +144,7 @@ for each row execute function public.enforce_message_insert_boundaries();
 -- Normalize INSERT policy around the trigger-derived sender/receiver identity.
 drop policy if exists "Users can send messages" on public.messages;
 drop policy if exists "Users can insert messages" on public.messages;
+drop policy if exists "Conversation participants can send messages" on public.messages;
 create policy "Conversation participants can send messages"
 on public.messages
 for insert
@@ -104,13 +163,17 @@ with check (
 );
 
 comment on function public.enforce_message_insert_boundaries() is
-  'Derives sender/receiver from authenticated conversation participants and protects initial receipt/edit/delete/reply state for pairwise messages.';
+  'Derives sender/receiver from authenticated conversation participants, protects initial receipt/edit/delete/reply state, and binds attachment messages to private conversation/sender object paths.';
 
 commit;
 
 -- CONTROLLED TESTS
--- 1. Browser-supplied sender_id/receiver_id are replaced with the actual participants.
+-- 1. Browser-supplied sender_id/receiver_id are replaced with actual participants.
 -- 2. A nonparticipant cannot insert into the conversation.
 -- 3. A reply_to_id from another conversation is rejected.
 -- 4. Browser cannot insert already-read/deleted/edited/delivered messages.
--- 5. Normal text/file/location message inserts still work for the two participants.
+-- 5. HTTP/public attachment URLs are rejected.
+-- 6. Attachment path must begin <conversation>/<authenticated sender>/ and be <=10 MiB.
+-- 7. A file path from another conversation cannot be forwarded/reused without copying it
+--    into an authorized object path for the target conversation.
+-- 8. Normal text/location/private-file messages work for the two participants.
