@@ -1,1 +1,1 @@
-export { default } from './ProfileRelaunchSafe';
+export { default } from './ProfileRelaunchShell';
