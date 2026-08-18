@@ -34,9 +34,10 @@ This file tracks only actions that should NOT be performed automatically while d
 8. Security hardening of legacy tables/views.
    - `users` public SELECT exposure.
    - `waitlist_signups` RLS.
-   - pairwise `messages` update policy.
-   - `community_members` admin recursion risk.
    - legacy views/grants and `security_invoker` review.
+   - `supabase/migrations/20260817_message_update_hardening.sql` is now staged to stop message recipients from changing message content while still allowing read/delivery receipts.
+   - `supabase/migrations/20260817_community_member_policy_hardening.sql` is now staged to remove the recursive `community_members` moderator/admin RLS lookup.
+   - Neither staged migration has been applied to the live database.
    - No live security-policy changes without explicit approval and a rollback plan.
 
 9. SMS provider activation.
