@@ -4,6 +4,7 @@ import { Heart, Loader2, CheckCircle, User, Mail, Phone, Stethoscope, ShieldChec
 import { toast } from "sonner";
 import TherapistSignupForm from "../components/signup/TherapistSignupForm";
 import SocialMediaPlatformsForm from "../components/signup/SocialMediaPlatformsForm";
+import TurnstileWidget, { turnstileConfigured } from "../components/signup/TurnstileWidget";
 import { submitProfessionalApplication } from "@/lib/professionalApplicationService";
 
 export default function TherapistSignup() {
@@ -21,6 +22,8 @@ export default function TherapistSignup() {
   const [consultationFee, setConsultationFee] = useState("");
   const [professionalBio, setProfessionalBio] = useState("");
   const [socialMediaPlatforms, setSocialMediaPlatforms] = useState({});
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const [signupComplete, setSignupComplete] = useState(false);
   const [applicationId, setApplicationId] = useState(null);
@@ -45,6 +48,10 @@ export default function TherapistSignup() {
       toast.error("Please add your professional bio.");
       return;
     }
+    if (turnstileConfigured() && !turnstileToken) {
+      toast.error("Please complete the secure verification before submitting.");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -54,6 +61,7 @@ export default function TherapistSignup() {
         lastName,
         email,
         phone,
+        turnstileToken,
         details: {
           licensedCountries,
           licensedStates,
@@ -73,6 +81,10 @@ export default function TherapistSignup() {
     } catch (error) {
       console.error('Therapist application error:', error);
       toast.error(error?.message || "We couldn't submit your application right now.");
+      if (turnstileConfigured()) {
+        setTurnstileToken("");
+        setTurnstileResetKey((value) => value + 1);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -183,8 +195,10 @@ export default function TherapistSignup() {
             Profile photos are added after application review so pre-membership uploads are not placed in public storage.
           </div>
 
+          <TurnstileWidget onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+
           <div className="flex justify-center">
-            <Button type="submit" disabled={isLoading} size="lg" className="bg-gradient-to-r from-teal-500 to-blue-500 text-white text-lg px-12 py-6 h-auto shadow-xl">
+            <Button type="submit" disabled={isLoading || (turnstileConfigured() && !turnstileToken)} size="lg" className="bg-gradient-to-r from-teal-500 to-blue-500 text-white text-lg px-12 py-6 h-auto shadow-xl">
               {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</> : <><Stethoscope className="w-5 h-5 mr-2" />Submit Application</>}
             </Button>
           </div>
