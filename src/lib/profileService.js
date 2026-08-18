@@ -1,95 +1,98 @@
 import { supabase, handleSupabaseError } from './supabase';
 
-/**
- * Ensure the current user is allowed to use the profile backend
- * Only regular users (or legacy users without a user_type) are permitted
- * @param {string} userId
- * @param {string} [columns='user_type']
- * @returns {Promise<Object>} Selected user columns
- */
-const ensureRegularUserAccess = async (userId, columns = 'user_type') => {
-  try {
-    let selection = columns || 'user_type';
+const SAFE_PROFILE_UPDATE_FIELDS = new Set([
+  'name',
+  'relationship_status',
+  'anniversary_date',
+  'partner_email',
+  'avatar_url',
+  'bio',
+  'location',
+  'love_language',
+  'date_frequency',
+  'communication_style',
+  'conflict_resolution',
+  'partner_name',
+  'interests',
+]);
 
-    if (selection !== '*' && !selection.split(',').map((col) => col.trim()).includes('user_type')) {
-      selection = `user_type,${selection}`;
-    }
-
-    const { data, error } = await supabase
-      .from('users')
-      .select(selection)
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    if (data?.user_type && data.user_type !== 'regular') {
-      throw new Error('Profile management is currently available for regular users only.');
-    }
-
-    return data;
-  } catch (error) {
-    throw error;
+const getAuthenticatedOwnUser = async (requestedUserId) => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) throw new Error('User not authenticated');
+  if (!requestedUserId || requestedUserId !== user.id) {
+    throw new Error('You may manage only your own profile.');
   }
+  return user;
 };
 
 /**
- * Upload profile picture to Supabase Storage
- * @param {File} file - The image file to upload
- * @param {string} userId - The user's ID
- * @returns {Promise<string>} Public URL of the uploaded image
+ * Ensure the current user is allowed to use the regular-member profile backend.
+ * Role is read from the trusted profile row, never from browser/auth metadata.
  */
+const ensureRegularUserAccess = async (userId, columns = 'user_type') => {
+  await getAuthenticatedOwnUser(userId);
+
+  let selection = columns || 'user_type';
+  if (selection !== '*' && !selection.split(',').map((col) => col.trim()).includes('user_type')) {
+    selection = `user_type,${selection}`;
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select(selection)
+    .eq('id', userId)
+    .single();
+
+  if (error) throw error;
+
+  if (data?.user_type && data.user_type !== 'regular') {
+    throw new Error('Profile management is currently available for regular users only.');
+  }
+
+  return data;
+};
+
+const sanitizeProfileUpdates = (updates = {}) => {
+  const safe = {};
+  for (const [key, value] of Object.entries(updates || {})) {
+    if (!SAFE_PROFILE_UPDATE_FIELDS.has(key) || value === undefined) continue;
+    safe[key] = value;
+  }
+  return safe;
+};
+
+/** Upload own regular-member profile picture. */
 export const uploadProfilePicture = async (file, userId) => {
   try {
     await ensureRegularUserAccess(userId);
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      throw new Error('File must be an image');
+    if (!file?.type?.startsWith('image/')) throw new Error('File must be an image');
+    if (file.size > 5 * 1024 * 1024) throw new Error('Image size must be less than 5MB');
+
+    const fileExt = String(file.name || '').split('.').pop()?.toLowerCase();
+    if (!fileExt || !['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fileExt)) {
+      throw new Error('Unsupported image format');
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('Image size must be less than 5MB');
-    }
-
-    // Get file extension
-    const fileExt = file.name.split('.').pop();
     const fileName = `profile.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    // Delete old profile picture if exists
     const { data: existingFiles } = await supabase.storage
       .from('profile-pictures')
-      .list(userId, {
-        search: 'profile'
-      });
+      .list(userId, { search: 'profile' });
 
-    if (existingFiles && existingFiles.length > 0) {
+    if (existingFiles?.length) {
       const oldFiles = existingFiles
-        .filter(f => f.name.startsWith('profile.'))
-        .map(f => `${userId}/${f.name}`);
-      
-      if (oldFiles.length > 0) {
-        await supabase.storage
-          .from('profile-pictures')
-          .remove(oldFiles);
-      }
+        .filter((item) => item.name.startsWith('profile.'))
+        .map((item) => `${userId}/${item.name}`);
+      if (oldFiles.length) await supabase.storage.from('profile-pictures').remove(oldFiles);
     }
 
-    // Upload new profile picture
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('profile-pictures')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true // Replace if exists
-      });
-
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
     if (error) throw error;
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('profile-pictures')
       .getPublicUrl(filePath);
@@ -101,47 +104,27 @@ export const uploadProfilePicture = async (file, userId) => {
   }
 };
 
-/**
- * Get user profile
- * @param {string} userId - The user's ID
- * @returns {Promise<Object>} User profile data
- */
 export const getUserProfile = async (userId) => {
   try {
-    const profile = await ensureRegularUserAccess(userId, '*');
-    return profile;
+    return await ensureRegularUserAccess(userId, '*');
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
 
-/**
- * Update user profile
- * @param {string} userId - The user's ID
- * @param {Object} updates - Profile fields to update
- * @returns {Promise<Object>} Updated user profile
- */
 export const updateUserProfile = async (userId, updates) => {
   try {
     await ensureRegularUserAccess(userId);
 
-    // Prepare update data
-    const updateData = {
-      updated_at: new Date().toISOString(),
-      ...updates
-    };
-
-    // Remove undefined values
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
-      }
-    });
+    const safeUpdates = sanitizeProfileUpdates(updates);
+    if (!Object.keys(safeUpdates).length) {
+      throw new Error('No editable profile fields were provided.');
+    }
 
     const { data, error } = await supabase
       .from('users')
-      .update(updateData)
+      .update({ ...safeUpdates, updated_at: new Date().toISOString() })
       .eq('id', userId)
       .select()
       .single();
@@ -154,34 +137,24 @@ export const updateUserProfile = async (userId, updates) => {
   }
 };
 
-/**
- * Delete profile picture
- * @param {string} userId - The user's ID
- * @returns {Promise<void>}
- */
 export const deleteProfilePicture = async (userId) => {
   try {
     await ensureRegularUserAccess(userId);
 
-    // List all files for this user
     const { data: files, error: listError } = await supabase.storage
       .from('profile-pictures')
       .list(userId);
-
     if (listError) throw listError;
 
-    if (files && files.length > 0) {
-      const filePaths = files
-        .filter(f => f.name.startsWith('profile.'))
-        .map(f => `${userId}/${f.name}`);
+    const filePaths = (files || [])
+      .filter((item) => item.name.startsWith('profile.'))
+      .map((item) => `${userId}/${item.name}`);
 
-      if (filePaths.length > 0) {
-        const { error: deleteError } = await supabase.storage
-          .from('profile-pictures')
-          .remove(filePaths);
-
-        if (deleteError) throw deleteError;
-      }
+    if (filePaths.length) {
+      const { error: deleteError } = await supabase.storage
+        .from('profile-pictures')
+        .remove(filePaths);
+      if (deleteError) throw deleteError;
     }
   } catch (error) {
     console.error('Error deleting profile picture:', error);
@@ -189,18 +162,10 @@ export const deleteProfilePicture = async (userId) => {
   }
 };
 
-/**
- * Refresh profile completion status
- * This triggers the database trigger to recalculate completion
- * @param {string} userId - The user's ID
- * @returns {Promise<Object>} Updated profile with completion data
- */
 export const refreshProfileCompletion = async (userId) => {
   try {
     await ensureRegularUserAccess(userId);
 
-    // Trigger completion update by doing a minimal update
-    // The database trigger will automatically recalculate completion
     const { data, error } = await supabase
       .from('users')
       .update({ updated_at: new Date().toISOString() })
@@ -216,13 +181,10 @@ export const refreshProfileCompletion = async (userId) => {
   }
 };
 
-/**
- * Get profile completion data
- * @param {string} userId - The user's ID
- * @returns {Promise<Object>} Profile completion data
- */
 export const getProfileCompletion = async (userId) => {
   try {
+    await getAuthenticatedOwnUser(userId);
+
     const { data, error } = await supabase
       .from('users')
       .select('profile_completion_percentage, profile_completed_fields, profile_total_fields')
@@ -233,7 +195,7 @@ export const getProfileCompletion = async (userId) => {
     return {
       percentage: data.profile_completion_percentage || 0,
       completedFields: data.profile_completed_fields || 0,
-      totalFields: data.profile_total_fields || 14
+      totalFields: data.profile_total_fields || 14,
     };
   } catch (error) {
     console.error('Error fetching profile completion:', error);
@@ -241,41 +203,24 @@ export const getProfileCompletion = async (userId) => {
   }
 };
 
-/**
- * Save love language quiz result
- * Maps quiz results to database values
- * @param {string} userId - The user's ID
- * @param {string} loveLanguageId - The love language ID from quiz (words, quality, gifts, service, touch)
- * @returns {Promise<Object>} Updated user profile
- */
 export const saveLoveLanguage = async (userId, loveLanguageId) => {
   try {
     await ensureRegularUserAccess(userId);
 
-    // Map quiz IDs to database values
     const languageMap = {
-      'words': 'words_of_affirmation',
-      'quality': 'quality_time',
-      'gifts': 'receiving_gifts',
-      'service': 'acts_of_service',
-      'touch': 'physical_touch'
+      words: 'words_of_affirmation',
+      quality: 'quality_time',
+      gifts: 'receiving_gifts',
+      service: 'acts_of_service',
+      touch: 'physical_touch',
     };
-
     const dbValue = languageMap[loveLanguageId] || loveLanguageId;
-
-    // Validate the value
     const validValues = ['words_of_affirmation', 'quality_time', 'receiving_gifts', 'acts_of_service', 'physical_touch'];
-    if (!validValues.includes(dbValue)) {
-      throw new Error('Invalid love language value');
-    }
+    if (!validValues.includes(dbValue)) throw new Error('Invalid love language value');
 
-    // Update the user's love language
     const { data, error } = await supabase
       .from('users')
-      .update({
-        love_language: dbValue,
-        updated_at: new Date().toISOString()
-      })
+      .update({ love_language: dbValue, updated_at: new Date().toISOString() })
       .eq('id', userId)
       .select()
       .single();
@@ -288,13 +233,10 @@ export const saveLoveLanguage = async (userId, loveLanguageId) => {
   }
 };
 
-/**
- * Get user's love language
- * @param {string} userId - The user's ID
- * @returns {Promise<string|null>} User's love language
- */
 export const getUserLoveLanguage = async (userId) => {
   try {
+    await getAuthenticatedOwnUser(userId);
+
     const { data, error } = await supabase
       .from('users')
       .select('love_language')
@@ -308,4 +250,3 @@ export const getUserLoveLanguage = async (userId) => {
     throw new Error(handleSupabaseError(error));
   }
 };
-
