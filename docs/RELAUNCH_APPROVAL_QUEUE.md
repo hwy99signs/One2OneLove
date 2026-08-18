@@ -32,13 +32,15 @@ This file tracks only actions that should NOT be performed automatically while d
    - Review and approve before live database changes.
 
 8. Security hardening of legacy tables/views.
-   - `users` public SELECT exposure.
-   - `waitlist_signups` RLS.
-   - legacy views/grants and `security_invoker` review.
-   - `supabase/migrations/20260817_message_update_hardening.sql` is now staged to stop message recipients from changing message content while still allowing read/delivery receipts.
-   - `supabase/migrations/20260817_community_member_policy_hardening.sql` is now staged to remove the recursive `community_members` moderator/admin RLS lookup.
-   - Neither staged migration has been applied to the live database.
-   - No live security-policy changes without explicit approval and a rollback plan.
+   - `supabase/migrations/20260817_message_update_hardening.sql` is staged to stop message recipients from changing message content while still allowing read/delivery receipts.
+   - `supabase/migrations/20260817_community_member_policy_hardening.sql` is staged to remove the recursive `community_members` moderator/admin RLS lookup.
+   - `supabase/migrations/20260817_presence_security_hardening.sql` is staged to prevent caller-supplied presence spoofing and remove email from the presence projection.
+   - `supabase/migrations/20260817_member_directory_privacy.sql` is staged to create a privacy-safe member-discovery projection without email, partner email, subscription/billing, or verification fields.
+   - `supabase/migrations/20260817_users_privacy_lockdown.sql` is staged to make `public.users` an own-row private table and remove any legacy always-true SELECT policy.
+   - **Do not apply the users-table lockdown until all member-facing consumers have moved off broad `public.users` reads.** The Buddy Finder is migrated; pairwise chat still requires migration to the safe member directory.
+   - The historical audit also identified a `waitlist_signups` RLS concern. The current relaunch form uses `public.waitlist`, so the actual live tables/policies must be re-verified before changing either one.
+   - None of these security migrations has been applied to the live database.
+   - No live security-policy changes without an explicit go-ahead at the production checkpoint and a rollback plan.
 
 9. SMS provider activation.
    - Do not activate paid SMS/Twilio or incur A2P-related cost without separate approval.
@@ -54,6 +56,8 @@ This file tracks only actions that should NOT be performed automatically while d
 - Preview-only flows that do not send messages or modify live data.
 - Bug fixes, validation, accessibility, responsive layout, translations, and route cleanup.
 - Read-only audits of repository code and Supabase configuration when connectors are available.
+- Refactoring member-facing reads away from private tables into purpose-built privacy-safe projections.
+- Expanding automated relaunch safety checks so production blockers are visible before launch.
 
 ## Current operating rule
 
