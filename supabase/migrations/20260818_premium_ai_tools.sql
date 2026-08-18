@@ -42,6 +42,10 @@ create table if not exists public.premium_ai_usage (
   model text,
   input_chars integer not null default 0 check (input_chars >= 0),
   output_chars integer not null default 0 check (output_chars >= 0),
+  -- Private cached result/reference lets the same logical request return the same answer
+  -- after a lost HTTP response instead of spending on a second AI generation.
+  result_text text check (result_text is null or char_length(result_text) <= 4000),
+  resource_id uuid,
   created_at timestamptz not null default now(),
   completed_at timestamptz,
   unique (user_id, feature, request_id)
@@ -107,7 +111,7 @@ comment on table public.ai_coach_conversations is
 comment on table public.ai_coach_messages is
   'Private server-managed One2OneLove premium AI Relationship Coach message history.';
 comment on table public.premium_ai_usage is
-  'Server-only premium AI request ledger used for idempotency, rate/cost controls and operational review.';
+  'Server-only premium AI request ledger used for idempotency, retry-safe result replay, rate/cost controls and operational review.';
 
 commit;
 
@@ -116,4 +120,5 @@ commit;
 -- 2. service_role can create/list/delete a caller-owned coach conversation and messages.
 -- 3. deleting an Auth user cascades their AI history/usage.
 -- 4. request_id uniqueness prevents a duplicate logical AI request from being charged/run twice.
--- 5. conversation updated_at advances when a message is added.
+-- 5. a successful request can replay its private result_text/resource reference after a lost HTTP response.
+-- 6. conversation updated_at advances when a message is added.
