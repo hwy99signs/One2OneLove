@@ -15,6 +15,7 @@ const checks = [
   ['relaunch profile/navigation', 'scripts/relaunch-profile-navigation-check.mjs'],
   ['relaunch acquisition', 'scripts/relaunch-acquisition-check.mjs'],
   ['relaunch route safety', 'scripts/relaunch-route-safety-check.mjs'],
+  ['relaunch homepage truthfulness', 'scripts/relaunch-home-truthfulness-check.mjs'],
   ['relaunch legal readiness', 'scripts/relaunch-legal-readiness-check.mjs'],
 ];
 
