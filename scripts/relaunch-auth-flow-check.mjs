@@ -15,22 +15,34 @@ const signup = read('src/components/signup/RegularUserRelaunchForm.jsx');
 const callback = read('src/pages/AuthCallback.jsx');
 const signin = read('src/pages/SignIn.jsx');
 const auth = read('src/contexts/AuthContext.jsx');
+const authFlow = read('src/lib/authFlowService.js');
 const routes = read('src/pages/index.jsx');
 
 requireText(reset, 'event === "PASSWORD_RECOVERY"', 'ResetPassword must require the PASSWORD_RECOVERY auth event.');
 requireText(reset, 'urlHasRecoveryMarker()', 'ResetPassword must limit its fallback to an explicit recovery URL marker.');
 forbidText(reset, 'event === "SIGNED_IN" || event === "INITIAL_SESSION"', 'ResetPassword must not authorize an ordinary signed-in session.');
 requireText(reset, 'if (!validSession)', 'Password update must fail closed without a validated recovery session.');
+requireText(reset, 'scrubAuthMaterialFromUrl', 'ResetPassword must scrub consumed recovery credentials from browser history.');
+requireText(reset, 'await supabase.auth.signOut()', 'Successful recovery must clear the temporary recovery session.');
 
 requireText(forgot, 'resetPasswordForEmail', 'ForgotPassword must use Supabase password-recovery delivery.');
 requireText(forgot, '/ResetPassword', 'Password recovery must return to the reviewed ResetPassword route.');
 requireText(forgot, 'If an account matches that email address', 'Password recovery copy must resist account enumeration.');
 
+requireText(authFlow, 'safeAuthReturnTo', 'Auth return validation must be centralized.');
+requireText(authFlow, "value.startsWith('/')", 'Auth return destinations must remain local paths.');
+requireText(authFlow, "value.startsWith('//')", 'Auth return destinations must reject protocol-relative URLs.');
+requireText(authFlow, "'access_token'", 'Auth URL scrubbing must remove access tokens.');
+requireText(authFlow, "'refresh_token'", 'Auth URL scrubbing must remove refresh tokens.');
+requireText(authFlow, "'code'", 'Auth URL scrubbing must remove one-time authorization codes.');
+requireText(authFlow, "url.hash = ''", 'Auth URL scrubbing must clear implicit-flow fragments.');
+requireText(authFlow, 'history.replaceState', 'Auth material must be removed from browser history without reloading.');
+
 requireText(signup, "window.localStorage.setItem('o2ol-return-after-auth', destination)", 'Signup must persist its validated return destination across email-confirmation tabs.');
-requireText(callback, "window.localStorage.getItem(RETURN_KEY)", 'AuthCallback must read the cross-tab return destination.');
-requireText(callback, 'window.sessionStorage.getItem(RETURN_KEY)', 'AuthCallback must preserve backward compatibility with older preview handoffs.');
-requireText(callback, 'clearStoredReturnTo()', 'AuthCallback must clear a completed return handoff.');
-requireText(callback, "!value.startsWith('/') || value.startsWith('//')", 'AuthCallback must reject external/protocol-relative return destinations.');
+requireText(callback, 'loadAuthReturnTo()', 'AuthCallback must read the centralized cross-tab return destination.');
+requireText(callback, 'clearAuthReturnTo()', 'AuthCallback must clear a completed return handoff.');
+requireText(callback, 'scrubAuthMaterialFromUrl()', 'AuthCallback must scrub one-time provider credentials.');
+requireText(callback, 'authUserIsConfirmed', 'AuthCallback must verify confirmed account state.');
 requireText(callback, 'Confirmation link processed. Please sign in to continue.', 'AuthCallback must not claim email confirmation without a confirmed session.');
 forbidText(callback, "setStatus('Email confirmed. Please sign in to continue.')", 'AuthCallback may not label an unverified no-session state as confirmed.');
 
@@ -41,12 +53,14 @@ requireText(signin, 'o2ol-return-after-auth', 'Confirmation resend must preserve
 
 requireText(auth, 'emailIsConfirmed', 'AuthContext must derive confirmation from Supabase Auth.');
 requireText(auth, 'rejectUnconfirmedSession', 'AuthContext must reject unconfirmed sessions.');
+requireText(auth, 'await supabase.auth.signOut()', 'Rejected unconfirmed sessions must be cleared.');
 requireText(auth, "user_type: 'regular'", 'Public account signup must not grant professional roles.');
+requireText(auth, 'ensure_own_regular_profile', 'Missing regular profiles must bootstrap through the trusted RPC.');
 
 requireText(routes, '["/auth/callback", AuthCallback]', 'Router must expose the exact lowercase auth callback used by Supabase email confirmation.');
 requireText(routes, '["/ResetPassword", ResetPassword]', 'Router must expose the reviewed password-reset route.');
 
-for (const source of [reset, forgot, signup, callback, signin, auth]) {
+for (const source of [reset, forgot, signup, callback, signin, auth, authFlow]) {
   forbidText(source, '123456', 'Legacy fixed verification code 123456 must not exist in relaunch auth surfaces.');
 }
 
@@ -56,4 +70,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Authentication-flow preflight passed: recovery requires genuine recovery context, unconfirmed sessions fail closed, confirmation resend is real, and auth return routes stay local.');
+console.log('Authentication-flow preflight passed: recovery requires genuine recovery context, unconfirmed sessions fail closed, auth return routes stay local, and consumed auth credentials are scrubbed from browser history.');
