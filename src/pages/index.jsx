@@ -20,6 +20,7 @@ import CoupleSupport from "./CoupleSupport";
 import LoveLanguageQuiz from "./LoveLanguageQuizRelaunch";
 import DateIdeas from "./DateIdeas";
 import Profile from "./ProfileRelaunch";
+import PrivacyCenter from "./PrivacyCenter";
 import Invite from "./InviteRelaunch";
 import CounselingSupport from "./CounselingSupport";
 import PodcastsSupport from "./PodcastsSupport";
@@ -78,6 +79,7 @@ const PAGES = {
   LoveLanguageQuiz,
   DateIdeas,
   Profile,
+  PrivacyCenter,
   Invite,
   CounselingSupport,
   PodcastsSupport,
@@ -142,6 +144,7 @@ const ROUTES = [
   ["/LoveLanguageQuiz", LoveLanguageQuiz],
   ["/DateIdeas", DateIdeas],
   ["/Profile", Profile],
+  ["/PrivacyCenter", PrivacyCenter],
   ["/WinACruise", RelaunchUnavailable],
   ["/Invite", Invite],
   ["/CounselingSupport", CounselingSupport],
