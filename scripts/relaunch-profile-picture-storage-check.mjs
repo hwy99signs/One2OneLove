@@ -8,6 +8,7 @@ const forbidText = (source, needle, label) => { if (source.includes(needle)) fai
 const migration = read('supabase/migrations/20260818_profile_picture_storage_hardening.sql');
 const service = read('src/lib/profileService.js');
 const profile = read('src/pages/ProfileRelaunchSafe.jsx');
+const directory = read('supabase/migrations/20260818_member_directory_minimization.sql');
 
 requireText(migration, "'profile-pictures',\n  'profile-pictures',\n  true,\n  5242880", 'Profile-picture bucket must stay intentionally public with a 5 MiB limit.');
 requireText(migration, "'image/jpeg'", 'Profile-picture bucket must allow JPEG.');
@@ -20,7 +21,7 @@ for (const operation of ['select', 'insert', 'update', 'delete']) {
   requireText(migration, `as restrictive\nfor ${operation}\nto public`, `Profile-picture ${operation.toUpperCase()} must have a restrictive bucket boundary.`);
 }
 requireText(migration, "bucket_id <> 'profile-pictures'", 'Restrictive policies must pass unrelated Storage buckets through unchanged.');
-requireText(migration, "(storage.foldername(name))[1] = auth.uid()::text", 'Profile-picture Storage ownership must be derived from the first object-path folder.');
+requireText(migration, "(storage.foldername(name))[1] = auth.uid()::text", 'Profile-picture Storage ownership must be derived from the authenticated owner folder.');
 requireText(migration, 'O2OL profile owners can upload pictures', 'Authenticated owner upload grant must exist.');
 requireText(migration, 'O2OL profile owners can update pictures', 'Authenticated owner update grant must exist.');
 requireText(migration, 'O2OL profile owners can delete pictures', 'Authenticated owner delete grant must exist.');
@@ -31,8 +32,13 @@ requireText(service, 'const filePath = `${userId}/${fileName}`', 'Profile-pictur
 requireText(service, "file.size > 5 * 1024 * 1024", 'Client should mirror the 5 MiB server bucket limit.');
 requireText(service, "['jpg', 'jpeg', 'png', 'webp', 'gif']", 'Client should mirror the approved profile-image extensions.');
 requireText(service, ".from('profile-pictures')", 'Profile-picture service must stay on the dedicated bucket.');
-requireText(service, '.getPublicUrl(filePath)', 'Public avatar URLs are intentional for discoverable profile images.');
-requireText(profile, 'name, profile image, short bio, general location, relationship status and member-since date', 'Profile disclosure must tell members that the profile image is discoverable.');
+requireText(service, '.getPublicUrl(filePath)', 'Public avatar delivery is intentional for the optional discoverable profile image.');
+
+requireText(directory, 'avatar_url', 'The minimized member directory may expose the optional avatar URL.');
+forbidText(directory, 'relationship_status,', 'Avatar discoverability must not imply relationship-status discoverability.');
+forbidText(directory, 'location,', 'Avatar discoverability must not imply location discoverability.');
+requireText(profile, 'only your display name, optional profile image, short bio and member-since date', 'Profile disclosure must match the minimized member directory.');
+requireText(profile, 'location, relationship status, anniversary, partner information and Love Language remain account-private', 'Profile must explicitly distinguish private relationship/location fields from the discoverable avatar.');
 
 if (failures.length) {
   console.error('\nProfile-picture Storage preflight blockers:');
@@ -40,4 +46,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Profile-picture Storage preflight passed: avatar delivery is public by design while Storage list/write/delete operations are owner-only and size/MIME constrained.');
+console.log('Profile-picture Storage preflight passed: optional avatars are publicly deliverable by URL while Storage list/write/delete remain owner-only and the member directory stays privacy-minimized.');
