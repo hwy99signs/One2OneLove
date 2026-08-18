@@ -6,7 +6,8 @@
 --   * any authenticated member could INSERT their own row with role='admin';
 --   * a joining member could choose an approval-bypassing status;
 --   * community creators depended on a browser-supplied `asAdmin` insert;
---   * a moderator/admin could mutate the creator's protected admin membership.
+--   * moderators could promote themselves/others to admin through the broad policy;
+--   * membership identity/routing fields could otherwise be rewritten.
 
 begin;
 
@@ -73,9 +74,8 @@ create trigger ensure_community_creator_membership
 after insert on public.communities
 for each row execute function public.ensure_community_creator_membership();
 
--- Protect the creator's admin row from browser demotion/removal. Deleting the community
--- itself still cascades the membership through trusted database execution.
-create or replace function public.protect_community_creator_membership()
+-- Field/role boundary for UPDATE/DELETE on membership rows.
+create or replace function public.enforce_community_membership_management()
 returns trigger
 language plpgsql
 security invoker
@@ -83,18 +83,59 @@ set search_path = public
 as $$
 declare
   creator_id uuid;
+  actor_role text;
 begin
   if auth.role() is null or auth.role() = 'service_role' then
     if tg_op = 'DELETE' then return old; end if;
     return new;
   end if;
 
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+
   select c.creator_id into creator_id
   from public.communities c
   where c.id = old.community_id;
 
+  -- Creator membership is structural. Remove it only by deleting the community.
   if old.user_id = creator_id then
     raise exception 'The community creator admin membership cannot be changed directly';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if new.id is distinct from old.id
+       or new.community_id is distinct from old.community_id
+       or new.user_id is distinct from old.user_id
+       or new.joined_at is distinct from old.joined_at then
+      raise exception 'Community membership identity fields are immutable';
+    end if;
+  end if;
+
+  select cm.role into actor_role
+  from public.community_members cm
+  where cm.community_id = old.community_id
+    and cm.user_id = auth.uid()
+    and cm.status = 'active'
+  limit 1;
+
+  if actor_role = 'moderator' then
+    -- Moderators may manage the status of ordinary members only. They cannot alter
+    -- roles, manage another moderator/admin, or promote themselves.
+    if old.role <> 'member' then
+      raise exception 'Moderators cannot manage moderator/admin memberships';
+    end if;
+    if tg_op = 'UPDATE' and new.role is distinct from old.role then
+      raise exception 'Moderators cannot change member roles';
+    end if;
+  elsif actor_role = 'admin' then
+    -- Admin management is allowed; the creator and immutable fields remain protected.
+    null;
+  elsif tg_op = 'DELETE' and auth.uid() = old.user_id and old.role = 'member' then
+    -- Ordinary members may leave their own membership.
+    null;
+  else
+    raise exception 'You are not allowed to manage this community membership';
   end if;
 
   if tg_op = 'DELETE' then return old; end if;
@@ -102,17 +143,19 @@ begin
 end;
 $$;
 
-revoke all on function public.protect_community_creator_membership() from public;
+revoke all on function public.enforce_community_membership_management() from public;
 
 drop trigger if exists protect_community_creator_membership on public.community_members;
-create trigger protect_community_creator_membership
+drop trigger if exists enforce_community_membership_management on public.community_members;
+create trigger enforce_community_membership_management
 before update or delete on public.community_members
-for each row execute function public.protect_community_creator_membership();
+for each row execute function public.enforce_community_membership_management();
 
 -- Member-list visibility: a member can always see their own row; otherwise the viewer
 -- must already be an active member. Public community discovery does not expose the raw
 -- membership roster/user UUIDs to nonmembers.
 drop policy if exists "Users can view community members" on public.community_members;
+drop policy if exists "Members can view community members" on public.community_members;
 create policy "Members can view community members"
 on public.community_members
 for select
@@ -125,6 +168,7 @@ using (
 -- Self-service join is member-role only, only for a public community, and status must
 -- match the community's approval setting. This closes browser role/status escalation.
 drop policy if exists "Users can join communities" on public.community_members;
+drop policy if exists "Users can safely join public communities" on public.community_members;
 create policy "Users can safely join public communities"
 on public.community_members
 for insert
@@ -141,7 +185,7 @@ with check (
   )
 );
 
--- Members may leave only their own non-creator row; the trigger protects creators.
+-- Members may leave only their own non-creator row; the trigger supplies the role check.
 drop policy if exists "Users can leave communities" on public.community_members;
 create policy "Users can leave communities"
 on public.community_members
@@ -149,7 +193,8 @@ for delete
 to authenticated
 using (auth.uid() = user_id);
 
--- RLS-safe moderator/admin management replaces the recursive legacy policy.
+-- RLS-safe moderator/admin management replaces the recursive legacy policy. The trigger
+-- above further distinguishes moderator versus admin capabilities.
 drop policy if exists "Admins can manage members" on public.community_members;
 create policy "Admins can manage members"
 on public.community_members
@@ -164,6 +209,8 @@ comment on function public.is_community_moderator_or_admin(uuid) is
   'RLS-safe moderator/admin role check used to avoid recursive community_members policies.';
 comment on function public.ensure_community_creator_membership() is
   'Database-created active admin membership for each new community creator; browser cannot self-assign this role.';
+comment on function public.enforce_community_membership_management() is
+  'Field/role boundary preventing membership rerouting, creator mutation, and moderator role escalation.';
 
 commit;
 
@@ -174,4 +221,6 @@ commit;
 -- 4. Browser attempts to join as moderator/admin or force active status are rejected.
 -- 5. A nonmember cannot enumerate another public community's membership rows.
 -- 6. Creator admin membership cannot be demoted/deleted directly.
--- 7. Existing admin/moderator management still works without RLS recursion.
+-- 7. Moderator can manage ordinary-member status but cannot change roles or manage admin/moderator rows.
+-- 8. Admin can manage non-creator roles/status while membership identity fields remain immutable.
+-- 9. Existing admin/moderator management works without RLS recursion.
