@@ -3,6 +3,7 @@ import { ShieldCheck } from 'lucide-react';
 
 const SCRIPT_ID = 'o2ol-cloudflare-turnstile';
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+const TURNSTILE_ACTION = 'professional_application';
 
 const loadTurnstile = () => new Promise((resolve, reject) => {
   if (typeof window === 'undefined') {
@@ -66,8 +67,11 @@ export default function TurnstileWidget({ onToken, resetKey = 0 }) {
         }
         widgetIdRef.current = api.render(containerRef.current, {
           sitekey: siteKey,
+          action: TURNSTILE_ACTION,
           theme: 'light',
           size: 'flexible',
+          language: 'auto',
+          'response-field': false,
           callback: (token) => {
             if (cancelled) return;
             setStatus('verified');
