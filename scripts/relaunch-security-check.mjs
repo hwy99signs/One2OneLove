@@ -97,8 +97,8 @@ const routeIndex = exists('src/pages/index.jsx') ? read('src/pages/index.jsx') :
 
 check('subscription page has no retired dollar prices', !/19\.99|34\.99/.test(subscriptionPage), 'Retired prices remain in Subscription.jsx.');
 check('subscription selector has no retired dollar prices', !/19\.99|34\.99/.test(selection), 'Retired prices remain in SubscriptionSelection.jsx.');
-check('profile subscription card has no retired tier model', !/19\.99|34\.99|Premiere|Exclusive/.test(profileSubscription), 'Retired profile tier/pricing copy remains.');
-check('premium page no longer unlocks paid tools with gamification', !/unlockPoints|gamification_points|Premiere|Exclusive/.test(premiumPage), 'PremiumFeatures must describe account/membership, not points-based paid unlocks.');
+check('profile subscription card has no retired tier model', !/19\.99|34\.99|Premiere|Exclusive/.test(profileSubscription), 'Retired profile tier/pricing logic remains.');
+check('premium page no longer unlocks paid tools with gamification', !/unlockPoints|unlockLevel|gamification_points/.test(premiumPage) && !/19\.99|34\.99/.test(premiumPage), 'PremiumFeatures must describe account/membership, not points-based unlocks or retired prices.');
 check('membership gate uses approved entitlement map', featureHook.includes('getFeatureEntitlement') && featureHook.includes("entitlement === 'free'") && featureHook.includes('ACTIVE_MEMBERSHIP_STATUSES'), 'Feature gate must enforce the approved free/membership boundary.');
 check('membership gate remains activation-controlled', featureHook.includes('membershipGatingEnabled') && membershipConfig.includes('VITE_MEMBERSHIP_GATING_ENABLED'), 'Paid gating must remain independently disabled until controlled rollout.');
 check('approved premium routes are wired to FeatureGate', routeIndex.includes('FeatureGate') && routeIndex.includes('"relationship_coach"') && routeIndex.includes('"relationship_goals"') && routeIndex.includes('"couples_calendar"') && routeIndex.includes('"shared_journals"'), 'Premium routes must be ready for the single activation flag.');
