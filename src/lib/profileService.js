@@ -1,20 +1,21 @@
 import { supabase, handleSupabaseError } from './supabase';
 
+// Relaunch profile writes are intentionally narrower than the historical Base44-era
+// profile schema. Partner email is not collected until a reviewed partner-linking flow
+// actually needs it, and role/billing/account-email fields are never browser-editable.
 const SAFE_PROFILE_UPDATE_FIELDS = new Set([
   'name',
   'relationship_status',
   'anniversary_date',
-  'partner_email',
   'avatar_url',
   'bio',
   'location',
   'love_language',
-  'date_frequency',
-  'communication_style',
-  'conflict_resolution',
   'partner_name',
-  'interests',
 ]);
+
+const SAFE_PROFILE_RETURN_FIELDS =
+  'id,name,relationship_status,anniversary_date,avatar_url,bio,location,love_language,partner_name,user_type,updated_at';
 
 const getAuthenticatedOwnUser = async (requestedUserId) => {
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -126,7 +127,7 @@ export const updateUserProfile = async (userId, updates) => {
       .from('users')
       .update({ ...safeUpdates, updated_at: new Date().toISOString() })
       .eq('id', userId)
-      .select()
+      .select(SAFE_PROFILE_RETURN_FIELDS)
       .single();
 
     if (error) throw error;
@@ -222,7 +223,7 @@ export const saveLoveLanguage = async (userId, loveLanguageId) => {
       .from('users')
       .update({ love_language: dbValue, updated_at: new Date().toISOString() })
       .eq('id', userId)
-      .select()
+      .select(SAFE_PROFILE_RETURN_FIELDS)
       .single();
 
     if (error) throw error;
