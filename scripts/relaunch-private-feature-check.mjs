@@ -9,6 +9,7 @@ const check = (name, pass, detail) => checks.push({ name, pass: Boolean(pass), d
 
 const files = {
   loveNoteSend: 'supabase/functions/send-love-note-invitation/index.ts',
+  loveNoteFlow: 'src/pages/LoveNoteSendFlow.jsx',
   chatStorage: 'supabase/migrations/20260818_chat_attachment_privacy.sql',
   messageInsert: 'supabase/migrations/20260817_message_insert_hardening.sql',
   chatService: 'src/lib/chatService.js',
@@ -20,6 +21,7 @@ for (const file of Object.values(files)) {
 }
 
 const loveNoteSend = exists(files.loveNoteSend) ? read(files.loveNoteSend) : '';
+const loveNoteFlow = exists(files.loveNoteFlow) ? read(files.loveNoteFlow) : '';
 const chatStorage = exists(files.chatStorage) ? read(files.chatStorage) : '';
 const messageInsert = exists(files.messageInsert) ? read(files.messageInsert) : '';
 const chatService = exists(files.chatService) ? read(files.chatService) : '';
@@ -44,12 +46,40 @@ check(
     && loveNoteSend.includes('if (scheduledRaw)'),
   'The membership check must live inside the scheduled-delivery branch.'
 );
+check(
+  'Love Note scheduling UI uses the approved feature entitlement',
+  loveNoteFlow.includes('useFeatureAccess("love_note_scheduling")')
+    && loveNoteFlow.includes('scheduleAccess.hasAccess')
+    && loveNoteFlow.includes('scheduleAccess.needsSignIn'),
+  'The mixed-access screen should guide signed-out visitors through auth and free members to Membership.'
+);
+check(
+  'Love Note scheduling UX preserves the free draft',
+  loveNoteFlow.includes('stashCurrent(2)')
+    && loveNoteFlow.includes('navigate("/Subscription")')
+    && loveNoteFlow.includes('setDeliveryTime("now")'),
+  'An upgrade/sign-in redirect must not erase the Love Note and stale locked schedules must reset safely.'
+);
+check(
+  'Love Note send-now option stays directly available',
+  loveNoteFlow.includes('onClick={() => setDeliveryTime("now")}')
+    && !/FeatureGate[^\n]*love_note_send/.test(loveNoteFlow),
+  'Do not gate the entire Love Notes send page merely because scheduling is premium.'
+);
 
 check(
   'chat-files bucket is private',
   chatStorage.includes("values ('chat-files', 'chat-files', false")
     && chatStorage.includes('set public = false'),
   'Private chat attachments must not rely on public bucket URLs.'
+);
+check(
+  'chat storage uses restrictive bucket-only boundaries',
+  chatStorage.includes('as restrictive')
+    && chatStorage.includes("bucket_id <> 'chat-files'")
+    && chatStorage.includes('O2OL chat-files read boundary')
+    && chatStorage.includes('O2OL chat-files insert boundary'),
+  'A broad legacy Storage policy must not bypass Chat privacy or be deleted if another bucket needs it.'
 );
 check(
   'chat attachment read policy is participant-scoped',
