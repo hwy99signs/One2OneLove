@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
+  Bookmark,
   CalendarHeart,
   Heart,
   LockKeyhole,
@@ -20,6 +21,7 @@ const copy = {
     intro: "Pick a note, make it yours, and send a little love when it matters — or when there is no special reason at all.",
     browse: "Browse Love Notes",
     write: "Write Your Own",
+    saved: "Saved Love Notes",
     continueToSend: "Continue to send",
     sendThisNote: "Send this Love Note",
     schedule: "Send now or schedule it",
@@ -43,6 +45,7 @@ const copy = {
     intro: "Elige una nota, hazla tuya y envía un poco de amor cuando importe — o simplemente porque sí.",
     browse: "Ver Notas de Amor",
     write: "Escribe la Tuya",
+    saved: "Notas de Amor Guardadas",
     continueToSend: "Continuar para enviar",
     sendThisNote: "Enviar esta Nota de Amor",
     schedule: "Envía ahora o programa",
@@ -66,6 +69,7 @@ const copy = {
     intro: "Choisissez un mot, personnalisez-le et envoyez un peu d’amour quand cela compte — ou simplement sans raison particulière.",
     browse: "Voir les Mots d’Amour",
     write: "Écrire le Vôtre",
+    saved: "Mots d’Amour Sauvegardés",
     continueToSend: "Continuer pour envoyer",
     sendThisNote: "Envoyer ce Mot d’Amour",
     schedule: "Envoyer maintenant ou programmer",
@@ -89,6 +93,7 @@ const copy = {
     intro: "Scegli una nota, rendila tua e manda un po’ d’amore quando conta — o semplicemente senza un motivo speciale.",
     browse: "Sfoglia le Note d’Amore",
     write: "Scrivi la Tua",
+    saved: "Note d’Amore Salvate",
     continueToSend: "Continua per inviare",
     sendThisNote: "Invia questa Nota d’Amore",
     schedule: "Invia ora o programma",
@@ -112,6 +117,7 @@ const copy = {
     intro: "Wähle eine Notiz, mach sie zu deiner und schicke ein bisschen Liebe, wenn es zählt — oder einfach so.",
     browse: "Liebesnotizen ansehen",
     write: "Eigene schreiben",
+    saved: "Gespeicherte Liebesnotizen",
     continueToSend: "Weiter zum Senden",
     sendThisNote: "Diese Liebesnotiz senden",
     schedule: "Jetzt senden oder planen",
@@ -135,6 +141,7 @@ const copy = {
     intro: "Kies een briefje, maak het persoonlijk en stuur wat liefde wanneer het telt — of gewoon zomaar.",
     browse: "Bekijk Liefdesbriefjes",
     write: "Schrijf Je Eigen",
+    saved: "Bewaarde Liefdesbriefjes",
     continueToSend: "Doorgaan met verzenden",
     sendThisNote: "Dit Liefdesbriefje verzenden",
     schedule: "Nu sturen of plannen",
@@ -203,6 +210,9 @@ export default function LoveNotesHub() {
               <a href="#write-your-own" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50">
                 <PenLine className="h-4 w-4" />{t.write}
               </a>
+              <Link to="/SavedLoveNotes" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-pink-200 hover:bg-pink-50">
+                <Bookmark className="h-4 w-4 text-pink-600" />{t.saved}
+              </Link>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold text-slate-600">
