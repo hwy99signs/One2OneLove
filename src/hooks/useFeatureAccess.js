@@ -1,29 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserSubscription } from '@/lib/stripeService';
-import { ACTIVE_MEMBERSHIP_STATUSES, membershipGatingEnabled } from '@/lib/membershipConfig';
+import {
+  ACTIVE_MEMBERSHIP_STATUSES,
+  getFeatureEntitlement,
+  membershipGatingEnabled,
+} from '@/lib/membershipConfig';
 
 /**
  * Relaunch feature-access hook.
  *
- * The old Basic/Premiere/Exclusive matrix has been retired. Until the owner approves
- * the exact free-account versus paid-membership feature boundary, membership gating is
- * disabled by default through VITE_MEMBERSHIP_GATING_ENABLED. This keeps development
- * from silently reviving stale prices or accidentally locking core relaunch flows.
- *
- * If somebody enables the gate before a feature map is approved, this hook fails closed
- * for named gated features rather than inventing a product entitlement.
+ * The entitlement map is approved, but paid gating remains disabled until the controlled
+ * Stripe/backend sequence is complete. Free features remain free even after the gate is
+ * enabled; membership features require an active/trialing paid membership.
  */
 export function useFeatureAccess(featureName) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [membership, setMembership] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const gatingEnabled = membershipGatingEnabled();
+  const entitlement = getFeatureEntitlement(featureName);
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!gatingEnabled || !user?.id) {
+    if (!gatingEnabled || entitlement === 'free' || !user?.id) {
       setMembership(null);
       setIsLoading(false);
       return undefined;
@@ -45,46 +46,56 @@ export function useFeatureAccess(featureName) {
     return () => {
       cancelled = true;
     };
-  }, [gatingEnabled, user?.id]);
+  }, [entitlement, gatingEnabled, user?.id]);
 
   return useMemo(() => {
-    if (!gatingEnabled) {
+    if (!gatingEnabled || entitlement === 'free') {
       return {
         hasAccess: true,
-        currentTier: 'relaunch-open',
-        requiredTier: null,
-        featureAccess: null,
+        currentTier: isAuthenticated ? 'free' : 'visitor',
+        requiredTier: entitlement,
+        featureAccess: entitlement,
         needsUpgrade: false,
-        gatingEnabled: false,
+        needsSignIn: false,
+        gatingEnabled,
+        isLoading: false,
+      };
+    }
+
+    if (!isAuthenticated) {
+      return {
+        hasAccess: false,
+        currentTier: 'visitor',
+        requiredTier: 'membership',
+        featureAccess: entitlement,
+        needsUpgrade: false,
+        needsSignIn: true,
+        gatingEnabled: true,
         isLoading: false,
       };
     }
 
     const activeMembership = ACTIVE_MEMBERSHIP_STATUSES.has(membership?.status);
 
-    // No feature-to-membership map is intentionally defined yet. Once the owner approves
-    // that product boundary, replace this fail-closed branch with the approved map.
-    const approvedFeatureMapExists = false;
-    const hasAccess = Boolean(activeMembership && approvedFeatureMapExists && featureName);
-
     return {
-      hasAccess,
+      hasAccess: activeMembership,
       currentTier: activeMembership ? 'membership' : 'free',
       requiredTier: 'membership',
-      featureAccess: null,
-      needsUpgrade: Boolean(featureName && !hasAccess),
+      featureAccess: entitlement,
+      needsUpgrade: !activeMembership,
+      needsSignIn: false,
       gatingEnabled: true,
       isLoading,
     };
-  }, [featureName, gatingEnabled, isLoading, membership?.status]);
+  }, [entitlement, gatingEnabled, isAuthenticated, isLoading, membership?.status]);
 }
 
 export function useTierInfo() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const gatingEnabled = membershipGatingEnabled();
 
   return {
-    currentTier: gatingEnabled ? 'free' : 'relaunch-open',
+    currentTier: isAuthenticated ? 'free' : 'visitor',
     tiers: ['free', 'membership'],
     user,
     gatingEnabled,
