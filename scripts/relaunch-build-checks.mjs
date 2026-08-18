@@ -10,6 +10,7 @@ const checks = [
   ['relaunch security', 'scripts/relaunch-security-check.mjs'],
   ['relaunch authentication flow', 'scripts/relaunch-auth-flow-check.mjs'],
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
+  ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
   ['relaunch premium AI', 'scripts/relaunch-ai-feature-check.mjs'],
   ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
