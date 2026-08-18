@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Loader2, CheckCircle, User, Mail, Phone, Building, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import OtherUserSignupForm from "../components/signup/OtherUserSignupForm";
+import TurnstileWidget, { turnstileConfigured } from "../components/signup/TurnstileWidget";
 import { submitProfessionalApplication } from "@/lib/professionalApplicationService";
 
 export default function ProfessionalSignup() {
@@ -16,6 +17,8 @@ export default function ProfessionalSignup() {
   const [serviceDescription, setServiceDescription] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [otherUserBio, setOtherUserBio] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const [signupComplete, setSignupComplete] = useState(false);
   const [applicationId, setApplicationId] = useState(null);
@@ -52,6 +55,10 @@ export default function ProfessionalSignup() {
       toast.error("Professional bio must be 1000 characters or less.");
       return;
     }
+    if (turnstileConfigured() && !turnstileToken) {
+      toast.error("Please complete the secure verification before submitting.");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -61,6 +68,7 @@ export default function ProfessionalSignup() {
         lastName,
         email,
         phone,
+        turnstileToken,
         details: {
           organizationName: organizationName.trim(),
           practiceType: organizationType,
@@ -76,6 +84,10 @@ export default function ProfessionalSignup() {
     } catch (error) {
       console.error('Professional application error:', error);
       toast.error(error?.message || "We couldn't submit your application right now.");
+      if (turnstileConfigured()) {
+        setTurnstileToken("");
+        setTurnstileResetKey((value) => value + 1);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -175,8 +187,10 @@ export default function ProfessionalSignup() {
             Profile photos are added after application review so pre-membership uploads are not placed in public storage.
           </div>
 
+          <TurnstileWidget onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+
           <div className="flex justify-center">
-            <Button type="submit" disabled={isLoading} size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg px-12 py-6 h-auto shadow-xl">
+            <Button type="submit" disabled={isLoading || (turnstileConfigured() && !turnstileToken)} size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg px-12 py-6 h-auto shadow-xl">
               {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</> : <><Building className="w-5 h-5 mr-2" />Submit Application</>}
             </Button>
           </div>
