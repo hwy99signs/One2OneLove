@@ -7,8 +7,7 @@ import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-
-const RETURN_KEY = 'o2ol-return-after-auth';
+import { safeAuthReturnTo, storeAuthReturnTo } from "@/lib/authFlowService";
 
 const translations = {
   en: {
@@ -34,11 +33,6 @@ const translations = {
   }
 };
 
-const safeReturnTo = (value) => {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
-  return value;
-};
-
 const needsEmailConfirmation = (message) => {
   const normalized = String(message || '').toLowerCase();
   return normalized.includes('confirm your email') || normalized.includes('email not confirmed') || normalized.includes('email_not_confirmed');
@@ -55,7 +49,7 @@ export default function SignIn() {
   const { currentLanguage } = useLanguage();
   const { login, logout } = useAuth();
   const t = translations[currentLanguage] || translations.en;
-  const returnTo = safeReturnTo(searchParams.get('returnTo'));
+  const returnTo = safeAuthReturnTo(searchParams.get('returnTo'));
   const signupUrl = returnTo
     ? `${createPageUrl("SignUp")}?returnTo=${encodeURIComponent(returnTo)}`
     : createPageUrl("SignUp");
@@ -100,7 +94,6 @@ export default function SignIn() {
 
         toast.success("Successfully signed in!");
         setIsLoading(false);
-
         setTimeout(() => {
           window.location.replace(returnTo || createPageUrl("Profile"));
         }, 100);
@@ -124,9 +117,7 @@ export default function SignIn() {
 
     setResendLoading(true);
     try {
-      if (returnTo && typeof window !== 'undefined') {
-        window.localStorage.setItem(RETURN_KEY, returnTo);
-      }
+      if (returnTo) storeAuthReturnTo(returnTo, { durable: true });
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: normalizedEmail,
@@ -160,15 +151,11 @@ export default function SignIn() {
           <h1 className="text-3xl font-bold text-gray-900">{t.signIn.title}</h1>
         </div>
 
-        <p className="text-gray-600 mb-8 text-center">
-          {t.signIn.subtitle}
-        </p>
+        <p className="text-gray-600 mb-8 text-center">{t.signIn.subtitle}</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.signIn.email} *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t.signIn.email} *</label>
             <div className="relative">
               <Mail size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -184,9 +171,7 @@ export default function SignIn() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.signIn.password}
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t.signIn.password}</label>
             <div className="relative">
               <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -210,9 +195,7 @@ export default function SignIn() {
           </div>
 
           <div className="text-right">
-            <Link to={createPageUrl("ForgotPassword")} className="text-sm text-pink-600 hover:text-pink-700 font-medium">
-              {t.signIn.forgotPassword}
-            </Link>
+            <Link to={createPageUrl("ForgotPassword")} className="text-sm text-pink-600 hover:text-pink-700 font-medium">{t.signIn.forgotPassword}</Link>
           </div>
 
           <Button
@@ -220,14 +203,7 @@ export default function SignIn() {
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg py-6 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              t.signIn.signInButton
-            )}
+            {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Signing in...</> : t.signIn.signInButton}
           </Button>
         </form>
 
@@ -249,17 +225,12 @@ export default function SignIn() {
 
         <div className="mt-6 rounded-2xl bg-pink-50 p-4 text-center">
           <span className="text-sm text-gray-600">{t.signIn.newHere} </span>
-          <Link to={signupUrl} className="text-sm font-bold text-pink-600 hover:text-pink-700">
-            {t.signIn.createAccount}
-          </Link>
+          <Link to={signupUrl} className="text-sm font-bold text-pink-600 hover:text-pink-700">{t.signIn.createAccount}</Link>
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
           <Link to={createPageUrl("Invite")}>
-            <Button
-              variant="outline"
-              className="w-full border-2 border-pink-300 text-pink-600 hover:bg-pink-50 font-semibold py-3 rounded-xl"
-            >
+            <Button variant="outline" className="w-full border-2 border-pink-300 text-pink-600 hover:bg-pink-50 font-semibold py-3 rounded-xl">
               <UserCheck className="w-5 h-5 mr-2" />
               {t.signIn.invite}
             </Button>
