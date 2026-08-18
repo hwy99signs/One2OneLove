@@ -61,6 +61,7 @@ import FindFriends from "./FindFriends";
 import FriendRequests from "./FriendRequests";
 import PaymentSuccess from "./PaymentSuccess";
 import Subscription from "./Subscription";
+import RelaunchUnavailable from "./RelaunchUnavailable";
 import FeatureGate from "@/components/subscription/FeatureGate";
 import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 
@@ -155,7 +156,7 @@ const ROUTES = [
   ["/LoveLanguageQuiz", LoveLanguageQuiz],
   ["/DateIdeas", DateIdeas],
   ["/Profile", Profile],
-  ["/WinACruise", WinACruise],
+  ["/WinACruise", RelaunchUnavailable],
   ["/Invite", Invite],
   ["/CounselingSupport", CounselingSupport],
   ["/PodcastsSupport", PodcastsSupport],
@@ -174,7 +175,7 @@ const ROUTES = [
   ["/Meditation", Meditation, "meditation"],
   ["/CommunicationPractice", CommunicationPractice, "communication_practice"],
   ["/CouplesProfile", CouplesProfile],
-  ["/Developer", Developer],
+  ["/Developer", RelaunchUnavailable],
   ["/CoupleActivities", CoupleActivities, "couple_activities"],
   ["/SharedJournals", SharedJournals, "shared_journals"],
   ["/CooperativeGames", CooperativeGames, "cooperative_games"],
