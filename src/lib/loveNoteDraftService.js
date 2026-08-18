@@ -1,6 +1,7 @@
 const NOTE_DRAFT_KEY = 'o2ol-love-note-draft';
 const SEND_SESSION_KEY = 'o2ol-love-note-send-session';
 const SEND_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const clean = (value, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -14,6 +15,20 @@ const parse = (raw) => {
     return null;
   }
 };
+
+export function createLoveNoteRequestId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = character === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+const validRequestId = (value) => UUID_PATTERN.test(clean(value, 80));
 
 export function stashLoveNoteDraft({ message, source = 'new', title = '', recipientName = '' } = {}) {
   if (typeof window === 'undefined') return;
@@ -37,8 +52,20 @@ export function clearLoveNoteDraft() {
 }
 
 export function stashLoveNoteSendSession(input = {}) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return null;
+
+  // Preserve one request ID for the entire logical send attempt. The form is stashed on
+  // every edit and before auth/upgrade redirects; regenerating this ID on each stash would
+  // defeat provider/database idempotency after a network retry.
+  const existing = parse(window.localStorage.getItem(SEND_SESSION_KEY));
+  const clientRequestId = validRequestId(input.clientRequestId)
+    ? clean(input.clientRequestId, 80)
+    : validRequestId(existing?.clientRequestId)
+      ? clean(existing.clientRequestId, 80)
+      : createLoveNoteRequestId();
+
   const payload = {
+    clientRequestId,
     senderName: clean(input.senderName, 80),
     recipientName: clean(input.recipientName, 80),
     delivery: input.delivery === 'email' ? 'email' : 'text',
@@ -52,6 +79,7 @@ export function stashLoveNoteSendSession(input = {}) {
     expiresAt: Date.now() + SEND_SESSION_TTL_MS,
   };
   window.localStorage.setItem(SEND_SESSION_KEY, JSON.stringify(payload));
+  return payload;
 }
 
 export function loadLoveNoteSendSession() {
@@ -71,6 +99,13 @@ export function loadLoveNoteSendSession() {
     window.localStorage.removeItem(SEND_SESSION_KEY);
     return null;
   }
+
+  // Older pre-idempotency sessions are upgraded once, not discarded.
+  if (!validRequestId(payload.clientRequestId)) {
+    payload.clientRequestId = createLoveNoteRequestId();
+    window.localStorage.setItem(SEND_SESSION_KEY, JSON.stringify(payload));
+  }
+
   return payload;
 }
 
