@@ -284,3 +284,11 @@ main > section.relative.isolate + section .mt-12.grid > a::before {
     font-size: 1rem !important;
   }
 }
+
+/* Relaunch launch-safety boundary: the legacy Chat page still contains prototype
+   call state, but no WebRTC/signaling backend exists yet. Hide its header call buttons
+   rather than presenting a control that falsely appears operational. */
+button[title="Voice Call"],
+button[title="Video Call"] {
+  display: none !important;
+}
