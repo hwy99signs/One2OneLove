@@ -8,6 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const ACTIVE_MEMBERSHIP_STATUSES = new Set(['trialing', 'active'])
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -58,6 +59,32 @@ const positiveIntEnv = (name: string, min: number, max: number) => {
   const value = Number.parseInt(raw, 10)
   if (!Number.isFinite(value) || value < min || value > max) return null
   return value
+}
+
+const requireSchedulingMembership = async (serviceClient: any, userId: string) => {
+  // The product boundary can be deployed before it is activated. When the server gate is
+  // OFF, beta/testing keeps the current scheduling control available. Once enabled, the
+  // database is the authority; browser code cannot bypass the paid entitlement.
+  if (Deno.env.get('MEMBERSHIP_GATING_ENABLED') !== 'true') {
+    return { allowed: true, reason: null }
+  }
+
+  const { data, error } = await serviceClient
+    .from('member_subscriptions')
+    .select('status')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Love Note scheduling membership lookup failed:', userId, error)
+    return { allowed: false, reason: 'backend' }
+  }
+
+  if (!ACTIVE_MEMBERSHIP_STATUSES.has(clean(data?.status, 40))) {
+    return { allowed: false, reason: 'membership' }
+  }
+
+  return { allowed: true, reason: null }
 }
 
 const buildCopy = (senderName: string, revealUrl: string) => ({
@@ -219,8 +246,8 @@ serve(async (request) => {
       return json(request, { error: 'VALID_RECIPIENT_REQUIRED' }, 400)
     }
 
-    // Return the existing result before rate-limit checks so a network retry of the same
-    // logical submission never creates or sends another invitation.
+    // Return the existing result before rate-limit or entitlement checks so a network
+    // retry of an already-created logical submission never creates or sends a duplicate.
     const { data: existing, error: existingError } = await serviceClient
       .from('love_note_invitations')
       .select('id, status')
@@ -254,6 +281,18 @@ serve(async (request) => {
 
     let scheduledFor: string | null = null
     if (scheduledRaw) {
+      const schedulingAccess = await requireSchedulingMembership(serviceClient, user.id)
+      if (!schedulingAccess.allowed) {
+        if (schedulingAccess.reason === 'backend') {
+          return json(request, { error: 'Membership access could not be verified.', code: 'MEMBERSHIP_BACKEND_UNAVAILABLE' }, 503)
+        }
+        return json(request, {
+          error: 'Love Note scheduling is included with One2OneLove Membership.',
+          code: 'MEMBERSHIP_REQUIRED',
+          feature: 'love_note_scheduling',
+        }, 403)
+      }
+
       const scheduledDate = new Date(scheduledRaw)
       if (Number.isNaN(scheduledDate.getTime())) return json(request, { error: 'INVALID_SCHEDULE' }, 400)
       if (scheduledDate.getTime() <= now + 30_000) return json(request, { error: 'SCHEDULE_MUST_BE_FUTURE' }, 400)
