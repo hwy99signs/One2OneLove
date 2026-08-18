@@ -1,6 +1,5 @@
 // Supabase Edge Function: send-love-note-invitation
-// Creates a private Love Note invitation and delivers ONLY invitation copy.
-// The Love Note content itself is never sent to the SMS/email delivery provider.
+// Authenticated Love Note invitation creation/delivery.
 // DEVELOPMENT CODE. Deploy/enable only through the approved controlled rollout.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -8,16 +7,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
 
 const normalizeEmail = (value: unknown) => clean(value, 320).toLowerCase()
-
-const positiveIntEnv = (name: string) => {
-  const value = Number.parseInt(Deno.env.get(name) || '', 10)
-  return Number.isFinite(value) && value > 0 ? value : null
-}
 
 const allowedOrigins = () => {
   const configured = (Deno.env.get('LOVE_NOTE_ALLOWED_ORIGINS') || '')
@@ -38,10 +33,14 @@ const corsHeadersFor = (request: Request) => {
   }
 }
 
-const json = (request: Request, body: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
+const json = (request: Request, body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeadersFor(request), ...extraHeaders, 'Content-Type': 'application/json' },
+    headers: {
+      ...corsHeadersFor(request),
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+    },
   })
 
 const randomToken = () => {
@@ -54,17 +53,11 @@ const sha256 = async (value: string) => {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-const getSenderName = async (serviceClient: any, user: any) => {
-  const { data } = await serviceClient
-    .from('users')
-    .select('name')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  const profileName = clean(data?.name, 80)
-  const metadataName = clean(user?.user_metadata?.name, 80)
-  // Never derive a public sender display name from private account email.
-  return profileName || metadataName || 'One2OneLove member'
+const positiveIntEnv = (name: string, min: number, max: number) => {
+  const raw = Deno.env.get(name) || ''
+  const value = Number.parseInt(raw, 10)
+  if (!Number.isFinite(value) || value < min || value > max) return null
+  return value
 }
 
 const buildCopy = (senderName: string, revealUrl: string) => ({
@@ -127,7 +120,6 @@ const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: an
   })
 
   if (!response.ok) throw new Error(`SMS provider returned ${response.status}`)
-
   try {
     const payload = await response.json()
     return clean(payload?.id || payload?.message_id, 200) || null
@@ -136,70 +128,60 @@ const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: an
   }
 }
 
-const enforceSenderRateLimit = async (serviceClient: any, senderUserId: string) => {
-  const hourlyLimit = positiveIntEnv('LOVE_NOTE_MAX_PER_HOUR')
-  const dailyLimit = positiveIntEnv('LOVE_NOTE_MAX_PER_DAY')
-
-  // Do not allow the delivery kill switch to be enabled without intentional limits.
-  if (!hourlyLimit || !dailyLimit) {
-    return { allowed: false, configurationError: true, retryAfter: 0 }
+const idempotentResponse = (request: Request, existing: any) => {
+  if (!existing) return null
+  if (['scheduled', 'sent', 'delivered', 'revealed'].includes(existing.status)) {
+    return json(request, {
+      success: true,
+      invitation_id: existing.id,
+      status: existing.status,
+      idempotent: true,
+    })
   }
-
-  const now = Date.now()
-  const hourStart = new Date(now - 60 * 60 * 1000).toISOString()
-  const dayStart = new Date(now - 24 * 60 * 60 * 1000).toISOString()
-
-  const [{ count: hourCount, error: hourError }, { count: dayCount, error: dayError }] = await Promise.all([
-    serviceClient
-      .from('love_note_invitations')
-      .select('id', { count: 'exact', head: true })
-      .eq('sender_user_id', senderUserId)
-      .gte('created_at', hourStart),
-    serviceClient
-      .from('love_note_invitations')
-      .select('id', { count: 'exact', head: true })
-      .eq('sender_user_id', senderUserId)
-      .gte('created_at', dayStart),
-  ])
-
-  if (hourError || dayError) {
-    console.error('Love Note rate-limit lookup failed:', hourError || dayError)
-    return { allowed: false, configurationError: true, retryAfter: 0 }
+  if (existing.status === 'queued') {
+    return json(request, {
+      error: 'This Love Note submission is already being reconciled. Do not resend it.',
+      code: 'DELIVERY_RECONCILIATION_REQUIRED',
+      invitation_id: existing.id,
+    }, 409)
   }
-
-  if ((hourCount || 0) >= hourlyLimit) {
-    return { allowed: false, configurationError: false, retryAfter: 3600 }
-  }
-  if ((dayCount || 0) >= dailyLimit) {
-    return { allowed: false, configurationError: false, retryAfter: 86400 }
-  }
-
-  return { allowed: true, configurationError: false, retryAfter: 0 }
+  return json(request, {
+    error: 'This Love Note submission cannot be retried with the same request ID.',
+    code: 'REQUEST_ALREADY_FINALIZED',
+    invitation_id: existing.id,
+    status: existing.status,
+  }, 409)
 }
 
 serve(async (request) => {
-  if (request.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeadersFor(request) })
-  }
-  if (request.method !== 'POST') return json(request, { error: 'Method not allowed' }, 405)
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(request) })
+  if (request.method !== 'POST') return json(request, { error: 'METHOD_NOT_ALLOWED' }, 405)
 
   const origin = request.headers.get('origin') || DEFAULT_ORIGIN
-  if (!allowedOrigins().has(origin)) {
-    return json(request, { error: 'Origin not allowed', code: 'ORIGIN_NOT_ALLOWED' }, 403)
+  if (!allowedOrigins().has(origin)) return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)
+
+  if (Deno.env.get('LOVE_NOTE_DELIVERY_ENABLED') !== 'true') {
+    return json(request, { error: 'Love Note delivery is not enabled yet.', code: 'DELIVERY_DISABLED' }, 503)
   }
 
   try {
-    if (Deno.env.get('LOVE_NOTE_DELIVERY_ENABLED') !== 'true') {
-      return json(request, { error: 'Love Note delivery is not enabled yet.', code: 'DELIVERY_DISABLED' }, 503)
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader) return json(request, { error: 'AUTHENTICATION_REQUIRED' }, 401)
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
+    if (!supabaseUrl || !anonKey || !serviceRoleKey || !siteUrl || !/^https:\/\//i.test(siteUrl)) {
+      return json(request, { error: 'BACKEND_NOT_CONFIGURED' }, 503)
     }
 
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader) return json(request, { error: 'Authentication required' }, 401)
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) return json(request, { error: 'Server configuration is incomplete' }, 500)
+    const maxPerHour = positiveIntEnv('LOVE_NOTE_MAX_PER_HOUR', 1, 1000)
+    const maxPerDay = positiveIntEnv('LOVE_NOTE_MAX_PER_DAY', 1, 5000)
+    const maxScheduleDays = positiveIntEnv('LOVE_NOTE_MAX_SCHEDULE_DAYS', 1, 3650)
+    if (!maxPerHour || !maxPerDay || !maxScheduleDays) {
+      return json(request, { error: 'RATE_LIMIT_NOT_CONFIGURED' }, 503)
+    }
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -210,124 +192,126 @@ serve(async (request) => {
     })
 
     const { data: { user }, error: userError } = await userClient.auth.getUser()
-    if (userError || !user) return json(request, { error: 'Authentication required' }, 401)
+    if (userError || !user) return json(request, { error: 'AUTHENTICATION_REQUIRED' }, 401)
     if (!user.email_confirmed_at && !user.confirmed_at) {
       return json(request, { error: 'Confirm your email before sending a Love Note.', code: 'EMAIL_NOT_CONFIRMED' }, 403)
     }
 
-    const rateLimit = await enforceSenderRateLimit(serviceClient, user.id)
-    if (!rateLimit.allowed) {
-      if (rateLimit.configurationError) {
-        return json(request, { error: 'Love Note sending limits are not configured.', code: 'RATE_LIMIT_NOT_CONFIGURED' }, 503)
-      }
-      return json(
-        request,
-        { error: 'You have reached the current Love Note sending limit. Please try again later.', code: 'RATE_LIMITED' },
-        429,
-        { 'Retry-After': String(rateLimit.retryAfter) },
-      )
-    }
-
     const body = await request.json()
-    const deliveryMethod = body?.delivery_method === 'email' ? 'email' : 'sms'
+    const clientRequestId = clean(body?.client_request_id || body?.clientRequestId, 80)
+    const recipientName = clean(body?.recipient_name || body?.recipientName, 80)
+    const deliveryMethod = clean(body?.delivery_method || body?.deliveryMethod, 20).toLowerCase()
+    const noteContent = clean(body?.note_content || body?.noteContent || body?.message, 500)
+    const scheduleTimezone = clean(body?.schedule_timezone || body?.scheduleTimezone || body?.timezone, 80) || null
+    const scheduledRaw = clean(body?.scheduled_for || body?.scheduledFor || body?.scheduledAt, 80)
+
+    if (!UUID_PATTERN.test(clientRequestId)) return json(request, { error: 'INVALID_REQUEST_ID' }, 400)
+    if (!['email', 'sms'].includes(deliveryMethod)) return json(request, { error: 'INVALID_DELIVERY_METHOD' }, 400)
+    if (!noteContent) return json(request, { error: 'LOVE_NOTE_REQUIRED' }, 400)
     if (deliveryMethod === 'sms' && Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
-      return json(request, { error: 'Love Note SMS delivery is not enabled yet.', code: 'SMS_DISABLED' }, 503)
+      return json(request, { error: 'SMS delivery is not enabled.', code: 'SMS_DISABLED' }, 503)
     }
 
-    const recipientName = clean(body?.recipient_name, 80)
-    const rawRecipientContact = clean(body?.recipient_contact, 160)
-    const recipientContact = deliveryMethod === 'email' ? normalizeEmail(rawRecipientContact) : rawRecipientContact
-    const noteContent = clean(body?.note_content, 500)
-    const deliveryTime = body?.delivery_time === 'schedule' ? 'schedule' : 'now'
-    const scheduledFor = clean(body?.scheduled_for, 80)
-    const scheduleTimezone = clean(body?.schedule_timezone, 80) || 'UTC'
-
-    if (!recipientContact || !noteContent) {
-      return json(request, { error: 'Recipient contact and Love Note content are required.' }, 400)
-    }
-    if (deliveryMethod === 'email' && !EMAIL_PATTERN.test(recipientContact)) {
-      return json(request, { error: 'Enter a valid recipient email address.' }, 400)
+    const recipientContact = deliveryMethod === 'email'
+      ? normalizeEmail(body?.recipient_contact || body?.recipientContact)
+      : clean(body?.recipient_contact || body?.recipientContact, 160)
+    if (!recipientContact || (deliveryMethod === 'email' && !EMAIL_PATTERN.test(recipientContact))) {
+      return json(request, { error: 'VALID_RECIPIENT_REQUIRED' }, 400)
     }
 
-    let scheduledAt: string | null = null
-    if (deliveryTime === 'schedule') {
-      const parsed = new Date(scheduledFor)
-      const maxScheduleDays = positiveIntEnv('LOVE_NOTE_MAX_SCHEDULE_DAYS') || 365
-      const latestAllowed = Date.now() + maxScheduleDays * 24 * 60 * 60 * 1000
-      if (!scheduledFor || Number.isNaN(parsed.getTime()) || parsed.getTime() <= Date.now()) {
-        return json(request, { error: 'Scheduled delivery must be a valid future date/time.' }, 400)
+    // Return the existing result before rate-limit checks so a network retry of the same
+    // logical submission never creates or sends another invitation.
+    const { data: existing, error: existingError } = await serviceClient
+      .from('love_note_invitations')
+      .select('id, status')
+      .eq('sender_user_id', user.id)
+      .eq('client_request_id', clientRequestId)
+      .maybeSingle()
+    if (existingError) throw existingError
+    const existingResponse = idempotentResponse(request, existing)
+    if (existingResponse) return existingResponse
+
+    let senderName = ''
+    const { data: profile } = await serviceClient
+      .from('users')
+      .select('name')
+      .eq('id', user.id)
+      .maybeSingle()
+    senderName = clean(profile?.name, 80) || clean(user.user_metadata?.name, 80) || 'One2OneLove member'
+
+    const now = Date.now()
+    const hourAgo = new Date(now - 60 * 60 * 1000).toISOString()
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString()
+
+    const [{ count: hourCount, error: hourError }, { count: dayCount, error: dayError }] = await Promise.all([
+      serviceClient.from('love_note_invitations').select('id', { count: 'exact', head: true }).eq('sender_user_id', user.id).gte('created_at', hourAgo),
+      serviceClient.from('love_note_invitations').select('id', { count: 'exact', head: true }).eq('sender_user_id', user.id).gte('created_at', dayAgo),
+    ])
+    if (hourError || dayError) throw hourError || dayError
+    if ((hourCount || 0) >= maxPerHour || (dayCount || 0) >= maxPerDay) {
+      return json(request, { error: 'LOVE_NOTE_RATE_LIMITED', code: 'RATE_LIMITED' }, 429)
+    }
+
+    let scheduledFor: string | null = null
+    if (scheduledRaw) {
+      const scheduledDate = new Date(scheduledRaw)
+      if (Number.isNaN(scheduledDate.getTime())) return json(request, { error: 'INVALID_SCHEDULE' }, 400)
+      if (scheduledDate.getTime() <= now + 30_000) return json(request, { error: 'SCHEDULE_MUST_BE_FUTURE' }, 400)
+      if (scheduledDate.getTime() > now + maxScheduleDays * 24 * 60 * 60 * 1000) {
+        return json(request, { error: 'SCHEDULE_TOO_FAR' }, 400)
       }
-      if (parsed.getTime() > latestAllowed) {
-        return json(request, { error: `Love Notes can currently be scheduled up to ${maxScheduleDays} days ahead.` }, 400)
-      }
-      scheduledAt = parsed.toISOString()
+      scheduledFor = scheduledDate.toISOString()
     }
 
-    const senderName = await getSenderName(serviceClient, user)
-    const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
-    if (!siteUrl) return json(request, { error: 'SITE_URL is not configured' }, 500)
-
-    if (deliveryTime === 'schedule') {
-      const { data: invitation, error: insertError } = await serviceClient
-        .from('love_note_invitations')
-        .insert({
-          sender_user_id: user.id,
-          sender_name: senderName,
-          recipient_name: recipientName || null,
-          recipient_contact: recipientContact,
-          delivery_method: deliveryMethod,
-          note_content: noteContent,
-          token_hash: null,
-          token_expires_at: null,
-          scheduled_for: scheduledAt,
-          schedule_timezone: scheduleTimezone,
-          status: 'scheduled',
-        })
-        .select('id, status, scheduled_for, schedule_timezone, created_at')
-        .single()
-
-      if (insertError || !invitation) {
-        console.error('Scheduled Love Note invitation insert failed:', insertError)
-        return json(request, { error: 'Unable to schedule Love Note invitation.' }, 500)
-      }
-
-      return json(request, {
-        invitation_id: invitation.id,
-        status: 'scheduled',
-        scheduled_for: invitation.scheduled_for,
-        schedule_timezone: invitation.schedule_timezone,
-        sender_name: senderName,
-      })
+    let rawToken: string | null = null
+    let tokenHash: string | null = null
+    let tokenExpiresAt: string | null = null
+    if (!scheduledFor) {
+      rawToken = randomToken()
+      tokenHash = await sha256(rawToken)
+      tokenExpiresAt = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
 
-    const rawToken = randomToken()
-    const tokenHash = await sha256(rawToken)
-    const revealUrl = `${siteUrl}/LoveNoteReveal?token=${encodeURIComponent(rawToken)}`
-    const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const insertPayload = {
+      sender_user_id: user.id,
+      client_request_id: clientRequestId,
+      sender_name: senderName,
+      recipient_name: recipientName || null,
+      recipient_contact: recipientContact,
+      delivery_method: deliveryMethod,
+      note_content: noteContent,
+      token_hash: tokenHash,
+      token_expires_at: tokenExpiresAt,
+      scheduled_for: scheduledFor,
+      schedule_timezone: scheduleTimezone,
+      status: scheduledFor ? 'scheduled' : 'queued',
+    }
 
     const { data: invitation, error: insertError } = await serviceClient
       .from('love_note_invitations')
-      .insert({
-        sender_user_id: user.id,
-        sender_name: senderName,
-        recipient_name: recipientName || null,
-        recipient_contact: recipientContact,
-        delivery_method: deliveryMethod,
-        note_content: noteContent,
-        token_hash: tokenHash,
-        token_expires_at: tokenExpiresAt,
-        scheduled_for: null,
-        schedule_timezone: null,
-        status: 'queued',
-      })
-      .select('id, status, created_at')
+      .insert(insertPayload)
+      .select('id, status')
       .single()
 
-    if (insertError || !invitation) {
-      console.error('Love Note invitation insert failed:', insertError)
-      return json(request, { error: 'Unable to prepare Love Note invitation.' }, 500)
+    if (insertError) {
+      if (insertError.code === '23505') {
+        const { data: raced } = await serviceClient
+          .from('love_note_invitations')
+          .select('id, status')
+          .eq('sender_user_id', user.id)
+          .eq('client_request_id', clientRequestId)
+          .maybeSingle()
+        const racedResponse = idempotentResponse(request, raced)
+        if (racedResponse) return racedResponse
+      }
+      throw insertError
     }
 
+    if (scheduledFor) {
+      return json(request, { success: true, invitation_id: invitation.id, status: 'scheduled' })
+    }
+
+    const revealUrl = `${siteUrl}/LoveNoteReveal?token=${encodeURIComponent(rawToken || '')}`
     const copy = buildCopy(senderName, revealUrl)
 
     try {
@@ -335,16 +319,29 @@ serve(async (request) => {
         ? await deliverEmailWithResend({ to: recipientContact, invitationId: invitation.id, copy })
         : await deliverSmsThroughConfiguredAdapter({ to: recipientContact, invitationId: invitation.id, copy })
 
-      const { error: updateError } = await serviceClient
+      const { error: sentStateError } = await serviceClient
         .from('love_note_invitations')
-        .update({ status: 'sent', sent_at: new Date().toISOString(), provider_message_id: providerMessageId, failure_reason: null })
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          provider_message_id: providerMessageId,
+          failure_reason: null,
+        })
         .eq('id', invitation.id)
         .eq('status', 'queued')
 
-      if (updateError) console.error('Love Note sent-state update failed:', updateError)
-      return json(request, { invitation_id: invitation.id, status: 'sent', sender_name: senderName })
+      if (sentStateError) {
+        console.error('Love Note provider succeeded but sent-state persistence failed:', invitation.id, sentStateError)
+        return json(request, {
+          error: 'Delivery succeeded but requires server reconciliation. Do not resend this submission.',
+          code: 'DELIVERY_RECONCILIATION_REQUIRED',
+          invitation_id: invitation.id,
+        }, 503)
+      }
+
+      return json(request, { success: true, invitation_id: invitation.id, status: 'sent' })
     } catch (deliveryError) {
-      console.error('Love Note delivery failed:', deliveryError)
+      console.error('Love Note delivery failed:', invitation.id, deliveryError instanceof Error ? deliveryError.message : 'unknown')
       await serviceClient
         .from('love_note_invitations')
         .update({
@@ -354,10 +351,10 @@ serve(async (request) => {
         .eq('id', invitation.id)
         .eq('status', 'queued')
 
-      return json(request, { error: 'The Love Note invitation could not be delivered.' }, 502)
+      return json(request, { error: 'LOVE_NOTE_DELIVERY_FAILED', code: 'DELIVERY_FAILED' }, 502)
     }
   } catch (error) {
-    console.error('send-love-note-invitation error:', error)
-    return json(request, { error: 'Unable to send Love Note invitation right now.' }, 500)
+    console.error('send-love-note-invitation error:', error instanceof Error ? error.message : 'unknown')
+    return json(request, { error: 'LOVE_NOTE_SEND_UNAVAILABLE' }, 500)
   }
 })
