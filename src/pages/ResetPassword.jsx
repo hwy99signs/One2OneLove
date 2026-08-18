@@ -27,6 +27,13 @@ const copy = {
   },
 };
 
+const urlHasRecoveryMarker = () => {
+  if (typeof window === "undefined") return false;
+  const search = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return search.get("type") === "recovery" || hash.get("type") === "recovery";
+};
+
 export default function ResetPassword() {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
@@ -43,34 +50,42 @@ export default function ResetPassword() {
     let mounted = true;
     let recoverySeen = false;
 
-    const acceptSession = (session) => {
+    const acceptRecoverySession = (session) => {
       if (!mounted || !session?.user) return;
+      recoverySeen = true;
       setValidSession(true);
+      setError("");
       setChecking(false);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      if (event === "PASSWORD_RECOVERY") recoverySeen = true;
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-        acceptSession(session);
+      if (event === "PASSWORD_RECOVERY") {
+        acceptRecoverySession(session);
       }
     });
 
     const verify = async () => {
-      for (let attempt = 0; attempt < 8 && mounted; attempt += 1) {
+      // A normal SIGNED_IN/INITIAL_SESSION must never authorize this page. The only
+      // fallback accepted here is a valid authenticated session paired with Supabase's
+      // explicit recovery marker in the URL. This covers implicit recovery redirects if
+      // PASSWORD_RECOVERY fired just before this component subscribed.
+      if (urlHasRecoveryMarker()) {
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (!sessionError && data?.session?.user) {
-          acceptSession(data.session);
+          acceptRecoverySession(data.session);
           return;
         }
-        await new Promise((resolve) => window.setTimeout(resolve, 250));
       }
 
-      if (!mounted) return;
+      // Give the auth client a short window to process a legitimate PKCE recovery code
+      // and emit PASSWORD_RECOVERY. Do not upgrade an ordinary signed-in session.
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      if (!mounted || recoverySeen) return;
+
       setChecking(false);
       setValidSession(false);
-      if (!recoverySeen) setError(t.invalid);
+      setError(t.invalid);
     };
 
     void verify();
@@ -84,6 +99,10 @@ export default function ResetPassword() {
     event.preventDefault();
     setError("");
 
+    if (!validSession) {
+      setError(t.invalid);
+      return;
+    }
     if (password.length < 8) {
       setError(t.short);
       return;
@@ -98,6 +117,7 @@ export default function ResetPassword() {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
       setSuccess(true);
+      setValidSession(false);
       try { await supabase.auth.signOut(); } catch (signOutError) { console.warn("Post-reset sign out failed:", signOutError); }
     } catch (updateError) {
       console.error("Password update failed:", updateError);
