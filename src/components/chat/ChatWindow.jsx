@@ -8,6 +8,12 @@ import { markMessagesAsRead } from '@/lib/chatService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+const privacySafeAvatar = (value) => {
+  const url = String(value || '').trim();
+  if (!url || url.includes('api.dicebear.com')) return null;
+  return url;
+};
+
 /**
  * Relaunch Chat window.
  *
@@ -50,9 +56,7 @@ export default function ChatWindow({
     };
 
     void markRead();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [chat?.id, currentUserId, queryClient]);
 
   useEffect(() => {
@@ -63,11 +67,9 @@ export default function ChatWindow({
     return (
       <div className="flex flex-1 items-center justify-center bg-gray-50 p-6">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-            <MessageCircle className="h-8 w-8 text-gray-400" />
-          </div>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200"><MessageCircle className="h-8 w-8 text-gray-400" /></div>
           <p className="font-medium text-gray-600">Select a chat to start messaging</p>
-          <p className="mt-1 text-sm text-gray-400">Private one-to-one messaging stays between the two participants.</p>
+          <p className="mt-1 text-sm text-gray-400">Private one-to-one messaging stays between accepted connections.</p>
         </div>
       </div>
     );
@@ -83,23 +85,18 @@ export default function ChatWindow({
     }
   };
 
+  const avatarUrl = privacySafeAvatar(chat.avatar);
+
   return (
     <div className="flex h-full flex-1 flex-col bg-gray-50">
       <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Back to chats"
-              className="flex-shrink-0 rounded-full p-2 transition-colors hover:bg-gray-100 lg:hidden"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
+            <button type="button" onClick={onBack} aria-label="Back to chats" className="flex-shrink-0 rounded-full p-2 transition-colors hover:bg-gray-100 lg:hidden"><ArrowLeft className="h-5 w-5 text-gray-600" /></button>
           )}
 
           <Avatar className="h-10 w-10 flex-shrink-0">
-            <AvatarImage src={chat.avatar} alt={chat.name || 'Member'} />
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={chat.name || 'Member'} /> : null}
             <AvatarFallback>{chat.name?.charAt(0) || 'M'}</AvatarFallback>
           </Avatar>
 
@@ -110,34 +107,16 @@ export default function ChatWindow({
         </div>
 
         {onArchive && (
-          <button
-            type="button"
-            onClick={() => void handleArchive()}
-            title="Archive chat"
-            aria-label="Archive chat"
-            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
-          >
-            <Archive className="h-5 w-5" />
-          </button>
+          <button type="button" onClick={() => void handleArchive()} title="Archive chat" aria-label="Archive chat" className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"><Archive className="h-5 w-5" /></button>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-4xl p-4">
           {isLoading && messages.length === 0 ? (
-            <div className="flex min-h-[240px] items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-purple-500" />
-                <p className="text-sm text-gray-500">Loading messages…</p>
-              </div>
-            </div>
+            <div className="flex min-h-[240px] items-center justify-center"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-purple-500" /><p className="text-sm text-gray-500">Loading messages…</p></div></div>
           ) : messages.length === 0 ? (
-            <div className="flex min-h-[240px] items-center justify-center text-center">
-              <div>
-                <p className="font-medium text-gray-600">No messages yet</p>
-                <p className="mt-1 text-sm text-gray-400">Send the first message when you're ready.</p>
-              </div>
-            </div>
+            <div className="flex min-h-[240px] items-center justify-center text-center"><div><p className="font-medium text-gray-600">No messages yet</p><p className="mt-1 text-sm text-gray-400">Send the first message when you're ready.</p></div></div>
           ) : (
             <div className="space-y-1">
               {messages.map((message, index) => (
@@ -155,12 +134,7 @@ export default function ChatWindow({
         </div>
       </div>
 
-      <ChatComposerRelaunch
-        onSendMessage={onSendMessage}
-        onSendFile={onSendFile}
-        onSendLocation={onSendLocation}
-        disabled={isLoading}
-      />
+      <ChatComposerRelaunch onSendMessage={onSendMessage} onSendFile={onSendFile} onSendLocation={onSendLocation} disabled={isLoading} />
     </div>
   );
 }
