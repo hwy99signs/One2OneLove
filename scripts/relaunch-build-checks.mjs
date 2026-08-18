@@ -14,6 +14,7 @@ const checks = [
   ['relaunch premium data', 'scripts/relaunch-premium-data-check.mjs'],
   ['relaunch profile/navigation', 'scripts/relaunch-profile-navigation-check.mjs'],
   ['relaunch acquisition', 'scripts/relaunch-acquisition-check.mjs'],
+  ['relaunch route safety', 'scripts/relaunch-route-safety-check.mjs'],
 ];
 
 console.log(`\nOne2OneLove relaunch build checks — ${strict ? 'STRICT' : 'PREVIEW/ADVISORY'} mode`);
