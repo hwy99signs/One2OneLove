@@ -61,6 +61,7 @@ import FindFriends from "./FindFriends";
 import FriendRequests from "./FriendRequests";
 import PaymentSuccess from "./PaymentSuccess";
 import Subscription from "./Subscription";
+import FeatureGate from "@/components/subscription/FeatureGate";
 import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 
 const PAGES = {
@@ -127,6 +128,8 @@ const PAGES = {
   Subscription,
 };
 
+// Third tuple value is an approved paid entitlement key. The FeatureGate remains
+// transparent until VITE_MEMBERSHIP_GATING_ENABLED=true after controlled billing tests.
 const ROUTES = [
   ["/", Home],
   ["/Home", Home],
@@ -140,7 +143,7 @@ const ROUTES = [
   ["/signup", SignUp],
   ["/auth/callback", AuthCallback],
   ["/ResetPassword", ResetPassword],
-  ["/MemoryLane", MemoryLane],
+  ["/MemoryLane", MemoryLane, "memory_lane"],
   ["/LoveNotes", LoveNotes],
   ["/LoveNotesCollection", LoveNotesCollection],
   ["/LoveNotes/Send", LoveNoteSendDemo],
@@ -158,25 +161,25 @@ const ROUTES = [
   ["/PodcastsSupport", PodcastsSupport],
   ["/ArticlesSupport", ArticlesSupport],
   ["/InfluencersSupport", InfluencersSupport],
-  ["/RelationshipQuizzes", RelationshipQuizzes],
-  ["/AnniversaryTracker", AnniversaryTracker],
+  ["/RelationshipQuizzes", RelationshipQuizzes, "advanced_relationship_quizzes"],
+  ["/AnniversaryTracker", AnniversaryTracker, "anniversary_tracker"],
   ["/ForgotPassword", ForgotPassword],
-  ["/AIContentCreator", AIContentCreator],
+  ["/AIContentCreator", AIContentCreator, "ai_content_creator"],
   ["/Dashboard", Dashboard],
   ["/Community", Community],
   ["/LiveRoom", LiveRoom],
-  ["/RelationshipMilestones", RelationshipMilestones],
-  ["/RelationshipCoach", RelationshipCoach],
-  ["/RelationshipGoals", RelationshipGoals],
-  ["/Meditation", Meditation],
-  ["/CommunicationPractice", CommunicationPractice],
+  ["/RelationshipMilestones", RelationshipMilestones, "relationship_milestones"],
+  ["/RelationshipCoach", RelationshipCoach, "relationship_coach"],
+  ["/RelationshipGoals", RelationshipGoals, "relationship_goals"],
+  ["/Meditation", Meditation, "meditation"],
+  ["/CommunicationPractice", CommunicationPractice, "communication_practice"],
   ["/CouplesProfile", CouplesProfile],
   ["/Developer", Developer],
-  ["/CoupleActivities", CoupleActivities],
-  ["/SharedJournals", SharedJournals],
-  ["/CooperativeGames", CooperativeGames],
-  ["/CouplesDashboard", CouplesDashboard],
-  ["/CouplesCalendar", CouplesCalendar],
+  ["/CoupleActivities", CoupleActivities, "couple_activities"],
+  ["/SharedJournals", SharedJournals, "shared_journals"],
+  ["/CooperativeGames", CooperativeGames, "cooperative_games"],
+  ["/CouplesDashboard", CouplesDashboard, "couples_dashboard"],
+  ["/CouplesCalendar", CouplesCalendar, "couples_calendar"],
   ["/LGBTQSupport", LGBTQSupport],
   ["/HelpCenter", HelpCenter],
   ["/ContactUs", ContactUs],
@@ -227,8 +230,20 @@ function PagesContent() {
       <ScrollToTop />
       <Layout currentPageName={currentPage}>
         <Routes>
-          {ROUTES.map(([path, Component]) => (
-            <Route key={path} path={path} element={<Component />} />
+          {ROUTES.map(([path, Component, entitlement]) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                entitlement ? (
+                  <FeatureGate feature={entitlement}>
+                    <Component />
+                  </FeatureGate>
+                ) : (
+                  <Component />
+                )
+              }
+            />
           ))}
         </Routes>
       </Layout>
