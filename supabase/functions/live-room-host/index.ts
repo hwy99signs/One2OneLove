@@ -42,6 +42,11 @@ const rooms: Record<string, { name: string; topic: string }> = {
 const cleanText = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
 
+const sha256Hex = async (value: string) => {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 const allowedOrigins = () => {
   const configured = (Deno.env.get('LIVE_ROOM_ALLOWED_ORIGINS') || '')
     .split(',')
@@ -99,6 +104,7 @@ const claimGenerationSlot = async (
   serviceClient: any,
   roomSlug: string,
   language: string,
+  contextHash: string,
   reason: string,
 ) => {
   const bucket = bucketStart(generationIntervalSeconds())
@@ -107,6 +113,7 @@ const claimGenerationSlot = async (
     .insert({
       room_slug: roomSlug,
       language,
+      context_hash: contextHash,
       bucket_start: bucket,
       reason,
       status: 'generating',
@@ -128,6 +135,7 @@ const claimGenerationSlot = async (
     .select('id, status, prompt, source')
     .eq('room_slug', roomSlug)
     .eq('language', language)
+    .eq('context_hash', contextHash)
     .eq('bucket_start', bucket)
     .maybeSingle()
 
@@ -204,9 +212,11 @@ serve(async (request) => {
     const apiKey = Deno.env.get('OPENAI_API_KEY') || ''
     if (!apiKey) return fallbackResponse(request)
 
+    const contextHash = await sha256Hex(JSON.stringify({ roomSlug, language, reason, recentMessages }))
+
     // The cache is a cost guard, not just an optimization. If it is unavailable, do not
     // make an uncached AI call that could multiply across many room participants.
-    const slot = await claimGenerationSlot(serviceClient, roomSlug, language, reason)
+    const slot = await claimGenerationSlot(serviceClient, roomSlug, language, contextHash, reason)
     if (slot.cachedPrompt) return json(request, { prompt: slot.cachedPrompt, source: 'ai' })
     if (!slot.ownsSlot || !slot.id) return fallbackResponse(request)
 
