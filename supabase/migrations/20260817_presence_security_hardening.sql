@@ -1,11 +1,35 @@
 -- One2OneLove relaunch: user presence security hardening
--- DEVELOPMENT MIGRATION ONLY. Do not apply to production without explicit approval.
+-- DEVELOPMENT MIGRATION ONLY. Apply to production only through an approved batch.
 --
--- Legacy SECURITY DEFINER presence RPCs accept a caller-supplied user UUID. Without
--- an auth.uid() check an authenticated caller can spoof another member's presence.
--- The legacy helper view also exposes profile email even though the client needs
--- only presence state. This migration constrains writes to the caller and removes
--- email from the presence view.
+-- Hardening goals:
+--   * Callers can update/heartbeat only their own presence.
+--   * Browser roles cannot directly INSERT/UPDATE/DELETE presence rows.
+--   * SECURITY DEFINER functions use a fixed search_path.
+--   * Presence projections never expose member email/private profile data.
+--   * Maintenance cleanup is service-role only.
+
+begin;
+
+alter table public.user_presence enable row level security;
+
+-- Legacy setup granted ALL on this table. Realtime/browser clients only need SELECT;
+-- state changes go through the authenticated RPCs below.
+revoke all on table public.user_presence from anon, authenticated;
+grant select on table public.user_presence to authenticated;
+
+-- Keep only the read policy at the table layer. Removing direct write policies prevents
+-- accidental permission broadening if table grants are changed later.
+drop policy if exists "Users can insert own presence" on public.user_presence;
+drop policy if exists "Users can update own presence" on public.user_presence;
+drop policy if exists "Users can delete own presence" on public.user_presence;
+
+-- Preserve/normalize the authenticated read policy used by realtime presence UI.
+drop policy if exists "Anyone can view user presence" on public.user_presence;
+create policy "Authenticated members can view presence"
+on public.user_presence
+for select
+to authenticated
+using (true);
 
 create or replace function public.update_user_presence(
   p_user_id uuid,
@@ -57,35 +81,100 @@ begin
 end;
 $$;
 
+create or replace function public.get_user_presence(p_user_id uuid)
+returns table(
+  user_id uuid,
+  status text,
+  last_seen timestamptz,
+  is_online boolean
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select
+    up.user_id,
+    up.status,
+    up.last_seen,
+    (up.last_active > now() - interval '5 minutes' and up.status = 'online') as is_online
+  from public.user_presence up
+  where up.user_id = p_user_id;
+$$;
+
+create or replace function public.get_online_users_count()
+returns bigint
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select count(*)
+  from public.user_presence
+  where status = 'online'
+    and last_active > now() - interval '5 minutes';
+$$;
+
+create or replace function public.get_online_users()
+returns table(
+  user_id uuid,
+  status text,
+  last_seen timestamptz
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select up.user_id, up.status, up.last_seen
+  from public.user_presence up
+  where up.status = 'online'
+    and up.last_active > now() - interval '5 minutes'
+  order by up.last_active desc;
+$$;
+
+create or replace function public.cleanup_stale_presence()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.user_presence
+  set status = 'offline', updated_at = now()
+  where status = 'online'
+    and last_active < now() - interval '5 minutes';
+$$;
+
 -- SECURITY DEFINER functions are executable by PUBLIC unless explicitly revoked.
 revoke all on function public.update_user_presence(uuid, text) from public;
 revoke all on function public.heartbeat_user_presence(uuid) from public;
-grant execute on function public.update_user_presence(uuid, text) to authenticated;
-grant execute on function public.heartbeat_user_presence(uuid) to authenticated;
-
 revoke all on function public.get_user_presence(uuid) from public;
 revoke all on function public.get_online_users_count() from public;
 revoke all on function public.get_online_users() from public;
+revoke all on function public.cleanup_stale_presence() from public;
+
+grant execute on function public.update_user_presence(uuid, text) to authenticated;
+grant execute on function public.heartbeat_user_presence(uuid) to authenticated;
 grant execute on function public.get_user_presence(uuid) to authenticated;
 grant execute on function public.get_online_users_count() to authenticated;
 grant execute on function public.get_online_users() to authenticated;
-
--- Cleanup is an internal maintenance function, not a member-facing RPC.
-revoke all on function public.cleanup_stale_presence() from public;
 grant execute on function public.cleanup_stale_presence() to service_role;
 
--- The relaunch client requests only user_id/status/timestamps/is_online/last_seen_text.
--- Keep name/avatar available for any existing UI consumers but do not expose email.
+-- Use the already-sanitized member directory rather than joining public.users directly.
+-- The client currently requests only the presence fields, but name/avatar remain here for
+-- compatibility with any reviewed authenticated UI that needs them.
 drop view if exists public.user_presence_view;
-create view public.user_presence_view as
+create view public.user_presence_view
+with (security_barrier = true)
+as
 select
   up.user_id,
   up.status,
   up.last_seen,
   up.last_active,
   up.updated_at,
-  u.name,
-  u.avatar_url,
+  md.name,
+  md.avatar_url,
   (up.last_active > now() - interval '5 minutes' and up.status = 'online') as is_online,
   case
     when up.last_active > now() - interval '5 minutes' and up.status = 'online' then 'Online'
@@ -96,10 +185,20 @@ select
     else 'Long time ago'
   end as last_seen_text
 from public.user_presence up
-left join public.users u on u.id = up.user_id;
+left join public.member_directory md on md.id = up.user_id;
 
 revoke all on public.user_presence_view from public;
+revoke all on public.user_presence_view from anon;
 grant select on public.user_presence_view to authenticated;
 
+comment on table public.user_presence is
+  'Presence state readable by authenticated members; browser writes are mediated by caller-bound RPCs.';
 comment on view public.user_presence_view is
-  'Authenticated presence projection; intentionally excludes member email and other private profile fields.';
+  'Authenticated presence projection joined only to privacy-safe member_directory fields; no member email/private profile data.';
+
+commit;
+
+-- PRE-APPLY ORDER
+-- 1. Apply 20260817_member_directory_privacy.sql first.
+-- 2. Apply this migration before the users-table privacy lockdown.
+-- 3. Test login/logout, heartbeat, visibility changes, online counts and realtime updates.
