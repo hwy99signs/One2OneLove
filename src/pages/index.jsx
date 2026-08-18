@@ -20,7 +20,6 @@ import CoupleSupport from "./CoupleSupport";
 import LoveLanguageQuiz from "./LoveLanguageQuizRelaunch";
 import DateIdeas from "./DateIdeas";
 import Profile from "./ProfileRelaunch";
-import WinACruise from "./WinACruise";
 import Invite from "./InviteRelaunch";
 import CounselingSupport from "./CounselingSupport";
 import PodcastsSupport from "./PodcastsSupport";
@@ -38,8 +37,6 @@ import RelationshipCoach from "./RelationshipCoach";
 import RelationshipGoals from "./RelationshipGoalsRelaunch";
 import Meditation from "./Meditation";
 import CommunicationPractice from "./CommunicationPractice";
-import CouplesProfile from "./CouplesProfile";
-import Developer from "./Developer";
 import CoupleActivities from "./CoupleActivities";
 import SharedJournals from "./SharedJournals";
 import CooperativeGames from "./CooperativeGames";
@@ -53,8 +50,6 @@ import TermsOfService from "./TermsOfService";
 import Blog from "./Blog";
 import Reviews from "./Reviews";
 import Suggestions from "./Suggestions";
-import Leaderboard from "./Leaderboard";
-import Achievements from "./Achievements";
 import PremiumFeatures from "./PremiumFeatures";
 import Chat from "./Chat";
 import FindFriends from "./FindFriends";
@@ -86,7 +81,6 @@ const PAGES = {
   LoveLanguageQuiz,
   DateIdeas,
   Profile,
-  WinACruise,
   Invite,
   CounselingSupport,
   PodcastsSupport,
@@ -104,8 +98,6 @@ const PAGES = {
   RelationshipGoals,
   Meditation,
   CommunicationPractice,
-  CouplesProfile,
-  Developer,
   CoupleActivities,
   SharedJournals,
   CooperativeGames,
@@ -119,8 +111,6 @@ const PAGES = {
   Blog,
   Reviews,
   Suggestions,
-  Leaderboard,
-  Achievements,
   PremiumFeatures,
   Chat,
   FindFriends,
@@ -131,6 +121,9 @@ const PAGES = {
 
 // Third tuple value is an approved paid entitlement key. The FeatureGate remains
 // transparent until VITE_MEMBERSHIP_GATING_ENABLED=true after controlled billing tests.
+// Legacy pages that contain mock rankings/rewards, developer indexes, unverified couple
+// account assumptions or retired campaigns stay preserved in source but are fenced from
+// the public relaunch route surface with RelaunchUnavailable.
 const ROUTES = [
   ["/", Home],
   ["/Home", Home],
@@ -174,7 +167,7 @@ const ROUTES = [
   ["/RelationshipGoals", RelationshipGoals, "relationship_goals"],
   ["/Meditation", Meditation, "meditation"],
   ["/CommunicationPractice", CommunicationPractice, "communication_practice"],
-  ["/CouplesProfile", CouplesProfile],
+  ["/CouplesProfile", RelaunchUnavailable],
   ["/Developer", RelaunchUnavailable],
   ["/CoupleActivities", CoupleActivities, "couple_activities"],
   ["/SharedJournals", SharedJournals, "shared_journals"],
@@ -189,8 +182,8 @@ const ROUTES = [
   ["/Blog", Blog],
   ["/Reviews", Reviews],
   ["/Suggestions", Suggestions],
-  ["/Leaderboard", Leaderboard],
-  ["/Achievements", Achievements],
+  ["/Leaderboard", RelaunchUnavailable],
+  ["/Achievements", RelaunchUnavailable],
   ["/PremiumFeatures", PremiumFeatures],
   ["/Chat", Chat],
   ["/FindFriends", FindFriends],
