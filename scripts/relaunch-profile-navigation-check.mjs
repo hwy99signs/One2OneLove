@@ -12,8 +12,10 @@ const files = {
   sharedLayout: 'src/Layout.jsx',
   layout: 'src/pages/LayoutRelaunch.jsx',
   profileShim: 'src/pages/ProfileRelaunch.jsx',
+  profileShell: 'src/pages/ProfileRelaunchShell.jsx',
   profile: 'src/pages/ProfileRelaunchSafe.jsx',
   profileService: 'src/lib/profileService.js',
+  privacyCenter: 'src/pages/PrivacyCenter.jsx',
   unavailable: 'src/pages/RelaunchUnavailable.jsx',
 };
 
@@ -25,8 +27,10 @@ const router = exists(files.router) ? read(files.router) : '';
 const sharedLayout = exists(files.sharedLayout) ? read(files.sharedLayout) : '';
 const layout = exists(files.layout) ? read(files.layout) : '';
 const profileShim = exists(files.profileShim) ? read(files.profileShim) : '';
+const profileShell = exists(files.profileShell) ? read(files.profileShell) : '';
 const profile = exists(files.profile) ? read(files.profile) : '';
 const profileService = exists(files.profileService) ? read(files.profileService) : '';
+const privacyCenter = exists(files.privacyCenter) ? read(files.privacyCenter) : '';
 const unavailable = exists(files.unavailable) ? read(files.unavailable) : '';
 
 check(
@@ -35,9 +39,25 @@ check(
   'The public Profile route must not drift back to the legacy fake-activity page.'
 );
 check(
-  'Profile shim resolves to privacy-explicit relaunch page',
-  profileShim.includes("export { default } from './ProfileRelaunchSafe'"),
-  'The reviewed profile privacy surface must remain the public implementation.'
+  'Profile shim resolves through privacy-aware relaunch shell',
+  profileShim.includes("export { default } from './ProfileRelaunchShell'"),
+  'The public Profile entry point must include the reviewed profile plus discoverable privacy controls.'
+);
+check(
+  'Profile shell preserves reviewed profile and exposes Privacy Center',
+  profileShell.includes("import ProfileRelaunchSafe from './ProfileRelaunchSafe'")
+    && profileShell.includes('<ProfileRelaunchSafe />')
+    && profileShell.includes('to="/PrivacyCenter"')
+    && profileShell.includes('Privacy & Account Controls'),
+  'Members must be able to find privacy/account controls from their Profile without replacing the reviewed profile surface.'
+);
+check(
+  'Privacy Center remains an explicit authenticated relaunch route',
+  router.includes('import PrivacyCenter from "./PrivacyCenter"')
+    && router.includes('["/PrivacyCenter", PrivacyCenter]')
+    && privacyCenter.includes('Privacy & Account Controls')
+    && privacyCenter.includes('if (!isAuthenticated)'),
+  'Privacy/account controls must be reachable but remain account-authenticated.'
 );
 check(
   'router uses relaunch Relationship Goals',
