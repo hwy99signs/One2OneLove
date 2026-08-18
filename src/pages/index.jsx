@@ -21,7 +21,7 @@ import LoveLanguageQuiz from "./LoveLanguageQuizRelaunch";
 import DateIdeas from "./DateIdeas";
 import Profile from "./ProfileRelaunch";
 import WinACruise from "./WinACruise";
-import Invite from "./Invite";
+import Invite from "./InviteRelaunch";
 import CounselingSupport from "./CounselingSupport";
 import PodcastsSupport from "./PodcastsSupport";
 import ArticlesSupport from "./ArticlesSupport";
