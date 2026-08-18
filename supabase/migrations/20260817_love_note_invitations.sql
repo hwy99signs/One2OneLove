@@ -1,17 +1,20 @@
 -- One2OneLove Love Notes private invitation/reveal model.
 -- DEVELOPMENT MIGRATION ONLY. Apply to production only through an approved batch.
 --
--- Privacy model:
+-- Privacy / reliability model:
 --   * Raw reveal tokens are never stored; only SHA-256 hashes are persisted.
 --   * Browser clients never read/write the delivery table directly.
 --   * Authenticated sender/recipient history is exposed only through a safe projection.
 --   * All delivery/reveal state changes are performed server-side with validated callers.
+--   * Each sender submission carries a client_request_id so network retries cannot create
+--     or send a second invitation for the same logical submission.
 
 begin;
 
 create table if not exists public.love_note_invitations (
   id uuid primary key default gen_random_uuid(),
   sender_user_id uuid not null references auth.users(id) on delete cascade,
+  client_request_id uuid not null,
   recipient_user_id uuid references auth.users(id) on delete set null,
   sender_name text not null check (char_length(sender_name) between 1 and 80),
   recipient_name text check (recipient_name is null or char_length(recipient_name) <= 80),
@@ -37,7 +40,8 @@ create table if not exists public.love_note_invitations (
   constraint love_note_token_pair check (
     (token_hash is null and token_expires_at is null)
     or (token_hash is not null and token_expires_at is not null)
-  )
+  ),
+  unique (sender_user_id, client_request_id)
 );
 
 create unique index if not exists love_note_invitations_token_hash_uidx
@@ -64,6 +68,7 @@ revoke all on table public.love_note_invitations from anon, authenticated;
 -- Defense-in-depth row policy for any future controlled direct grant. The current
 -- relaunch does NOT grant browser SELECT on the table itself.
 drop policy if exists "love_note_sender_select_own" on public.love_note_invitations;
+drop policy if exists "love_note_participants_select_own" on public.love_note_invitations;
 create policy "love_note_participants_select_own"
   on public.love_note_invitations
   for select
@@ -91,7 +96,7 @@ before update on public.love_note_invitations
 for each row execute function public.set_love_note_invitation_updated_at();
 
 -- Safe browser history projection. It intentionally excludes recipient_contact,
--- token_hash/token_expires_at, provider_message_id and failure_reason.
+-- client_request_id, token_hash/token_expires_at, provider_message_id and failure_reason.
 drop view if exists public.love_note_invitation_history;
 create view public.love_note_invitation_history
 with (security_barrier = true)
@@ -120,8 +125,8 @@ revoke all on public.love_note_invitation_history from anon;
 grant select on public.love_note_invitation_history to authenticated;
 
 comment on table public.love_note_invitations is
-  'Private Love Notes delivery records. Raw reveal tokens are never stored; browser roles have no direct table access.';
+  'Private Love Notes delivery records. Raw reveal tokens are never stored; browser roles have no direct table access; sender client_request_id prevents duplicate logical submissions.';
 comment on view public.love_note_invitation_history is
-  'Participant-only Love Note history projection. Excludes raw recipient contact, token hashes and provider/delivery internals.';
+  'Participant-only Love Note history projection. Excludes raw recipient contact, request IDs, token hashes and provider/delivery internals.';
 
 commit;
