@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Loader2, CheckCircle, User, Mail, Phone, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import InfluencerSignupForm from "../components/signup/InfluencerSignupForm";
+import TurnstileWidget, { turnstileConfigured } from "../components/signup/TurnstileWidget";
 import { submitProfessionalApplication } from "@/lib/professionalApplicationService";
 
 export default function InfluencerSignup() {
@@ -17,6 +18,8 @@ export default function InfluencerSignup() {
   const [collaborationTypes, setCollaborationTypes] = useState([]);
   const [mediaKitUrl, setMediaKitUrl] = useState("");
   const [influencerBio, setInfluencerBio] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const [signupComplete, setSignupComplete] = useState(false);
   const [applicationId, setApplicationId] = useState(null);
@@ -47,6 +50,10 @@ export default function InfluencerSignup() {
       toast.error("Bio must be at least 100 characters.");
       return;
     }
+    if (turnstileConfigured() && !turnstileToken) {
+      toast.error("Please complete the secure verification before submitting.");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -56,6 +63,7 @@ export default function InfluencerSignup() {
         lastName,
         email,
         phone,
+        turnstileToken,
         details: {
           platformLinks,
           followerCount: followerCount ? Number(followerCount) : null,
@@ -72,6 +80,10 @@ export default function InfluencerSignup() {
     } catch (error) {
       console.error('Influencer application error:', error);
       toast.error(error?.message || "We couldn't submit your application right now.");
+      if (turnstileConfigured()) {
+        setTurnstileToken("");
+        setTurnstileResetKey((value) => value + 1);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -172,8 +184,10 @@ export default function InfluencerSignup() {
             Profile photos are added after application review so pre-membership uploads are not placed in public storage.
           </div>
 
+          <TurnstileWidget onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+
           <div className="flex justify-center">
-            <Button type="submit" disabled={isLoading} size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-lg px-12 py-6 h-auto shadow-xl">
+            <Button type="submit" disabled={isLoading || (turnstileConfigured() && !turnstileToken)} size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-lg px-12 py-6 h-auto shadow-xl">
               {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</> : <><Heart className="w-5 h-5 mr-2 fill-current" />Submit Application</>}
             </Button>
           </div>
