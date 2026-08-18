@@ -10,54 +10,67 @@ const requestAlias = read('src/pages/FriendRequests.jsx');
 const requestPage = read('src/pages/FriendRequestsRelaunch.jsx');
 const profile = read('src/pages/ProfileRelaunchSafe.jsx');
 const buddyService = read('src/lib/buddyService.js');
-const directoryMigration = read('supabase/migrations/20260817_member_directory_privacy.sql');
+const memberMedia = read('src/lib/memberMedia.js');
+const chatPage = read('src/pages/Chat.jsx');
+const relaunchChatService = read('src/lib/relaunchChatService.js');
+const directoryMigration = read('supabase/migrations/20260818_member_directory_minimization.sql');
 const chatGate = read('supabase/migrations/20260818_chat_connection_gate.sql');
 const composer = read('src/components/chat/ChatComposerRelaunch.jsx');
 
 const directorySelect = directoryMigration.match(/as\s+select([\s\S]*?)from\s+public\.users/i)?.[1] || '';
 
-check('member discovery uses relaunch page', findAlias.includes("./FindFriendsRelaunch"), 'Legacy discovery UI must not reintroduce direct pre-accept Chat.');
-check('connection requests use relaunch page', requestAlias.includes("./FriendRequestsRelaunch"), 'Legacy request UI must not expose account email.');
+check('member discovery uses relaunch page', findAlias.includes('./FindFriendsRelaunch'), 'Legacy discovery UI must not reintroduce direct pre-accept Chat.');
+check('connection requests use relaunch page', requestAlias.includes('./FriendRequestsRelaunch'), 'Legacy request UI must not expose account email.');
 check('member discovery never renders account email', !findPage.includes('member.email') && !findPage.includes('userData.email'), 'Directory surface must stay on privacy-safe profile fields.');
 check('request page never renders account email', !requestPage.includes('.email') && requestPage.includes('Account email is never shown here.'), 'Connection-request identity is name/avatar/bio only.');
-check('private Chat button requires accepted connection in UI', findPage.includes('const connected = connectedIds.has(member.id)') && findPage.includes("connected ? <Button") && findPage.includes('/Chat?userId='), 'Pending/unconnected members should not get a direct Chat control.');
+check('private Chat button requires accepted connection in UI', findPage.includes('const connected = connectedIds.has(member.id)') && findPage.includes('connected ? <Button') && findPage.includes('/Chat?userId='), 'Pending/unconnected members should not get a direct Chat control.');
 
 check(
-  'member directory exposes only the disclosed regular-member projection',
+  'member directory exposes only the minimized regular-member projection',
   directorySelect.includes('id,')
     && directorySelect.includes('name,')
     && directorySelect.includes('avatar_url,')
     && directorySelect.includes('bio,')
-    && directorySelect.includes('relationship_status,')
-    && directorySelect.includes('location,')
     && directorySelect.includes('created_at')
     && !directorySelect.includes('email')
+    && !directorySelect.includes('relationship_status')
+    && !directorySelect.includes('location')
     && !directorySelect.includes('partner_')
     && !directorySelect.includes('interests')
     && !directorySelect.includes('user_type')
     && directoryMigration.includes("coalesce(user_type, 'regular') = 'regular'"),
-  'The database projection itself should exclude email, partner data, interests and role/account type rather than relying only on UI restraint.'
+  'The database projection itself must expose only id/name/avatar/bio/member-since and exclude relationship/account data.'
 );
 check(
-  'profile disclosure matches the member directory fields',
-  profile.includes('name, profile image, short bio, general location, relationship status and member-since date')
-    && profile.includes('account email, anniversary, partner name and Love Language are not included in the member directory'),
-  'Members should be told what discovery actually exposes and what remains account-private.'
+  'profile disclosure matches the minimized member directory',
+  profile.includes('only your display name, optional profile image, short bio and member-since date')
+    && profile.includes('location, relationship status, anniversary, partner information and Love Language remain account-private'),
+  'Members should be told the same privacy boundary enforced by the directory.'
 );
 check(
   'buddy service requests only the minimized directory contract',
-  buddyService.includes("'relationship_status',\n  'location',\n  'created_at'")
-    && !buddyService.includes("'user_type',")
-    && !buddyService.includes("'interests',")
-    && !buddyService.includes(".eq('user_type'")
+  buddyService.includes("const PUBLIC_MEMBER_FIELDS = 'id,name,avatar_url,bio,created_at'")
+    && !buddyService.includes('location.ilike')
+    && !buddyService.includes('relationship_status.ilike')
     && !buddyService.includes(".from('users')"),
-  'Browser discovery must not request fields the staged member directory deliberately removed.'
+  'Browser discovery must not request hidden relationship/location/account fields.'
 );
 check(
   'buddy request reads avoid broad select-star projections',
   !buddyService.includes(".from('buddy_requests')\n      .select('*')"),
   'Connection request operations should request only the fields needed by the relaunch UI.'
 );
+
+check(
+  'member avatars are restricted to first-party profile-picture URLs',
+  memberMedia.includes('candidate.origin !== expectedOrigin')
+    && memberMedia.includes("candidate.pathname.startsWith(profilePicturePrefix)")
+    && memberMedia.includes("profile-pictures/"),
+  'Legacy external/generated avatar URLs must fall back locally rather than create third-party browser requests.'
+);
+check('buddy discovery sanitizes member avatar data', buddyService.includes("from './memberMedia'") && buddyService.includes('sanitizeMemberSummary'), 'Member cards and friend requests must receive sanitized avatar URLs.');
+check('Chat reads use the relaunch avatar wrapper', chatPage.includes("from '@/lib/relaunchChatService'") && relaunchChatService.includes('safeMemberAvatarUrl(conversation.avatar)'), 'Legacy Chat-generated avatar URLs must be stripped before rendering.');
+check('active relaunch Chat no longer imports the raw chat service directly', !chatPage.includes("from '@/lib/chatService'"), 'The large legacy service may remain internally, but public Chat reads must pass through the privacy wrapper.');
 
 check('database conversation RPC requires accepted connection', chatGate.includes('are_accepted_buddies(v_self, v_other)') && chatGate.includes('Private Chat is available only after a connection request is accepted'), 'Guessed deep links/direct RPC calls must not create unsolicited chats.');
 check('database message insert also requires accepted connection', chatGate.includes('enforce_message_connection_gate') && chatGate.includes('Private messages require an accepted connection'), 'A legacy conversation row must not bypass the connection rule.');
