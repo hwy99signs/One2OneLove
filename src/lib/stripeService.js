@@ -104,7 +104,7 @@ export const getPaymentHistory = async () => {
 
     const { data, error } = await supabase
       .from('payment_history')
-      .select('id, amount, currency, status, payment_date, description, created_at')
+      .select('id, amount, currency, status, subscription_plan, payment_method, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(100);
