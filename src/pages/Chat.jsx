@@ -20,7 +20,7 @@ import {
   unsubscribeFromMessages,
   updateConversationSettings,
   deleteMessage,
-} from '@/lib/chatService';
+} from '@/lib/relaunchChatService';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -30,7 +30,8 @@ import { supabase } from '@/lib/supabase';
  * attachment / location messages, delivery/read state, pin/mute/archive settings, editing
  * own text, and deleting one's own message for the conversation. Legacy prototype call,
  * pop-out, fake mark-unread, clear-chat, and destructive-conversation-delete code has been
- * removed rather than merely hidden.
+ * removed rather than merely hidden. Conversation avatar reads also pass through the
+ * relaunch first-party media sanitizer before they reach React.
  */
 export default function Chat() {
   const { user } = useAuth();
@@ -73,7 +74,7 @@ export default function Chat() {
     await Promise.all(jobs);
   };
 
-  // Deep-link from a member/friend profile: /Chat?userId=<member uuid>.
+  // Deep-link from an accepted member connection: /Chat?userId=<member uuid>.
   useEffect(() => {
     const otherUserId = searchParams.get('userId');
     if (!user?.id || !otherUserId || otherUserId === user.id) return;
@@ -103,7 +104,6 @@ export default function Chat() {
     };
   }, [queryClient, searchParams, user?.id]);
 
-  // Keep the selected conversation live without polling every message continuously.
   useEffect(() => {
     if (!selectedChatId || !user?.id) return undefined;
 
@@ -123,8 +123,6 @@ export default function Chat() {
     return () => unsubscribeFromMessages(subscription);
   }, [selectedChatId, user?.id]);
 
-  // Conversation metadata (last message, unread count, pin/mute/archive) is shared by the
-  // list and header, so listen for its database updates separately.
   useEffect(() => {
     if (!user?.id) return undefined;
 
@@ -137,8 +135,6 @@ export default function Chat() {
     };
   }, [queryClient, user?.id]);
 
-  // Mark new incoming messages as delivered while the Chat page is open even when their
-  // conversation is not selected. Read status is set only when that conversation is open.
   useEffect(() => {
     if (!user?.id) return undefined;
 
@@ -237,7 +233,7 @@ export default function Chat() {
 
   const settingsMutation = useMutation({
     mutationFn: ({ conversationId, settings }) => updateConversationSettings(conversationId, settings),
-    onSuccess: (_, variables) => queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['conversations'] }),
     onError: (error) => {
       console.error('Unable to update chat setting:', error);
       toast.error('Unable to update chat');
