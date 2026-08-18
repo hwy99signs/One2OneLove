@@ -117,6 +117,30 @@ Approval Batch 001 remains valid for the items/version scope already approved. T
    - repeated save of the same built-in idea does not intentionally create duplicate favorite rows;
    - account-data failure leaves built-in browsing available with a truthful private-tools-unavailable state.
 
+## F. Paid Relationship Goals persistence
+
+20. Keep the relaunch Relationship Goals UI limited to functionality that actually exists:
+   - private member goals;
+   - title/description/category/target date;
+   - up to 20 action steps;
+   - progress/completion;
+   - edit/delete.
+   - Do not present SMS reminders as active; there is no reviewed reminder dispatcher/provider flow.
+   - Do not claim goals are shared with a partner; `partner_email`/`shared_with_partner` legacy columns do not by themselves create a permission or notification model.
+21. Apply `supabase/migrations/20260818_relationship_goals_membership_hardening.sql` **only when paid membership gating is being activated**, not during the intentionally open/free beta.
+   - Requires `member_subscriptions`.
+   - Adds a server/database active/trialing membership predicate.
+   - Browser goal and action-step access is capped by both owner identity and paid membership through RESTRICTIVE RLS boundaries.
+   - Browser-supplied goal ownership is derived from `auth.uid()` and cannot be reassigned.
+   - New/updated relaunch rows get title/description/step limits without forcing an immediate scan of dirty legacy rows.
+22. Controlled Relationship Goals tests when membership gating is ready must verify:
+   - signed-out/unconfirmed/free users cannot read or mutate paid goal data;
+   - active/trialing member A can CRUD only A's goals/steps;
+   - member B cannot access A's goal/step by UUID;
+   - a member cannot change `user_id` to transfer a goal;
+   - progress 100% results in completed status;
+   - SMS/partner-sharing claims remain absent from the relaunch UI until separately implemented and approved.
+
 ## Explicitly NOT included
 
 - Production/default-branch merge.
@@ -125,7 +149,7 @@ Approval Batch 001 remains valid for the items/version scope already approved. T
 - Paid SMS/Twilio/A2P activation.
 - Any Vercel plan upgrade or new recurring platform expense.
 - Destructive deletion of legacy attachment data.
-- A promise to retain chat attachments, AI Coach history, or custom Date Ideas indefinitely; retention/deletion policy remains part of legal/product launch review.
+- A promise to retain chat attachments, AI Coach history, custom Date Ideas, or Relationship Goals indefinitely; retention/deletion policy remains part of legal/product launch review.
 - Any replacement of an existing OpenAI/Resend/Stripe secret without first verifying its current usage.
 
 ## Future owner approval
