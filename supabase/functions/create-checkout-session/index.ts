@@ -10,6 +10,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const PLAN_KEY = 'membership'
 const PRICING_VERSION = 'launch_2026'
+const INTRO_CENTS = 199
+const STANDARD_CENTS = 599
 const BLOCKING_STATUSES = new Set(['trialing', 'active', 'past_due', 'unpaid'])
 
 const clean = (value: unknown, max = 500) =>
@@ -65,6 +67,26 @@ const stripeRequest = async (path: string, body?: URLSearchParams) => {
   return payload
 }
 
+const validateLaunchPrices = async (introPriceId: string, standardPriceId: string) => {
+  const expectedCurrency = clean(Deno.env.get('STRIPE_EXPECTED_CURRENCY') || 'usd', 10).toLowerCase()
+  const [intro, standard] = await Promise.all([
+    stripeRequest(`/v1/prices/${encodeURIComponent(introPriceId)}`),
+    stripeRequest(`/v1/prices/${encodeURIComponent(standardPriceId)}`),
+  ])
+
+  const validMonthlyPrice = (price: any, expectedCents: number) =>
+    price?.active === true
+    && price?.type === 'recurring'
+    && price?.recurring?.interval === 'month'
+    && Number(price?.recurring?.interval_count || 1) === 1
+    && Number(price?.unit_amount) === expectedCents
+    && clean(price?.currency, 10).toLowerCase() === expectedCurrency
+
+  if (!validMonthlyPrice(intro, INTRO_CENTS) || !validMonthlyPrice(standard, STANDARD_CENTS)) {
+    throw new Error('Configured Stripe prices do not match the approved launch monthly pricing')
+  }
+}
+
 const requireHttpsSiteUrl = () => {
   const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
   if (!siteUrl || !/^https:\/\//i.test(siteUrl)) throw new Error('SITE_URL must be configured with HTTPS')
@@ -118,6 +140,10 @@ serve(async (request) => {
       return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)
     }
     if (!user.email) return json(request, { error: 'ACCOUNT_EMAIL_REQUIRED' }, 400)
+
+    // Fail closed before creating a customer/session if either configured Price ID has
+    // the wrong amount, currency, recurrence, or active state.
+    await validateLaunchPrices(introPriceId, standardPriceId)
 
     const { data: membership, error: membershipError } = await serviceClient
       .from('member_subscriptions')
