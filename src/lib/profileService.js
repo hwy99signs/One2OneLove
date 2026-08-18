@@ -17,6 +17,9 @@ const SAFE_PROFILE_UPDATE_FIELDS = new Set([
 const SAFE_PROFILE_RETURN_FIELDS =
   'id,name,relationship_status,anniversary_date,avatar_url,bio,location,love_language,partner_name,user_type,updated_at';
 
+const PROFILE_PICTURE_EDITING_ENABLED = import.meta.env.VITE_PROFILE_PICTURE_EDITING_ENABLED === 'true';
+export const profilePictureEditingEnabled = () => PROFILE_PICTURE_EDITING_ENABLED;
+
 const getAuthenticatedOwnUser = async (requestedUserId) => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error('User not authenticated');
@@ -62,9 +65,20 @@ const sanitizeProfileUpdates = (updates = {}) => {
   return safe;
 };
 
-/** Upload own regular-member profile picture. */
+const requireProfilePictureEditing = () => {
+  if (!PROFILE_PICTURE_EDITING_ENABLED) {
+    throw new Error('Profile picture editing is not enabled yet.');
+  }
+};
+
+/**
+ * Upload own regular-member profile picture.
+ * This path stays explicitly OFF until the hardened profile-pictures Storage migration
+ * has been applied and controlled ownership/MIME/size tests have passed.
+ */
 export const uploadProfilePicture = async (file, userId) => {
   try {
+    requireProfilePictureEditing();
     await ensureRegularUserAccess(userId);
 
     if (!file?.type?.startsWith('image/')) throw new Error('File must be an image');
@@ -140,6 +154,7 @@ export const updateUserProfile = async (userId, updates) => {
 
 export const deleteProfilePicture = async (userId) => {
   try {
+    requireProfilePictureEditing();
     await ensureRegularUserAccess(userId);
 
     const { data: files, error: listError } = await supabase.storage
