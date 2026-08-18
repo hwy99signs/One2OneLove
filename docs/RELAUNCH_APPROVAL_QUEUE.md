@@ -37,7 +37,8 @@ This file tracks only actions that should NOT be performed automatically while d
    - `supabase/migrations/20260817_presence_security_hardening.sql` is staged to prevent caller-supplied presence spoofing and remove email from the presence projection.
    - `supabase/migrations/20260817_member_directory_privacy.sql` is staged to create a privacy-safe member-discovery projection without email, partner email, subscription/billing, or verification fields.
    - `supabase/migrations/20260817_users_privacy_lockdown.sql` is staged to make `public.users` an own-row private table and remove any legacy always-true SELECT policy.
-   - **Do not apply the users-table lockdown until all member-facing consumers have moved off broad `public.users` reads.** The Buddy Finder is migrated; pairwise chat still requires migration to the safe member directory.
+   - Buddy Finder and pairwise chat identity lookups have now been moved to `public.member_directory` in development; chat no longer requests another member's account email.
+   - **Do not apply the users-table lockdown yet.** Remaining public/community/member-card consumers must be audited and the exact live policies must be inspected first.
    - The historical audit also identified a `waitlist_signups` RLS concern. The current relaunch form uses `public.waitlist`, so the actual live tables/policies must be re-verified before changing either one.
    - None of these security migrations has been applied to the live database.
    - No live security-policy changes without an explicit go-ahead at the production checkpoint and a rollback plan.
