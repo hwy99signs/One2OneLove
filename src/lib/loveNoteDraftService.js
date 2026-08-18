@@ -56,6 +56,15 @@ export function stashLoveNoteSendSession(input = {}) {
 
 export function loadLoveNoteSendSession() {
   if (typeof window === 'undefined') return null;
+
+  // A freshly chosen/written/reply Love Note always wins over an older in-progress
+  // sender session. This prevents a stale form from replacing the new note when
+  // the user starts another send flow without first clearing local storage.
+  if (window.sessionStorage.getItem(NOTE_DRAFT_KEY)) {
+    window.localStorage.removeItem(SEND_SESSION_KEY);
+    return null;
+  }
+
   const payload = parse(window.localStorage.getItem(SEND_SESSION_KEY));
   if (!payload) return null;
   if (!Number.isFinite(payload.expiresAt) || payload.expiresAt <= Date.now()) {
