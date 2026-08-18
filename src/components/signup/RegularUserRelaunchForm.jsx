@@ -100,7 +100,10 @@ export default function RegularUserRelaunchForm({ returnTo = '/' }) {
     setSubmitting(true);
     try {
       if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem('o2ol-return-after-auth', destination);
+        // Email confirmation commonly opens in a new tab, so sessionStorage is not
+        // reliable for this handoff. The callback re-validates this as a local path
+        // before navigating and clears it once the confirmation flow is complete.
+        window.localStorage.setItem('o2ol-return-after-auth', destination);
       }
 
       const result = await register({
@@ -119,6 +122,9 @@ export default function RegularUserRelaunchForm({ returnTo = '/' }) {
         return;
       }
 
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('o2ol-return-after-auth');
+      }
       navigate(destination, { replace: true });
     } catch (submitError) {
       setError(submitError?.message || 'Unable to create your account right now.');
