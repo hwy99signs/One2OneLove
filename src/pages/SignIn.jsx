@@ -1,34 +1,36 @@
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Heart, Mail, Lock, Eye, EyeOff, X, UserCheck, Loader2 } from "lucide-react";
+import { Heart, Mail, Lock, Eye, EyeOff, X, UserCheck, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
+const RETURN_KEY = 'o2ol-return-after-auth';
+
 const translations = {
   en: {
-    signIn: { title: "Sign In", subtitle: "Join live conversations, send Love Notes, and access your relationship tools", email: "Email Address", password: "Password", emailPlaceholder: "Enter your email", passwordPlaceholder: "Enter your password", signInButton: "Sign In", forgotPassword: "Forgot Password?", invite: "Invite Friends", newHere: "New to One2OneLove?", createAccount: "Create a free account" }
+    signIn: { title: "Sign In", subtitle: "Join live conversations, send Love Notes, and access your relationship tools", email: "Email Address", password: "Password", emailPlaceholder: "Enter your email", passwordPlaceholder: "Enter your password", signInButton: "Sign In", forgotPassword: "Forgot Password?", invite: "Invite Friends", newHere: "New to One2OneLove?", createAccount: "Create a free account", confirmNeeded: "Your email still needs confirmation before you can sign in.", resendConfirmation: "Resend confirmation email", resending: "Sending confirmation…", resendSent: "If this account is awaiting confirmation, another confirmation email has been requested." }
   },
   es: {
-    signIn: { title: "Iniciar Sesión", subtitle: "Únete a conversaciones en vivo, envía notas de amor y accede a tus herramientas de relación", email: "Correo Electrónico", password: "Contraseña", emailPlaceholder: "Ingresa tu correo electrónico", passwordPlaceholder: "Ingresa tu contraseña", signInButton: "Iniciar Sesión", forgotPassword: "¿Olvidaste tu contraseña?", invite: "Invitar Amigos", newHere: "¿Nuevo en One2OneLove?", createAccount: "Crea una cuenta gratis" }
+    signIn: { title: "Iniciar Sesión", subtitle: "Únete a conversaciones en vivo, envía notas de amor y accede a tus herramientas de relación", email: "Correo Electrónico", password: "Contraseña", emailPlaceholder: "Ingresa tu correo electrónico", passwordPlaceholder: "Ingresa tu contraseña", signInButton: "Iniciar Sesión", forgotPassword: "¿Olvidaste tu contraseña?", invite: "Invitar Amigos", newHere: "¿Nuevo en One2OneLove?", createAccount: "Crea una cuenta gratis", confirmNeeded: "Tu correo todavía necesita confirmación antes de iniciar sesión.", resendConfirmation: "Reenviar correo de confirmación", resending: "Enviando confirmación…", resendSent: "Si esta cuenta espera confirmación, se solicitó otro correo de confirmación." }
   },
   fr: {
-    signIn: { title: "Se Connecter", subtitle: "Rejoignez des conversations en direct, envoyez des mots d’amour et accédez à vos outils relationnels", email: "Adresse E-mail", password: "Mot de Passe", emailPlaceholder: "Entrez votre e-mail", passwordPlaceholder: "Entrez votre mot de passe", signInButton: "Se Connecter", forgotPassword: "Mot de passe oublié?", invite: "Inviter des Amis", newHere: "Nouveau sur One2OneLove ?", createAccount: "Créer un compte gratuit" }
+    signIn: { title: "Se Connecter", subtitle: "Rejoignez des conversations en direct, envoyez des mots d’amour et accédez à vos outils relationnels", email: "Adresse E-mail", password: "Mot de Passe", emailPlaceholder: "Entrez votre e-mail", passwordPlaceholder: "Entrez votre mot de passe", signInButton: "Se Connecter", forgotPassword: "Mot de passe oublié?", invite: "Inviter des Amis", newHere: "Nouveau sur One2OneLove ?", createAccount: "Créer un compte gratuit", confirmNeeded: "Votre e-mail doit encore être confirmé avant la connexion.", resendConfirmation: "Renvoyer l’e-mail de confirmation", resending: "Envoi de la confirmation…", resendSent: "Si ce compte attend une confirmation, un nouvel e-mail a été demandé." }
   },
   it: {
-    signIn: { title: "Accedi", subtitle: "Partecipa alle conversazioni dal vivo, invia note d’amore e usa i tuoi strumenti di relazione", email: "Indirizzo Email", password: "Password", emailPlaceholder: "Inserisci la tua email", passwordPlaceholder: "Inserisci la password", signInButton: "Accedi", forgotPassword: "Password dimenticata?", invite: "Invita Amici", newHere: "Nuovo su One2OneLove?", createAccount: "Crea un account gratuito" }
+    signIn: { title: "Accedi", subtitle: "Partecipa alle conversazioni dal vivo, invia note d’amore e usa i tuoi strumenti di relazione", email: "Indirizzo Email", password: "Password", emailPlaceholder: "Inserisci la tua email", passwordPlaceholder: "Inserisci la password", signInButton: "Accedi", forgotPassword: "Password dimenticata?", invite: "Invita Amici", newHere: "Nuovo su One2OneLove?", createAccount: "Crea un account gratuito", confirmNeeded: "La tua email deve ancora essere confermata prima di accedere.", resendConfirmation: "Reinvia email di conferma", resending: "Invio conferma…", resendSent: "Se questo account è in attesa di conferma, è stata richiesta un’altra email." }
   },
   de: {
-    signIn: { title: "Anmelden", subtitle: "Nimm an Live-Gesprächen teil, sende Liebesbotschaften und nutze deine Beziehungstools", email: "E-Mail-Adresse", password: "Passwort", emailPlaceholder: "Geben Sie Ihre E-Mail ein", passwordPlaceholder: "Geben Sie Ihr Passwort ein", signInButton: "Anmelden", forgotPassword: "Passwort vergessen?", invite: "Freunde Einladen", newHere: "Neu bei One2OneLove?", createAccount: "Kostenloses Konto erstellen" }
+    signIn: { title: "Anmelden", subtitle: "Nimm an Live-Gesprächen teil, sende Liebesbotschaften und nutze deine Beziehungstools", email: "E-Mail-Adresse", password: "Passwort", emailPlaceholder: "Geben Sie Ihre E-Mail ein", passwordPlaceholder: "Geben Sie Ihr Passwort ein", signInButton: "Anmelden", forgotPassword: "Passwort vergessen?", invite: "Freunde Einladen", newHere: "Neu bei One2OneLove?", createAccount: "Kostenloses Konto erstellen", confirmNeeded: "Deine E-Mail muss vor der Anmeldung noch bestätigt werden.", resendConfirmation: "Bestätigungs-E-Mail erneut senden", resending: "Bestätigung wird gesendet…", resendSent: "Wenn dieses Konto auf Bestätigung wartet, wurde eine weitere E-Mail angefordert." }
   },
   nl: {
-    signIn: { title: "Inloggen", subtitle: "Doe mee aan live gesprekken, stuur liefdesbriefjes en gebruik je relatietools", email: "E-mailadres", password: "Wachtwoord", emailPlaceholder: "Voer je e-mail in", passwordPlaceholder: "Voer je wachtwoord in", signInButton: "Inloggen", forgotPassword: "Wachtwoord vergeten?", invite: "Vrienden Uitnodigen", newHere: "Nieuw bij One2OneLove?", createAccount: "Maak een gratis account" }
+    signIn: { title: "Inloggen", subtitle: "Doe mee aan live gesprekken, stuur liefdesbriefjes en gebruik je relatietools", email: "E-mailadres", password: "Wachtwoord", emailPlaceholder: "Voer je e-mail in", passwordPlaceholder: "Voer je wachtwoord in", signInButton: "Inloggen", forgotPassword: "Wachtwoord vergeten?", invite: "Vrienden Uitnodigen", newHere: "Nieuw bij One2OneLove?", createAccount: "Maak een gratis account", confirmNeeded: "Je e-mail moet nog worden bevestigd voordat je kunt inloggen.", resendConfirmation: "Bevestigingsmail opnieuw sturen", resending: "Bevestiging versturen…", resendSent: "Als dit account op bevestiging wacht, is een nieuwe bevestigingsmail aangevraagd." }
   },
   pt: {
-    signIn: { title: "Entrar", subtitle: "Participe de conversas ao vivo, envie notas de amor e acesse suas ferramentas de relacionamento", email: "Endereço de E-mail", password: "Senha", emailPlaceholder: "Digite seu e-mail", passwordPlaceholder: "Digite sua senha", signInButton: "Entrar", forgotPassword: "Esqueceu a senha?", invite: "Convidar Amigos", newHere: "Novo no One2OneLove?", createAccount: "Crie uma conta grátis" }
+    signIn: { title: "Entrar", subtitle: "Participe de conversas ao vivo, envie notas de amor e acesse suas ferramentas de relacionamento", email: "Endereço de E-mail", password: "Senha", emailPlaceholder: "Digite seu e-mail", passwordPlaceholder: "Digite sua senha", signInButton: "Entrar", forgotPassword: "Esqueceu a senha?", invite: "Convidar Amigos", newHere: "Novo no One2OneLove?", createAccount: "Crie uma conta grátis", confirmNeeded: "Seu e-mail ainda precisa ser confirmado antes de entrar.", resendConfirmation: "Reenviar e-mail de confirmação", resending: "Enviando confirmação…", resendSent: "Se esta conta estiver aguardando confirmação, outro e-mail foi solicitado." }
   }
 };
 
@@ -37,11 +39,18 @@ const safeReturnTo = (value) => {
   return value;
 };
 
+const needsEmailConfirmation = (message) => {
+  const normalized = String(message || '').toLowerCase();
+  return normalized.includes('confirm your email') || normalized.includes('email not confirmed') || normalized.includes('email_not_confirmed');
+};
+
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmationNeeded, setConfirmationNeeded] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const { currentLanguage } = useLanguage();
   const { login, logout } = useAuth();
@@ -53,6 +62,7 @@ export default function SignIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setConfirmationNeeded(false);
 
     if (!email || !password) {
       toast.error("Please enter both email and password");
@@ -80,9 +90,10 @@ export default function SignIn() {
           return;
         }
 
-        if (!authenticatedUser.email_confirmed_at) {
+        if (!authenticatedUser.email_confirmed_at && !authenticatedUser.confirmed_at) {
           await logout();
-          toast.error("Please confirm your email before signing in.");
+          setConfirmationNeeded(true);
+          toast.error(t.signIn.confirmNeeded);
           setIsLoading(false);
           return;
         }
@@ -95,13 +106,41 @@ export default function SignIn() {
         }, 100);
       } else {
         const errorMessage = result?.error || "Invalid email or password. Please try again.";
+        if (needsEmailConfirmation(errorMessage)) setConfirmationNeeded(true);
         toast.error(errorMessage);
         setIsLoading(false);
       }
     } catch (error) {
       const errorMessage = error.message || "An error occurred. Please try again.";
+      if (needsEmailConfirmation(errorMessage)) setConfirmationNeeded(true);
       toast.error(errorMessage);
       setIsLoading(false);
+    }
+  };
+
+  const resendConfirmation = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || resendLoading) return;
+
+    setResendLoading(true);
+    try {
+      if (returnTo && typeof window !== 'undefined') {
+        window.localStorage.setItem(RETURN_KEY, returnTo);
+      }
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: normalizedEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      toast.success(t.signIn.resendSent);
+    } catch (error) {
+      console.error('Unable to resend confirmation email:', error);
+      toast.error('We could not request another confirmation email right now. Please try again shortly.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -135,7 +174,7 @@ export default function SignIn() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setConfirmationNeeded(false); }}
                 placeholder={t.signIn.emailPlaceholder}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none text-gray-700 placeholder-gray-400"
                 autoComplete="email"
@@ -191,6 +230,22 @@ export default function SignIn() {
             )}
           </Button>
         </form>
+
+        {confirmationNeeded && (
+          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold leading-6 text-amber-900">{t.signIn.confirmNeeded}</p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={resendLoading || !email.trim()}
+              onClick={() => void resendConfirmation()}
+              className="mt-3 w-full border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+            >
+              {resendLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              {resendLoading ? t.signIn.resending : t.signIn.resendConfirmation}
+            </Button>
+          </div>
+        )}
 
         <div className="mt-6 rounded-2xl bg-pink-50 p-4 text-center">
           <span className="text-sm text-gray-600">{t.signIn.newHere} </span>
