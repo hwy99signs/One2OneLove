@@ -2,14 +2,41 @@
  * Chat Service
  * Handles pairwise messaging operations with Supabase.
  *
- * Privacy rule: other-member identity is loaded only from public.member_directory.
- * Account email and other private public.users fields are never requested here.
+ * Privacy rules:
+ * - Other-member identity is loaded only from public.member_directory.
+ * - Account email and other private public.users fields are never requested here.
+ * - Chat attachments are stored as private object paths, never permanent public URLs.
+ * - Conversation participants receive short-lived signed URLs only after Storage RLS
+ *   confirms they belong to the conversation.
  */
 
 import { supabase } from './supabase';
 
 const MEMBER_FIELDS = 'id,name,avatar_url';
 const UNKNOWN_MEMBER = 'One2OneLove member';
+const CHAT_FILES_BUCKET = 'chat-files';
+const CHAT_FILE_MAX_BYTES = 10 * 1024 * 1024;
+const CHAT_SIGNED_URL_TTL_SECONDS = 15 * 60;
+const ATTACHMENT_MESSAGE_TYPES = new Set(['image', 'video', 'audio', 'voice', 'file']);
+
+const SAFE_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const SAFE_VIDEO_MIME_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+const SAFE_AUDIO_MIME_TYPES = new Set([
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/webm',
+  'audio/ogg',
+]);
+const SAFE_FILE_MIME_TYPES = new Set([
+  'application/pdf',
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
 
 const avatarForMember = (member, fallbackId = 'member') =>
   member?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(member?.id || fallbackId)}`;
@@ -35,6 +62,78 @@ const getAuthenticatedUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error('User not authenticated');
   return user;
+};
+
+const attachmentStoragePath = (value) => {
+  if (!value || typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return trimmed.replace(/^\/+/, '');
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const markers = [
+      `/object/public/${CHAT_FILES_BUCKET}/`,
+      `/object/sign/${CHAT_FILES_BUCKET}/`,
+      `/object/authenticated/${CHAT_FILES_BUCKET}/`,
+    ];
+    const marker = markers.find((candidate) => parsed.pathname.includes(candidate));
+    if (!marker) return null;
+    const encodedPath = parsed.pathname.split(marker)[1] || '';
+    return decodeURIComponent(encodedPath).replace(/^\/+/, '') || null;
+  } catch {
+    return null;
+  }
+};
+
+const loadAttachmentSignedUrls = async (messages) => {
+  const paths = [...new Set(
+    (messages || [])
+      .filter((message) => ATTACHMENT_MESSAGE_TYPES.has(message.message_type))
+      .map((message) => attachmentStoragePath(message.file_url))
+      .filter(Boolean)
+  )];
+
+  if (!paths.length) return {};
+
+  const { data, error } = await supabase.storage
+    .from(CHAT_FILES_BUCKET)
+    .createSignedUrls(paths, CHAT_SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    console.warn('Unable to create private chat attachment links:', error);
+    return {};
+  }
+
+  return Object.fromEntries(
+    (data || [])
+      .filter((entry) => entry?.path && entry?.signedUrl && !entry?.error)
+      .map((entry) => [entry.path, entry.signedUrl])
+  );
+};
+
+const safeExtension = (name) => {
+  const candidate = String(name || '').split('.').pop()?.toLowerCase() || 'bin';
+  return /^[a-z0-9]{1,10}$/.test(candidate) ? candidate : 'bin';
+};
+
+const validateAttachment = (file, messageType) => {
+  if (!file) throw new Error('No file selected');
+  if (!ATTACHMENT_MESSAGE_TYPES.has(messageType)) throw new Error('Unsupported attachment type');
+  if (!Number.isFinite(file.size) || file.size <= 0) throw new Error('The selected file is empty');
+  if (file.size > CHAT_FILE_MAX_BYTES) throw new Error('Chat attachments can be up to 10 MB');
+
+  const mime = String(file.type || '').toLowerCase();
+  let allowed = false;
+  if (messageType === 'image') allowed = SAFE_IMAGE_MIME_TYPES.has(mime);
+  else if (messageType === 'video') allowed = SAFE_VIDEO_MIME_TYPES.has(mime);
+  else if (messageType === 'audio' || messageType === 'voice') allowed = SAFE_AUDIO_MIME_TYPES.has(mime);
+  else if (messageType === 'file') allowed = SAFE_FILE_MIME_TYPES.has(mime);
+
+  if (!allowed) throw new Error('This file type is not supported for private chat attachments');
 };
 
 /**
@@ -156,6 +255,7 @@ export const getMessages = async (conversationId) => {
       participantIds.add(message.receiver_id);
     });
     const membersById = await loadMemberSummaries([...participantIds]);
+    const signedAttachmentUrls = await loadAttachmentSignedUrls(messages || []);
 
     const replyToIds = [...new Set((messages || []).filter((message) => message.reply_to_id).map((message) => message.reply_to_id))];
     const replyMessagesById = {};
@@ -192,6 +292,9 @@ export const getMessages = async (conversationId) => {
       if (message.read_at || (message.is_read && message.delivered_at)) status = 'read';
       else if (message.delivered_at) status = 'delivered';
 
+      const storagePath = attachmentStoragePath(message.file_url);
+      const privateFileUrl = storagePath ? signedAttachmentUrls[storagePath] || null : null;
+
       const transformed = {
         id: message.id,
         conversationId: message.conversation_id,
@@ -202,7 +305,8 @@ export const getMessages = async (conversationId) => {
         type: message.message_type,
         text: message.content,
         content: message.content,
-        fileUrl: message.file_url,
+        fileUrl: privateFileUrl,
+        fileStoragePath: storagePath,
         fileName: message.file_name,
         fileSize: message.file_size,
         fileType: message.file_type,
@@ -224,10 +328,10 @@ export const getMessages = async (conversationId) => {
       };
 
       if (message.message_type === 'image') {
-        transformed.imageUrl = message.file_url;
+        transformed.imageUrl = privateFileUrl;
         transformed.caption = message.content;
       } else if (message.message_type === 'voice' || message.message_type === 'audio') {
-        transformed.audioUrl = message.file_url;
+        transformed.audioUrl = privateFileUrl;
         transformed.duration = message.duration || 0;
       } else if (message.message_type === 'location') {
         transformed.latitude = message.location_lat;
@@ -269,17 +373,8 @@ export const sendMessage = async (conversationId, receiverId, content, messageTy
 
     if (error) throw error;
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const { error: recalcError } = await supabase.rpc('recalculate_unread_count', {
-        p_conversation_id: conversationId,
-        p_user_id: receiverId,
-      });
-      if (recalcError) console.warn('Unread-count recalculation deferred:', recalcError);
-    } catch (recalcError) {
-      console.warn('Unread-count recalculation deferred:', recalcError);
-    }
-
+    // The database message trigger owns the receiver's unread-count increment. A sender
+    // must never call an RPC that rewrites the other member's unread counter.
     return message;
   } catch (error) {
     console.error('Error in sendMessage:', error);
@@ -288,25 +383,30 @@ export const sendMessage = async (conversationId, receiverId, content, messageTy
 };
 
 /**
- * Send a file message (image, video, audio, file).
+ * Send a private file message (image, video, audio/voice, or supported document).
  */
 export const sendFileMessage = async (conversationId, receiverId, file, messageType) => {
+  let uploadedPath = null;
+
   try {
     const user = await getAuthenticatedUser();
-    if (!file) throw new Error('No file selected');
+    validateAttachment(file, messageType);
 
-    const fileExt = file.name?.split('.').pop() || 'bin';
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-    const filePath = `chat-files/${fileName}`;
+    const extension = safeExtension(file.name);
+    const objectId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    const filePath = `${conversationId}/${user.id}/${objectId}.${extension}`;
+    uploadedPath = filePath;
 
     const { error: uploadError } = await supabase.storage
-      .from('chat-files')
-      .upload(filePath, file);
+      .from(CHAT_FILES_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        contentType: file.type || 'application/octet-stream',
+        upsert: false,
+      });
     if (uploadError) throw uploadError;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('chat-files')
-      .getPublicUrl(filePath);
 
     const { data: message, error } = await supabase
       .from('messages')
@@ -314,19 +414,39 @@ export const sendFileMessage = async (conversationId, receiverId, file, messageT
         conversation_id: conversationId,
         sender_id: user.id,
         receiver_id: receiverId,
-        content: file.name,
+        content: String(file.name || 'Attachment').slice(0, 255),
         message_type: messageType,
-        file_url: publicUrl,
-        file_name: file.name,
+        // Store only the private object key. A signed URL is generated when a participant
+        // reads the conversation; permanent/public URLs are never persisted.
+        file_url: filePath,
+        file_name: String(file.name || 'Attachment').slice(0, 255),
         file_size: file.size,
-        file_type: file.type,
+        file_type: String(file.type || '').slice(0, 100) || null,
       })
       .select()
       .single();
 
     if (error) throw error;
-    return message;
+
+    const { data: signed, error: signedError } = await supabase.storage
+      .from(CHAT_FILES_BUCKET)
+      .createSignedUrl(filePath, CHAT_SIGNED_URL_TTL_SECONDS);
+
+    if (signedError) console.warn('Attachment sent but immediate signed preview is unavailable:', signedError);
+
+    return {
+      ...message,
+      file_storage_path: filePath,
+      file_url: signed?.signedUrl || null,
+    };
   } catch (error) {
+    if (uploadedPath) {
+      const { error: cleanupError } = await supabase.storage
+        .from(CHAT_FILES_BUCKET)
+        .remove([uploadedPath]);
+      if (cleanupError) console.warn('Unable to clean up failed chat attachment upload:', cleanupError);
+    }
+
     console.error('Error in sendFileMessage:', error);
     throw error;
   }
@@ -540,6 +660,8 @@ export const updateConversationSettings = async (conversationId, settings) => {
     if (settings.isPinned !== undefined) updateData[`${prefix}pinned`] = settings.isPinned;
     if (settings.isArchived !== undefined) updateData[`${prefix}archived`] = settings.isArchived;
 
+    if (!Object.keys(updateData).length) return;
+
     const { error } = await supabase
       .from('conversations')
       .update(updateData)
@@ -551,18 +673,12 @@ export const updateConversationSettings = async (conversationId, settings) => {
   }
 };
 
+/**
+ * Legacy export kept for existing UI callers. A shared conversation is not physically
+ * deleted by one participant; the member archives it locally instead.
+ */
 export const deleteConversation = async (conversationId) => {
-  try {
-    await getAuthenticatedUser();
-    const { error } = await supabase
-      .from('conversations')
-      .delete()
-      .eq('id', conversationId);
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error in deleteConversation:', error);
-    throw error;
-  }
+  return updateConversationSettings(conversationId, { isArchived: true });
 };
 
 export const subscribeToMessages = (conversationId, callback) => {
