@@ -8,6 +8,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
+const TURNSTILE_ACTION = 'professional_application'
 const ALLOWED_TYPES = new Set(['therapist', 'influencer', 'professional'])
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -22,6 +23,18 @@ const allowedOrigins = () => {
     .map((value) => value.trim())
     .filter(Boolean)
   return new Set(configured.length ? configured : [DEFAULT_ORIGIN])
+}
+
+const allowedHostnames = () => {
+  const hostnames = new Set<string>()
+  for (const origin of allowedOrigins()) {
+    try {
+      hostnames.add(new URL(origin).hostname.toLowerCase())
+    } catch {
+      // Invalid configured origins are ignored; the origin check will fail closed.
+    }
+  }
+  return hostnames
 }
 
 const corsHeadersFor = (request: Request) => {
@@ -40,7 +53,7 @@ const corsHeadersFor = (request: Request) => {
 const json = (request: Request, body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeadersFor(request), 'Content-Type': 'application/json' },
+    headers: { ...corsHeadersFor(request), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
 
 const sanitizeDetails = (details: unknown) => {
@@ -57,23 +70,37 @@ const verifyTurnstileIfRequired = async (request: Request, token: string) => {
   if (Deno.env.get('PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED') !== 'true') return true
 
   const secret = Deno.env.get('TURNSTILE_SECRET_KEY') || ''
-  if (!secret || !token) return false
+  const expectedHostnames = allowedHostnames()
+  if (!secret || !token || expectedHostnames.size === 0) return false
 
   const form = new FormData()
   form.set('secret', secret)
   form.set('response', token)
 
-  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')?.[0]?.trim()
-  if (forwardedFor) form.set('remoteip', forwardedFor)
+  const remoteIp = request.headers.get('cf-connecting-ip')
+    || request.headers.get('x-forwarded-for')?.split(',')?.[0]?.trim()
+    || ''
+  if (remoteIp) form.set('remoteip', remoteIp)
 
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    body: form,
-  })
+  let response: Response
+  try {
+    response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: form,
+      signal: AbortSignal.timeout(10_000),
+    })
+  } catch (error) {
+    console.error('Turnstile verification request failed:', error instanceof Error ? error.message : 'unknown')
+    return false
+  }
 
   if (!response.ok) return false
   const result = await response.json()
+  const hostname = clean(result?.hostname, 255).toLowerCase()
+
   return result?.success === true
+    && result?.action === TURNSTILE_ACTION
+    && expectedHostnames.has(hostname)
 }
 
 serve(async (request) => {
@@ -172,7 +199,7 @@ serve(async (request) => {
     if (message === 'APPLICATION_DETAILS_TOO_LARGE') {
       return json(request, { error: message }, 413)
     }
-    console.error('Professional application request failed:', error)
+    console.error('Professional application request failed:', error instanceof Error ? error.message : 'unknown')
     return json(request, { error: 'INVALID_REQUEST' }, 400)
   }
 })
