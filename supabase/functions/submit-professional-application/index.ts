@@ -17,6 +17,129 @@ const clean = (value: unknown, max = 500) =>
 
 const normalizeEmail = (value: unknown) => clean(value, 320).toLowerCase()
 
+const cleanArray = (value: unknown, { maxItems = 20, maxLength = 120 } = {}) => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const item of value) {
+    const candidate = clean(item, maxLength)
+    if (!candidate || seen.has(candidate.toLowerCase())) continue
+    seen.add(candidate.toLowerCase())
+    result.push(candidate)
+    if (result.length >= maxItems) break
+  }
+  return result
+}
+
+const cleanNumber = (
+  value: unknown,
+  { min = 0, max = Number.MAX_SAFE_INTEGER, integer = false } = {},
+) => {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  if (!Number.isFinite(number) || number < min || number > max) return null
+  return integer ? Math.round(number) : number
+}
+
+const cleanUrl = (value: unknown, max = 1000) => {
+  const candidate = clean(value, max)
+  if (!candidate) return null
+  try {
+    const parsed = new URL(candidate)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null
+    return parsed.toString().slice(0, max)
+  } catch {
+    return null
+  }
+}
+
+const cleanUrlMap = (value: unknown, maxEntries = 10) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const result: Record<string, string> = {}
+  for (const [rawKey, rawValue] of Object.entries(value as Record<string, unknown>)) {
+    const key = clean(rawKey, 40).toLowerCase().replace(/[^a-z0-9_-]/g, '')
+    const url = cleanUrl(rawValue, 1000)
+    if (!key || !url) continue
+    result[key] = url
+    if (Object.keys(result).length >= maxEntries) break
+  }
+  return result
+}
+
+const sanitizeDetails = (applicationType: string, details: unknown) => {
+  const source = details && typeof details === 'object' && !Array.isArray(details)
+    ? details as Record<string, unknown>
+    : {}
+
+  if (applicationType === 'therapist') {
+    const licensedCountries = cleanArray(source.licensedCountries, { maxItems: 20, maxLength: 100 })
+    const licensedStates = cleanArray(source.licensedStates, { maxItems: 40, maxLength: 100 })
+    const therapyTypes = cleanArray(source.therapyTypes, { maxItems: 20, maxLength: 120 })
+    const specializations = cleanArray(source.specializations, { maxItems: 30, maxLength: 120 })
+    const certifications = cleanArray(source.certifications, { maxItems: 30, maxLength: 160 })
+    const yearsExperience = cleanNumber(source.yearsExperience, { min: 0, max: 80, integer: true })
+    const consultationFee = cleanNumber(source.consultationFee, { min: 0, max: 100000 })
+    const professionalBio = clean(source.professionalBio, 2000)
+    const socialMediaPlatforms = cleanUrlMap(source.socialMediaPlatforms, 10)
+
+    if (!licensedCountries.length || !licensedStates.length) throw new Error('THERAPIST_LICENSE_LOCATION_REQUIRED')
+    if (!therapyTypes.length || !specializations.length) throw new Error('THERAPIST_SPECIALTY_REQUIRED')
+    if (professionalBio.length < 50) throw new Error('THERAPIST_BIO_REQUIRED')
+
+    return {
+      licensedCountries,
+      licensedStates,
+      therapyTypes,
+      specializations,
+      certifications,
+      yearsExperience,
+      consultationFee,
+      professionalBio,
+      socialMediaPlatforms,
+    }
+  }
+
+  if (applicationType === 'influencer') {
+    const platformLinks = cleanUrlMap(source.platformLinks, 10)
+    const followerCount = cleanNumber(source.followerCount, { min: 0, max: 2_000_000_000, integer: true })
+    const contentCategories = cleanArray(source.contentCategories, { maxItems: 20, maxLength: 100 })
+    const collaborationTypes = cleanArray(source.collaborationTypes, { maxItems: 20, maxLength: 100 })
+    const mediaKitUrl = cleanUrl(source.mediaKitUrl, 1000)
+    const bio = clean(source.bio, 2000)
+
+    if (!Object.keys(platformLinks).length) throw new Error('INFLUENCER_PLATFORM_REQUIRED')
+    if (!contentCategories.length || !collaborationTypes.length) throw new Error('INFLUENCER_DETAILS_REQUIRED')
+    if (bio.length < 50) throw new Error('INFLUENCER_BIO_REQUIRED')
+
+    return {
+      platformLinks,
+      followerCount,
+      contentCategories,
+      collaborationTypes,
+      mediaKitUrl,
+      bio,
+    }
+  }
+
+  const organizationName = clean(source.organizationName, 160)
+  const practiceType = clean(source.practiceType, 100)
+  const serviceDescription = clean(source.serviceDescription, 500)
+  const websiteUrl = cleanUrl(source.websiteUrl, 1000)
+  const professionalBio = clean(source.professionalBio, 2000)
+
+  if (!organizationName || !practiceType) throw new Error('PROFESSIONAL_ORGANIZATION_REQUIRED')
+  if (serviceDescription.length < 20) throw new Error('PROFESSIONAL_SERVICE_DESCRIPTION_REQUIRED')
+  if (professionalBio.length < 50) throw new Error('PROFESSIONAL_BIO_REQUIRED')
+
+  return {
+    organizationName,
+    practiceType,
+    serviceDescription,
+    websiteUrl,
+    professionalBio,
+  }
+}
+
 const allowedOrigins = () => {
   const configured = (Deno.env.get('PROFESSIONAL_APPLICATION_ALLOWED_ORIGINS') || '')
     .split(',')
@@ -55,16 +178,6 @@ const json = (request: Request, body: unknown, status = 200) =>
     status,
     headers: { ...corsHeadersFor(request), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
-
-const sanitizeDetails = (details: unknown) => {
-  if (!details || typeof details !== 'object' || Array.isArray(details)) return {}
-
-  const serialized = JSON.stringify(details)
-  if (serialized.length > 20_000) throw new Error('APPLICATION_DETAILS_TOO_LARGE')
-
-  // Round-trip through JSON so only plain serializable input reaches jsonb.
-  return JSON.parse(serialized)
-}
 
 const verifyTurnstileIfRequired = async (request: Request, token: string) => {
   if (Deno.env.get('PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED') !== 'true') return true
@@ -130,7 +243,6 @@ serve(async (request) => {
     const lastName = clean(body?.lastName, 80)
     const email = normalizeEmail(body?.email)
     const phone = clean(body?.phone, 40)
-    const details = sanitizeDetails(body?.details)
     const turnstileToken = clean(body?.turnstileToken, 2048)
 
     if (!ALLOWED_TYPES.has(applicationType)) {
@@ -145,6 +257,8 @@ serve(async (request) => {
     if (phone.length < 7) {
       return json(request, { error: 'VALID_PHONE_REQUIRED' }, 400)
     }
+
+    const details = sanitizeDetails(applicationType, body?.details)
 
     const turnstileValid = await verifyTurnstileIfRequired(request, turnstileToken)
     if (!turnstileValid) {
@@ -196,8 +310,19 @@ serve(async (request) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
-    if (message === 'APPLICATION_DETAILS_TOO_LARGE') {
-      return json(request, { error: message }, 413)
+    const validationErrors = new Set([
+      'THERAPIST_LICENSE_LOCATION_REQUIRED',
+      'THERAPIST_SPECIALTY_REQUIRED',
+      'THERAPIST_BIO_REQUIRED',
+      'INFLUENCER_PLATFORM_REQUIRED',
+      'INFLUENCER_DETAILS_REQUIRED',
+      'INFLUENCER_BIO_REQUIRED',
+      'PROFESSIONAL_ORGANIZATION_REQUIRED',
+      'PROFESSIONAL_SERVICE_DESCRIPTION_REQUIRED',
+      'PROFESSIONAL_BIO_REQUIRED',
+    ])
+    if (validationErrors.has(message)) {
+      return json(request, { error: message }, 400)
     }
     console.error('Professional application request failed:', error instanceof Error ? error.message : 'unknown')
     return json(request, { error: 'INVALID_REQUEST' }, 400)
