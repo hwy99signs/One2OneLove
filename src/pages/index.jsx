@@ -43,13 +43,9 @@ import CooperativeGames from "./CooperativeGames";
 import CouplesDashboard from "./CouplesDashboard";
 import CouplesCalendar from "./CouplesCalendar";
 import LGBTQSupport from "./LGBTQSupport";
-import HelpCenter from "./HelpCenter";
-import ContactUs from "./ContactUs";
+import HelpCenter from "./HelpCenterRelaunch";
 import PrivacyPolicy from "./PrivacyPolicy";
 import TermsOfService from "./TermsOfService";
-import Blog from "./Blog";
-import Reviews from "./Reviews";
-import Suggestions from "./Suggestions";
 import PremiumFeatures from "./PremiumFeatures";
 import Chat from "./Chat";
 import FindFriends from "./FindFriends";
@@ -105,12 +101,8 @@ const PAGES = {
   CouplesCalendar,
   LGBTQSupport,
   HelpCenter,
-  ContactUs,
   PrivacyPolicy,
   TermsOfService,
-  Blog,
-  Reviews,
-  Suggestions,
   PremiumFeatures,
   Chat,
   FindFriends,
@@ -121,9 +113,9 @@ const PAGES = {
 
 // Third tuple value is an approved paid entitlement key. The FeatureGate remains
 // transparent until VITE_MEMBERSHIP_GATING_ENABLED=true after controlled billing tests.
-// Legacy pages that contain mock rankings/rewards, developer indexes, unverified couple
-// account assumptions or retired campaigns stay preserved in source but are fenced from
-// the public relaunch route surface with RelaunchUnavailable.
+// Legacy pages that contain fabricated reviews/editorial authors, mock rankings/rewards,
+// placeholder contact delivery, developer indexes, unverified couple-account assumptions
+// or retired campaigns remain preserved in source but are fenced from the public relaunch.
 const ROUTES = [
   ["/", Home],
   ["/Home", Home],
@@ -176,12 +168,12 @@ const ROUTES = [
   ["/CouplesCalendar", CouplesCalendar, "couples_calendar"],
   ["/LGBTQSupport", LGBTQSupport],
   ["/HelpCenter", HelpCenter],
-  ["/ContactUs", ContactUs],
+  ["/ContactUs", RelaunchUnavailable],
   ["/PrivacyPolicy", PrivacyPolicy],
   ["/TermsOfService", TermsOfService],
-  ["/Blog", Blog],
-  ["/Reviews", Reviews],
-  ["/Suggestions", Suggestions],
+  ["/Blog", RelaunchUnavailable],
+  ["/Reviews", RelaunchUnavailable],
+  ["/Suggestions", RelaunchUnavailable],
   ["/Leaderboard", RelaunchUnavailable],
   ["/Achievements", RelaunchUnavailable],
   ["/PremiumFeatures", PremiumFeatures],
