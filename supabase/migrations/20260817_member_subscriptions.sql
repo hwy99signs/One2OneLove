@@ -23,6 +23,9 @@ create table if not exists public.member_subscriptions (
     'incomplete_expired',
     'paused'
   )),
+  pricing_transition_status text not null default 'not_started' check (
+    pricing_transition_status in ('not_started', 'pending', 'configured', 'reconciliation_required')
+  ),
   stripe_customer_id text unique,
   stripe_subscription_id text unique,
   stripe_schedule_id text unique,
@@ -39,6 +42,10 @@ create table if not exists public.member_subscriptions (
 
 create index if not exists member_subscriptions_status_idx
   on public.member_subscriptions(status, updated_at desc);
+
+create index if not exists member_subscriptions_reconciliation_idx
+  on public.member_subscriptions(pricing_transition_status, updated_at desc)
+  where pricing_transition_status = 'reconciliation_required';
 
 alter table public.member_subscriptions enable row level security;
 
@@ -89,9 +96,9 @@ revoke all on public.my_membership from anon;
 grant select on public.my_membership to authenticated;
 
 comment on table public.member_subscriptions is
-  'Private server-managed Stripe membership state. Browser roles have no direct table access.';
+  'Private server-managed Stripe membership state. Browser roles have no direct table access; pricing-transition reconciliation is server/operator-only.';
 comment on view public.my_membership is
-  'Authenticated member own billing-status projection; excludes Stripe customer/subscription/schedule and price identifiers.';
+  'Authenticated member own billing-status projection; excludes Stripe customer/subscription/schedule, raw price IDs and reconciliation internals.';
 
 commit;
 
@@ -100,5 +107,7 @@ commit;
 -- 2. Confirm anon cannot read/write this table and authenticated browser cannot mutate it.
 -- 3. Confirm authenticated user can read only their own my_membership row.
 -- 4. Confirm service_role can upsert Stripe state.
--- 5. Do not delete legacy public.users subscription columns yet; leave them read-only
+-- 5. Confirm a failed intro->standard schedule setup is recorded as
+--    pricing_transition_status='reconciliation_required' and is never silently ignored.
+-- 6. Do not delete legacy public.users subscription columns yet; leave them read-only
 --    during the relaunch transition until all legacy consumers are removed.
