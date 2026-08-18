@@ -1,5 +1,13 @@
 -- One2OneLove Love Notes private invitation/reveal model.
--- DEVELOPMENT MIGRATION ONLY. Do not apply to production without explicit approval.
+-- DEVELOPMENT MIGRATION ONLY. Apply to production only through an approved batch.
+--
+-- Privacy model:
+--   * Raw reveal tokens are never stored; only SHA-256 hashes are persisted.
+--   * Browser clients never read/write the delivery table directly.
+--   * Authenticated sender/recipient history is exposed only through a safe projection.
+--   * All delivery/reveal state changes are performed server-side with validated callers.
+
+begin;
 
 create table if not exists public.love_note_invitations (
   id uuid primary key default gen_random_uuid(),
@@ -49,19 +57,21 @@ create index if not exists love_note_invitations_status_idx
 
 alter table public.love_note_invitations enable row level security;
 
--- Members may see only invitations they sent or invitations that have already
--- been securely claimed by their account. Recipient reveal itself is handled
--- server-side by an Edge Function after validating the private token.
+-- Browser roles do not need raw-table access. This prevents token hashes, provider IDs,
+-- raw recipient contact information and failure internals from being selected directly.
+revoke all on table public.love_note_invitations from anon, authenticated;
+
+-- Defense-in-depth row policy for any future controlled direct grant. The current
+-- relaunch does NOT grant browser SELECT on the table itself.
 drop policy if exists "love_note_sender_select_own" on public.love_note_invitations;
-create policy "love_note_sender_select_own"
+create policy "love_note_participants_select_own"
   on public.love_note_invitations
   for select
   to authenticated
   using (sender_user_id = auth.uid() or recipient_user_id = auth.uid());
 
 -- No direct INSERT/UPDATE/DELETE policy is granted to browser clients.
--- Authenticated Edge Functions perform writes using the service role after
--- verifying the caller and reveal token. This prevents forged delivery state.
+-- Edge Functions perform writes using service_role after validating the caller.
 
 create or replace function public.set_love_note_invitation_updated_at()
 returns trigger
@@ -80,5 +90,38 @@ create trigger set_love_note_invitation_updated_at
 before update on public.love_note_invitations
 for each row execute function public.set_love_note_invitation_updated_at();
 
+-- Safe browser history projection. It intentionally excludes recipient_contact,
+-- token_hash/token_expires_at, provider_message_id and failure_reason.
+drop view if exists public.love_note_invitation_history;
+create view public.love_note_invitation_history
+with (security_barrier = true)
+as
+select
+  id,
+  sender_user_id,
+  recipient_user_id,
+  sender_name,
+  recipient_name,
+  delivery_method,
+  note_content,
+  scheduled_for,
+  schedule_timezone,
+  status,
+  sent_at,
+  delivered_at,
+  revealed_at,
+  created_at,
+  updated_at
+from public.love_note_invitations
+where sender_user_id = auth.uid() or recipient_user_id = auth.uid();
+
+revoke all on public.love_note_invitation_history from public;
+revoke all on public.love_note_invitation_history from anon;
+grant select on public.love_note_invitation_history to authenticated;
+
 comment on table public.love_note_invitations is
-  'Private Love Notes delivery records. Raw reveal tokens are never stored; only a SHA-256 hash is persisted after a note is actually sent.';
+  'Private Love Notes delivery records. Raw reveal tokens are never stored; browser roles have no direct table access.';
+comment on view public.love_note_invitation_history is
+  'Participant-only Love Note history projection. Excludes raw recipient contact, token hashes and provider/delivery internals.';
+
+commit;
