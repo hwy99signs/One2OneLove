@@ -53,6 +53,7 @@ import FriendRequests from "./FriendRequests";
 import PaymentSuccess from "./PaymentSuccess";
 import Subscription from "./Subscription";
 import RelaunchUnavailable from "./RelaunchUnavailable";
+import NotFoundRelaunch from "./NotFoundRelaunch";
 import FeatureGate from "@/components/subscription/FeatureGate";
 import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 
@@ -183,6 +184,7 @@ const ROUTES = [
   ["/PaymentSuccess", PaymentSuccess],
   ["/payment-success", PaymentSuccess],
   ["/Subscription", Subscription],
+  ["*", NotFoundRelaunch],
 ];
 
 function _getCurrentPage(url) {
