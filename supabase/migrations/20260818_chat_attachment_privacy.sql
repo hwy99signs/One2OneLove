@@ -8,6 +8,11 @@
 -- segment names a conversation they participate in. Upload/update/delete is additionally
 -- limited to objects whose second path segment equals auth.uid(). Browser clients receive
 -- short-lived signed URLs; persistent public URLs are not part of the relaunch model.
+--
+-- Legacy objects were uploaded under `chat-files/<sender>/<timestamp>` inside the same
+-- bucket and their message rows stored a public URL. The read policy below has a narrow
+-- compatibility branch that authorizes a legacy object only when an existing message URL
+-- ends in that exact object name and the caller is that message sender or receiver.
 
 begin;
 
@@ -38,11 +43,20 @@ for select
 to authenticated
 using (
   bucket_id = 'chat-files'
-  and exists (
-    select 1
-    from public.conversations c
-    where c.id::text = (storage.foldername(name))[1]
-      and auth.uid() in (c.user1_id, c.user2_id)
+  and (
+    exists (
+      select 1
+      from public.conversations c
+      where c.id::text = (storage.foldername(name))[1]
+        and auth.uid() in (c.user1_id, c.user2_id)
+    )
+    or exists (
+      select 1
+      from public.messages m
+      where m.file_url is not null
+        and m.file_url like ('%/object/public/chat-files/' || storage.objects.name)
+        and auth.uid() in (m.sender_id, m.receiver_id)
+    )
   )
 );
 
@@ -102,7 +116,7 @@ using (
 );
 
 comment on table storage.objects is
-  'One2OneLove chat-files access is participant-scoped through storage RLS; new chat objects use conversation/sender/random object keys.';
+  'One2OneLove chat-files access is participant-scoped through storage RLS; new chat objects use conversation/sender/random object keys and legacy public-url objects have participant-only read compatibility.';
 
 commit;
 
@@ -115,4 +129,5 @@ commit;
 -- 5. A third authenticated member cannot SELECT/sign/upload into that conversation path.
 -- 6. Anonymous/public URL access fails.
 -- 7. A signed URL expires and a fresh signed URL can be generated only by a participant.
--- 8. 10 MiB+ uploads fail.
+-- 8. Existing legacy attachment rows remain readable only to their original sender/receiver.
+-- 9. 10 MiB+ uploads fail.
