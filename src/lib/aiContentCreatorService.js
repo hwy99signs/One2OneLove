@@ -12,6 +12,21 @@ const createRequestId = () => {
   });
 };
 
+const readFunctionErrorPayload = async (error, data) => {
+  if (data && typeof data === 'object') return data;
+
+  const response = error?.context;
+  if (!response || typeof response.json !== 'function') return null;
+
+  try {
+    const readable = typeof response.clone === 'function' ? response.clone() : response;
+    const payload = await readable.json();
+    return payload && typeof payload === 'object' ? payload : null;
+  } catch {
+    return null;
+  }
+};
+
 export const newAiContentRequestId = createRequestId;
 
 /**
@@ -41,19 +56,21 @@ export async function generateRelationshipContent({
   };
 
   if (!body.content_type || !body.tone) {
-    const error = new Error('Choose a content type and tone first.');
-    error.code = 'INVALID_GENERATION_OPTIONS';
-    throw error;
+    const invalid = new Error('Choose a content type and tone first.');
+    invalid.code = 'INVALID_GENERATION_OPTIONS';
+    throw invalid;
   }
 
   const { data, error } = await supabase.functions.invoke('generate-relationship-content', { body });
 
   if (error || data?.error) {
-    const code = data?.error || null;
+    const payload = await readFunctionErrorPayload(error, data);
+    const code = payload?.error || data?.error || null;
     const message = code || error?.message || 'AI Content Creator is unavailable right now.';
     const enriched = new Error(message);
     enriched.code = code;
-    enriched.feature = data?.feature || null;
+    enriched.feature = payload?.feature || data?.feature || null;
+    enriched.status = error?.context?.status || null;
     throw enriched;
   }
 
@@ -66,6 +83,7 @@ export async function generateRelationshipContent({
   return {
     content: String(data.content).slice(0, 4000),
     idempotent: Boolean(data.idempotent),
+    reconciliationRequired: Boolean(data.reconciliation_required),
     requestId: body.request_id,
   };
 }
