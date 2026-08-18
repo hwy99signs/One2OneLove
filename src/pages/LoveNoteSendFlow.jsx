@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CalendarHeart,
   Check,
+  Crown,
   Heart,
   LockKeyhole,
   Mail,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/Layout";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import {
   clearLoveNoteDraft,
   clearLoveNoteSendSession,
@@ -36,6 +38,7 @@ const copy = {
     email: "Email", emailHelp: "A private invitation arrives without exposing the Love Note.", mobile: "Mobile number", emailAddress: "Email address",
     note: "Your Love Note", notePlaceholder: "Write your Love Note…", replyPlaceholder: (name) => `Write your reply to ${name}…`, continue: "Continue to delivery",
     sendNow: "Send now", sendNowHelp: "Deliver the invitation as soon as delivery is activated.", schedule: "Schedule it", scheduleHelp: "Choose a future date and time.",
+    membership: "Membership", scheduleMembershipHelp: "Future-date scheduling is included with One2OneLove Membership.",
     privateTitle: "Private by design", privateText: (sender) => `The invitation identifies ${sender}, but the Love Note itself stays hidden until the recipient opens the secure reveal.`,
     backButton: "Back", review: "Review", from: "From", recipient: "Recipient", delivery: "Delivery", contact: "Contact", when: "When",
     signInTitle: "Your Love Note is ready.", signInText: "Sign in or create a free account to continue. We’ll keep this Love Note and bring you right back here.",
@@ -54,6 +57,7 @@ const copy = {
     deliveryQuestion: "¿Cómo debe llegar la invitación?", text: "Mensaje de texto", textHelp: "Solo vista previa. El SMS de pago aún no está activado.", email: "Correo electrónico", emailHelp: "La invitación privada llega sin mostrar la Nota de Amor.",
     mobile: "Número móvil", emailAddress: "Correo electrónico", note: "Tu Nota de Amor", notePlaceholder: "Escribe tu Nota de Amor…", replyPlaceholder: (name) => `Escribe tu respuesta para ${name}…`, continue: "Continuar a entrega",
     sendNow: "Enviar ahora", sendNowHelp: "Entregar la invitación cuando se active la entrega.", schedule: "Programarla", scheduleHelp: "Elige una fecha y hora futuras.",
+    membership: "Membresía", scheduleMembershipHelp: "La programación para una fecha futura está incluida con la Membresía One2OneLove.",
     privateTitle: "Privada por diseño", privateText: (sender) => `La invitación identifica a ${sender}, pero la Nota de Amor permanece oculta hasta la revelación segura.`,
     backButton: "Atrás", review: "Revisar", from: "De", recipient: "Destinatario", delivery: "Entrega", contact: "Contacto", when: "Cuándo",
     signInTitle: "Tu Nota de Amor está lista.", signInText: "Inicia sesión o crea una cuenta gratis. Guardaremos esta nota y te traeremos de vuelta.", signIn: "Iniciar sesión para enviar", signup: "Crear cuenta gratis", signedIn: "Sesión iniciada y lista",
@@ -70,6 +74,7 @@ const copy = {
     deliveryQuestion: "Comment l’invitation doit-elle arriver ?", text: "SMS", textHelp: "Aperçu uniquement. L’envoi SMS payant n’est pas activé.", email: "E-mail", emailHelp: "L’invitation privée arrive sans dévoiler le Mot d’Amour.",
     mobile: "Numéro mobile", emailAddress: "Adresse e-mail", note: "Votre Mot d’Amour", notePlaceholder: "Écrivez votre Mot d’Amour…", replyPlaceholder: (name) => `Écrivez votre réponse à ${name}…`, continue: "Continuer vers l’envoi",
     sendNow: "Envoyer maintenant", sendNowHelp: "Envoyer l’invitation une fois la livraison activée.", schedule: "Programmer", scheduleHelp: "Choisissez une date et une heure futures.",
+    membership: "Adhésion", scheduleMembershipHelp: "La programmation à une date future est incluse avec l’adhésion One2OneLove.",
     privateTitle: "Privé par conception", privateText: (sender) => `L’invitation identifie ${sender}, mais le Mot d’Amour reste caché jusqu’à la révélation sécurisée.`,
     backButton: "Retour", review: "Vérifier", from: "De", recipient: "Destinataire", delivery: "Envoi", contact: "Contact", when: "Quand",
     signInTitle: "Votre Mot d’Amour est prêt.", signInText: "Connectez-vous ou créez un compte gratuit. Nous garderons ce mot et vous ramènerons ici.", signIn: "Se connecter pour envoyer", signup: "Créer un compte gratuit", signedIn: "Connecté et prêt",
@@ -86,6 +91,7 @@ const copy = {
     deliveryQuestion: "Come deve arrivare l’invito?", text: "Messaggio di testo", textHelp: "Solo anteprima. L’SMS a pagamento non è attivo.", email: "Email", emailHelp: "L’invito privato arriva senza mostrare la Nota d’Amore.",
     mobile: "Numero di cellulare", emailAddress: "Indirizzo email", note: "La tua Nota d’Amore", notePlaceholder: "Scrivi la tua Nota d’Amore…", replyPlaceholder: (name) => `Scrivi la tua risposta a ${name}…`, continue: "Continua alla consegna",
     sendNow: "Invia ora", sendNowHelp: "Consegna l’invito quando la consegna sarà attiva.", schedule: "Programma", scheduleHelp: "Scegli una data e un’ora future.",
+    membership: "Abbonamento", scheduleMembershipHelp: "La programmazione per una data futura è inclusa nell’abbonamento One2OneLove.",
     privateTitle: "Privata per design", privateText: (sender) => `L’invito identifica ${sender}, ma la Nota d’Amore resta nascosta fino alla rivelazione sicura.`,
     backButton: "Indietro", review: "Rivedi", from: "Da", recipient: "Destinatario", delivery: "Consegna", contact: "Contatto", when: "Quando",
     signInTitle: "La tua Nota d’Amore è pronta.", signInText: "Accedi o crea un account gratuito. Terremo questa nota e ti riporteremo qui.", signIn: "Accedi per inviare", signup: "Crea account gratuito", signedIn: "Accesso effettuato",
@@ -102,6 +108,7 @@ const copy = {
     deliveryQuestion: "Wie soll die Einladung ankommen?", text: "Textnachricht", textHelp: "Derzeit nur Vorschau. Bezahlte SMS-Zustellung ist nicht aktiviert.", email: "E-Mail", emailHelp: "Die private Einladung kommt an, ohne die Liebesnotiz zu zeigen.",
     mobile: "Mobilnummer", emailAddress: "E-Mail-Adresse", note: "Deine Liebesnotiz", notePlaceholder: "Schreibe deine Liebesnotiz…", replyPlaceholder: (name) => `Schreibe deine Antwort an ${name}…`, continue: "Weiter zur Zustellung",
     sendNow: "Jetzt senden", sendNowHelp: "Einladung senden, sobald die Zustellung aktiviert ist.", schedule: "Planen", scheduleHelp: "Wähle ein zukünftiges Datum und eine Uhrzeit.",
+    membership: "Mitgliedschaft", scheduleMembershipHelp: "Die Planung für ein zukünftiges Datum ist in der One2OneLove Mitgliedschaft enthalten.",
     privateTitle: "Privat konzipiert", privateText: (sender) => `Die Einladung nennt ${sender}, aber die Liebesnotiz bleibt bis zur sicheren Enthüllung verborgen.`,
     backButton: "Zurück", review: "Prüfen", from: "Von", recipient: "Empfänger", delivery: "Zustellung", contact: "Kontakt", when: "Wann",
     signInTitle: "Deine Liebesnotiz ist bereit.", signInText: "Melde dich an oder erstelle ein kostenloses Konto. Wir bewahren diese Notiz auf und bringen dich zurück.", signIn: "Zum Senden anmelden", signup: "Kostenloses Konto erstellen", signedIn: "Angemeldet und bereit",
@@ -118,6 +125,7 @@ const copy = {
     deliveryQuestion: "Hoe moet de uitnodiging aankomen?", text: "Sms", textHelp: "Voorlopig alleen een voorbeeld. Betaalde sms-bezorging is niet geactiveerd.", email: "E-mail", emailHelp: "De privé-uitnodiging arriveert zonder het Liefdesbriefje te tonen.",
     mobile: "Mobiel nummer", emailAddress: "E-mailadres", note: "Jouw Liefdesbriefje", notePlaceholder: "Schrijf jouw Liefdesbriefje…", replyPlaceholder: (name) => `Schrijf je antwoord aan ${name}…`, continue: "Doorgaan naar bezorging",
     sendNow: "Nu versturen", sendNowHelp: "Bezorg de uitnodiging zodra bezorging is geactiveerd.", schedule: "Inplannen", scheduleHelp: "Kies een toekomstige datum en tijd.",
+    membership: "Lidmaatschap", scheduleMembershipHelp: "Planning voor een toekomstige datum is inbegrepen bij het One2OneLove Lidmaatschap.",
     privateTitle: "Privé ontworpen", privateText: (sender) => `De uitnodiging noemt ${sender}, maar het Liefdesbriefje blijft verborgen tot de beveiligde onthulling.`,
     backButton: "Terug", review: "Controleren", from: "Van", recipient: "Ontvanger", delivery: "Bezorging", contact: "Contact", when: "Wanneer",
     signInTitle: "Je Liefdesbriefje is klaar.", signInText: "Log in of maak een gratis account. We bewaren dit briefje en brengen je hier terug.", signIn: "Inloggen om te sturen", signup: "Gratis account maken", signedIn: "Ingelogd en klaar",
@@ -146,6 +154,7 @@ export default function LoveNoteSendFlow() {
   const { user } = useAuth();
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
+  const scheduleAccess = useFeatureAccess("love_note_scheduling");
   const [initial] = useState(cleanDraft);
   const [senderName, setSenderName] = useState(initial.senderName || user?.name || "");
   const [recipientName, setRecipientName] = useState(initial.recipientName || "");
@@ -174,6 +183,19 @@ export default function LoveNoteSendFlow() {
     });
   }, [senderName, recipientName, delivery, contact, message, deliveryTime, scheduleDate, scheduleTime, step, initial.source]);
 
+  useEffect(() => {
+    if (
+      scheduleAccess.gatingEnabled
+      && !scheduleAccess.isLoading
+      && !scheduleAccess.hasAccess
+      && deliveryTime === "schedule"
+    ) {
+      setDeliveryTime("now");
+      setScheduleDate("");
+      setScheduleTime("");
+    }
+  }, [deliveryTime, scheduleAccess.gatingEnabled, scheduleAccess.hasAccess, scheduleAccess.isLoading]);
+
   const senderLabel = senderName.trim() || t.yourName;
   const recipientLabel = recipientName.trim() || t.recipientName;
   const canContinue = Boolean(senderName.trim() && recipientName.trim() && contact.trim() && message.trim());
@@ -189,12 +211,34 @@ export default function LoveNoteSendFlow() {
   const scheduleLabel = deliveryTime === "now" ? t.nowLabel : (scheduleValid ? `${scheduleDate} · ${scheduleTime}` : t.chooseDate);
   const steps = [t.recipientStep, t.deliveryStep, t.reviewStep];
 
-  const preserveAndGo = (path) => {
+  const stashCurrent = (targetStep = step) => {
     stashLoveNoteSendSession({
       senderName, recipientName, delivery, contact, message, deliveryTime,
-      scheduleDate, scheduleTime, source: initial.source, step: 3,
+      scheduleDate, scheduleTime, source: initial.source, step: targetStep,
     });
+  };
+
+  const preserveAndGo = (path) => {
+    stashCurrent(3);
     navigate(`${path}?returnTo=${encodeURIComponent(RETURN_TO)}`);
+  };
+
+  const chooseSchedule = () => {
+    if (scheduleAccess.isLoading) return;
+    if (scheduleAccess.hasAccess) {
+      setDeliveryTime("schedule");
+      return;
+    }
+
+    // Preserve the free Love Note draft. Signed-out visitors first establish identity;
+    // signed-in free members see the one-membership offer. The server independently
+    // enforces the entitlement, so this is UX—not the security boundary.
+    stashCurrent(2);
+    if (scheduleAccess.needsSignIn) {
+      navigate(`/SignIn?returnTo=${encodeURIComponent(RETURN_TO)}`);
+    } else {
+      navigate("/Subscription");
+    }
   };
 
   const previewRecipient = () => {
@@ -213,6 +257,8 @@ export default function LoveNoteSendFlow() {
     clearLoveNoteSendSession();
     navigate("/LoveNotes");
   };
+
+  const scheduleLocked = scheduleAccess.gatingEnabled && !scheduleAccess.hasAccess;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-violet-50 px-5 py-10 text-slate-900 sm:px-8">
@@ -274,7 +320,19 @@ export default function LoveNoteSendFlow() {
               <div className="mt-8 space-y-5">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button type="button" onClick={() => setDeliveryTime("now")} className={`rounded-2xl border p-5 text-left ${deliveryTime === "now" ? "border-pink-300 bg-pink-50" : "border-slate-200"}`}><Send className="h-5 w-5 text-pink-600" /><div className="mt-3 font-black">{t.sendNow}</div><div className="mt-1 text-xs leading-5 text-slate-500">{t.sendNowHelp}</div></button>
-                  <button type="button" onClick={() => setDeliveryTime("schedule")} className={`rounded-2xl border p-5 text-left ${deliveryTime === "schedule" ? "border-violet-300 bg-violet-50" : "border-slate-200"}`}><CalendarHeart className="h-5 w-5 text-violet-600" /><div className="mt-3 font-black">{t.schedule}</div><div className="mt-1 text-xs leading-5 text-slate-500">{t.scheduleHelp}</div></button>
+                  <button
+                    type="button"
+                    onClick={chooseSchedule}
+                    disabled={scheduleAccess.isLoading}
+                    className={`relative rounded-2xl border p-5 text-left transition disabled:cursor-wait disabled:opacity-60 ${deliveryTime === "schedule" ? "border-violet-300 bg-violet-50" : scheduleLocked ? "border-purple-200 bg-purple-50/60" : "border-slate-200"}`}
+                  >
+                    {scheduleLocked && (
+                      <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-purple-700 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white"><Crown className="h-3 w-3" />{t.membership}</span>
+                    )}
+                    <CalendarHeart className="h-5 w-5 text-violet-600" />
+                    <div className="mt-3 font-black">{t.schedule}</div>
+                    <div className="mt-1 pr-2 text-xs leading-5 text-slate-500">{scheduleLocked ? t.scheduleMembershipHelp : t.scheduleHelp}</div>
+                  </button>
                 </div>
                 {deliveryTime === "schedule" && <div><div className="grid gap-3 sm:grid-cols-2"><input type="date" min={today} value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="rounded-2xl border border-slate-200 px-4 py-3" /><input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="rounded-2xl border border-slate-200 px-4 py-3" /></div>{!scheduleValid && scheduleDate && scheduleTime && <p className="mt-2 text-xs font-bold text-amber-700">{t.invalidSchedule}</p>}</div>}
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900"><div className="flex items-center gap-2 font-black"><LockKeyhole className="h-4 w-4" />{t.privateTitle}</div><p className="mt-1">{t.privateText(senderLabel)}</p></div>
