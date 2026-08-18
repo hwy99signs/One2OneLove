@@ -51,7 +51,7 @@ export default function AuthCallback() {
       if (authError) {
         if (!cancelled) {
           setState('error');
-          setStatus('We could not confirm that email link. Please sign in or request a new link.');
+          setStatus('We could not confirm that email link. Please sign in or request a new confirmation link.');
         }
         // Keep the stored destination on an error so the member can request/sign in and
         // still return to the original Love Note or member experience afterward.
@@ -91,10 +91,11 @@ export default function AuthCallback() {
         return;
       }
 
-      // Confirmation can succeed without leaving a browser session, depending on the
-      // email-link flow. Preserve the validated destination by passing it to Sign In.
+      // Some email-link flows can return to the site without leaving a browser session.
+      // Without a confirmed session we cannot truthfully claim confirmation succeeded.
+      // Preserve the validated destination and let Sign In verify the account state.
       setState('success');
-      setStatus('Email confirmed. Please sign in to continue.');
+      setStatus('Confirmation link processed. Please sign in to continue.');
       scheduleRedirect(signInUrl, 900);
     };
 
