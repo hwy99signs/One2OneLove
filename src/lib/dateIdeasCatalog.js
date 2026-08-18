@@ -1,0 +1,91 @@
+const BASE = [
+  { key: 'stargazing', category: 'romantic', budget: 'free', location_type: 'nature', occasion: 'regular', relationship_stage: 'any', duration: '2–3 hr', icon: 'star', color: 'from-purple-500 to-pink-500' },
+  { key: 'cookTogether', category: 'creative', budget: 'low', location_type: 'home', occasion: 'regular', relationship_stage: 'any', duration: '2–3 hr', icon: 'utensils', color: 'from-orange-500 to-red-500' },
+  { key: 'coffeeWalk', category: 'relaxing', budget: 'low', location_type: 'urban', occasion: 'regular', relationship_stage: 'any', duration: '2–3 hr', icon: 'coffee', color: 'from-amber-500 to-orange-500' },
+  { key: 'movieFort', category: 'indoor', budget: 'low', location_type: 'home', occasion: 'regular', relationship_stage: 'any', duration: '3–5 hr', icon: 'film', color: 'from-blue-500 to-purple-500' },
+  { key: 'liveMusic', category: 'romantic', budget: 'medium', location_type: 'cultural', occasion: 'special', relationship_stage: 'any', duration: '3–4 hr', icon: 'music', color: 'from-pink-500 to-rose-500' },
+  { key: 'hike', category: 'adventure', budget: 'free', location_type: 'nature', occasion: 'regular', relationship_stage: 'any', duration: '3–5 hr', icon: 'mountain', color: 'from-green-500 to-emerald-500' },
+  { key: 'sunset', category: 'outdoor', budget: 'free', location_type: 'nature', occasion: 'regular', relationship_stage: 'any', duration: '1–2 hr', icon: 'waves', color: 'from-cyan-500 to-blue-500' },
+  { key: 'artNight', category: 'creative', budget: 'low', location_type: 'home', occasion: 'regular', relationship_stage: 'any', duration: '2–3 hr', icon: 'sparkles', color: 'from-fuchsia-500 to-pink-500' },
+  { key: 'newNeighborhood', category: 'adventure', budget: 'medium', location_type: 'urban', occasion: 'regular', relationship_stage: 'any', duration: '3–4 hr', icon: 'map', color: 'from-teal-500 to-cyan-500' },
+];
+
+const COPY = {
+  en: {
+    stargazing: ['Stargazing Picnic', 'Pack simple snacks, find a darker open spot, put the phones away, and spend the evening talking under the sky.'],
+    cookTogether: ['Cook Something New Together', 'Choose one recipe neither of you has made, divide the jobs, play music, and enjoy the meal you created together.'],
+    coffeeWalk: ['Coffee + Long Walk', 'Pick a coffee shop, choose a neighborhood or park to explore, and make the walk about conversation rather than errands.'],
+    movieFort: ['Movie Fort Night', 'Build a comfortable blanket-and-pillow setup, pick a movie theme, add favorite snacks, and make home feel different for the night.'],
+    liveMusic: ['Live Music Night', 'Find a small live-music venue or community performance, arrive early, and make room for a little dancing if the mood is right.'],
+    hike: ['Scenic Hike + Snack Break', 'Choose a trail that fits both of you, bring water and snacks, and plan a slow stop somewhere with a view.'],
+    sunset: ['Sunset Date', 'Choose a waterfront, overlook, or open park and arrive early enough to walk, talk, and watch the light change together.'],
+    artNight: ['At-Home Art Night', 'Grab inexpensive art supplies, each make something without judging the result, and trade stories about what you created.'],
+    newNeighborhood: ['Explore a New Neighborhood', 'Pick an area you rarely visit, walk without a tight itinerary, and each choose one shop, snack, or stop to try.'],
+  },
+  es: {
+    stargazing: ['Picnic Bajo las Estrellas', 'Lleven algo sencillo de comer, busquen un lugar abierto y oscuro, guarden los teléfonos y conversen bajo el cielo.'],
+    cookTogether: ['Cocinen Algo Nuevo Juntos', 'Elijan una receta que ninguno haya preparado, repartan las tareas, pongan música y disfruten lo que crearon juntos.'],
+    coffeeWalk: ['Café + Caminata Larga', 'Elijan una cafetería y un vecindario o parque para explorar, dejando que la caminata se concentre en la conversación.'],
+    movieFort: ['Noche de Película en un Fuerte', 'Armen un espacio cómodo con mantas y almohadas, elijan un tema de películas y conviertan la casa en algo distinto por una noche.'],
+    liveMusic: ['Noche de Música en Vivo', 'Busquen un lugar pequeño con música en vivo o una presentación local, lleguen temprano y bailen un poco si les nace.'],
+    hike: ['Caminata con Vista + Merienda', 'Elijan un sendero adecuado para ambos, lleven agua y algo de comer, y hagan una pausa tranquila donde haya una buena vista.'],
+    sunset: ['Cita al Atardecer', 'Elijan un paseo junto al agua, un mirador o un parque abierto y lleguen con tiempo para caminar y ver caer el sol juntos.'],
+    artNight: ['Noche de Arte en Casa', 'Consigan materiales económicos, creen algo sin preocuparse por el resultado y cuéntense qué inspiró cada obra.'],
+    newNeighborhood: ['Exploren un Vecindario Nuevo', 'Elijan una zona que casi nunca visitan, caminen sin un plan rígido y que cada uno escoja una parada para probar.'],
+  },
+  fr: {
+    stargazing: ['Pique-nique Sous les Étoiles', 'Prenez quelques encas, trouvez un endroit ouvert et sombre, rangez les téléphones et discutez sous le ciel.'],
+    cookTogether: ['Cuisinez Quelque Chose de Nouveau', 'Choisissez une recette qu’aucun de vous n’a faite, partagez les tâches, mettez de la musique et savourez votre création.'],
+    coffeeWalk: ['Café + Longue Promenade', 'Choisissez un café puis un quartier ou un parc à explorer, en faisant de la conversation le vrai programme.'],
+    movieFort: ['Soirée Film Dans un Fort', 'Créez un coin confortable avec couvertures et coussins, choisissez un thème de films et transformez la maison pour la soirée.'],
+    liveMusic: ['Soirée Musique Live', 'Trouvez une petite salle ou un spectacle local, arrivez tôt et laissez une place à quelques pas de danse si l’envie vient.'],
+    hike: ['Randonnée + Pause Gourmande', 'Choisissez un sentier adapté à vous deux, prenez de l’eau et des encas, et prévoyez une pause avec une belle vue.'],
+    sunset: ['Rendez-vous au Coucher du Soleil', 'Choisissez un bord d’eau, un belvédère ou un parc et arrivez assez tôt pour marcher, parler et regarder la lumière changer.'],
+    artNight: ['Soirée Créative à la Maison', 'Prenez du matériel simple, créez chacun quelque chose sans juger le résultat, puis racontez ce qui vous a inspirés.'],
+    newNeighborhood: ['Explorez un Nouveau Quartier', 'Choisissez un quartier que vous connaissez peu, marchez sans programme strict et choisissez chacun un arrêt à découvrir.'],
+  },
+  it: {
+    stargazing: ['Picnic Sotto le Stelle', 'Portate qualche snack, trovate un posto aperto e poco illuminato, mettete via i telefoni e parlate sotto il cielo.'],
+    cookTogether: ['Cucinate Qualcosa di Nuovo', 'Scegliete una ricetta nuova per entrambi, dividete i compiti, mettete musica e gustate ciò che avete creato insieme.'],
+    coffeeWalk: ['Caffè + Lunga Passeggiata', 'Scegliete un bar e poi un quartiere o un parco da esplorare, facendo della conversazione il vero programma.'],
+    movieFort: ['Serata Film nel Fortino', 'Create un angolo comodo con coperte e cuscini, scegliete un tema di film e rendete la casa diversa per una sera.'],
+    liveMusic: ['Serata di Musica dal Vivo', 'Trovate un piccolo locale o uno spettacolo della zona, arrivate presto e lasciate spazio a qualche passo di danza.'],
+    hike: ['Escursione Panoramica + Spuntino', 'Scegliete un percorso adatto a entrambi, portate acqua e snack e fate una pausa lenta in un punto panoramico.'],
+    sunset: ['Appuntamento al Tramonto', 'Scegliete un lungomare, un belvedere o un parco aperto e arrivate in tempo per camminare e guardare insieme il tramonto.'],
+    artNight: ['Serata d’Arte a Casa', 'Prendete materiali economici, create qualcosa senza giudicare il risultato e raccontatevi cosa vi ha ispirato.'],
+    newNeighborhood: ['Esplorate un Nuovo Quartiere', 'Scegliete una zona che frequentate poco, camminate senza un itinerario rigido e scegliete una tappa ciascuno.'],
+  },
+  de: {
+    stargazing: ['Picknick Unter den Sternen', 'Packt einfache Snacks ein, sucht einen dunkleren offenen Platz, legt die Handys weg und redet unter dem Himmel.'],
+    cookTogether: ['Kocht Gemeinsam Etwas Neues', 'Wählt ein Rezept, das ihr beide noch nie gekocht habt, teilt die Aufgaben, macht Musik an und genießt euer Ergebnis.'],
+    coffeeWalk: ['Kaffee + Langer Spaziergang', 'Sucht ein Café und danach ein Viertel oder einen Park aus und macht das Gespräch zum eigentlichen Programm.'],
+    movieFort: ['Filmabend im Deckenfort', 'Baut euch mit Decken und Kissen einen gemütlichen Platz, wählt ein Filmthema und macht das Zuhause für einen Abend besonders.'],
+    liveMusic: ['Abend mit Livemusik', 'Findet einen kleinen Musikort oder eine lokale Aufführung, kommt früh und tanzt ein wenig, wenn es sich richtig anfühlt.'],
+    hike: ['Aussichtsreiche Wanderung + Snackpause', 'Wählt einen Weg, der für euch beide passt, nehmt Wasser und Snacks mit und plant eine ruhige Pause mit Aussicht.'],
+    sunset: ['Date zum Sonnenuntergang', 'Wählt einen Platz am Wasser, einen Aussichtspunkt oder Park und kommt früh genug zum Spazieren, Reden und Zuschauen.'],
+    artNight: ['Kunstabend zu Hause', 'Besorgt einfache Materialien, gestaltet beide etwas ohne Leistungsdruck und erzählt euch danach, was euch inspiriert hat.'],
+    newNeighborhood: ['Erkundet ein Neues Viertel', 'Wählt eine Gegend, die ihr kaum kennt, lauft ohne engen Plan los und sucht euch jeweils einen Laden oder Stopp aus.'],
+  },
+  nl: {
+    stargazing: ['Picknick Onder de Sterren', 'Neem eenvoudige snacks mee, zoek een donkere open plek, leg de telefoons weg en praat samen onder de sterren.'],
+    cookTogether: ['Kook Samen Iets Nieuws', 'Kies een recept dat jullie allebei nog nooit hebben gemaakt, verdeel de taken, zet muziek aan en geniet van jullie creatie.'],
+    coffeeWalk: ['Koffie + Lange Wandeling', 'Kies een koffiebar en een buurt of park om te verkennen, en maak het gesprek belangrijker dan de bestemming.'],
+    movieFort: ['Filmavond in een Dekenfort', 'Maak een gezellige plek met dekens en kussens, kies een filmthema en laat thuis voor één avond anders aanvoelen.'],
+    liveMusic: ['Avond met Livemuziek', 'Zoek een kleine zaal of lokale voorstelling, kom op tijd en dans een beetje als daar vanzelf zin in ontstaat.'],
+    hike: ['Mooie Wandeling + Snackpauze', 'Kies een route die voor jullie beiden past, neem water en snacks mee en plan een rustige pauze met uitzicht.'],
+    sunset: ['Date bij Zonsondergang', 'Kies een plek aan het water, een uitkijkpunt of park en kom vroeg genoeg om samen te wandelen en de zon te zien zakken.'],
+    artNight: ['Kunstavond Thuis', 'Pak betaalbare materialen, maak allebei iets zonder het resultaat te beoordelen en vertel elkaar wat je inspireerde.'],
+    newNeighborhood: ['Ontdek een Nieuwe Buurt', 'Kies een buurt waar jullie bijna nooit komen, loop zonder strak plan rond en kies allebei één plek om te proberen.'],
+  },
+};
+
+export const getBuiltInDateIdeas = (language = 'en') => {
+  const copy = COPY[language] || COPY.en;
+  return BASE.map((idea) => ({
+    ...idea,
+    id: `builtin-${idea.key}`,
+    source: 'builtin',
+    title: copy[idea.key]?.[0] || COPY.en[idea.key][0],
+    description: copy[idea.key]?.[1] || COPY.en[idea.key][1],
+  }));
+};
