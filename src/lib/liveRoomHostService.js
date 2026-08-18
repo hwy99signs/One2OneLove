@@ -1,11 +1,18 @@
 import { supabase } from './supabase';
 
+const SUPPORTED_HOST_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de', 'nl']);
+
 // Keep AI-host context minimal: recent public room text only, no member names or profile fields.
 const normalizeRecentMessages = (messages = []) =>
   messages.slice(-8).map((message) => ({
-    sender_name: 'Member',
     content: String(message.content || '').slice(0, 400),
   }));
+
+const currentHostLanguage = () => {
+  if (typeof window === 'undefined') return 'en';
+  const stored = window.localStorage?.getItem('preferredLanguage') || 'en';
+  return SUPPORTED_HOST_LANGUAGES.has(stored) ? stored : 'en';
+};
 
 export async function getLiveRoomHostPrompt(roomSlug, recentMessages = [], reason = 'room_empty') {
   try {
@@ -13,6 +20,7 @@ export async function getLiveRoomHostPrompt(roomSlug, recentMessages = [], reaso
       body: {
         room_slug: roomSlug,
         reason: reason === 'room_quiet' ? 'room_quiet' : 'room_empty',
+        language: currentHostLanguage(),
         recent_messages: normalizeRecentMessages(recentMessages),
       },
     });
