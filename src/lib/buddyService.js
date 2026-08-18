@@ -4,8 +4,10 @@ import { supabase, handleSupabaseError } from './supabase';
  * Buddy/Friend System Service
  * Handles member discovery and buddy requests.
  *
- * Privacy rule: member discovery reads only from public.member_directory, which
- * intentionally excludes email, partner_email, and other account-private fields.
+ * Privacy rule: member discovery reads only from public.member_directory. The relaunch
+ * projection contains only regular-member discovery fields: name, avatar, short bio,
+ * general location, relationship status and member-since date. Account email, partner
+ * data, interests, role/account type and billing data are not requested here.
  * Mutation rule: the acting user is always derived from Supabase Auth, never trusted
  * from a caller-supplied user ID.
  */
@@ -16,9 +18,7 @@ const PUBLIC_MEMBER_FIELDS = [
   'avatar_url',
   'bio',
   'relationship_status',
-  'user_type',
   'location',
-  'interests',
   'created_at',
 ].join(',');
 
@@ -43,12 +43,10 @@ const requireMemberId = (value, label = 'member') => {
 export const getAllUsers = async (currentUserId, options = {}) => {
   try {
     const user = await requireAuthenticatedUser(currentUserId || null);
-    let query = supabase
+    const query = supabase
       .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
       .neq('id', user.id);
-
-    if (options.userType) query = query.eq('user_type', options.userType);
 
     const allowedSortFields = new Set(['created_at', 'name']);
     const sortBy = allowedSortFields.has(options.sortBy) ? options.sortBy : 'created_at';
@@ -82,7 +80,6 @@ export const searchUsers = async (currentUserId, searchQuery) => {
       .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
       .neq('id', user.id)
-      .eq('user_type', 'regular')
       .or(`name.ilike.%${safeTerm}%,location.ilike.%${safeTerm}%,bio.ilike.%${safeTerm}%,relationship_status.ilike.%${safeTerm}%`)
       .order('name', { ascending: true })
       .limit(100);
@@ -138,7 +135,7 @@ export const sendBuddyRequest = async (fromUserId, toUserId) => {
         to_user_id: targetId,
         status: 'pending',
       })
-      .select()
+      .select('id, status, from_user_id, to_user_id, created_at, updated_at')
       .single();
 
     if (error) throw error;
@@ -163,7 +160,7 @@ export const cancelBuddyRequest = async (requestId, userId) => {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error cancelling buddy request:', error);
+    console.error('Error cancelling request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -173,7 +170,7 @@ export const getSentBuddyRequests = async (userId) => {
     const user = await requireAuthenticatedUser(userId || null);
     const { data, error } = await supabase
       .from('buddy_requests')
-      .select('*')
+      .select('id, status, from_user_id, to_user_id, created_at, updated_at')
       .eq('from_user_id', user.id)
       .eq('status', 'pending');
 
@@ -204,7 +201,7 @@ export const getReceivedBuddyRequests = async (userId) => {
     const user = await requireAuthenticatedUser(userId || null);
     const { data, error } = await supabase
       .from('buddy_requests')
-      .select('*')
+      .select('id, status, from_user_id, to_user_id, created_at, updated_at')
       .eq('to_user_id', user.id)
       .eq('status', 'pending');
 
@@ -241,13 +238,13 @@ export const acceptBuddyRequest = async (requestId, userId) => {
       .eq('id', id)
       .eq('to_user_id', user.id)
       .eq('status', 'pending')
-      .select()
+      .select('id, status, from_user_id, to_user_id, created_at, updated_at')
       .single();
 
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error accepting buddy request:', error);
+    console.error('Error accepting request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -266,7 +263,7 @@ export const rejectBuddyRequest = async (requestId, userId) => {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error rejecting buddy request:', error);
+    console.error('Error rejecting request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -276,7 +273,7 @@ export const getMyBuddies = async (userId) => {
     const user = await requireAuthenticatedUser(userId || null);
     const { data, error } = await supabase
       .from('buddy_requests')
-      .select('*')
+      .select('id, status, from_user_id, to_user_id, created_at, updated_at')
       .eq('status', 'accepted')
       .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`);
 
