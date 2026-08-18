@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import { scrubAuthMaterialFromUrl } from "@/lib/authFlowService";
 
 const copy = {
   en: {
@@ -56,20 +57,18 @@ export default function ResetPassword() {
       setValidSession(true);
       setError("");
       setChecking(false);
+      // The auth client has consumed the temporary recovery credentials. Remove them
+      // from browser history/address immediately while keeping the authenticated recovery
+      // session in Supabase storage for the password update itself.
+      scrubAuthMaterialFromUrl();
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      if (event === "PASSWORD_RECOVERY") {
-        acceptRecoverySession(session);
-      }
+      if (event === "PASSWORD_RECOVERY") acceptRecoverySession(session);
     });
 
     const verify = async () => {
-      // A normal SIGNED_IN/INITIAL_SESSION must never authorize this page. The only
-      // fallback accepted here is a valid authenticated session paired with Supabase's
-      // explicit recovery marker in the URL. This covers implicit recovery redirects if
-      // PASSWORD_RECOVERY fired just before this component subscribed.
       if (urlHasRecoveryMarker()) {
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (!sessionError && data?.session?.user) {
@@ -78,11 +77,12 @@ export default function ResetPassword() {
         }
       }
 
-      // Give the auth client a short window to process a legitimate PKCE recovery code
-      // and emit PASSWORD_RECOVERY. Do not upgrade an ordinary signed-in session.
       await new Promise((resolve) => window.setTimeout(resolve, 2500));
       if (!mounted || recoverySeen) return;
 
+      // Even a failed/expired recovery URL should not leave stale provider tokens or
+      // error details in the address bar/history.
+      scrubAuthMaterialFromUrl();
       setChecking(false);
       setValidSession(false);
       setError(t.invalid);
