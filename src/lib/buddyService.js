@@ -2,11 +2,12 @@ import { supabase, handleSupabaseError } from './supabase';
 
 /**
  * Buddy/Friend System Service
- * Handles finding users and managing buddy requests.
+ * Handles member discovery and buddy requests.
  *
- * Privacy rule: member discovery reads only from public.member_directory, a
- * server-side projection that intentionally excludes email, partner_email, and
- * other account-private fields.
+ * Privacy rule: member discovery reads only from public.member_directory, which
+ * intentionally excludes email, partner_email, and other account-private fields.
+ * Mutation rule: the acting user is always derived from Supabase Auth, never trusted
+ * from a caller-supplied user ID.
  */
 
 const PUBLIC_MEMBER_FIELDS = [
@@ -22,13 +23,30 @@ const PUBLIC_MEMBER_FIELDS = [
 ].join(',');
 
 const BASIC_MEMBER_FIELDS = 'id,name,avatar_url,bio';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const requireAuthenticatedUser = async (expectedUserId = null) => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) throw new Error('User not authenticated');
+  if (expectedUserId && expectedUserId !== user.id) {
+    throw new Error('You may manage only your own buddy requests.');
+  }
+  return user;
+};
+
+const requireMemberId = (value, label = 'member') => {
+  const id = String(value || '').trim();
+  if (!UUID_PATTERN.test(id)) throw new Error(`Invalid ${label} ID.`);
+  return id;
+};
 
 export const getAllUsers = async (currentUserId, options = {}) => {
   try {
+    const user = await requireAuthenticatedUser(currentUserId || null);
     let query = supabase
       .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
-      .neq('id', currentUserId);
+      .neq('id', user.id);
 
     if (options.userType) query = query.eq('user_type', options.userType);
 
@@ -37,11 +55,10 @@ export const getAllUsers = async (currentUserId, options = {}) => {
     const sortOrder = options.sortOrder === 'asc' ? 'asc' : 'desc';
     const limit = Math.min(Math.max(Number(options.limit) || 100, 1), 100);
 
-    query = query
+    const { data, error } = await query
       .order(sortBy, { ascending: sortOrder === 'asc' })
       .limit(limit);
 
-    const { data, error } = await query;
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -52,15 +69,21 @@ export const getAllUsers = async (currentUserId, options = {}) => {
 
 export const searchUsers = async (currentUserId, searchQuery) => {
   try {
+    const user = await requireAuthenticatedUser(currentUserId || null);
     const term = String(searchQuery || '').trim().slice(0, 80);
-    if (!term) return getAllUsers(currentUserId, { limit: 100, sortBy: 'name', sortOrder: 'asc' });
+    if (!term) return getAllUsers(user.id, { limit: 100, sortBy: 'name', sortOrder: 'asc' });
+
+    // Escape PostgREST OR-filter wildcard/control characters so member search is text,
+    // not a caller-controlled filter expression.
+    const safeTerm = term.replace(/[,%()]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!safeTerm) return [];
 
     const { data, error } = await supabase
       .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
-      .neq('id', currentUserId)
+      .neq('id', user.id)
       .eq('user_type', 'regular')
-      .or(`name.ilike.%${term}%,location.ilike.%${term}%,bio.ilike.%${term}%,relationship_status.ilike.%${term}%`)
+      .or(`name.ilike.%${safeTerm}%,location.ilike.%${safeTerm}%,bio.ilike.%${safeTerm}%,relationship_status.ilike.%${safeTerm}%`)
       .order('name', { ascending: true })
       .limit(100);
 
@@ -74,10 +97,13 @@ export const searchUsers = async (currentUserId, searchQuery) => {
 
 export const getUserProfile = async (userId) => {
   try {
+    await requireAuthenticatedUser();
+    const memberId = requireMemberId(userId);
+
     const { data, error } = await supabase
       .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
-      .eq('id', userId)
+      .eq('id', memberId)
       .single();
 
     if (error) throw error;
@@ -90,22 +116,27 @@ export const getUserProfile = async (userId) => {
 
 export const sendBuddyRequest = async (fromUserId, toUserId) => {
   try {
-    const { data: existing } = await supabase
+    const user = await requireAuthenticatedUser(fromUserId || null);
+    const targetId = requireMemberId(toUserId, 'target member');
+    if (targetId === user.id) throw new Error('You cannot send a buddy request to yourself.');
+
+    const { data: existing, error: existingError } = await supabase
       .from('buddy_requests')
-      .select('id, status')
-      .or(`and(from_user_id.eq.${fromUserId},to_user_id.eq.${toUserId}),and(from_user_id.eq.${toUserId},to_user_id.eq.${fromUserId})`)
+      .select('id, status, from_user_id, to_user_id')
+      .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${targetId}),and(from_user_id.eq.${targetId},to_user_id.eq.${user.id})`)
+      .limit(1)
       .maybeSingle();
 
+    if (existingError) throw existingError;
     if (existing?.status === 'pending') throw new Error('A buddy request already exists');
     if (existing?.status === 'accepted') throw new Error('You are already buddies');
 
     const { data, error } = await supabase
       .from('buddy_requests')
       .insert({
-        from_user_id: fromUserId,
-        to_user_id: toUserId,
+        from_user_id: user.id,
+        to_user_id: targetId,
         status: 'pending',
-        created_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -120,11 +151,14 @@ export const sendBuddyRequest = async (fromUserId, toUserId) => {
 
 export const cancelBuddyRequest = async (requestId, userId) => {
   try {
+    const user = await requireAuthenticatedUser(userId || null);
+    const id = requireMemberId(requestId, 'request');
+
     const { error } = await supabase
       .from('buddy_requests')
       .delete()
-      .eq('id', requestId)
-      .eq('from_user_id', userId)
+      .eq('id', id)
+      .eq('from_user_id', user.id)
       .eq('status', 'pending');
 
     if (error) throw error;
@@ -136,10 +170,11 @@ export const cancelBuddyRequest = async (requestId, userId) => {
 
 export const getSentBuddyRequests = async (userId) => {
   try {
+    const user = await requireAuthenticatedUser(userId || null);
     const { data, error } = await supabase
       .from('buddy_requests')
       .select('*')
-      .eq('from_user_id', userId)
+      .eq('from_user_id', user.id)
       .eq('status', 'pending');
 
     if (error) throw error;
@@ -152,7 +187,7 @@ export const getSentBuddyRequests = async (userId) => {
       .in('id', userIds);
 
     if (usersError) throw usersError;
-    const usersMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
+    const usersMap = Object.fromEntries((users || []).map((member) => [member.id, member]));
 
     return (data || []).map((req) => ({
       ...req,
@@ -166,10 +201,11 @@ export const getSentBuddyRequests = async (userId) => {
 
 export const getReceivedBuddyRequests = async (userId) => {
   try {
+    const user = await requireAuthenticatedUser(userId || null);
     const { data, error } = await supabase
       .from('buddy_requests')
       .select('*')
-      .eq('to_user_id', userId)
+      .eq('to_user_id', user.id)
       .eq('status', 'pending');
 
     if (error) throw error;
@@ -182,7 +218,7 @@ export const getReceivedBuddyRequests = async (userId) => {
       .in('id', userIds);
 
     if (usersError) throw usersError;
-    const usersMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
+    const usersMap = Object.fromEntries((users || []).map((member) => [member.id, member]));
 
     return (data || []).map((req) => ({
       ...req,
@@ -196,11 +232,15 @@ export const getReceivedBuddyRequests = async (userId) => {
 
 export const acceptBuddyRequest = async (requestId, userId) => {
   try {
+    const user = await requireAuthenticatedUser(userId || null);
+    const id = requireMemberId(requestId, 'request');
+
     const { data, error } = await supabase
       .from('buddy_requests')
-      .update({ status: 'accepted', updated_at: new Date().toISOString() })
-      .eq('id', requestId)
-      .eq('to_user_id', userId)
+      .update({ status: 'accepted' })
+      .eq('id', id)
+      .eq('to_user_id', user.id)
+      .eq('status', 'pending')
       .select()
       .single();
 
@@ -214,11 +254,15 @@ export const acceptBuddyRequest = async (requestId, userId) => {
 
 export const rejectBuddyRequest = async (requestId, userId) => {
   try {
+    const user = await requireAuthenticatedUser(userId || null);
+    const id = requireMemberId(requestId, 'request');
+
     const { error } = await supabase
       .from('buddy_requests')
-      .update({ status: 'rejected', updated_at: new Date().toISOString() })
-      .eq('id', requestId)
-      .eq('to_user_id', userId);
+      .update({ status: 'rejected' })
+      .eq('id', id)
+      .eq('to_user_id', user.id)
+      .eq('status', 'pending');
 
     if (error) throw error;
   } catch (error) {
@@ -229,16 +273,17 @@ export const rejectBuddyRequest = async (requestId, userId) => {
 
 export const getMyBuddies = async (userId) => {
   try {
+    const user = await requireAuthenticatedUser(userId || null);
     const { data, error } = await supabase
       .from('buddy_requests')
       .select('*')
       .eq('status', 'accepted')
-      .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`);
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`);
 
     if (error) throw error;
 
     const otherUserIds = [...new Set((data || []).map((request) =>
-      request.from_user_id === userId ? request.to_user_id : request.from_user_id
+      request.from_user_id === user.id ? request.to_user_id : request.from_user_id
     ))];
 
     let usersMap = {};
@@ -249,11 +294,11 @@ export const getMyBuddies = async (userId) => {
         .in('id', otherUserIds);
 
       if (usersError) throw usersError;
-      usersMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
+      usersMap = Object.fromEntries((users || []).map((member) => [member.id, member]));
     }
 
     return (data || []).map((request) => {
-      const otherUserId = request.from_user_id === userId ? request.to_user_id : request.from_user_id;
+      const otherUserId = request.from_user_id === user.id ? request.to_user_id : request.from_user_id;
       const buddy = usersMap[otherUserId] || { id: otherUserId, name: 'Member' };
       return {
         ...buddy,
