@@ -74,6 +74,8 @@ Approval Batch 001 remains valid for the items/version scope already approved. T
    - OpenAI response storage remains disabled in the prepared request (`store:false`).
    - Lost-response retries use the same request ID to replay a completed result rather than create a second model generation.
 13. Deploy the reviewed `generate-relationship-content` revision disabled first under the same premium-AI gates.
+   - AI Content Creator accepts only the member-supplied generation fields plus server-owned entitlement state; it does not read Love Notes, pairwise Chat, account email, or other private relationship history for model context.
+   - A successful generation is stored privately against its logical request ID so a lost-response retry can replay the same result without a second model call.
 14. Configure premium AI controls/secrets without exposing secret values in source or chat:
    - existing server-side `OPENAI_API_KEY` must be verified before use, not blindly replaced;
    - `PREMIUM_AI_ALLOWED_ORIGINS` exact allowlist;
@@ -87,10 +89,33 @@ Approval Batch 001 remains valid for the items/version scope already approved. T
    - active controlled member can create/read/delete only their own Coach conversations;
    - a different member cannot access another Coach conversation by UUID;
    - identical logical request ID does not generate twice after a lost/ambiguous response;
+   - AI Content Creator retry with the same completed request ID returns its stored draft;
    - rate limits fail closed when the usage ledger is unavailable;
    - disabling `PREMIUM_AI_ENABLED` prevents model spend even if the UI is accessible;
-   - no private Love Note, pairwise Chat, account email, or unrelated profile text is added to Coach model context.
-16. Keep Relationship Coach public activation OFF until the product safety copy, premium membership gate, and controlled AI-cost test all pass.
+   - no private Love Note, pairwise Chat, account email, or unrelated profile text is added to premium-AI model context.
+16. Keep Relationship Coach and AI Content Creator public activation OFF until the product safety copy, premium membership gate, and controlled AI-cost test all pass.
+
+## E. Free Date Ideas account persistence
+
+17. Apply `supabase/migrations/20260818_date_ideas_hardening.sql` before enabling custom/saved Date Idea persistence in production.
+   - Built-in Date Ideas remain public/free frontend content and require no database read.
+   - `custom_date_ideas` remains private to its owning authenticated member.
+   - Browser-supplied `user_id` is replaced with `auth.uid()` and cannot be reassigned on update.
+   - RESTRICTIVE owner boundaries cap any unknown permissive legacy RLS policy.
+   - New/updated rows enforce the actual table contract: title/description lengths and supported category/budget/location/occasion/stage values.
+   - Constraints are initially `NOT VALID` so historical dirty Base44-era rows do not make the migration fail; existing rows must be reviewed before later validation.
+18. Activate the relaunch Date Ideas service/UI only after item 17 passes controlled ownership tests.
+   - Visitors can browse the multilingual built-in catalog without signing in.
+   - Confirmed free accounts can create private custom ideas, save a built-in idea as a private member copy, favorite/unfavorite, mark done/not done, edit, and delete their own rows.
+   - The legacy fake `created_by`, `completed`, `difficulty`, `duration_hours`, `is_public`, and `partner_email` persistence assumptions are not used.
+   - No “shared with partner” success claim is shown until real partner-sharing semantics are separately designed and tested.
+19. Controlled Date Ideas tests must verify:
+   - anonymous visitor can browse built-ins but cannot read `custom_date_ideas`;
+   - member A can CRUD only A-owned rows;
+   - member B cannot read/update/delete A's row even by direct UUID;
+   - save/favorite/completion use the real `is_favorite` and `is_completed` fields;
+   - repeated save of the same built-in idea does not intentionally create duplicate favorite rows;
+   - account-data failure leaves built-in browsing available with a truthful private-tools-unavailable state.
 
 ## Explicitly NOT included
 
@@ -100,7 +125,7 @@ Approval Batch 001 remains valid for the items/version scope already approved. T
 - Paid SMS/Twilio/A2P activation.
 - Any Vercel plan upgrade or new recurring platform expense.
 - Destructive deletion of legacy attachment data.
-- A promise to retain chat attachments or AI Coach history indefinitely; retention/deletion policy remains part of legal/product launch review.
+- A promise to retain chat attachments, AI Coach history, or custom Date Ideas indefinitely; retention/deletion policy remains part of legal/product launch review.
 - Any replacement of an existing OpenAI/Resend/Stripe secret without first verifying its current usage.
 
 ## Future owner approval
