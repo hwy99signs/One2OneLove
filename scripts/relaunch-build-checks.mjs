@@ -13,6 +13,7 @@ const checks = [
   ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
   ['relaunch premium data', 'scripts/relaunch-premium-data-check.mjs'],
   ['relaunch premium routes', 'scripts/relaunch-premium-route-check.mjs'],
+  ['relaunch member connections/chat', 'scripts/relaunch-connection-chat-check.mjs'],
   ['relaunch profile/navigation', 'scripts/relaunch-profile-navigation-check.mjs'],
   ['relaunch acquisition', 'scripts/relaunch-acquisition-check.mjs'],
   ['relaunch route safety', 'scripts/relaunch-route-safety-check.mjs'],
