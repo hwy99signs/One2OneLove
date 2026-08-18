@@ -8,6 +8,7 @@ const strict = strictRequested || strictFromEnvironment || vercelEnvironment ===
 const checks = [
   ['relaunch safety', 'scripts/relaunch-safety-check.mjs'],
   ['relaunch security', 'scripts/relaunch-security-check.mjs'],
+  ['relaunch authentication flow', 'scripts/relaunch-auth-flow-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
   ['relaunch premium AI', 'scripts/relaunch-ai-feature-check.mjs'],
   ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
