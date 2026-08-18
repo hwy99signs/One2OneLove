@@ -15,6 +15,7 @@ import LoveNotesCollection from "./LoveNotesCollectionRelaunch";
 import LoveNoteSendDemo from "./LoveNoteSendDemo";
 import LoveNoteRevealDemo from "./LoveNoteRevealDemo";
 import LoveNoteReveal from "./LoveNoteReveal";
+import SavedLoveNotes from "./SavedLoveNotes";
 import CoupleSupport from "./CoupleSupport";
 import LoveLanguageQuiz from "./LoveLanguageQuiz";
 import DateIdeas from "./DateIdeas";
@@ -78,6 +79,7 @@ const PAGES = {
   LoveNoteSendDemo,
   LoveNoteRevealDemo,
   LoveNoteReveal,
+  SavedLoveNotes,
   CoupleSupport,
   LoveLanguageQuiz,
   DateIdeas,
@@ -145,6 +147,7 @@ const ROUTES = [
   ["/LoveNoteSendDemo", LoveNoteSendDemo],
   ["/LoveNoteRevealDemo", LoveNoteRevealDemo],
   ["/LoveNoteReveal", LoveNoteReveal],
+  ["/SavedLoveNotes", SavedLoveNotes],
   ["/CoupleSupport", CoupleSupport],
   ["/LoveLanguageQuiz", LoveLanguageQuiz],
   ["/DateIdeas", DateIdeas],
