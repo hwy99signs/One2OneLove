@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Heart, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { createPageUrl } from '@/utils';
+import { useLanguage } from '@/Layout';
 import {
   authUserIsConfirmed,
   clearAuthReturnTo,
@@ -9,8 +10,18 @@ import {
   scrubAuthMaterialFromUrl,
 } from '@/lib/authFlowService';
 
+const COPY = {
+  en: { confirming: 'Confirming your email…', linkError: 'We could not confirm that email link. Please sign in or request a new confirmation link.', confirmed: 'Email confirmed. Taking you back to One2OneLove…', incomplete: 'That link did not finish confirming your email. Please request a new confirmation link.', processed: 'Confirmation link processed. Please sign in to continue.' },
+  es: { confirming: 'Confirmando tu correo…', linkError: 'No pudimos confirmar ese enlace. Inicia sesión o solicita un nuevo correo de confirmación.', confirmed: 'Correo confirmado. Volviendo a One2OneLove…', incomplete: 'Ese enlace no terminó de confirmar tu correo. Solicita un nuevo enlace de confirmación.', processed: 'Enlace de confirmación procesado. Inicia sesión para continuar.' },
+  fr: { confirming: 'Confirmation de votre e-mail…', linkError: 'Nous n’avons pas pu confirmer ce lien. Connectez-vous ou demandez un nouvel e-mail de confirmation.', confirmed: 'E-mail confirmé. Retour à One2OneLove…', incomplete: 'Ce lien n’a pas terminé la confirmation de votre e-mail. Demandez un nouveau lien.', processed: 'Lien de confirmation traité. Connectez-vous pour continuer.' },
+  it: { confirming: 'Conferma della tua email…', linkError: 'Non siamo riusciti a confermare quel link. Accedi o richiedi una nuova email di conferma.', confirmed: 'Email confermata. Ritorno a One2OneLove…', incomplete: 'Quel link non ha completato la conferma della tua email. Richiedi un nuovo link.', processed: 'Link di conferma elaborato. Accedi per continuare.' },
+  de: { confirming: 'E-Mail wird bestätigt…', linkError: 'Dieser Bestätigungslink konnte nicht bestätigt werden. Melde dich an oder fordere eine neue Bestätigungs-E-Mail an.', confirmed: 'E-Mail bestätigt. Zurück zu One2OneLove…', incomplete: 'Dieser Link hat die E-Mail-Bestätigung nicht abgeschlossen. Fordere einen neuen Bestätigungslink an.', processed: 'Bestätigungslink verarbeitet. Melde dich an, um fortzufahren.' },
+};
+
 export default function AuthCallback() {
-  const [status, setStatus] = useState('Confirming your email…');
+  const { currentLanguage } = useLanguage();
+  const t = COPY[currentLanguage] || COPY.en;
+  const [status, setStatus] = useState(t.confirming);
   const [state, setState] = useState('loading');
 
   useEffect(() => {
@@ -31,12 +42,10 @@ export default function AuthCallback() {
         : createPageUrl('SignIn');
 
       if (authError) {
-        // Read the provider error first, then remove auth/error material from the browser
-        // address/history before the member is redirected.
         scrubAuthMaterialFromUrl();
         if (!cancelled) {
           setState('error');
-          setStatus('We could not confirm that email link. Please sign in or request a new confirmation link.');
+          setStatus(t.linkError);
         }
         scheduleRedirect(signInUrl, 1800);
         return;
@@ -52,12 +61,10 @@ export default function AuthCallback() {
       if (cancelled) return;
 
       if (session?.user && authUserIsConfirmed(session.user)) {
-        // Supabase has consumed the temporary confirmation credentials. Remove them from
-        // the visible URL/history before any application navigation occurs.
         scrubAuthMaterialFromUrl();
         clearAuthReturnTo();
         setState('success');
-        setStatus('Email confirmed. Taking you back to One2OneLove…');
+        setStatus(t.confirmed);
         scheduleRedirect(storedReturnTo || createPageUrl('Profile'), 700);
         return;
       }
@@ -71,17 +78,14 @@ export default function AuthCallback() {
         }
         if (cancelled) return;
         setState('error');
-        setStatus('That link did not finish confirming your email. Please request a new confirmation link.');
+        setStatus(t.incomplete);
         scheduleRedirect(signInUrl, 1800);
         return;
       }
 
-      // A confirmation link may have been consumed without leaving a browser session.
-      // Never claim success from the URL alone; scrub one-time material and require sign-in
-      // to establish the confirmed account state.
       scrubAuthMaterialFromUrl();
       setState('success');
-      setStatus('Confirmation link processed. Please sign in to continue.');
+      setStatus(t.processed);
       scheduleRedirect(signInUrl, 900);
     };
 
@@ -95,9 +99,7 @@ export default function AuthCallback() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-16">
       <div className="mx-auto max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg">
-          <Heart className="h-8 w-8 fill-white" />
-        </div>
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg"><Heart className="h-8 w-8 fill-white" /></div>
         <h1 className="mt-6 text-3xl font-black text-slate-950">One2OneLove</h1>
         <div className="mt-5 flex items-center justify-center gap-2 text-sm font-bold text-slate-600">
           {state === 'success' ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : state === 'error' ? <AlertCircle className="h-5 w-5 text-amber-500" /> : <Loader2 className="h-5 w-5 animate-spin text-pink-500" />}
