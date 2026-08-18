@@ -13,6 +13,7 @@ const files = {
   layout: 'src/pages/LayoutRelaunch.jsx',
   profile: 'src/pages/ProfileRelaunch.jsx',
   profileService: 'src/lib/profileService.js',
+  unavailable: 'src/pages/RelaunchUnavailable.jsx',
 };
 
 for (const file of Object.values(files)) {
@@ -24,6 +25,7 @@ const sharedLayout = exists(files.sharedLayout) ? read(files.sharedLayout) : '';
 const layout = exists(files.layout) ? read(files.layout) : '';
 const profile = exists(files.profile) ? read(files.profile) : '';
 const profileService = exists(files.profileService) ? read(files.profileService) : '';
+const unavailable = exists(files.unavailable) ? read(files.unavailable) : '';
 
 check(
   'router uses relaunch Profile',
@@ -52,6 +54,13 @@ check(
     && !layout.includes('/Developer')
     && !layout.includes('developer'),
   'Legacy campaign and developer destinations must not be promoted in public navigation.'
+);
+check(
+  'excluded Developer and prize routes cannot render their legacy pages',
+  router.includes('["/Developer", RelaunchUnavailable]')
+    && router.includes('["/WinACruise", RelaunchUnavailable]')
+    && unavailable.includes('not part of the current relaunch'),
+  'Hiding a menu item is insufficient when the old URL is directly guessable.'
 );
 check(
   'main navigation promotes the reviewed acquisition loop',
