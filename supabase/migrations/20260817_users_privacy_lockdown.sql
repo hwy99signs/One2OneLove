@@ -79,8 +79,9 @@ comment on view public.member_directory is
 commit;
 
 -- PRE-APPLY CHECKLIST:
--- 1. Buddy finder uses public.member_directory. (staged)
--- 2. Pairwise chat/profile lookups no longer depend on broad public.users reads.
--- 3. Any community/member-card lookup uses a purpose-built projection.
--- 4. Test own profile load/update, buddy finder, chat, community and admin workflows.
--- 5. Keep a rollback script ready before applying to live data.
+-- 1. Buddy Finder uses public.member_directory. (completed in development)
+-- 2. Pairwise chat identity lookups use public.member_directory and no longer request member email. (completed in development)
+-- 3. Audit any remaining public/community/member-card consumers for broad public.users reads. (still required)
+-- 4. Test own profile load/update, Buddy Finder, chat, community and admin workflows against the tightened policy.
+-- 5. Inspect the live users policies before applying; do not assume repository SQL exactly matches production state.
+-- 6. Keep a rollback script ready before applying to live data.
