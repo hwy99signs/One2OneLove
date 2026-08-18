@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run relaunch:check && vite build",
+    "build": "npm run relaunch:check && npm run relaunch:security-check && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "relaunch:check": "node scripts/relaunch-safety-check.mjs"
+    "relaunch:check": "node scripts/relaunch-safety-check.mjs",
+    "relaunch:security-check": "node scripts/relaunch-security-check.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
