@@ -85,7 +85,8 @@ declare
   creator_id uuid;
 begin
   if auth.role() is null or auth.role() = 'service_role' then
-    return coalesce(new, old);
+    if tg_op = 'DELETE' then return old; end if;
+    return new;
   end if;
 
   select c.creator_id into creator_id
@@ -96,7 +97,8 @@ begin
     raise exception 'The community creator admin membership cannot be changed directly';
   end if;
 
-  return coalesce(new, old);
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
 end;
 $$;
 
