@@ -2,30 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Heart, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { createPageUrl } from '@/utils';
-
-const RETURN_KEY = 'o2ol-return-after-auth';
-
-const safeReturnTo = (value) => {
-  if (!value || typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return null;
-  return value;
-};
-
-const isConfirmedUser = (user) => Boolean(user?.email_confirmed_at || user?.confirmed_at);
-
-const loadStoredReturnTo = () => {
-  if (typeof window === 'undefined') return null;
-  // localStorage is the canonical cross-tab handoff. sessionStorage is read only as a
-  // backward-compatible fallback for older preview flows.
-  return safeReturnTo(
-    window.localStorage.getItem(RETURN_KEY) || window.sessionStorage.getItem(RETURN_KEY)
-  );
-};
-
-const clearStoredReturnTo = () => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(RETURN_KEY);
-  window.sessionStorage.removeItem(RETURN_KEY);
-};
+import {
+  authUserIsConfirmed,
+  clearAuthReturnTo,
+  loadAuthReturnTo,
+  scrubAuthMaterialFromUrl,
+} from '@/lib/authFlowService';
 
 export default function AuthCallback() {
   const [status, setStatus] = useState('Confirming your email…');
@@ -40,7 +22,7 @@ export default function AuthCallback() {
     };
 
     const finishConfirmation = async () => {
-      const storedReturnTo = loadStoredReturnTo();
+      const storedReturnTo = loadAuthReturnTo();
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const queryParams = new URLSearchParams(window.location.search);
       const authError = queryParams.get('error_description') || hashParams.get('error_description');
@@ -49,12 +31,13 @@ export default function AuthCallback() {
         : createPageUrl('SignIn');
 
       if (authError) {
+        // Read the provider error first, then remove auth/error material from the browser
+        // address/history before the member is redirected.
+        scrubAuthMaterialFromUrl();
         if (!cancelled) {
           setState('error');
           setStatus('We could not confirm that email link. Please sign in or request a new confirmation link.');
         }
-        // Keep the stored destination on an error so the member can request/sign in and
-        // still return to the original Love Note or member experience afterward.
         scheduleRedirect(signInUrl, 1800);
         return;
       }
@@ -68,17 +51,19 @@ export default function AuthCallback() {
 
       if (cancelled) return;
 
-      if (session?.user && isConfirmedUser(session.user)) {
-        clearStoredReturnTo();
+      if (session?.user && authUserIsConfirmed(session.user)) {
+        // Supabase has consumed the temporary confirmation credentials. Remove them from
+        // the visible URL/history before any application navigation occurs.
+        scrubAuthMaterialFromUrl();
+        clearAuthReturnTo();
         setState('success');
         setStatus('Email confirmed. Taking you back to One2OneLove…');
         scheduleRedirect(storedReturnTo || createPageUrl('Profile'), 700);
         return;
       }
 
-      // Never call an account confirmed merely because a session object exists.
-      // The AuthContext and protected backend paths use the same confirmation rule.
-      if (session?.user && !isConfirmedUser(session.user)) {
+      if (session?.user && !authUserIsConfirmed(session.user)) {
+        scrubAuthMaterialFromUrl();
         try {
           await supabase.auth.signOut();
         } catch (error) {
@@ -91,9 +76,10 @@ export default function AuthCallback() {
         return;
       }
 
-      // Some email-link flows can return to the site without leaving a browser session.
-      // Without a confirmed session we cannot truthfully claim confirmation succeeded.
-      // Preserve the validated destination and let Sign In verify the account state.
+      // A confirmation link may have been consumed without leaving a browser session.
+      // Never claim success from the URL alone; scrub one-time material and require sign-in
+      // to establish the confirmed account state.
+      scrubAuthMaterialFromUrl();
       setState('success');
       setStatus('Confirmation link processed. Please sign in to continue.');
       scheduleRedirect(signInUrl, 900);
