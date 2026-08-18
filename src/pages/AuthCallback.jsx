@@ -3,12 +3,29 @@ import { AlertCircle, CheckCircle2, Heart, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { createPageUrl } from '@/utils';
 
+const RETURN_KEY = 'o2ol-return-after-auth';
+
 const safeReturnTo = (value) => {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  if (!value || typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return null;
   return value;
 };
 
 const isConfirmedUser = (user) => Boolean(user?.email_confirmed_at || user?.confirmed_at);
+
+const loadStoredReturnTo = () => {
+  if (typeof window === 'undefined') return null;
+  // localStorage is the canonical cross-tab handoff. sessionStorage is read only as a
+  // backward-compatible fallback for older preview flows.
+  return safeReturnTo(
+    window.localStorage.getItem(RETURN_KEY) || window.sessionStorage.getItem(RETURN_KEY)
+  );
+};
+
+const clearStoredReturnTo = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(RETURN_KEY);
+  window.sessionStorage.removeItem(RETURN_KEY);
+};
 
 export default function AuthCallback() {
   const [status, setStatus] = useState('Confirming your email…');
@@ -23,7 +40,7 @@ export default function AuthCallback() {
     };
 
     const finishConfirmation = async () => {
-      const storedReturnTo = safeReturnTo(localStorage.getItem('o2ol-return-after-auth'));
+      const storedReturnTo = loadStoredReturnTo();
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const queryParams = new URLSearchParams(window.location.search);
       const authError = queryParams.get('error_description') || hashParams.get('error_description');
@@ -36,6 +53,8 @@ export default function AuthCallback() {
           setState('error');
           setStatus('We could not confirm that email link. Please sign in or request a new link.');
         }
+        // Keep the stored destination on an error so the member can request/sign in and
+        // still return to the original Love Note or member experience afterward.
         scheduleRedirect(signInUrl, 1800);
         return;
       }
@@ -50,7 +69,7 @@ export default function AuthCallback() {
       if (cancelled) return;
 
       if (session?.user && isConfirmedUser(session.user)) {
-        localStorage.removeItem('o2ol-return-after-auth');
+        clearStoredReturnTo();
         setState('success');
         setStatus('Email confirmed. Taking you back to One2OneLove…');
         scheduleRedirect(storedReturnTo || createPageUrl('Profile'), 700);
@@ -72,7 +91,8 @@ export default function AuthCallback() {
         return;
       }
 
-      localStorage.removeItem('o2ol-return-after-auth');
+      // Confirmation can succeed without leaving a browser session, depending on the
+      // email-link flow. Preserve the validated destination by passing it to Sign In.
       setState('success');
       setStatus('Email confirmed. Please sign in to continue.');
       scheduleRedirect(signInUrl, 900);
