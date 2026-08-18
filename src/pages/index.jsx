@@ -4,6 +4,7 @@ import Home from "./Home";
 import InfluencerSignup from "./InfluencerSignup";
 import ProfessionalSignup from "./ProfessionalSignup";
 import TherapistSignup from "./TherapistSignup";
+import ProfessionalApplicationsClosed from "./ProfessionalApplicationsClosed";
 import AboutUs from "./AboutUs";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
@@ -114,6 +115,15 @@ const PAGES = {
   Subscription,
 };
 
+const PROFESSIONAL_APPLICATION_PATHS = new Set([
+  "/InfluencerSignup",
+  "/ProfessionalSignup",
+  "/TherapistSignup",
+]);
+
+const professionalApplicationsOpen = () =>
+  import.meta.env.VITE_PROFESSIONAL_APPLICATIONS_ENABLED === "true";
+
 // Third tuple value is an approved paid entitlement key. The FeatureGate remains
 // transparent until VITE_MEMBERSHIP_GATING_ENABLED=true after controlled billing tests.
 // Legacy pages that contain fabricated reviews/editorial authors, mock rankings/rewards,
@@ -212,6 +222,22 @@ function ScrollToTop() {
   return null;
 }
 
+function routeElement(path, Component, entitlement) {
+  if (PROFESSIONAL_APPLICATION_PATHS.has(path) && !professionalApplicationsOpen()) {
+    return <ProfessionalApplicationsClosed />;
+  }
+
+  if (entitlement) {
+    return (
+      <FeatureGate feature={entitlement}>
+        <Component />
+      </FeatureGate>
+    );
+  }
+
+  return <Component />;
+}
+
 function PagesContent() {
   const location = useLocation();
   const currentPage = _getCurrentPage(location.pathname);
@@ -225,15 +251,7 @@ function PagesContent() {
             <Route
               key={path}
               path={path}
-              element={
-                entitlement ? (
-                  <FeatureGate feature={entitlement}>
-                    <Component />
-                  </FeatureGate>
-                ) : (
-                  <Component />
-                )
-              }
+              element={routeElement(path, Component, entitlement)}
             />
           ))}
         </Routes>
