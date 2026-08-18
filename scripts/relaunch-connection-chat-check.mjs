@@ -14,6 +14,8 @@ const directoryMigration = read('supabase/migrations/20260817_member_directory_p
 const chatGate = read('supabase/migrations/20260818_chat_connection_gate.sql');
 const composer = read('src/components/chat/ChatComposerRelaunch.jsx');
 
+const directorySelect = directoryMigration.match(/as\s+select([\s\S]*?)from\s+public\.users/i)?.[1] || '';
+
 check('member discovery uses relaunch page', findAlias.includes("./FindFriendsRelaunch"), 'Legacy discovery UI must not reintroduce direct pre-accept Chat.');
 check('connection requests use relaunch page', requestAlias.includes("./FriendRequestsRelaunch"), 'Legacy request UI must not expose account email.');
 check('member discovery never renders account email', !findPage.includes('member.email') && !findPage.includes('userData.email'), 'Directory surface must stay on privacy-safe profile fields.');
@@ -22,11 +24,18 @@ check('private Chat button requires accepted connection in UI', findPage.include
 
 check(
   'member directory exposes only the disclosed regular-member projection',
-  directoryMigration.includes('id,\n  name,\n  avatar_url,\n  bio,\n  relationship_status,\n  location,\n  created_at')
-    && directoryMigration.includes("coalesce(user_type, 'regular') = 'regular'")
-    && !directoryMigration.includes('partner_email')
-    && !directoryMigration.includes('interests,')
-    && !directoryMigration.includes('user_type,\n  location'),
+  directorySelect.includes('id,')
+    && directorySelect.includes('name,')
+    && directorySelect.includes('avatar_url,')
+    && directorySelect.includes('bio,')
+    && directorySelect.includes('relationship_status,')
+    && directorySelect.includes('location,')
+    && directorySelect.includes('created_at')
+    && !directorySelect.includes('email')
+    && !directorySelect.includes('partner_')
+    && !directorySelect.includes('interests')
+    && !directorySelect.includes('user_type')
+    && directoryMigration.includes("coalesce(user_type, 'regular') = 'regular'"),
   'The database projection itself should exclude email, partner data, interests and role/account type rather than relying only on UI restraint.'
 );
 check(
