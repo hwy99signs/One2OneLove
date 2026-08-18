@@ -6,6 +6,7 @@ const requireText = (source, needle, label) => { if (!source.includes(needle)) f
 const forbidText = (source, needle, label) => { if (source.includes(needle)) failures.push(label); };
 
 const migration = read('supabase/migrations/20260818_profile_picture_storage_hardening.sql');
+const fieldBoundary = read('supabase/migrations/20260818_users_profile_field_minimization.sql');
 const service = read('src/lib/profileService.js');
 const profile = read('src/pages/ProfileRelaunchSafe.jsx');
 const directory = read('supabase/migrations/20260818_member_directory_minimization.sql');
@@ -36,6 +37,12 @@ requireText(service, "['jpg', 'jpeg', 'png', 'webp', 'gif']", 'Client should mir
 requireText(service, ".from('profile-pictures')", 'Profile-picture service must stay on the dedicated bucket.');
 requireText(service, '.getPublicUrl(filePath)', 'Public avatar delivery is intentional for the optional discoverable profile image.');
 
+// An avatar URL is display data but it is also an outbound browser request. Do not let a
+// modified browser write an arbitrary tracking URL into another member's rendered profile.
+forbidText(service.match(/const SAFE_PROFILE_UPDATE_FIELDS[\s\S]*?\]\);/)?.[0] || '', "'avatar_url'", 'Generic profile update allowlist must not include avatar_url.');
+forbidText(fieldBoundary.match(/v_safe_fields text\[\][\s\S]*?\];/)?.[0] || '', "'avatar_url'", 'Database generic self-service allowlist must not include avatar_url.');
+requireText(fieldBoundary, 'Member cannot directly set avatar_url to an arbitrary external URL.', 'Staged database tests must explicitly cover avatar URL spoofing.');
+
 requireText(directory, 'avatar_url', 'The minimized member directory may expose the optional avatar URL.');
 forbidText(directory, 'relationship_status,', 'Avatar discoverability must not imply relationship-status discoverability.');
 forbidText(directory, 'location,', 'Avatar discoverability must not imply location discoverability.');
@@ -48,4 +55,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Profile-picture Storage preflight passed: avatar editing is default-off until hardened Storage activation; optional avatars are publicly deliverable by URL while Storage list/write/delete remain owner-only and the member directory stays privacy-minimized.');
+console.log('Profile-picture Storage preflight passed: editing is default-off, generic avatar URL spoofing is blocked, optional avatars are publicly deliverable by URL, and Storage list/write/delete remain owner-only.');
