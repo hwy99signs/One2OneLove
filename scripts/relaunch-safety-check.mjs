@@ -16,6 +16,7 @@ const requiredFiles = [
   'src/pages/LoveNoteSendDemo.jsx',
   'src/pages/LoveNoteReveal.jsx',
   'src/lib/loveNoteInvitationService.js',
+  'src/lib/professionalApplicationService.js',
   'src/pages/ForgotPassword.jsx',
   'src/pages/ResetPassword.jsx',
   'supabase/migrations/20260817_love_note_invitations.sql',
@@ -24,8 +25,11 @@ const requiredFiles = [
   'supabase/migrations/20260817_message_update_hardening.sql',
   'supabase/migrations/20260817_community_member_policy_hardening.sql',
   'supabase/migrations/20260817_presence_security_hardening.sql',
+  'supabase/migrations/20260817_waitlist_privacy_hardening.sql',
+  'supabase/migrations/20260817_professional_applications.sql',
   'supabase/functions/send-love-note-invitation/index.ts',
   'supabase/functions/reveal-love-note/index.ts',
+  'supabase/functions/submit-professional-application/index.ts',
 ];
 
 for (const file of requiredFiles) {
@@ -75,14 +79,19 @@ const professionalSignupFiles = [
 for (const file of professionalSignupFiles) {
   const source = exists(file) ? read(file) : '';
   const containsMockVerification = source.includes('123456') || /Use code:/i.test(source);
-  check(
-    `${path.basename(file)} has no mock verification code`,
-    !containsMockVerification,
-    containsMockVerification
-      ? 'LAUNCH BLOCKER: this application page still displays/accepts a hard-coded verification code.'
-      : 'No hard-coded verification code found.'
-  );
+  check(`${path.basename(file)} has no mock verification code`, !containsMockVerification, containsMockVerification ? 'LAUNCH BLOCKER: hard-coded verification remains.' : 'No hard-coded verification code found.');
+  check(`${path.basename(file)} uses review-first application intake`, source.includes('submitProfessionalApplication'), 'Professional applicants must not be auto-created as verified members.');
+  check(`${path.basename(file)} does not generate temporary member passwords`, !/tempPassword|registerTherapist|registerInfluencer|registerProfessional/.test(source), 'Application intake must not create an inaccessible temporary-password account.');
 }
+
+const professionalMigration = exists('supabase/migrations/20260817_professional_applications.sql') ? read('supabase/migrations/20260817_professional_applications.sql') : '';
+check('professional applications are private from browser roles', professionalMigration.includes('revoke all on table public.professional_applications from anon, authenticated'), 'Sensitive application records must be backend-only.');
+check('professional applications do not auto-verify contact fields', professionalMigration.includes('email_verified boolean not null default false') && professionalMigration.includes('phone_verified boolean not null default false'), 'New applications must begin unverified.');
+
+const professionalFunction = exists('supabase/functions/submit-professional-application/index.ts') ? read('supabase/functions/submit-professional-application/index.ts') : '';
+check('professional application intake has a server-side kill switch', professionalFunction.includes("PROFESSIONAL_APPLICATIONS_ENABLED') !== 'true'"), 'Deployment alone must not activate public intake.');
+check('professional application intake has optional anti-abuse verification', professionalFunction.includes('PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED') && professionalFunction.includes('TURNSTILE_SECRET_KEY'), 'Public intake should have an anti-abuse path before broad activation.');
+check('professional application intake restricts origins', professionalFunction.includes('PROFESSIONAL_APPLICATION_ALLOWED_ORIGINS'), 'Public intake must not silently accept arbitrary browser origins.');
 
 const presence = exists('src/lib/roomPresenceService.js') ? read('src/lib/roomPresenceService.js') : '';
 const tracksRawPresenceIdentity = /channel\.track\(\{[\s\S]{0,200}(user_id|name:)/.test(presence);
@@ -113,24 +122,19 @@ check('Buddy Finder UI does not advertise email search', !/Search by name, email
 const chatService = exists('src/lib/chatService.js') ? read('src/lib/chatService.js') : '';
 const chatReadsPrivateUsers = chatService.includes(".from('users')");
 const chatRequestsMemberEmail = /\.select\(['\"][^'\"]*email[^'\"]*['\"]\)/.test(chatService);
-check(
-  'Pairwise chat uses privacy-safe member directory',
-  !chatReadsPrivateUsers,
-  chatReadsPrivateUsers
-    ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still reads other members from public.users.'
-    : 'No direct public.users read found in chatService.'
-);
-check(
-  'Pairwise chat does not retrieve member email',
-  !chatRequestsMemberEmail,
-  chatRequestsMemberEmail
-    ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still requests member email for display/fallbacks.'
-    : 'No member-email projection found in chatService.'
-);
+check('Pairwise chat uses privacy-safe member directory', !chatReadsPrivateUsers, chatReadsPrivateUsers ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still reads other members from public.users.' : 'No direct public.users read found in chatService.');
+check('Pairwise chat does not retrieve member email', !chatRequestsMemberEmail, chatRequestsMemberEmail ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still requests member email.' : 'No member-email projection found in chatService.');
 
 const communityService = exists('src/lib/communityService.js') ? read('src/lib/communityService.js') : '';
 const broadCommunityUsersRead = /\.from\(['\"]users['\"]\)[\s\S]{0,250}\.in\(['\"]id['\"]|\.neq\(['\"]id['\"]|\.or\(/.test(communityService);
 check('Community service has no broad users-directory read', !broadCommunityUsersRead, 'Community public/member lookups must use a safe directory; own-profile name reads are acceptable.');
+
+const waitlistForm = exists('src/components/home/WaitlistForm.jsx') ? read('src/components/home/WaitlistForm.jsx') : '';
+check('waitlist browser insert is write-only', waitlistForm.includes(".from('waitlist')") && !/\.from\(['\"]waitlist['\"]\)[\s\S]{0,180}\.select\(/.test(waitlistForm), 'The public waitlist form must not request inserted rows back.');
+
+const waitlistMigration = exists('supabase/migrations/20260817_waitlist_privacy_hardening.sql') ? read('supabase/migrations/20260817_waitlist_privacy_hardening.sql') : '';
+check('active waitlist blocks browser read/update/delete', waitlistMigration.includes('revoke select, update, delete on table public.waitlist from anon, authenticated'), 'Waitlist contact data must be write-only from the browser.');
+check('legacy waitlist_signups is locked to backend access', waitlistMigration.includes('revoke all on table public.waitlist_signups from anon, authenticated'), 'Legacy waitlist_signups must not remain browser-readable.');
 
 const home = exists('src/pages/Home.jsx') ? read('src/pages/Home.jsx') : '';
 const homeMayImplyLiveHumans = /ROOM OPEN|People are talking now|SALA ABIERTA|SALON OUVERT|STANZA APERTA|RAUM OFFEN/.test(home);
