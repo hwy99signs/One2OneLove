@@ -2,12 +2,12 @@ import { supabase, handleSupabaseError } from './supabase';
 
 // Relaunch profile writes are intentionally narrower than the historical Base44-era
 // profile schema. Partner email is not collected until a reviewed partner-linking flow
-// actually needs it, and role/billing/account-email fields are never browser-editable.
+// actually needs it, and role/billing/account-email/avatar URL fields are never generic
+// browser-editable profile fields.
 const SAFE_PROFILE_UPDATE_FIELDS = new Set([
   'name',
   'relationship_status',
   'anniversary_date',
-  'avatar_url',
   'bio',
   'location',
   'love_language',
@@ -29,10 +29,6 @@ const getAuthenticatedOwnUser = async (requestedUserId) => {
   return user;
 };
 
-/**
- * Ensure the current user is allowed to use the regular-member profile backend.
- * Role is read from the trusted profile row, never from browser/auth metadata.
- */
 const ensureRegularUserAccess = async (userId, columns = 'user_type') => {
   await getAuthenticatedOwnUser(userId);
 
@@ -72,9 +68,10 @@ const requireProfilePictureEditing = () => {
 };
 
 /**
- * Upload own regular-member profile picture.
- * This path stays explicitly OFF until the hardened profile-pictures Storage migration
- * has been applied and controlled ownership/MIME/size tests have passed.
+ * Upload own regular-member profile picture object.
+ * This path stays explicitly OFF until the hardened Storage migration and a dedicated
+ * server-reviewed profile-avatar assignment flow have passed controlled tests. Returning
+ * the uploaded URL alone does not authorize generic `users.avatar_url` mutation.
  */
 export const uploadProfilePicture = async (file, userId) => {
   try {
