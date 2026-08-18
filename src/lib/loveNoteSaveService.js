@@ -19,7 +19,19 @@ export async function getSavedLoveNotes() {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+
+  // Preserve the historical UI shape while sourcing it from the safe projection.
+  return (data || []).map((item) => ({
+    id: item.id,
+    invitation_id: item.invitation_id,
+    created_at: item.created_at,
+    love_note_invitations: {
+      sender_name: item.sender_name,
+      recipient_name: item.recipient_name,
+      note_content: item.note_content,
+      revealed_at: item.revealed_at,
+    },
+  }));
 }
 
 export async function isLoveNoteSaved(invitationId) {
