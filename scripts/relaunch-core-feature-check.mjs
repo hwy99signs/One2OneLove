@@ -13,6 +13,9 @@ const files = {
   dateService: 'src/lib/dateIdeasService.js',
   dateCatalog: 'src/lib/dateIdeasCatalog.js',
   dateMigration: 'supabase/migrations/20260818_date_ideas_hardening.sql',
+  quizPage: 'src/pages/LoveLanguageQuizRelaunch.jsx',
+  profileService: 'src/lib/profileService.js',
+  usersMutation: 'supabase/migrations/20260817_users_mutation_hardening.sql',
   membership: 'src/lib/membershipConfig.js',
   router: 'src/pages/index.jsx',
 };
@@ -26,6 +29,9 @@ const form = exists(files.dateForm) ? read(files.dateForm) : '';
 const service = exists(files.dateService) ? read(files.dateService) : '';
 const catalog = exists(files.dateCatalog) ? read(files.dateCatalog) : '';
 const migration = exists(files.dateMigration) ? read(files.dateMigration) : '';
+const quiz = exists(files.quizPage) ? read(files.quizPage) : '';
+const profile = exists(files.profileService) ? read(files.profileService) : '';
+const usersMutation = exists(files.usersMutation) ? read(files.usersMutation) : '';
 const membership = exists(files.membership) ? read(files.membership) : '';
 const router = exists(files.router) ? read(files.router) : '';
 
@@ -125,8 +131,78 @@ check(
 check(
   'account persistence failure preserves built-in browsing',
   page.includes('myIdeasQuery.isError')
-    && page.includes('sourceIdeas = view === \'explore\' ? builtIns'),
+    && page.includes("sourceIdeas = view === 'explore' ? builtIns"),
   'A private table outage must not make the free browse catalog disappear.'
+);
+
+check(
+  'Love Language Quiz remains an approved free feature',
+  membership.includes("love_language_quiz: 'free'")
+    && router.includes('import LoveLanguageQuiz from "./LoveLanguageQuizRelaunch"')
+    && router.includes('["/LoveLanguageQuiz", LoveLanguageQuiz]'),
+  'The relaunch route should use the reviewed free quiz implementation.'
+);
+check(
+  'Love Language comparisons are balanced',
+  quiz.includes("['words', 'quality']")
+    && quiz.includes("['words', 'gifts']")
+    && quiz.includes("['service', 'touch']")
+    && quiz.includes('const PAIRS = ['),
+  'Each of the five preference categories should be compared against every other category once.'
+);
+check(
+  'Love Language result is scored explicitly from final answers',
+  quiz.includes('const scoreAnswers = (answers) =>')
+    && quiz.includes('const scored = scoreAnswers(finalAnswers)')
+    && quiz.includes('setResult(scored)'),
+  'Result display must not depend on React state timing from the final answer click.'
+);
+check(
+  'Love Language Quiz covers relaunch languages',
+  ["en:", "es:", "fr:", "it:", "de:", "nl:"].every((token) => quiz.includes(token)),
+  'Prepared quiz UI/results should have the same language coverage as the relaunch core.'
+);
+check(
+  'Love Language sharing is a real browser action',
+  quiz.includes('navigator.share')
+    && quiz.includes('navigator.clipboard.writeText(text)')
+    && quiz.includes('shareResult'),
+  'A visible Share Result control must actually share or copy a result.'
+);
+check(
+  'Love Language sharing does not expose private profile data',
+  quiz.includes('t.names[result.primary]')
+    && quiz.includes("`${window.location.origin}/LoveLanguageQuiz`")
+    && !quiz.includes('user.email')
+    && !quiz.includes('partner_email'),
+  'Share text should contain only the chosen result and public quiz link.'
+);
+check(
+  'signed-out Love Language result survives auth acquisition path',
+  quiz.includes("sessionStorage.setItem(RESULT_STORAGE_KEY")
+    && quiz.includes("/SignUp?returnTo=")
+    && quiz.includes("/SignIn?returnTo=")
+    && quiz.includes('loadPendingResult()'),
+  'The free-account growth CTA must not erase the quiz result that motivated signup.'
+);
+check(
+  'Love Language profile save is owner-scoped and value-limited',
+  profile.includes('await ensureRegularUserAccess(userId)')
+    && profile.includes('const validValues =')
+    && profile.includes(".eq('id', userId)"),
+  'Profile save must allow only known values for the authenticated own account.'
+);
+check(
+  'Love Language is allowed by default-deny users mutation boundary',
+  usersMutation.includes("'love_language'")
+    && usersMutation.includes('enforce_users_self_service_update'),
+  'The staged users hardening must not accidentally block this legitimate self-service profile field.'
+);
+check(
+  'Love Language result is framed as reflection, not diagnosis',
+  quiz.includes('informal reflection tool')
+    && quiz.includes('not a clinical or validated assessment'),
+  'Do not overstate an informal preference quiz as a clinical assessment.'
 );
 
 console.log('\nOne2OneLove free-core relaunch check\n');
