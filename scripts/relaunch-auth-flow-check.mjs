@@ -38,7 +38,10 @@ requireText(authFlow, "'code'", 'Auth URL scrubbing must remove one-time authori
 requireText(authFlow, "url.hash = ''", 'Auth URL scrubbing must clear implicit-flow fragments.');
 requireText(authFlow, 'history.replaceState', 'Auth material must be removed from browser history without reloading.');
 
-requireText(signup, "window.localStorage.setItem('o2ol-return-after-auth', destination)", 'Signup must persist its validated return destination across email-confirmation tabs.');
+requireText(signup, 'safeAuthReturnTo', 'Signup must use the centralized local return-path validator.');
+requireText(signup, 'storeAuthReturnTo(destination, { durable: true })', 'Signup must persist its validated return destination across confirmation tabs.');
+requireText(signup, 'clearAuthReturnTo()', 'Signup must clear the return handoff when confirmation is not required.');
+
 requireText(callback, 'loadAuthReturnTo()', 'AuthCallback must read the centralized cross-tab return destination.');
 requireText(callback, 'clearAuthReturnTo()', 'AuthCallback must clear a completed return handoff.');
 requireText(callback, 'scrubAuthMaterialFromUrl()', 'AuthCallback must scrub one-time provider credentials.');
@@ -46,10 +49,10 @@ requireText(callback, 'authUserIsConfirmed', 'AuthCallback must verify confirmed
 requireText(callback, 'Confirmation link processed. Please sign in to continue.', 'AuthCallback must not claim email confirmation without a confirmed session.');
 forbidText(callback, "setStatus('Email confirmed. Please sign in to continue.')", 'AuthCallback may not label an unverified no-session state as confirmed.');
 
-requireText(signin, "!value.startsWith('/') || value.startsWith('//')", 'SignIn must reject external/protocol-relative return destinations.');
+requireText(signin, 'safeAuthReturnTo', 'SignIn must use the centralized local return-path validator.');
+requireText(signin, 'storeAuthReturnTo(returnTo, { durable: true })', 'Confirmation resend must preserve the validated local return destination.');
 requireText(signin, 'supabase.auth.resend({', 'SignIn must provide a real confirmation-email resend path.');
 requireText(signin, "type: 'signup'", 'Confirmation resend must use Supabase signup confirmation.');
-requireText(signin, 'o2ol-return-after-auth', 'Confirmation resend must preserve the validated local return destination.');
 
 requireText(auth, 'emailIsConfirmed', 'AuthContext must derive confirmation from Supabase Auth.');
 requireText(auth, 'rejectUnconfirmedSession', 'AuthContext must reject unconfirmed sessions.');
