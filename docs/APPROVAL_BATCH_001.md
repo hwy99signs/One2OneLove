@@ -1,14 +1,16 @@
 # One2OneLove Relaunch — Approval Batch 001
 
-Status: **COLLECTING — DO NOT EXECUTE YET**
+Status: **OWNER APPROVED — EXECUTION PARTIALLY BLOCKED BY SUPABASE CONNECTOR INSTABILITY**
 
-This is the single owner-approval batch for actions that cross the development boundary. Routine work on `relaunch-homepage` continues without interruption. Production/default branch remains untouched until a later explicit release approval.
+Owner approval received **2026-08-18** with the recommended free-account / paid-membership structure and **no separate free trial**. Approval remains valid for the reviewed Batch 001 scope below. Routine work on `relaunch-homepage` continues. Production/default branch remains untouched until a separate release approval.
 
-## Batch 001 — production/backend actions to approve together
+Execution rule: run in dependency order and stop on a failed prerequisite. Do not force writes through an unstable connector. Any item later superseded by a stricter privacy/security design is held rather than executed under an older approval.
+
+## Batch 001 — approved production/backend actions
 
 ### A. Core Love Notes backend
 
-1. Apply the current reviewed version of `supabase/migrations/20260817_love_note_invitations.sql`.
+1. Apply the approved reviewed version of `supabase/migrations/20260817_love_note_invitations.sql`.
    - Raw reveal tokens are never stored.
    - Browser roles have no direct access to the private delivery table.
    - Participant history is exposed only through a safe projection that omits recipient contact, token hashes, provider IDs, and failure internals.
@@ -26,7 +28,6 @@ This is the single owner-approval batch for actions that cross the development b
    - `LOVE_NOTE_MAX_PER_DAY=30`
    - `LOVE_NOTE_MAX_SCHEDULE_DAYS=365`
    - `LOVE_NOTE_DISPATCH_BATCH_SIZE=25`
-   These are recommended beta defaults and can be changed later without a schema migration.
 7. Keep `LOVE_NOTE_DELIVERY_ENABLED=false` until all Love Notes migrations/functions/secrets pass configuration checks. `LOVE_NOTE_SMS_ENABLED` remains false.
 
 ### B. Live Community backend and moderation
@@ -46,8 +47,11 @@ This is the single owner-approval batch for actions that cross the development b
 
 ### C. Account/member privacy and security migrations
 
-15. Apply `supabase/migrations/20260817_member_directory_privacy.sql`.
-16. Apply `supabase/migrations/20260817_presence_security_hardening.sql` after the member directory exists.
+15. **HELD / SUPERSEDED — DO NOT APPLY YET:** `supabase/migrations/20260817_member_directory_privacy.sql`.
+   - A later privacy review determined that location and relationship status should not be discoverable by default.
+   - The stricter `20260818_member_directory_minimization.sql` is collected in Approval Batch 002.
+   - Do not expose the broader Batch 001 directory view during the interim.
+16. **HELD WITH ITEM 15:** `supabase/migrations/20260817_presence_security_hardening.sql` until the minimized member directory prerequisite is approved/applied.
 17. Apply `supabase/migrations/20260817_message_update_hardening.sql`.
    - Recipients can change receipt state only.
    - Senders can edit/delete their own content only.
@@ -76,7 +80,6 @@ This is the single owner-approval batch for actions that cross the development b
    - store `TURNSTILE_SECRET_KEY` only in Supabase Edge Function secrets,
    - set `PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED=true`,
    - allow only approved One2OneLove production/test hostnames in the Turnstile widget configuration.
-   The server validates successful Siteverify response, expected action `professional_application`, and an allowed hostname. No secret belongs in GitHub or chat.
 26. After one controlled application test succeeds, set `PROFESSIONAL_APPLICATIONS_ENABLED=true`.
 
 ### E. Secrets / external systems
@@ -85,7 +88,7 @@ This is the single owner-approval batch for actions that cross the development b
 28. If verification shows the existing key is appropriate, reuse it for Love Notes instead of replacing it.
 29. Configure `RESEND_FROM_EMAIL`, `SITE_URL`, `LOVE_NOTE_SCHEDULER_SECRET`, the Love Notes limits above, and delivery flags only through Supabase secret/config management. No secret value belongs in GitHub or chat.
 30. Verify the existing server-side `OPENAI_API_KEY` availability before enabling the AI Host; never expose or replace it blindly.
-31. Do **not** upgrade Vercel merely to bypass the current preview build-rate limit. Wait for the existing limit to clear unless a later approval batch explicitly authorizes a hosting-plan change.
+31. Do **not** upgrade Vercel merely to bypass a preview build-rate limit unless a later approval explicitly authorizes a hosting-plan change.
 
 ### F. Controlled live tests covered by this batch after A–E succeed
 
@@ -100,22 +103,20 @@ This is the single owner-approval batch for actions that cross the development b
 40. Test Live Room persistence, real presence count, sender identity, reactions, own-message deletion, report submission, and no fake-human activity with controlled test accounts.
 41. Confirm simultaneous identical AI Host requests create at most one OpenAI generation per room/language/context/time bucket.
 42. Submit one controlled professional application and confirm no Auth user/member account is created automatically and browser roles cannot read the application table.
-43. Run the relaunch build gate and require `npm run relaunch:check` to report zero blockers before the production-release batch is considered.
+43. Run the strict relaunch preflight and require zero blockers before a production-release batch is considered.
 
 ## Explicitly NOT included in Batch 001
 
 - Paid SMS/Twilio/A2P activation or SMS spend.
 - A production/default-branch merge.
 - Public launch of One2OneLove.com.
+- Live Stripe billing activation merely because this batch is approved.
 - Any replacement of an existing production secret without first verifying its current usage.
 - Any irreversible deletion of live user data.
 - Any Vercel/hosting-plan upgrade or new recurring platform expense.
 - Approval/rejection of any real therapist, influencer, or professional applicant.
+- The broader member-directory exposure superseded by Batch 002 minimization.
 
-## Execution rule after approval
+## Current execution note
 
-Once this file is marked **READY FOR APPROVAL**, the owner can approve the whole batch with one instruction such as:
-
-> Approve One2OneLove Approval Batch 001.
-
-Execution must follow dependency order, use controlled test accounts/addresses, and stop automatically on a failed prerequisite instead of forcing the remainder of the batch through. Production/default-branch release remains a separate later approval even after this backend batch succeeds.
+The owner approved Batch 001. Attempts to begin with a read-only Supabase migration-history prerequisite check encountered intermittent connector disablement/upstream failure, so execution stopped **before any Batch 001 production migration was applied**. Resume from the first unapplied prerequisite only when the connector is stable enough to verify state safely.
