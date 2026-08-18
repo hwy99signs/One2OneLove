@@ -77,7 +77,7 @@ export default function LoveNoteReveal() {
 
   const replyWithLoveNote = () => {
     sessionStorage.setItem("o2ol-love-note-draft", JSON.stringify({ source: "reply", recipientName: revealed?.sender_name || "", message: "" }));
-    navigate("/LoveNotes/Send");
+    navigate("/LoveNoteSendDemo");
   };
 
   return (
