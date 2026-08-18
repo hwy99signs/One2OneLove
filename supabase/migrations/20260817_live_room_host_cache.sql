@@ -2,8 +2,9 @@
 -- DEVELOPMENT MIGRATION ONLY. Apply to production only through an approved batch.
 --
 -- The browser never reads this table directly. The authenticated Edge Function uses
--- service_role to atomically claim one generation slot per room/language/time bucket so
--- many members entering the same quiet room do not create duplicate OpenAI calls.
+-- service_role to atomically claim one generation slot per room/language/context/time
+-- bucket so concurrent members do not create duplicate OpenAI calls while a materially
+-- different quiet-room conversation can still receive a relevant host invitation.
 
 begin;
 
@@ -17,6 +18,7 @@ create table if not exists public.live_room_host_prompt_cache (
     'starting-over'
   )),
   language text not null default 'en' check (language in ('en','es','fr','it','de','nl')),
+  context_hash text not null check (char_length(context_hash) = 64),
   bucket_start timestamptz not null,
   reason text not null check (reason in ('room_empty', 'room_quiet')),
   status text not null default 'generating' check (status in ('generating', 'ready', 'failed')),
@@ -24,7 +26,7 @@ create table if not exists public.live_room_host_prompt_cache (
   source text check (source is null or source in ('ai', 'fallback')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (room_slug, language, bucket_start)
+  unique (room_slug, language, context_hash, bucket_start)
 );
 
 create index if not exists live_room_host_prompt_cache_created_idx
@@ -51,13 +53,14 @@ before update on public.live_room_host_prompt_cache
 for each row execute function public.set_live_room_host_prompt_cache_updated_at();
 
 comment on table public.live_room_host_prompt_cache is
-  'Server-only AI Host cache/cost guard. One generation claim per room/language/time bucket; browser roles have no direct access.';
+  'Server-only AI Host cache/cost guard. One generation claim per room/language/context/time bucket; browser roles have no direct access.';
 
 commit;
 
 -- PRE-APPLY CHECKLIST
 -- 1. Deploy live-room-host with LIVE_ROOM_AI_ENABLED=false first.
 -- 2. Configure LIVE_ROOM_HOST_MIN_INTERVAL_SECONDS and allowed origins.
--- 3. Confirm simultaneous same-language requests produce at most one AI generation per room bucket.
--- 4. Confirm different enabled languages do not receive another language cache entry.
--- 5. Add a periodic retention cleanup later if prompt volume makes it necessary.
+-- 3. Confirm simultaneous identical-context requests produce at most one AI generation.
+-- 4. Confirm a materially different quiet-room context can generate a new relevant prompt.
+-- 5. Confirm different enabled languages do not receive another language cache entry.
+-- 6. Add a periodic retention cleanup later if prompt volume makes it necessary.
