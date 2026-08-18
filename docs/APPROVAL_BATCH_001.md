@@ -56,40 +56,51 @@ This is the single owner-approval batch for actions that cross the development b
 19. Apply `supabase/migrations/20260817_waitlist_privacy_hardening.sql`.
    - Current waitlist becomes browser write-only.
    - Legacy `waitlist_signups` becomes backend/service-role only.
-20. Apply `supabase/migrations/20260817_users_privacy_lockdown.sql` **last among the profile/privacy migrations**, after the remaining member-facing route audit confirms there is no required broad `public.users` read.
+20. Apply `supabase/migrations/20260817_users_mutation_hardening.sql` after the matching AuthContext/profile-service frontend is ready.
+   - Direct browser INSERT into `public.users` is revoked.
+   - Missing regular profiles are created through `ensure_own_regular_profile`, which derives account ID/email/regular role from confirmed Supabase Auth.
+   - Browser self-service UPDATE is default-deny for privileged/unknown fields; only ordinary profile fields are editable.
+   - Legacy public professional-registration APIs now fail closed instead of self-creating privileged accounts.
+21. Apply `supabase/migrations/20260817_users_privacy_lockdown.sql` **last among the profile/privacy migrations**, after the automated/direct-access audit confirms there is no required broad `public.users` read.
 
 ### D. Professional / therapist / influencer application intake
 
-21. Apply `supabase/migrations/20260817_professional_applications.sql`.
+22. Apply `supabase/migrations/20260817_professional_applications.sql`.
    - Applications remain private pre-membership records.
    - Email/phone begin unverified.
    - Submission does not auto-create a member account or temporary password.
-22. Deploy `submit-professional-application` with public invocation (`verify_jwt=false`) but `PROFESSIONAL_APPLICATIONS_ENABLED=false` initially.
-23. Configure exact `PROFESSIONAL_APPLICATION_ALLOWED_ORIGINS`.
-24. Before broad public intake, configure the prepared Cloudflare Turnstile anti-abuse path and set `PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED=true`.
-   - Do not place Turnstile secret keys in source code or chat.
-25. After one controlled application test succeeds, set `PROFESSIONAL_APPLICATIONS_ENABLED=true`.
+23. Deploy `submit-professional-application` with public invocation (`verify_jwt=false`) but `PROFESSIONAL_APPLICATIONS_ENABLED=false` initially.
+24. Configure exact `PROFESSIONAL_APPLICATION_ALLOWED_ORIGINS`.
+25. Configure Cloudflare Turnstile for the professional-application form before broad intake:
+   - add the public `VITE_TURNSTILE_SITE_KEY` to the frontend/Vercel environment,
+   - store `TURNSTILE_SECRET_KEY` only in Supabase Edge Function secrets,
+   - set `PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED=true`,
+   - allow only approved One2OneLove production/test hostnames in the Turnstile widget configuration.
+   The server validates successful Siteverify response, expected action `professional_application`, and an allowed hostname. No secret belongs in GitHub or chat.
+26. After one controlled application test succeeds, set `PROFESSIONAL_APPLICATIONS_ENABLED=true`.
 
 ### E. Secrets / external systems
 
-26. Read-only verify how the existing Supabase `RESEND_API_KEY` is used before changing it. **Do not replace the existing secret blindly.**
-27. If verification shows the existing key is appropriate, reuse it for Love Notes instead of replacing it.
-28. Configure `RESEND_FROM_EMAIL`, `SITE_URL`, `LOVE_NOTE_SCHEDULER_SECRET`, the Love Notes limits above, and delivery flags only through Supabase secret/config management. No secret value belongs in GitHub or chat.
-29. Verify the existing server-side `OPENAI_API_KEY` availability before enabling the AI Host; never expose or replace it blindly.
-30. Do **not** upgrade Vercel merely to bypass the current preview build-rate limit. Wait for the existing limit to clear unless a later approval batch explicitly authorizes a hosting-plan change.
+27. Read-only verify how the existing Supabase `RESEND_API_KEY` is used before changing it. **Do not replace the existing secret blindly.**
+28. If verification shows the existing key is appropriate, reuse it for Love Notes instead of replacing it.
+29. Configure `RESEND_FROM_EMAIL`, `SITE_URL`, `LOVE_NOTE_SCHEDULER_SECRET`, the Love Notes limits above, and delivery flags only through Supabase secret/config management. No secret value belongs in GitHub or chat.
+30. Verify the existing server-side `OPENAI_API_KEY` availability before enabling the AI Host; never expose or replace it blindly.
+31. Do **not** upgrade Vercel merely to bypass the current preview build-rate limit. Wait for the existing limit to clear unless a later approval batch explicitly authorizes a hosting-plan change.
 
 ### F. Controlled live tests covered by this batch after A–E succeed
 
-31. Submit one waitlist entry and confirm browser roles cannot read waitlist records.
-32. Send one **email** Love Note to an owner-controlled test address.
-33. Verify the invitation contains the sender identity and secure reveal link but **not the Love Note body**.
-34. Verify sign-in/free-account return-to, confirmed-email requirement, secure reveal, sender identity, reply, save, Saved Love Notes, and remove-from-saved behavior.
-35. Verify a token cannot be claimed by a different account and an email invitation can be claimed only by the confirmed email address that received it.
-36. Verify scheduled email delivery with one short controlled schedule; confirm SMS remains untouched/disabled.
-37. Verify password-recovery redirect and new-password completion with an owner-controlled account.
-38. Test Live Room persistence, real presence count, sender identity, reactions, own-message deletion, report submission, and no fake-human activity with controlled test accounts.
-39. Confirm simultaneous identical AI Host requests create at most one OpenAI generation per room/language/context/time bucket.
-40. Submit one controlled professional application and confirm no Auth user/member account is created automatically and browser roles cannot read the application table.
+32. Submit one waitlist entry and confirm browser roles cannot read waitlist records.
+33. Create/confirm one controlled regular-member account and verify the trusted profile bootstrap creates only a `regular` own profile; confirm direct browser `public.users` INSERT and privileged-field UPDATE attempts fail.
+34. Send one **email** Love Note to an owner-controlled test address.
+35. Verify the invitation contains the sender identity and secure reveal link but **not the Love Note body**.
+36. Verify sign-in/free-account return-to, confirmed-email requirement, secure reveal, sender identity, reply, save, Saved Love Notes, and remove-from-saved behavior.
+37. Verify a token cannot be claimed by a different account and an email invitation can be claimed only by the confirmed email address that received it.
+38. Verify scheduled email delivery with one short controlled schedule; confirm SMS remains untouched/disabled.
+39. Verify password-recovery redirect and new-password completion with an owner-controlled account.
+40. Test Live Room persistence, real presence count, sender identity, reactions, own-message deletion, report submission, and no fake-human activity with controlled test accounts.
+41. Confirm simultaneous identical AI Host requests create at most one OpenAI generation per room/language/context/time bucket.
+42. Submit one controlled professional application and confirm no Auth user/member account is created automatically and browser roles cannot read the application table.
+43. Run the relaunch build gate and require `npm run relaunch:check` to report zero blockers before the production-release batch is considered.
 
 ## Explicitly NOT included in Batch 001
 
