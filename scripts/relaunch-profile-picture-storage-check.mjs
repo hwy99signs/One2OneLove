@@ -27,6 +27,8 @@ requireText(migration, 'O2OL profile owners can update pictures', 'Authenticated
 requireText(migration, 'O2OL profile owners can delete pictures', 'Authenticated owner delete grant must exist.');
 requireText(migration, 'O2OL profile owners can list pictures', 'Authenticated owner metadata/list grant must exist.');
 
+requireText(service, "VITE_PROFILE_PICTURE_EDITING_ENABLED === 'true'", 'Profile-picture editing must remain behind an explicit default-off frontend activation flag.');
+requireText(service, 'requireProfilePictureEditing()', 'Upload/delete code must enforce the profile-picture activation flag in the service layer.');
 requireText(service, 'await ensureRegularUserAccess(userId)', 'Profile-picture service must authenticate/authorize the requested owner before Storage access.');
 requireText(service, 'const filePath = `${userId}/${fileName}`', 'Profile-picture client must use the owner-folder object-key contract.');
 requireText(service, "file.size > 5 * 1024 * 1024", 'Client should mirror the 5 MiB server bucket limit.');
@@ -46,4 +48,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Profile-picture Storage preflight passed: optional avatars are publicly deliverable by URL while Storage list/write/delete remain owner-only and the member directory stays privacy-minimized.');
+console.log('Profile-picture Storage preflight passed: avatar editing is default-off until hardened Storage activation; optional avatars are publicly deliverable by URL while Storage list/write/delete remain owner-only and the member directory stays privacy-minimized.');
