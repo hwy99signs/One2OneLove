@@ -4,9 +4,9 @@ import { supabase, handleSupabaseError } from './supabase';
  * Buddy/Friend System Service
  * Handles finding users and managing buddy requests.
  *
- * Privacy rule: member-directory queries intentionally exclude email, partner_email,
- * and other account/private fields. Only fields intended for member discovery are
- * returned to directory and buddy UI consumers.
+ * Privacy rule: member discovery reads only from public.member_directory, a
+ * server-side projection that intentionally excludes email, partner_email, and
+ * other account-private fields.
  */
 
 const PUBLIC_MEMBER_FIELDS = [
@@ -23,19 +23,14 @@ const PUBLIC_MEMBER_FIELDS = [
 
 const BASIC_MEMBER_FIELDS = 'id,name,avatar_url,bio';
 
-/**
- * Get users for the buddy finder (excluding current user).
- */
 export const getAllUsers = async (currentUserId, options = {}) => {
   try {
     let query = supabase
-      .from('users')
+      .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
       .neq('id', currentUserId);
 
-    if (options.userType) {
-      query = query.eq('user_type', options.userType);
-    }
+    if (options.userType) query = query.eq('user_type', options.userType);
 
     const allowedSortFields = new Set(['created_at', 'name']);
     const sortBy = allowedSortFields.has(options.sortBy) ? options.sortBy : 'created_at';
@@ -55,16 +50,13 @@ export const getAllUsers = async (currentUserId, options = {}) => {
   }
 };
 
-/**
- * Search users by public directory fields only.
- */
 export const searchUsers = async (currentUserId, searchQuery) => {
   try {
     const term = String(searchQuery || '').trim().slice(0, 80);
     if (!term) return getAllUsers(currentUserId, { limit: 100, sortBy: 'name', sortOrder: 'asc' });
 
     const { data, error } = await supabase
-      .from('users')
+      .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
       .neq('id', currentUserId)
       .eq('user_type', 'regular')
@@ -80,13 +72,10 @@ export const searchUsers = async (currentUserId, searchQuery) => {
   }
 };
 
-/**
- * Get the public member profile projection by ID.
- */
 export const getUserProfile = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('users')
+      .from('member_directory')
       .select(PUBLIC_MEMBER_FIELDS)
       .eq('id', userId)
       .single();
@@ -99,9 +88,6 @@ export const getUserProfile = async (userId) => {
   }
 };
 
-/**
- * Send a buddy/friend request.
- */
 export const sendBuddyRequest = async (fromUserId, toUserId) => {
   try {
     const { data: existing } = await supabase
@@ -161,7 +147,7 @@ export const getSentBuddyRequests = async (userId) => {
     if (!userIds.length) return [];
 
     const { data: users, error: usersError } = await supabase
-      .from('users')
+      .from('member_directory')
       .select(BASIC_MEMBER_FIELDS)
       .in('id', userIds);
 
@@ -191,7 +177,7 @@ export const getReceivedBuddyRequests = async (userId) => {
     if (!userIds.length) return [];
 
     const { data: users, error: usersError } = await supabase
-      .from('users')
+      .from('member_directory')
       .select(BASIC_MEMBER_FIELDS)
       .in('id', userIds);
 
@@ -258,7 +244,7 @@ export const getMyBuddies = async (userId) => {
     let usersMap = {};
     if (otherUserIds.length) {
       const { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('member_directory')
         .select('id,name,avatar_url,bio,relationship_status,location')
         .in('id', otherUserIds);
 
