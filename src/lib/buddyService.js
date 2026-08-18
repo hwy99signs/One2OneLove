@@ -1,13 +1,14 @@
 import { supabase, handleSupabaseError } from './supabase';
+import { sanitizeMemberSummary } from './memberMedia';
 
 /**
  * Buddy/Friend System Service
  * Handles member discovery and buddy requests.
  *
  * Relaunch privacy rule: ordinary member discovery is intentionally minimal. Other
- * authenticated members receive only name, optional avatar, short bio and member-since
- * date. Account email, location, relationship status, partner data, interests, role,
- * verification and billing data are not requested here.
+ * authenticated members receive only name, optional first-party avatar, short bio and
+ * member-since date. Account email, location, relationship status, partner data,
+ * interests, role, verification and billing data are not requested here.
  *
  * Mutation rule: the acting user is always derived from Supabase Auth, never trusted
  * from a caller-supplied user ID.
@@ -50,7 +51,7 @@ export const getAllUsers = async (currentUserId, options = {}) => {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(sanitizeMemberSummary);
   } catch (error) {
     console.error('Error fetching buddy directory:', error);
     throw new Error(handleSupabaseError(error));
@@ -63,8 +64,6 @@ export const searchUsers = async (currentUserId, searchQuery) => {
     const term = String(searchQuery || '').trim().slice(0, 80);
     if (!term) return getAllUsers(user.id, { limit: 100, sortBy: 'name', sortOrder: 'asc' });
 
-    // Escape PostgREST OR-filter wildcard/control characters so member search is text,
-    // not a caller-controlled filter expression.
     const safeTerm = term.replace(/[,%()]/g, ' ').replace(/\s+/g, ' ').trim();
     if (!safeTerm) return [];
 
@@ -77,7 +76,7 @@ export const searchUsers = async (currentUserId, searchQuery) => {
       .limit(100);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(sanitizeMemberSummary);
   } catch (error) {
     console.error('Error searching users:', error);
     throw new Error(handleSupabaseError(error));
@@ -96,7 +95,7 @@ export const getUserProfile = async (userId) => {
       .single();
 
     if (error) throw error;
-    return data;
+    return sanitizeMemberSummary(data);
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw new Error(handleSupabaseError(error));
@@ -176,11 +175,14 @@ export const getSentBuddyRequests = async (userId) => {
       .in('id', userIds);
 
     if (usersError) throw usersError;
-    const usersMap = Object.fromEntries((users || []).map((member) => [member.id, member]));
+    const usersMap = Object.fromEntries((users || []).map((member) => {
+      const safe = sanitizeMemberSummary(member);
+      return [safe.id, safe];
+    }));
 
     return (data || []).map((req) => ({
       ...req,
-      to_user: usersMap[req.to_user_id] || { id: req.to_user_id, name: 'Member' },
+      to_user: usersMap[req.to_user_id] || { id: req.to_user_id, name: 'Member', avatar_url: null },
     }));
   } catch (error) {
     console.error('Error fetching sent requests:', error);
@@ -207,11 +209,14 @@ export const getReceivedBuddyRequests = async (userId) => {
       .in('id', userIds);
 
     if (usersError) throw usersError;
-    const usersMap = Object.fromEntries((users || []).map((member) => [member.id, member]));
+    const usersMap = Object.fromEntries((users || []).map((member) => {
+      const safe = sanitizeMemberSummary(member);
+      return [safe.id, safe];
+    }));
 
     return (data || []).map((req) => ({
       ...req,
-      from_user: usersMap[req.from_user_id] || { id: req.from_user_id, name: 'Member' },
+      from_user: usersMap[req.from_user_id] || { id: req.from_user_id, name: 'Member', avatar_url: null },
     }));
   } catch (error) {
     console.error('Error fetching received requests:', error);
@@ -236,7 +241,7 @@ export const acceptBuddyRequest = async (requestId, userId) => {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error accepting request:', error);
+    console.error('Error accepting buddy request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -255,7 +260,7 @@ export const rejectBuddyRequest = async (requestId, userId) => {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error rejecting request:', error);
+    console.error('Error rejecting buddy request:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
@@ -283,12 +288,15 @@ export const getMyBuddies = async (userId) => {
         .in('id', otherUserIds);
 
       if (usersError) throw usersError;
-      usersMap = Object.fromEntries((users || []).map((member) => [member.id, member]));
+      usersMap = Object.fromEntries((users || []).map((member) => {
+        const safe = sanitizeMemberSummary(member);
+        return [safe.id, safe];
+      }));
     }
 
     return (data || []).map((request) => {
       const otherUserId = request.from_user_id === user.id ? request.to_user_id : request.from_user_id;
-      const buddy = usersMap[otherUserId] || { id: otherUserId, name: 'Member' };
+      const buddy = usersMap[otherUserId] || { id: otherUserId, name: 'Member', avatar_url: null };
       return {
         ...buddy,
         request_id: request.id,
