@@ -12,13 +12,31 @@ const createRequestId = () => {
   });
 };
 
+const readFunctionErrorPayload = async (error, data) => {
+  if (data && typeof data === 'object') return data;
+
+  const response = error?.context;
+  if (!response || typeof response.json !== 'function') return null;
+
+  try {
+    const readable = typeof response.clone === 'function' ? response.clone() : response;
+    const payload = await readable.json();
+    return payload && typeof payload === 'object' ? payload : null;
+  } catch {
+    return null;
+  }
+};
+
 const invoke = async (body) => {
   const { data, error } = await supabase.functions.invoke('relationship-coach', { body });
   if (error || data?.error) {
-    const message = data?.error || error?.message || 'Relationship Coach is unavailable right now.';
+    const payload = await readFunctionErrorPayload(error, data);
+    const code = payload?.error || data?.error || null;
+    const message = code || error?.message || 'Relationship Coach is unavailable right now.';
     const enriched = new Error(message);
-    enriched.code = data?.error || null;
-    enriched.feature = data?.feature || null;
+    enriched.code = code;
+    enriched.feature = payload?.feature || data?.feature || null;
+    enriched.status = error?.context?.status || null;
     throw enriched;
   }
   return data;
