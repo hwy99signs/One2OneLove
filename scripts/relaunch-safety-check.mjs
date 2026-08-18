@@ -19,6 +19,11 @@ const requiredFiles = [
   'src/pages/ForgotPassword.jsx',
   'src/pages/ResetPassword.jsx',
   'supabase/migrations/20260817_love_note_invitations.sql',
+  'supabase/migrations/20260817_member_directory_privacy.sql',
+  'supabase/migrations/20260817_users_privacy_lockdown.sql',
+  'supabase/migrations/20260817_message_update_hardening.sql',
+  'supabase/migrations/20260817_community_member_policy_hardening.sql',
+  'supabase/migrations/20260817_presence_security_hardening.sql',
   'supabase/functions/send-love-note-invitation/index.ts',
   'supabase/functions/reveal-love-note/index.ts',
 ];
@@ -49,6 +54,7 @@ check('email reveal binds invited address', revealFunction.includes('accountEmai
 const authContext = exists('src/contexts/AuthContext.jsx') ? read('src/contexts/AuthContext.jsx') : '';
 const hasUnconfirmedBypass = /allowing sign in anyway|allowing sign in|allowing access/i.test(authContext);
 check('AuthContext email-confirmation bypass removed', !hasUnconfirmedBypass, hasUnconfirmedBypass ? 'BLOCKER: AuthContext still contains an unconfirmed-email bypass.' : 'No known bypass phrase found.');
+check('AuthContext actively rejects unconfirmed sessions', authContext.includes('rejectUnconfirmedSession') && authContext.includes('emailIsConfirmed'), 'Session restoration and login should reject unconfirmed accounts.');
 
 const signIn = exists('src/pages/SignIn.jsx') ? read('src/pages/SignIn.jsx') : '';
 check('Sign In confirms authenticated email', signIn.includes('email_confirmed_at'), 'Defense-in-depth check should remain at the sign-in boundary.');
@@ -82,6 +88,49 @@ const presence = exists('src/lib/roomPresenceService.js') ? read('src/lib/roomPr
 const tracksRawPresenceIdentity = /channel\.track\(\{[\s\S]{0,200}(user_id|name:)/.test(presence);
 check('Live Room presence does not broadcast account identity', !tracksRawPresenceIdentity, 'Presence should carry only aggregate-count metadata, not member IDs or names.');
 check('Live Room presence key is pseudonymous', presence.includes('SHA-256') && presence.includes('one2onelove-room-presence:'), 'Use a deterministic one-way key instead of broadcasting the account UUID.');
+
+const presenceMigration = exists('supabase/migrations/20260817_presence_security_hardening.sql') ? read('supabase/migrations/20260817_presence_security_hardening.sql') : '';
+check('presence RPC blocks caller-supplied identity spoofing', presenceMigration.includes('auth.uid() <> p_user_id'), 'Presence SECURITY DEFINER functions must restrict writes to the authenticated caller.');
+check('presence projection excludes email', !/select[\s\S]*u\.email[\s\S]*from public\.user_presence/i.test(presenceMigration), 'Presence projection should not expose member email.');
+
+const memberDirectoryMigration = exists('supabase/migrations/20260817_member_directory_privacy.sql') ? read('supabase/migrations/20260817_member_directory_privacy.sql') : '';
+check('privacy-safe member directory exists', memberDirectoryMigration.includes('public.member_directory'), 'Member-facing profile discovery needs a purpose-built projection.');
+check('member directory excludes email fields', !/\bemail\b\s*,|partner_email/i.test(memberDirectoryMigration.replace(/--.*$/gm, '')), 'Member directory must not project email or partner_email.');
+
+const usersPrivacyMigration = exists('supabase/migrations/20260817_users_privacy_lockdown.sql') ? read('supabase/migrations/20260817_users_privacy_lockdown.sql') : '';
+check('users table own-row privacy policy staged', usersPrivacyMigration.includes('using (auth.uid() = id)'), 'The private users table should have an own-row SELECT policy.');
+check('users table anonymous SELECT revoked', usersPrivacyMigration.includes('revoke select on table public.users from anon'), 'Anonymous clients must not read full users rows.');
+
+const buddyService = exists('src/lib/buddyService.js') ? read('src/lib/buddyService.js') : '';
+check('Buddy Finder uses safe member directory', buddyService.includes(".from('member_directory')"), 'Buddy/member discovery should not read private public.users rows.');
+check('Buddy Finder does not query private users table', !buddyService.includes(".from('users')"), 'Buddy Finder still has a direct public.users dependency.');
+check('Buddy Finder does not request member email', !/select\([^)]*email/i.test(buddyService), 'Member discovery must not retrieve member email.');
+
+const findFriends = exists('src/pages/FindFriends.jsx') ? read('src/pages/FindFriends.jsx') : '';
+check('Buddy Finder UI does not display email', !/userData\.email/.test(findFriends), 'Member cards must not display account email.');
+check('Buddy Finder UI does not advertise email search', !/Search by name, email/i.test(findFriends), 'Member discovery should not encourage email-address lookup.');
+
+const chatService = exists('src/lib/chatService.js') ? read('src/lib/chatService.js') : '';
+const chatReadsPrivateUsers = chatService.includes(".from('users')");
+const chatRequestsMemberEmail = /\.select\(['\"][^'\"]*email[^'\"]*['\"]\)/.test(chatService);
+check(
+  'Pairwise chat uses privacy-safe member directory',
+  !chatReadsPrivateUsers,
+  chatReadsPrivateUsers
+    ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still reads other members from public.users.'
+    : 'No direct public.users read found in chatService.'
+);
+check(
+  'Pairwise chat does not retrieve member email',
+  !chatRequestsMemberEmail,
+  chatRequestsMemberEmail
+    ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still requests member email for display/fallbacks.'
+    : 'No member-email projection found in chatService.'
+);
+
+const communityService = exists('src/lib/communityService.js') ? read('src/lib/communityService.js') : '';
+const broadCommunityUsersRead = /\.from\(['\"]users['\"]\)[\s\S]{0,250}\.in\(['\"]id['\"]|\.neq\(['\"]id['\"]|\.or\(/.test(communityService);
+check('Community service has no broad users-directory read', !broadCommunityUsersRead, 'Community public/member lookups must use a safe directory; own-profile name reads are acceptable.');
 
 const home = exists('src/pages/Home.jsx') ? read('src/pages/Home.jsx') : '';
 const homeMayImplyLiveHumans = /ROOM OPEN|People are talking now|SALA ABIERTA|SALON OUVERT|STANZA APERTA|RAUM OFFEN/.test(home);
