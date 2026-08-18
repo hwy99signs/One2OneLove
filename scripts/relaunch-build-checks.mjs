@@ -11,6 +11,7 @@ const checks = [
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
   ['relaunch premium AI', 'scripts/relaunch-ai-feature-check.mjs'],
   ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
+  ['relaunch premium data', 'scripts/relaunch-premium-data-check.mjs'],
 ];
 
 console.log(`\nOne2OneLove relaunch build checks — ${strict ? 'STRICT' : 'PREVIEW/ADVISORY'} mode`);
