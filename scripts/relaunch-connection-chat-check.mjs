@@ -8,7 +8,9 @@ const findAlias = read('src/pages/FindFriends.jsx');
 const findPage = read('src/pages/FindFriendsRelaunch.jsx');
 const requestAlias = read('src/pages/FriendRequests.jsx');
 const requestPage = read('src/pages/FriendRequestsRelaunch.jsx');
+const profile = read('src/pages/ProfileRelaunchSafe.jsx');
 const buddyService = read('src/lib/buddyService.js');
+const directoryMigration = read('supabase/migrations/20260817_member_directory_privacy.sql');
 const chatGate = read('supabase/migrations/20260818_chat_connection_gate.sql');
 const composer = read('src/components/chat/ChatComposerRelaunch.jsx');
 
@@ -17,7 +19,37 @@ check('connection requests use relaunch page', requestAlias.includes("./FriendRe
 check('member discovery never renders account email', !findPage.includes('member.email') && !findPage.includes('userData.email'), 'Directory surface must stay on privacy-safe profile fields.');
 check('request page never renders account email', !requestPage.includes('.email') && requestPage.includes('Account email is never shown here.'), 'Connection-request identity is name/avatar/bio only.');
 check('private Chat button requires accepted connection in UI', findPage.includes('const connected = connectedIds.has(member.id)') && findPage.includes("connected ? <Button") && findPage.includes('/Chat?userId='), 'Pending/unconnected members should not get a direct Chat control.');
-check('buddy service member lookups stay on privacy directory', buddyService.includes(".from('member_directory')") && !buddyService.includes(".from('users')"), 'Social discovery must not query private users rows.');
+
+check(
+  'member directory exposes only the disclosed regular-member projection',
+  directoryMigration.includes('id,\n  name,\n  avatar_url,\n  bio,\n  relationship_status,\n  location,\n  created_at')
+    && directoryMigration.includes("coalesce(user_type, 'regular') = 'regular'")
+    && !directoryMigration.includes('partner_email')
+    && !directoryMigration.includes('interests,')
+    && !directoryMigration.includes('user_type,\n  location'),
+  'The database projection itself should exclude email, partner data, interests and role/account type rather than relying only on UI restraint.'
+);
+check(
+  'profile disclosure matches the member directory fields',
+  profile.includes('name, profile image, short bio, general location, relationship status and member-since date')
+    && profile.includes('account email, anniversary, partner name and Love Language are not included in the member directory'),
+  'Members should be told what discovery actually exposes and what remains account-private.'
+);
+check(
+  'buddy service requests only the minimized directory contract',
+  buddyService.includes("'relationship_status',\n  'location',\n  'created_at'")
+    && !buddyService.includes("'user_type',")
+    && !buddyService.includes("'interests',")
+    && !buddyService.includes(".eq('user_type'")
+    && !buddyService.includes(".from('users')"),
+  'Browser discovery must not request fields the staged member directory deliberately removed.'
+);
+check(
+  'buddy request reads avoid broad select-star projections',
+  !buddyService.includes(".from('buddy_requests')\n      .select('*')"),
+  'Connection request operations should request only the fields needed by the relaunch UI.'
+);
+
 check('database conversation RPC requires accepted connection', chatGate.includes('are_accepted_buddies(v_self, v_other)') && chatGate.includes('Private Chat is available only after a connection request is accepted'), 'Guessed deep links/direct RPC calls must not create unsolicited chats.');
 check('database message insert also requires accepted connection', chatGate.includes('enforce_message_connection_gate') && chatGate.includes('Private messages require an accepted connection'), 'A legacy conversation row must not bypass the connection rule.');
 check('Chat attachments are default-off behind explicit flag', composer.includes("VITE_CHAT_ATTACHMENTS_ENABLED === 'true'") && composer.includes('Private text chat is active. Attachments and location sharing remain staged'), 'Text Chat should be the safe baseline until private attachment activation.');
