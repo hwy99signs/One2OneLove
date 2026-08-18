@@ -1,6 +1,9 @@
 -- One2OneLove Live Community sender-identity hardening.
--- DEVELOPMENT MIGRATION ONLY. Do not apply to production without explicit approval.
--- Browser clients should never be able to impersonate another display name in a room.
+-- DEVELOPMENT MIGRATION ONLY. Apply to production only through an approved batch.
+-- Browser clients should never be able to impersonate another display name in a room,
+-- and room display names should never be derived from private account email.
+
+begin;
 
 alter table public.room_messages
   drop constraint if exists room_messages_sender_name_length;
@@ -30,9 +33,10 @@ set search_path = public, auth
 as $$
 declare
   profile_name text;
-  auth_email text;
+  metadata_name text;
 begin
-  -- Host/system records are reserved for trusted server-side writes.
+  -- Host/system records are reserved for trusted server-side writes. The room_messages
+  -- INSERT RLS policy separately restricts authenticated browser clients to `member`.
   if new.message_type <> 'member' then
     return new;
   end if;
@@ -50,17 +54,15 @@ begin
    limit 1;
 
   if profile_name is null then
-    select email
-      into auth_email
-      from auth.users
-     where id = auth.uid()
+    select nullif(trim(coalesce(au.raw_user_meta_data ->> 'name', '')), '')
+      into metadata_name
+      from auth.users au
+     where au.id = auth.uid()
      limit 1;
   end if;
 
-  new.sender_name := left(
-    coalesce(profile_name, nullif(split_part(coalesce(auth_email, ''), '@', 1), ''), 'Member'),
-    80
-  );
+  -- Do not fall back to the email address or its local part in a public room.
+  new.sender_name := left(coalesce(profile_name, metadata_name, 'Member'), 80);
 
   return new;
 end;
@@ -74,4 +76,6 @@ before insert on public.room_messages
 for each row execute function public.set_room_member_identity();
 
 comment on function public.set_room_member_identity() is
-  'For member-authored Live Room messages, derives user_id and sender_name from the authenticated account instead of trusting browser-supplied identity fields.';
+  'For member-authored Live Room messages, derives user_id and public sender_name from authenticated profile/metadata; never trusts browser identity or derives a public name from email.';
+
+commit;
