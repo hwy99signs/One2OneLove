@@ -2,76 +2,73 @@ import { supabase, handleSupabaseError } from './supabase';
 
 /**
  * Buddy/Friend System Service
- * Handles finding users and managing buddy requests
+ * Handles finding users and managing buddy requests.
+ *
+ * Privacy rule: member-directory queries intentionally exclude email, partner_email,
+ * and other account/private fields. Only fields intended for member discovery are
+ * returned to directory and buddy UI consumers.
  */
 
+const PUBLIC_MEMBER_FIELDS = [
+  'id',
+  'name',
+  'avatar_url',
+  'bio',
+  'relationship_status',
+  'user_type',
+  'location',
+  'interests',
+  'created_at',
+].join(',');
+
+const BASIC_MEMBER_FIELDS = 'id,name,avatar_url,bio';
+
 /**
- * Get all users for the buddy finder (excluding current user)
- * @param {string} currentUserId - The current user's ID
- * @param {Object} options - Query options
- * @returns {Promise<Array>} Array of users
+ * Get users for the buddy finder (excluding current user).
  */
 export const getAllUsers = async (currentUserId, options = {}) => {
   try {
-    console.log('🔍 getAllUsers called with userId:', currentUserId);
-    
-    // Select all user fields including optional location
     let query = supabase
       .from('users')
-      .select('*')
-      .neq('id', currentUserId); // Exclude current user
+      .select(PUBLIC_MEMBER_FIELDS)
+      .neq('id', currentUserId);
 
-    // REMOVED STRICT user_type FILTER - show all users regardless of type
-    // This ensures users show up even if user_type is NULL or not set
     if (options.userType) {
-      console.log('Filtering by user_type:', options.userType);
       query = query.eq('user_type', options.userType);
     }
-    // Note: If no userType specified, we show ALL users (no filter)
 
-    // NO search filter applied in the query - we'll filter in the frontend
-    // This is because OR with NULL values can cause issues
+    const allowedSortFields = new Set(['created_at', 'name']);
+    const sortBy = allowedSortFields.has(options.sortBy) ? options.sortBy : 'created_at';
+    const sortOrder = options.sortOrder === 'asc' ? 'asc' : 'desc';
+    const limit = Math.min(Math.max(Number(options.limit) || 100, 1), 100);
 
-    // Apply sorting
-    const sortBy = options.sortBy || 'created_at';
-    const sortOrder = options.sortOrder || 'desc';
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+    query = query
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .limit(limit);
 
-    // Limit results (default to 100 to show more users)
-    const limit = options.limit || 100;
-    query = query.limit(limit);
-
-    console.log('📡 Executing Supabase query...');
     const { data, error } = await query;
-
-    if (error) {
-      console.error('❌ Supabase query error:', error);
-      throw error;
-    }
-    
-    console.log('✅ Query successful! Returned users:', data?.length || 0);
-    console.log('👥 Users data:', data);
+    if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('💥 Error fetching users:', error);
+    console.error('Error fetching buddy directory:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
 
 /**
- * Search users by query
- * @param {string} currentUserId - The current user's ID  
- * @param {string} searchQuery - Search query
- * @returns {Promise<Array>} Array of matching users
+ * Search users by public directory fields only.
  */
 export const searchUsers = async (currentUserId, searchQuery) => {
   try {
+    const term = String(searchQuery || '').trim().slice(0, 80);
+    if (!term) return getAllUsers(currentUserId, { limit: 100, sortBy: 'name', sortOrder: 'asc' });
+
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio, relationship_status, user_type, location, interests, partner_email, created_at')
+      .select(PUBLIC_MEMBER_FIELDS)
       .neq('id', currentUserId)
       .eq('user_type', 'regular')
-      .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%,bio.ilike.%${searchQuery}%`)
+      .or(`name.ilike.%${term}%,location.ilike.%${term}%,bio.ilike.%${term}%,relationship_status.ilike.%${term}%`)
       .order('name', { ascending: true })
       .limit(100);
 
@@ -84,15 +81,13 @@ export const searchUsers = async (currentUserId, searchQuery) => {
 };
 
 /**
- * Get user profile by ID
- * @param {string} userId - User ID
- * @returns {Promise<Object>} User profile
+ * Get the public member profile projection by ID.
  */
 export const getUserProfile = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .select(PUBLIC_MEMBER_FIELDS)
       .eq('id', userId)
       .single();
 
@@ -105,29 +100,19 @@ export const getUserProfile = async (userId) => {
 };
 
 /**
- * Send a buddy/friend request
- * @param {string} fromUserId - Sender's user ID
- * @param {string} toUserId - Recipient's user ID
- * @returns {Promise<Object>} Created request
+ * Send a buddy/friend request.
  */
 export const sendBuddyRequest = async (fromUserId, toUserId) => {
   try {
-    // Check if request already exists
-    const { data: existing, error: checkError } = await supabase
+    const { data: existing } = await supabase
       .from('buddy_requests')
       .select('id, status')
       .or(`and(from_user_id.eq.${fromUserId},to_user_id.eq.${toUserId}),and(from_user_id.eq.${toUserId},to_user_id.eq.${fromUserId})`)
-      .single();
+      .maybeSingle();
 
-    if (existing) {
-      if (existing.status === 'pending') {
-        throw new Error('A buddy request already exists');
-      } else if (existing.status === 'accepted') {
-        throw new Error('You are already buddies');
-      }
-    }
+    if (existing?.status === 'pending') throw new Error('A buddy request already exists');
+    if (existing?.status === 'accepted') throw new Error('You are already buddies');
 
-    // Create new request
     const { data, error } = await supabase
       .from('buddy_requests')
       .insert({
@@ -147,12 +132,6 @@ export const sendBuddyRequest = async (fromUserId, toUserId) => {
   }
 };
 
-/**
- * Cancel a buddy request
- * @param {string} requestId - Request ID
- * @param {string} userId - User ID (must be the sender)
- * @returns {Promise<void>}
- */
 export const cancelBuddyRequest = async (requestId, userId) => {
   try {
     const { error } = await supabase
@@ -169,11 +148,6 @@ export const cancelBuddyRequest = async (requestId, userId) => {
   }
 };
 
-/**
- * Get sent buddy requests for current user
- * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of sent requests
- */
 export const getSentBuddyRequests = async (userId) => {
   try {
     const { data, error } = await supabase
@@ -183,46 +157,27 @@ export const getSentBuddyRequests = async (userId) => {
       .eq('status', 'pending');
 
     if (error) throw error;
+    const userIds = data?.map((req) => req.to_user_id) || [];
+    if (!userIds.length) return [];
 
-    // Get user IDs
-    const userIds = data?.map(req => req.to_user_id) || [];
-    
-    if (userIds.length === 0) return [];
-
-    // Fetch user data
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio')
+      .select(BASIC_MEMBER_FIELDS)
       .in('id', userIds);
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-    }
+    if (usersError) throw usersError;
+    const usersMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
 
-    // Create map
-    const usersMap = {};
-    users?.forEach(u => {
-      usersMap[u.id] = u;
-    });
-
-    // Combine data
-    const requests = data.map(req => ({
+    return (data || []).map((req) => ({
       ...req,
-      to_user: usersMap[req.to_user_id] || { id: req.to_user_id, email: 'Unknown' }
+      to_user: usersMap[req.to_user_id] || { id: req.to_user_id, name: 'Member' },
     }));
-
-    return requests;
   } catch (error) {
     console.error('Error fetching sent requests:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
 
-/**
- * Get received buddy requests for current user
- * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of received requests
- */
 export const getReceivedBuddyRequests = async (userId) => {
   try {
     const { data, error } = await supabase
@@ -232,55 +187,32 @@ export const getReceivedBuddyRequests = async (userId) => {
       .eq('status', 'pending');
 
     if (error) throw error;
+    const userIds = data?.map((req) => req.from_user_id) || [];
+    if (!userIds.length) return [];
 
-    // Get user IDs
-    const userIds = data?.map(req => req.from_user_id) || [];
-    
-    if (userIds.length === 0) return [];
-
-    // Fetch user data
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, name, email, avatar_url, bio')
+      .select(BASIC_MEMBER_FIELDS)
       .in('id', userIds);
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-    }
+    if (usersError) throw usersError;
+    const usersMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
 
-    // Create map
-    const usersMap = {};
-    users?.forEach(u => {
-      usersMap[u.id] = u;
-    });
-
-    // Combine data
-    const requests = data.map(req => ({
+    return (data || []).map((req) => ({
       ...req,
-      from_user: usersMap[req.from_user_id] || { id: req.from_user_id, email: 'Unknown' }
+      from_user: usersMap[req.from_user_id] || { id: req.from_user_id, name: 'Member' },
     }));
-
-    return requests;
   } catch (error) {
     console.error('Error fetching received requests:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
 
-/**
- * Accept a buddy request
- * @param {string} requestId - Request ID
- * @param {string} userId - User ID (must be the recipient)
- * @returns {Promise<Object>} Updated request
- */
 export const acceptBuddyRequest = async (requestId, userId) => {
   try {
     const { data, error } = await supabase
       .from('buddy_requests')
-      .update({
-        status: 'accepted',
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: 'accepted', updated_at: new Date().toISOString() })
       .eq('id', requestId)
       .eq('to_user_id', userId)
       .select()
@@ -294,20 +226,11 @@ export const acceptBuddyRequest = async (requestId, userId) => {
   }
 };
 
-/**
- * Reject a buddy request
- * @param {string} requestId - Request ID
- * @param {string} userId - User ID (must be the recipient)
- * @returns {Promise<void>}
- */
 export const rejectBuddyRequest = async (requestId, userId) => {
   try {
-    const { error} = await supabase
+    const { error } = await supabase
       .from('buddy_requests')
-      .update({
-        status: 'rejected',
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: 'rejected', updated_at: new Date().toISOString() })
       .eq('id', requestId)
       .eq('to_user_id', userId);
 
@@ -318,16 +241,8 @@ export const rejectBuddyRequest = async (requestId, userId) => {
   }
 };
 
-/**
- * Get accepted buddies for current user
- * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of buddies
- */
 export const getMyBuddies = async (userId) => {
   try {
-    console.log('👥 Fetching buddies for user:', userId);
-    
-    // Fetch buddy requests without joins
     const { data, error } = await supabase
       .from('buddy_requests')
       .select('*')
@@ -336,46 +251,24 @@ export const getMyBuddies = async (userId) => {
 
     if (error) throw error;
 
-    console.log('✅ Found buddy requests:', data);
+    const otherUserIds = [...new Set((data || []).map((request) =>
+      request.from_user_id === userId ? request.to_user_id : request.from_user_id
+    ))];
 
-    // Get unique user IDs
-    const userIds = new Set();
-    data?.forEach(request => {
-      userIds.add(request.from_user_id);
-      userIds.add(request.to_user_id);
-    });
+    let usersMap = {};
+    if (otherUserIds.length) {
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id,name,avatar_url,bio,relationship_status,location')
+        .in('id', otherUserIds);
 
-    // Fetch all user data in one query
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, name, email, avatar_url, bio, relationship_status, location')
-      .in('id', Array.from(userIds));
-
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
+      if (usersError) throw usersError;
+      usersMap = Object.fromEntries((users || []).map((u) => [u.id, u]));
     }
 
-    console.log('✅ Fetched user data:', users);
-
-    // Create a map of users by ID
-    const usersMap = {};
-    users?.forEach(u => {
-      usersMap[u.id] = u;
-    });
-
-    // Transform data to return the other user's info
-    const buddies = (data || []).map(request => {
-      const isFromUser = request.from_user_id === userId;
-      const otherUserId = isFromUser ? request.to_user_id : request.from_user_id;
-      const buddy = usersMap[otherUserId] || { id: otherUserId, email: 'Unknown' };
-      
-      console.log('🎴 Processing buddy:', { 
-        requestId: request.id, 
-        isFromUser, 
-        otherUserId, 
-        buddyName: buddy.name 
-      });
-      
+    return (data || []).map((request) => {
+      const otherUserId = request.from_user_id === userId ? request.to_user_id : request.from_user_id;
+      const buddy = usersMap[otherUserId] || { id: otherUserId, name: 'Member' };
       return {
         ...buddy,
         request_id: request.id,
@@ -383,12 +276,8 @@ export const getMyBuddies = async (userId) => {
         status: 'active',
       };
     });
-
-    console.log('✅ Transformed buddies:', buddies);
-    return buddies;
   } catch (error) {
     console.error('Error fetching buddies:', error);
     throw new Error(handleSupabaseError(error));
   }
 };
-
