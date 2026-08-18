@@ -140,10 +140,6 @@ serve(async (request) => {
     if (membership.error) return json(request, { error: 'MEMBERSHIP_BACKEND_UNAVAILABLE' }, 503)
     if (!membership.allowed) return json(request, { error: 'MEMBERSHIP_REQUIRED', feature: 'ai_content_creator' }, 403)
 
-    const limit = await rateLimit(serviceClient, user.id)
-    if (limit.backendError) return json(request, { error: 'USAGE_BACKEND_UNAVAILABLE' }, 503)
-    if (!limit.allowed) return json(request, { error: 'AI_USAGE_LIMIT_REACHED' }, 429)
-
     const body = await request.json().catch(() => ({}))
     const requestId = clean(body?.request_id || body?.requestId, 80)
     const contentType = clean(body?.content_type || body?.contentType, 40)
@@ -151,7 +147,8 @@ serve(async (request) => {
     const length = clean(body?.length, 20)
     const partnerName = clean(body?.partner_name || body?.partnerName, 80)
     const details = clean(body?.details, 1200)
-    const language = LANGUAGES[clean(body?.language, 5).toLowerCase()] ? clean(body?.language, 5).toLowerCase() : 'en'
+    const languageRaw = clean(body?.language, 5).toLowerCase()
+    const language = LANGUAGES[languageRaw] ? languageRaw : 'en'
 
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
       return json(request, { error: 'INVALID_REQUEST_ID' }, 400)
@@ -160,17 +157,30 @@ serve(async (request) => {
       return json(request, { error: 'INVALID_GENERATION_OPTIONS' }, 400)
     }
 
+    // Idempotency is checked before rate limits. A member retrying the same logical request
+    // after a lost HTTP response should recover its already-paid-for result without being
+    // blocked by a later usage cap or spending on another model call.
     const { data: existing, error: existingError } = await serviceClient
       .from('premium_ai_usage')
-      .select('id, status')
+      .select('id, status, result_text')
       .eq('user_id', user.id)
       .eq('feature', 'ai_content_creator')
       .eq('request_id', requestId)
       .maybeSingle()
     if (existingError) return json(request, { error: 'USAGE_BACKEND_UNAVAILABLE' }, 503)
+    if (existing?.status === 'succeeded' && existing.result_text) {
+      return json(request, { content: existing.result_text, idempotent: true })
+    }
+    if (existing?.status === 'started') {
+      return json(request, { error: 'REQUEST_IN_PROGRESS' }, 409)
+    }
     if (existing) {
       return json(request, { error: 'REQUEST_ALREADY_USED', status: existing.status }, 409)
     }
+
+    const limit = await rateLimit(serviceClient, user.id)
+    if (limit.backendError) return json(request, { error: 'USAGE_BACKEND_UNAVAILABLE' }, 503)
+    if (!limit.allowed) return json(request, { error: 'AI_USAGE_LIMIT_REACHED' }, 429)
 
     const model = clean(Deno.env.get('OPENAI_MODEL') || 'gpt-5.6', 80)
     const inputChars = partnerName.length + details.length + contentType.length + tone.length + length.length
@@ -187,7 +197,7 @@ serve(async (request) => {
       .select('id')
       .single()
     if (usageError || !usage?.id) {
-      if (usageError?.code === '23505') return json(request, { error: 'REQUEST_ALREADY_USED' }, 409)
+      if (usageError?.code === '23505') return json(request, { error: 'REQUEST_IN_PROGRESS' }, 409)
       return json(request, { error: 'USAGE_BACKEND_UNAVAILABLE' }, 503)
     }
 
@@ -238,11 +248,22 @@ Do not include headings unless the requested content naturally needs one.`
 
     const { error: completionError } = await serviceClient
       .from('premium_ai_usage')
-      .update({ status: 'succeeded', output_chars: content.length, completed_at: new Date().toISOString() })
+      .update({
+        status: 'succeeded',
+        output_chars: content.length,
+        result_text: content,
+        completed_at: new Date().toISOString(),
+      })
       .eq('id', usage.id)
-    if (completionError) console.error('AI usage completion ledger update failed:', completionError.code || 'unknown')
 
-    return json(request, { content })
+    if (completionError) {
+      // The model already returned a result. Do not automatically retry/spend again if the
+      // usage ledger cannot be finalized; surface an operational reconciliation state.
+      console.error('AI content result generated but ledger finalization failed:', completionError.code || 'unknown')
+      return json(request, { error: 'AI_RESULT_RECONCILIATION_REQUIRED' }, 503)
+    }
+
+    return json(request, { content, idempotent: false })
   } catch (error) {
     console.error('generate-relationship-content error:', error instanceof Error ? error.message : 'unknown')
     return json(request, { error: 'AI_GENERATION_UNAVAILABLE' }, 500)
