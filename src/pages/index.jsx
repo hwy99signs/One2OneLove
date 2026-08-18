@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import Layout from "./Layout.jsx";
+import Layout from "./LayoutRelaunch.jsx";
 import Home from "./Home";
 import InfluencerSignup from "./InfluencerSignup";
 import ProfessionalSignup from "./ProfessionalSignup";
