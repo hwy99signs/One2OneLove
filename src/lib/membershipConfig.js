@@ -15,12 +15,9 @@ export const ACTIVE_MEMBERSHIP_STATUSES = new Set(['trialing', 'active']);
 /**
  * Approved relaunch product boundary.
  *
- * `free` means no paid membership is required. Individual pages may still require a
- * confirmed One2OneLove account for privacy/security reasons.
- *
- * `membership` means the feature becomes paid only when
- * VITE_MEMBERSHIP_GATING_ENABLED=true. The gate stays OFF during controlled beta build
- * and Stripe test preparation, so development cannot accidentally lock users out.
+ * Entitlement says whether a feature is free or paid once released. It does NOT mean an
+ * older prototype is launch-ready. Route/readiness gates separately keep staged features
+ * unavailable until their privacy/data/real-functionality review is complete.
  */
 export const FEATURE_ENTITLEMENTS = Object.freeze({
   // Acquisition + community foundation
@@ -41,13 +38,15 @@ export const FEATURE_ENTITLEMENTS = Object.freeze({
   // Selected engagement tools kept free to create habit before asking for payment.
   love_language_quiz: 'free',
   date_ideas: 'free',
-  couple_profile: 'free',
   support_library: 'free',
 
-  // Paid retention / AI / couple tools
+  // Reviewed relaunch paid foundation.
   relationship_coach: 'membership',
   ai_content_creator: 'membership',
   relationship_goals: 'membership',
+
+  // Paid roadmap entitlements. These remain staged even for members until their own
+  // relaunch review is complete.
   couples_calendar: 'membership',
   shared_journals: 'membership',
   memory_lane: 'membership',
@@ -69,18 +68,25 @@ export const FREE_FEATURE_HIGHLIGHTS = Object.freeze([
   'Core Live Community rooms and participation',
   'Love Language Quiz',
   'Date Ideas',
-  'Member profile and community discovery',
-  'Friend requests and private text chat',
+  'Member profile and privacy-safe community discovery',
+  'Accepted member connections and private text chat',
 ]);
 
+// These are the reviewed premium capabilities intended to form the first relaunch
+// membership release after billing/AI/data activation is tested.
 export const MEMBERSHIP_FEATURE_HIGHLIGHTS = Object.freeze([
   'AI Relationship Coach',
-  'AI-assisted romantic content creation',
-  'Relationship Goals and progress tools',
-  'Couples Calendar and milestone planning',
+  'AI Content Creator for romantic messages and ideas',
+  'Relationship Goals and progress tracking',
+]);
+
+// Roadmap only: paid entitlement has been decided, but product availability has not.
+export const STAGED_MEMBERSHIP_FEATURE_HIGHLIGHTS = Object.freeze([
+  'Couples Calendar, milestones and anniversary tools',
   'Shared Journals and Memory Lane',
   'Couples Dashboard and deeper relationship insights',
   'Couple activities, cooperative games and communication practice',
+  'Meditation and advanced relationship quizzes',
   'Love Note scheduling and AI personalization',
 ]);
 
