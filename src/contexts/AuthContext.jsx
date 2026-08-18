@@ -12,6 +12,9 @@ const authRedirectUrl = () =>
     ? `${window.location.origin}/auth/callback`
     : 'https://one2onelove.com/auth/callback';
 
+const PROFESSIONAL_APPLICATION_MESSAGE =
+  'Professional accounts are created only after application review. Please use the appropriate One2OneLove application page.';
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,95 +27,78 @@ export function AuthProvider({ children }) {
       id: authUser.id,
       email: authUser.email,
       ...safeProfile,
-      name: safeProfile?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0],
-      user_type: safeProfile?.user_type || authUser.user_metadata?.user_type || 'regular',
-      email_verified: true,
+      name: safeProfile?.name || authUser.user_metadata?.name || 'Member',
+      // Account role comes only from the trusted profile row. Auth metadata is user-
+      // supplied at signup and must never grant therapist/influencer/professional access.
+      user_type: safeProfile?.user_type || 'regular',
+      // Supabase Auth is the source of truth for confirmation; do not trust or require a
+      // writable duplicate profile flag for access decisions.
+      email_verified: emailIsConfirmed(authUser),
     };
+  };
+
+  const fetchOwnProfile = async (authUser) => {
+    const profileQuery = supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUser.id)
+      .maybeSingle();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
+    );
+
+    return Promise.race([profileQuery, timeoutPromise]);
+  };
+
+  const bootstrapRegularProfile = async (authUser) => {
+    const metadata = authUser?.user_metadata || {};
+
+    // Legacy professional accounts must be repaired/reviewed by a trusted admin path;
+    // never let user-controlled metadata self-create a privileged profile.
+    if (metadata.user_type && metadata.user_type !== 'regular') {
+      console.warn('Missing non-regular profile requires trusted administrative review.');
+      return null;
+    }
+
+    const { error } = await supabase.rpc('ensure_own_regular_profile', {
+      p_name: metadata.name || null,
+      p_relationship_status: metadata.relationship_status || null,
+      p_anniversary_date: metadata.anniversary_date || null,
+      p_partner_email: metadata.partner_email || null,
+    });
+
+    if (error) throw error;
+
+    const refreshed = await fetchOwnProfile(authUser);
+    if (refreshed?.error) throw refreshed.error;
+    return refreshed?.data || null;
   };
 
   const ensureUserProfile = async (authUser) => {
     if (!authUser || !emailIsConfirmed(authUser)) return null;
 
     try {
-      const profileQuery = supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
-      );
-
-      let result;
-      try {
-        result = await Promise.race([profileQuery, timeoutPromise]);
-      } catch (timeoutError) {
-        console.warn('Profile fetch timed out; using confirmed auth data.', timeoutError);
-        return buildUserData(authUser);
-      }
-
+      const result = await fetchOwnProfile(authUser);
       const profile = result?.data;
       const profileError = result?.error;
 
-      if (profileError?.code === 'PGRST116') {
-        const metadata = authUser.user_metadata || {};
-        const userType = metadata.user_type || 'regular';
-        const profilePayload = {
-          id: authUser.id,
-          email: authUser.email,
-          name: metadata.name || authUser.email?.split('@')[0],
-          user_type: userType,
-          email_verified: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        // Regular-user signup details are preserved in Supabase Auth metadata while
-        // the account waits for email confirmation. Once the confirmed session is
-        // established, create the profile with those values instead of attempting
-        // an unauthenticated pre-confirmation table insert.
-        if (userType === 'regular') {
-          Object.assign(profilePayload, {
-            relationship_status: metadata.relationship_status || null,
-            anniversary_date: metadata.anniversary_date || null,
-            partner_email: metadata.partner_email || null,
-            subscription_plan: metadata.subscription_plan || 'Basic',
-            subscription_price: metadata.subscription_price !== undefined ? metadata.subscription_price : 0,
-            subscription_status: 'active',
-          });
-        }
-
-        const { data: newProfile, error: createError } = await supabase
-          .from('users')
-          .insert(profilePayload)
-          .select()
-          .single();
-
-        if (createError) {
-          console.warn('Unable to create missing profile; using confirmed auth data.', createError);
-          return buildUserData(authUser);
-        }
-
-        return buildUserData(authUser, newProfile);
-      }
-
       if (profileError) {
-        console.warn('Unable to fetch profile; using confirmed auth data.', profileError);
+        console.warn('Unable to fetch own profile; using confirmed auth data.', profileError);
         return buildUserData(authUser);
       }
 
-      if (profile && profile.email_verified !== true) {
-        // Auth is the source of truth for email confirmation. Keep the profile flag
-        // synchronized when possible, without blocking a confirmed account on a
-        // profile-table write failure.
-        supabase
-          .from('users')
-          .update({ email_verified: true, updated_at: new Date().toISOString() })
-          .eq('id', authUser.id)
-          .then(({ error }) => {
-            if (error) console.warn('Unable to sync email_verified profile flag:', error);
-          });
+      if (!profile) {
+        try {
+          const bootstrappedProfile = await bootstrapRegularProfile(authUser);
+          if (bootstrappedProfile) return buildUserData(authUser, bootstrappedProfile);
+        } catch (createError) {
+          // Before the staged migration is applied, the preview may not yet have this
+          // RPC. Fail closed on profile creation rather than falling back to a direct
+          // browser INSERT that could set privileged account fields.
+          console.warn('Unable to bootstrap missing regular profile through trusted RPC.', createError);
+        }
+        return buildUserData(authUser);
       }
 
       return buildUserData(authUser, profile);
@@ -327,26 +313,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const createBaseProfile = async ({ authUser, email, name, userType, extra = {} }) => {
-    const confirmed = emailIsConfirmed(authUser);
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: authUser.id,
-        email,
-        name,
-        user_type: userType,
-        email_verified: confirmed,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        ...extra,
-      })
-      .select()
-      .single();
-
-    return { profile, profileError, confirmed };
-  };
-
   const finalizeRegistration = async ({ authData, userData }) => {
     const confirmed = emailIsConfirmed(authData?.user);
     const hasConfirmedSession = Boolean(authData?.session && confirmed);
@@ -374,8 +340,6 @@ export function AuthProvider({ children }) {
         relationshipStatus,
         anniversaryDate,
         partnerEmail,
-        subscriptionPlan,
-        subscriptionPrice,
       } = userData;
 
       if (!isSupabaseConfigured()) {
@@ -390,11 +354,9 @@ export function AuthProvider({ children }) {
           data: {
             name,
             user_type: 'regular',
-            relationship_status: relationshipStatus,
-            anniversary_date: anniversaryDate,
-            partner_email: partnerEmail,
-            subscription_plan: subscriptionPlan || 'Basic',
-            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0,
+            relationship_status: relationshipStatus || null,
+            anniversary_date: anniversaryDate || null,
+            partner_email: partnerEmail || null,
           },
         },
       });
@@ -406,40 +368,23 @@ export function AuthProvider({ children }) {
       let profile = null;
 
       if (confirmed && authData.session) {
-        const profileResult = await createBaseProfile({
-          authUser: authData.user,
-          email,
-          name,
-          userType: 'regular',
-          extra: {
-            relationship_status: relationshipStatus || null,
-            anniversary_date: anniversaryDate || null,
-            partner_email: partnerEmail || null,
-            subscription_plan: subscriptionPlan || 'Basic',
-            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0,
-            subscription_status: 'active',
-          },
-        });
-
-        if (profileResult.profileError) {
-          return {
-            success: false,
-            error: `Account created but profile setup failed: ${handleSupabaseError(profileResult.profileError)}. Please contact support.`,
-          };
+        // The trusted RPC derives id/email/regular role from Supabase Auth and accepts
+        // only ordinary profile fields. It replaces the former direct users-table INSERT.
+        try {
+          const profileData = await ensureUserProfile(authData.user);
+          profile = profileData;
+        } catch (profileError) {
+          console.warn('Confirmed account created; profile bootstrap is pending.', profileError);
         }
-        profile = profileResult.profile;
       }
 
-      const newUser = {
-        id: authData.user.id,
-        email: authData.user.email,
+      const newUser = profile || buildUserData(authData.user, {
         name,
-        relationship_status: relationshipStatus,
-        anniversary_date: anniversaryDate,
-        partner_email: partnerEmail,
-        email_verified: confirmed,
-        ...(profile || {}),
-      };
+        relationship_status: relationshipStatus || null,
+        anniversary_date: anniversaryDate || null,
+        partner_email: partnerEmail || null,
+        user_type: 'regular',
+      });
 
       return finalizeRegistration({ authData, userData: newUser });
     } catch (error) {
@@ -448,161 +393,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const registerTherapist = async (userData, therapistData) => {
-    try {
-      const { email, password, firstName, lastName } = userData;
-      const fullName = `${firstName} ${lastName}`.trim();
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: authRedirectUrl(),
-          data: { name: fullName, user_type: 'therapist' },
-        },
-      });
-
-      if (authError) return { success: false, error: handleSupabaseError(authError) };
-      if (!authData?.user) return { success: false, error: 'Registration failed.' };
-
-      const { profile: userProfile, profileError } = await createBaseProfile({
-        authUser: authData.user,
-        email,
-        name: fullName,
-        userType: 'therapist',
-      });
-      if (profileError) console.warn('Therapist base profile creation failed:', profileError);
-
-      const { createTherapistProfile } = await import('@/lib/therapistService');
-      const therapistResult = await createTherapistProfile(authData.user.id, {
-        ...therapistData,
-        firstName,
-        lastName,
-        email,
-        emailVerified: emailIsConfirmed(authData.user),
-        phoneVerified: therapistData.phoneVerified || false,
-      });
-      if (!therapistResult.success) console.warn('Therapist profile creation failed:', therapistResult.error);
-
-      const newUser = {
-        id: authData.user.id,
-        email: authData.user.email,
-        name: fullName,
-        user_type: 'therapist',
-        email_verified: emailIsConfirmed(authData.user),
-        ...userProfile,
-      };
-
-      return finalizeRegistration({ authData, userData: newUser });
-    } catch (error) {
-      console.error('Therapist registration error:', error);
-      return { success: false, error: handleSupabaseError(error) };
-    }
-  };
-
-  const registerInfluencer = async (userData, influencerData) => {
-    try {
-      const { email, password, firstName, lastName } = userData;
-      const fullName = `${firstName} ${lastName}`.trim();
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: authRedirectUrl(),
-          data: { name: fullName, user_type: 'influencer' },
-        },
-      });
-
-      if (authError) return { success: false, error: handleSupabaseError(authError) };
-      if (!authData?.user) return { success: false, error: 'Registration failed.' };
-
-      const { profile: userProfile, profileError } = await createBaseProfile({
-        authUser: authData.user,
-        email,
-        name: fullName,
-        userType: 'influencer',
-      });
-      if (profileError) console.warn('Influencer base profile creation failed:', profileError);
-
-      const { createInfluencerProfile } = await import('@/lib/influencerService');
-      const influencerResult = await createInfluencerProfile(authData.user.id, {
-        ...influencerData,
-        firstName,
-        lastName,
-        email,
-        emailVerified: emailIsConfirmed(authData.user),
-        phoneVerified: influencerData.phoneVerified || false,
-      });
-      if (!influencerResult.success) console.warn('Influencer profile creation failed:', influencerResult.error);
-
-      const newUser = {
-        id: authData.user.id,
-        email: authData.user.email,
-        name: fullName,
-        user_type: 'influencer',
-        email_verified: emailIsConfirmed(authData.user),
-        ...userProfile,
-      };
-
-      return finalizeRegistration({ authData, userData: newUser });
-    } catch (error) {
-      console.error('Influencer registration error:', error);
-      return { success: false, error: handleSupabaseError(error) };
-    }
-  };
-
-  const registerProfessional = async (userData, professionalData) => {
-    try {
-      const { email, password, firstName, lastName } = userData;
-      const fullName = `${firstName} ${lastName}`.trim();
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: authRedirectUrl(),
-          data: { name: fullName, user_type: 'professional' },
-        },
-      });
-
-      if (authError) return { success: false, error: handleSupabaseError(authError) };
-      if (!authData?.user) return { success: false, error: 'Registration failed.' };
-
-      const { profile: userProfile, profileError } = await createBaseProfile({
-        authUser: authData.user,
-        email,
-        name: fullName,
-        userType: 'professional',
-      });
-      if (profileError) console.warn('Professional base profile creation failed:', profileError);
-
-      const { createProfessionalProfile } = await import('@/lib/professionalService');
-      const professionalResult = await createProfessionalProfile(authData.user.id, {
-        ...professionalData,
-        firstName,
-        lastName,
-        email,
-        emailVerified: emailIsConfirmed(authData.user),
-        phoneVerified: professionalData.phoneVerified || false,
-      });
-      if (!professionalResult.success) console.warn('Professional profile creation failed:', professionalResult.error);
-
-      const newUser = {
-        id: authData.user.id,
-        email: authData.user.email,
-        name: fullName,
-        user_type: 'professional',
-        email_verified: emailIsConfirmed(authData.user),
-        ...userProfile,
-      };
-
-      return finalizeRegistration({ authData, userData: newUser });
-    } catch (error) {
-      console.error('Professional registration error:', error);
-      return { success: false, error: handleSupabaseError(error) };
-    }
-  };
+  // Public professional flows are now review-first applications. Preserve these API
+  // keys temporarily for any legacy caller, but fail closed instead of creating an Auth
+  // account or trusting browser-supplied verification/role data.
+  const registerTherapist = async () => ({ success: false, error: PROFESSIONAL_APPLICATION_MESSAGE });
+  const registerInfluencer = async () => ({ success: false, error: PROFESSIONAL_APPLICATION_MESSAGE });
+  const registerProfessional = async () => ({ success: false, error: PROFESSIONAL_APPLICATION_MESSAGE });
 
   const value = {
     user,
