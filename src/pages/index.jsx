@@ -17,7 +17,7 @@ import LoveNoteRevealDemo from "./LoveNoteRevealDemo";
 import LoveNoteReveal from "./LoveNoteReveal";
 import SavedLoveNotes from "./SavedLoveNotes";
 import CoupleSupport from "./CoupleSupport";
-import LoveLanguageQuiz from "./LoveLanguageQuiz";
+import LoveLanguageQuiz from "./LoveLanguageQuizRelaunch";
 import DateIdeas from "./DateIdeas";
 import Profile from "./Profile";
 import WinACruise from "./WinACruise";
