@@ -11,7 +11,8 @@ const files = {
   router: 'src/pages/index.jsx',
   sharedLayout: 'src/Layout.jsx',
   layout: 'src/pages/LayoutRelaunch.jsx',
-  profile: 'src/pages/ProfileRelaunch.jsx',
+  profileShim: 'src/pages/ProfileRelaunch.jsx',
+  profile: 'src/pages/ProfileRelaunchSafe.jsx',
   profileService: 'src/lib/profileService.js',
   unavailable: 'src/pages/RelaunchUnavailable.jsx',
 };
@@ -23,6 +24,7 @@ for (const file of Object.values(files)) {
 const router = exists(files.router) ? read(files.router) : '';
 const sharedLayout = exists(files.sharedLayout) ? read(files.sharedLayout) : '';
 const layout = exists(files.layout) ? read(files.layout) : '';
+const profileShim = exists(files.profileShim) ? read(files.profileShim) : '';
 const profile = exists(files.profile) ? read(files.profile) : '';
 const profileService = exists(files.profileService) ? read(files.profileService) : '';
 const unavailable = exists(files.unavailable) ? read(files.unavailable) : '';
@@ -31,6 +33,11 @@ check(
   'router uses relaunch Profile',
   router.includes('import Profile from "./ProfileRelaunch"') && router.includes('["/Profile", Profile]'),
   'The public Profile route must not drift back to the legacy fake-activity page.'
+);
+check(
+  'Profile shim resolves to privacy-explicit relaunch page',
+  profileShim.includes("export { default } from './ProfileRelaunchSafe'"),
+  'The reviewed profile privacy surface must remain the public implementation.'
 );
 check(
   'router uses relaunch Relationship Goals',
@@ -80,10 +87,17 @@ check(
   'Profile must not display fabricated activity metrics.'
 );
 check(
-  'Profile explicitly avoids fake partner-account linking',
-  profile.includes('does not automatically link two One2OneLove accounts')
-    && !profile.includes('Link your profiles together'),
-  'A stored partner email is not a couple-account permission/link model.'
+  'Profile truthfully distinguishes discoverable and private fields',
+  profile.includes('What other members can discover')
+    && profile.includes('name, profile image, short bio, general location, relationship status')
+    && profile.includes('Account-private details'),
+  'Members must not be told the entire profile is private when selected directory fields are intentionally discoverable.'
+);
+check(
+  'relaunch Profile does not collect partner email before partner linking exists',
+  !profile.includes('partner_email')
+    && profile.includes('Partner email is not collected'),
+  'Data minimization should win until a reviewed partner-linking workflow actually needs partner email.'
 );
 check(
   'Profile save uses reviewed profile service boundary',
@@ -93,11 +107,15 @@ check(
   'Profile writes should remain centralized through the allowlisted service.'
 );
 check(
-  'profile service has explicit self-service allowlist',
+  'profile service allowlist excludes account/role/billing and partner-email writes',
   profileService.includes('SAFE_PROFILE_UPDATE_FIELDS')
     && profileService.includes('sanitizeProfileUpdates')
-    && profileService.includes('getAuthenticatedOwnUser'),
-  'Profile UI safety depends on the existing own-user/field allowlist remaining intact.'
+    && profileService.includes('getAuthenticatedOwnUser')
+    && !profileService.includes("'partner_email'")
+    && !profileService.includes("'email'")
+    && !profileService.includes("'user_type'")
+    && !profileService.includes("'subscription_status'"),
+  'The relaunch profile update function must stay narrow and own-user-only.'
 );
 check(
   'navigation language rollout preserves disabled Dutch and Portuguese state',
