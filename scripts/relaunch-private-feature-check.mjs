@@ -13,6 +13,8 @@ const files = {
   chatStorage: 'supabase/migrations/20260818_chat_attachment_privacy.sql',
   messageInsert: 'supabase/migrations/20260817_message_insert_hardening.sql',
   chatService: 'src/lib/chatService.js',
+  chatList: 'src/components/chat/ChatList.jsx',
+  indexCss: 'src/index.css',
   membershipConfig: 'src/lib/membershipConfig.js',
   premiumAiMigration: 'supabase/migrations/20260818_premium_ai_tools.sql',
   coachFunction: 'supabase/functions/relationship-coach/index.ts',
@@ -29,6 +31,8 @@ const loveNoteFlow = exists(files.loveNoteFlow) ? read(files.loveNoteFlow) : '';
 const chatStorage = exists(files.chatStorage) ? read(files.chatStorage) : '';
 const messageInsert = exists(files.messageInsert) ? read(files.messageInsert) : '';
 const chatService = exists(files.chatService) ? read(files.chatService) : '';
+const chatList = exists(files.chatList) ? read(files.chatList) : '';
+const indexCss = exists(files.indexCss) ? read(files.indexCss) : '';
 const membershipConfig = exists(files.membershipConfig) ? read(files.membershipConfig) : '';
 const premiumAiMigration = exists(files.premiumAiMigration) ? read(files.premiumAiMigration) : '';
 const coachFunction = exists(files.coachFunction) ? read(files.coachFunction) : '';
@@ -166,6 +170,30 @@ check(
   'conversation delete is member-local archive',
   chatService.includes("return updateConversationSettings(conversationId, { isArchived: true })"),
   'One participant must not physically delete a shared conversation.'
+);
+check(
+  'unfinished chat list actions are opt-in and hidden by default',
+  chatList.includes('callsEnabled = false')
+    && chatList.includes('markUnreadEnabled = false')
+    && chatList.includes('destructiveDeleteEnabled = false')
+    && chatList.includes('callsEnabled && onCall')
+    && chatList.includes('markUnreadEnabled && onMarkAsUnread')
+    && chatList.includes('destructiveDeleteEnabled && onDelete'),
+  'Prototype voice/video, fake mark-unread, and misleading destructive delete must not appear in relaunch Chat by default.'
+);
+check(
+  'chat search actually filters visible conversations',
+  chatList.includes('const filteredConversations = React.useMemo')
+    && chatList.includes('name.includes(query) || lastMessage.includes(query)')
+    && chatList.includes('filteredConversations.map'),
+  'A visible search field must perform a real local filter instead of acting like an inert prototype.'
+);
+check(
+  'legacy chat header call buttons are hidden until real calling exists',
+  indexCss.includes('button[title="Voice Call"]')
+    && indexCss.includes('button[title="Video Call"]')
+    && indexCss.includes('display: none !important'),
+  'Do not present WebRTC-looking controls before signaling/media infrastructure is actually built and tested.'
 );
 
 check(
