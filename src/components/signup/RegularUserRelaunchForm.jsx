@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle2, Heart, Loader2, LockKeyhole, Mail, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { clearAuthReturnTo, safeAuthReturnTo, storeAuthReturnTo } from '@/lib/authFlowService';
 
 const COPY = {
   en: {
@@ -61,12 +62,6 @@ const safeLanguage = () => {
   return COPY[stored] ? stored : 'en';
 };
 
-const safeReturnTo = (value) => {
-  if (!value || typeof value !== 'string') return '/';
-  if (!value.startsWith('/') || value.startsWith('//')) return '/';
-  return value;
-};
-
 export default function RegularUserRelaunchForm({ returnTo = '/' }) {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -76,7 +71,7 @@ export default function RegularUserRelaunchForm({ returnTo = '/' }) {
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const language = safeLanguage();
   const t = COPY[language] || COPY.en;
-  const destination = useMemo(() => safeReturnTo(returnTo), [returnTo]);
+  const destination = useMemo(() => safeAuthReturnTo(returnTo, '/'), [returnTo]);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -99,12 +94,9 @@ export default function RegularUserRelaunchForm({ returnTo = '/' }) {
 
     setSubmitting(true);
     try {
-      if (typeof window !== 'undefined') {
-        // Email confirmation commonly opens in a new tab, so sessionStorage is not
-        // reliable for this handoff. The callback re-validates this as a local path
-        // before navigating and clears it once the confirmation flow is complete.
-        window.localStorage.setItem('o2ol-return-after-auth', destination);
-      }
+      // Confirmation commonly opens in a new tab, so store the already-validated local
+      // destination durably. The callback clears it once the auth flow completes.
+      storeAuthReturnTo(destination, { durable: true });
 
       const result = await register({
         name: form.name.trim(),
@@ -122,9 +114,7 @@ export default function RegularUserRelaunchForm({ returnTo = '/' }) {
         return;
       }
 
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('o2ol-return-after-auth');
-      }
+      clearAuthReturnTo();
       navigate(destination, { replace: true });
     } catch (submitError) {
       setError(submitError?.message || 'Unable to create your account right now.');
