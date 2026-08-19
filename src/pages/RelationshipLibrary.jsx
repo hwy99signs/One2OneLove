@@ -23,6 +23,7 @@ const translations = {
         ['Date Ideas', '/DateIdeas'],
       ]],
       ['Grow Together', 'Turn relationship intentions into shared habits, goals, and meaningful reflection.', 'sparkles', [
+        ['Relationship Rituals', '/RelationshipRituals'],
         ['Couples Challenges', '/CouplesChallenges'],
         ['Relationship Goals', '/RelationshipGoals'],
         ['Shared Journals', '/SharedJournals'],
@@ -67,6 +68,7 @@ const translations = {
         ['Ideas para Citas', '/DateIdeas'],
       ]],
       ['Crecer Juntos', 'Conviertan sus intenciones en hábitos compartidos, metas y reflexión significativa.', 'sparkles', [
+        ['Rituales de Relación', '/RelationshipRituals'],
         ['Retos para Parejas', '/CouplesChallenges'],
         ['Metas de Relación', '/RelationshipGoals'],
         ['Diarios Compartidos', '/SharedJournals'],
@@ -111,6 +113,7 @@ const translations = {
         ['Idées de Rendez-vous', '/DateIdeas'],
       ]],
       ['Grandir Ensemble', 'Transformez vos intentions en habitudes communes, objectifs et réflexion significative.', 'sparkles', [
+        ['Rituels de Relation', '/RelationshipRituals'],
         ['Défis de Couple', '/CouplesChallenges'],
         ['Objectifs de Relation', '/RelationshipGoals'],
         ['Journaux Partagés', '/SharedJournals'],
@@ -155,6 +158,7 @@ const translations = {
         ['Idee per Appuntamenti', '/DateIdeas'],
       ]],
       ['Crescere Insieme', 'Trasformate le intenzioni in abitudini condivise, obiettivi e riflessione significativa.', 'sparkles', [
+        ['Rituali di Coppia', '/RelationshipRituals'],
         ['Sfide di Coppia', '/CouplesChallenges'],
         ['Obiettivi di Relazione', '/RelationshipGoals'],
         ['Diari Condivisi', '/SharedJournals'],
@@ -199,6 +203,7 @@ const translations = {
         ['Date-Ideen', '/DateIdeas'],
       ]],
       ['Gemeinsam Wachsen', 'Macht aus guten Absichten gemeinsame Gewohnheiten, Ziele und sinnvolle Reflexion.', 'sparkles', [
+        ['Beziehungsrituale', '/RelationshipRituals'],
         ['Paar-Challenges', '/CouplesChallenges'],
         ['Beziehungsziele', '/RelationshipGoals'],
         ['Gemeinsame Journale', '/SharedJournals'],
