@@ -46,7 +46,11 @@ jobs:
             src/pages/RelationshipGoals.jsx \
             src/components/goals/GoalForm.jsx \
             src/components/goals/GoalCard.jsx \
-            src/components/goals/ProgressUpdateModal.jsx; do
+            src/components/goals/ProgressUpdateModal.jsx \
+            src/pages/RelationshipMilestones.jsx \
+            src/components/milestones/MilestoneCard.jsx \
+            src/components/milestones/CelebrationIdeas.jsx \
+            src/lib/milestoneCelebrationFallbacks.js; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -70,6 +74,8 @@ jobs:
           grep -q 'createError' src/pages/RelationshipGoals.jsx
           grep -q 'updateError' src/pages/RelationshipGoals.jsx
           grep -q 'deleteError' src/pages/RelationshipGoals.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/milestones/MilestoneCard.jsx
+          grep -q 'getMilestoneCelebrationFallback' src/components/milestones/CelebrationIdeas.jsx
 
       - name: Reject misleading, hard-coded, or privacy-leaking controls
         shell: bash
@@ -107,6 +113,10 @@ jobs:
             echo 'Relationship Goal mutation errors must remain localized.'
             exit 1
           fi
+          if grep -q 't.milestones\[milestone.milestone_type\]' src/components/milestones/CelebrationIdeas.jsx; then
+            echo 'Celebration Ideas must not depend on incomplete per-language milestone dictionaries.'
+            exit 1
+          fi
 
       - name: Lint localized surfaces except Couple Profile
         run: >-
@@ -125,6 +135,10 @@ jobs:
           src/components/goals/GoalForm.jsx
           src/components/goals/GoalCard.jsx
           src/components/goals/ProgressUpdateModal.jsx
+          src/pages/RelationshipMilestones.jsx
+          src/components/milestones/MilestoneCard.jsx
+          src/components/milestones/CelebrationIdeas.jsx
+          src/lib/milestoneCelebrationFallbacks.js
           --rule 'react/prop-types: off'
 
       - name: Lint Couple Profile with known import-only exception
