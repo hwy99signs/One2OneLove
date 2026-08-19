@@ -24,5 +24,5 @@ jobs:
         with:
           node-version: 24
 
-      - name: Verify O2OL launch-critical source
-        run: node scripts/verify-o2ol-launch.mjs
+      - name: Verify current O2OL launch-critical source
+        run: node scripts/verify-o2ol-launch-current.mjs
