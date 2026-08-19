@@ -49,6 +49,11 @@ const loveNotesHubRequiredKeys = [
   'steps',
 ];
 
+const loveNoteSendRequiredKeys = [
+  'defaultNote',
+  'loveNoteLabel',
+];
+
 const failures = [];
 
 const read = (file) => {
@@ -141,6 +146,34 @@ for (const literal of forbiddenLoveNotesRuntimeLiterals) {
   if (loveNotesHubRuntime.includes(literal)) {
     failures.push(`LoveNotesHub.jsx: hard-coded English runtime copy remains (${literal}).`);
   }
+}
+
+const loveNoteSendFlow = read('src/pages/LoveNoteSendFlow.jsx');
+for (const language of ACTIVE_LANGUAGES) {
+  const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
+  const match = loveNoteSendFlow.match(blockPattern);
+  if (!match) continue;
+
+  for (const key of loveNoteSendRequiredKeys) {
+    const keyPattern = new RegExp(`\\n\\s{4}${key}:`);
+    if (!keyPattern.test(match[1])) {
+      failures.push(`LoveNoteSendFlow.jsx: ${language} is missing required translated UI key ${key}.`);
+    }
+  }
+}
+
+const loveNoteSendRuntime = loveNoteSendFlow.split('export default function LoveNoteSendFlow()')[1] || '';
+for (const binding of ['cleanDraft(t.defaultNote)', 't.defaultNote', 't.loveNoteLabel']) {
+  if (!loveNoteSendRuntime.includes(binding)) {
+    failures.push(`LoveNoteSendFlow.jsx: runtime must use ${binding} so default and preview copy follow the selected language.`);
+  }
+}
+
+if (/const\s+DEFAULT_NOTE\s*=/.test(loveNoteSendFlow)) {
+  failures.push('LoveNoteSendFlow.jsx: do not reintroduce a single hard-coded English DEFAULT_NOTE.');
+}
+if (loveNoteSendRuntime.includes('/> Love Note</div>')) {
+  failures.push('LoveNoteSendFlow.jsx: sender preview must not hard-code the English “Love Note” label.');
 }
 
 if (failures.length) {
