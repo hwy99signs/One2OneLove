@@ -1,0 +1,83 @@
+name: O2OL Guarded Dependency Remediation
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-audit-remediation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Apply non-breaking npm audit fixes only
+        run: npm audit fix
+
+      - name: Verify production audit after remediation
+        run: npm audit --omit=dev
+
+      - name: Verify launch-critical O2OL source
+        run: node scripts/verify-o2ol-launch.mjs
+
+      - name: Lint launch-critical O2OL surfaces
+        run: >-
+          npx eslint
+          src/pages/GlobalRelationshipRoom.jsx
+          src/pages/RoomCreatorAccess.jsx
+          src/pages/RoomModeration.jsx
+          src/pages/RoomReplayManager.jsx
+          src/pages/RoomProgramManager.jsx
+          src/pages/RoomOfficialScheduler.jsx
+          src/pages/RoomReportQueue.jsx
+          src/pages/RoomCancellationQueue.jsx
+          src/pages/RoomModerationAudit.jsx
+          src/pages/RoomOpsDashboard.jsx
+          src/pages/NotFound.jsx
+          src/components/global-room/RoomScheduleViewer.jsx
+          src/components/global-room/ProgramReportButton.jsx
+          src/components/home/GlobalRoomPromo.jsx
+          src/lib/globalRelationshipRoomService.js
+          src/lib/globalRoomCancellationService.js
+          src/lib/globalRoomModerationService.js
+          src/lib/globalRoomOfficialService.js
+          src/lib/globalRoomReportingService.js
+          src/lib/globalRoomAuditService.js
+          src/lib/globalRoomOpsService.js
+          --rule 'react/prop-types: off'
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Commit remediated dependency lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package.json package-lock.json; then
+            echo 'No dependency changes were required.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m 'Remediate non-breaking npm audit vulnerabilities'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
