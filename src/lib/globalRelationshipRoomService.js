@@ -1,12 +1,24 @@
 import { supabase, handleSupabaseError } from './supabase';
 
 const ACTIVE_SLOT_STATUSES = ['pending', 'approved', 'scheduled', 'live'];
+const PUBLIC_SLOT_COLUMNS = [
+  'id',
+  'title',
+  'description',
+  'program_type',
+  'scheduled_start',
+  'scheduled_end',
+  'status',
+  'moderation_status',
+  'disclaimer_required',
+  'source_slot_id',
+].join(',');
 
 export const getRoomSchedule = async (startIso, endIso) => {
   try {
     let query = supabase
       .from('relationship_room_slots')
-      .select('*')
+      .select(PUBLIC_SLOT_COLUMNS)
       .in('status', ['approved', 'scheduled', 'live', 'completed'])
       .eq('moderation_status', 'approved')
       .order('scheduled_start', { ascending: true });
@@ -41,17 +53,40 @@ export const getMyRoomCreatorProfile = async (userId) => {
 
 export const createRoomCreatorProfile = async (userId, profile) => {
   try {
+    if (!userId || !profile?.displayName?.trim()) {
+      return { success: false, error: 'Display name is required.' };
+    }
+
     const { data, error } = await supabase
       .from('room_creator_profiles')
       .insert({
         user_id: userId,
-        display_name: profile.displayName,
-        bio: profile.bio || null,
-        plan: 'free',
-        daily_slot_limit: 2,
-        status: 'pending',
+        display_name: profile.displayName.trim(),
+        bio: profile.bio?.trim() || null,
         terms_accepted_at: new Date().toISOString(),
       })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, profile: data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error) };
+  }
+};
+
+export const updateMyRoomCreatorProfile = async (userId, profile) => {
+  try {
+    const updates = {
+      display_name: profile.displayName?.trim(),
+      bio: profile.bio?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('room_creator_profiles')
+      .update(updates)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -80,6 +115,23 @@ export const getCreatorSlotsForDay = async (creatorId, dayStartIso, dayEndIso) =
   }
 };
 
+export const getMyRoomSlots = async (userId) => {
+  if (!userId) return { success: true, slots: [] };
+
+  try {
+    const { data, error } = await supabase
+      .from('relationship_room_slots')
+      .select('*')
+      .eq('owner_user_id', userId)
+      .order('scheduled_start', { ascending: true });
+
+    if (error) throw error;
+    return { success: true, slots: data || [] };
+  } catch (error) {
+    return { success: false, slots: [], error: handleSupabaseError(error) };
+  }
+};
+
 export const checkRoomSlotAvailability = async (scheduledStart, scheduledEnd) => {
   try {
     const { data, error } = await supabase
@@ -97,7 +149,14 @@ export const checkRoomSlotAvailability = async (scheduledStart, scheduledEnd) =>
   }
 };
 
-export const submitRoomSlot = async ({ userId, creatorProfile, title, description, scheduledStart, scheduledEnd, programType = 'creator', sourceSlotId = null }) => {
+export const submitRoomSlot = async ({
+  userId,
+  creatorProfile,
+  title,
+  description,
+  scheduledStart,
+  scheduledEnd,
+}) => {
   try {
     if (!userId || !creatorProfile?.id) {
       return { success: false, error: 'Approved creator profile required.' };
@@ -107,8 +166,13 @@ export const submitRoomSlot = async ({ userId, creatorProfile, title, descriptio
       return { success: false, error: 'Creator profile must be approved before booking.' };
     }
 
+    if (!title?.trim()) return { success: false, error: 'Program title is required.' };
+
     const start = new Date(scheduledStart);
     const end = new Date(scheduledEnd);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return { success: false, error: 'Choose a valid start and end time.' };
+    }
     if (!(start < end)) return { success: false, error: 'End time must be after start time.' };
 
     const dayStart = new Date(start);
@@ -139,15 +203,11 @@ export const submitRoomSlot = async ({ userId, creatorProfile, title, descriptio
       .insert({
         creator_id: creatorProfile.id,
         owner_user_id: userId,
-        title,
-        description: description || null,
-        program_type: programType,
+        title: title.trim(),
+        description: description?.trim() || null,
+        program_type: 'creator',
         scheduled_start: start.toISOString(),
         scheduled_end: end.toISOString(),
-        source_slot_id: sourceSlotId,
-        status: 'pending',
-        moderation_status: 'unreviewed',
-        disclaimer_required: true,
       })
       .select()
       .single();
