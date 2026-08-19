@@ -48,6 +48,7 @@ jobs:
           test -f src/components/home/DailyQuestionPromo.jsx
           test -f src/pages/MarriageMatters.jsx
           test -f src/components/home/MarriageMattersPromo.jsx
+          test -f src/components/home/FeaturesGrid.jsx
           grep -q 'path="/SignIn"' src/pages/index.jsx
           grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
@@ -68,7 +69,8 @@ jobs:
             src/pages/DailyQuestion.jsx \
             src/components/home/DailyQuestionPromo.jsx \
             src/pages/MarriageMatters.jsx \
-            src/components/home/MarriageMattersPromo.jsx; do
+            src/components/home/MarriageMattersPromo.jsx \
+            src/components/home/FeaturesGrid.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -107,6 +109,7 @@ jobs:
           src/components/home/GlobalRoomPromo.jsx
           src/components/home/DailyQuestionPromo.jsx
           src/components/home/MarriageMattersPromo.jsx
+          src/components/home/FeaturesGrid.jsx
           src/lib/globalRelationshipRoomService.js
           src/lib/globalRoomCancellationService.js
           src/lib/globalRoomModerationService.js
