@@ -4,30 +4,41 @@ Updated: 2026-08-19
 Branch: `o2ol-build-branch-2026-08-18`
 Draft PR: #17 — active build branch; intentionally remains draft
 
+## Launch product status
+
+The official feature roadmap now uses three explicit categories:
+
+1. **Available at launch** — working features intended for launch after runtime/deployment validation and owner-controlled activation items.
+2. **Post launch** — approved future features ranked in implementation priority.
+3. **Retired / no longer used as previously designed** — legacy concepts, fake/mock behavior, or replaced architecture that must not quietly return.
+
+See `docs/O2OL_FEATURE_ROADMAP.md` for the canonical inventory.
+
 ## Global Relationship Room
 
 Implemented on the branch and live Supabase backend:
 
 - Five-language public Global Relationship Room experience.
 - Approved tagline: **One Room. Many Voices. Stronger Relationships.**
-- Public **Live Now / Up Next / Next 7 Days** schedule with automatic live/up-next refresh.
-- Program types for One2OneLove, Creator, Replay, Partner, and Special programming.
-- Permanent third-party-programming disclaimer plus per-program short disclaimer.
+- Public Live Now / Up Next / Next 7 Days schedule.
+- O2OL, Creator, Replay, Partner, and Special program types.
+- Permanent third-party-programming disclaimer plus short program disclaimer.
 - Signed-in multilingual program reporting.
-- Creator application, approval status, self-booking, history, cancellations, timezone handling, and localized errors.
-- Database overlap protection and free-account two-slot daily limit.
-- Trusted moderator registry, moderation queue, report queue, cancellation queue, replay manager, official scheduling, operations summary/dashboard, program control, and moderation audit history.
-- Browser users cannot self-approve, self-moderate, remove required disclaimers, or elevate themselves to moderator.
+- Creator application/access, approval status, self-booking, history, cancellations, timezone handling, and localized errors.
+- Database overlap protection and free-account two-slot creator-local daily limit.
+- Trusted moderator registry, moderation queue, report queue, cancellation queue, replay manager, official scheduling, operations dashboard/summary, program control, and moderation audit history.
+- Normal browser users cannot self-approve, self-moderate, remove required disclaimers, or elevate themselves to moderator.
 
-## Relationship engagement and discovery
+## Relationship engagement and couple tools
 
-Routed five-language experiences now include:
+Five-language launch-intended experiences now include:
 
 - Daily Relationship Question
 - Marriage Matters
 - Relationship Library
 - Couples Challenges
 - Date Night
+- Date Ideas
 - Relationship Reset
 - O2OL Show
 - Conversation Cards
@@ -36,163 +47,169 @@ Routed five-language experiences now include:
 - Couple Activities
 - Couples Dashboard
 - Communication Practice
+- Guided Couples Meditation
 - Relationship Support
 - Relationship Goals
 - Relationship Milestones
 - Anniversary Tracker
+- Couples Calendar
+- Couple Profile
 - Shared Journals
 - Memory Lane
 - Relationship Quizzes / Love Language Reflection
 - Love Notes
 
-### Privacy-first lightweight tools
+Privacy-first behavior includes:
 
 - Conversation Cards do not save or transmit answers.
 - Weekly Relationship Check-In keeps answers only in page memory.
 - Communication Practice stores or transmits no practice response and is explicitly educational, not therapy.
-- Daily Relationship Question is deterministic content and creates no answer record.
-- Relationship Reset discloses its limited browser-local completion state.
+- Daily Relationship Question creates no answer record.
+- Relationship Reset discloses its browser-local completion state.
 - Date Night personalization remains local to the browser.
-- Love Language Reflection keeps answers in memory; only the final preference is saved when the signed-in member explicitly chooses **Save to Profile**.
+- Love Language Reflection keeps answers in memory and saves only the final preference when a signed-in member explicitly chooses Save to Profile.
+- Date Ideas saves only supported private owner-scoped fields and does not claim community/partner sharing that the schema does not support.
 
 ## Real couple-data features
 
 ### Love Notes
 
-Love Notes is now a real private delivery feature rather than an SMS/email mockup:
-
 - Delivery is limited to a mutually linked partner.
 - Recipient identity is resolved server-side rather than entered as arbitrary email.
-- Sent, received, unread, read-state, and deletion behavior are backed by the database.
+- Sent, received, unread, read-state, and deletion behavior are database-backed.
 - Browser clients cannot directly insert/update Love Note rows.
-- Legacy sender-only records are not treated as verified partner delivery unless they match a reciprocal partner relationship.
+- Legacy sender-only rows are not treated as verified partner delivery unless reciprocal relationship evidence exists.
 - Dedicated Love Notes privacy/security CI is active.
 
 ### Shared Journals
-
-Shared Journals now matches its product name without exposing old private data:
 
 - Existing entries remain private.
 - New entries are private by default.
 - Sharing is explicit per-entry opt-in through `shared_with_partner`.
 - Only a reciprocally linked partner can read a shared entry.
-- Partner-owned entries are read-only in the UI; partners cannot edit/delete them.
-- The UI clearly distinguishes **Private**, **Shared with partner**, and **Shared by your partner**.
-- Dedicated Journal Privacy CI enforces those guarantees.
+- Partner-owned entries are read-only in the UI.
+- UI distinguishes Private, Shared with partner, and Shared by your partner.
+- Dedicated Journal Privacy CI protects these guarantees.
 
-### Couple Profile / Anniversary / Memory Lane
+### Couple Profile / Anniversary / Memory Lane / Profile
 
-- Couple Profile resolves a partner through a mutual-link safe RPC and no longer reads another member’s private account row directly.
-- Anniversary Tracker stores and updates only the signed-in member’s anniversary profile field and does not fabricate relationship statistics.
-- Memory Lane persistence is aligned to the live schema, uses explicit columns, owner-scoped writes, localized dates/actions, and no fake sharing/upload controls.
+- Couple Profile resolves a partner through a mutual-link safe RPC rather than directly reading another account row.
+- Anniversary Tracker updates only the signed-in member’s anniversary profile field and does not fabricate relationship statistics.
+- Memory Lane uses the real live schema, explicit columns, owner-scoped writes, localized dates/actions, and no unsupported fake sharing/upload controls.
+- Profile was rebuilt against verified live account columns and no longer displays fabricated activity, quiz, memory, or streak counters.
 
-## Trust and multilingual cleanup
+## AI surfaces
 
-- Homepage feature discovery links to real features rather than vague/fabricated claims.
-- Fabricated featured-expert and testimonial content was removed/replaced with truthful O2OL/AMORA positioning and relationship-value content.
-- Cooperative Games opens the real Conversation Cards activity; unfinished games are visibly **Coming Soon** instead of dead Play buttons.
-- Relationship Quizzes now exposes the working Love Language Reflection and marks unfinished reflections **Coming Soon**.
-- Unverified “expert-designed assessment” language was removed; the quiz is framed as educational reflection, not diagnosis or validated psychological assessment.
-- Relationship Support routes only to real O2OL self-help resources and explicitly does not claim therapy, diagnosis, crisis care, or verified licensed-professional referral.
-- Legacy calendar, journals, goals, milestones, Memory Lane, Couple Profile, Couple Activities, Couples Dashboard, and related child components have been audited/modernized for EN/ES/FR/IT/DE.
+- AI Relationship Coach is a five-language zero-data preview. It does not collect relationship text, diagnose users, or imply a live AI service.
+- AI Content Creator is a five-language zero-data preview. It does not collect partner names/context or imply generation is active.
+- Both previews route to real working O2OL alternatives.
+- Live AI services are post-launch roadmap items and require a deliberate privacy-reviewed backend.
 
-## Auth, chat, privacy, accessibility, and platform hardening
+## Trust and legacy-surface cleanup
+
+Launch-facing or routed legacy pages have been converted away from fake/mock behavior:
+
+- Fabricated homepage experts/testimonials removed.
+- Professional and therapist application routes explicitly state those verified ecosystems are post launch and collect no credential/profile data today.
+- Old influencer signup now routes creators to the real Global Relationship Room creator program; separate brand/influencer partnerships remain post launch.
+- LGBTQ+ support removed unverified therapist referrals, hard-coded crisis contacts, and legal-rights guidance; the dedicated verified resource hub is post launch.
+- Articles and Blog routes no longer publish invented experts, authors, dates, audience claims, or article catalogs.
+- Influencer/Expert directory no longer displays invented identities, followers, credentials, or endorsements.
+- Reviews no longer displays fabricated couples, ratings, or testimonials.
+- Suggestions no longer pretends a feedback submission was saved; it routes to a functioning contact path until a real feedback backend exists.
+- Leaderboard no longer ranks users against fabricated couples and is retired for launch.
+- Achievements no longer awards pretend badges, points, streaks, or rewards at launch.
+- Premium Features no longer uses pretend unlocks or points to sell unavailable benefits.
+- Subscription route explicitly states paid membership checkout is not opening at launch and old plan/pricing promises are not launch offers.
+- Win-a-Cruise route explicitly states no active prize competition exists.
+- Podcast support routes to real O2OL programming rather than fake third-party statistics/listen buttons.
+
+A permanent **O2OL Legacy Trust Verification** workflow now guards these routed compatibility/post-launch surfaces against restoration of known fabricated or inactive claims.
+
+## Community and chat
+
+Launch-intended supported social surfaces include:
+
+- privacy-safe member discovery;
+- friend requests and accepted buddy connections;
+- real member-submitted relationship stories;
+- private chat;
+- participant-scoped realtime subscriptions;
+- private chat attachment storage with short-lived signed URLs;
+- unread conversation indicators.
+
+The old Discussion Forums shell is not counted as a complete launch feature because its previous backend was removed. Full forums are a post-launch roadmap item.
+
+## Auth, privacy, accessibility, and platform hardening
 
 - Password recovery and guarded auth-callback routing are present.
 - Application error boundary, skip-to-content support, footer, and unknown-route page are present.
 - AuthContext no longer emits emails, IDs, profiles, sessions, or auth diagnostics to the browser console.
-- AuthContext keeps the existing login/logout/register/specialist-registration public API and uses statically analyzable specialist-service imports.
-- Auth privacy is now protected by a read-only CI gate; self-modifying AuthContext sanitizer automation was removed.
 - Social discovery uses the safe directory surface rather than exposing account rows.
-- Chat attachment storage is private and authorized reads use short-lived signed URLs.
-- Chat realtime subscriptions remain participant-scoped.
 - Partner application completion verifies persisted pending-profile state before success is shown.
+- Global Layout was rebuilt with five-language desktop/mobile discovery, Global Room/Relationship Library/Couples Dashboard access, localized AI labels, simplified chat badge refresh, no public developer shortcut, and no browser account diagnostics.
 - Node.js 24 is used in O2OL CI.
 
 ## Live Supabase hardening
 
-In addition to the Global Room migrations, the live O2OL Supabase project now includes:
+The live O2OL project includes:
 
 - Waitlist RLS enabled.
-- Anonymous access removed entirely from clearly private relationship/account tables including memories, relationship goals, milestones, shared journals, Love Notes, calendar events, friend/buddy private data, and subscription changes.
-- Public-readable catalog/community surfaces reduced to anonymous **SELECT only** where public reading is intentional.
-- Waitlist reduced to anonymous **INSERT only** and authenticated **INSERT only**; members cannot browse signup records.
-- Three legacy views (`goals_with_steps`, `milestones_with_next_date`, `user_presence_view`) changed to `security_invoker=true` so they cannot bypass caller permissions/RLS.
-- Twenty-one legacy functions now have fixed `search_path=public, pg_temp`, removing mutable-search-path advisor warnings without changing callers or function bodies.
+- Anonymous access removed from clearly private relationship/account tables.
+- Public catalog/community surfaces limited to intentional public-readable access.
+- Waitlist reduced to insert-only behavior for public/authenticated signup paths.
+- Legacy views `goals_with_steps`, `milestones_with_next_date`, and `user_presence_view` changed to `security_invoker=true`.
+- Twenty-one legacy functions now have fixed `search_path=public, pg_temp`.
 - Shared Journals mutual-partner read policy applied live.
 - Love Notes mutual-partner delivery/read-state hardening applied live.
 
-The remaining Supabase advisor notices are primarily:
+Remaining Supabase platform/advisor items are primarily owner-controlled or intentionally reviewed architecture:
 
-- intentionally authenticated `SECURITY DEFINER` RPCs whose function bodies perform caller/participant authorization;
-- GraphQL schema discoverability notices for RLS-protected or intentionally public-readable objects;
-- private Global Room tables with RLS and no direct policies because access is RPC-controlled;
+- authenticated SECURITY DEFINER RPCs with caller/participant authorization;
+- GraphQL schema discoverability notices on RLS-protected or intentionally readable objects;
+- private Global Room tables controlled through RPC paths;
 - leaked-password protection disabled (platform setting);
-- a Supabase Postgres patch upgrade available (platform maintenance item).
-
-High-risk ID-taking authenticated RPCs reviewed so far verify caller identity or conversation/message participation; they were not weakened simply to silence generic advisor warnings.
+- available Supabase Postgres security-patch upgrade (maintenance item).
 
 ## Dependency security
 
-- Dependency auditing is structured and PR-visible.
-- Production-only and full-tree `npm audit --json` reports are captured and uploaded as CI artifacts.
-- The last completed production audit reported 8 findings: 7 high and 1 moderate; the full tree reported 19 findings including dev/build tooling.
-- Direct affected packages identified include `postcss` and `react-router-dom`; `vite` is a direct dev/build dependency.
-- No `npm audit fix --force` is permitted automatically.
-- Dependency ancestry mapping is now being captured so transitive findings can be remediated through the correct parent package rather than patched blindly.
-- Production build still passes while the remediation plan is being narrowed.
+The locked dependency tree is currently clean at the configured audit threshold:
 
-## Verification status
+- **Production dependencies:** 0 vulnerabilities at `npm audit --omit=dev --audit-level=low`.
+- **Full dependency tree:** 0 vulnerabilities at `npm audit --audit-level=low`.
+- The unused `@flydotio/dockerfile` development helper was removed after repository-use review; its transitive `diff` advisories disappeared with it.
+- The cleanup guard required `npm ci`, production audit, full-tree audit, and production build before committing.
+- `npm audit fix --force` remains prohibited for automatic remediation.
 
-The fully validated checkpoint at commit `d6f66a1bfa56c951a37a546e92ddc1bd08c9451f` passed all 16 PR-visible suites:
+See `docs/O2OL_DEPENDENCY_REMEDIATION_STATUS.md` for the permanent dependency policy.
 
-- O2OL Build Verification
-- O2OL Source Verification
-- O2OL Security Verification
-- O2OL Account Privacy Audit
-- O2OL Social Privacy
-- O2OL Chat Security
-- O2OL Partner Integrity
-- O2OL Integrated Hardening
-- O2OL Launch Readiness
-- O2OL Engagement Verification
-- O2OL Localization Verification
-- O2OL Love Notes Verification
-- O2OL Couple Tools Verification
-- O2OL Journal Privacy
-- O2OL Quiz Privacy
-- O2OL Dependency Audit
+## Permanent verification coverage
 
-A read-only O2OL Auth Privacy gate also protects AuthContext invariants.
+The branch has permanent PR-visible gates covering core build/source/security/privacy, social/chat/partner integrity, engagement/localization, Love Notes, journals, quizzes, couple tools, route performance, Date Ideas, Profile, Layout navigation, AI previews, Invite trust, dependency auditing, and legacy-route trust.
 
-The branch may have newer dependency-audit instrumentation commits after this fully green checkpoint; read the latest commit’s CI before declaring a later checkpoint fully green.
+Do not call a newer branch head fully green until the checks for that exact commit have completed.
 
 ## Current infrastructure constraint
 
-- The external Vercel status has reported a plan build-rate-limit condition (`upgradeToPro=build-rate-limit`).
-- This is separate from GitHub code compilation/verification.
+- External Vercel deployment has reported `upgradeToPro=build-rate-limit`.
+- This is separate from GitHub compilation/verification.
 - No Vercel upgrade or paid plan change has been performed automatically.
 
 ## Next active implementation areas
 
-- Complete dependency ancestry review and apply only verified non-breaking security updates, with production build and privacy gates required afterward.
-- Continue focused review of authenticated privileged RPCs where caller checks could materially matter; do not chase generic linter warnings blindly.
-- Continue responsive/mobile/accessibility polish on legacy public surfaces that still need it.
-- Browser/runtime verification when a deployable Vercel preview is available again.
-- Prepare merge readiness after deployment/runtime validation and owner-controlled launch items are resolved.
+- Continue mobile/accessibility/trust audit of remaining launch-visible public and community surfaces.
+- Complete real Community feature boundary cleanup so empty legacy forums cannot be mistaken for a launch feature.
+- Continue narrow review of privileged Supabase RPCs only where caller authorization materially matters.
+- Browser/runtime validation when a deployable Vercel preview is available again.
+- Prepare merge readiness only after deployment/runtime validation and owner-controlled launch items are resolved.
 
 ## Owner-controlled / platform activation items
 
-- Assign the first trusted Global Relationship Room moderator/admin account when desired. No normal account is auto-elevated.
-- Decide later whether the Vercel build-rate-limit warrants a plan change; no cost should be incurred automatically.
-- Enable Supabase leaked-password protection when the platform setting is intentionally activated.
-- Schedule the available Supabase Postgres security-patch upgrade as a maintenance action rather than changing database infrastructure blindly during active development.
+- Assign the first trusted Global Relationship Room moderator/admin account when desired; no normal account is auto-elevated.
+- Decide later whether Vercel build-rate-limit warrants a plan change; no cost should be incurred automatically.
+- Enable Supabase leaked-password protection when intentionally approved.
+- Schedule the available Supabase Postgres security-patch upgrade as a maintenance action.
 
 ## Deferred by product decision
 
-- Paid creator-slot pricing and checkout.
-- Sponsorship/ad inventory.
-- Sensitive-data/privacy-law-heavy concepts.
-- Final creator verification thresholds and moderation appeal policy.
-
-Deferred product decisions remain in `docs/O2OL_FEATURE_ROADMAP.md`; owner decisions remain consolidated in `docs/O2OL_APPROVAL_BATCH.md`.
+Priority-ordered post-launch work now lives in `docs/O2OL_FEATURE_ROADMAP.md`, including paid creator slots, advanced creator ecosystem, paid membership, live AI services, verified LGBTQ+ resources, verified professional/therapist ecosystem, full forums, advanced reflections/games, editorial publishing, verified discovery, optional gamification, real reviews/feedback, sponsorships/promotions, and far-later sensitive personalization.
