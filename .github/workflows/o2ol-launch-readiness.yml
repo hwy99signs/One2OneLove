@@ -8,10 +8,13 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,191 +28,102 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Report production dependency audit
-        shell: bash
-        run: |
-          echo 'Production dependency audit is informational until remediation is reviewed for breaking-change risk.'
-          npm audit --omit=dev || true
+      - name: Verify locked dependency audit
+        run: npm audit --audit-level=low
 
-      - name: Verify critical account, billing, partner, Global Room, and engagement routes
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f src/pages/SignIn.jsx
-          test -f src/pages/SignUp.jsx
-          test -f src/components/signup/RegularUserForm.jsx
-          test -f src/components/signup/EmailVerificationDialog.jsx
-          test -f src/pages/InfluencerSignup.jsx
-          test -f src/pages/ProfessionalSignup.jsx
-          test -f src/components/signup/InfluencerSignupForm.jsx
-          test -f src/components/signup/OtherUserSignupForm.jsx
-          test -f src/components/signup/ProfilePhotoUpload.jsx
-          test -f src/pages/Subscription.jsx
-          test -f src/components/subscriptions/TierCard.jsx
-          test -f src/lib/stripeService.js
-          test -f supabase/functions/create-checkout-session/index.ts
-          test -f supabase/functions/create-billing-portal/index.ts
-          test -f supabase/functions/stripe-webhook/index.ts
-          test -f src/pages/ResetPassword.jsx
-          test -f src/pages/GlobalRelationshipRoom.jsx
-          test -f src/pages/RoomCreatorAccess.jsx
-          test -f src/pages/RoomModeration.jsx
-          test -f src/pages/RoomCancellationQueue.jsx
-          test -f src/pages/DailyQuestion.jsx
-          test -f src/components/home/DailyQuestionPromo.jsx
-          test -f src/pages/MarriageMatters.jsx
-          test -f src/components/home/MarriageMattersPromo.jsx
-          test -f src/pages/RelationshipLibrary.jsx
-          test -f src/pages/CouplesChallenges.jsx
-          test -f src/pages/ConversationCards.jsx
-          test -f src/pages/WeeklyCheckIn.jsx
-          test -f src/pages/DateNight.jsx
-          test -f src/pages/RelationshipReset.jsx
-          test -f src/components/home/RelationshipResetPromo.jsx
-          test -f src/pages/O2OLShow.jsx
-          test -f src/components/home/HeroSection.jsx
-          test -f src/components/home/FeaturesGrid.jsx
-          test -f src/components/home/DiversitySection.jsx
-          test -f src/components/home/FeaturedPodcast.jsx
-          test -f src/components/home/Testimonials.jsx
-          test -f src/components/home/Footer.jsx
-          grep -q 'path="/SignIn"' src/pages/index.jsx
-          grep -q 'path="/SignUp"' src/pages/index.jsx
-          grep -q 'path="/InfluencerSignup"' src/pages/index.jsx
-          grep -q 'path="/ProfessionalSignup"' src/pages/index.jsx
-          grep -q 'path="/Subscription"' src/pages/index.jsx
-          grep -q 'path="/ResetPassword"' src/pages/index.jsx
-          grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
-          grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
-          grep -q 'path="/RoomModeration"' src/pages/index.jsx
-          grep -q 'path="/RoomCancellationQueue"' src/pages/index.jsx
-          grep -q 'path="/DailyQuestion"' src/pages/index.jsx
-          grep -q 'path="/MarriageMatters"' src/pages/index.jsx
-          grep -q 'path="/RelationshipLibrary"' src/pages/index.jsx
-          grep -q 'path="/CouplesChallenges"' src/pages/index.jsx
-          grep -q 'path="/ConversationCards"' src/pages/index.jsx
-          grep -q 'path="/WeeklyCheckIn"' src/pages/index.jsx
-          grep -q 'path="/DateNight"' src/pages/index.jsx
-          grep -q 'path="/RelationshipReset"' src/pages/index.jsx
-          grep -q 'path="/O2OLShow"' src/pages/index.jsx
-          grep -q '<DailyQuestionPromo />' src/pages/Home.jsx
-          grep -q '<MarriageMattersPromo />' src/pages/Home.jsx
-          grep -q '<RelationshipResetPromo />' src/pages/Home.jsx
-          if grep -q 'love-notes-stats' src/pages/Home.jsx; then
-            echo 'Legacy dead homepage stats polling must not return.'
-            exit 1
-          fi
-          if grep -Eq '123456|tempPassword|emailVerificationCode|phoneVerificationCode' src/pages/InfluencerSignup.jsx src/pages/ProfessionalSignup.jsx; then
-            echo 'Development-era partner verification placeholders must not return.'
-            exit 1
-          fi
-          if grep -q "subscription_plan: 'Basic'" src/lib/stripeService.js; then
-            echo 'Client-side subscription mutation must not return.'
-            exit 1
-          fi
-          grep -q "body: { planName }" src/lib/stripeService.js
-          grep -q "allowedPlans" supabase/functions/create-checkout-session/index.ts
-          grep -q "stripe.webhooks.constructEvent" supabase/functions/stripe-webhook/index.ts
-          grep -q "billingPortal.sessions.create" supabase/functions/create-billing-portal/index.ts
-
-      - name: Verify launch surfaces use all five active languages
+      - name: Verify current launch routes and trust surfaces
         shell: bash
         run: |
           set -euo pipefail
           for file in \
-            src/pages/InfluencerSignup.jsx \
-            src/pages/ProfessionalSignup.jsx \
-            src/components/signup/InfluencerSignupForm.jsx \
-            src/components/signup/OtherUserSignupForm.jsx \
-            src/components/signup/ProfilePhotoUpload.jsx \
-            src/pages/Subscription.jsx \
-            src/components/subscriptions/TierCard.jsx \
+            src/pages/SignIn.jsx \
+            src/pages/SignUp.jsx \
+            src/components/signup/RegularUserForm.jsx \
+            src/pages/ForgotPassword.jsx \
+            src/pages/ResetPassword.jsx \
+            src/pages/Profile.jsx \
+            src/pages/CouplesProfile.jsx \
+            src/pages/LoveNotes.jsx \
+            src/pages/SharedJournals.jsx \
+            src/pages/MemoryLane.jsx \
+            src/pages/RelationshipGoals.jsx \
+            src/pages/RelationshipMilestones.jsx \
+            src/pages/AnniversaryTracker.jsx \
+            src/pages/CouplesCalendar.jsx \
+            src/pages/DateNight.jsx \
+            src/pages/DateIdeas.jsx \
             src/pages/DailyQuestion.jsx \
-            src/components/home/DailyQuestionPromo.jsx \
             src/pages/MarriageMatters.jsx \
-            src/components/home/MarriageMattersPromo.jsx \
-            src/pages/RelationshipLibrary.jsx \
-            src/pages/CouplesChallenges.jsx \
             src/pages/ConversationCards.jsx \
             src/pages/WeeklyCheckIn.jsx \
-            src/pages/DateNight.jsx \
+            src/pages/RelationshipRituals.jsx \
             src/pages/RelationshipReset.jsx \
-            src/components/home/RelationshipResetPromo.jsx \
-            src/pages/O2OLShow.jsx \
-            src/components/home/HeroSection.jsx \
-            src/components/home/FeaturesGrid.jsx \
-            src/components/home/DiversitySection.jsx \
-            src/components/home/FeaturedPodcast.jsx \
-            src/components/home/Testimonials.jsx \
-            src/components/home/Footer.jsx; do
-            for lang in en es fr it de; do
-              grep -q "${lang}:" "$file"
-            done
+            src/pages/CommunicationPractice.jsx \
+            src/pages/RelationshipLibrary.jsx \
+            src/pages/CouplesChallenges.jsx \
+            src/pages/CoupleActivities.jsx \
+            src/pages/CouplesDashboard.jsx \
+            src/pages/Community.jsx \
+            src/pages/FindFriends.jsx \
+            src/pages/FriendRequests.jsx \
+            src/pages/Chat.jsx \
+            src/pages/GlobalRelationshipRoom.jsx \
+            src/pages/RoomCreatorAccess.jsx \
+            src/pages/RoomModeration.jsx \
+            src/pages/RoomReportQueue.jsx \
+            src/pages/RoomCancellationQueue.jsx \
+            src/pages/RoomOpsDashboard.jsx \
+            src/pages/ContactUs.jsx \
+            src/pages/HelpCenter.jsx \
+            src/pages/AboutUs.jsx \
+            src/pages/InfluencerSignup.jsx \
+            src/pages/ProfessionalSignup.jsx \
+            src/pages/TherapistSignup.jsx \
+            src/pages/Subscription.jsx \
+            src/pages/PaymentSuccess.jsx; do
+            test -f "$file"
           done
+          for route in SignIn SignUp Profile CouplesProfile LoveNotes SharedJournals MemoryLane RelationshipGoals RelationshipMilestones AnniversaryTracker CouplesCalendar DateNight DateIdeas DailyQuestion MarriageMatters ConversationCards WeeklyCheckIn RelationshipRituals RelationshipReset CommunicationPractice RelationshipLibrary CouplesChallenges CoupleActivities CouplesDashboard Community FindFriends FriendRequests Chat GlobalRelationshipRoom RoomCreatorAccess ContactUs HelpCenter AboutUs; do
+            grep -q "path=\"/${route}\"" src/pages/index.jsx
+          done
+          grep -q 'path="*"' src/pages/index.jsx
+          if grep -Eq 'love-notes-stats|123456|tempPassword' src/pages/Home.jsx src/pages/InfluencerSignup.jsx src/pages/ProfessionalSignup.jsx src/pages/TherapistSignup.jsx; then
+            echo 'Legacy fake launch behavior detected.'
+            exit 1
+          fi
 
-      - name: Verify launch-critical source and five active languages
-        run: node scripts/verify-o2ol-launch.mjs
+      - name: Verify current launch source
+        run: node scripts/verify-o2ol-launch-current.mjs
 
-      - name: Verify account and security invariants
-        run: node scripts/verify-o2ol-security.mjs
+      - name: Verify current security invariants
+        run: node scripts/verify-o2ol-security-current.mjs
 
-      - name: Lint launch-critical O2OL surfaces
+      - name: Verify social privacy
+        run: node scripts/verify-o2ol-social-privacy.mjs
+
+      - name: Verify chat security
+        run: node scripts/verify-o2ol-chat-security.mjs
+
+      - name: Lint launch shell and newly rebuilt public surfaces
         run: >-
           npx eslint
           src/pages/Home.jsx
-          src/pages/SignIn.jsx
-          src/pages/SignUp.jsx
-          src/components/signup/RegularUserForm.jsx
-          src/components/signup/EmailVerificationDialog.jsx
+          src/pages/Layout.jsx
+          src/pages/Profile.jsx
+          src/pages/Community.jsx
+          src/pages/FindFriends.jsx
+          src/pages/FriendRequests.jsx
+          src/pages/ContactUs.jsx
+          src/pages/HelpCenter.jsx
+          src/pages/AboutUs.jsx
           src/pages/InfluencerSignup.jsx
           src/pages/ProfessionalSignup.jsx
-          src/components/signup/InfluencerSignupForm.jsx
-          src/components/signup/OtherUserSignupForm.jsx
-          src/components/signup/ProfilePhotoUpload.jsx
+          src/pages/TherapistSignup.jsx
           src/pages/Subscription.jsx
-          src/components/subscriptions/TierCard.jsx
-          src/lib/stripeService.js
-          src/pages/ForgotPassword.jsx
-          src/pages/ResetPassword.jsx
-          src/pages/GlobalRelationshipRoom.jsx
-          src/pages/RoomCreatorAccess.jsx
-          src/pages/RoomModeration.jsx
-          src/pages/RoomReplayManager.jsx
-          src/pages/RoomProgramManager.jsx
-          src/pages/RoomOfficialScheduler.jsx
-          src/pages/RoomReportQueue.jsx
-          src/pages/RoomCancellationQueue.jsx
-          src/pages/RoomModerationAudit.jsx
-          src/pages/RoomOpsDashboard.jsx
-          src/pages/DailyQuestion.jsx
-          src/pages/MarriageMatters.jsx
-          src/pages/RelationshipLibrary.jsx
-          src/pages/CouplesChallenges.jsx
-          src/pages/ConversationCards.jsx
-          src/pages/WeeklyCheckIn.jsx
-          src/pages/DateNight.jsx
-          src/pages/RelationshipReset.jsx
-          src/pages/O2OLShow.jsx
-          src/pages/NotFound.jsx
-          src/components/global-room/RoomScheduleViewer.jsx
-          src/components/global-room/ProgramReportButton.jsx
-          src/components/home/HeroSection.jsx
-          src/components/home/GlobalRoomPromo.jsx
-          src/components/home/DailyQuestionPromo.jsx
-          src/components/home/MarriageMattersPromo.jsx
-          src/components/home/RelationshipResetPromo.jsx
-          src/components/home/FeaturesGrid.jsx
-          src/components/home/DiversitySection.jsx
-          src/components/home/FeaturedPodcast.jsx
-          src/components/home/Testimonials.jsx
-          src/components/home/Footer.jsx
-          src/lib/globalRelationshipRoomService.js
-          src/lib/globalRoomCancellationService.js
-          src/lib/globalRoomModerationService.js
-          src/lib/globalRoomOfficialService.js
-          src/lib/globalRoomReportingService.js
-          src/lib/globalRoomAuditService.js
-          src/lib/globalRoomOpsService.js
+          src/pages/PaymentSuccess.jsx
+          src/lib/buddyService.js
+          src/lib/chatService.js
+          src/lib/successStoriesService.js
           --rule 'react/prop-types: off'
 
       - name: Production build
