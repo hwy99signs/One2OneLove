@@ -22,6 +22,7 @@ import InfluencersSupport from "./InfluencersSupport";
 import RelationshipQuizzes from "./RelationshipQuizzes";
 import AnniversaryTracker from "./AnniversaryTracker";
 import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 import AIContentCreator from "./AIContentCreator";
 import Dashboard from "./Dashboard";
 import Community from "./Community";
@@ -84,6 +85,7 @@ const PAGES = {
   RelationshipQuizzes,
   AnniversaryTracker,
   ForgotPassword,
+  ResetPassword,
   AIContentCreator,
   Dashboard,
   Community,
@@ -162,6 +164,7 @@ function PagesContent() {
         <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
         <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
+        <Route path="/ResetPassword" element={<ResetPassword />} />
         <Route path="/AIContentCreator" element={<AIContentCreator />} />
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/Community" element={<Community />} />
