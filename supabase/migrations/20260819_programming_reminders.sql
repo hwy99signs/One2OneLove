@@ -1,6 +1,8 @@
 -- One2OneLove programming reminders + in-app programming notifications.
 -- DEVELOPMENT MIGRATION ONLY. Do not apply to live Supabase until explicitly approved.
 -- Depends on 20260819_creator_programming_calendar.sql.
+-- Notification rows store structured facts rather than English prose so the client can
+-- render member-facing reminder text in the currently selected One2OneLove language.
 
 begin;
 
@@ -28,8 +30,12 @@ create table if not exists public.programming_notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   slot_id uuid null references public.creator_programming_slots(id) on delete set null,
-  title text not null check (char_length(title) between 1 and 160),
-  body text not null default '' check (char_length(body) <= 500),
+  notification_type text not null default 'programming_reminder'
+    check (notification_type in ('programming_reminder')),
+  program_title text not null check (char_length(program_title) between 1 and 160),
+  program_source text not null check (program_source in ('creator','o2ol')),
+  content_mode text not null check (content_mode in ('live','replay')),
+  starts_at timestamptz not null,
   action_path text not null default '/LiveRoom?room=global-relationship-room'
     check (char_length(action_path) between 1 and 300),
   read_at timestamptz null,
@@ -94,7 +100,7 @@ for each row execute function public.set_programming_reminder_updated_at();
 comment on table public.programming_reminders is
   'Private member reminders for scheduled Global Relationship Room programming. Writes are backend-only; members can read only their own reminder state.';
 comment on table public.programming_notifications is
-  'Private in-app notifications generated from due programming reminders. Members can read their own records and mark read_at only.';
+  'Private structured in-app programming notifications. Member-facing copy is localized client-side; members can read their own records and mark read_at only.';
 
 commit;
 
@@ -105,4 +111,5 @@ commit;
 -- 4. Verify authenticated members cannot INSERT/UPDATE/DELETE programming_reminders directly.
 -- 5. Verify members can SELECT only their own reminder/notification rows.
 -- 6. Verify authenticated notification UPDATE privileges are limited to read_at.
--- 7. Do not configure any email/SMS/push delivery provider as part of this migration.
+-- 7. Verify notification rows contain structured program facts, not hard-coded English member-facing prose.
+-- 8. Do not configure any email/SMS/push delivery provider as part of this migration.
