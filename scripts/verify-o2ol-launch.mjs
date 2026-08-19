@@ -42,6 +42,13 @@ const multilingualSources = [
   ['RoomCancellationQueue', 'src/pages/RoomCancellationQueue.jsx'],
   ['RoomModerationAudit', 'src/pages/RoomModerationAudit.jsx'],
   ['RoomOpsDashboard', 'src/pages/RoomOpsDashboard.jsx'],
+  ['DailyQuestion', 'src/pages/DailyQuestion.jsx'],
+  ['MarriageMatters', 'src/pages/MarriageMatters.jsx'],
+  ['RelationshipLibrary', 'src/pages/RelationshipLibrary.jsx'],
+  ['CouplesChallenges', 'src/pages/CouplesChallenges.jsx'],
+  ['DateNight', 'src/pages/DateNight.jsx'],
+  ['O2OLShow', 'src/pages/O2OLShow.jsx'],
+  ['HomeFeatures', 'src/components/home/FeaturesGrid.jsx'],
   ['NotFound', 'src/pages/NotFound.jsx'],
   ['ProgramReportButton', 'src/components/global-room/ProgramReportButton.jsx'],
 ];
@@ -69,6 +76,12 @@ const requiredRoutes = [
   '/RoomCancellationQueue',
   '/RoomModerationAudit',
   '/RoomOpsDashboard',
+  '/DailyQuestion',
+  '/MarriageMatters',
+  '/RelationshipLibrary',
+  '/CouplesChallenges',
+  '/DateNight',
+  '/O2OLShow',
 ];
 for (const route of requiredRoutes) requireText(router, `path="${route}"`, `route ${route}`);
 requireText(router, 'path="*"', 'NotFound catch-all route');
@@ -162,6 +175,37 @@ const cancellationService = read('src/lib/globalRoomCancellationService.js');
 requireText(cancellationService, 'get_global_room_cancellation_queue', 'moderator cancellation queue RPC');
 requireText(cancellationService, 'review_global_room_cancellation_request', 'moderator cancellation review RPC');
 requireText(cancellationService, 'relationship_room_cancellation_requests', 'creator cancellation request table use');
+
+const dailyQuestion = read('src/pages/DailyQuestion.jsx');
+requireText(dailyQuestion, 'useLanguage', 'Daily Question language integration');
+
+const marriageMatters = read('src/pages/MarriageMatters.jsx');
+requireText(marriageMatters, 'useLanguage', 'Marriage Matters language integration');
+
+const relationshipLibrary = read('src/pages/RelationshipLibrary.jsx');
+requireText(relationshipLibrary, '/CommunicationPractice', 'Relationship Library communication path');
+requireText(relationshipLibrary, '/MarriageMatters', 'Relationship Library marriage path');
+requireText(relationshipLibrary, '/GlobalRelationshipRoom', 'Relationship Library programming path');
+
+const couplesChallenges = read('src/pages/CouplesChallenges.jsx');
+requireText(couplesChallenges, 'localStorage', 'local-only Couples Challenges progress');
+requireText(couplesChallenges, 'o2ol-couples-challenge-', 'weekly challenge storage namespace');
+
+const dateNight = read('src/pages/DateNight.jsx');
+requireText(dateNight, 'budgets:', 'Date Night budget selection');
+requireText(dateNight, 'times:', 'Date Night time selection');
+requireText(dateNight, 'plans:', 'Date Night plan library');
+
+const o2olShow = read('src/pages/O2OLShow.jsx');
+requireText(o2olShow, 'O2OL', 'O2OL Show host identity');
+requireText(o2olShow, 'AMORA', 'AMORA host identity');
+requireText(o2olShow, '/GlobalRelationshipRoom', 'O2OL Show Global Room connection');
+
+const homeFeatures = read('src/components/home/FeaturesGrid.jsx');
+requireText(homeFeatures, '/RelationshipLibrary', 'homepage Relationship Library discovery');
+requireText(homeFeatures, '/CouplesChallenges', 'homepage Couples Challenges discovery');
+requireText(homeFeatures, '/DateNight', 'homepage Date Night discovery');
+requireText(homeFeatures, '/O2OLShow', 'homepage O2OL Show discovery');
 
 const roomSql = read('supabase-global-relationship-room.sql');
 requireText(roomSql, 'relationship_room_no_active_overlap', 'room overlap protection');
