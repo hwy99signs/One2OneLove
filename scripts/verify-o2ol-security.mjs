@@ -86,6 +86,59 @@ const profilePhoto = requireLanguages('src/components/signup/ProfilePhotoUpload.
 rejectText(profilePhoto, 'alert(', 'blocking profile-photo browser alert');
 requireText(profilePhoto, 'role="alert"', 'accessible profile-photo validation');
 
+const subscription = requireLanguages('src/pages/Subscription.jsx');
+requireText(subscription, 'createBillingPortalSession', 'Stripe-hosted billing management');
+requireText(subscription, 'getPaymentHistory', 'verified payment history read');
+rejectText(subscription, '1-on-1 Expert Consultation', 'unsupported expert consultation promise');
+rejectText(subscription, 'Premium Support (24/7)', 'unsupported 24/7 premium support promise');
+
+const tierCard = requireLanguages('src/components/subscriptions/TierCard.jsx');
+requireText(tierCard, 'handleSubscriptionCheckout', 'server-authoritative tier action');
+rejectText(tierCard, 'window.location.reload', 'forced subscription reload success assumption');
+
+const stripeClient = read('src/lib/stripeService.js');
+requireText(stripeClient, "body: { planName }", 'server-authoritative checkout payload');
+requireText(stripeClient, "create-billing-portal", 'Stripe billing portal client path');
+rejectText(stripeClient, "subscription_plan: 'Basic'", 'client-side plan mutation');
+rejectText(stripeClient, 'userId:', 'client-supplied billing user ID');
+rejectText(stripeClient, 'priceId:', 'client-supplied Stripe price ID');
+
+const checkoutFunction = read('supabase/functions/create-checkout-session/index.ts');
+requireText(checkoutFunction, "new Set(['Premiere', 'Exclusive'])", 'paid plan allowlist');
+requireText(checkoutFunction, 'ctx.supabaseAdmin', 'trusted checkout account writes');
+requireText(checkoutFunction, 'subscription_data', 'Stripe subscription metadata');
+rejectText(checkoutFunction, 'payload.priceId', 'client-controlled checkout price');
+rejectText(checkoutFunction, 'payload.userId', 'client-controlled checkout user');
+
+const billingPortalFunction = read('supabase/functions/create-billing-portal/index.ts');
+requireText(billingPortalFunction, 'billingPortal.sessions.create', 'Stripe-hosted billing portal creation');
+requireText(billingPortalFunction, 'ctx.supabaseAdmin', 'trusted billing-profile lookup');
+
+const webhookFunction = read('supabase/functions/stripe-webhook/index.ts');
+requireText(webhookFunction, 'stripe.webhooks.constructEvent', 'Stripe webhook signature verification');
+requireText(webhookFunction, "new Set(['Premiere', 'Exclusive'])", 'webhook paid plan allowlist');
+requireText(webhookFunction, "subscription_plan: 'Basic'", 'verified webhook downgrade to Basic');
+requireText(webhookFunction, "onConflict: 'stripe_invoice_id'", 'idempotent invoice history');
+
+const partnerSecurity = read('supabase-partner-profile-security.sql');
+requireText(partnerSecurity, 'influencers can update own pending profile', 'pending-only influencer updates');
+requireText(partnerSecurity, 'professionals can update own pending profile', 'pending-only professional updates');
+requireText(partnerSecurity, 'revoke all on table public.influencer_profiles from anon, authenticated', 'partner least privilege reset');
+
+const accountSecurity = read('supabase-account-core-security.sql');
+requireText(accountSecurity, 'protect_user_managed_fields', 'account billing protection trigger');
+requireText(accountSecurity, "new.subscription_plan := 'Basic'", 'safe new-account Basic default');
+requireText(accountSecurity, 'new.subscription_plan := old.subscription_plan', 'client subscription mutation protection');
+requireText(accountSecurity, 'revoke all on table public.payment_history from anon', 'anonymous payment history lock');
+
+const legacyApiSecurity = read('supabase-legacy-api-security.sql');
+requireText(legacyApiSecurity, 'auth.uid() <> p_user_id', 'legacy user-bound RPC authorization');
+requireText(legacyApiSecurity, 'from public, anon, authenticated', 'billing mutation RPC authenticated revoke');
+requireText(legacyApiSecurity, 'to service_role', 'billing mutation service-role grant');
+
+const paymentIdempotency = read('supabase-payment-webhook-idempotency.sql');
+requireText(paymentIdempotency, 'payment_history_stripe_invoice_unique', 'Stripe payment idempotency index');
+
 const profileLock = read('supabase-global-room-creator-profile-lock.sql');
 requireText(profileLock, 'creators can update own pending room profile', 'pending-only creator profile update policy');
 requireText(profileLock, "status = 'pending'", 'approved creator profile lock');
