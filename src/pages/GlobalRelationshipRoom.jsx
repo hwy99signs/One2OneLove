@@ -18,6 +18,7 @@ const translations = {
     creatorButton: 'Creator Access',
     loading: 'Loading programming…',
     empty: 'No public programming is scheduled in this window yet.',
+    disclaimerTitle: 'Disclaimer',
     disclaimer: 'Programming, opinions, statements, and advice presented by third-party creators are their own and do not necessarily represent the views of One2OneLove or ERANT Property Services LLC.',
     roomDisclaimer: 'Third-party views are not necessarily those of One2OneLove or ERANT.',
     twentyFour: '24-hour programming',
@@ -35,6 +36,7 @@ const translations = {
     creatorButton: 'Acceso para Creadores',
     loading: 'Cargando programación…',
     empty: 'Todavía no hay programación pública en este período.',
+    disclaimerTitle: 'Aviso',
     disclaimer: 'La programación, opiniones, declaraciones y consejos de creadores externos les pertenecen y no representan necesariamente las opiniones de One2OneLove o ERANT Property Services LLC.',
     roomDisclaimer: 'Las opiniones de terceros no representan necesariamente a One2OneLove o ERANT.',
     twentyFour: 'Programación 24 horas',
@@ -52,6 +54,7 @@ const translations = {
     creatorButton: 'Accès Créateur',
     loading: 'Chargement du programme…',
     empty: 'Aucun programme public n’est encore prévu dans cette période.',
+    disclaimerTitle: 'Avis',
     disclaimer: 'Les programmes, opinions, déclarations et conseils des créateurs tiers leur appartiennent et ne représentent pas nécessairement les positions de One2OneLove ou ERANT Property Services LLC.',
     roomDisclaimer: 'Les opinions de tiers ne représentent pas nécessairement One2OneLove ou ERANT.',
     twentyFour: 'Programmation 24 h/24',
@@ -69,6 +72,7 @@ const translations = {
     creatorButton: 'Accesso Creator',
     loading: 'Caricamento della programmazione…',
     empty: 'Non ci sono ancora programmi pubblici previsti in questo intervallo.',
+    disclaimerTitle: 'Avviso',
     disclaimer: 'Programmi, opinioni, dichiarazioni e consigli dei creator terzi appartengono ai rispettivi autori e non rappresentano necessariamente le opinioni di One2OneLove o ERANT Property Services LLC.',
     roomDisclaimer: 'Le opinioni di terzi non rappresentano necessariamente One2OneLove o ERANT.',
     twentyFour: 'Programmazione 24 ore',
@@ -86,6 +90,7 @@ const translations = {
     creatorButton: 'Creator-Zugang',
     loading: 'Programm wird geladen…',
     empty: 'Für diesen Zeitraum ist noch kein öffentliches Programm geplant.',
+    disclaimerTitle: 'Hinweis',
     disclaimer: 'Programme, Meinungen, Aussagen und Ratschläge externer Creators sind deren eigene und entsprechen nicht notwendigerweise den Ansichten von One2OneLove oder ERANT Property Services LLC.',
     roomDisclaimer: 'Ansichten Dritter entsprechen nicht notwendigerweise denen von One2OneLove oder ERANT.',
     twentyFour: '24-Stunden-Programm',
@@ -200,7 +205,7 @@ export default function GlobalRelationshipRoom() {
               </Card>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-                <div className="mb-1 flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4" /> Disclaimer</div>
+                <div className="mb-1 flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4" /> {t.disclaimerTitle}</div>
                 {t.disclaimer}
               </div>
             </div>
