@@ -41,12 +41,12 @@ jobs:
           grep -q 'path="/ConversationCards"' src/pages/index.jsx
           grep -q 'path="/WeeklyCheckIn"' src/pages/index.jsx
           grep -q 'path="/RelationshipRituals"' src/pages/index.jsx
-          grep -q '"/ConversationCards"' src/pages/RelationshipLibrary.jsx
-          grep -q '"/WeeklyCheckIn"' src/pages/RelationshipLibrary.jsx
-          grep -q '"/RelationshipRituals"' src/pages/RelationshipLibrary.jsx
-          grep -q '"/ConversationCards"' src/components/home/FeaturesGrid.jsx
-          grep -q '"/WeeklyCheckIn"' src/components/home/FeaturesGrid.jsx
-          grep -q '"/RelationshipRituals"' src/components/home/FeaturesGrid.jsx
+          grep -q '/ConversationCards' src/pages/RelationshipLibrary.jsx
+          grep -q '/WeeklyCheckIn' src/pages/RelationshipLibrary.jsx
+          grep -q '/RelationshipRituals' src/pages/RelationshipLibrary.jsx
+          grep -q '/ConversationCards' src/components/home/FeaturesGrid.jsx
+          grep -q '/WeeklyCheckIn' src/components/home/FeaturesGrid.jsx
+          grep -q '/RelationshipRituals' src/components/home/FeaturesGrid.jsx
 
       - name: Verify five active languages
         shell: bash
