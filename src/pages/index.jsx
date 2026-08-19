@@ -56,6 +56,7 @@ import Subscription from "./Subscription";
 import GlobalRelationshipRoom from "./GlobalRelationshipRoom";
 import RoomCreatorAccess from "./RoomCreatorAccess";
 import RoomModeration from "./RoomModeration";
+import RoomReplayManager from "./RoomReplayManager";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -116,20 +117,14 @@ const PAGES = {
   GlobalRelationshipRoom,
   RoomCreatorAccess,
   RoomModeration,
+  RoomReplayManager,
 };
 
 function _getCurrentPage(url) {
-  if (url.endsWith('/')) {
-    url = url.slice(0, -1);
-  }
+  if (url.endsWith('/')) url = url.slice(0, -1);
   let urlLastPart = url.split('/').pop();
-  if (urlLastPart.includes('?')) {
-    urlLastPart = urlLastPart.split('?')[0];
-  }
-
-  const pageName = Object.keys(PAGES).find(
-    (page) => page.toLowerCase() === urlLastPart.toLowerCase()
-  );
+  if (urlLastPart.includes('?')) urlLastPart = urlLastPart.split('?')[0];
+  const pageName = Object.keys(PAGES).find((page) => page.toLowerCase() === urlLastPart.toLowerCase());
   return pageName || Object.keys(PAGES)[0];
 }
 
@@ -200,15 +195,12 @@ function PagesContent() {
         <Route path="/GlobalRelationshipRoom" element={<GlobalRelationshipRoom />} />
         <Route path="/RoomCreatorAccess" element={<RoomCreatorAccess />} />
         <Route path="/RoomModeration" element={<RoomModeration />} />
+        <Route path="/RoomReplayManager" element={<RoomReplayManager />} />
       </Routes>
     </Layout>
   );
 }
 
 export default function Pages() {
-  return (
-    <Router>
-      <PagesContent />
-    </Router>
-  );
+  return <Router><PagesContent /></Router>;
 }
