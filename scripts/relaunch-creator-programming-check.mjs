@@ -7,6 +7,7 @@ const routesFile = 'src/pages/index.jsx';
 const migrationFile = 'supabase/migrations/20260819_creator_programming_calendar.sql';
 const bookingFunctionFile = 'supabase/functions/book-creator-programming-slot/index.ts';
 const listingFunctionFile = 'supabase/functions/list-creator-programming/index.ts';
+const statusFunctionFile = 'supabase/functions/current-creator-programming/index.ts';
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const service = read(serviceFile);
@@ -15,12 +16,15 @@ const routes = read(routesFile);
 const migration = read(migrationFile);
 const bookingFunction = read(bookingFunctionFile);
 const listingFunction = read(listingFunctionFile);
+const statusFunction = read(statusFunctionFile);
 
 for (const required of [
   "VITE_CREATOR_PROGRAMMING_ENABLED === 'true'",
   "booking_tier: 'free'",
   "supabase.functions.invoke('book-creator-programming-slot'",
   "supabase.functions.invoke('list-creator-programming'",
+  "supabase.functions.invoke('current-creator-programming'",
+  'export const getGlobalProgrammingStatus = async () =>',
 ]) {
   if (!service.includes(required)) failures.push(`${serviceFile}: missing staged creator-programming guard ${required}.`);
 }
@@ -87,13 +91,26 @@ for (const required of [
   if (!bookingFunction.includes(required)) failures.push(`${bookingFunctionFile}: missing backend booking safeguard ${required}.`);
 }
 
-for (const forbidden of [
-  "select('*')",
-  'creator_user_id,title,description',
-  'replay_url',
+for (const [file, source] of [
+  [listingFunctionFile, listingFunction],
+  [statusFunctionFile, statusFunction],
 ]) {
-  const selectionLine = listingFunction.split(".select(")[1]?.split(')')[0] || '';
-  if (selectionLine.includes(forbidden)) failures.push(`${listingFunctionFile}: public schedule selection exposes forbidden field ${forbidden}.`);
+  for (const forbidden of ["select('*')", 'creator_user_id', 'replay_url', 'booking_tier', 'price_cents', 'payment_status']) {
+    const publicSelection = source.match(/const publicFields = '([^']+)'/)?.[1]
+      || source.split('.select(')[1]?.split(')')[0]
+      || '';
+    if (publicSelection.includes(forbidden)) failures.push(`${file}: public programming payload exposes forbidden field ${forbidden}.`);
+  }
+}
+
+for (const required of [
+  "const GLOBAL_ROOM = 'global-relationship-room'",
+  "return json(request, { success: true, enabled: false, current: null, next: null })",
+  "const publicFields = 'id,room_slug,title,description,starts_at,ends_at,content_mode'",
+  'current: publicSlot(currentRows?.[0] || null)',
+  'next: publicSlot(nextRows?.[0] || null)',
+]) {
+  if (!statusFunction.includes(required)) failures.push(`${statusFunctionFile}: missing privacy-safe now/next behavior ${required}.`);
 }
 
 if (failures.length) {
@@ -102,4 +119,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Creator programming remains feature-gated, multilingual, two-free-slots/day limited, overlap-protected, Global-Room compatible and paid-slot disabled.');
+console.log('✅ Creator programming remains feature-gated, multilingual, two-free-slots/day limited, overlap-protected, Global-Room compatible, privacy-minimized and paid-slot disabled.');
