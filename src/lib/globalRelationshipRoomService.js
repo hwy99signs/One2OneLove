@@ -6,6 +6,7 @@ const PUBLIC_SLOT_COLUMNS = [
   'title',
   'description',
   'program_type',
+  'creator_display_name',
   'scheduled_start',
   'scheduled_end',
   'status',
@@ -159,41 +160,21 @@ export const checkRoomSlotAvailability = async (scheduledStart, scheduledEnd) =>
   }
 };
 
-export const submitRoomSlot = async ({
-  userId,
-  creatorProfile,
-  title,
-  description,
-  scheduledStart,
-  scheduledEnd,
-}) => {
+export const submitRoomSlot = async ({ userId, creatorProfile, title, description, scheduledStart, scheduledEnd }) => {
   try {
-    if (!userId || !creatorProfile?.id) {
-      return { success: false, error: 'Approved creator profile required.' };
-    }
-
-    if (creatorProfile.status !== 'approved') {
-      return { success: false, error: 'Creator profile must be approved before booking.' };
-    }
-
+    if (!userId || !creatorProfile?.id) return { success: false, error: 'Approved creator profile required.' };
+    if (creatorProfile.status !== 'approved') return { success: false, error: 'Creator profile must be approved before booking.' };
     if (!title?.trim()) return { success: false, error: 'Program title is required.' };
 
     const start = new Date(scheduledStart);
     const end = new Date(scheduledEnd);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return { success: false, error: 'Choose a valid start and end time.' };
-    }
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return { success: false, error: 'Choose a valid start and end time.' };
     if (!(start < end)) return { success: false, error: 'End time must be after start time.' };
     if (start.getTime() <= Date.now()) return { success: false, error: 'Programming must be scheduled in the future.' };
 
-    // The browser check provides quick feedback for conflicts the current viewer is allowed to see.
-    // Postgres independently blocks *all* overlapping active/pending slots, including another
-    // creator's unreviewed submission, so direct API calls cannot create double-bookings.
     const availability = await checkRoomSlotAvailability(start.toISOString(), end.toISOString());
     if (!availability.success) return availability;
-    if (!availability.available) {
-      return { success: false, error: 'That programming time is already booked.', conflict: availability.conflict };
-    }
+    if (!availability.available) return { success: false, error: 'That programming time is already booked.', conflict: availability.conflict };
 
     const { data, error } = await supabase
       .from('relationship_room_slots')
@@ -210,9 +191,7 @@ export const submitRoomSlot = async ({
       .single();
 
     if (error) {
-      if (error.code === '23P01') {
-        return { success: false, error: 'That programming time is no longer available.' };
-      }
+      if (error.code === '23P01') return { success: false, error: 'That programming time is no longer available.' };
       if (error.code === '23514' && error.message?.includes('programming slots per creator-local day')) {
         return { success: false, error: `Free creator accounts are limited to ${creatorProfile.daily_slot_limit ?? 2} programming slots per day.` };
       }
