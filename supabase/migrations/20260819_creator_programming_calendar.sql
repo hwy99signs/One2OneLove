@@ -152,6 +152,24 @@ with check ((select auth.uid()) = creator_user_id and status in ('booked','cance
 comment on table public.creator_programming_slots is
   'Creator self-booking calendar. Browser users can read/cancel only their own slots; creation and public schedule delivery are mediated by reviewed backend functions.';
 
+-- The earlier identity-hardening migration restricted the room_messages table itself to
+-- the original five room slugs. The Global Relationship Room must pass both that table
+-- constraint and the INSERT policy below, otherwise a valid member message would still
+-- be rejected before RLS can authorize it.
+alter table public.room_messages
+  drop constraint if exists room_messages_room_slug_allowed;
+
+alter table public.room_messages
+  add constraint room_messages_room_slug_allowed
+  check (room_slug in (
+    'global-relationship-room',
+    'vent-room',
+    'modern-dating-unfiltered',
+    'love-talk',
+    'marriage-matters',
+    'starting-over'
+  ));
+
 -- Add the approved Global Relationship Room to member messaging without weakening the
 -- existing ownership rule. This replaces the prior five-room allowlist policy.
 drop policy if exists "room_messages_insert_own" on public.room_messages;
@@ -171,5 +189,6 @@ commit;
 -- 3. Verify anon has zero direct table privileges and authenticated users can see only their own slots.
 -- 4. Verify a third free booking on one creator-local date fails under concurrent requests.
 -- 5. Verify overlapping booked slots fail at the exclusion constraint.
--- 6. Deploy book-creator-programming-slot with JWT verification enabled.
--- 7. Keep paid booking disabled until a separate payment/refund/terms approval batch.
+-- 6. Verify Global Relationship Room messages pass both room_messages_room_slug_allowed and room_messages_insert_own.
+-- 7. Deploy book-creator-programming-slot with JWT verification enabled.
+-- 8. Keep paid booking disabled until a separate payment/refund/terms approval batch.
