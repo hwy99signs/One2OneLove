@@ -31,7 +31,7 @@ jobs:
           echo 'Production dependency audit is informational until remediation is reviewed for breaking-change risk.'
           npm audit --omit=dev || true
 
-      - name: Verify critical account, partner, Global Room, and engagement routes
+      - name: Verify critical account, billing, partner, Global Room, and engagement routes
         shell: bash
         run: |
           set -euo pipefail
@@ -44,6 +44,12 @@ jobs:
           test -f src/components/signup/InfluencerSignupForm.jsx
           test -f src/components/signup/OtherUserSignupForm.jsx
           test -f src/components/signup/ProfilePhotoUpload.jsx
+          test -f src/pages/Subscription.jsx
+          test -f src/components/subscriptions/TierCard.jsx
+          test -f src/lib/stripeService.js
+          test -f supabase/functions/create-checkout-session/index.ts
+          test -f supabase/functions/create-billing-portal/index.ts
+          test -f supabase/functions/stripe-webhook/index.ts
           test -f src/pages/ResetPassword.jsx
           test -f src/pages/GlobalRelationshipRoom.jsx
           test -f src/pages/RoomCreatorAccess.jsx
@@ -69,6 +75,7 @@ jobs:
           grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/InfluencerSignup"' src/pages/index.jsx
           grep -q 'path="/ProfessionalSignup"' src/pages/index.jsx
+          grep -q 'path="/Subscription"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
           grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
           grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
@@ -92,6 +99,14 @@ jobs:
             echo 'Development-era partner verification placeholders must not return.'
             exit 1
           fi
+          if grep -q "subscription_plan: 'Basic'" src/lib/stripeService.js; then
+            echo 'Client-side subscription mutation must not return.'
+            exit 1
+          fi
+          grep -q "body: { planName }" src/lib/stripeService.js
+          grep -q "allowedPlans" supabase/functions/create-checkout-session/index.ts
+          grep -q "stripe.webhooks.constructEvent" supabase/functions/stripe-webhook/index.ts
+          grep -q "billingPortal.sessions.create" supabase/functions/create-billing-portal/index.ts
 
       - name: Verify launch surfaces use all five active languages
         shell: bash
@@ -103,6 +118,8 @@ jobs:
             src/components/signup/InfluencerSignupForm.jsx \
             src/components/signup/OtherUserSignupForm.jsx \
             src/components/signup/ProfilePhotoUpload.jsx \
+            src/pages/Subscription.jsx \
+            src/components/subscriptions/TierCard.jsx \
             src/pages/DailyQuestion.jsx \
             src/components/home/DailyQuestionPromo.jsx \
             src/pages/MarriageMatters.jsx \
@@ -143,6 +160,9 @@ jobs:
           src/components/signup/InfluencerSignupForm.jsx
           src/components/signup/OtherUserSignupForm.jsx
           src/components/signup/ProfilePhotoUpload.jsx
+          src/pages/Subscription.jsx
+          src/components/subscriptions/TierCard.jsx
+          src/lib/stripeService.js
           src/pages/ForgotPassword.jsx
           src/pages/ResetPassword.jsx
           src/pages/GlobalRelationshipRoom.jsx
