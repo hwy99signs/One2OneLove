@@ -1,0 +1,46 @@
+name: O2OL Dependency Audit
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/o2ol-dependency-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        shell: bash
+        run: |
+          echo '--- Production dependency audit ---'
+          npm audit --omit=dev || true
+
+      - name: Audit full dependency tree
+        shell: bash
+        run: |
+          echo '--- Full dependency audit ---'
+          npm audit || true
+
+      - name: Explain audit policy
+        run: echo 'Audit is informational until each remediation is reviewed for runtime and breaking-change risk. Do not use npm audit fix --force automatically.'
