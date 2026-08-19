@@ -21,6 +21,7 @@ const requiredSurfaces = [
   'src/pages/LoveNoteRevealFlow.jsx',
   'src/pages/SavedLoveNotes.jsx',
   'src/pages/DateIdeasRelaunchBrowse.jsx',
+  'src/lib/dateIdeasCatalog.js',
   'src/pages/LoveLanguageQuizRelaunch.jsx',
   'src/pages/ProfileRelaunchSafe.jsx',
   'src/pages/PrivacyCenter.jsx',
@@ -187,6 +188,16 @@ if (loveNotesCollectionRuntime.includes('title: note?.title || "Love Note"')) {
   failures.push('LoveNotesCollectionRelaunch.jsx: do not hard-code the English Love Note draft title.');
 }
 
+const dateIdeasBrowse = read('src/pages/DateIdeasRelaunchBrowse.jsx');
+assertActiveLanguageKeys(dateIdeasBrowse, 'DateIdeasRelaunchBrowse.jsx', ['durations']);
+const dateIdeasRuntime = dateIdeasBrowse.split('export default function DateIdeasRelaunchBrowse()')[1] || '';
+if (!dateIdeasRuntime.includes('t.durations[idea.duration] || idea.duration')) {
+  failures.push('DateIdeasRelaunchBrowse.jsx: duration metadata must be localized through the selected-language duration map.');
+}
+if (dateIdeasRuntime.includes('label={t.duration} value={idea.duration}')) {
+  failures.push('DateIdeasRelaunchBrowse.jsx: do not display raw English-style duration metadata directly.');
+}
+
 if (failures.length) {
   console.error('\n⛔ One2OneLove multilingual relaunch check failed:');
   failures.forEach((failure) => console.error(` - ${failure}`));
@@ -194,4 +205,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Multilingual relaunch coverage passed for the five active languages (EN/ES/FR/IT/DE) across the core account, Love Notes, member, Chat and relationship-tool journey.');
+console.log('✅ Multilingual relaunch coverage passed for the five active languages (EN/ES/FR/IT/DE) across the core account, Love Notes, Date Ideas, member, Chat and relationship-tool journey.');
