@@ -126,7 +126,7 @@ jobs:
             echo 'Celebration Ideas must not depend on incomplete per-language milestone dictionaries.'
             exit 1
           fi
-          if grep -Eq 'partner_email|formData\.tags|name=["'"']tags["'"']|FileUpload|uploadFile' src/components/memories/MemoryForm.jsx; then
+          if grep -Eq 'partner_email|formData\.tags|FileUpload|uploadFile' src/components/memories/MemoryForm.jsx || grep -F 'name="tags"' src/components/memories/MemoryForm.jsx || grep -F "name='tags'" src/components/memories/MemoryForm.jsx; then
             echo 'Memory Lane form must not submit unsupported tags/partner fields or expose an unimplemented upload control.'
             exit 1
           fi
