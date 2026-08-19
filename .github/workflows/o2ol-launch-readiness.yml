@@ -33,10 +33,12 @@ jobs:
           test -f src/pages/GlobalRelationshipRoom.jsx
           test -f src/pages/RoomCreatorAccess.jsx
           test -f src/pages/RoomModeration.jsx
+          test -f src/pages/RoomCancellationQueue.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
           grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
           grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
           grep -q 'path="/RoomModeration"' src/pages/index.jsx
+          grep -q 'path="/RoomCancellationQueue"' src/pages/index.jsx
 
       - name: Verify launch-critical source and five active languages
         run: node scripts/verify-o2ol-launch.mjs
@@ -51,6 +53,7 @@ jobs:
           src/pages/RoomProgramManager.jsx
           src/pages/RoomOfficialScheduler.jsx
           src/pages/RoomReportQueue.jsx
+          src/pages/RoomCancellationQueue.jsx
           src/pages/RoomModerationAudit.jsx
           src/pages/RoomOpsDashboard.jsx
           src/pages/NotFound.jsx
@@ -58,6 +61,7 @@ jobs:
           src/components/global-room/ProgramReportButton.jsx
           src/components/home/GlobalRoomPromo.jsx
           src/lib/globalRelationshipRoomService.js
+          src/lib/globalRoomCancellationService.js
           src/lib/globalRoomModerationService.js
           src/lib/globalRoomOfficialService.js
           src/lib/globalRoomReportingService.js
