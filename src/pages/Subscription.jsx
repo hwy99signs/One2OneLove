@@ -38,6 +38,9 @@ export default function Subscription() {
   const { currentLanguage } = useLanguage();
   const t = getMembershipCopy(currentLanguage).subscription;
   const locale = LOCALES[currentLanguage] || LOCALES.en;
+  const introPrice = formatMembershipPrice(MEMBERSHIP_PRICING.introMonthly, locale);
+  const standardPrice = formatMembershipPrice(MEMBERSHIP_PRICING.standardMonthly, locale);
+  const localizedThenPrice = t.thenPrice.replace('$5.99', standardPrice);
   const [membership, setMembership] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -145,11 +148,11 @@ export default function Subscription() {
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-100">{t.launchMembership}</p>
               </div>
               <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1">
-                <span className="text-5xl font-black">{formatMembershipPrice(MEMBERSHIP_PRICING.introMonthly)}</span>
+                <span className="text-5xl font-black">{introPrice}</span>
                 <span className="pb-1 text-lg">{t.monthly}</span>
               </div>
               <p className="mt-2 font-semibold">{t.firstMonths}</p>
-              <p className="mt-1 text-sm text-purple-100">{t.thenPrice}</p>
+              <p className="mt-1 text-sm text-purple-100">{localizedThenPrice}</p>
             </div>
 
             <div className="space-y-6 p-7">

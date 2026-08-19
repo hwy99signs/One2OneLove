@@ -95,8 +95,8 @@ export const getFeatureEntitlement = (featureName) => {
   return FEATURE_ENTITLEMENTS[featureName] || 'membership';
 };
 
-export const formatMembershipPrice = (amount) =>
-  new Intl.NumberFormat('en-US', {
+export const formatMembershipPrice = (amount, locale = 'en-US') =>
+  new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: MEMBERSHIP_PRICING.currency,
     minimumFractionDigits: 2,

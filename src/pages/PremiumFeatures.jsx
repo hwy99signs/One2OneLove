@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Clock3, Crown, Heart, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,24 @@ const COPY = {
   },
 };
 
+const LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE', nl: 'nl-NL' };
+
+const FEATURE_TERMS = {
+  en: [],
+  es: [['Love Notes', 'Notas de Amor'], ['Love Note', 'Nota de Amor'], ['Live Community', 'Comunidad en Vivo'], ['Memory Lane', 'Recuerdos Compartidos']],
+  fr: [['Love Notes', 'Mots d’Amour'], ['Love Note', 'Mot d’Amour'], ['Live Community', 'Communauté en Direct'], ['Memory Lane', 'Chemin des Souvenirs']],
+  it: [['Love Notes', 'Note d’Amore'], ['Love Note', 'Nota d’Amore'], ['Live Community', 'Community dal Vivo'], ['Memory Lane', 'Percorso dei Ricordi']],
+  de: [['Love Notes', 'Liebesnotizen'], ['Love Note', 'Liebesnotiz'], ['Live Community', 'Live-Community'], ['Memory Lane', 'Erinnerungsweg']],
+  nl: [['Love Notes', 'Liefdesbriefjes'], ['Love Note', 'Liefdesbriefje'], ['Live Community', 'Live Community'], ['Memory Lane', 'Herinneringenpad']],
+};
+
+const localizeFeatureTerms = (value, replacements) => {
+  if (typeof value === 'string') return replacements.reduce((text, [from, to]) => text.split(from).join(to), value);
+  if (Array.isArray(value)) return value.map((item) => localizeFeatureTerms(item, replacements));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeFeatureTerms(item, replacements)]));
+  return value;
+};
+
 function FeatureList({ items, tone = 'free', icon: Icon = CheckCircle2 }) {
   return (
     <div className="space-y-3">
@@ -77,7 +95,9 @@ function FeatureList({ items, tone = 'free', icon: Icon = CheckCircle2 }) {
 
 export default function PremiumFeatures() {
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const locale = LOCALES[language] || LOCALES.en;
+  const t = useMemo(() => localizeFeatureTerms(COPY[language], FEATURE_TERMS[language] || []), [language]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-pink-50 px-4 py-10 sm:py-14">
@@ -104,9 +124,9 @@ export default function PremiumFeatures() {
           <section className="overflow-hidden rounded-3xl border border-purple-200 bg-white shadow-xl">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-7 text-white sm:p-8">
               <div className="flex items-center gap-3"><Sparkles className="h-7 w-7" /><h2 className="text-2xl font-black">{t.membershipTitle}</h2></div>
-              <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1"><span className="text-5xl font-black">{formatMembershipPrice(MEMBERSHIP_PRICING.introMonthly)}</span><span className="pb-1 text-lg">{t.monthly}</span></div>
+              <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1"><span className="text-5xl font-black">{formatMembershipPrice(MEMBERSHIP_PRICING.introMonthly, locale)}</span><span className="pb-1 text-lg">{t.monthly}</span></div>
               <p className="mt-2 font-semibold">{t.intro}</p>
-              <p className="mt-1 text-sm text-purple-100">{t.then} {formatMembershipPrice(MEMBERSHIP_PRICING.standardMonthly)} {t.monthly}.</p>
+              <p className="mt-1 text-sm text-purple-100">{t.then} {formatMembershipPrice(MEMBERSHIP_PRICING.standardMonthly, locale)} {t.monthly}.</p>
             </div>
 
             <div className="p-7 sm:p-8">
