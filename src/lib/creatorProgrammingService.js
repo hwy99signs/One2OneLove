@@ -33,6 +33,22 @@ export const getCreatorProgrammingAccess = async () => {
   }
 };
 
+export const getGlobalProgrammingStatus = async () => {
+  if (!CREATOR_PROGRAMMING_ENABLED) {
+    return { enabled: false, current: null, next: null };
+  }
+
+  const { data, error } = await supabase.functions.invoke('current-creator-programming', { body: {} });
+  if (error) throw new Error(error?.message || 'Unable to load current programming.');
+  if (!data?.success) throw new Error('Unable to load current programming.');
+
+  return {
+    enabled: Boolean(data.enabled),
+    current: data.current || null,
+    next: data.next || null,
+  };
+};
+
 export const listPublishedProgramming = async ({ from, to, roomSlug = 'global-relationship-room' } = {}) => {
   requireEnabled();
   const { data, error } = await supabase.functions.invoke('list-creator-programming', {
