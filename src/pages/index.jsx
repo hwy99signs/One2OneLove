@@ -34,6 +34,7 @@ import AIContentCreator from "./AIContentCreator";
 import Dashboard from "./Dashboard";
 import Community from "./LiveCommunity";
 import LiveRoom from "./LiveRoom";
+import CreatorProgramming from "./CreatorProgramming";
 import RelationshipMilestones from "./RelationshipMilestones";
 import RelationshipCoach from "./RelationshipCoach";
 import RelationshipGoals from "./RelationshipGoalsRelaunch";
@@ -93,6 +94,7 @@ const PAGES = {
   Dashboard,
   Community,
   LiveRoom,
+  CreatorProgramming,
   RelationshipMilestones,
   RelationshipCoach,
   RelationshipGoals,
@@ -168,6 +170,7 @@ const ROUTES = [
   ["/Dashboard", Dashboard],
   ["/Community", Community],
   ["/LiveRoom", LiveRoom],
+  ["/CreatorProgramming", CreatorProgramming],
   ["/RelationshipMilestones", RelationshipMilestones, "relationship_milestones"],
   ["/RelationshipCoach", RelationshipCoach, "relationship_coach"],
   ["/RelationshipGoals", RelationshipGoals, "relationship_goals"],
