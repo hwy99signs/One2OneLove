@@ -2,7 +2,10 @@ import fs from 'node:fs';
 
 const file = 'src/contexts/AuthContext.jsx';
 const source = fs.readFileSync(file, 'utf8');
-const prefixes = ['console.log', 'console.warn', 'console.error', 'console.debug', 'console.info'];
+// Authentication/account state should never be emitted to the browser console.
+// Keep this list explicit so a newly introduced diagnostic method cannot be
+// mistaken for approved production logging.
+const prefixes = ['console.log', 'console.warn', 'console.error', 'console.debug', 'console.info', 'console.trace'];
 
 function findClosingParen(text, openIndex) {
   let depth = 0;
