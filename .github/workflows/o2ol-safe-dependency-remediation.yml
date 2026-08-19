@@ -1,0 +1,121 @@
+name: O2OL Safe Dependency Remediation
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-safe-dependency-remediation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Apply only non-forced audit fixes
+        shell: bash
+        run: |
+          set +e
+          npm audit fix
+          status=$?
+          set -e
+          echo "npm_audit_fix_exit=$status"
+          echo 'No --force option is permitted in this workflow.'
+
+      - name: Verify direct package major boundaries
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          const versions = {
+            postcss: lock.packages?.['node_modules/postcss']?.version,
+            router: lock.packages?.['node_modules/react-router-dom']?.version,
+            vite: lock.packages?.['node_modules/vite']?.version,
+          };
+          console.log(versions);
+          if (!versions.postcss?.startsWith('8.')) throw new Error('PostCSS crossed its declared major boundary');
+          if (!versions.router?.startsWith('7.')) throw new Error('React Router DOM crossed its declared major boundary');
+          if (!versions.vite?.startsWith('6.')) throw new Error('Vite crossed its declared major boundary');
+          NODE
+
+      - name: Verify production audit improves and direct findings are cleared
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > npm-audit-after-production.json
+          audit_status=$?
+          set -e
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit-after-production.json', 'utf8'));
+          const v = audit.metadata?.vulnerabilities || {};
+          const findings = audit.vulnerabilities || {};
+          console.log(`After non-forced remediation: total=${v.total || 0}, critical=${v.critical || 0}, high=${v.high || 0}, moderate=${v.moderate || 0}, low=${v.low || 0}`);
+          if ((v.critical || 0) > 0) throw new Error('Production critical vulnerability remains after safe remediation');
+          for (const name of ['postcss', 'react-router-dom']) {
+            if (findings[name]?.isDirect) throw new Error(`Direct production vulnerability remains in ${name}`);
+          }
+          if ((v.total || 0) >= 8) throw new Error('Safe remediation did not improve the production vulnerability count');
+          NODE
+          echo "post_fix_audit_exit=$audit_status"
+
+      - name: Verify full audit does not regress
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > npm-audit-after-full.json
+          audit_status=$?
+          set -e
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit-after-full.json', 'utf8'));
+          const v = audit.metadata?.vulnerabilities || {};
+          console.log(`Full tree after remediation: total=${v.total || 0}, critical=${v.critical || 0}, high=${v.high || 0}, moderate=${v.moderate || 0}, low=${v.low || 0}`);
+          if ((v.total || 0) >= 19) throw new Error('Safe remediation did not improve the full dependency vulnerability count');
+          NODE
+          echo "post_fix_full_audit_exit=$audit_status"
+
+      - name: Verify O2OL security source
+        run: node scripts/verify-o2ol-security.mjs
+
+      - name: Verify O2OL launch source
+        run: node scripts/verify-o2ol-launch.mjs
+
+      - name: Verify privacy feature invariants
+        run: |
+          node scripts/verify-o2ol-love-notes.mjs
+          node scripts/verify-o2ol-journal-sharing.mjs
+          node scripts/verify-o2ol-quiz-truth.mjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified dependency lock changes and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-safe-dependency-remediation.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add package.json package-lock.json .github/workflows/o2ol-safe-dependency-remediation.yml
+          git commit -m 'Apply safe non-forced dependency security updates'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
