@@ -1,0 +1,51 @@
+name: O2OL Asset Provenance Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reject retired Base44 storage dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE 'base44-prod|qtrypzzcjebvfcihiynt|base44' src --exclude-dir=node_modules; then
+            echo 'Production source must not depend on retired Base44 assets or runtime references.'
+            exit 1
+          fi
+
+      - name: Verify current O2OL logo asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png' src/components/home/HeroSection.jsx
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint hero
+        run: npx eslint src/components/home/HeroSection.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
