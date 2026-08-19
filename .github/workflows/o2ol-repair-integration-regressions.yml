@@ -1,0 +1,131 @@
+name: O2OL Repair Integration Regressions
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-repair-integration-regressions.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Repair chat privacy and realtime exports
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/lib/chatService.js')
+          text = path.read_text()
+
+          old = """    return messages.map((message) => {\n      const sender = profiles.get(message.sender_id) || { id: message.sender_id, name: 'One2OneLove Member' };"""
+          new = """    return Promise.all(messages.map(async (message) => {\n      const sender = profiles.get(message.sender_id) || { id: message.sender_id, name: 'One2OneLove Member' };"""
+          if old not in text:
+            raise SystemExit('Could not find message mapping block')
+          text = text.replace(old, new, 1)
+
+          old = """      const status = message.read_at || message.is_read ? 'read' : message.delivered_at ? 'delivered' : 'sent';\n\n      const transformed = {"""
+          new = """      const status = message.read_at || message.is_read ? 'read' : message.delivered_at ? 'delivered' : 'sent';\n      let attachmentUrl = message.file_url || null;\n      if (attachmentUrl && !/^https?:\\/\\//i.test(attachmentUrl)) {\n        const { data: signedData, error: signedError } = await supabase.storage\n          .from('chat-files')\n          .createSignedUrl(attachmentUrl, 3600);\n        attachmentUrl = signedError ? null : signedData?.signedUrl || null;\n      }\n\n      const transformed = {"""
+          if old not in text:
+            raise SystemExit('Could not find message transform preamble')
+          text = text.replace(old, new, 1)
+
+          text = text.replace('        fileUrl: message.file_url,', '        fileUrl: attachmentUrl,', 1)
+          text = text.replace('        transformed.imageUrl = message.file_url;', '        transformed.imageUrl = attachmentUrl;', 1)
+          text = text.replace('        transformed.audioUrl = message.file_url;', '        transformed.audioUrl = attachmentUrl;', 1)
+
+          old = """      return transformed;\n    });\n  } catch (error) {\n    throw new Error(handleSupabaseError(error));\n  }\n};\n\nexport const sendMessage"""
+          new = """      return transformed;\n    }));\n  } catch (error) {\n    throw new Error(handleSupabaseError(error));\n  }\n};\n\nexport const sendMessage"""
+          if old not in text:
+            raise SystemExit('Could not find message mapping close')
+          text = text.replace(old, new, 1)
+
+          old = """    const { data: publicUrlData } = supabase.storage.from('chat-files').getPublicUrl(filePath);\n    const { data, error } = await supabase\n      .from('messages')\n      .insert({\n        conversation_id: conversationId,\n        sender_id: user.id,\n        receiver_id: receiverId,\n        content: String(file.name || '').slice(0, 255),\n        message_type: messageType,\n        file_url: publicUrlData.publicUrl,"""
+          new = """    const { data, error } = await supabase\n      .from('messages')\n      .insert({\n        conversation_id: conversationId,\n        sender_id: user.id,\n        receiver_id: receiverId,\n        content: String(file.name || '').slice(0, 255),\n        message_type: messageType,\n        file_url: filePath,"""
+          if old not in text:
+            raise SystemExit('Could not find public attachment URL block')
+          text = text.replace(old, new, 1)
+
+          old = """    if (error) throw error;\n    return data;\n  } catch (error) {\n    throw new Error(handleSupabaseError(error));\n  }\n};\n\nexport const sendLocationMessage"""
+          new = """    if (error) throw error;\n\n    const { data: signedData } = await supabase.storage\n      .from('chat-files')\n      .createSignedUrl(filePath, 3600);\n\n    return { ...data, file_url: signedData?.signedUrl || null };\n  } catch (error) {\n    throw new Error(handleSupabaseError(error));\n  }\n};\n\nexport const sendLocationMessage"""
+          if old not in text:
+            raise SystemExit('Could not find send-file return block')
+          text = text.replace(old, new, 1)
+
+          if 'export const subscribeToMessages' not in text:
+            text += """\n\nexport const deleteConversation = async (conversationId) => {\n  await updateConversationSettings(conversationId, { isArchived: true });\n};\n\nexport const subscribeToMessages = (conversationId, callback) => {\n  if (!conversationId || typeof callback !== 'function') return null;\n  return supabase\n    .channel(`messages-${conversationId}-${crypto.randomUUID()}`)\n    .on(\n      'postgres_changes',\n      { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },\n      (payload) => callback(payload.new || payload.old || payload),\n    )\n    .subscribe();\n};\n\nexport const unsubscribeFromMessages = (channel) => {\n  if (channel) supabase.removeChannel(channel);\n};\n\nexport const subscribeToConversations = (callback) => {\n  if (typeof callback !== 'function') return null;\n  return supabase\n    .channel(`conversations-${crypto.randomUUID()}`)\n    .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, callback)\n    .subscribe();\n};\n"""
+
+          if '.getPublicUrl(' in text:
+            raise SystemExit('Public chat attachment URL creation still present')
+
+          path.write_text(text)
+
+      - name: Verify professional application persistence
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/ProfessionalSignup.jsx')
+          text = path.read_text()
+
+          import_line = "import { supabase } from '@/lib/supabase';"
+          addition = "import { getProfessionalProfile } from '@/lib/professionalService';"
+          if addition not in text:
+            if import_line not in text:
+              raise SystemExit('Could not find ProfessionalSignup Supabase import')
+            text = text.replace(import_line, import_line + '\n' + addition, 1)
+
+          old = """      if (!result?.success) {\n        setFormError(t.errors.submit);\n        return;\n      }\n      setSignupComplete(true);"""
+          new = """      if (!result?.success || !result?.user?.id) {\n        setFormError(t.errors.submit);\n        return;\n      }\n\n      const persisted = await getProfessionalProfile(result.user.id);\n      if (!persisted?.success || !persisted.profile || persisted.profile.status !== 'pending') {\n        setFormError(t.errors.submit);\n        return;\n      }\n\n      setSignupComplete(true);"""
+          if old not in text:
+            raise SystemExit('Could not find ProfessionalSignup success block')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+      - name: Verify repaired invariants
+        run: |
+          node scripts/verify-o2ol-social-privacy.mjs
+          node scripts/verify-o2ol-chat-security.mjs
+          node scripts/verify-o2ol-partner-integrity.mjs
+          node scripts/verify-o2ol-launch.mjs
+          node scripts/verify-o2ol-security.mjs
+
+      - name: Lint repaired surfaces
+        run: npx eslint src/lib/chatService.js src/pages/ProfessionalSignup.jsx --rule 'react/prop-types: off'
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Commit repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/lib/chatService.js src/pages/ProfessionalSignup.jsx; then
+            echo 'No repair changes were required.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/lib/chatService.js src/pages/ProfessionalSignup.jsx
+          git commit -m 'Repair O2OL chat privacy and partner integrity regressions'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
