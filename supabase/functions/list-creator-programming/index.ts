@@ -79,13 +79,16 @@ serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
+    // Return every booking that overlaps the requested calendar window, not only
+    // bookings whose start time falls inside it. This keeps cross-midnight and
+    // multi-hour programs from creating false "Open" time on the 24-hour calendar.
     const { data, error } = await serviceClient
       .from('creator_programming_slots')
       .select('id,room_slug,title,description,starts_at,ends_at,content_mode,status')
       .eq('room_slug', roomSlug)
       .eq('status', 'booked')
-      .gte('starts_at', requestedFrom.toISOString())
       .lt('starts_at', to.toISOString())
+      .gt('ends_at', requestedFrom.toISOString())
       .order('starts_at', { ascending: true })
 
     if (error) throw error
