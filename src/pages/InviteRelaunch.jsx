@@ -16,6 +16,18 @@ const COPY = {
   nl: { title: 'Nodig Iemand uit voor One2OneLove', subtitle: 'Deel One2OneLove via je telefoon, e-mail of sociale app.', note: 'One2OneLove beweert niet dat vanuit deze pagina een uitnodiging is bezorgd. De e-mail- en sms-knoppen openen de composer van je apparaat, zodat jij de afzender blijft.', link: 'Aanmeldlink', copy: 'Link Kopiëren', copied: 'Aanmeldlink gekopieerd.', share: 'Delen', email: 'E-mail Openen', text: 'Sms Openen', whatsapp: 'WhatsApp Openen', message: 'Ik dacht dat je One2OneLove misschien leuk zou vinden — een plek voor Love Notes, relatiegesprekken, date-ideeën en tools om samen te groeien.', from: 'Uitnodiging van', fallback: 'Delen is niet beschikbaar op dit apparaat, dus de link is gekopieerd.', noRewards: 'Deze uitnodigingspagina belooft geen referralwedstrijd of beloning.' },
 };
 
+const INVITE_I18N_EXTRAS = {
+  en: { copyError: 'Unable to copy the link on this device.', shareError: 'Sharing is unavailable on this device.', featureTerms: [] },
+  es: { copyError: 'No se pudo copiar el enlace en este dispositivo.', shareError: 'Compartir no está disponible en este dispositivo.', featureTerms: [] },
+  fr: { copyError: 'Impossible de copier le lien sur cet appareil.', shareError: 'Le partage n’est pas disponible sur cet appareil.', featureTerms: [] },
+  it: { copyError: 'Impossibile copiare il link su questo dispositivo.', shareError: 'La condivisione non è disponibile su questo dispositivo.', featureTerms: [] },
+  de: { copyError: 'Der Link konnte auf diesem Gerät nicht kopiert werden.', shareError: 'Teilen ist auf diesem Gerät nicht verfügbar.', featureTerms: [['Love Notes', 'Liebesnotizen']] },
+  nl: { copyError: 'De link kon niet op dit apparaat worden gekopieerd.', shareError: 'Delen is niet beschikbaar op dit apparaat.', featureTerms: [['Love Notes', 'Liefdesbriefjes']] },
+};
+
+const localizeFeatureTerms = (value, replacements) =>
+  replacements.reduce((text, [from, to]) => text.split(from).join(to), value);
+
 const safeWriteClipboard = async (text) => {
   if (!navigator?.clipboard?.writeText) throw new Error('Clipboard unavailable');
   await navigator.clipboard.writeText(text);
@@ -23,7 +35,10 @@ const safeWriteClipboard = async (text) => {
 
 export default function InviteRelaunch() {
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const baseCopy = COPY[language];
+  const extras = INVITE_I18N_EXTRAS[language] || INVITE_I18N_EXTRAS.en;
+  const t = { ...baseCopy, ...extras, message: localizeFeatureTerms(baseCopy.message, extras.featureTerms || []) };
   const { user } = useAuth();
 
   const signupLink = useMemo(() => {
@@ -39,7 +54,7 @@ export default function InviteRelaunch() {
       await safeWriteClipboard(signupLink);
       toast.success(t.copied);
     } catch {
-      toast.error('Unable to copy the link on this device.');
+      toast.error(t.copyError);
     }
   };
 
@@ -56,7 +71,7 @@ export default function InviteRelaunch() {
       await safeWriteClipboard(invitationText);
       toast.success(t.fallback);
     } catch {
-      toast.error('Sharing is unavailable on this device.');
+      toast.error(t.shareError);
     }
   };
 
