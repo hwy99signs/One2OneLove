@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ProgrammingNotificationCenter from '@/components/programming/ProgrammingNotificationCenter';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMyConversations } from '@/lib/chatService';
 import { supabase } from '@/lib/supabase';
@@ -161,6 +162,8 @@ function LayoutContent({ children }) {
             </nav>
 
             <div className="flex items-center gap-1.5">
+              {isAuthenticated ? <ProgrammingNotificationCenter languageCode={currentLanguage} /> : null}
+
               {isAuthenticated && (
                 <Link to="/Chat" className="relative hidden rounded-lg p-2 text-white/85 transition hover:bg-white/10 hover:text-white md:block" aria-label={t.chat} title={t.chat}>
                   <MessageCircle className="h-5 w-5" />
