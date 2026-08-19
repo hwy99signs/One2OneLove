@@ -1,0 +1,75 @@
+name: O2OL Fix Milestone Celebration Fallback
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-fix-milestone-celebration-fallback.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Add multilingual safe fallback
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('src/components/milestones/CelebrationIdeas.jsx')
+          s = p.read_text()
+          import_line = 'import { getMilestoneCelebrationFallback } from "@/lib/milestoneCelebrationFallbacks";\n'
+          anchor = 'import { toast } from "sonner";\n'
+          if import_line not in s:
+              if anchor not in s:
+                  raise SystemExit('Expected toast import anchor not found')
+              s = s.replace(anchor, anchor + import_line, 1)
+          old = '  const ideas = t.milestones[milestone.milestone_type] || t.milestones.custom;'
+          new = '  const ideas = t.milestones[milestone.milestone_type] || t.milestones.custom || getMilestoneCelebrationFallback(currentLanguage);'
+          if old not in s and new not in s:
+              raise SystemExit('Expected milestone ideas expression not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+      - name: Verify fallback and source
+        run: |
+          grep -q 'getMilestoneCelebrationFallback' src/components/milestones/CelebrationIdeas.jsx
+          grep -q 'fr:' src/lib/milestoneCelebrationFallbacks.js
+          grep -q 'it:' src/lib/milestoneCelebrationFallbacks.js
+          grep -q 'de:' src/lib/milestoneCelebrationFallbacks.js
+
+      - name: Lint milestone surfaces
+        run: npx eslint src/components/milestones/CelebrationIdeas.jsx src/components/milestones/MilestoneCard.jsx src/lib/milestoneCelebrationFallbacks.js --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified repair and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-fix-milestone-celebration-fallback.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/components/milestones/CelebrationIdeas.jsx .github/workflows/o2ol-fix-milestone-celebration-fallback.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Prevent milestone celebration localization crashes'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
