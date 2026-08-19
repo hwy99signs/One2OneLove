@@ -2,36 +2,26 @@
 
 Updated: 2026-08-19
 
-## Completed safe remediation
+## Current locked-tree status
 
-Commit `a8cd4e6b59a648b33993e70c92ef786eee7e3230` was generated only after the one-time dependency remediation guard completed successfully.
+The O2OL dependency remediation sequence is now clean at the configured audit threshold.
 
-The remediation used `npm audit fix` **without `--force`** and enforced these constraints before committing:
+- **Production dependencies:** 0 vulnerabilities at `npm audit --omit=dev --audit-level=low`.
+- **Full dependency tree:** 0 vulnerabilities at `npm audit --audit-level=low` after removal of the unused `@flydotio/dockerfile` development helper.
+- The final two low-severity findings were transitive through `@flydotio/dockerfile -> diff`; repository search found no O2OL application use of the Fly helper, so removal was safer than forcing or downgrading unrelated runtime packages.
+- The removal guard required an updated lockfile to pass `npm ci`, production audit, full-tree audit, and `npm run build` before it could commit.
 
-- PostCSS remained on major version 8.
-- React Router DOM remained on major version 7.
-- Vite remained on major version 6.
-- No production critical vulnerability could remain.
-- Direct production findings for `postcss` and `react-router-dom` had to be cleared.
-- The production vulnerability total had to improve from the previous count of 8.
-- The full dependency-tree vulnerability total had to improve from the previous count of 19.
-- O2OL security verification had to pass.
-- O2OL launch verification had to pass.
-- Love Notes, Shared Journals, and Quiz privacy verifiers had to pass.
-- The production application build had to pass.
+## Safe remediation completed
 
-The one-time remediation workflow deleted itself after the guarded commit. Permanent dependency auditing remains read-only and PR-visible.
+Earlier remediation used `npm audit fix` **without `--force`** and preserved the application’s existing major-version boundaries. It cleared the prior production findings while keeping PostCSS on major 8, React Router DOM on major 7, and Vite on major 6.
 
-## Validation sequence
+The later cleanup removed the unused Fly Dockerfile dev helper rather than accepting npm’s suggested downgrade path. This eliminated the remaining dev-only `diff` advisory from the locked tree.
 
-The automation-authored remediation commit caused GitHub to mark its PR-triggered workflow records as `action_required` without creating jobs. This document commit intentionally advances the branch normally so the full permanent O2OL CI suite runs again against the exact remediated lockfile.
-
-Do not treat the dependency remediation as the new fully validated launch checkpoint until those permanent suites complete successfully.
-
-## Continuing policy
+## Permanent policy
 
 - Never use `npm audit fix --force` automatically.
-- Prefer same-major and semver-compatible security fixes first.
-- Keep production and full-tree audits separate.
-- Trace transitive findings to their parent packages before considering overrides or breaking upgrades.
-- Require production build and O2OL privacy/security gates after dependency changes.
+- Keep production and full-tree audits separate and PR-visible.
+- Trace transitive findings to their direct parent package before changing versions.
+- Prefer removal of unused dependencies over adding overrides or breaking upgrades.
+- Require `npm ci`, production build, and O2OL privacy/security gates after dependency changes.
+- Re-open remediation only when a future dependency audit reports a new finding.
