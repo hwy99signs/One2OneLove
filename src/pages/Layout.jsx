@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { ChevronDown, Heart, Home, LogIn, LogOut, Menu, MessageCircle, Sparkles, User, UserPlus, Users, X } from "lucide-react";
+import { ChevronDown, Home, LogIn, LogOut, Menu, MessageCircle, Sparkles, User, UserPlus, Users, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,26 +8,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getMyConversations } from "@/lib/chatService";
 import { createPageUrl } from "@/utils";
 
+const LOGO_URL = "https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png";
+
 const translations = {
   en: {
     nav: { home: "Home", globalRoom: "Global Relationship Room", community: "Community", action: "Relationship Tools", profile: "Profile", chat: "Chat", signIn: "Sign In", signUp: "Sign Up", signOut: "Sign Out", menu: "Open navigation menu", closeMenu: "Close navigation menu", language: "Language" },
-    tools: { library: "Relationship Library", dashboard: "Couples Dashboard", loveNotes: "Love Notes", coach: "AI Relationship Coach", support: "Relationship Support", quizzes: "Relationship Quizzes", milestones: "Milestones & Anniversaries", goals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane" },
+    tools: { library: "Relationship Library", dashboard: "Couples Dashboard", loveNotes: "Love Notes", support: "Relationship Support", quizzes: "Relationship Quizzes", milestones: "Milestones & Anniversaries", goals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane" },
   },
   es: {
     nav: { home: "Inicio", globalRoom: "Sala Global de Relaciones", community: "Comunidad", action: "Herramientas de Relación", profile: "Perfil", chat: "Chat", signIn: "Iniciar Sesión", signUp: "Registrarse", signOut: "Cerrar Sesión", menu: "Abrir menú de navegación", closeMenu: "Cerrar menú de navegación", language: "Idioma" },
-    tools: { library: "Biblioteca de Relaciones", dashboard: "Panel de Pareja", loveNotes: "Notas de Amor", coach: "Coach de Relaciones con IA", support: "Apoyo para Relaciones", quizzes: "Cuestionarios de Relaciones", milestones: "Hitos y Aniversarios", goals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Camino de Recuerdos" },
+    tools: { library: "Biblioteca de Relaciones", dashboard: "Panel de Pareja", loveNotes: "Notas de Amor", support: "Apoyo para Relaciones", quizzes: "Cuestionarios de Relaciones", milestones: "Hitos y Aniversarios", goals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Camino de Recuerdos" },
   },
   fr: {
     nav: { home: "Accueil", globalRoom: "Salle Mondiale des Relations", community: "Communauté", action: "Outils Relationnels", profile: "Profil", chat: "Chat", signIn: "Se Connecter", signUp: "S’inscrire", signOut: "Se Déconnecter", menu: "Ouvrir le menu de navigation", closeMenu: "Fermer le menu de navigation", language: "Langue" },
-    tools: { library: "Bibliothèque Relationnelle", dashboard: "Tableau de Bord du Couple", loveNotes: "Notes d’Amour", coach: "Coach Relationnel IA", support: "Soutien aux Relations", quizzes: "Quiz sur les Relations", milestones: "Jalons et Anniversaires", goals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs" },
+    tools: { library: "Bibliothèque Relationnelle", dashboard: "Tableau de Bord du Couple", loveNotes: "Notes d’Amour", support: "Soutien aux Relations", quizzes: "Quiz sur les Relations", milestones: "Jalons et Anniversaires", goals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs" },
   },
   it: {
     nav: { home: "Home", globalRoom: "Sala Globale delle Relazioni", community: "Community", action: "Strumenti di Relazione", profile: "Profilo", chat: "Chat", signIn: "Accedi", signUp: "Iscriviti", signOut: "Esci", menu: "Apri menu di navigazione", closeMenu: "Chiudi menu di navigazione", language: "Lingua" },
-    tools: { library: "Biblioteca delle Relazioni", dashboard: "Dashboard di Coppia", loveNotes: "Note d’Amore", coach: "Coach Relazionale IA", support: "Supporto per Relazioni", quizzes: "Quiz sulle Relazioni", milestones: "Traguardi e Anniversari", goals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi" },
+    tools: { library: "Biblioteca delle Relazioni", dashboard: "Dashboard di Coppia", loveNotes: "Note d’Amore", support: "Supporto per Relazioni", quizzes: "Quiz sulle Relazioni", milestones: "Traguardi e Anniversari", goals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi" },
   },
   de: {
     nav: { home: "Startseite", globalRoom: "Globaler Beziehungsraum", community: "Community", action: "Beziehungswerkzeuge", profile: "Profil", chat: "Chat", signIn: "Anmelden", signUp: "Registrieren", signOut: "Abmelden", menu: "Navigationsmenü öffnen", closeMenu: "Navigationsmenü schließen", language: "Sprache" },
-    tools: { library: "Beziehungsbibliothek", dashboard: "Paar-Dashboard", loveNotes: "Liebesbotschaften", coach: "KI-Beziehungscoach", support: "Beziehungsunterstützung", quizzes: "Beziehungsquiz", milestones: "Meilensteine & Jahrestage", goals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse" },
+    tools: { library: "Beziehungsbibliothek", dashboard: "Paar-Dashboard", loveNotes: "Liebesbotschaften", support: "Beziehungsunterstützung", quizzes: "Beziehungsquiz", milestones: "Meilensteine & Jahrestage", goals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse" },
   },
 };
 
@@ -67,7 +69,6 @@ const toolLinks = [
   ["library", "RelationshipLibrary"],
   ["dashboard", "CouplesDashboard"],
   ["loveNotes", "LoveNotes"],
-  ["coach", "RelationshipCoach"],
   ["support", "CoupleSupport"],
   ["quizzes", "RelationshipQuizzes"],
   ["milestones", "RelationshipMilestones"],
@@ -139,10 +140,9 @@ function LanguageContent({ children }) {
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-purple-800 via-purple-700 to-pink-700 shadow-lg">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
-          <Link to={createPageUrl("Home")} className="flex min-w-0 items-center gap-2 text-white">
-            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/15"><Heart className="h-6 w-6 fill-white" aria-hidden="true" /></span>
-            <span className="truncate text-lg font-bold">One2One Love</span>
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2">
+          <Link to={createPageUrl("Home")} className="flex min-w-0 items-center text-white" aria-label="One2OneLove home">
+            <img src={LOGO_URL} alt="One2OneLove" className="h-12 w-auto rounded-md bg-white/95 p-0.5 sm:h-14" />
           </Link>
 
           <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
@@ -183,34 +183,26 @@ function LanguageContent({ children }) {
         {mobileOpen && (
           <nav className="border-t border-white/10 px-4 pb-4 lg:hidden" aria-label="Mobile navigation">
             <div className="mx-auto max-w-7xl space-y-1 pt-3">
-              <NavigationLink to={createPageUrl("Home")} icon={Home} onClick={() => setMobileOpen(false)} active={isActive("Home")}>{t.nav.home}</NavigationLink>
+              <div className="block"><NavigationLink to={createPageUrl("Home")} icon={Home} onClick={() => setMobileOpen(false)} active={isActive("Home")}>{t.nav.home}</NavigationLink></div>
               <div className="block"><NavigationLink to={createPageUrl("GlobalRelationshipRoom")} icon={MessageCircle} onClick={() => setMobileOpen(false)} active={isActive("GlobalRelationshipRoom")}>{t.nav.globalRoom}</NavigationLink></div>
               <div className="block"><NavigationLink to={createPageUrl("Community")} icon={Users} onClick={() => setMobileOpen(false)} active={isActive("Community")}>{t.nav.community}</NavigationLink></div>
 
               <button type="button" onClick={() => setMobileToolsOpen((open) => !open)} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-white/10" aria-expanded={mobileToolsOpen}>
-                <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4" />{t.nav.action}</span><ChevronDown className={`h-4 w-4 transition ${mobileToolsOpen ? "rotate-180" : ""}`} />
+                <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4" aria-hidden="true" />{t.nav.action}</span><ChevronDown className={`h-4 w-4 transition ${mobileToolsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
               {mobileToolsOpen && <ToolMenu mobile />}
 
-              {isAuthenticated && <div className="block"><NavigationLink to={createPageUrl("Chat")} icon={MessageCircle} onClick={() => setMobileOpen(false)} active={isActive("Chat")}>{t.nav.chat}{unreadCount > 0 && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs">{unreadCount > 99 ? "99+" : unreadCount}</span>}</NavigationLink></div>}
+              {isAuthenticated && <div className="block"><NavigationLink to={createPageUrl("Chat")} icon={MessageCircle} onClick={() => setMobileOpen(false)} active={isActive("Chat")}>{t.nav.chat}{unreadCount > 0 && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>}</NavigationLink></div>}
               {isAuthenticated && <div className="block"><NavigationLink to={createPageUrl("Profile")} icon={User} onClick={() => setMobileOpen(false)} active={isActive("Profile")}>{t.nav.profile}</NavigationLink></div>}
 
-              <div className="pt-2">
-                <Select value={currentLanguage} onValueChange={changeLanguage}>
-                  <SelectTrigger className="w-full border-white/30 bg-white/10 text-white" aria-label={t.nav.language}><SelectValue /></SelectTrigger>
-                  <SelectContent>{activeLanguages.map(([code, name]) => <SelectItem key={code} value={code}>{name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
+              <div className="px-3 py-2"><Select value={currentLanguage} onValueChange={changeLanguage}><SelectTrigger className="w-full border-white/30 bg-white/10 text-white" aria-label={t.nav.language}><SelectValue /></SelectTrigger><SelectContent>{activeLanguages.map(([code, name]) => <SelectItem key={code} value={code}>{name}</SelectItem>)}</SelectContent></Select></div>
 
-              <div className="flex gap-2 pt-2">
-                {isAuthenticated ? <Button type="button" variant="secondary" className="w-full" onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" />{t.nav.signOut}</Button> : <><Button type="button" variant="ghost" className="flex-1 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(createPageUrl("SignIn"))}>{t.nav.signIn}</Button><Button type="button" variant="secondary" className="flex-1" onClick={() => navigate(createPageUrl("SignUp"))}>{t.nav.signUp}</Button></>}
-              </div>
+              {isAuthenticated ? <Button type="button" variant="ghost" className="w-full justify-start text-white hover:bg-white/10 hover:text-white" onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" />{t.nav.signOut}</Button> : <div className="grid gap-2 pt-2 sm:grid-cols-2"><Button type="button" variant="ghost" className="justify-start text-white hover:bg-white/10 hover:text-white" onClick={() => { setMobileOpen(false); navigate(createPageUrl("SignIn")); }}><LogIn className="mr-2 h-4 w-4" />{t.nav.signIn}</Button><Button type="button" variant="secondary" onClick={() => { setMobileOpen(false); navigate(createPageUrl("SignUp")); }}><UserPlus className="mr-2 h-4 w-4" />{t.nav.signUp}</Button></div>}
             </div>
           </nav>
         )}
       </header>
-
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
     </div>
   );
 }
