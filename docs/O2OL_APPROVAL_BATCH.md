@@ -6,7 +6,23 @@ This file collects owner decisions that should not interrupt active build work. 
 
 ## Pending owner approvals
 
-_No approval is currently required to continue active O2OL development._
+Active development may continue without interruption. The following items must be resolved before public launch or before activating the affected feature.
+
+### Launch legal review — required before public launch
+
+The old generic 2025 Privacy Policy and Terms of Service templates were removed because they contained broad legal, cookie, liability, and rights language that was not tied to the current O2OL architecture.
+
+The website now contains five-language **operational launch drafts** that accurately describe current product behavior while clearly stating that final legal review is required.
+
+Before public launch, owner action is required to:
+
+- obtain or approve final legal review of the Privacy Policy;
+- obtain or approve final legal review of the Terms of Service;
+- decide the final legal/business identity and contact information that must appear in those documents;
+- confirm age/eligibility language, governing-law/venue language, content-license terms, retention/deletion language, cookie/tracking disclosures, and jurisdiction-specific privacy rights as applicable;
+- replace the operational drafts with final reviewed legal text before removing the visible legal-review notice.
+
+Do not invent or silently activate jurisdiction-specific legal promises in code.
 
 ### Global Relationship Room operational activation — batch for later owner review
 
@@ -24,7 +40,7 @@ The remaining platform-level items require owner-controlled timing or account-co
 - **Supabase leaked-password protection:** decide when to enable compromised-password checking after confirming the desired sign-up/sign-in experience. This is a platform Auth setting rather than a normal application-code change.
 - **Supabase/Postgres patch upgrade:** schedule the available database security-patch upgrade during an intentional maintenance window after compatibility review. Do not perform infrastructure upgrades blindly during active development.
 
-These items are not blockers for continued feature development.
+These platform items are not blockers for continued feature development.
 
 ## Build assumptions currently authorized
 
