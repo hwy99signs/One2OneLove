@@ -59,6 +59,11 @@ import RoomCreatorAccess from "./RoomCreatorAccess";
 import RoomModeration from "./RoomModeration";
 import RoomReplayManager from "./RoomReplayManager";
 import RoomProgramManager from "./RoomProgramManager";
+import RoomOfficialScheduler from "./RoomOfficialScheduler";
+import RoomReportQueue from "./RoomReportQueue";
+import RoomModerationAudit from "./RoomModerationAudit";
+import RoomOpsDashboard from "./RoomOpsDashboard";
+import NotFound from "./NotFound";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -122,6 +127,11 @@ const PAGES = {
   RoomModeration,
   RoomReplayManager,
   RoomProgramManager,
+  RoomOfficialScheduler,
+  RoomReportQueue,
+  RoomModerationAudit,
+  RoomOpsDashboard,
+  NotFound,
 };
 
 function _getCurrentPage(url) {
@@ -129,7 +139,7 @@ function _getCurrentPage(url) {
   let urlLastPart = url.split('/').pop();
   if (urlLastPart.includes('?')) urlLastPart = urlLastPart.split('?')[0];
   const pageName = Object.keys(PAGES).find((page) => page.toLowerCase() === urlLastPart.toLowerCase());
-  return pageName || Object.keys(PAGES)[0];
+  return pageName || 'NotFound';
 }
 
 function PagesContent() {
@@ -202,6 +212,11 @@ function PagesContent() {
         <Route path="/RoomModeration" element={<RoomModeration />} />
         <Route path="/RoomReplayManager" element={<RoomReplayManager />} />
         <Route path="/RoomProgramManager" element={<RoomProgramManager />} />
+        <Route path="/RoomOfficialScheduler" element={<RoomOfficialScheduler />} />
+        <Route path="/RoomReportQueue" element={<RoomReportQueue />} />
+        <Route path="/RoomModerationAudit" element={<RoomModerationAudit />} />
+        <Route path="/RoomOpsDashboard" element={<RoomOpsDashboard />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
   );
