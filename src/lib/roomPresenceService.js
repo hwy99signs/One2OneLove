@@ -3,6 +3,8 @@ import { supabase } from "./supabase";
 const roomChannelName = (roomSlug) => `o2ol-live-room:${roomSlug}`;
 const countPresenceMembers = (state) => Object.keys(state || {}).length;
 
+const opaqueLocalKey = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 const privatePresenceKey = async (userId) => {
   try {
     if (globalThis.crypto?.subtle) {
@@ -20,12 +22,12 @@ const privatePresenceKey = async (userId) => {
   try {
     let value = localStorage.getItem(storageKey);
     if (!value) {
-      value = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      value = opaqueLocalKey();
       localStorage.setItem(storageKey, value);
     }
     return value;
   } catch {
-    return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return opaqueLocalKey();
   }
 };
 
@@ -93,4 +95,57 @@ export function joinRoomPresence(roomSlug, user, onCountChange) {
       supabase.removeChannel(channel);
     }
   };
+}
+
+// Legacy LiveRoom compatibility. The public key remains opaque; authenticated
+// membership is verified before tracking so community counts do not inflate with
+// anonymous page views.
+export function buildPublicPresenceKey() {
+  return opaqueLocalKey();
+}
+
+export function enterPublicRoom(roomSlug, presenceKey, onCountChange) {
+  let channel = null;
+  let cancelled = false;
+
+  void (async () => {
+    const { data } = await supabase.auth.getUser();
+    if (cancelled || !data?.user?.id) {
+      onCountChange?.(0);
+      return;
+    }
+
+    const key = await privatePresenceKey(data.user.id).catch(() => presenceKey || opaqueLocalKey());
+    if (cancelled) return;
+
+    channel = supabase.channel(roomChannelName(roomSlug), {
+      config: { presence: { key } },
+    });
+
+    const emitCount = () => onCountChange?.(countPresenceMembers(channel?.presenceState?.() || {}));
+    channel
+      .on("presence", { event: "sync" }, emitCount)
+      .on("presence", { event: "join" }, emitCount)
+      .on("presence", { event: "leave" }, emitCount)
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED" && !cancelled) {
+          await channel.track({ joined_at: new Date().toISOString() });
+        }
+      });
+  })();
+
+  return () => {
+    cancelled = true;
+    if (!channel) return;
+    try {
+      channel.untrack();
+    } finally {
+      supabase.removeChannel(channel);
+    }
+  };
+}
+
+export function leavePublicRoom() {
+  // enterPublicRoom returns the authoritative cleanup function. This no-op is kept
+  // only for older callers that invoke both cleanup paths during unmount.
 }
