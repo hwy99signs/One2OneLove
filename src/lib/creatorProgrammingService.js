@@ -85,6 +85,7 @@ export const bookCreatorProgrammingSlot = async ({
   contentMode = 'live',
   replayUrl = '',
   roomSlug = 'global-relationship-room',
+  policyAcknowledged = false,
 } = {}) => {
   requireEnabled();
   await getAuthenticatedCreator();
@@ -100,6 +101,7 @@ export const bookCreatorProgrammingSlot = async ({
       replay_url: contentMode === 'replay' ? String(replayUrl || '').trim().slice(0, 1000) : '',
       room_slug: roomSlug,
       booking_tier: 'free',
+      policy_acknowledged: policyAcknowledged === true,
     },
   });
 
@@ -108,6 +110,7 @@ export const bookCreatorProgrammingSlot = async ({
     const code = data?.error || 'BOOKING_FAILED';
     const messages = {
       CREATOR_NOT_APPROVED: 'Creator programming is available only to approved creator accounts.',
+      POLICY_ACK_REQUIRED: 'Confirm the creator programming rules before booking.',
       DAILY_FREE_LIMIT_REACHED: 'You have already booked the two free creator slots allowed for this day.',
       SLOT_CONFLICT: 'That programming time is no longer available.',
       INVALID_TIME: 'Choose a valid future programming time.',
