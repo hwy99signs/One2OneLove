@@ -63,6 +63,7 @@ import RoomOfficialScheduler from "./RoomOfficialScheduler";
 import RoomReportQueue from "./RoomReportQueue";
 import RoomModerationAudit from "./RoomModerationAudit";
 import RoomOpsDashboard from "./RoomOpsDashboard";
+import RoomCancellationQueue from "./RoomCancellationQueue";
 import NotFound from "./NotFound";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
@@ -131,6 +132,7 @@ const PAGES = {
   RoomReportQueue,
   RoomModerationAudit,
   RoomOpsDashboard,
+  RoomCancellationQueue,
   NotFound,
 };
 
@@ -216,6 +218,7 @@ function PagesContent() {
         <Route path="/RoomReportQueue" element={<RoomReportQueue />} />
         <Route path="/RoomModerationAudit" element={<RoomModerationAudit />} />
         <Route path="/RoomOpsDashboard" element={<RoomOpsDashboard />} />
+        <Route path="/RoomCancellationQueue" element={<RoomCancellationQueue />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
