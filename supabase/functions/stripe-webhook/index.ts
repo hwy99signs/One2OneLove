@@ -1,266 +1,169 @@
-// Supabase Edge Function: stripe-webhook
-// This function handles Stripe webhook events
+import { withSupabase } from 'npm:@supabase/server@^1';
+import Stripe from 'npm:stripe@22.1.1';
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+const paidPlans = new Set(['Premiere', 'Exclusive']);
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-  apiVersion: '2023-10-16',
-  httpClient: Stripe.createFetchHttpClient(),
-})
+function asId(value: unknown) {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'id' in value) return String((value as { id?: string }).id || '');
+  return '';
+}
 
-serve(async (req) => {
-  const signature = req.headers.get('stripe-signature')
-  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+function subscriptionPeriod(subscription: any) {
+  const item = subscription?.items?.data?.[0];
+  const startSeconds = subscription?.current_period_start ?? item?.current_period_start ?? null;
+  const endSeconds = subscription?.current_period_end ?? item?.current_period_end ?? null;
+  return {
+    start: startSeconds ? new Date(startSeconds * 1000).toISOString() : null,
+    end: endSeconds ? new Date(endSeconds * 1000).toISOString() : null,
+  };
+}
 
-  if (!signature || !webhookSecret) {
-    return new Response('Missing signature or webhook secret', { status: 400 })
+function invoiceSubscriptionId(invoice: any) {
+  return asId(invoice?.subscription) || asId(invoice?.parent?.subscription_details?.subscription);
+}
+
+async function updateSubscriptionFromStripe(ctx: any, subscription: any) {
+  const userId = String(subscription?.metadata?.user_id || '');
+  const planName = String(subscription?.metadata?.plan_name || '');
+  if (!userId || !paidPlans.has(planName)) return;
+
+  const period = subscriptionPeriod(subscription);
+  await ctx.supabaseAdmin
+    .from('users')
+    .update({
+      subscription_plan: planName,
+      subscription_status: String(subscription.status || 'inactive'),
+      stripe_customer_id: asId(subscription.customer) || null,
+      stripe_subscription_id: String(subscription.id || '') || null,
+      subscription_current_period_start: period.start,
+      subscription_current_period_end: period.end,
+      cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+}
+
+async function recordInvoice(ctx: any, stripe: Stripe, invoice: any, status: 'succeeded' | 'failed') {
+  const subscriptionId = invoiceSubscriptionId(invoice);
+  if (!subscriptionId) return;
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const userId = String(subscription.metadata?.user_id || '');
+  const planName = String(subscription.metadata?.plan_name || '');
+  if (!userId || !paidPlans.has(planName)) return;
+
+  const amountCents = status === 'succeeded' ? Number(invoice.amount_paid || 0) : Number(invoice.amount_due || 0);
+  const paymentIntentId = asId(invoice.payment_intent) || asId(invoice?.payments?.data?.[0]?.payment?.payment_intent) || null;
+
+  await ctx.supabaseAdmin
+    .from('payment_history')
+    .upsert(
+      {
+        user_id: userId,
+        stripe_payment_intent_id: paymentIntentId,
+        stripe_invoice_id: String(invoice.id || ''),
+        amount: amountCents / 100,
+        currency: String(invoice.currency || 'usd'),
+        status,
+        subscription_plan: planName,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'stripe_invoice_id' },
+    );
+
+  if (status === 'failed') {
+    await ctx.supabaseAdmin
+      .from('users')
+      .update({ subscription_status: 'past_due', updated_at: new Date().toISOString() })
+      .eq('id', userId);
   }
+}
 
-  try {
-    const body = await req.text()
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-
-    console.log('Webhook event received:', event.type)
-
-    // Initialize Supabase client (service role for admin access)
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Handle different event types
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        await handleCheckoutCompleted(session, supabaseClient)
-        break
-      }
-
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription
-        await handleSubscriptionUpdate(subscription, supabaseClient)
-        break
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription
-        await handleSubscriptionCanceled(subscription, supabaseClient)
-        break
-      }
-
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice
-        await handlePaymentSucceeded(invoice, supabaseClient)
-        break
-      }
-
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice
-        await handlePaymentFailed(invoice, supabaseClient)
-        break
-      }
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
+export default {
+  fetch: withSupabase({ auth: 'none' }, async (req, ctx) => {
+    if (req.method !== 'POST') {
+      return new Response('method_not_allowed', { status: 405 });
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    })
-  } catch (error) {
-    console.error('Webhook error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-        status: 400,
+    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')?.trim();
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')?.trim();
+    const signature = req.headers.get('stripe-signature') || '';
+    if (!stripeSecret || !webhookSecret || !signature) {
+      return new Response('webhook_not_configured', { status: 503 });
+    }
+
+    const stripe = new Stripe(stripeSecret);
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(await req.text(), signature, webhookSecret);
+    } catch {
+      return new Response('invalid_signature', { status: 400 });
+    }
+
+    try {
+      if (event.type === 'checkout.session.completed') {
+        const session: any = event.data.object;
+        const subscriptionId = asId(session.subscription);
+        const userId = String(session.metadata?.user_id || session.client_reference_id || '');
+        const planName = String(session.metadata?.plan_name || '');
+
+        if (subscriptionId && userId && paidPlans.has(planName)) {
+          const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
+          const period = subscriptionPeriod(subscription);
+          await ctx.supabaseAdmin
+            .from('users')
+            .update({
+              subscription_plan: planName,
+              subscription_status: String(subscription.status || 'active'),
+              subscription_price: Number(session.amount_total || 0) / 100,
+              stripe_customer_id: asId(session.customer) || asId(subscription.customer) || null,
+              stripe_subscription_id: subscriptionId,
+              subscription_current_period_start: period.start,
+              subscription_current_period_end: period.end,
+              cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
+              canceled_at: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+        }
+      } else if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+        await updateSubscriptionFromStripe(ctx, event.data.object);
+      } else if (event.type === 'customer.subscription.deleted') {
+        const subscription: any = event.data.object;
+        const userId = String(subscription?.metadata?.user_id || '');
+        if (userId) {
+          await ctx.supabaseAdmin
+            .from('users')
+            .update({
+              subscription_plan: 'Basic',
+              subscription_price: 0,
+              subscription_status: 'active',
+              stripe_subscription_id: null,
+              subscription_current_period_start: null,
+              subscription_current_period_end: null,
+              cancel_at_period_end: false,
+              canceled_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+
+          await ctx.supabaseAdmin.from('subscription_changes').insert({
+            user_id: userId,
+            from_plan: String(subscription?.metadata?.plan_name || ''),
+            to_plan: 'Basic',
+            change_type: 'cancel',
+          });
+        }
+      } else if (event.type === 'invoice.paid' || event.type === 'invoice.payment_succeeded') {
+        await recordInvoice(ctx, stripe, event.data.object, 'succeeded');
+      } else if (event.type === 'invoice.payment_failed') {
+        await recordInvoice(ctx, stripe, event.data.object, 'failed');
       }
-    )
-  }
-})
 
-async function handleCheckoutCompleted(
-  session: Stripe.Checkout.Session,
-  supabaseClient: any
-) {
-  const userId = session.metadata?.user_id
-  const planName = session.metadata?.plan_name
-
-  if (!userId || !planName) {
-    console.error('Missing metadata in session')
-    return
-  }
-
-  console.log('Checkout completed:', { userId, planName })
-
-  // Get subscription details
-  const subscription = await stripe.subscriptions.retrieve(
-    session.subscription as string
-  )
-
-  // Update user subscription in database
-  await supabaseClient
-    .from('users')
-    .update({
-      subscription_plan: planName,
-      subscription_status: 'active',
-      subscription_price: (session.amount_total || 0) / 100,
-      stripe_subscription_id: subscription.id,
-      subscription_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
-
-  console.log('User subscription updated successfully')
-}
-
-async function handleSubscriptionUpdate(
-  subscription: Stripe.Subscription,
-  supabaseClient: any
-) {
-  const userId = subscription.metadata?.user_id
-
-  if (!userId) {
-    console.error('Missing user_id in subscription metadata')
-    return
-  }
-
-  console.log('Subscription updated:', subscription.id)
-
-  await supabaseClient
-    .from('users')
-    .update({
-      subscription_status: subscription.status,
-      subscription_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
-
-  console.log('Subscription status updated')
-}
-
-async function handleSubscriptionCanceled(
-  subscription: Stripe.Subscription,
-  supabaseClient: any
-) {
-  const userId = subscription.metadata?.user_id
-
-  if (!userId) {
-    console.error('Missing user_id in subscription metadata')
-    return
-  }
-
-  console.log('Subscription canceled:', subscription.id)
-
-  // Update to free plan
-  await supabaseClient
-    .from('users')
-    .update({
-      subscription_plan: 'Basis',
-      subscription_price: 0,
-      subscription_status: 'canceled',
-      stripe_subscription_id: null,
-      canceled_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
-
-  // Record subscription change
-  await supabaseClient
-    .from('subscription_changes')
-    .insert({
-      user_id: userId,
-      from_plan: subscription.metadata?.plan_name,
-      to_plan: 'Basis',
-      change_type: 'cancel',
-    })
-
-  console.log('Subscription canceled and user downgraded to free plan')
-}
-
-async function handlePaymentSucceeded(
-  invoice: Stripe.Invoice,
-  supabaseClient: any
-) {
-  const subscription = await stripe.subscriptions.retrieve(
-    invoice.subscription as string
-  )
-
-  const userId = subscription.metadata?.user_id
-  const planName = subscription.metadata?.plan_name
-
-  if (!userId) {
-    console.error('Missing user_id in subscription metadata')
-    return
-  }
-
-  console.log('Payment succeeded:', invoice.id)
-
-  // Record payment in history
-  await supabaseClient
-    .from('payment_history')
-    .insert({
-      user_id: userId,
-      stripe_payment_intent_id: invoice.payment_intent,
-      stripe_invoice_id: invoice.id,
-      amount: (invoice.amount_paid || 0) / 100,
-      currency: invoice.currency,
-      status: 'succeeded',
-      subscription_plan: planName,
-      created_at: new Date().toISOString(),
-    })
-
-  console.log('Payment recorded in history')
-}
-
-async function handlePaymentFailed(
-  invoice: Stripe.Invoice,
-  supabaseClient: any
-) {
-  const subscription = await stripe.subscriptions.retrieve(
-    invoice.subscription as string
-  )
-
-  const userId = subscription.metadata?.user_id
-  const planName = subscription.metadata?.plan_name
-
-  if (!userId) {
-    console.error('Missing user_id in subscription metadata')
-    return
-  }
-
-  console.log('Payment failed:', invoice.id)
-
-  // Record failed payment in history
-  await supabaseClient
-    .from('payment_history')
-    .insert({
-      user_id: userId,
-      stripe_payment_intent_id: invoice.payment_intent,
-      stripe_invoice_id: invoice.id,
-      amount: (invoice.amount_due || 0) / 100,
-      currency: invoice.currency,
-      status: 'failed',
-      subscription_plan: planName,
-      created_at: new Date().toISOString(),
-    })
-
-  // Optionally update subscription status
-  await supabaseClient
-    .from('users')
-    .update({
-      subscription_status: 'past_due',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
-
-  console.log('Failed payment recorded')
-}
-
+      return Response.json({ received: true });
+    } catch {
+      return new Response('webhook_processing_failed', { status: 500 });
+    }
+  }),
+};
