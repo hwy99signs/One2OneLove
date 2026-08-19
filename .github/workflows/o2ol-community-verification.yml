@@ -60,6 +60,20 @@ jobs:
             exit 1
           fi
 
+      - name: Verify reaction privacy contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          for table in story_likes story_helpful; do
+            grep -q "revoke all privileges on table public.${table} from anon, authenticated" supabase-community-story-privileges.sql
+            grep -q "grant select, insert, delete on table public.${table} to authenticated" supabase-community-story-privileges.sql
+          done
+          grep -q 'using (auth.uid() = user_id)' supabase-community-story-privileges.sql
+          if grep -Eq 'grant .*\b(update|truncate|trigger|references)\b.*story_(likes|helpful).*authenticated|grant .*story_(likes|helpful).*anon' supabase-community-story-privileges.sql; then
+            echo 'Reaction rows must not expose member identities publicly or restore unnecessary browser privileges.'
+            exit 1
+          fi
+
       - name: Reject retired forum and private-account behavior
         shell: bash
         run: |
