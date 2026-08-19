@@ -38,7 +38,8 @@ jobs:
             src/pages/CoupleActivities.jsx \
             src/pages/CouplesDashboard.jsx \
             src/pages/CommunicationPractice.jsx \
-            src/pages/CoupleSupport.jsx; do
+            src/pages/CoupleSupport.jsx \
+            src/pages/RelationshipCoach.jsx; do
             test -f "$file"
             for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
           done
@@ -47,6 +48,7 @@ jobs:
           grep -q 'path="/CouplesDashboard"' src/pages/index.jsx
           grep -q 'path="/CommunicationPractice"' src/pages/index.jsx
           grep -q 'path="/CoupleSupport"' src/pages/index.jsx
+          grep -q 'path="/RelationshipCoach"' src/pages/index.jsx
 
       - name: Verify Anniversary Tracker privacy
         shell: bash
@@ -107,6 +109,22 @@ jobs:
             exit 1
           fi
 
+      - name: Verify AI Coach is a truthful zero-data preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'Preview' src/pages/RelationshipCoach.jsx
+          grep -q 'not available yet' src/pages/RelationshipCoach.jsx
+          grep -q 'does not save or transmit' src/pages/RelationshipCoach.jsx
+          grep -q 'will not diagnose' src/pages/RelationshipCoach.jsx
+          grep -q 'createPageUrl("CommunicationPractice")' src/pages/RelationshipCoach.jsx
+          grep -q 'createPageUrl("RelationshipLibrary")' src/pages/RelationshipCoach.jsx
+          grep -q 'createPageUrl("WeeklyCheckIn")' src/pages/RelationshipCoach.jsx
+          if grep -Eq 'supabase|fetch\(|localStorage|sessionStorage|console\.|<Input|<Textarea|useMutation|useQuery' src/pages/RelationshipCoach.jsx; then
+            echo 'AI Coach preview must not collect, store, transmit, or imply live conversational AI.'
+            exit 1
+          fi
+
       - name: Verify AuthContext does not expose account diagnostics
         shell: bash
         run: |
@@ -126,6 +144,7 @@ jobs:
           src/pages/CouplesDashboard.jsx
           src/pages/CommunicationPractice.jsx
           src/pages/CoupleSupport.jsx
+          src/pages/RelationshipCoach.jsx
           src/contexts/AuthContext.jsx
           --rule 'react/prop-types: off'
 
