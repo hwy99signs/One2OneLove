@@ -1,31 +1,30 @@
 # O2OL Approval Batch
 
-Updated: 2026-08-18
+Updated: 2026-08-19
 
 This file collects owner decisions that should not interrupt active build work. Items are added only when a genuine product, legal, brand, monetization, infrastructure, or irreversible implementation decision is required.
 
 ## Pending owner approvals
 
-_No approval is currently required to continue the present Global Relationship Room build._
+_No approval is currently required to continue active O2OL development._
 
 ### Global Relationship Room operational activation — batch for later owner review
 
-The moderation system is now built and secured, but two activation decisions should remain owner-controlled rather than being guessed during development.
+The moderation system is built and secured, but two activation decisions remain owner-controlled.
 
-- **Initial moderator account:** choose which existing One2OneLove user account should receive the first trusted Global Relationship Room moderator/admin assignment. No account is auto-elevated. Until this is assigned, the moderation route remains securely inaccessible to ordinary users.
-- **Vercel build-rate limit:** GitHub currently reports the connected One2OneLove Vercel deployment check as failed with a Vercel `upgradeToPro=build-rate-limit` target. Development can continue in GitHub and Supabase, but production/preview deployment availability may require either waiting for the plan limit to reset or approving a Vercel plan change. Do not upgrade or incur cost automatically.
+- **Initial moderator account:** choose which existing One2OneLove user account should receive the first trusted Global Relationship Room moderator/admin assignment. No account is auto-elevated. Until this is assigned, trusted operations remain inaccessible to ordinary users.
+- **Vercel build-rate limit:** the connected One2OneLove Vercel deployment status has reported a `upgradeToPro=build-rate-limit` condition. GitHub/Supabase development can continue, but preview/production deployment capacity may require either waiting for the plan limit to reset or approving a Vercel plan change. Do not upgrade or incur cost automatically.
 
-### Legacy platform security / infrastructure review — batch for later owner review
+### Platform maintenance / account-security decisions — batch for later owner review
 
-A live Supabase security-advisor pass identified several pre-existing platform items that are outside the new Global Relationship Room work. They are intentionally not being changed blindly because some may affect existing production behavior.
+The earlier database-hardening backlog has been substantially completed: waitlist RLS is enabled, clearly private anonymous table privileges were removed, legacy security-invoker view hardening was applied, mutable function search paths were fixed, and targeted privileged RPCs were reviewed rather than weakened simply to silence generic advisor warnings.
 
-- Decide when to schedule a controlled legacy database-security cleanup covering existing SECURITY DEFINER views/functions and mutable function search paths.
-- Approve a controlled fix for the existing `waitlist_signups` table, which has policies defined but Row Level Security currently disabled.
-- Decide whether to enable Supabase leaked-password protection for account security after confirming the desired sign-up/sign-in experience.
-- Approve the Supabase/Postgres patch-level upgrade during a maintenance window after compatibility review.
-- Review broad legacy GraphQL/Data API exposure as a separate hardening pass; the newly added Global Relationship Room tables are already protected by explicit grants plus RLS.
+The remaining platform-level items require owner-controlled timing or account-console changes:
 
-These items are **not blockers** for continuing the current feature branch and should be handled as a dedicated security-hardening batch with verification.
+- **Supabase leaked-password protection:** decide when to enable compromised-password checking after confirming the desired sign-up/sign-in experience. This is a platform Auth setting rather than a normal application-code change.
+- **Supabase/Postgres patch upgrade:** schedule the available database security-patch upgrade during an intentional maintenance window after compatibility review. Do not perform infrastructure upgrades blindly during active development.
+
+These items are not blockers for continued feature development.
 
 ## Build assumptions currently authorized
 
