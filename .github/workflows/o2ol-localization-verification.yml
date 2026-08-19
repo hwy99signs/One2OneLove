@@ -50,7 +50,12 @@ jobs:
             src/pages/RelationshipMilestones.jsx \
             src/components/milestones/MilestoneCard.jsx \
             src/components/milestones/CelebrationIdeas.jsx \
-            src/lib/milestoneCelebrationFallbacks.js; do
+            src/lib/milestoneCelebrationFallbacks.js \
+            src/pages/MemoryLane.jsx \
+            src/components/memories/MemoryForm.jsx \
+            src/components/memories/MemoryCard.jsx \
+            src/components/memories/MemoryTimeline.jsx \
+            src/components/memories/MemoryFilters.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -76,6 +81,10 @@ jobs:
           grep -q 'deleteError' src/pages/RelationshipGoals.jsx
           grep -q 'Intl.DateTimeFormat' src/components/milestones/MilestoneCard.jsx
           grep -q 'getMilestoneCelebrationFallback' src/components/milestones/CelebrationIdeas.jsx
+          grep -q 'MEMORY_COLUMNS' src/pages/MemoryLane.jsx
+          grep -q "eq('user_id', user.id)" src/pages/MemoryLane.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/memories/MemoryCard.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/memories/MemoryTimeline.jsx
 
       - name: Reject misleading, hard-coded, or privacy-leaking controls
         shell: bash
@@ -117,6 +126,18 @@ jobs:
             echo 'Celebration Ideas must not depend on incomplete per-language milestone dictionaries.'
             exit 1
           fi
+          if grep -Eq 'partner_email|tags|FileUpload|uploadFile' src/components/memories/MemoryForm.jsx; then
+            echo 'Memory Lane form must not promise fields or uploads absent from the live memories schema.'
+            exit 1
+          fi
+          if grep -Eq 'console\.(log|debug|info|warn|error)' src/pages/MemoryLane.jsx src/components/memories/MemoryForm.jsx; then
+            echo 'Memory Lane must not log private memory data to the browser console.'
+            exit 1
+          fi
+          if grep -F ".from('memories').select('*')" src/pages/MemoryLane.jsx; then
+            echo 'Memory Lane must use an explicit safe memories column list.'
+            exit 1
+          fi
 
       - name: Lint localized surfaces except Couple Profile
         run: >-
@@ -139,6 +160,11 @@ jobs:
           src/components/milestones/MilestoneCard.jsx
           src/components/milestones/CelebrationIdeas.jsx
           src/lib/milestoneCelebrationFallbacks.js
+          src/pages/MemoryLane.jsx
+          src/components/memories/MemoryForm.jsx
+          src/components/memories/MemoryCard.jsx
+          src/components/memories/MemoryTimeline.jsx
+          src/components/memories/MemoryFilters.jsx
           --rule 'react/prop-types: off'
 
       - name: Lint Couple Profile with known import-only exception
