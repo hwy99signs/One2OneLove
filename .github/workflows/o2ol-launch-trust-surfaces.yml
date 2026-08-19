@@ -40,7 +40,12 @@ jobs:
             src/pages/InfluencersSupport.jsx \
             src/pages/Reviews.jsx \
             src/pages/Blog.jsx \
-            src/pages/ArticlesSupport.jsx; do
+            src/pages/ArticlesSupport.jsx \
+            src/pages/Leaderboard.jsx \
+            src/pages/Achievements.jsx \
+            src/pages/PremiumFeatures.jsx \
+            src/pages/Suggestions.jsx \
+            src/pages/LGBTQSupport.jsx; do
             for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
           done
           grep -q '/RoomCreatorAccess' src/pages/InfluencerSignup.jsx
@@ -48,6 +53,11 @@ jobs:
           grep -q '/Community' src/pages/Reviews.jsx
           grep -q '/RelationshipLibrary' src/pages/Blog.jsx
           grep -q '/RelationshipLibrary' src/pages/ArticlesSupport.jsx
+          grep -q '/RelationshipGoals' src/pages/Leaderboard.jsx
+          grep -q '/RelationshipRituals' src/pages/Achievements.jsx
+          grep -q '/RelationshipLibrary' src/pages/PremiumFeatures.jsx
+          grep -q '/ContactUs' src/pages/Suggestions.jsx
+          grep -q '/CommunicationPractice' src/pages/LGBTQSupport.jsx
 
       - name: Reject fabricated or inactive-program behavior
         shell: bash
@@ -81,6 +91,26 @@ jobs:
             echo 'Fabricated article/newsletter claims must not return.'
             exit 1
           fi
+          if grep -Eq 'Emma & James|Sofia & Lucas|mockLeaderboard|gamification_points|Your Rank|Top Couples' src/pages/Leaderboard.jsx; then
+            echo 'Mock public relationship rankings must not return.'
+            exit 1
+          fi
+          if grep -Eq 'earned: true|gamification_points|badges|Romantic Streak|Power Couple|pointsActivities' src/pages/Achievements.jsx; then
+            echo 'Pretend earned achievements or point rewards must not return.'
+            exit 1
+          fi
+          if grep -Eq 'gamification_points|unlockPoints|unlockLevel|Advanced AI Relationship Coach|Unlimited Love Notes|Activate Now|supabase|useAuth' src/pages/PremiumFeatures.jsx; then
+            echo 'Fake premium unlocks or inactive paid benefits must not return.'
+            exit 1
+          fi
+          if grep -Eq '<form|<Input|<Textarea|toast\.success|successMessage|setFormData' src/pages/Suggestions.jsx; then
+            echo 'Suggestions must not claim persistence until a real backend exists.'
+            exit 1
+          fi
+          if grep -Eq '1-866-488-7386|1-877-565-8860|1-888-843-4564|Finding LGBTQ\+ Affirming Therapists|Legal Rights & Marriage Equality|Connect with therapists' src/pages/LGBTQSupport.jsx; then
+            echo 'Unverified location-sensitive LGBTQ resources must not return.'
+            exit 1
+          fi
 
       - name: Lint trust surfaces
         run: >-
@@ -92,6 +122,11 @@ jobs:
           src/pages/Reviews.jsx
           src/pages/Blog.jsx
           src/pages/ArticlesSupport.jsx
+          src/pages/Leaderboard.jsx
+          src/pages/Achievements.jsx
+          src/pages/PremiumFeatures.jsx
+          src/pages/Suggestions.jsx
+          src/pages/LGBTQSupport.jsx
           --rule 'react/prop-types: off'
 
       - name: Production build
