@@ -50,18 +50,41 @@ rejectText(regularUser, 'console.log', 'registration debug logging');
 const verificationDialog = requireLanguages('src/components/signup/EmailVerificationDialog.jsx');
 requireText(verificationDialog, 'requiresVerification', 'verification-aware signup result handling');
 
-// Influencer/professional application status is enforced in the service layer, not the page.
-// These legacy signup pages are being localized separately; the security check should verify
-// the actual moderation boundary rather than require duplicated translation dictionaries.
-const influencer = read('src/pages/InfluencerSignup.jsx');
+const influencer = requireLanguages('src/pages/InfluencerSignup.jsx');
+requireText(influencer, 'minLength={8}', 'influencer password minimum');
+requireText(influencer, 'autoComplete="new-password"', 'influencer real password input');
+requireText(influencer, 'to="/TermsOfService"', 'influencer Terms consent');
+requireText(influencer, 'to="/PrivacyPolicy"', 'influencer Privacy consent');
+rejectText(influencer, '123456', 'placeholder influencer verification code');
+rejectText(influencer, 'tempPassword', 'temporary influencer password');
+rejectText(influencer, 'emailVerificationCode', 'fake influencer email verification state');
+rejectText(influencer, 'phoneVerificationCode', 'fake influencer phone verification state');
 rejectText(influencer, 'error.message', 'raw influencer backend error disclosure');
+rejectText(influencer, 'result.error', 'raw influencer registration error disclosure');
 const influencerService = read('src/lib/influencerService.js');
 requireText(influencerService, "status: 'pending'", 'pending influencer moderation status');
 
-const professional = read('src/pages/ProfessionalSignup.jsx');
+const professional = requireLanguages('src/pages/ProfessionalSignup.jsx');
+requireText(professional, 'minLength={8}', 'professional password minimum');
+requireText(professional, 'autoComplete="new-password"', 'professional real password input');
+requireText(professional, 'to="/TermsOfService"', 'professional Terms consent');
+requireText(professional, 'to="/PrivacyPolicy"', 'professional Privacy consent');
+rejectText(professional, '123456', 'placeholder professional verification code');
+rejectText(professional, 'tempPassword', 'temporary professional password');
+rejectText(professional, 'emailVerificationCode', 'fake professional email verification state');
+rejectText(professional, 'phoneVerificationCode', 'fake professional phone verification state');
 rejectText(professional, 'error.message', 'raw professional backend error disclosure');
+rejectText(professional, 'result.error', 'raw professional registration error disclosure');
 const professionalService = read('src/lib/professionalService.js');
 requireText(professionalService, "status: 'pending'", 'pending professional moderation status');
+
+const influencerDetails = requireLanguages('src/components/signup/InfluencerSignupForm.jsx');
+requireText(influencerDetails, 'At least one platform link is required', 'influencer platform-link guidance');
+const professionalDetails = requireLanguages('src/components/signup/OtherUserSignupForm.jsx');
+requireText(professionalDetails, 'application will be reviewed', 'professional moderation disclosure');
+const profilePhoto = requireLanguages('src/components/signup/ProfilePhotoUpload.jsx');
+rejectText(profilePhoto, 'alert(', 'blocking profile-photo browser alert');
+requireText(profilePhoto, 'role="alert"', 'accessible profile-photo validation');
 
 const profileLock = read('supabase-global-room-creator-profile-lock.sql');
 requireText(profileLock, 'creators can update own pending room profile', 'pending-only creator profile update policy');
