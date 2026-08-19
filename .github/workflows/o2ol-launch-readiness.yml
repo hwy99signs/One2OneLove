@@ -1,0 +1,57 @@
+name: O2OL Launch Readiness
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify critical recovery and Global Room routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f src/pages/ResetPassword.jsx
+          test -f src/pages/GlobalRelationshipRoom.jsx
+          test -f src/pages/RoomCreatorAccess.jsx
+          test -f src/pages/RoomModeration.jsx
+          grep -q 'path="/ResetPassword"' src/pages/index.jsx
+          grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
+          grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
+          grep -q 'path="/RoomModeration"' src/pages/index.jsx
+
+      - name: Verify five active languages on new launch-critical surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            src/pages/ForgotPassword.jsx \
+            src/pages/ResetPassword.jsx \
+            src/pages/GlobalRelationshipRoom.jsx \
+            src/pages/RoomCreatorAccess.jsx \
+            src/pages/RoomModeration.jsx; do
+            for lang in en es fr it de; do
+              grep -q "${lang}:" "$file"
+            done
+          done
+
+      - name: Production build
+        run: npm run build
