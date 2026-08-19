@@ -29,14 +29,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify Shared Journals five-language coverage
+      - name: Verify five-language legacy surfaces
         shell: bash
         run: |
           set -euo pipefail
           for file in \
             src/pages/SharedJournals.jsx \
             src/components/activities/JournalForm.jsx \
-            src/components/activities/JournalEntry.jsx; do
+            src/components/activities/JournalEntry.jsx \
+            src/pages/CooperativeGames.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -45,8 +46,10 @@ jobs:
           grep -q 'Intl.DateTimeFormat' src/components/activities/JournalEntry.jsx
           grep -q 'useLanguage' src/components/activities/JournalForm.jsx
           grep -q 'useLanguage' src/components/activities/JournalEntry.jsx
+          grep -q '"/ConversationCards"' src/pages/CooperativeGames.jsx
+          grep -q 'comingSoonLabel' src/components/activities/GameCard.jsx
 
-      - name: Reject hard-coded journal form controls
+      - name: Reject misleading or hard-coded controls
         shell: bash
         run: |
           set -euo pipefail
@@ -54,13 +57,19 @@ jobs:
             echo 'Shared Journal form controls must remain localized.'
             exit 1
           fi
+          if grep -q '>Play Now<' src/components/activities/GameCard.jsx; then
+            echo 'Cooperative Games must not restore a hard-coded or misleading Play Now control.'
+            exit 1
+          fi
 
-      - name: Lint localized journal surfaces
+      - name: Lint localized surfaces
         run: >-
           npx eslint
           src/pages/SharedJournals.jsx
           src/components/activities/JournalForm.jsx
           src/components/activities/JournalEntry.jsx
+          src/pages/CooperativeGames.jsx
+          src/components/activities/GameCard.jsx
           --rule 'react/prop-types: off'
 
       - name: Production build
