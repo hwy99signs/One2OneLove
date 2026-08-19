@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import HeroSection from "../components/home/HeroSection";
 import DiversitySection from "../components/home/DiversitySection";
 import FeaturedPodcast from "../components/home/FeaturedPodcast";
+import GlobalRoomPromo from "../components/home/GlobalRoomPromo";
 import FeaturesGrid from "../components/home/FeaturesGrid";
 import Testimonials from "../components/home/Testimonials";
 import Footer from "../components/home/Footer";
@@ -69,6 +70,7 @@ export default function Home() {
       <HeroSection stats={stats} />
       <DiversitySection />
       <FeaturedPodcast />
+      <GlobalRoomPromo />
       <FeaturesGrid />
       <Testimonials />
       <Footer />
