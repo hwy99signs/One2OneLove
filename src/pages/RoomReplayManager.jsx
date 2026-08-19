@@ -50,7 +50,7 @@ export default function RoomReplayManager() {
   const accessQuery = useQuery({ queryKey: ['globalRoomModeratorAccess', user?.id], queryFn: isGlobalRoomModerator, enabled: Boolean(user?.id) });
   const isModerator = accessQuery.data?.success && accessQuery.data.isModerator;
   const sourcesQuery = useQuery({ queryKey: ['globalRoomReplaySources'], queryFn: getGlobalRoomReplaySources, enabled: Boolean(isModerator), refetchOnWindowFocus: true });
-  const sources = sourcesQuery.data?.success ? sourcesQuery.data.sources : [];
+  const sources = useMemo(() => (sourcesQuery.data?.success ? sourcesQuery.data.sources : []), [sourcesQuery.data]);
   const sourcesFailed = sourcesQuery.isError || (sourcesQuery.data && !sourcesQuery.data.success);
   const selectedSource = useMemo(() => sources.find((item) => item.id === sourceId) || null, [sources, sourceId]);
 
