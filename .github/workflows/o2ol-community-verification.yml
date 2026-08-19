@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/pages/Community.jsx src/components/community/PostStoryForm.jsx src/components/community/StoryCard.jsx src/components/community/BuddyCard.jsx src/lib/successStoriesService.js src/lib/buddyService.js; do test -f "$file"; done
+          for file in src/pages/Community.jsx src/components/community/PostStoryForm.jsx src/components/community/StoryCard.jsx src/components/community/BuddyCard.jsx src/lib/successStoriesService.js src/lib/buddyService.js supabase-community-story-privileges.sql; do test -f "$file"; done
           for lang in en es fr it de; do
             grep -q "${lang}:" src/pages/Community.jsx
             grep -q "${lang}:" src/components/community/PostStoryForm.jsx
@@ -45,6 +45,20 @@ jobs:
           grep -q 'user_directory_profiles' src/lib/buddyService.js
           grep -q 'Discussion Forums — Post Launch' src/pages/Community.jsx
           grep -q 'Every new story is submitted for review first' src/components/community/PostStoryForm.jsx
+
+      - name: Verify story privilege contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'revoke all privileges on table public.success_stories from anon, authenticated' supabase-community-story-privileges.sql
+          grep -q 'grant select on table public.success_stories to anon' supabase-community-story-privileges.sql
+          grep -q 'grant select, delete on table public.success_stories to authenticated' supabase-community-story-privileges.sql
+          grep -q 'revoke all on function public.submit_community_story' supabase-community-story-privileges.sql
+          grep -q 'grant execute on function public.submit_community_story' supabase-community-story-privileges.sql
+          if grep -Eq 'grant .*\b(insert|update|truncate|trigger|references)\b.*success_stories.*authenticated' supabase-community-story-privileges.sql; then
+            echo 'Normal members must not regain direct story insert/update/truncate/trigger/reference privileges.'
+            exit 1
+          fi
 
       - name: Reject retired forum and private-account behavior
         shell: bash
