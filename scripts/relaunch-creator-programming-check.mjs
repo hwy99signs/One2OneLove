@@ -3,20 +3,26 @@ import fs from 'node:fs';
 const failures = [];
 const serviceFile = 'src/lib/creatorProgrammingService.js';
 const pageFile = 'src/pages/CreatorProgramming.jsx';
+const adminServiceFile = 'src/lib/o2olProgrammingService.js';
+const adminPageFile = 'src/pages/O2OLProgrammingAdmin.jsx';
 const routesFile = 'src/pages/index.jsx';
 const migrationFile = 'supabase/migrations/20260819_creator_programming_calendar.sql';
 const bookingFunctionFile = 'supabase/functions/book-creator-programming-slot/index.ts';
 const listingFunctionFile = 'supabase/functions/list-creator-programming/index.ts';
 const statusFunctionFile = 'supabase/functions/current-creator-programming/index.ts';
+const adminFunctionFile = 'supabase/functions/manage-o2ol-programming/index.ts';
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const service = read(serviceFile);
 const page = read(pageFile);
+const adminService = read(adminServiceFile);
+const adminPage = read(adminPageFile);
 const routes = read(routesFile);
 const migration = read(migrationFile);
 const bookingFunction = read(bookingFunctionFile);
 const listingFunction = read(listingFunctionFile);
 const statusFunction = read(statusFunctionFile);
+const adminFunction = read(adminFunctionFile);
 
 for (const required of [
   "VITE_CREATOR_PROGRAMMING_ENABLED === 'true'",
@@ -26,6 +32,7 @@ for (const required of [
   "supabase.functions.invoke('list-creator-programming'",
   "supabase.functions.invoke('current-creator-programming'",
   'export const getGlobalProgrammingStatus = async () =>',
+  ".eq('program_source', 'creator')",
   "if (to) query = query.lt('starts_at', to);",
   "if (from) query = query.gt('ends_at', from);",
 ]) {
@@ -83,17 +90,49 @@ for (const language of ['en', 'es', 'fr', 'it', 'de']) {
 }
 
 for (const required of [
-  'import CreatorProgramming from "./CreatorProgramming";',
-  '["/CreatorProgramming", CreatorProgramming]',
+  "supabase.functions.invoke('manage-o2ol-programming'",
+  "action: 'access'",
+  "action: 'book'",
+  "action: 'cancel'",
 ]) {
-  if (!routes.includes(required)) failures.push(`${routesFile}: missing creator-programming route binding ${required}.`);
+  if (!adminService.includes(required)) failures.push(`${adminServiceFile}: missing O2OL staff programming service behavior ${required}.`);
+}
+
+for (const language of ['en', 'es', 'fr', 'it', 'de']) {
+  const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
+  const match = adminPage.match(blockPattern);
+  if (!match) failures.push(`${adminPageFile}: missing ${language} O2OL programming copy block.`);
 }
 
 for (const required of [
-  "check (room_slug in ('global-relationship-room'))",
-  "check (booking_tier in ('free','paid'))",
-  'policy_version text not null',
-  'policy_acknowledged_at timestamptz not null',
+  'getO2OLProgrammingAdminAccess()',
+  'if (!accessResult.eligible) return;',
+  "slot.program_source === 'o2ol'",
+  'schedule.some((slot) => overlaps(slot, selectedWindow.starts, selectedWindow.ends))',
+  'cancelO2OLProgrammingSlot(slotId)',
+]) {
+  if (!adminPage.includes(required)) failures.push(`${adminPageFile}: missing allowlisted O2OL console behavior ${required}.`);
+}
+
+for (const required of [
+  'import CreatorProgramming from "./CreatorProgramming";',
+  '["/CreatorProgramming", CreatorProgramming]',
+  'import O2OLProgrammingAdmin from "./O2OLProgrammingAdmin";',
+  '["/O2OLProgrammingAdmin", O2OLProgrammingAdmin]',
+]) {
+  if (!routes.includes(required)) failures.push(`${routesFile}: missing programming route binding ${required}.`);
+}
+
+for (const required of [
+  "program_source text not null default 'creator'",
+  "check (program_source in ('creator','o2ol'))",
+  "check (booking_tier in ('free','paid','internal'))",
+  "program_source = 'creator'",
+  "program_source = 'o2ol'",
+  "booking_tier = 'internal'",
+  'creator_user_id is null',
+  'policy_version is null',
+  'policy_acknowledged_at is null',
   'booked_count >= 2',
   'creator_programming_slots_no_room_overlap',
   'alter table public.creator_programming_slots enable row level security;',
@@ -114,6 +153,8 @@ for (const required of [
   "creator?.user_type !== 'influencer'",
   "body?.policy_acknowledged === true",
   "return json(request, { error: 'POLICY_ACK_REQUIRED' }, 400)",
+  "program_source: 'creator'",
+  ".eq('program_source', 'creator')",
   'policy_version: CREATOR_PROGRAMMING_POLICY_VERSION',
   'policy_acknowledged_at: new Date().toISOString()',
   "bookingTier !== 'free'",
@@ -121,15 +162,50 @@ for (const required of [
   "return json(request, { error: 'DAILY_FREE_LIMIT_REACHED' }, 409)",
   "return json(request, { error: 'SLOT_CONFLICT' }, 409)",
 ]) {
-  if (!bookingFunction.includes(required)) failures.push(`${bookingFunctionFile}: missing backend booking safeguard ${required}.`);
+  if (!bookingFunction.includes(required)) failures.push(`${bookingFunctionFile}: missing backend creator booking safeguard ${required}.`);
 }
 
 for (const required of [
   ".lt('starts_at', to.toISOString())",
   ".gt('ends_at', requestedFrom.toISOString())",
   'Return every booking that overlaps the requested calendar window',
+  "select('id,program_source,room_slug,title,description,starts_at,ends_at,content_mode,status')",
 ]) {
-  if (!listingFunction.includes(required)) failures.push(`${listingFunctionFile}: missing overlap-window schedule behavior ${required}.`);
+  if (!listingFunction.includes(required)) failures.push(`${listingFunctionFile}: missing overlap/source schedule behavior ${required}.`);
+}
+
+for (const required of [
+  "const publicFields = 'id,program_source,room_slug,title,description,starts_at,ends_at,content_mode'",
+  'program_source: slot.program_source',
+  'current: publicSlot(currentRows?.[0] || null)',
+  'next: publicSlot(nextRows?.[0] || null)',
+]) {
+  if (!statusFunction.includes(required)) failures.push(`${statusFunctionFile}: missing privacy-safe now/next source behavior ${required}.`);
+}
+
+for (const required of [
+  "Deno.env.get('O2OL_PROGRAMMING_ADMIN_USER_IDS')",
+  'allowedAdminIds().has(caller.id)',
+  "if (action === 'access')",
+  "if (!eligible) return json(request, { error: 'O2OL_PROGRAMMING_ADMIN_REQUIRED' }, 403)",
+  "program_source: 'o2ol'",
+  'creator_user_id: null',
+  "booking_tier: 'internal'",
+  'policy_version: null',
+  'policy_acknowledged_at: null',
+  ".eq('program_source', 'o2ol')",
+  "return json(request, { error: 'SLOT_CONFLICT' }, 409)",
+]) {
+  if (!adminFunction.includes(required)) failures.push(`${adminFunctionFile}: missing O2OL staff safeguard ${required}.`);
+}
+
+for (const forbidden of [
+  "user_type === 'professional'",
+  "user_type === 'influencer'",
+  "user_type === 'therapist'",
+  "user_type === 'regular'",
+]) {
+  if (adminFunction.includes(forbidden)) failures.push(`${adminFunctionFile}: O2OL staff authority must not derive from profile role (${forbidden}).`);
 }
 
 for (const [file, source] of [
@@ -138,20 +214,10 @@ for (const [file, source] of [
 ]) {
   for (const forbidden of ["select('*')", 'creator_user_id', 'replay_url', 'booking_tier', 'price_cents', 'payment_status', 'policy_version', 'policy_acknowledged_at']) {
     const publicSelection = source.match(/const publicFields = '([^']+)'/)?.[1]
-      || source.split('.select(')[1]?.split(')')[0]
+      || source.match(/\.select\('([^']+)'\)/)?.[1]
       || '';
     if (publicSelection.includes(forbidden)) failures.push(`${file}: public programming payload exposes forbidden field ${forbidden}.`);
   }
-}
-
-for (const required of [
-  "const GLOBAL_ROOM = 'global-relationship-room'",
-  "return json(request, { success: true, enabled: false, current: null, next: null })",
-  "const publicFields = 'id,room_slug,title,description,starts_at,ends_at,content_mode'",
-  'current: publicSlot(currentRows?.[0] || null)',
-  'next: publicSlot(nextRows?.[0] || null)',
-]) {
-  if (!statusFunction.includes(required)) failures.push(`${statusFunctionFile}: missing privacy-safe now/next behavior ${required}.`);
 }
 
 if (failures.length) {
@@ -160,4 +226,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Creator programming remains feature-gated, multilingual, policy-acknowledged, overlap-accurate, conflict-aware, two-free-slots/day limited, Global-Room compatible, privacy-minimized and paid-slot disabled.');
+console.log('✅ Programming remains feature-gated, multilingual, creator/O2OL source-separated, allowlist-administered, overlap-accurate, conflict-aware, two-free-slots/day limited, privacy-minimized and paid-slot disabled.');
