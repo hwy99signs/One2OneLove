@@ -1,121 +1,20 @@
-import React, { useState } from "react";
-import { useLanguage } from "@/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Heart, Calendar, User, ArrowLeft, ArrowRight } from "lucide-react";
+import React from "react";
+import { BookOpen, Radio, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLanguage } from "@/Layout";
 
 const translations = {
-  en: {
-    title: "Relationship Blog",
-    subtitle: "Tips, stories, and insights for stronger relationships",
-    back: "Back",
-    readMore: "Read More",
-    recentPosts: "Recent Posts",
-    categories: { all: "All", communication: "Communication", intimacy: "Intimacy", activities: "Activities", advice: "Advice" }
-  },
-  es: {
-    title: "Blog de Relaciones",
-    subtitle: "Consejos, historias e ideas para relaciones más fuertes",
-    back: "Volver",
-    readMore: "Leer Más",
-    recentPosts: "Publicaciones Recientes",
-    categories: { all: "Todos", communication: "Comunicación", intimacy: "Intimidad", activities: "Actividades", advice: "Consejos" }
-  },
-  fr: {
-    title: "Blog sur les Relations",
-    subtitle: "Conseils, histoires et idées pour des relations plus fortes",
-    back: "Retour",
-    readMore: "Lire Plus",
-    recentPosts: "Publications Récentes",
-    categories: { all: "Tous", communication: "Communication", intimacy: "Intimité", activities: "Activités", advice: "Conseils" }
-  },
-  it: {
-    title: "Blog sulle Relazioni",
-    subtitle: "Consigli, storie e intuizioni per relazioni più forti",
-    back: "Indietro",
-    readMore: "Leggi di Più",
-    recentPosts: "Post Recenti",
-    categories: { all: "Tutti", communication: "Comunicazione", intimacy: "Intimità", activities: "Attività", advice: "Consigli" }
-  },
-  de: {
-    title: "Beziehungs-Blog",
-    subtitle: "Tipps, Geschichten und Einblicke für stärkere Beziehungen",
-    back: "Zurück",
-    readMore: "Weiterlesen",
-    recentPosts: "Neueste Beiträge",
-    categories: { all: "Alle", communication: "Kommunikation", intimacy: "Intimität", activities: "Aktivitäten", advice: "Ratschläge" }
-  }
+  en: { title: "One2OneLove Editorial", subtitle: "A full O2OL article and blog publishing system is planned for post launch.", notice: "We are not filling the launch site with invented authors, dates, or articles. Until the editorial system is active, use the Relationship Library, O2OL Show, and Global Relationship Room for real One2OneLove content.", library: "Relationship Library", show: "O2OL Show", room: "Global Relationship Room" },
+  es: { title: "Editorial One2OneLove", subtitle: "Un sistema completo de artículos y blog de O2OL está previsto para después del lanzamiento.", notice: "No llenaremos el sitio de lanzamiento con autores, fechas o artículos inventados. Hasta que el sistema editorial esté activo, usa la Biblioteca de Relaciones, O2OL Show y la Sala Global de Relaciones para contenido real de One2OneLove.", library: "Biblioteca de Relaciones", show: "O2OL Show", room: "Sala Global de Relaciones" },
+  fr: { title: "Éditorial One2OneLove", subtitle: "Un système complet de publication d’articles et de blog O2OL est prévu après le lancement.", notice: "Nous ne remplirons pas le site de lancement avec des auteurs, dates ou articles inventés. Jusqu’à l’activation du système éditorial, utilisez la Bibliothèque Relationnelle, O2OL Show et la Salle Mondiale des Relations pour du contenu One2OneLove réel.", library: "Bibliothèque Relationnelle", show: "O2OL Show", room: "Salle Mondiale des Relations" },
+  it: { title: "Editoriale One2OneLove", subtitle: "Un sistema completo di articoli e blog O2OL è previsto dopo il lancio.", notice: "Non riempiremo il sito di lancio con autori, date o articoli inventati. Finché il sistema editoriale non sarà attivo, usa la Biblioteca delle Relazioni, O2OL Show e la Sala Globale delle Relazioni per contenuti reali One2OneLove.", library: "Biblioteca delle Relazioni", show: "O2OL Show", room: "Sala Globale delle Relazioni" },
+  de: { title: "One2OneLove Redaktion", subtitle: "Ein vollständiges O2OL Artikel- und Blogsystem ist für die Zeit nach dem Start geplant.", notice: "Wir füllen die Startseite nicht mit erfundenen Autoren, Daten oder Artikeln. Bis das Redaktionssystem aktiv ist, nutzt die Beziehungsbibliothek, O2OL Show und den Globalen Beziehungsraum für echte One2OneLove-Inhalte.", library: "Beziehungsbibliothek", show: "O2OL Show", room: "Globaler Beziehungsraum" },
 };
 
 export default function Blog() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [selectedCategory, setSelectedCategory] = useState("all");
-
-  const posts = [
-    { id: 1, title: "10 Ways to Improve Communication in Your Relationship", category: "communication", date: "Nov 10, 2025", author: "Dr. Sarah Johnson", excerpt: "Learn effective communication strategies that can transform your relationship...", image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400" },
-    { id: 2, title: "The Power of Daily Love Notes", category: "intimacy", date: "Nov 8, 2025", author: "Emily Chen", excerpt: "Discover how small daily gestures can strengthen your emotional connection...", image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400" },
-    { id: 3, title: "Creative Date Ideas for Busy Couples", category: "activities", date: "Nov 5, 2025", author: "Michael Brown", excerpt: "Even with hectic schedules, you can keep the romance alive with these creative ideas...", image: "https://images.unsplash.com/photo-1511988617509-a57c8a288659?w=400" },
-    { id: 4, title: "Understanding Love Languages", category: "advice", date: "Nov 2, 2025", author: "Dr. Lisa Martinez", excerpt: "Learn about the five love languages and how they can improve your relationship...", image: "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=400" }
-  ];
-
-  const filteredPosts = selectedCategory === "all" ? posts : posts.filter(p => p.category === selectedCategory);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <BookOpen className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
-        </motion.div>
-
-        <div className="flex flex-wrap gap-2 justify-center mb-12">
-          {Object.entries(t.categories).map(([key, label]) => (
-            <button key={key} onClick={() => setSelectedCategory(key)} className={`px-4 py-2 rounded-full font-medium transition-all ${selectedCategory === key ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50 shadow'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredPosts.map((post, index) => (
-            <motion.div key={post.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.1 }}>
-              <Card className="h-full hover:shadow-2xl transition-all overflow-hidden border-2 border-transparent hover:border-pink-200">
-                <img src={post.image} alt={post.title} className="w-full h-48 object-cover" />
-                <CardHeader>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{post.date}</span>
-                    <span>•</span>
-                    <User className="w-4 h-4" />
-                    <span>{post.author}</span>
-                  </div>
-                  <CardTitle className="text-xl">{post.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                  <button className="flex items-center gap-2 text-pink-600 hover:text-pink-700 font-semibold">
-                    {t.readMore}
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-rose-50 px-4 py-12 md:py-20"><div className="mx-auto max-w-4xl text-center"><BookOpen className="mx-auto h-14 w-14 text-amber-700" aria-hidden="true"/><h1 className="mt-5 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-4 text-lg text-slate-600">{t.subtitle}</p><Card className="mx-auto mt-8 max-w-3xl border-amber-100 text-left"><CardContent className="p-6 md:p-8"><p className="rounded-2xl bg-amber-50 p-5 text-sm leading-6 text-amber-950">{t.notice}</p><div className="mt-8 grid gap-3 sm:grid-cols-3"><Button asChild><Link to="/RelationshipLibrary"><Sparkles className="mr-2 h-4 w-4" aria-hidden="true"/>{t.library}</Link></Button><Button asChild variant="outline"><Link to="/O2OLShow">{t.show}</Link></Button><Button asChild variant="outline"><Link to="/GlobalRelationshipRoom"><Radio className="mr-2 h-4 w-4" aria-hidden="true"/>{t.room}</Link></Button></div></CardContent></Card></div></main>;
 }
