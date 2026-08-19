@@ -31,7 +31,10 @@ const multilingualSources = [
   ['RoomReplayManager', 'src/pages/RoomReplayManager.jsx'],
   ['RoomProgramManager', 'src/pages/RoomProgramManager.jsx'],
   ['RoomOfficialScheduler', 'src/pages/RoomOfficialScheduler.jsx'],
+  ['RoomReportQueue', 'src/pages/RoomReportQueue.jsx'],
   ['RoomModerationAudit', 'src/pages/RoomModerationAudit.jsx'],
+  ['RoomOpsDashboard', 'src/pages/RoomOpsDashboard.jsx'],
+  ['NotFound', 'src/pages/NotFound.jsx'],
   ['ProgramReportButton', 'src/components/global-room/ProgramReportButton.jsx'],
 ];
 
@@ -47,9 +50,32 @@ const requiredRoutes = [
   '/GlobalRelationshipRoom',
   '/RoomCreatorAccess',
   '/RoomModeration',
+  '/RoomReplayManager',
+  '/RoomProgramManager',
+  '/RoomOfficialScheduler',
+  '/RoomReportQueue',
+  '/RoomModerationAudit',
+  '/RoomOpsDashboard',
   '/ResetPassword',
 ];
 for (const route of requiredRoutes) requireText(router, `path="${route}"`, `route ${route}`);
+requireText(router, 'path="*"', 'NotFound catch-all route');
+requireText(router, 'return pageName || \'NotFound\'', 'NotFound current-page fallback');
+
+const privateModeratorPages = [
+  'src/pages/RoomModeration.jsx',
+  'src/pages/RoomReplayManager.jsx',
+  'src/pages/RoomProgramManager.jsx',
+  'src/pages/RoomOfficialScheduler.jsx',
+  'src/pages/RoomReportQueue.jsx',
+  'src/pages/RoomModerationAudit.jsx',
+  'src/pages/RoomOpsDashboard.jsx',
+];
+for (const file of privateModeratorPages) {
+  const content = read(file);
+  requireText(content, 'isGlobalRoomModerator', `trusted moderator gate in ${file}`);
+  requireText(content, '!moderator', `restricted moderator rendering in ${file}`);
+}
 
 const forgotPassword = read('src/pages/ForgotPassword.jsx');
 requireText(forgotPassword, 'resetPasswordForEmail', 'real Supabase reset email call');
@@ -60,7 +86,7 @@ requireText(resetPassword, "event === 'PASSWORD_RECOVERY'", 'PASSWORD_RECOVERY h
 requireText(resetPassword, 'updateUser({ password })', 'Supabase password update');
 
 const roomCreatorAccess = read('src/pages/RoomCreatorAccess.jsx');
-requireText(roomCreatorAccess, "getRoomCreatorTranslation", 'creator translation module usage');
+requireText(roomCreatorAccess, 'getRoomCreatorTranslation', 'creator translation module usage');
 
 const roomService = read('src/lib/globalRelationshipRoomService.js');
 requireText(roomService, 'creator_display_name', 'safe public creator display name');
@@ -84,4 +110,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`O2OL launch verification passed (${multilingualSources.length} multilingual surfaces, ${requiredRoutes.length} critical routes).`);
+console.log(`O2OL launch verification passed (${multilingualSources.length} multilingual surfaces, ${requiredRoutes.length} critical routes, ${privateModeratorPages.length} private moderator gates).`);
