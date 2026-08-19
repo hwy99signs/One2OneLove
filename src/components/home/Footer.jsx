@@ -1,8 +1,9 @@
 import React from "react";
-import { Heart } from "lucide-react";
 import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+
+const LOGO_URL = "https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png";
 
 const translations = {
   en: {
@@ -19,9 +20,10 @@ const translations = {
     relationshipSupport: "Relationship Support",
     contactUs: "Contact Us",
     aboutUs: "About Us",
-    blog: "Blog",
-    privacyPolicy: "Privacy Policy",
-    termsOfService: "Terms of Service",
+    o2olShow: "O2OL Show",
+    invite: "Invite Someone",
+    privacyPolicy: "Privacy Notice",
+    termsOfService: "Terms Overview",
     copyright: "One2OneLove. All rights reserved."
   },
   es: {
@@ -38,9 +40,10 @@ const translations = {
     relationshipSupport: "Apoyo para Relaciones",
     contactUs: "Contáctanos",
     aboutUs: "Sobre Nosotros",
-    blog: "Blog",
-    privacyPolicy: "Política de Privacidad",
-    termsOfService: "Términos de Servicio",
+    o2olShow: "O2OL Show",
+    invite: "Invitar a Alguien",
+    privacyPolicy: "Aviso de Privacidad",
+    termsOfService: "Resumen de Términos",
     copyright: "One2OneLove. Todos los derechos reservados."
   },
   fr: {
@@ -57,9 +60,10 @@ const translations = {
     relationshipSupport: "Soutien aux Relations",
     contactUs: "Nous Contacter",
     aboutUs: "À Propos",
-    blog: "Blog",
-    privacyPolicy: "Politique de Confidentialité",
-    termsOfService: "Conditions d'Utilisation",
+    o2olShow: "O2OL Show",
+    invite: "Inviter Quelqu’un",
+    privacyPolicy: "Avis de Confidentialité",
+    termsOfService: "Aperçu des Conditions",
     copyright: "One2OneLove. Tous droits réservés."
   },
   it: {
@@ -76,9 +80,10 @@ const translations = {
     relationshipSupport: "Supporto per Relazioni",
     contactUs: "Contattaci",
     aboutUs: "Chi Siamo",
-    blog: "Blog",
+    o2olShow: "O2OL Show",
+    invite: "Invita Qualcuno",
     privacyPolicy: "Informativa Privacy",
-    termsOfService: "Termini di Servizio",
+    termsOfService: "Panoramica dei Termini",
     copyright: "One2OneLove. Tutti i diritti riservati."
   },
   de: {
@@ -95,9 +100,10 @@ const translations = {
     relationshipSupport: "Beziehungsunterstützung",
     contactUs: "Kontakt",
     aboutUs: "Über Uns",
-    blog: "Blog",
-    privacyPolicy: "Datenschutz",
-    termsOfService: "Nutzungsbedingungen",
+    o2olShow: "O2OL Show",
+    invite: "Jemanden Einladen",
+    privacyPolicy: "Datenschutzhinweis",
+    termsOfService: "Nutzungsübersicht",
     copyright: "One2OneLove. Alle Rechte vorbehalten."
   }
 };
@@ -110,21 +116,18 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4 mb-8">
+    <footer className="bg-gradient-to-r from-cyan-500 to-blue-600 py-12 text-white">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <Link to={createPageUrl("Home")} className="flex items-center gap-2 mb-4 w-fit">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-pink-500 fill-pink-500" aria-hidden="true" />
-              </div>
-              <span className="text-xl font-bold">One2OneLove</span>
+            <Link to={createPageUrl("Home")} className="mb-4 flex w-fit items-center gap-3">
+              <img src={LOGO_URL} alt="One2OneLove" className="h-14 w-auto rounded-lg bg-white/95 p-1" />
             </Link>
-            <p className="text-white/90 text-sm leading-6">{t.tagline}</p>
+            <p className="text-sm leading-6 text-white/90">{t.tagline}</p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4">{t.features}</h3>
+            <h3 className="mb-4 text-lg font-bold">{t.features}</h3>
             <ul className="space-y-2">
               <li><Link to={createPageUrl("LoveNotes")} className={linkClass}>{t.loveNotes}</Link></li>
               <li><Link to="/DailyQuestion" className={linkClass}>{t.dailyQuestion}</Link></li>
@@ -135,7 +138,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4">{t.support}</h3>
+            <h3 className="mb-4 text-lg font-bold">{t.support}</h3>
             <ul className="space-y-2">
               <li><Link to={createPageUrl("HelpCenter")} className={linkClass}>{t.helpCenter}</Link></li>
               <li><Link to={createPageUrl("CoupleSupport")} className={linkClass}>{t.relationshipSupport}</Link></li>
@@ -146,16 +149,17 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4">{t.company}</h3>
+            <h3 className="mb-4 text-lg font-bold">{t.company}</h3>
             <ul className="space-y-2">
               <li><Link to={createPageUrl("AboutUs")} className={linkClass}>{t.aboutUs}</Link></li>
-              <li><Link to={createPageUrl("Blog")} className={linkClass}>{t.blog}</Link></li>
+              <li><Link to={createPageUrl("O2OLShow")} className={linkClass}>{t.o2olShow}</Link></li>
+              <li><Link to={createPageUrl("Invite")} className={linkClass}>{t.invite}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/20 pt-8 text-center">
-          <p className="text-white/90 text-sm">© {year} {t.copyright}</p>
+          <p className="text-sm text-white/90">© {year} {t.copyright}</p>
         </div>
       </div>
     </footer>
