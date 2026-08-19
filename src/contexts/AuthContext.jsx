@@ -1,924 +1,348 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, handleSupabaseError, isSupabaseConfigured } from '@/lib/supabase';
 import { initializePresence, cleanupPresence } from '@/lib/presenceService';
 
 const AuthContext = createContext(null);
+const PROFILE_TIMEOUT_MS = 5000;
+const LOGIN_TIMEOUT_MS = 10000;
+
+function withTimeout(promise, milliseconds, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      const timeoutId = setTimeout(() => reject(new Error(message)), milliseconds);
+      promise.finally(() => clearTimeout(timeoutId)).catch(() => {});
+    }),
+  ]);
+}
+
+function buildUserData(authUser, profileData = null) {
+  if (!authUser) return null;
+  const profile = profileData && typeof profileData === 'object' ? profileData : {};
+  return {
+    id: authUser.id,
+    email: authUser.email,
+    ...profile,
+    name: profile.name || authUser.user_metadata?.name || authUser.email?.split('@')[0],
+    user_type: profile.user_type || authUser.user_metadata?.user_type || 'regular',
+  };
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isManualLoginRef = useRef(false);
-
-  const buildUserData = (authUser, profileData = null) => {
-    if (!authUser) return null;
-
-    const safeProfile =
-      profileData && typeof profileData === 'object' ? profileData : {};
-
-    return {
-      id: authUser.id,
-      email: authUser.email,
-      ...safeProfile,
-      name:
-        safeProfile?.name ||
-        authUser.user_metadata?.name ||
-        authUser.email?.split('@')[0],
-      user_type:
-        safeProfile?.user_type ||
-        authUser.user_metadata?.user_type ||
-        'regular',
-    };
-  };
 
   const ensureUserProfile = async (authUser) => {
-    if (!authUser) {
-      console.log('ensureUserProfile: No authUser provided');
-      return null;
-    }
-
-    console.log('ensureUserProfile: Starting for user:', authUser.id);
+    if (!authUser) return null;
 
     try {
-      console.log('ensureUserProfile: Fetching profile from database...');
-      
-      // Add timeout to prevent hanging - wrap Supabase query properly
-      const profileQuery = supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000)
+      const result = await withTimeout(
+        supabase.from('users').select('*').eq('id', authUser.id).maybeSingle(),
+        PROFILE_TIMEOUT_MS,
+        'Profile request timed out.'
       );
-      
-      // Race the query against timeout
-      let profile, profileError;
-      try {
-        const result = await Promise.race([
-          profileQuery,
-          timeoutPromise
-        ]);
-        profile = result?.data;
-        profileError = result?.error;
-      } catch (timeoutError) {
-        console.warn('⚠️ Profile fetch timed out, using basic user data');
-        return buildUserData(authUser);
-      }
 
-      console.log('ensureUserProfile: Profile query result:', { profile, profileError });
+      if (result?.error) return buildUserData(authUser);
+      if (result?.data) return buildUserData(authUser, result.data);
 
-      if (profileError && profileError.code === 'PGRST116') {
-        console.log('ensureUserProfile: Profile not found, creating new profile...');
-        const { data: newProfile, error: createError } = await supabase
-          .from('users')
-          .insert({
-            id: authUser.id,
-            email: authUser.email,
-            name: authUser.user_metadata?.name || authUser.email?.split('@')[0],
-            user_type: authUser.user_metadata?.user_type || 'regular',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+      const fallbackProfile = {
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.user_metadata?.name || authUser.email?.split('@')[0],
+        user_type: authUser.user_metadata?.user_type || 'regular',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-        if (createError) {
-          console.error('Error creating missing profile:', createError);
-          console.log('ensureUserProfile: Returning user data without profile');
-          return buildUserData(authUser);
-        }
+      const { data, error } = await supabase
+        .from('users')
+        .upsert(fallbackProfile, { onConflict: 'id' })
+        .select()
+        .single();
 
-        console.log('ensureUserProfile: New profile created successfully');
-        return buildUserData(authUser, newProfile);
-      }
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        console.log('ensureUserProfile: Returning user data without profile due to error');
-        return buildUserData(authUser);
-      }
-
-      console.log('ensureUserProfile: Profile found successfully');
-      return buildUserData(authUser, profile);
-    } catch (error) {
-      console.error('ensureUserProfile unexpected error:', error);
-      console.log('ensureUserProfile: Returning user data after catch');
+      return error ? buildUserData(authUser) : buildUserData(authUser, data);
+    } catch {
       return buildUserData(authUser);
     }
+  };
+
+  const hydrateUser = async (authUser, { presence = true } = {}) => {
+    const hydrated = await ensureUserProfile(authUser);
+    setUser(hydrated || buildUserData(authUser));
+    if (presence) {
+      try {
+        await initializePresence();
+      } catch {
+        // Presence is non-critical and must never block authentication.
+      }
+    }
+    return hydrated;
   };
 
   const refreshUserProfile = async () => {
     try {
       const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Error refreshing user profile:', error);
-        return null;
-      }
-
-      if (!data?.user) {
+      if (error || !data?.user) {
         setUser(null);
         return null;
       }
-
-      const userData = await ensureUserProfile(data.user);
-      setUser(userData);
-      return userData;
-    } catch (error) {
-      console.error('refreshUserProfile error:', error);
+      return await hydrateUser(data.user, { presence: false });
+    } catch {
       return null;
     }
   };
 
-  // Check for existing session on mount
   useEffect(() => {
-    console.log('🚀 AuthContext: Initializing...');
     let mounted = true;
-    let refreshInterval;
-    let retryTimeout;
-    let initTimeout;
-    let sessionRestored = false;
-    let isManualLogin = false; // Track if login is being done manually
-    
-    // IMPORTANT: Set up listener FIRST to catch INITIAL_SESSION event immediately
-    // Listen for auth state changes with improved handling
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth state changed:', event, session?.user?.email);
-      
+
+    const applySessionUser = (authUser, presence = true) => {
+      if (!mounted || !authUser) return;
+      setUser(buildUserData(authUser));
+      setIsLoading(false);
+      setTimeout(() => {
+        if (!mounted) return;
+        void hydrateUser(authUser, { presence }).then((hydrated) => {
+          if (mounted && hydrated) setUser(hydrated);
+        });
+      }, 0);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in (via listener):', session.user.email);
-        // If manual login is in progress, let it handle state setting
-        if (isManualLoginRef.current) {
-          console.log('🔄 Listener: Manual login in progress, skipping listener update');
-          return;
-        }
-        // Only update if user state is not already set (avoid race conditions)
-        if (mounted) {
-          // Set basic user data immediately
-          const basicUserData = buildUserData(session.user);
-          setUser(basicUserData);
-          setIsLoading(false); // Clear loading immediately
-          
-          // Fetch full profile asynchronously (non-blocking)
-          ensureUserProfile(session.user)
-            .then(profileData => {
-              if (profileData && mounted) {
-                console.log('✅ Profile fetched, updating user state');
-                setUser(profileData);
-              }
-            })
-            .catch(err => {
-              console.warn('⚠️ Profile fetch failed in listener (non-critical):', err);
-              // User already has basic data, so continue
-            });
-          
-          initializePresence().catch(err => {
-            console.warn('⚠️ Presence init failed in listener:', err);
-          });
-        }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
-        if (mounted) {
-          setUser(null);
-          setIsLoading(false);
-          await cleanupPresence();
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed for:', session?.user?.email);
-        // Ensure user state is set if session exists (safety check)
-        if (session?.user && mounted) {
-          const userData = await ensureUserProfile(session.user);
-          if (mounted) {
-            setUser(userData);
-            // Presence should already be initialized, but ensure it's active
-            await initializePresence();
-          }
-        }
-      } else if (event === 'USER_UPDATED') {
-        console.log('📝 User updated:', session?.user?.email);
-        if (session?.user && mounted) {
-          const userData = await ensureUserProfile(session.user);
-          if (mounted) {
-            setUser(userData);
-            setIsLoading(false);
-          }
-        }
+
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsLoading(false);
+        void cleanupPresence().catch(() => {});
+        return;
+      }
+
+      if (session?.user && ['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
+        applySessionUser(session.user, true);
       } else if (event === 'INITIAL_SESSION') {
-        // This event fires when Supabase restores session from localStorage
-        if (session?.user) {
-          console.log('🔵 Initial session loaded from storage:', session.user.email);
-          sessionRestored = true;
-          const userData = await ensureUserProfile(session.user);
-          if (mounted) {
-            setUser(userData);
-            setIsLoading(false);
-            await initializePresence();
-          }
-        } else {
-          console.log('🔵 Initial session check: No session in storage');
-          if (mounted) setIsLoading(false);
-        }
+        setUser(null);
+        setIsLoading(false);
       }
     });
-    
-    const checkAuth = async (retryCount = 0) => {
-      try {
-        console.log('🔍 Checking for existing session...', retryCount > 0 ? `(retry ${retryCount})` : '');
-        // Get current session from Supabase
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ Error getting session:', error);
-          if (mounted && !sessionRestored) setIsLoading(false);
-          return;
-        }
 
-        if (session?.user && mounted) {
-          // Only set user if it hasn't been set by INITIAL_SESSION event
-          if (!sessionRestored) {
-            console.log('✅ Session found for:', session.user.email);
-            const userData = await ensureUserProfile(session.user);
-            if (mounted) {
-              setUser(userData);
-              // Initialize presence for existing session
-              console.log('🟢 Initializing presence for existing session...');
-              await initializePresence();
-              setIsLoading(false);
-            }
-          } else {
-            console.log('✅ Session already restored via INITIAL_SESSION event');
-            if (mounted) setIsLoading(false);
-          }
-        } else {
-          // If no session found and we haven't retried yet, wait a bit and retry
-          // This handles the case where Supabase hasn't finished restoring from localStorage
-          if (retryCount === 0 && mounted && !sessionRestored) {
-            console.log('⚠️ No active session found, retrying after short delay...');
-            retryTimeout = setTimeout(() => {
-              if (mounted) checkAuth(1);
-            }, 100);
-          } else {
-            console.log('⚠️ No active session found');
-            if (mounted && !sessionRestored) setIsLoading(false);
-          }
-        }
-      } catch (error) {
-        console.error('💥 Error checking auth:', error);
-        if (mounted && !sessionRestored) setIsLoading(false);
-      }
-    };
-
-    // Small delay to ensure Supabase has initialized and restored session from localStorage
-    // But the listener above should catch INITIAL_SESSION event first
-    initTimeout = setTimeout(() => {
-      if (!sessionRestored) {
-        checkAuth();
-      }
-    }, 100);
-
-    // Set up periodic session check (every 5 minutes) to ensure session is valid
-    refreshInterval = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session && mounted) {
-          console.log('⚠️ Session expired, clearing user state');
-          setUser(null);
-        }
-        // Note: We don't need to restore user state here as the auth state change listener handles it
-      } catch (error) {
-        console.error('Error checking session:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-
-    // Handle page visibility changes to maintain session
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && mounted) {
-        console.log('👀 Page became visible, checking session...');
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user && mounted) {
-            // Always ensure user state is set when page becomes visible and session exists
-            const userData = await ensureUserProfile(session.user);
-            if (mounted) {
-              setUser(userData);
-              await initializePresence();
-            }
-          }
-        } catch (error) {
-          console.error('Error restoring session:', error);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    void supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (!error && data?.session?.user) applySessionUser(data.session.user, true);
+        else setIsLoading(false);
+      })
+      .catch(() => {
+        if (mounted) setIsLoading(false);
+      });
 
     return () => {
-      console.log('🧹 Cleaning up auth listener');
       mounted = false;
       subscription.unsubscribe();
-      if (refreshInterval) clearInterval(refreshInterval);
-      if (retryTimeout) clearTimeout(retryTimeout);
-      if (initTimeout) clearTimeout(initTimeout);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
   const login = async (email, password) => {
-    // Set flag to prevent listener from interfering
-    isManualLoginRef.current = true;
-    
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Application is not properly configured. Please contact support.' };
+    }
+
     try {
-      console.log('🔵 Attempting login for:', email);
-      
-      // Check if Supabase is configured
-      if (!isSupabaseConfigured()) {
-        const errorMsg = 'Application is not properly configured. Please contact support or configure Supabase credentials in your .env file.';
-        console.error('❌ Supabase not configured');
-        return { success: false, error: errorMsg };
-      }
-      
-      // IMPORTANT: Clear any stale session data before attempting new login
-      // This prevents conflicts with cached sessions that might interfere
-      console.log('🧹 Clearing any existing session before login...');
-      try {
-        // Get current session to check if it exists (with timeout)
-        const getSessionPromise = supabase.auth.getSession();
-        const sessionTimeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 2000)
-        );
-        
-        let existingSession;
-        try {
-          const sessionResult = await Promise.race([
-            getSessionPromise.then(r => ({ type: 'success', ...r })),
-            sessionTimeout.then(() => ({ type: 'timeout' }))
-          ]);
-          
-          if (sessionResult.type === 'timeout') {
-            console.warn('⚠️ Session check timed out (continuing)');
-            existingSession = null;
-          } else {
-            existingSession = sessionResult.data?.session;
-          }
-        } catch (sessionError) {
-          console.warn('⚠️ Session check failed (continuing):', sessionError);
-          existingSession = null;
-        }
-        
-        if (existingSession) {
-          console.log('⚠️ Found existing session, signing out first...');
-          // Sign out to clear stale session (with timeout)
-          const signOutPromise = supabase.auth.signOut();
-          const signOutTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Sign out timeout')), 2000)
-          );
-          
-          try {
-            await Promise.race([
-              signOutPromise.then(() => ({ type: 'success' })),
-              signOutTimeout.then(() => ({ type: 'timeout' }))
-            ]);
-            // Small delay to ensure session is cleared
-            await new Promise(resolve => setTimeout(resolve, 100));
-          } catch (signOutError) {
-            console.warn('⚠️ Sign out failed (continuing with login):', signOutError);
-          }
-        }
-      } catch (clearError) {
-        console.warn('⚠️ Error clearing existing session (continuing with login):', clearError);
-        // Continue with login even if clearing fails
-      }
-      
-      console.log('🔐 Attempting sign in with password...');
-      
-      // Add timeout to prevent hanging on signInWithPassword
-      const signInPromise = supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      const signInTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Sign in timeout after 10 seconds')), 10000)
+      const result = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        LOGIN_TIMEOUT_MS,
+        'Sign in timed out. Please try again.'
       );
-      
-      let data, error;
-      try {
-        const result = await Promise.race([
-          signInPromise.then(r => ({ type: 'success', ...r })),
-          signInTimeout.then(() => ({ type: 'timeout' }))
-        ]);
-        
-        if (result.type === 'timeout') {
-          console.error('❌ Sign in timed out');
-          return { success: false, error: 'Sign in timed out. Please try again.' };
-        }
-        
-        data = result.data;
-        error = result.error;
-      } catch (timeoutError) {
-        console.error('❌ Sign in error:', timeoutError);
-        return { success: false, error: timeoutError.message || 'Sign in failed. Please try again.' };
-      }
 
-      if (error) {
-        console.error('❌ Supabase auth error:', error);
-        
-        // Allow sign in even if email is not confirmed
-        if (error.message && error.message.includes('email not confirmed')) {
-          console.log('⚠️ Email not confirmed, but allowing sign in anyway');
-          // Try to get the user session anyway
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData?.session?.user) {
-            console.log('✅ Got user session despite email confirmation error');
-            const basicUserData = buildUserData(sessionData.session.user);
-            setUser(basicUserData);
-            ensureUserProfile(sessionData.session.user)
-              .then(profileData => {
-                if (profileData && isManualLoginRef.current) {
-                  setUser(profileData);
-                }
-              })
-              .catch(err => console.warn('⚠️ Profile fetch failed:', err));
-            return { success: true, user: basicUserData };
-          }
-        }
-        
-        return { success: false, error: handleSupabaseError(error) };
-      }
+      if (result?.error) return { success: false, error: handleSupabaseError(result.error) };
+      if (!result?.data?.user) return { success: false, error: 'Login failed: no user data received.' };
 
-      if (!data?.user) {
-        console.error('❌ No user data returned from Supabase');
-        return { success: false, error: 'Login failed: No user data received' };
-      }
-      
-      // Log email confirmation status (but don't block sign in)
-      if (data.user.email_confirmed_at === null) {
-        console.log('⚠️ User email not confirmed, but allowing sign in');
-      }
+      const basicUser = buildUserData(result.data.user);
+      setUser(basicUser);
+      setIsLoading(false);
 
-      console.log('✅ Auth successful, fetching profile for user:', data.user.id);
-
-      // Set basic user data immediately (don't wait for profile)
-      const basicUserData = buildUserData(data.user);
-      setUser(basicUserData);
-      
-      // CRITICAL: Return immediately, don't wait for profile fetch
-      // Profile fetch happens asynchronously and won't block login
-      console.log('✅ Login successful - returning immediately with basic user data');
-      
-      // Fetch profile asynchronously (non-blocking) - don't await
-      ensureUserProfile(data.user)
-        .then(profileData => {
-          if (profileData && isManualLoginRef.current) {
-            console.log('✅ Profile fetched, updating user state');
-            setUser(profileData);
-          }
-        })
-        .catch(err => {
-          console.warn('⚠️ Profile fetch failed (non-critical):', err);
-          // User is already set with basic data, so login can continue
-        });
-      
-      // Initialize presence tracking asynchronously (don't block login)
-      console.log('🟢 Initializing presence tracking (non-blocking)...');
-      initializePresence().catch(err => {
-        console.warn('⚠️ Presence initialization failed (non-critical):', err);
-      });
-      
-      // Clear manual login flag after a short delay
       setTimeout(() => {
-        isManualLoginRef.current = false;
-      }, 2000);
-      
-      // Return immediately - don't wait for async operations
-      return { success: true, user: basicUserData };
+        void hydrateUser(result.data.user, { presence: true });
+      }, 0);
+
+      return { success: true, user: basicUser };
     } catch (error) {
-      console.error('❌ Login error:', error);
-      isManualLoginRef.current = false;
-      return { success: false, error: error.message || handleSupabaseError(error) };
+      return { success: false, error: error?.message || handleSupabaseError(error) };
     }
   };
 
   const logout = async () => {
+    setUser(null);
+    setIsLoading(false);
+
     try {
-      console.log('🔴 Starting logout process...');
-      
-      // Clean up presence before logging out (don't let errors block logout)
-      try {
-        console.log('🔴 Cleaning up presence tracking...');
-        await cleanupPresence();
-      } catch (presenceError) {
-        console.error('⚠️ Error cleaning up presence (continuing logout):', presenceError);
-        // Continue with logout even if presence cleanup fails
-      }
-      
-      // Clear user state first to prevent race conditions
-      setUser(null);
-      setIsLoading(false);
-      
-      // Sign out from Supabase
-      console.log('🔴 Signing out from Supabase...');
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('❌ Supabase signOut error:', error);
-      } else {
-        console.log('✅ Successfully signed out from Supabase');
-      }
-      
-      // Clear localStorage auth token to prevent stale sessions
-      try {
-        const storageKey = 'sb-one2one-love-auth-token';
-        localStorage.removeItem(storageKey);
-        console.log('🧹 Cleared auth token from localStorage');
-      } catch (storageError) {
-        console.warn('⚠️ Error clearing localStorage:', storageError);
-      }
-      
-      // Clear sessionStorage as well
-      try {
-        sessionStorage.clear();
-        console.log('🧹 Cleared sessionStorage');
-      } catch (storageError) {
-        console.warn('⚠️ Error clearing sessionStorage:', storageError);
-      }
-      
-      // Ensure user state is cleared (redundant but safe)
-      setUser(null);
-      setIsLoading(false);
-      
-      console.log('✅ Logout completed');
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-      // Ensure user state is cleared even on error
-      setUser(null);
-      setIsLoading(false);
-      
-      // Try to clear storage as fallback
-      try {
-        const storageKey = 'sb-one2one-love-auth-token';
-        localStorage.removeItem(storageKey);
-        sessionStorage.clear();
-      } catch (storageError) {
-        console.warn('⚠️ Error clearing storage in catch:', storageError);
-      }
+      await cleanupPresence();
+    } catch {
+      // Presence cleanup is best-effort.
+    }
+
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Local state is already cleared; do not expose auth internals in the browser.
+    }
+
+    try {
+      localStorage.removeItem('sb-one2one-love-auth-token');
+      sessionStorage.clear();
+    } catch {
+      // Storage cleanup is best-effort.
     }
   };
 
   const register = async (userData) => {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Application is not properly configured. Please contact support.' };
+    }
+
+    const {
+      email,
+      password,
+      name,
+      relationshipStatus,
+      anniversaryDate,
+      partnerEmail,
+      subscriptionPlan,
+      subscriptionPrice,
+    } = userData;
+
     try {
-      console.log('AuthContext.register: Starting registration...', { email: userData.email, name: userData.name });
-      const { email, password, name, relationshipStatus, anniversaryDate, partnerEmail, subscriptionPlan, subscriptionPrice } = userData;
-
-      // Check if Supabase is configured
-      if (!isSupabaseConfigured()) {
-        const errorMsg = 'Application is not properly configured. Please contact support or configure Supabase credentials.';
-        console.error('❌ Supabase not configured');
-        return { success: false, error: errorMsg };
-      }
-
-      // Sign up with Supabase Auth
-      console.log('Calling supabase.auth.signUp...');
-      
-      // Get the current URL for redirect (works for both localhost and Vercel)
-      const redirectUrl = typeof window !== 'undefined' 
+      const redirectUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/auth/callback`
         : 'https://one2-one-love.vercel.app/auth/callback';
-      
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            name: name,
+            name,
             relationship_status: relationshipStatus,
             anniversary_date: anniversaryDate,
             partner_email: partnerEmail,
             subscription_plan: subscriptionPlan || 'Basic',
-            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0,
+            subscription_price: subscriptionPrice ?? 0,
           },
         },
       });
 
-      console.log('SignUp auth response:', { authData, authError });
+      if (authError) return { success: false, error: handleSupabaseError(authError) };
+      if (!authData?.user) return { success: false, error: 'Registration failed.' };
 
-      if (authError) {
-        console.error('Auth error:', authError);
-        return { success: false, error: handleSupabaseError(authError) };
-      }
+      const now = new Date().toISOString();
+      const profilePayload = {
+        id: authData.user.id,
+        email,
+        name,
+        user_type: 'regular',
+        relationship_status: relationshipStatus || null,
+        anniversary_date: anniversaryDate || null,
+        partner_email: partnerEmail || null,
+        subscription_plan: subscriptionPlan || 'Basic',
+        subscription_price: subscriptionPrice ?? 0,
+        subscription_status: 'active',
+        email_verified: Boolean(authData.user.email_confirmed_at),
+        created_at: now,
+        updated_at: now,
+      };
 
-      if (authData?.user) {
-        console.log('User created in auth, creating profile in database...');
-        
-        // Check if email is confirmed (might be null if confirmation is disabled)
-        const isEmailConfirmed = authData.user.email_confirmed_at !== null;
-        console.log('Email confirmation status:', { 
-          email: authData.user.email, 
-          confirmed: isEmailConfirmed,
-          confirmed_at: authData.user.email_confirmed_at 
-        });
-        
-        // Create user profile in database
-        // user_type defaults to 'regular' for regular user signups
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            name: name,
-            user_type: 'regular', // Set user type for regular users
-            relationship_status: relationshipStatus || null,
-            anniversary_date: anniversaryDate || null,
-            partner_email: partnerEmail || null,
-            subscription_plan: subscriptionPlan || 'Basic',
-            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0, // Basic is now free
-            subscription_status: 'active',
-            email_verified: isEmailConfirmed, // Track email verification status
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .upsert(profilePayload, { onConflict: 'id' })
+        .select()
+        .single();
 
-        console.log('Profile creation response:', { profile, profileError });
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // User is created in auth but profile creation failed
-          // Return error so user knows something went wrong
-          return { 
-            success: false, 
-            error: `Account created but profile setup failed: ${handleSupabaseError(profileError)}. Please contact support.` 
-          };
-        }
-
-        const newUser = {
-          id: authData.user.id,
-          email: authData.user.email,
-          name: name,
-          relationship_status: relationshipStatus,
-          anniversary_date: anniversaryDate,
-          partner_email: partnerEmail,
-          email_verified: isEmailConfirmed,
-          ...profile,
+      if (profileError) {
+        return {
+          success: false,
+          error: `Account created but profile setup failed: ${handleSupabaseError(profileError)}. Please contact support.`,
         };
-
-        console.log('Setting user state and returning success');
-        setUser(newUser);
-        
-        // If email is not confirmed, show a message but still allow sign in
-        if (!isEmailConfirmed) {
-          console.log('⚠️ User signed up but email not confirmed (this is OK - allowing access)');
-        }
-        
-        return { success: true, user: newUser };
       }
 
-      console.error('No user data in authData');
-      return { success: false, error: 'Registration failed' };
+      const newUser = buildUserData(authData.user, profile);
+      setUser(newUser);
+      setIsLoading(false);
+      return { success: true, user: newUser };
     } catch (error) {
-      console.error('Registration error (caught):', error);
       return { success: false, error: handleSupabaseError(error) };
     }
   };
 
-  const registerTherapist = async (userData, therapistData) => {
-    try {
-      const { email, password, firstName, lastName } = userData;
-      const fullName = `${firstName} ${lastName}`;
+  const registerSpecialist = async (userData, profileData, type) => {
+    const { email, password, firstName, lastName } = userData;
+    const fullName = `${firstName} ${lastName}`.trim();
 
-      // Sign up with Supabase Auth
+    try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            name: fullName,
-            user_type: 'therapist',
-          },
-        },
+        options: { data: { name: fullName, user_type: type } },
       });
 
-      if (authError) {
-        return { success: false, error: handleSupabaseError(authError) };
-      }
+      if (authError) return { success: false, error: handleSupabaseError(authError) };
+      if (!authData?.user) return { success: false, error: 'Registration failed.' };
 
-      if (authData?.user) {
-        // Create user profile in database with therapist type
-        const { data: userProfile, error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            name: fullName,
-            user_type: 'therapist',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // Continue anyway - therapist profile can still be created
-        }
-
-        // Create therapist profile
-        const { createTherapistProfile } = await import('@/lib/therapistService');
-        const therapistResult = await createTherapistProfile(authData.user.id, {
-          ...therapistData,
-          firstName,
-          lastName,
-          email,
-          emailVerified: therapistData.emailVerified || false,
-          phoneVerified: therapistData.phoneVerified || false,
-        });
-
-        if (!therapistResult.success) {
-          console.error('Error creating therapist profile:', therapistResult.error);
-          // User account is created but therapist profile failed
-          // They can log in but profile will be incomplete
-        }
-
-        const newUser = {
+      const now = new Date().toISOString();
+      const { data: userProfile } = await supabase
+        .from('users')
+        .upsert({
           id: authData.user.id,
-          email: authData.user.email,
+          email,
           name: fullName,
-          user_type: 'therapist',
-          ...userProfile,
-        };
+          user_type: type,
+          created_at: now,
+          updated_at: now,
+        }, { onConflict: 'id' })
+        .select()
+        .single();
 
-        setUser(newUser);
-        return { success: true, user: newUser };
+      const serviceConfig = {
+        therapist: ['@/lib/therapistService', 'createTherapistProfile'],
+        influencer: ['@/lib/influencerService', 'createInfluencerProfile'],
+        professional: ['@/lib/professionalService', 'createProfessionalProfile'],
+      }[type];
+
+      if (serviceConfig) {
+        const [modulePath, functionName] = serviceConfig;
+        try {
+          const service = await import(/* @vite-ignore */ modulePath);
+          const createProfile = service[functionName];
+          if (typeof createProfile === 'function') {
+            await createProfile(authData.user.id, {
+              ...profileData,
+              firstName,
+              lastName,
+              email,
+              emailVerified: Boolean(profileData?.emailVerified),
+              phoneVerified: Boolean(profileData?.phoneVerified),
+            });
+          }
+        } catch {
+          // The account remains usable even if optional specialist profile setup fails.
+        }
       }
 
-      return { success: false, error: 'Registration failed' };
+      const newUser = buildUserData(authData.user, userProfile || { name: fullName, user_type: type });
+      setUser(newUser);
+      setIsLoading(false);
+      return { success: true, user: newUser };
     } catch (error) {
-      console.error('Therapist registration error:', error);
       return { success: false, error: handleSupabaseError(error) };
     }
   };
 
-  const registerInfluencer = async (userData, influencerData) => {
-    try {
-      const { email, password, firstName, lastName } = userData;
-      const fullName = `${firstName} ${lastName}`;
-
-      // Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: fullName,
-            user_type: 'influencer',
-          },
-        },
-      });
-
-      if (authError) {
-        return { success: false, error: handleSupabaseError(authError) };
-      }
-
-      if (authData?.user) {
-        // Create user profile in database with influencer type
-        const { data: userProfile, error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            name: fullName,
-            user_type: 'influencer',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // Continue anyway - influencer profile can still be created
-        }
-
-        // Create influencer profile
-        const { createInfluencerProfile } = await import('@/lib/influencerService');
-        const influencerResult = await createInfluencerProfile(authData.user.id, {
-          ...influencerData,
-          firstName,
-          lastName,
-          email,
-          emailVerified: influencerData.emailVerified || false,
-          phoneVerified: influencerData.phoneVerified || false,
-        });
-
-        if (!influencerResult.success) {
-          console.error('Error creating influencer profile:', influencerResult.error);
-          // User account is created but influencer profile failed
-          // They can log in but profile will be incomplete
-        }
-
-        const newUser = {
-          id: authData.user.id,
-          email: authData.user.email,
-          name: fullName,
-          user_type: 'influencer',
-          ...userProfile,
-        };
-
-        setUser(newUser);
-        return { success: true, user: newUser };
-      }
-
-      return { success: false, error: 'Registration failed' };
-    } catch (error) {
-      console.error('Influencer registration error:', error);
-      return { success: false, error: handleSupabaseError(error) };
-    }
-  };
-
-  const registerProfessional = async (userData, professionalData) => {
-    try {
-      const { email, password, firstName, lastName } = userData;
-      const fullName = `${firstName} ${lastName}`;
-
-      // Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: fullName,
-            user_type: 'professional',
-          },
-        },
-      });
-
-      if (authError) {
-        return { success: false, error: handleSupabaseError(authError) };
-      }
-
-      if (authData?.user) {
-        // Create user profile in database with professional type
-        const { data: userProfile, error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            name: fullName,
-            user_type: 'professional',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // Continue anyway - professional profile can still be created
-        }
-
-        // Create professional profile
-        const { createProfessionalProfile } = await import('@/lib/professionalService');
-        const professionalResult = await createProfessionalProfile(authData.user.id, {
-          ...professionalData,
-          firstName,
-          lastName,
-          email,
-          emailVerified: professionalData.emailVerified || false,
-          phoneVerified: professionalData.phoneVerified || false,
-        });
-
-        if (!professionalResult.success) {
-          console.error('Error creating professional profile:', professionalResult.error);
-          // User account is created but professional profile failed
-          // They can log in but profile will be incomplete
-        }
-
-        const newUser = {
-          id: authData.user.id,
-          email: authData.user.email,
-          name: fullName,
-          user_type: 'professional',
-          ...userProfile,
-        };
-
-        setUser(newUser);
-        return { success: true, user: newUser };
-      }
-
-      return { success: false, error: 'Registration failed' };
-    } catch (error) {
-      console.error('Professional registration error:', error);
-      return { success: false, error: handleSupabaseError(error) };
-    }
-  };
+  const registerTherapist = (userData, therapistData) => registerSpecialist(userData, therapistData, 'therapist');
+  const registerInfluencer = (userData, influencerData) => registerSpecialist(userData, influencerData, 'influencer');
+  const registerProfessional = (userData, professionalData) => registerSpecialist(userData, professionalData, 'professional');
 
   const value = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: Boolean(user),
     isLoading,
     login,
     logout,
@@ -934,9 +358,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }
-
