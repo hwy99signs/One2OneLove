@@ -12,12 +12,12 @@ import {
 } from '@/lib/programmingReminderService';
 
 const COPY = {
-  en: { add: 'Remind me', set: 'Reminder set', remove: 'Remove reminder', sent: 'Reminder sent', added: 'Programming reminder set.', removed: 'Programming reminder removed.', failed: 'Unable to update the reminder.' },
-  es: { add: 'Recordarme', set: 'Recordatorio activado', remove: 'Quitar recordatorio', sent: 'Recordatorio enviado', added: 'Recordatorio de programación activado.', removed: 'Recordatorio eliminado.', failed: 'No se pudo actualizar el recordatorio.' },
-  fr: { add: 'Me rappeler', set: 'Rappel activé', remove: 'Supprimer le rappel', sent: 'Rappel envoyé', added: 'Rappel de programmation activé.', removed: 'Rappel supprimé.', failed: 'Impossible de mettre à jour le rappel.' },
-  it: { add: 'Ricordamelo', set: 'Promemoria attivo', remove: 'Rimuovi promemoria', sent: 'Promemoria inviato', added: 'Promemoria della programmazione attivato.', removed: 'Promemoria rimosso.', failed: 'Impossibile aggiornare il promemoria.' },
-  de: { add: 'Erinnere mich', set: 'Erinnerung aktiv', remove: 'Erinnerung entfernen', sent: 'Erinnerung gesendet', added: 'Programmerinnerung aktiviert.', removed: 'Erinnerung entfernt.', failed: 'Erinnerung konnte nicht aktualisiert werden.' },
-  nl: { add: 'Herinner mij', set: 'Herinnering actief', remove: 'Herinnering verwijderen', sent: 'Herinnering verzonden', added: 'Programmaherinnering ingesteld.', removed: 'Herinnering verwijderd.', failed: 'De herinnering kon niet worden bijgewerkt.' },
+  en: { add: 'Remind me', remove: 'Remove reminder', sending: 'Reminder sending', sent: 'Reminder sent', added: 'Programming reminder set.', removed: 'Programming reminder removed.', failed: 'Unable to update the reminder.' },
+  es: { add: 'Recordarme', remove: 'Quitar recordatorio', sending: 'Enviando recordatorio', sent: 'Recordatorio enviado', added: 'Recordatorio de programación activado.', removed: 'Recordatorio eliminado.', failed: 'No se pudo actualizar el recordatorio.' },
+  fr: { add: 'Me rappeler', remove: 'Supprimer le rappel', sending: 'Envoi du rappel', sent: 'Rappel envoyé', added: 'Rappel de programmation activé.', removed: 'Rappel supprimé.', failed: 'Impossible de mettre à jour le rappel.' },
+  it: { add: 'Ricordamelo', remove: 'Rimuovi promemoria', sending: 'Invio promemoria', sent: 'Promemoria inviato', added: 'Promemoria della programmazione attivato.', removed: 'Promemoria rimosso.', failed: 'Impossibile aggiornare il promemoria.' },
+  de: { add: 'Erinnere mich', remove: 'Erinnerung entfernen', sending: 'Erinnerung wird gesendet', sent: 'Erinnerung gesendet', added: 'Programmerinnerung aktiviert.', removed: 'Erinnerung entfernt.', failed: 'Erinnerung konnte nicht aktualisiert werden.' },
+  nl: { add: 'Herinner mij', remove: 'Herinnering verwijderen', sending: 'Herinnering wordt verzonden', sent: 'Herinnering verzonden', added: 'Programmaherinnering ingesteld.', removed: 'Herinnering verwijderd.', failed: 'De herinnering kon niet worden bijgewerkt.' },
 };
 
 export default function ProgrammingReminderButton({ slot }) {
@@ -63,8 +63,13 @@ export default function ProgrammingReminderButton({ slot }) {
   if (loading) return <Button type="button" size="sm" variant="outline" disabled><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />{t.add}</Button>;
   if (!serverEnabled) return null;
 
-  const active = reminder?.status === 'active' || reminder?.status === 'processing';
+  const active = reminder?.status === 'active';
+  const processing = reminder?.status === 'processing';
   const sent = reminder?.status === 'sent';
+
+  if (processing) {
+    return <Button type="button" size="sm" variant="outline" disabled><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />{t.sending}</Button>;
+  }
 
   if (sent) {
     return <Button type="button" size="sm" variant="outline" disabled><Check className="mr-2 h-3.5 w-3.5" />{t.sent}</Button>;
@@ -77,11 +82,11 @@ export default function ProgrammingReminderButton({ slot }) {
       if (active) {
         const updated = await cancelProgrammingReminder(slot.id);
         setReminder(updated || { status: 'cancelled', slot_id: slot.id });
-        toast.success(t.removed);
+        if (updated?.status === 'cancelled' || !updated) toast.success(t.removed);
       } else {
         const updated = await setProgrammingReminder(slot.id);
         setReminder(updated);
-        toast.success(t.added);
+        if (updated?.status === 'active') toast.success(t.added);
       }
     } catch {
       toast.error(t.failed);
