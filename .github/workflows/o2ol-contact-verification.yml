@@ -1,0 +1,63 @@
+name: O2OL Contact Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-contact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify contact UI and schema contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f src/pages/ContactUs.jsx
+          test -f supabase-contact-messages.sql
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/ContactUs.jsx; done
+          grep -q "from('contact_messages').insert" src/pages/ContactUs.jsx
+          grep -q 'Contact messages are stored privately' src/pages/ContactUs.jsx
+          grep -q 'alter table public.contact_messages enable row level security' supabase-contact-messages.sql
+          grep -q 'grant insert on table public.contact_messages to anon, authenticated' supabase-contact-messages.sql
+          grep -q 'with check (user_id is null)' supabase-contact-messages.sql
+          grep -q 'with check (user_id = auth.uid())' supabase-contact-messages.sql
+
+      - name: Reject fake success and browser-readable support queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'console\.|mock|Base44|Promise\.resolve\(|setTimeout\(' src/pages/ContactUs.jsx; then
+            echo 'Contact Us must remain a real backend submission path without fake success behavior.'
+            exit 1
+          fi
+          if grep -Eq 'grant (select|update|delete)|grant all' supabase-contact-messages.sql; then
+            echo 'Browser roles must not receive contact-message read/update/delete access.'
+            exit 1
+          fi
+
+      - name: Lint contact page
+        run: npx eslint src/pages/ContactUs.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
