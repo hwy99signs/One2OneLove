@@ -68,8 +68,10 @@ export const listMyProgramming = async ({ from, to } = {}) => {
     .eq('creator_user_id', creator.id)
     .order('starts_at', { ascending: true });
 
-  if (from) query = query.gte('starts_at', from);
+  // Use overlap semantics so a creator can see/cancel a program that began before
+  // midnight but is still active on the selected calendar day.
   if (to) query = query.lt('starts_at', to);
+  if (from) query = query.gt('ends_at', from);
 
   const { data, error } = await query;
   if (error) throw error;
