@@ -2,11 +2,23 @@
 
 Updated: 2026-08-18
 
-This file collects owner decisions that should not interrupt active build work. Items are added only when a genuine product, legal, brand, monetization, or irreversible implementation decision is required.
+This file collects owner decisions that should not interrupt active build work. Items are added only when a genuine product, legal, brand, monetization, infrastructure, or irreversible implementation decision is required.
 
 ## Pending owner approvals
 
-_No approval is currently required to continue the present build branch._
+_No approval is currently required to continue the present Global Relationship Room build._
+
+### Legacy platform security / infrastructure review — batch for later owner review
+
+A live Supabase security-advisor pass identified several pre-existing platform items that are outside the new Global Relationship Room work. They are intentionally not being changed blindly because some may affect existing production behavior.
+
+- Decide when to schedule a controlled legacy database-security cleanup covering existing SECURITY DEFINER views/functions and mutable function search paths.
+- Approve a controlled fix for the existing `waitlist_signups` table, which has policies defined but Row Level Security currently disabled.
+- Decide whether to enable Supabase leaked-password protection for account security after confirming the desired sign-up/sign-in experience.
+- Approve the Supabase/Postgres patch-level upgrade during a maintenance window after compatibility review.
+- Review broad legacy GraphQL/Data API exposure as a separate hardening pass; the newly added Global Relationship Room tables are already protected by explicit grants plus RLS.
+
+These items are **not blockers** for continuing the current feature branch and should be handled as a dedicated security-hardening batch with verification.
 
 ## Build assumptions currently authorized
 
