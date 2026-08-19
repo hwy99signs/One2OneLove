@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, CalendarClock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/Layout';
 import {
   PROGRAMMING_REMINDERS_ENABLED,
   listProgrammingNotifications,
@@ -20,11 +19,10 @@ const COPY = {
 
 const localeByLanguage = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE', nl: 'nl-NL' };
 
-export default function ProgrammingNotificationCenter() {
+export default function ProgrammingNotificationCenter({ languageCode = 'en' }) {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { currentLanguage } = useLanguage();
-  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const language = COPY[languageCode] ? languageCode : 'en';
   const t = COPY[language];
   const locale = localeByLanguage[language] || 'en-US';
   const panelRef = useRef(null);
