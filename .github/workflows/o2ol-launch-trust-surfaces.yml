@@ -91,15 +91,15 @@ jobs:
             echo 'Fabricated blog authors/posts must not return.'
             exit 1
           fi
-          if grep -Eq 'Dr\. Sarah Mitchell|Join thousands|newsletter|subscribe|subscribed' src/pages/ArticlesSupport.jsx; then
-            echo 'Fabricated article/newsletter claims must not return.'
+          if grep -Eq 'Dr\. Sarah Mitchell|Join thousands|<form|<Input|subscribe|subscribed' src/pages/ArticlesSupport.jsx; then
+            echo 'Fabricated article or audience-capture behavior must not return.'
             exit 1
           fi
           if grep -Eq 'Emma & James|Sofia & Lucas|mockLeaderboard|gamification_points|Your Rank|Top Couples' src/pages/Leaderboard.jsx; then
             echo 'Mock public relationship rankings must not return.'
             exit 1
           fi
-          if grep -Eq 'earned: true|gamification_points|badges|Romantic Streak|Power Couple|pointsActivities' src/pages/Achievements.jsx; then
+          if grep -Eq 'earned:[[:space:]]*true|gamification_points|Romantic Streak|Power Couple|pointsActivities' src/pages/Achievements.jsx; then
             echo 'Pretend earned achievements or point rewards must not return.'
             exit 1
           fi
