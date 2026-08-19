@@ -41,6 +41,7 @@ export default function ProgramReportButton({ slotId, compact = false }) {
   useEffect(() => {
     if (!open) return undefined;
     const previouslyFocused = document.activeElement;
+    const trigger = triggerRef.current;
     closeRef.current?.focus();
     const onKeyDown = (event) => {
       if (event.key === 'Escape') setOpen(false);
@@ -48,7 +49,7 @@ export default function ProgramReportButton({ slotId, compact = false }) {
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      const restoreTarget = triggerRef.current || previouslyFocused;
+      const restoreTarget = trigger || previouslyFocused;
       restoreTarget?.focus?.();
     };
   }, [open]);
