@@ -18,6 +18,7 @@ import MarriageMatters from "./MarriageMatters";
 import RelationshipLibrary from "./RelationshipLibrary";
 import CouplesChallenges from "./CouplesChallenges";
 import ConversationCards from "./ConversationCards";
+import WeeklyCheckIn from "./WeeklyCheckIn";
 import RelationshipReset from "./RelationshipReset";
 import O2OLShow from "./O2OLShow";
 import Profile from "./Profile";
@@ -95,6 +96,7 @@ const PAGES = {
   RelationshipLibrary,
   CouplesChallenges,
   ConversationCards,
+  WeeklyCheckIn,
   RelationshipReset,
   O2OLShow,
   Profile,
@@ -188,6 +190,7 @@ function PagesContent() {
         <Route path="/RelationshipLibrary" element={<RelationshipLibrary />} />
         <Route path="/CouplesChallenges" element={<CouplesChallenges />} />
         <Route path="/ConversationCards" element={<ConversationCards />} />
+        <Route path="/WeeklyCheckIn" element={<WeeklyCheckIn />} />
         <Route path="/RelationshipReset" element={<RelationshipReset />} />
         <Route path="/O2OLShow" element={<O2OLShow />} />
         <Route path="/Profile" element={<Profile />} />
