@@ -28,6 +28,22 @@ function buildUserData(authUser, profileData = null) {
   };
 }
 
+async function createSpecialistProfile(type, userId, profileData) {
+  if (type === 'therapist') {
+    const { createTherapistProfile } = await import('@/lib/therapistService');
+    return createTherapistProfile(userId, profileData);
+  }
+  if (type === 'influencer') {
+    const { createInfluencerProfile } = await import('@/lib/influencerService');
+    return createInfluencerProfile(userId, profileData);
+  }
+  if (type === 'professional') {
+    const { createProfessionalProfile } = await import('@/lib/professionalService');
+    return createProfessionalProfile(userId, profileData);
+  }
+  return null;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -301,30 +317,17 @@ export function AuthProvider({ children }) {
         .select()
         .single();
 
-      const serviceConfig = {
-        therapist: ['@/lib/therapistService', 'createTherapistProfile'],
-        influencer: ['@/lib/influencerService', 'createInfluencerProfile'],
-        professional: ['@/lib/professionalService', 'createProfessionalProfile'],
-      }[type];
-
-      if (serviceConfig) {
-        const [modulePath, functionName] = serviceConfig;
-        try {
-          const service = await import(/* @vite-ignore */ modulePath);
-          const createProfile = service[functionName];
-          if (typeof createProfile === 'function') {
-            await createProfile(authData.user.id, {
-              ...profileData,
-              firstName,
-              lastName,
-              email,
-              emailVerified: Boolean(profileData?.emailVerified),
-              phoneVerified: Boolean(profileData?.phoneVerified),
-            });
-          }
-        } catch {
-          // The account remains usable even if optional specialist profile setup fails.
-        }
+      try {
+        await createSpecialistProfile(type, authData.user.id, {
+          ...profileData,
+          firstName,
+          lastName,
+          email,
+          emailVerified: Boolean(profileData?.emailVerified),
+          phoneVerified: Boolean(profileData?.phoneVerified),
+        });
+      } catch {
+        // The account remains usable even if optional specialist profile setup fails.
       }
 
       const newUser = buildUserData(authData.user, userProfile || { name: fullName, user_type: type });
