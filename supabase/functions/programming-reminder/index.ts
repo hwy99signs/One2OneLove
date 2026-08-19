@@ -7,6 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const REMINDER_LEAD_MS = 15 * 60 * 1000
+const REMINDER_FIELDS = 'id,slot_id,remind_at,status,created_at,updated_at'
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -73,28 +74,35 @@ serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
-    if (action === 'status') {
+    const readOwnReminder = async () => {
       const { data, error } = await serviceClient
         .from('programming_reminders')
-        .select('id,slot_id,remind_at,status,created_at,updated_at')
+        .select(REMINDER_FIELDS)
         .eq('user_id', caller.id)
         .eq('slot_id', slotId)
         .maybeSingle()
       if (error) throw error
-      return json(request, { success: true, enabled: true, reminder: data || null })
+      return data || null
+    }
+
+    if (action === 'status') {
+      return json(request, { success: true, enabled: true, reminder: await readOwnReminder() })
     }
 
     if (action === 'cancel') {
+      // Cancellation is guaranteed only while the reminder is still active. Once the
+      // dispatcher has claimed it as processing, the UI reports that delivery is in
+      // progress rather than falsely promising cancellation.
       const { data, error } = await serviceClient
         .from('programming_reminders')
         .update({ status: 'cancelled' })
         .eq('user_id', caller.id)
         .eq('slot_id', slotId)
-        .in('status', ['active', 'processing'])
-        .select('id,slot_id,remind_at,status,created_at,updated_at')
+        .eq('status', 'active')
+        .select(REMINDER_FIELDS)
         .maybeSingle()
       if (error) throw error
-      return json(request, { success: true, enabled: true, reminder: data || null })
+      return json(request, { success: true, enabled: true, reminder: data || await readOwnReminder() })
     }
 
     if (action !== 'set') return json(request, { error: 'INVALID_ACTION' }, 400)
@@ -116,14 +124,13 @@ serve(async (request) => {
 
     const desiredReminder = new Date(startsAt.getTime() - REMINDER_LEAD_MS)
     const remindAt = desiredReminder > now ? desiredReminder : now
+    const existing = await readOwnReminder()
 
-    const { data: existing, error: existingError } = await serviceClient
-      .from('programming_reminders')
-      .select('id,status')
-      .eq('user_id', caller.id)
-      .eq('slot_id', slotId)
-      .maybeSingle()
-    if (existingError) throw existingError
+    // A reminder already claimed or sent must not be re-armed. In particular, a sent
+    // reminder already owns a unique notification row keyed by reminder_id.
+    if (existing?.status === 'processing' || existing?.status === 'sent') {
+      return json(request, { success: true, enabled: true, reminder: existing })
+    }
 
     let reminder
     if (existing) {
@@ -132,27 +139,33 @@ serve(async (request) => {
         .update({ remind_at: remindAt.toISOString(), status: 'active' })
         .eq('id', existing.id)
         .eq('user_id', caller.id)
-        .select('id,slot_id,remind_at,status,created_at,updated_at')
-        .single()
+        .in('status', ['active', 'cancelled'])
+        .select(REMINDER_FIELDS)
+        .maybeSingle()
       if (error) throw error
-      reminder = data
+      reminder = data || await readOwnReminder()
     } else {
       const { data, error } = await serviceClient
         .from('programming_reminders')
         .insert({ user_id: caller.id, slot_id: slotId, remind_at: remindAt.toISOString(), status: 'active' })
-        .select('id,slot_id,remind_at,status,created_at,updated_at')
+        .select(REMINDER_FIELDS)
         .single()
       if (error) {
         if (error.code === '23505') {
-          const { data: raced, error: raceError } = await serviceClient
-            .from('programming_reminders')
-            .update({ remind_at: remindAt.toISOString(), status: 'active' })
-            .eq('user_id', caller.id)
-            .eq('slot_id', slotId)
-            .select('id,slot_id,remind_at,status,created_at,updated_at')
-            .single()
-          if (raceError) throw raceError
-          reminder = raced
+          const raced = await readOwnReminder()
+          if (raced?.status === 'active' || raced?.status === 'cancelled') {
+            const { data: updated, error: raceError } = await serviceClient
+              .from('programming_reminders')
+              .update({ remind_at: remindAt.toISOString(), status: 'active' })
+              .eq('id', raced.id)
+              .in('status', ['active', 'cancelled'])
+              .select(REMINDER_FIELDS)
+              .maybeSingle()
+            if (raceError) throw raceError
+            reminder = updated || await readOwnReminder()
+          } else {
+            reminder = raced
+          }
         } else {
           throw error
         }
