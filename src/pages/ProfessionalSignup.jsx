@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building, CheckCircle, Heart, Loader2, LockKeyhole, Mail, Phone, User } from 'lucide-react';
+import { Building, CheckCircle, Loader2, LockKeyhole, Mail, Phone, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
