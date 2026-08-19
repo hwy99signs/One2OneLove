@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 export const CREATOR_PROGRAMMING_ENABLED = import.meta.env.VITE_CREATOR_PROGRAMMING_ENABLED === 'true';
 
-const SLOT_FIELDS = 'id,creator_user_id,room_slug,title,description,starts_at,ends_at,creator_timezone,creator_local_date,content_mode,replay_url,booking_tier,price_cents,payment_status,status,created_at,updated_at';
+const SLOT_FIELDS = 'id,creator_user_id,program_source,room_slug,title,description,starts_at,ends_at,creator_timezone,creator_local_date,content_mode,replay_url,booking_tier,price_cents,payment_status,status,created_at,updated_at';
 
 const requireEnabled = () => {
   if (!CREATOR_PROGRAMMING_ENABLED) throw new Error('Creator programming is not enabled yet.');
@@ -65,6 +65,7 @@ export const listMyProgramming = async ({ from, to } = {}) => {
   let query = supabase
     .from('creator_programming_slots')
     .select(SLOT_FIELDS)
+    .eq('program_source', 'creator')
     .eq('creator_user_id', creator.id)
     .order('starts_at', { ascending: true });
 
@@ -134,6 +135,7 @@ export const cancelCreatorProgrammingSlot = async (slotId) => {
     .from('creator_programming_slots')
     .update({ status: 'cancelled', updated_at: new Date().toISOString() })
     .eq('id', slotId)
+    .eq('program_source', 'creator')
     .eq('creator_user_id', creator.id)
     .eq('status', 'booked')
     .select(SLOT_FIELDS)
