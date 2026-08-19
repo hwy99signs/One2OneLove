@@ -1,0 +1,149 @@
+name: O2OL Profile Trust Hardening
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-profile-trust-hardening.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden-profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout current O2OL branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Remove fake metrics and harden Profile
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('src/pages/Profile.jsx')
+          s = p.read_text()
+
+          s = s.replace('TrendingUp, Award, ArrowRight', 'TrendingUp, ArrowRight')
+
+          runtime_anchor = '\n};\n\n// Active Goals Card Component\n'
+          runtime_block = '''
+};
+
+const profileRuntimeCopy = {
+  en: { updated: "Profile updated successfully.", updateError: "We could not update your profile.", signInUpload: "Sign in to upload a profile picture.", regularOnly: "Profile photos are available for regular members only.", imageOnly: "Choose an image file.", imageSize: "Profile images must be smaller than 5 MB.", imageUpdated: "Profile image updated.", imageError: "We could not update your profile image.", loading: "Loading profile...", recently: "Recently" },
+  es: { updated: "Perfil actualizado correctamente.", updateError: "No pudimos actualizar tu perfil.", signInUpload: "Inicia sesión para subir una foto de perfil.", regularOnly: "Las fotos de perfil están disponibles solo para miembros regulares.", imageOnly: "Elige un archivo de imagen.", imageSize: "Las imágenes de perfil deben pesar menos de 5 MB.", imageUpdated: "Foto de perfil actualizada.", imageError: "No pudimos actualizar tu foto de perfil.", loading: "Cargando perfil...", recently: "Recientemente" },
+  fr: { updated: "Profil mis à jour.", updateError: "Nous n’avons pas pu mettre à jour votre profil.", signInUpload: "Connectez-vous pour ajouter une photo de profil.", regularOnly: "Les photos de profil sont disponibles uniquement pour les membres réguliers.", imageOnly: "Choisissez un fichier image.", imageSize: "Les images de profil doivent faire moins de 5 Mo.", imageUpdated: "Photo de profil mise à jour.", imageError: "Nous n’avons pas pu mettre à jour votre photo de profil.", loading: "Chargement du profil...", recently: "Récemment" },
+  it: { updated: "Profilo aggiornato.", updateError: "Non è stato possibile aggiornare il profilo.", signInUpload: "Accedi per caricare una foto profilo.", regularOnly: "Le foto profilo sono disponibili solo per i membri regolari.", imageOnly: "Scegli un file immagine.", imageSize: "Le immagini del profilo devono essere inferiori a 5 MB.", imageUpdated: "Foto profilo aggiornata.", imageError: "Non è stato possibile aggiornare la foto profilo.", loading: "Caricamento profilo...", recently: "Di recente" },
+  de: { updated: "Profil aktualisiert.", updateError: "Das Profil konnte nicht aktualisiert werden.", signInUpload: "Melde dich an, um ein Profilbild hochzuladen.", regularOnly: "Profilbilder sind nur für reguläre Mitglieder verfügbar.", imageOnly: "Wähle eine Bilddatei aus.", imageSize: "Profilbilder müssen kleiner als 5 MB sein.", imageUpdated: "Profilbild aktualisiert.", imageError: "Das Profilbild konnte nicht aktualisiert werden.", loading: "Profil wird geladen...", recently: "Kürzlich" },
+};
+
+const profileLocaleMap = { en: "en-US", es: "es", fr: "fr", it: "it", de: "de" };
+
+// Active Goals Card Component
+'''
+          if runtime_anchor not in s:
+            raise SystemExit('Profile runtime-copy anchor not found')
+          s = s.replace(runtime_anchor, runtime_block, 1)
+
+          debug_block = re.compile(r'''\n  // Debug logging \(remove in production\)\n  useEffect\(\(\) => \{\n    if \(allGoals && allGoals\.length > 0\) \{\n      console\.log\('All goals:', allGoals\);\n      console\.log\('Active goals filtered:', activeGoals\);\n      console\.log\('Goal statuses:', allGoals\.map\(g => \(\{ title: g\.title, status: g\.status \}\)\)\);\n    \}\n  \}, \[allGoals, activeGoals\]\);\n''')
+          s, n = debug_block.subn('\n', s, count=1)
+          if n != 1:
+            raise SystemExit('Active goals debug block not found')
+
+          s = s.replace("<span>{new Date(goal.target_date).toLocaleDateString()}</span>", "<span>{goal.target_date ? new Intl.DateTimeFormat(profileLocaleMap[currentLanguage] || profileLocaleMap.en).format(new Date(goal.target_date)) : t.profile.notSet}</span>")
+
+          user_anchor = '  const { currentLanguage } = useLanguage();\n  const t = translations[currentLanguage] || translations.en;\n  const [isEditing, setIsEditing] = useState(false);'
+          user_new = '  const { currentLanguage } = useLanguage();\n  const t = translations[currentLanguage] || translations.en;\n  const runtime = profileRuntimeCopy[currentLanguage] || profileRuntimeCopy.en;\n  const locale = profileLocaleMap[currentLanguage] || profileLocaleMap.en;\n  const [isEditing, setIsEditing] = useState(false);'
+          if user_anchor not in s:
+            raise SystemExit('Profile language anchor not found')
+          s = s.replace(user_anchor, user_new, 1)
+
+          s = s.replace('  // Mock memories data for now (can be replaced with actual query later)\n  const memories = [];\n\n', '')
+          s = s.replace('toast.success("Profile updated successfully!");', 'toast.success(runtime.updated);')
+          s = s.replace('toast.error(error.message || "Failed to update profile");', 'toast.error(error?.message || runtime.updateError);')
+          s = s.replace("toast.error('Please sign in to upload a profile picture');", 'toast.error(runtime.signInUpload);')
+          s = s.replace("toast.error('Profile photos are currently available for regular users only');", 'toast.error(runtime.regularOnly);')
+          s = s.replace("toast.error('Please select an image file');", 'toast.error(runtime.imageOnly);')
+          s = s.replace("toast.error('Image size should be less than 5MB');", 'toast.error(runtime.imageSize);')
+          s = s.replace("toast.success('Profile image updated successfully!');", 'toast.success(runtime.imageUpdated);')
+          s = re.sub(r'^\s*console\.error\([^\n]*\);\s*\n', '', s, flags=re.MULTILINE)
+          s = s.replace("toast.error(error.message || 'Failed to upload image. Please try again.');", 'toast.error(error?.message || runtime.imageError);')
+          s = s.replace('<p className="text-gray-600">Loading profile...</p>', '<p className="text-gray-600">{runtime.loading}</p>')
+          s = s.replace("const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';", "const joinDate = user?.created_at ? new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date(user.created_at)) : runtime.recently;")
+          s = s.replace('alt="Profile"', 'alt={t.profile.title}')
+          s = s.replace('const isProfileIncomplete = !user?.partner_name || !user?.love_language || !user?.anniversary_date;', 'const isProfileIncomplete = !user?.partner_email || !user?.love_language || !user?.anniversary_date;')
+          s = s.replace('to={createPageUrl("Community")}', 'to={createPageUrl("CouplesProfile")}', 1)
+
+          stats_decl = re.compile(r'''\n  const stats = \[\n.*?\n  \];\n''', re.DOTALL)
+          s, n = stats_decl.subn('\n', s, count=1)
+          if n != 1:
+            raise SystemExit('Profile stats declaration not found')
+
+          stats_render = re.compile(r'''\n        \{/\* Stats \*/\}\n        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">\n.*?\n        </div>\n\n        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">''', re.DOTALL)
+          s, n = stats_render.subn('\n        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">', s, count=1)
+          if n != 1:
+            raise SystemExit('Profile fake stats render block not found')
+
+          active_static = re.compile(r'''          \{/\* Active Goals \*/\}\n          <motion\.div\n            initial=\{\{ opacity: 0, x: 20 \}\}\n            animate=\{\{ opacity: 1, x: 0 \}\}\n            transition=\{\{ delay: 0\.3 \}\}\n          >\n            <Card className="shadow-lg h-full">\n.*?\n            </Card>\n          </motion\.div>''', re.DOTALL)
+          s, n = active_static.subn('          {/* Active Goals — real database-backed data */}\n          <ActiveGoalsCard />', s, count=1)
+          if n != 1:
+            raise SystemExit('Static Active Goals block not found')
+
+          if 'value: 3' in s or 'const memories = []' in s:
+            raise SystemExit('Fabricated Profile metric remains')
+
+          p.write_text(s)
+
+      - name: Verify profile trust invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/Profile.jsx; done
+          grep -q '<ActiveGoalsCard />' src/pages/Profile.jsx
+          grep -q 'Intl.DateTimeFormat(locale' src/pages/Profile.jsx
+          grep -q 'createPageUrl("CouplesProfile")' src/pages/Profile.jsx
+          if grep -Eq 'value: 3|const memories = \[\]|console\.(log|debug|info|trace|warn|error)' src/pages/Profile.jsx; then
+            echo 'Profile must not contain fabricated counters or browser diagnostics.'
+            exit 1
+          fi
+          if grep -q 'toLocaleDateString.(.en-US' src/pages/Profile.jsx; then
+            echo 'Profile dates must follow the selected active language.'
+            exit 1
+          fi
+
+      - name: Lint Profile
+        run: npx eslint src/pages/Profile.jsx --rule 'react/prop-types: off'
+
+      - name: Verify O2OL source
+        run: node scripts/verify-o2ol-launch.mjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified Profile hardening and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-profile-trust-hardening.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/Profile.jsx .github/workflows/o2ol-profile-trust-hardening.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Harden multilingual Profile trust and data accuracy'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
