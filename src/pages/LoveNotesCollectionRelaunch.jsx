@@ -8,22 +8,22 @@ const PAGE_SIZE = 24;
 
 const copy = {
   en: {
-    title: "365 Love Notes", subtitle: "Find the words, make them yours, then send the note privately.", search: "Search Love Notes…", all: "All", random: "Surprise me", send: "Send this Love Note", back: "Back to Love Notes", showing: "Showing", of: "of", notes: "Love Notes", empty: "No Love Notes match that search yet.", loadMore: "Show more Love Notes",
+    title: "365 Love Notes", subtitle: "Find the words, make them yours, then send the note privately.", search: "Search Love Notes…", all: "All", random: "Surprise me", send: "Send this Love Note", back: "Back to Love Notes", showing: "Showing", of: "of", notes: "Love Notes", empty: "No Love Notes match that search yet.", loadMore: "Show more Love Notes", draftTitle: "Love Note",
   },
   es: {
-    title: "365 Notas de Amor", subtitle: "Encuentra las palabras, hazlas tuyas y luego envía la nota en privado.", search: "Buscar Notas de Amor…", all: "Todas", random: "Sorpréndeme", send: "Enviar esta Nota de Amor", back: "Volver a Notas de Amor", showing: "Mostrando", of: "de", notes: "Notas de Amor", empty: "Ninguna Nota de Amor coincide con esa búsqueda.", loadMore: "Mostrar más Notas de Amor",
+    title: "365 Notas de Amor", subtitle: "Encuentra las palabras, hazlas tuyas y luego envía la nota en privado.", search: "Buscar Notas de Amor…", all: "Todas", random: "Sorpréndeme", send: "Enviar esta Nota de Amor", back: "Volver a Notas de Amor", showing: "Mostrando", of: "de", notes: "Notas de Amor", empty: "Ninguna Nota de Amor coincide con esa búsqueda.", loadMore: "Mostrar más Notas de Amor", draftTitle: "Nota de Amor",
   },
   fr: {
-    title: "365 Mots d’Amour", subtitle: "Trouvez les mots, personnalisez-les, puis envoyez votre mot en privé.", search: "Rechercher des Mots d’Amour…", all: "Tous", random: "Surprenez-moi", send: "Envoyer ce Mot d’Amour", back: "Retour aux Mots d’Amour", showing: "Affichage", of: "sur", notes: "Mots d’Amour", empty: "Aucun Mot d’Amour ne correspond à cette recherche.", loadMore: "Afficher plus de Mots d’Amour",
+    title: "365 Mots d’Amour", subtitle: "Trouvez les mots, personnalisez-les, puis envoyez votre mot en privé.", search: "Rechercher des Mots d’Amour…", all: "Tous", random: "Surprenez-moi", send: "Envoyer ce Mot d’Amour", back: "Retour aux Mots d’Amour", showing: "Affichage", of: "sur", notes: "Mots d’Amour", empty: "Aucun Mot d’Amour ne correspond à cette recherche.", loadMore: "Afficher plus de Mots d’Amour", draftTitle: "Mot d’Amour",
   },
   it: {
-    title: "365 Note d’Amore", subtitle: "Trova le parole, rendile tue e poi invia la nota in privato.", search: "Cerca Note d’Amore…", all: "Tutte", random: "Sorprendimi", send: "Invia questa Nota d’Amore", back: "Torna alle Note d’Amore", showing: "Mostrando", of: "di", notes: "Note d’Amore", empty: "Nessuna Nota d’Amore corrisponde alla ricerca.", loadMore: "Mostra altre Note d’Amore",
+    title: "365 Note d’Amore", subtitle: "Trova le parole, rendile tue e poi invia la nota in privato.", search: "Cerca Note d’Amore…", all: "Tutte", random: "Sorprendimi", send: "Invia questa Nota d’Amore", back: "Torna alle Note d’Amore", showing: "Mostrando", of: "di", notes: "Note d’Amore", empty: "Nessuna Nota d’Amore corrisponde alla ricerca.", loadMore: "Mostra altre Note d’Amore", draftTitle: "Nota d’Amore",
   },
   de: {
-    title: "365 Liebesnotizen", subtitle: "Finde die Worte, mach sie persönlich und sende die Notiz privat.", search: "Liebesnotizen durchsuchen…", all: "Alle", random: "Überrasch mich", send: "Diese Liebesnotiz senden", back: "Zurück zu Liebesnotizen", showing: "Angezeigt", of: "von", notes: "Liebesnotizen", empty: "Keine Liebesnotiz passt zu dieser Suche.", loadMore: "Mehr Liebesnotizen anzeigen",
+    title: "365 Liebesnotizen", subtitle: "Finde die Worte, mach sie persönlich und sende die Notiz privat.", search: "Liebesnotizen durchsuchen…", all: "Alle", random: "Überrasch mich", send: "Diese Liebesnotiz senden", back: "Zurück zu Liebesnotizen", showing: "Angezeigt", of: "von", notes: "Liebesnotizen", empty: "Keine Liebesnotiz passt zu dieser Suche.", loadMore: "Mehr Liebesnotizen anzeigen", draftTitle: "Liebesnotiz",
   },
   nl: {
-    title: "365 Liefdesbriefjes", subtitle: "Vind de woorden, maak ze persoonlijk en verstuur het briefje privé.", search: "Liefdesbriefjes zoeken…", all: "Alle", random: "Verras me", send: "Dit Liefdesbriefje sturen", back: "Terug naar Liefdesbriefjes", showing: "Getoond", of: "van", notes: "Liefdesbriefjes", empty: "Geen Liefdesbriefjes gevonden voor deze zoekopdracht.", loadMore: "Meer Liefdesbriefjes tonen",
+    title: "365 Liefdesbriefjes", subtitle: "Vind de woorden, maak ze persoonlijk en verstuur het briefje privé.", search: "Liefdesbriefjes zoeken…", all: "Alle", random: "Verras me", send: "Dit Liefdesbriefje sturen", back: "Terug naar Liefdesbriefjes", showing: "Getoond", of: "van", notes: "Liefdesbriefjes", empty: "Geen Liefdesbriefjes gevonden voor deze zoekopdracht.", loadMore: "Meer Liefdesbriefjes tonen", draftTitle: "Liefdesbriefje",
   },
 };
 
@@ -61,7 +61,7 @@ export default function LoveNotesCollectionRelaunch() {
 
   const sendNote = (note) => {
     sessionStorage.setItem("o2ol-love-note-draft", JSON.stringify({
-      message: (note?.content || "").trim().slice(0, 500), source: "collection", title: note?.title || "Love Note",
+      message: (note?.content || "").trim().slice(0, 500), source: "collection", title: note?.title || t.draftTitle,
     }));
     navigate("/LoveNotes/Send");
   };
