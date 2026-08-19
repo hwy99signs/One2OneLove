@@ -82,7 +82,11 @@ jobs:
             echo 'Couple Profile surfaces must not log account or relationship data to the browser console.'
             exit 1
           fi
-          if grep -Eq '\.from\(["'"']users["'"']\).*\.select' src/pages/CouplesProfile.jsx; then
+          if grep -F ".from('users')" src/pages/CouplesProfile.jsx | grep -q '.select'; then
+            echo 'Couple Profile must not restore direct private-account partner reads.'
+            exit 1
+          fi
+          if grep -F '.from("users")' src/pages/CouplesProfile.jsx | grep -q '.select'; then
             echo 'Couple Profile must not restore direct private-account partner reads.'
             exit 1
           fi
