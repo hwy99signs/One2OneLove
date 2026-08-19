@@ -1,0 +1,70 @@
+name: O2OL Auth Log Hardening
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - scripts/sanitize-auth-logging.mjs
+      - .github/workflows/o2ol-auth-log-hardening.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sanitize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Remove AuthContext console diagnostics
+        run: node scripts/sanitize-auth-logging.mjs
+
+      - name: Verify no AuthContext console diagnostics remain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'console\.(log|warn|error|debug|info)' src/contexts/AuthContext.jsx; then
+            echo 'AuthContext still contains browser-console diagnostics.'
+            exit 1
+          fi
+
+      - name: Verify O2OL account security
+        run: node scripts/verify-o2ol-security.mjs
+
+      - name: Verify launch source
+        run: node scripts/verify-o2ol-launch.mjs
+
+      - name: Lint AuthContext
+        run: npx eslint src/contexts/AuthContext.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit only after verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/contexts/AuthContext.jsx; then
+            echo 'AuthContext diagnostics already sanitized.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/contexts/AuthContext.jsx
+          git commit -m 'Remove sensitive auth browser diagnostics'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
