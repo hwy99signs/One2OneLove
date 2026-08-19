@@ -31,15 +31,21 @@ jobs:
           echo 'Production dependency audit is informational until remediation is reviewed for breaking-change risk.'
           npm audit --omit=dev || true
 
-      - name: Verify critical recovery and Global Room routes
+      - name: Verify critical account and Global Room routes
         shell: bash
         run: |
           set -euo pipefail
+          test -f src/pages/SignIn.jsx
+          test -f src/pages/SignUp.jsx
+          test -f src/components/signup/RegularUserForm.jsx
+          test -f src/components/signup/EmailVerificationDialog.jsx
           test -f src/pages/ResetPassword.jsx
           test -f src/pages/GlobalRelationshipRoom.jsx
           test -f src/pages/RoomCreatorAccess.jsx
           test -f src/pages/RoomModeration.jsx
           test -f src/pages/RoomCancellationQueue.jsx
+          grep -q 'path="/SignIn"' src/pages/index.jsx
+          grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
           grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
           grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
@@ -52,6 +58,12 @@ jobs:
       - name: Lint launch-critical O2OL surfaces
         run: >-
           npx eslint
+          src/pages/SignIn.jsx
+          src/pages/SignUp.jsx
+          src/components/signup/RegularUserForm.jsx
+          src/components/signup/EmailVerificationDialog.jsx
+          src/pages/ForgotPassword.jsx
+          src/pages/ResetPassword.jsx
           src/pages/GlobalRelationshipRoom.jsx
           src/pages/RoomCreatorAccess.jsx
           src/pages/RoomModeration.jsx
