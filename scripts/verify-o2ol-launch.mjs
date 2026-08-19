@@ -17,6 +17,10 @@ const requireText = (content, text, label) => {
   if (!content.includes(text)) failures.push(`Missing ${label}: ${text}`);
 };
 
+const rejectText = (content, text, label) => {
+  if (content.includes(text)) failures.push(`Unsafe ${label}: ${text}`);
+};
+
 const requireAnyText = (content, options, label) => {
   if (!options.some((text) => content.includes(text))) {
     failures.push(`Missing ${label}: expected one of ${options.join(', ')}`);
@@ -30,6 +34,11 @@ const multilingualSources = [
   ['SignUp', 'src/pages/SignUp.jsx'],
   ['RegularUserForm', 'src/components/signup/RegularUserForm.jsx'],
   ['EmailVerificationDialog', 'src/components/signup/EmailVerificationDialog.jsx'],
+  ['InfluencerSignup', 'src/pages/InfluencerSignup.jsx'],
+  ['ProfessionalSignup', 'src/pages/ProfessionalSignup.jsx'],
+  ['InfluencerSignupForm', 'src/components/signup/InfluencerSignupForm.jsx'],
+  ['OtherUserSignupForm', 'src/components/signup/OtherUserSignupForm.jsx'],
+  ['ProfilePhotoUpload', 'src/components/signup/ProfilePhotoUpload.jsx'],
   ['ForgotPassword', 'src/pages/ForgotPassword.jsx'],
   ['ResetPassword', 'src/pages/ResetPassword.jsx'],
   ['GlobalRelationshipRoom', 'src/pages/GlobalRelationshipRoom.jsx'],
@@ -66,6 +75,8 @@ const router = read('src/pages/index.jsx');
 const requiredRoutes = [
   '/SignIn',
   '/SignUp',
+  '/InfluencerSignup',
+  '/ProfessionalSignup',
   '/ForgotPassword',
   '/ResetPassword',
   '/GlobalRelationshipRoom',
@@ -137,6 +148,27 @@ requireText(regularSignup, 'result.user?.email_verified', 'verification-aware po
 const verificationDialog = read('src/components/signup/EmailVerificationDialog.jsx');
 requireText(verificationDialog, 'requiresVerification', 'verification-aware account success dialog');
 requireText(verificationDialog, 't.steps.map', 'localized verification steps');
+
+const influencerSignup = read('src/pages/InfluencerSignup.jsx');
+requireText(influencerSignup, 'registerInfluencer', 'real influencer registration call');
+requireText(influencerSignup, 'minLength={8}', 'influencer password minimum');
+requireText(influencerSignup, 'to="/TermsOfService"', 'influencer Terms consent');
+requireText(influencerSignup, 'to="/PrivacyPolicy"', 'influencer Privacy consent');
+rejectText(influencerSignup, '123456', 'influencer placeholder verification code');
+rejectText(influencerSignup, 'tempPassword', 'influencer temporary password');
+
+const professionalSignup = read('src/pages/ProfessionalSignup.jsx');
+requireText(professionalSignup, 'registerProfessional', 'real professional registration call');
+requireText(professionalSignup, 'minLength={8}', 'professional password minimum');
+requireText(professionalSignup, 'to="/TermsOfService"', 'professional Terms consent');
+requireText(professionalSignup, 'to="/PrivacyPolicy"', 'professional Privacy consent');
+rejectText(professionalSignup, '123456', 'professional placeholder verification code');
+rejectText(professionalSignup, 'tempPassword', 'professional temporary password');
+
+const influencerService = read('src/lib/influencerService.js');
+requireText(influencerService, "status: 'pending'", 'pending influencer moderation status');
+const professionalService = read('src/lib/professionalService.js');
+requireText(professionalService, "status: 'pending'", 'pending professional moderation status');
 
 const forgotPassword = read('src/pages/ForgotPassword.jsx');
 requireText(forgotPassword, 'resetPasswordForEmail', 'real Supabase reset email call');
