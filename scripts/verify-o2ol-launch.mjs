@@ -17,6 +17,12 @@ const requireText = (content, text, label) => {
   if (!content.includes(text)) failures.push(`Missing ${label}: ${text}`);
 };
 
+const requireAnyText = (content, options, label) => {
+  if (!options.some((text) => content.includes(text))) {
+    failures.push(`Missing ${label}: expected one of ${options.join(', ')}`);
+  }
+};
+
 const activeLanguages = ['en', 'es', 'fr', 'it', 'de'];
 
 // Verify each launch-critical surface at the canonical file that owns its translations.
@@ -74,7 +80,8 @@ const privateModeratorPages = [
 for (const file of privateModeratorPages) {
   const content = read(file);
   requireText(content, 'isGlobalRoomModerator', `trusted moderator gate in ${file}`);
-  requireText(content, '!moderator', `restricted moderator rendering in ${file}`);
+  requireText(content, 'data?.isModerator', `moderator authorization result in ${file}`);
+  requireAnyText(content, ['!moderator', '!isModerator'], `restricted moderator rendering in ${file}`);
 }
 
 const forgotPassword = read('src/pages/ForgotPassword.jsx');
@@ -87,6 +94,15 @@ requireText(resetPassword, 'updateUser({ password })', 'Supabase password update
 
 const roomCreatorAccess = read('src/pages/RoomCreatorAccess.jsx');
 requireText(roomCreatorAccess, 'getRoomCreatorTranslation', 'creator translation module usage');
+requireText(roomCreatorAccess, 'profileLoadFailed', 'creator profile failure state');
+requireText(roomCreatorAccess, 'min={minimumStartTime}', 'creator booking minimum start time');
+
+const publicRoom = read('src/pages/GlobalRelationshipRoom.jsx');
+requireText(publicRoom, 'hasError={scheduleUnavailable}', 'public schedule backend failure state');
+
+const scheduleViewer = read('src/components/global-room/RoomScheduleViewer.jsx');
+requireText(scheduleViewer, 'role="alert"', 'public schedule alert state');
+requireText(scheduleViewer, 'dateTime={slot.scheduled_start}', 'semantic public schedule time');
 
 const roomService = read('src/lib/globalRelationshipRoomService.js');
 requireText(roomService, 'creator_display_name', 'safe public creator display name');
