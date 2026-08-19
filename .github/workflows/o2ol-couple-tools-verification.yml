@@ -33,7 +33,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/pages/AnniversaryTracker.jsx src/pages/CoupleActivities.jsx src/pages/CouplesDashboard.jsx src/pages/CommunicationPractice.jsx; do
+          for file in \
+            src/pages/AnniversaryTracker.jsx \
+            src/pages/CoupleActivities.jsx \
+            src/pages/CouplesDashboard.jsx \
+            src/pages/CommunicationPractice.jsx \
+            src/pages/CoupleSupport.jsx; do
             test -f "$file"
             for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
           done
@@ -41,6 +46,7 @@ jobs:
           grep -q 'path="/CoupleActivities"' src/pages/index.jsx
           grep -q 'path="/CouplesDashboard"' src/pages/index.jsx
           grep -q 'path="/CommunicationPractice"' src/pages/index.jsx
+          grep -q 'path="/CoupleSupport"' src/pages/index.jsx
 
       - name: Verify Anniversary Tracker privacy
         shell: bash
@@ -88,13 +94,39 @@ jobs:
             exit 1
           fi
 
-      - name: Lint couple tools
+      - name: Verify Relationship Support trust boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'does not provide therapy' src/pages/CoupleSupport.jsx
+          grep -q 'crisis care' src/pages/CoupleSupport.jsx
+          grep -q '/CommunicationPractice' src/pages/CoupleSupport.jsx
+          grep -q '/RelationshipLibrary' src/pages/CoupleSupport.jsx
+          if grep -Eq 'licensed professionals|Find a Counselor|therapist_profiles|professional_profiles|supabase|fetch\(' src/pages/CoupleSupport.jsx; then
+            echo 'Relationship Support must not imply an unverified professional-referral flow.'
+            exit 1
+          fi
+
+      - name: Verify AuthContext does not expose account diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'console\.(log|debug|info|trace)' src/contexts/AuthContext.jsx; then
+            echo 'AuthContext must not log account, profile, or session data to the browser console.'
+            exit 1
+          fi
+          grep -q 'refreshUserProfile' src/contexts/AuthContext.jsx
+          grep -q "supabase.auth.onAuthStateChange" src/contexts/AuthContext.jsx
+
+      - name: Lint couple tools and auth context
         run: >-
           npx eslint
           src/pages/AnniversaryTracker.jsx
           src/pages/CoupleActivities.jsx
           src/pages/CouplesDashboard.jsx
           src/pages/CommunicationPractice.jsx
+          src/pages/CoupleSupport.jsx
+          src/contexts/AuthContext.jsx
           --rule 'react/prop-types: off'
 
       - name: Production build
