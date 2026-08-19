@@ -6,6 +6,7 @@
 --   * approved creator accounts are existing users.user_type='influencer' accounts.
 --   * each creator may hold at most two FREE booked slots per creator-local date.
 --   * live and replay programming are supported.
+--   * every booking records acknowledgement of creator content/community rules.
 --   * paid fields are reserved for a later approved rollout; browser insert is disabled.
 --   * Global Relationship Room is the initial programming destination.
 
@@ -31,6 +32,8 @@ create table if not exists public.creator_programming_slots (
   price_cents integer not null default 0 check (price_cents >= 0),
   payment_status text not null default 'not_required'
     check (payment_status in ('not_required','pending','paid','refunded','failed')),
+  policy_version text not null check (char_length(policy_version) between 1 and 80),
+  policy_acknowledged_at timestamptz not null,
   status text not null default 'booked'
     check (status in ('booked','cancelled','completed')),
   created_at timestamptz not null default now(),
@@ -150,7 +153,7 @@ using ((select auth.uid()) = creator_user_id and status = 'booked')
 with check ((select auth.uid()) = creator_user_id and status in ('booked','cancelled'));
 
 comment on table public.creator_programming_slots is
-  'Creator self-booking calendar. Browser users can read/cancel only their own slots; creation and public schedule delivery are mediated by reviewed backend functions.';
+  'Creator self-booking calendar. Browser users can read/cancel only their own slots; creation and public schedule delivery are mediated by reviewed backend functions. Each booking stores the server-assigned creator programming policy version and acknowledgement time.';
 
 -- The earlier identity-hardening migration restricted the room_messages table itself to
 -- the original five room slugs. The Global Relationship Room must pass both that table
@@ -190,5 +193,6 @@ commit;
 -- 4. Verify a third free booking on one creator-local date fails under concurrent requests.
 -- 5. Verify overlapping booked slots fail at the exclusion constraint.
 -- 6. Verify Global Relationship Room messages pass both room_messages_room_slug_allowed and room_messages_insert_own.
--- 7. Deploy book-creator-programming-slot with JWT verification enabled.
--- 8. Keep paid booking disabled until a separate payment/refund/terms approval batch.
+-- 7. Verify every inserted creator slot has server-assigned policy_version and policy_acknowledged_at values.
+-- 8. Deploy book-creator-programming-slot with JWT verification enabled.
+-- 9. Keep paid booking disabled until a separate payment/refund/terms approval batch.
