@@ -31,7 +31,7 @@ jobs:
           echo 'Production dependency audit is informational until remediation is reviewed for breaking-change risk.'
           npm audit --omit=dev || true
 
-      - name: Verify critical account, Global Room, and engagement routes
+      - name: Verify critical account, partner, Global Room, and engagement routes
         shell: bash
         run: |
           set -euo pipefail
@@ -39,6 +39,11 @@ jobs:
           test -f src/pages/SignUp.jsx
           test -f src/components/signup/RegularUserForm.jsx
           test -f src/components/signup/EmailVerificationDialog.jsx
+          test -f src/pages/InfluencerSignup.jsx
+          test -f src/pages/ProfessionalSignup.jsx
+          test -f src/components/signup/InfluencerSignupForm.jsx
+          test -f src/components/signup/OtherUserSignupForm.jsx
+          test -f src/components/signup/ProfilePhotoUpload.jsx
           test -f src/pages/ResetPassword.jsx
           test -f src/pages/GlobalRelationshipRoom.jsx
           test -f src/pages/RoomCreatorAccess.jsx
@@ -62,6 +67,8 @@ jobs:
           test -f src/components/home/Footer.jsx
           grep -q 'path="/SignIn"' src/pages/index.jsx
           grep -q 'path="/SignUp"' src/pages/index.jsx
+          grep -q 'path="/InfluencerSignup"' src/pages/index.jsx
+          grep -q 'path="/ProfessionalSignup"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
           grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
           grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
@@ -81,12 +88,21 @@ jobs:
             echo 'Legacy dead homepage stats polling must not return.'
             exit 1
           fi
+          if grep -Eq '123456|tempPassword|emailVerificationCode|phoneVerificationCode' src/pages/InfluencerSignup.jsx src/pages/ProfessionalSignup.jsx; then
+            echo 'Development-era partner verification placeholders must not return.'
+            exit 1
+          fi
 
-      - name: Verify new engagement and homepage five-language coverage
+      - name: Verify launch surfaces use all five active languages
         shell: bash
         run: |
           set -euo pipefail
           for file in \
+            src/pages/InfluencerSignup.jsx \
+            src/pages/ProfessionalSignup.jsx \
+            src/components/signup/InfluencerSignupForm.jsx \
+            src/components/signup/OtherUserSignupForm.jsx \
+            src/components/signup/ProfilePhotoUpload.jsx \
             src/pages/DailyQuestion.jsx \
             src/components/home/DailyQuestionPromo.jsx \
             src/pages/MarriageMatters.jsx \
@@ -122,6 +138,11 @@ jobs:
           src/pages/SignUp.jsx
           src/components/signup/RegularUserForm.jsx
           src/components/signup/EmailVerificationDialog.jsx
+          src/pages/InfluencerSignup.jsx
+          src/pages/ProfessionalSignup.jsx
+          src/components/signup/InfluencerSignupForm.jsx
+          src/components/signup/OtherUserSignupForm.jsx
+          src/components/signup/ProfilePhotoUpload.jsx
           src/pages/ForgotPassword.jsx
           src/pages/ResetPassword.jsx
           src/pages/GlobalRelationshipRoom.jsx
