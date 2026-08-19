@@ -18,6 +18,8 @@ const checks = [
   ['relaunch premium routes', 'scripts/relaunch-premium-route-check.mjs'],
   ['relaunch member connections/chat', 'scripts/relaunch-connection-chat-check.mjs'],
   ['relaunch member-connections multilingual runtime', 'scripts/relaunch-member-connections-i18n-check.mjs'],
+  ['relaunch live community', 'scripts/relaunch-live-community-check.mjs'],
+  ['relaunch live-room multilingual runtime', 'scripts/relaunch-live-room-i18n-check.mjs'],
   ['relaunch professional applications', 'scripts/relaunch-professional-application-check.mjs'],
   ['relaunch profile/navigation', 'scripts/relaunch-profile-navigation-check.mjs'],
   ['relaunch profile multilingual runtime', 'scripts/relaunch-profile-i18n-check.mjs'],
