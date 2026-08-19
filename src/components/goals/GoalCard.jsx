@@ -5,75 +5,36 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle2, Clock, Edit, Trash2, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { format } from "date-fns";
 
 const translations = {
   en: {
-    progress: "Progress",
-    targetDate: "Target",
-    status: {
-      in_progress: "In Progress",
-      completed: "Completed",
-      paused: "Paused"
-    },
-    actionSteps: "Action Steps",
-    edit: "Edit",
-    delete: "Delete",
-    updateProgress: "Update Progress"
+    progress: "Progress", targetDate: "Target", actionSteps: "Action Steps", updateProgress: "Update Progress",
+    editLabel: "Edit goal", deleteLabel: "Delete goal", completed: "Completed!", daysLeft: "days left", overdue: "days overdue", today: "Due today",
+    status: { in_progress: "In Progress", completed: "Completed", paused: "Paused" }
   },
   es: {
-    progress: "Progreso",
-    targetDate: "Objetivo",
-    status: {
-      in_progress: "En Progreso",
-      completed: "Completado",
-      paused: "Pausado"
-    },
-    actionSteps: "Pasos de Acción",
-    edit: "Editar",
-    delete: "Eliminar",
-    updateProgress: "Actualizar Progreso"
+    progress: "Progreso", targetDate: "Objetivo", actionSteps: "Pasos de Acción", updateProgress: "Actualizar Progreso",
+    editLabel: "Editar meta", deleteLabel: "Eliminar meta", completed: "¡Completada!", daysLeft: "días restantes", overdue: "días de retraso", today: "Vence hoy",
+    status: { in_progress: "En Progreso", completed: "Completada", paused: "Pausada" }
   },
   fr: {
-    progress: "Progrès",
-    targetDate: "Cible",
-    status: {
-      in_progress: "En Cours",
-      completed: "Terminé",
-      paused: "En Pause"
-    },
-    actionSteps: "Étapes d'Action",
-    edit: "Modifier",
-    delete: "Supprimer",
-    updateProgress: "Mettre à Jour le Progrès"
+    progress: "Progrès", targetDate: "Échéance", actionSteps: "Étapes d’Action", updateProgress: "Mettre à Jour le Progrès",
+    editLabel: "Modifier l’objectif", deleteLabel: "Supprimer l’objectif", completed: "Terminé !", daysLeft: "jours restants", overdue: "jours de retard", today: "Échéance aujourd’hui",
+    status: { in_progress: "En Cours", completed: "Terminé", paused: "En Pause" }
   },
   it: {
-    progress: "Progresso",
-    targetDate: "Obiettivo",
-    status: {
-      in_progress: "In Corso",
-      completed: "Completato",
-      paused: "In Pausa"
-    },
-    actionSteps: "Passi d'Azione",
-    edit: "Modifica",
-    delete: "Elimina",
-    updateProgress: "Aggiorna Progresso"
+    progress: "Progresso", targetDate: "Scadenza", actionSteps: "Passi d’Azione", updateProgress: "Aggiorna Progresso",
+    editLabel: "Modifica obiettivo", deleteLabel: "Elimina obiettivo", completed: "Completato!", daysLeft: "giorni rimanenti", overdue: "giorni di ritardo", today: "Scade oggi",
+    status: { in_progress: "In Corso", completed: "Completato", paused: "In Pausa" }
   },
   de: {
-    progress: "Fortschritt",
-    targetDate: "Ziel",
-    status: {
-      in_progress: "In Bearbeitung",
-      completed: "Abgeschlossen",
-      paused: "Pausiert"
-    },
-    actionSteps: "Aktionsschritte",
-    edit: "Bearbeiten",
-    delete: "Löschen",
-    updateProgress: "Fortschritt Aktualisieren"
+    progress: "Fortschritt", targetDate: "Zieldatum", actionSteps: "Aktionsschritte", updateProgress: "Fortschritt Aktualisieren",
+    editLabel: "Ziel bearbeiten", deleteLabel: "Ziel löschen", completed: "Abgeschlossen!", daysLeft: "Tage verbleibend", overdue: "Tage überfällig", today: "Heute fällig",
+    status: { in_progress: "In Bearbeitung", completed: "Abgeschlossen", paused: "Pausiert" }
   }
 };
+
+const localeMap = { en: 'en-US', es: 'es', fr: 'fr', it: 'it', de: 'de' };
 
 const categoryColors = {
   communication: "from-blue-500 to-cyan-500",
@@ -88,112 +49,92 @@ const categoryColors = {
   career: "from-gray-500 to-slate-500"
 };
 
+function daysFromToday(value) {
+  if (!value) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(target.getTime())) return null;
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
 export default function GoalCard({ goal, onEdit, onDelete, onUpdateProgress }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const locale = localeMap[currentLanguage] || localeMap.en;
+  const daysRemaining = daysFromToday(goal.target_date);
+  const progress = Math.min(Math.max(Number(goal.progress) || 0, 0), 100);
+  const statusLabel = t.status[goal.status] || goal.status || t.status.in_progress;
+  const colorClass = categoryColors[goal.category] || categoryColors.communication;
+  const targetDateLabel = goal.target_date
+    ? new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${goal.target_date}T12:00:00`))
+    : null;
 
-  const getDaysRemaining = () => {
-    const today = new Date();
-    const target = new Date(goal.target_date);
-    const diffTime = target - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const daysRemaining = getDaysRemaining();
-  const isOverdue = daysRemaining < 0;
+  let deadlineLabel = targetDateLabel;
+  if (goal.status === 'completed') deadlineLabel = t.completed;
+  else if (daysRemaining === 0) deadlineLabel = t.today;
+  else if (daysRemaining !== null && daysRemaining < 0) deadlineLabel = `${Math.abs(daysRemaining)} ${t.overdue}`;
+  else if (daysRemaining !== null) deadlineLabel = `${daysRemaining} ${t.daysLeft}`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-    >
-      <Card className="hover:shadow-xl transition-all border-2 border-transparent hover:border-pink-200">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+      <Card className="border-2 border-transparent transition-all hover:border-pink-200 hover:shadow-xl">
         <CardHeader>
-          <div className="flex items-start justify-between mb-3">
-            <div className={`w-12 h-12 bg-gradient-to-br ${categoryColors[goal.category]} rounded-xl flex items-center justify-center shadow-lg`}>
-              <TrendingUp className="w-6 h-6 text-white" />
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${colorClass} shadow-lg`}>
+              <TrendingUp className="h-6 w-6 text-white" aria-hidden="true" />
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(goal)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Edit className="w-4 h-4" />
+              <Button variant="ghost" size="icon" type="button" onClick={() => onEdit(goal)} className="text-gray-400 hover:text-gray-600" aria-label={t.editLabel}>
+                <Edit className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(goal.id)}
-                className="text-gray-400 hover:text-red-600"
-              >
-                <Trash2 className="w-4 h-4" />
+              <Button variant="ghost" size="icon" type="button" onClick={() => onDelete(goal.id)} className="text-gray-400 hover:text-red-600" aria-label={t.deleteLabel}>
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>
-          <CardTitle className="text-xl font-bold text-gray-900">
-            {goal.title}
-          </CardTitle>
-          {goal.description && (
-            <p className="text-sm text-gray-600 mt-2">{goal.description}</p>
-          )}
+          <CardTitle className="text-xl font-bold text-gray-900">{goal.title}</CardTitle>
+          {goal.description && <p className="mt-2 text-sm text-gray-600">{goal.description}</p>}
         </CardHeader>
+
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className={goal.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}>
-              {goal.status === 'completed' ? (
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-              ) : (
-                <Clock className="w-3 h-3 mr-1" />
-              )}
-              {t.status[goal.status]}
+              {goal.status === 'completed' ? <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden="true" /> : <Clock className="mr-1 h-3 w-3" aria-hidden="true" />}
+              {statusLabel}
             </Badge>
-            <Badge variant="outline" className={isOverdue ? 'text-red-600 border-red-300' : ''}>
-              <Calendar className="w-3 h-3 mr-1" />
-              {isOverdue ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d left`}
-            </Badge>
+            {deadlineLabel && (
+              <Badge variant="outline" className={daysRemaining !== null && daysRemaining < 0 && goal.status !== 'completed' ? 'border-red-300 text-red-600' : ''} title={targetDateLabel || undefined}>
+                <Calendar className="mr-1 h-3 w-3" aria-hidden="true" />{deadlineLabel}
+              </Badge>
+            )}
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">{t.progress}</span>
-              <span className="text-sm font-bold text-pink-600">{goal.progress}%</span>
+              <span className="text-sm font-bold text-pink-600">{progress}%</span>
             </div>
-            <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${goal.progress}%` }}
-                transition={{ duration: 0.5 }}
-                className="h-full bg-gradient-to-r from-pink-500 to-purple-600"
-              />
+            <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200" role="progressbar" aria-label={t.progress} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+              <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.5 }} className="h-full bg-gradient-to-r from-pink-500 to-purple-600" />
             </div>
           </div>
 
-          {goal.action_steps && goal.action_steps.length > 0 && (
+          {goal.action_steps?.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">{t.actionSteps}</p>
+              <p className="mb-2 text-sm font-medium text-gray-700">{t.actionSteps}</p>
               <ul className="space-y-1">
                 {goal.action_steps.slice(0, 3).map((step, index) => (
-                  <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                    <span className="text-pink-500 mt-1">•</span>
-                    <span className="flex-1">{step}</span>
-                  </li>
+                  <li key={`${step}-${index}`} className="flex items-start gap-2 text-sm text-gray-600"><span className="mt-1 text-pink-500" aria-hidden="true">•</span><span className="flex-1">{step}</span></li>
                 ))}
               </ul>
             </div>
           )}
 
           {goal.status !== 'completed' && (
-            <Button
-              onClick={() => onUpdateProgress(goal)}
-              variant="outline"
-              className="w-full"
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              {t.updateProgress}
+            <Button type="button" onClick={() => onUpdateProgress(goal)} variant="outline" className="w-full">
+              <TrendingUp className="mr-2 h-4 w-4" aria-hidden="true" />{t.updateProgress}
             </Button>
           )}
         </CardContent>
