@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Crown, Heart, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,21 @@ import { getMembershipCopy } from '@/lib/membershipCopy';
 
 const LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
 
+const FEATURE_TERMS = {
+  en: [],
+  es: [['Love Notes', 'Notas de Amor'], ['Love Note', 'Nota de Amor'], ['Live Community', 'Comunidad en Vivo']],
+  fr: [['Love Notes', 'Mots d’Amour'], ['Love Note', 'Mot d’Amour'], ['Live Community', 'Communauté en Direct']],
+  it: [['Love Notes', 'Note d’Amore'], ['Love Note', 'Nota d’Amore'], ['Live Community', 'Community dal Vivo']],
+  de: [['Love Notes', 'Liebesnotizen'], ['Love Note', 'Liebesnotiz'], ['Live Community', 'Live-Community']],
+};
+
+const localizeFeatureTerms = (value, replacements) => {
+  if (typeof value === 'string') return replacements.reduce((text, [from, to]) => text.split(from).join(to), value);
+  if (Array.isArray(value)) return value.map((item) => localizeFeatureTerms(item, replacements));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeFeatureTerms(item, replacements)]));
+  return value;
+};
+
 function BenefitList({ items, tone = 'free' }) {
   return (
     <div className="space-y-2.5">
@@ -36,8 +51,9 @@ export default function Subscription() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { currentLanguage } = useLanguage();
-  const t = getMembershipCopy(currentLanguage).subscription;
-  const locale = LOCALES[currentLanguage] || LOCALES.en;
+  const language = LOCALES[currentLanguage] ? currentLanguage : 'en';
+  const t = useMemo(() => localizeFeatureTerms(getMembershipCopy(language).subscription, FEATURE_TERMS[language] || []), [language]);
+  const locale = LOCALES[language] || LOCALES.en;
   const introPrice = formatMembershipPrice(MEMBERSHIP_PRICING.introMonthly, locale);
   const standardPrice = formatMembershipPrice(MEMBERSHIP_PRICING.standardMonthly, locale);
   const localizedThenPrice = t.thenPrice.replace('$5.99', standardPrice);
