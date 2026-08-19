@@ -8,29 +8,34 @@ const translations = {
   en: {
     title: 'Relationship Library',
     subtitle: 'Start with what your relationship needs today.',
-    intro: 'A simple way to explore One2OneLove resources by goal instead of searching through the entire platform.',
+    intro: 'Explore One2OneLove by relationship goal instead of searching through the entire platform.',
     groups: [
       ['Communicate Better', 'Practice listening, expressing needs, and starting conversations that matter.', 'message', [
         ['Communication Practice', '/CommunicationPractice'],
         ['Daily Relationship Question', '/DailyQuestion'],
+        ['Conversation Cards', '/ConversationCards'],
         ['Relationship Quizzes', '/RelationshipQuizzes'],
       ]],
       ['Reconnect', 'Create small moments of attention, appreciation, and intentional time together.', 'heart', [
+        ['Weekly Relationship Check-In', '/WeeklyCheckIn'],
         ['Love Notes', '/LoveNotes'],
+        ['Date Night', '/DateNight'],
         ['Date Ideas', '/DateIdeas'],
-        ['Couple Activities', '/CoupleActivities'],
       ]],
       ['Grow Together', 'Turn relationship intentions into shared habits, goals, and meaningful reflection.', 'sparkles', [
+        ['Couples Challenges', '/CouplesChallenges'],
         ['Relationship Goals', '/RelationshipGoals'],
         ['Shared Journals', '/SharedJournals'],
         ['Relationship Milestones', '/RelationshipMilestones'],
       ]],
       ['Marriage', 'Resources designed specifically for married couples who want to keep investing in their marriage.', 'marriage', [
         ['Marriage Matters', '/MarriageMatters'],
+        ['Weekly Relationship Check-In', '/WeeklyCheckIn'],
         ['Anniversary Tracker', '/AnniversaryTracker'],
         ['Couples Calendar', '/CouplesCalendar'],
       ]],
-      ['Calm & Reflect', 'Slow down, check in with yourself, and create more room for thoughtful responses.', 'brain', [
+      ['Calm & Reflect', 'Slow down, check in, and create more room for thoughtful responses.', 'brain', [
+        ['Relationship Reset', '/RelationshipReset'],
         ['Meditation', '/Meditation'],
         ['Memory Lane', '/MemoryLane'],
         ['Shared Journals', '/SharedJournals'],
@@ -39,6 +44,7 @@ const translations = {
         ['Relationship Support', '/CoupleSupport'],
         ['Community', '/Community'],
         ['Global Relationship Room', '/GlobalRelationshipRoom'],
+        ['The O2OL Show', '/O2OLShow'],
       ]],
     ],
     note: 'One2OneLove educational and reflection tools do not replace licensed counseling, medical care, legal advice, or emergency services.',
@@ -46,37 +52,43 @@ const translations = {
   es: {
     title: 'Biblioteca de Relaciones',
     subtitle: 'Comienza con lo que tu relación necesita hoy.',
-    intro: 'Una manera sencilla de explorar los recursos de One2OneLove según tu objetivo, sin tener que buscar por toda la plataforma.',
+    intro: 'Explora One2OneLove según el objetivo de tu relación, sin tener que buscar por toda la plataforma.',
     groups: [
       ['Comunicarse Mejor', 'Practiquen escuchar, expresar necesidades e iniciar conversaciones importantes.', 'message', [
         ['Práctica de Comunicación', '/CommunicationPractice'],
         ['Pregunta Diaria para la Relación', '/DailyQuestion'],
+        ['Tarjetas de Conversación', '/ConversationCards'],
         ['Cuestionarios de Relaciones', '/RelationshipQuizzes'],
       ]],
       ['Reconectarse', 'Creen pequeños momentos de atención, aprecio y tiempo intencional juntos.', 'heart', [
+        ['Revisión Semanal de la Relación', '/WeeklyCheckIn'],
         ['Notas de Amor', '/LoveNotes'],
+        ['Noche de Cita', '/DateNight'],
         ['Ideas para Citas', '/DateIdeas'],
-        ['Actividades para Parejas', '/CoupleActivities'],
       ]],
       ['Crecer Juntos', 'Conviertan sus intenciones en hábitos compartidos, metas y reflexión significativa.', 'sparkles', [
+        ['Retos para Parejas', '/CouplesChallenges'],
         ['Metas de Relación', '/RelationshipGoals'],
         ['Diarios Compartidos', '/SharedJournals'],
         ['Hitos de la Relación', '/RelationshipMilestones'],
       ]],
       ['Matrimonio', 'Recursos creados específicamente para matrimonios que quieren seguir invirtiendo en su relación.', 'marriage', [
         ['El Matrimonio Importa', '/MarriageMatters'],
+        ['Revisión Semanal de la Relación', '/WeeklyCheckIn'],
         ['Seguimiento de Aniversario', '/AnniversaryTracker'],
         ['Calendario de Pareja', '/CouplesCalendar'],
       ]],
-      ['Calma y Reflexión', 'Baja el ritmo, conéctate contigo mismo y crea más espacio para responder con intención.', 'brain', [
+      ['Calma y Reflexión', 'Bajen el ritmo, hagan una pausa y creen más espacio para responder con intención.', 'brain', [
+        ['Reinicio de la Relación', '/RelationshipReset'],
         ['Meditación', '/Meditation'],
         ['Camino de Recuerdos', '/MemoryLane'],
         ['Diarios Compartidos', '/SharedJournals'],
       ]],
-      ['Encontrar Apoyo', 'Usa la comunidad, el apoyo para relaciones y la programación cuando necesites más perspectiva o ayuda.', 'users', [
+      ['Encontrar Apoyo', 'Usen la comunidad, el apoyo para relaciones y la programación cuando necesiten más perspectiva o ayuda.', 'users', [
         ['Apoyo para Relaciones', '/CoupleSupport'],
         ['Comunidad', '/Community'],
         ['Sala Global de Relaciones', '/GlobalRelationshipRoom'],
+        ['El Programa O2OL', '/O2OLShow'],
       ]],
     ],
     note: 'Las herramientas educativas y de reflexión de One2OneLove no sustituyen terapia profesional, atención médica, asesoramiento legal ni servicios de emergencia.',
@@ -84,29 +96,34 @@ const translations = {
   fr: {
     title: 'Bibliothèque Relationnelle',
     subtitle: 'Commencez par ce dont votre relation a besoin aujourd’hui.',
-    intro: 'Une façon simple d’explorer les ressources One2OneLove selon votre objectif plutôt que de chercher dans toute la plateforme.',
+    intro: 'Explorez One2OneLove selon votre objectif relationnel plutôt que de chercher dans toute la plateforme.',
     groups: [
       ['Mieux Communiquer', 'Entraînez-vous à écouter, exprimer vos besoins et lancer des conversations importantes.', 'message', [
         ['Pratique de Communication', '/CommunicationPractice'],
         ['Question Relationnelle du Jour', '/DailyQuestion'],
+        ['Cartes de Conversation', '/ConversationCards'],
         ['Quiz Relationnels', '/RelationshipQuizzes'],
       ]],
       ['Se Reconnecter', 'Créez de petits moments d’attention, d’appréciation et de temps intentionnel ensemble.', 'heart', [
+        ['Bilan Relationnel Hebdomadaire', '/WeeklyCheckIn'],
         ['Notes d’Amour', '/LoveNotes'],
+        ['Soirée en Couple', '/DateNight'],
         ['Idées de Rendez-vous', '/DateIdeas'],
-        ['Activités de Couple', '/CoupleActivities'],
       ]],
       ['Grandir Ensemble', 'Transformez vos intentions en habitudes communes, objectifs et réflexion significative.', 'sparkles', [
+        ['Défis de Couple', '/CouplesChallenges'],
         ['Objectifs de Relation', '/RelationshipGoals'],
         ['Journaux Partagés', '/SharedJournals'],
         ['Jalons Relationnels', '/RelationshipMilestones'],
       ]],
       ['Mariage', 'Des ressources conçues spécialement pour les couples mariés qui souhaitent continuer à investir dans leur mariage.', 'marriage', [
         ['Le Mariage Compte', '/MarriageMatters'],
+        ['Bilan Relationnel Hebdomadaire', '/WeeklyCheckIn'],
         ['Suivi d’Anniversaire', '/AnniversaryTracker'],
         ['Calendrier du Couple', '/CouplesCalendar'],
       ]],
-      ['Calme & Réflexion', 'Ralentissez, faites le point avec vous-même et créez plus d’espace pour répondre avec intention.', 'brain', [
+      ['Calme & Réflexion', 'Ralentissez, faites le point et créez plus d’espace pour répondre avec intention.', 'brain', [
+        ['Réinitialisation Relationnelle', '/RelationshipReset'],
         ['Méditation', '/Meditation'],
         ['Allée des Souvenirs', '/MemoryLane'],
         ['Journaux Partagés', '/SharedJournals'],
@@ -115,6 +132,7 @@ const translations = {
         ['Soutien aux Relations', '/CoupleSupport'],
         ['Communauté', '/Community'],
         ['Salle Mondiale des Relations', '/GlobalRelationshipRoom'],
+        ['L’Émission O2OL', '/O2OLShow'],
       ]],
     ],
     note: 'Les outils éducatifs et de réflexion One2OneLove ne remplacent pas un suivi professionnel, des soins médicaux, des conseils juridiques ou des services d’urgence.',
@@ -122,37 +140,43 @@ const translations = {
   it: {
     title: 'Biblioteca delle Relazioni',
     subtitle: 'Inizia da ciò di cui la tua relazione ha bisogno oggi.',
-    intro: 'Un modo semplice per esplorare le risorse One2OneLove in base all’obiettivo, senza dover cercare in tutta la piattaforma.',
+    intro: 'Esplora One2OneLove in base all’obiettivo della relazione, senza dover cercare in tutta la piattaforma.',
     groups: [
       ['Comunicare Meglio', 'Esercitatevi ad ascoltare, esprimere bisogni e iniziare conversazioni importanti.', 'message', [
         ['Pratica di Comunicazione', '/CommunicationPractice'],
         ['Domanda Quotidiana sulla Relazione', '/DailyQuestion'],
+        ['Carte di Conversazione', '/ConversationCards'],
         ['Quiz sulle Relazioni', '/RelationshipQuizzes'],
       ]],
       ['Riconnettersi', 'Create piccoli momenti di attenzione, apprezzamento e tempo intenzionale insieme.', 'heart', [
+        ['Check-In Settimanale di Coppia', '/WeeklyCheckIn'],
         ['Note d’Amore', '/LoveNotes'],
+        ['Serata di Coppia', '/DateNight'],
         ['Idee per Appuntamenti', '/DateIdeas'],
-        ['Attività di Coppia', '/CoupleActivities'],
       ]],
       ['Crescere Insieme', 'Trasformate le intenzioni in abitudini condivise, obiettivi e riflessione significativa.', 'sparkles', [
+        ['Sfide di Coppia', '/CouplesChallenges'],
         ['Obiettivi di Relazione', '/RelationshipGoals'],
         ['Diari Condivisi', '/SharedJournals'],
         ['Traguardi della Relazione', '/RelationshipMilestones'],
       ]],
       ['Matrimonio', 'Risorse create appositamente per le coppie sposate che vogliono continuare a investire nel proprio matrimonio.', 'marriage', [
         ['Il Matrimonio Conta', '/MarriageMatters'],
+        ['Check-In Settimanale di Coppia', '/WeeklyCheckIn'],
         ['Monitoraggio Anniversario', '/AnniversaryTracker'],
         ['Calendario di Coppia', '/CouplesCalendar'],
       ]],
-      ['Calma e Riflessione', 'Rallenta, ascolta te stesso e crea più spazio per rispondere con intenzione.', 'brain', [
+      ['Calma e Riflessione', 'Rallentate, fate il punto e create più spazio per rispondere con intenzione.', 'brain', [
+        ['Reset della Relazione', '/RelationshipReset'],
         ['Meditazione', '/Meditation'],
         ['Viale dei Ricordi', '/MemoryLane'],
         ['Diari Condivisi', '/SharedJournals'],
       ]],
-      ['Trovare Supporto', 'Usa la comunità, il supporto relazionale e la programmazione quando hai bisogno di più prospettiva o aiuto.', 'users', [
+      ['Trovare Supporto', 'Usate la comunità, il supporto relazionale e la programmazione quando avete bisogno di più prospettiva o aiuto.', 'users', [
         ['Supporto per Relazioni', '/CoupleSupport'],
         ['Comunità', '/Community'],
         ['Sala Globale delle Relazioni', '/GlobalRelationshipRoom'],
+        ['Lo Show O2OL', '/O2OLShow'],
       ]],
     ],
     note: 'Gli strumenti educativi e di riflessione One2OneLove non sostituiscono consulenza professionale, cure mediche, consulenza legale o servizi di emergenza.',
@@ -160,29 +184,34 @@ const translations = {
   de: {
     title: 'Beziehungsbibliothek',
     subtitle: 'Beginnt mit dem, was eure Beziehung heute braucht.',
-    intro: 'Ein einfacher Weg, One2OneLove-Ressourcen nach eurem Ziel zu entdecken, statt die gesamte Plattform durchsuchen zu müssen.',
+    intro: 'Entdeckt One2OneLove nach eurem Beziehungsziel, statt die gesamte Plattform durchsuchen zu müssen.',
     groups: [
       ['Besser Kommunizieren', 'Übt Zuhören, Bedürfnisse auszudrücken und wichtige Gespräche zu beginnen.', 'message', [
         ['Kommunikationspraxis', '/CommunicationPractice'],
         ['Tägliche Beziehungsfrage', '/DailyQuestion'],
+        ['Gesprächskarten', '/ConversationCards'],
         ['Beziehungsquiz', '/RelationshipQuizzes'],
       ]],
       ['Wieder Nähe Finden', 'Schafft kleine Momente für Aufmerksamkeit, Wertschätzung und bewusste gemeinsame Zeit.', 'heart', [
+        ['Wöchentlicher Beziehungs-Check-In', '/WeeklyCheckIn'],
         ['Liebesbotschaften', '/LoveNotes'],
+        ['Date Night', '/DateNight'],
         ['Date-Ideen', '/DateIdeas'],
-        ['Paar-Aktivitäten', '/CoupleActivities'],
       ]],
       ['Gemeinsam Wachsen', 'Macht aus guten Absichten gemeinsame Gewohnheiten, Ziele und sinnvolle Reflexion.', 'sparkles', [
+        ['Paar-Challenges', '/CouplesChallenges'],
         ['Beziehungsziele', '/RelationshipGoals'],
         ['Gemeinsame Journale', '/SharedJournals'],
         ['Beziehungsmeilensteine', '/RelationshipMilestones'],
       ]],
       ['Ehe', 'Ressourcen speziell für Ehepaare, die weiter bewusst in ihre Ehe investieren möchten.', 'marriage', [
         ['Ehe Zählt', '/MarriageMatters'],
+        ['Wöchentlicher Beziehungs-Check-In', '/WeeklyCheckIn'],
         ['Jahrestags-Tracker', '/AnniversaryTracker'],
         ['Paar-Kalender', '/CouplesCalendar'],
       ]],
-      ['Ruhe & Reflexion', 'Werdet langsamer, hört in euch hinein und schafft mehr Raum für bewusste Reaktionen.', 'brain', [
+      ['Ruhe & Reflexion', 'Werdet langsamer, macht einen Check-in und schafft mehr Raum für bewusste Reaktionen.', 'brain', [
+        ['Beziehungs-Reset', '/RelationshipReset'],
         ['Meditation', '/Meditation'],
         ['Erinnerungsgasse', '/MemoryLane'],
         ['Gemeinsame Journale', '/SharedJournals'],
@@ -191,6 +220,7 @@ const translations = {
         ['Beziehungsunterstützung', '/CoupleSupport'],
         ['Community', '/Community'],
         ['Globaler Beziehungsraum', '/GlobalRelationshipRoom'],
+        ['Die O2OL Show', '/O2OLShow'],
       ]],
     ],
     note: 'Die Bildungs- und Reflexionswerkzeuge von One2OneLove ersetzen keine professionelle Beratung, medizinische Versorgung, Rechtsberatung oder Notfalldienste.',
@@ -211,16 +241,16 @@ export default function RelationshipLibrary() {
   const t = translations[currentLanguage] || translations.en;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-pink-50 px-4 py-10 md:py-16">
+    <main className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-pink-50 px-4 py-10 md:py-16">
       <div className="mx-auto max-w-6xl">
-        <div className="mx-auto max-w-3xl text-center">
+        <header className="mx-auto max-w-3xl text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700">
             <BookOpen className="h-7 w-7" aria-hidden="true" />
           </div>
           <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
           <p className="mt-3 text-xl font-semibold text-indigo-700">{t.subtitle}</p>
           <p className="mt-4 text-base leading-7 text-slate-600 md:text-lg">{t.intro}</p>
-        </div>
+        </header>
 
         <div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {t.groups.map(([title, description, iconKey, links]) => {
@@ -254,6 +284,6 @@ export default function RelationshipLibrary() {
 
         <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-5 text-slate-500">{t.note}</p>
       </div>
-    </div>
+    </main>
   );
 }
