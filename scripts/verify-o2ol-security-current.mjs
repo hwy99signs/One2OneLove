@@ -73,7 +73,7 @@ reject(chatService, /\.getPublicUrl\(/, 'public chat attachment URLs');
 
 const loveNotesSql = read('supabase-mutual-love-note-delivery.sql');
 requireText(loveNotesSql, 'send_love_note_to_mutual_partner', 'mutual Love Note send RPC');
-requireText(loveNotesSql, 'mark_love_note_read', 'recipient read RPC');
+requireText(loveNotesSql, 'mark_received_love_note_read', 'recipient read RPC');
 const journalSql = read('supabase-shared-journal-partner-sharing.sql');
 requireText(journalSql, 'shared_with_partner', 'explicit journal partner sharing');
 requireText(journalSql, 'private.is_mutual_partner_pair', 'mutual journal partner authorization');
