@@ -84,7 +84,7 @@ serve(async (request) => {
     // multi-hour programs from creating false "Open" time on the 24-hour calendar.
     const { data, error } = await serviceClient
       .from('creator_programming_slots')
-      .select('id,room_slug,title,description,starts_at,ends_at,content_mode,status')
+      .select('id,program_source,room_slug,title,description,starts_at,ends_at,content_mode,status')
       .eq('room_slug', roomSlug)
       .eq('status', 'booked')
       .lt('starts_at', to.toISOString())
