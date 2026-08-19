@@ -77,6 +77,22 @@ This file tracks only actions that should NOT be performed automatically while d
     - The schema is future-ready for a `paid` tier, but the creator booking endpoint currently rejects all non-free creator bookings and the frontend always requests a free booking.
     - Paid slots require a separate approval batch covering pricing, checkout/payment provider behavior, creator terms, cancellations/refunds, disputes/chargebacks, tax/accounting treatment, moderation obligations, and any revenue-share policy before implementation is enabled.
 
+16. Programming reminder database + member API activation.
+    - `supabase/migrations/20260819_programming_reminders.sql` is DEVELOPMENT ONLY and depends on the programming calendar migration.
+    - Do not apply it or deploy `programming-reminder` until the programming calendar is live and reviewed.
+    - Keep both `VITE_PROGRAMMING_REMINDERS_ENABLED=false` and `PROGRAMMING_REMINDERS_ENABLED=false` during deployment and controlled testing.
+    - Reminder writes are backend-mediated; members can read only their own reminder state. In-app notification records are private and store structured program facts rather than English prose so the current client language controls member-facing copy.
+
+17. Programming reminder dispatcher activation.
+    - `dispatch-programming-reminders` is staged for **in-app notification creation only**. It contains no email, SMS, push, or other external-provider call.
+    - Do not deploy/schedule it or create `PROGRAMMING_REMINDER_DISPATCH_SECRET` until the reminder database/API batch is explicitly approved.
+    - The dispatch secret must be generated/stored as a production secret and must never be pasted into chat, committed to source, or exposed to the browser.
+    - No production scheduler/cron has been configured. Scheduler cadence and secret injection must be reviewed at activation time.
+
+18. External programming-reminder delivery channels.
+    - Email, SMS, mobile push, web push, or any paid/third-party delivery channel is **not part of the staged reminder system**.
+    - Do not add a provider, incur messaging cost, request push permission, or reuse unrelated messaging credentials without a separate explicit approval covering provider, cost, consent, unsubscribe/opt-out, deliverability, privacy, and regional requirements.
+
 ## Safe development work that may continue without separate approval
 
 - Frontend UX and visual refinements on `relaunch-homepage`.
@@ -86,7 +102,7 @@ This file tracks only actions that should NOT be performed automatically while d
 - Read-only audits of repository code and Supabase configuration when connectors are available.
 - Refactoring member-facing reads away from private tables into purpose-built privacy-safe projections.
 - Expanding automated relaunch safety checks so production blockers are visible before launch.
-- Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, and automated checks while the programming feature switches remain off and no production staff allowlist is configured.
+- Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
 
 ## Current operating rule
 
