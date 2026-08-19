@@ -31,6 +31,7 @@ for (const language of ['en', 'es', 'fr', 'it', 'de']) {
     'programmingNext',
     'programmingLiveType',
     'programmingReplayType',
+    'manageProgramming',
   ]) {
     if (!new RegExp(`\\b${key}:\\s*`).test(match[1])) failures.push(`${file}: ${language} is missing ${key}.`);
   }
@@ -49,8 +50,27 @@ for (const binding of [
   'getGlobalProgrammingStatus().catch(() => ({ enabled: false, current: null, next: null }))',
   '<ProgrammingStatus status={programmingStatus} locale={locale} t={t} />',
   'slot.content_mode === \'replay\' ? t.programmingReplayType : t.programmingLiveType',
+  "room?.slug === 'global-relationship-room'",
+  "user?.user_type === 'influencer'",
+  'const canManageCreatorProgramming = Boolean(',
+  "navigate('/CreatorProgramming')",
+  '{t.manageProgramming}',
 ]) {
   if (!source.includes(binding)) failures.push(`${file}: missing localized Live Room runtime binding ${binding}.`);
+}
+
+const creatorGuardStart = runtime.indexOf('const canManageCreatorProgramming = Boolean(');
+const creatorGuardEnd = runtime.indexOf(');', creatorGuardStart);
+const creatorGuard = creatorGuardStart >= 0 && creatorGuardEnd > creatorGuardStart
+  ? runtime.slice(creatorGuardStart, creatorGuardEnd)
+  : '';
+for (const required of [
+  "room?.slug === 'global-relationship-room'",
+  'CREATOR_PROGRAMMING_ENABLED',
+  'isAuthenticated',
+  "user?.user_type === 'influencer'",
+]) {
+  if (!creatorGuard.includes(required)) failures.push(`${file}: creator management guard is missing ${required}.`);
 }
 
 for (const forbidden of [
@@ -77,4 +97,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Live Room host identity, reactions, disclaimer, now/next programming strip and member-facing failure states follow EN/ES/FR/IT/DE without private programming fields.');
+console.log('✅ Live Room host identity, reactions, disclaimer, now/next strip and approved-creator management entry follow EN/ES/FR/IT/DE without private programming fields.');
