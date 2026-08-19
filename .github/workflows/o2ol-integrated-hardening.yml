@@ -29,11 +29,11 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Verify launch-critical multilingual source
-        run: node scripts/verify-o2ol-launch.mjs
+      - name: Verify current launch-critical multilingual source
+        run: node scripts/verify-o2ol-launch-current.mjs
 
-      - name: Verify account and billing security
-        run: node scripts/verify-o2ol-security.mjs
+      - name: Verify current account and platform security
+        run: node scripts/verify-o2ol-security-current.mjs
 
       - name: Verify social privacy boundary
         run: node scripts/verify-o2ol-social-privacy.mjs
@@ -54,19 +54,23 @@ jobs:
           test -f vercel.json
           node -e "const v=require('./vercel.json'); if(!v.rewrites?.some(r=>r.source==='/(.*)' && (r.destination==='/index.html'||r.destination==='/'))) process.exit(1)"
 
-      - name: Lint newly hardened surfaces
+      - name: Lint current hardened surfaces
         run: >-
           npx eslint
           src/pages/InfluencerSignup.jsx
           src/pages/ProfessionalSignup.jsx
+          src/pages/TherapistSignup.jsx
           src/pages/Subscription.jsx
+          src/pages/PaymentSuccess.jsx
+          src/pages/ContactUs.jsx
+          src/pages/Community.jsx
           src/pages/FindFriends.jsx
           src/pages/FriendRequests.jsx
-          src/components/subscriptions/TierCard.jsx
-          src/lib/stripeService.js
-          src/lib/partnerPhotoService.js
+          src/pages/AboutUs.jsx
+          src/pages/HelpCenter.jsx
           src/lib/buddyService.js
           src/lib/chatService.js
+          src/lib/successStoriesService.js
           --rule 'react/prop-types: off'
 
       - name: Production build
