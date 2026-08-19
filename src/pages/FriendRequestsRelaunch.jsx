@@ -20,6 +20,15 @@ const COPY = {
   nl: { title: 'Verbindingsverzoeken', subtitle: 'Accepteer, weiger of annuleer verzoeken tussen leden. Account-e-mail wordt hier nooit getoond.', received: 'Ontvangen', sent: 'Verzonden', loading: 'Verzoeken laden…', emptyReceived: 'Geen ontvangen verzoeken in behandeling.', emptySent: 'Geen verzonden verzoeken in behandeling.', find: 'Leden Vinden', accept: 'Accepteren', decline: 'Weigeren', cancel: 'Annuleren', pending: 'In Behandeling', accepted: 'Verbinding geaccepteerd.', declined: 'Verbinding geweigerd.', cancelled: 'Verzoek geannuleerd.', member: 'One2OneLove-lid', back: 'Terug naar Community' },
 };
 
+const REQUEST_I18N_EXTRAS = {
+  en: { signInPrompt: 'Sign in to manage connection requests.', signInButton: 'Sign In', loadError: 'Unable to load connection requests.', updateError: 'Unable to update this connection request.' },
+  es: { signInPrompt: 'Inicia sesión para gestionar solicitudes de conexión.', signInButton: 'Iniciar Sesión', loadError: 'No se pudieron cargar las solicitudes de conexión.', updateError: 'No se pudo actualizar esta solicitud de conexión.' },
+  fr: { signInPrompt: 'Connectez-vous pour gérer les demandes de connexion.', signInButton: 'Se Connecter', loadError: 'Impossible de charger les demandes de connexion.', updateError: 'Impossible de mettre à jour cette demande de connexion.' },
+  it: { signInPrompt: 'Accedi per gestire le richieste di connessione.', signInButton: 'Accedi', loadError: 'Impossibile caricare le richieste di connessione.', updateError: 'Impossibile aggiornare questa richiesta di connessione.' },
+  de: { signInPrompt: 'Melde dich an, um Verbindungsanfragen zu verwalten.', signInButton: 'Anmelden', loadError: 'Verbindungsanfragen konnten nicht geladen werden.', updateError: 'Diese Verbindungsanfrage konnte nicht aktualisiert werden.' },
+  nl: { signInPrompt: 'Log in om verbindingsverzoeken te beheren.', signInButton: 'Inloggen', loadError: 'Verbindingsverzoeken konden niet worden geladen.', updateError: 'Dit verbindingsverzoek kon niet worden bijgewerkt.' },
+};
+
 const RequestMember = ({ member, fallback }) => {
   const name = member?.name || fallback;
   const initial = String(name || '?').trim().slice(0, 1).toUpperCase() || '?';
@@ -30,7 +39,8 @@ export default function FriendRequestsRelaunch() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const t = { ...COPY[language], ...(REQUEST_I18N_EXTRAS[language] || REQUEST_I18N_EXTRAS.en) };
   const [received, setReceived] = useState([]);
   const [sent, setSent] = useState([]);
   const [loading, setLoading] = useState(Boolean(user?.id));
@@ -48,7 +58,7 @@ export default function FriendRequestsRelaunch() {
       setSent(outgoing || []);
     } catch (error) {
       console.error('Unable to load connection requests:', error);
-      toast.error(error?.message || 'Unable to load connection requests.');
+      toast.error(t.loadError);
     } finally {
       setLoading(false);
     }
@@ -74,14 +84,15 @@ export default function FriendRequestsRelaunch() {
         toast.success(t.cancelled);
       }
     } catch (error) {
-      toast.error(error?.message || 'Unable to update this connection request.');
+      console.error('Unable to update connection request:', error);
+      toast.error(t.updateError);
     } finally {
       setBusyId(null);
     }
   };
 
   if (!user?.id) {
-    return <div className="min-h-[70vh] bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-16"><Card className="mx-auto max-w-lg"><CardContent className="p-8 text-center"><Users className="mx-auto h-12 w-12 text-purple-500" /><p className="mt-4 font-semibold text-gray-700">Sign in to manage connection requests.</p><Button className="mt-5" onClick={() => navigate('/SignIn?returnTo=%2FFriendRequests')}>Sign In</Button></CardContent></Card></div>;
+    return <div className="min-h-[70vh] bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-16"><Card className="mx-auto max-w-lg"><CardContent className="p-8 text-center"><Users className="mx-auto h-12 w-12 text-purple-500" /><p className="mt-4 font-semibold text-gray-700">{t.signInPrompt}</p><Button className="mt-5" onClick={() => navigate('/SignIn?returnTo=%2FFriendRequests')}>{t.signInButton}</Button></CardContent></Card></div>;
   }
 
   return (
