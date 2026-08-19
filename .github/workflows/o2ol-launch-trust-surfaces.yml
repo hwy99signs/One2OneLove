@@ -45,7 +45,9 @@ jobs:
             src/pages/Achievements.jsx \
             src/pages/PremiumFeatures.jsx \
             src/pages/Suggestions.jsx \
-            src/pages/LGBTQSupport.jsx; do
+            src/pages/LGBTQSupport.jsx \
+            src/pages/Subscription.jsx \
+            src/pages/PaymentSuccess.jsx; do
             for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
           done
           grep -q '/RoomCreatorAccess' src/pages/InfluencerSignup.jsx
@@ -58,6 +60,8 @@ jobs:
           grep -q '/RelationshipLibrary' src/pages/PremiumFeatures.jsx
           grep -q '/ContactUs' src/pages/Suggestions.jsx
           grep -q '/CommunicationPractice' src/pages/LGBTQSupport.jsx
+          grep -q '/ContactUs' src/pages/Subscription.jsx
+          grep -q '/ContactUs' src/pages/PaymentSuccess.jsx
 
       - name: Reject fabricated or inactive-program behavior
         shell: bash
@@ -111,6 +115,14 @@ jobs:
             echo 'Unverified location-sensitive LGBTQ resources must not return.'
             exit 1
           fi
+          if grep -Eq 'redirectToCheckout|createBillingPortalSession|19\.99|34\.99|Basic: \{|Premiere: \{|Exclusive: \{' src/pages/Subscription.jsx; then
+            echo 'Paid membership checkout or legacy prices must not be active at launch.'
+            exit 1
+          fi
+          if grep -Eq 'verifyCheckoutSession|payment.*success|subscription.*activated|checkout_session|stripe' src/pages/PaymentSuccess.jsx; then
+            echo 'Legacy payment-success route must not imply payment confirmation before paid launch.'
+            exit 1
+          fi
 
       - name: Lint trust surfaces
         run: >-
@@ -127,6 +139,8 @@ jobs:
           src/pages/PremiumFeatures.jsx
           src/pages/Suggestions.jsx
           src/pages/LGBTQSupport.jsx
+          src/pages/Subscription.jsx
+          src/pages/PaymentSuccess.jsx
           --rule 'react/prop-types: off'
 
       - name: Production build
