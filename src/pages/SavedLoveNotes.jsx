@@ -21,6 +21,7 @@ const copy = {
     remove: "Remove from saved",
     emptyTitle: "No saved Love Notes yet",
     emptyText: "When you save a revealed Love Note, it will appear here.",
+    noteFallback: "Love Note",
   },
   es: {
     back: "Volver a Notas de Amor",
@@ -37,6 +38,7 @@ const copy = {
     remove: "Quitar de guardadas",
     emptyTitle: "Aún no hay Notas de Amor guardadas",
     emptyText: "Cuando guardes una Nota de Amor revelada, aparecerá aquí.",
+    noteFallback: "Nota de Amor",
   },
   fr: {
     back: "Retour aux Mots d’Amour",
@@ -53,6 +55,7 @@ const copy = {
     remove: "Retirer des sauvegardés",
     emptyTitle: "Aucun Mot d’Amour sauvegardé",
     emptyText: "Quand vous sauvegarderez un Mot d’Amour révélé, il apparaîtra ici.",
+    noteFallback: "Mot d’Amour",
   },
   it: {
     back: "Torna alle Note d’Amore",
@@ -69,6 +72,7 @@ const copy = {
     remove: "Rimuovi dalle salvate",
     emptyTitle: "Nessuna Nota d’Amore salvata",
     emptyText: "Quando salverai una Nota d’Amore rivelata, apparirà qui.",
+    noteFallback: "Nota d’Amore",
   },
   de: {
     back: "Zurück zu Liebesnotizen",
@@ -85,6 +89,7 @@ const copy = {
     remove: "Aus Gespeichert entfernen",
     emptyTitle: "Noch keine Liebesnotizen gespeichert",
     emptyText: "Wenn du eine enthüllte Liebesnotiz speicherst, erscheint sie hier.",
+    noteFallback: "Liebesnotiz",
   },
   nl: {
     back: "Terug naar Liefdesbriefjes",
@@ -101,6 +106,7 @@ const copy = {
     remove: "Verwijderen uit bewaard",
     emptyTitle: "Nog geen Liefdesbriefjes bewaard",
     emptyText: "Wanneer je een onthuld Liefdesbriefje bewaart, verschijnt het hier.",
+    noteFallback: "Liefdesbriefje",
   },
 };
 
@@ -191,7 +197,7 @@ export default function SavedLoveNotes() {
                     <article key={item.id} className="rounded-[1.75rem] border border-white bg-white p-6 shadow-lg">
                       <div className="text-xs font-black uppercase tracking-[0.14em] text-pink-600">{t.from} {sender}</div>
                       <div className="mt-5 -rotate-1 rounded-sm border border-yellow-300 bg-yellow-100 p-6 shadow-md">
-                        <p className="text-base font-semibold leading-7 text-slate-800">{note.note_content || "Love Note"}</p>
+                        <p className="text-base font-semibold leading-7 text-slate-800">{note.note_content || t.noteFallback}</p>
                         <div className="mt-5 text-right text-sm font-bold text-slate-600">— {sender} 💕</div>
                       </div>
                       <button type="button" onClick={() => removeNote(item.invitation_id)} disabled={removingId === item.invitation_id} className="mt-5 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-red-600 disabled:opacity-50">

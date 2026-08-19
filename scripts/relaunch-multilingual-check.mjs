@@ -65,6 +65,19 @@ const read = (file) => {
   }
 };
 
+const assertActiveLanguageKeys = (source, file, keys) => {
+  for (const language of ACTIVE_LANGUAGES) {
+    const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
+    const match = source.match(blockPattern);
+    if (!match) continue;
+
+    for (const key of keys) {
+      const keyPattern = new RegExp(`\\b${key}:\\s*`);
+      if (!keyPattern.test(match[1])) failures.push(`${file}: ${language} is missing required translated UI key ${key}.`);
+    }
+  }
+};
+
 const layout = read('src/pages/LayoutRelaunch.jsx');
 
 for (const language of ACTIVE_LANGUAGES) {
@@ -107,18 +120,7 @@ for (const language of ACTIVE_LANGUAGES) {
 }
 
 const loveNotesHub = read('src/pages/LoveNotesHub.jsx');
-for (const language of ACTIVE_LANGUAGES) {
-  const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
-  const match = loveNotesHub.match(blockPattern);
-  if (!match) continue;
-
-  for (const key of loveNotesHubRequiredKeys) {
-    const keyPattern = new RegExp(`\\n\\s{4}${key}:`);
-    if (!keyPattern.test(match[1])) {
-      failures.push(`LoveNotesHub.jsx: ${language} is missing required translated UI key ${key}.`);
-    }
-  }
-}
+assertActiveLanguageKeys(loveNotesHub, 'LoveNotesHub.jsx', loveNotesHubRequiredKeys);
 
 const loveNotesHubRuntime = loveNotesHub.split('export default function LoveNotesHub()')[1] || '';
 const requiredLoveNotesBindings = [
@@ -149,18 +151,7 @@ for (const literal of forbiddenLoveNotesRuntimeLiterals) {
 }
 
 const loveNoteSendFlow = read('src/pages/LoveNoteSendFlow.jsx');
-for (const language of ACTIVE_LANGUAGES) {
-  const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
-  const match = loveNoteSendFlow.match(blockPattern);
-  if (!match) continue;
-
-  for (const key of loveNoteSendRequiredKeys) {
-    const keyPattern = new RegExp(`\\n\\s{4}${key}:`);
-    if (!keyPattern.test(match[1])) {
-      failures.push(`LoveNoteSendFlow.jsx: ${language} is missing required translated UI key ${key}.`);
-    }
-  }
-}
+assertActiveLanguageKeys(loveNoteSendFlow, 'LoveNoteSendFlow.jsx', loveNoteSendRequiredKeys);
 
 const loveNoteSendRuntime = loveNoteSendFlow.split('export default function LoveNoteSendFlow()')[1] || '';
 for (const binding of ['cleanDraft(t.defaultNote)', 't.defaultNote', 't.loveNoteLabel']) {
@@ -174,6 +165,26 @@ if (/const\s+DEFAULT_NOTE\s*=/.test(loveNoteSendFlow)) {
 }
 if (loveNoteSendRuntime.includes('/> Love Note</div>')) {
   failures.push('LoveNoteSendFlow.jsx: sender preview must not hard-code the English “Love Note” label.');
+}
+
+const savedLoveNotes = read('src/pages/SavedLoveNotes.jsx');
+assertActiveLanguageKeys(savedLoveNotes, 'SavedLoveNotes.jsx', ['noteFallback']);
+const savedLoveNotesRuntime = savedLoveNotes.split('export default function SavedLoveNotes()')[1] || '';
+if (!savedLoveNotesRuntime.includes('note.note_content || t.noteFallback')) {
+  failures.push('SavedLoveNotes.jsx: empty saved-note content must use the selected-language fallback label.');
+}
+if (savedLoveNotesRuntime.includes('note.note_content || "Love Note"')) {
+  failures.push('SavedLoveNotes.jsx: do not hard-code the English Love Note fallback in the saved library.');
+}
+
+const loveNotesCollection = read('src/pages/LoveNotesCollectionRelaunch.jsx');
+assertActiveLanguageKeys(loveNotesCollection, 'LoveNotesCollectionRelaunch.jsx', ['draftTitle']);
+const loveNotesCollectionRuntime = loveNotesCollection.split('export default function LoveNotesCollectionRelaunch()')[1] || '';
+if (!loveNotesCollectionRuntime.includes('title: note?.title || t.draftTitle')) {
+  failures.push('LoveNotesCollectionRelaunch.jsx: collection draft fallback title must follow the selected language.');
+}
+if (loveNotesCollectionRuntime.includes('title: note?.title || "Love Note"')) {
+  failures.push('LoveNotesCollectionRelaunch.jsx: do not hard-code the English Love Note draft title.');
 }
 
 if (failures.length) {
