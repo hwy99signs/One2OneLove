@@ -35,6 +35,7 @@ const multilingualSources = [
   ['RoomProgramManager', 'src/pages/RoomProgramManager.jsx'],
   ['RoomOfficialScheduler', 'src/pages/RoomOfficialScheduler.jsx'],
   ['RoomReportQueue', 'src/pages/RoomReportQueue.jsx'],
+  ['RoomCancellationQueue', 'src/pages/RoomCancellationQueue.jsx'],
   ['RoomModerationAudit', 'src/pages/RoomModerationAudit.jsx'],
   ['RoomOpsDashboard', 'src/pages/RoomOpsDashboard.jsx'],
   ['NotFound', 'src/pages/NotFound.jsx'],
@@ -57,6 +58,7 @@ const requiredRoutes = [
   '/RoomProgramManager',
   '/RoomOfficialScheduler',
   '/RoomReportQueue',
+  '/RoomCancellationQueue',
   '/RoomModerationAudit',
   '/RoomOpsDashboard',
   '/ResetPassword',
@@ -71,6 +73,7 @@ const privateModeratorPages = [
   'src/pages/RoomProgramManager.jsx',
   'src/pages/RoomOfficialScheduler.jsx',
   'src/pages/RoomReportQueue.jsx',
+  'src/pages/RoomCancellationQueue.jsx',
   'src/pages/RoomModerationAudit.jsx',
   'src/pages/RoomOpsDashboard.jsx',
 ];
@@ -96,6 +99,8 @@ const roomCreatorAccess = read('src/pages/RoomCreatorAccess.jsx');
 requireText(roomCreatorAccess, 'getRoomCreatorTranslation', 'creator translation module usage');
 requireText(roomCreatorAccess, 'profileLoadFailed', 'creator profile failure state');
 requireText(roomCreatorAccess, 'min={minimumStartTime}', 'creator booking minimum start time');
+requireText(roomCreatorAccess, 'submitGlobalRoomCancellationRequest', 'creator cancellation request submission');
+requireText(roomCreatorAccess, 'cancellationPending', 'creator cancellation review state');
 
 const publicRoom = read('src/pages/GlobalRelationshipRoom.jsx');
 requireText(publicRoom, 'hasError={scheduleUnavailable}', 'public schedule backend failure state');
@@ -112,9 +117,16 @@ const auditPage = read('src/pages/RoomModerationAudit.jsx');
 requireText(auditPage, 'report_reviewed', 'localized report review audit decision');
 requireText(auditPage, 'report_actioned', 'localized report action audit decision');
 requireText(auditPage, 'report_dismissed', 'localized report dismissal audit decision');
+requireText(auditPage, 'cancellation_approved', 'localized cancellation approval audit decision');
+requireText(auditPage, 'cancellation_denied', 'localized cancellation denial audit decision');
 
 const roomService = read('src/lib/globalRelationshipRoomService.js');
 requireText(roomService, 'creator_display_name', 'safe public creator display name');
+
+const cancellationService = read('src/lib/globalRoomCancellationService.js');
+requireText(cancellationService, 'get_global_room_cancellation_queue', 'moderator cancellation queue RPC');
+requireText(cancellationService, 'review_global_room_cancellation_request', 'moderator cancellation review RPC');
+requireText(cancellationService, 'relationship_room_cancellation_requests', 'creator cancellation request table use');
 
 const roomSql = read('supabase-global-relationship-room.sql');
 requireText(roomSql, 'relationship_room_no_active_overlap', 'room overlap protection');
@@ -133,6 +145,20 @@ requireText(moderationSql, 'global_room_moderation_audit', 'moderation audit tra
 const reportingSql = read('supabase-global-room-reporting.sql');
 requireText(reportingSql, 'relationship_room_report_once', 'one report per account/program protection');
 requireText(reportingSql, 'users can submit own room reports', 'report ownership RLS');
+
+const cancellationSql = read('supabase-global-room-cancellations.sql');
+requireText(cancellationSql, 'idx_room_cancellation_one_open_per_slot', 'one open cancellation per program');
+requireText(cancellationSql, 'creators can submit own room cancellation requests', 'creator cancellation ownership policy');
+requireText(cancellationSql, 'review_global_room_cancellation_request', 'trusted cancellation review function');
+requireText(cancellationSql, "'cancellation_' || p_decision", 'cancellation moderation audit trail');
+
+const opsCancellationSql = read('supabase-global-room-ops-cancellations.sql');
+requireText(opsCancellationSql, "'open_cancellations'", 'cancellation operations metric');
+const opsService = read('src/lib/globalRoomOpsService.js');
+requireText(opsService, 'openCancellations', 'cancellation metric client mapping');
+const opsDashboard = read('src/pages/RoomOpsDashboard.jsx');
+requireText(opsDashboard, '/RoomCancellationQueue', 'cancellation queue operations link');
+requireText(opsDashboard, 's.openCancellations', 'cancellation operations metric rendering');
 
 if (failures.length) {
   console.error('\nO2OL launch verification failed:\n');
