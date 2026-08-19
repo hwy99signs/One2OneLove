@@ -13,7 +13,7 @@ create table if not exists public.programming_reminders (
   user_id uuid not null references auth.users(id) on delete cascade,
   slot_id uuid not null references public.creator_programming_slots(id) on delete cascade,
   remind_at timestamptz not null,
-  status text not null default 'active' check (status in ('active','sent','cancelled')),
+  status text not null default 'active' check (status in ('active','processing','sent','cancelled')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, slot_id)
@@ -23,11 +23,16 @@ create index if not exists programming_reminders_due_idx
   on public.programming_reminders (remind_at)
   where status = 'active';
 
+create index if not exists programming_reminders_processing_idx
+  on public.programming_reminders (updated_at)
+  where status = 'processing';
+
 create index if not exists programming_reminders_user_idx
   on public.programming_reminders (user_id, created_at desc);
 
 create table if not exists public.programming_notifications (
   id uuid primary key default gen_random_uuid(),
+  reminder_id uuid not null unique references public.programming_reminders(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   slot_id uuid null references public.creator_programming_slots(id) on delete set null,
   notification_type text not null default 'programming_reminder'
@@ -98,9 +103,9 @@ before update on public.programming_reminders
 for each row execute function public.set_programming_reminder_updated_at();
 
 comment on table public.programming_reminders is
-  'Private member reminders for scheduled Global Relationship Room programming. Writes are backend-only; members can read only their own reminder state.';
+  'Private member reminders for scheduled Global Relationship Room programming. Writes are backend-only; members can read only their own reminder state. processing is a short-lived dispatcher claim state.';
 comment on table public.programming_notifications is
-  'Private structured in-app programming notifications. Member-facing copy is localized client-side; members can read their own records and mark read_at only.';
+  'Private structured in-app programming notifications. reminder_id is unique for idempotent dispatch; member-facing copy is localized client-side.';
 
 commit;
 
@@ -112,4 +117,6 @@ commit;
 -- 5. Verify members can SELECT only their own reminder/notification rows.
 -- 6. Verify authenticated notification UPDATE privileges are limited to read_at.
 -- 7. Verify notification rows contain structured program facts, not hard-coded English member-facing prose.
--- 8. Do not configure any email/SMS/push delivery provider as part of this migration.
+-- 8. Verify duplicate dispatcher runs cannot create two notifications for one reminder_id.
+-- 9. Verify stale processing reminders can be safely returned to active by the dispatcher.
+-- 10. Do not configure any email/SMS/push delivery provider as part of this migration.
