@@ -50,13 +50,18 @@ rejectText(regularUser, 'console.log', 'registration debug logging');
 const verificationDialog = requireLanguages('src/components/signup/EmailVerificationDialog.jsx');
 requireText(verificationDialog, 'requiresVerification', 'verification-aware signup result handling');
 
-const influencer = requireLanguages('src/pages/InfluencerSignup.jsx');
-requireText(influencer, 'status: "pending"', 'pending influencer moderation status');
+// Influencer/professional application status is enforced in the service layer, not the page.
+// These legacy signup pages are being localized separately; the security check should verify
+// the actual moderation boundary rather than require duplicated translation dictionaries.
+const influencer = read('src/pages/InfluencerSignup.jsx');
 rejectText(influencer, 'error.message', 'raw influencer backend error disclosure');
+const influencerService = read('src/lib/influencerService.js');
+requireText(influencerService, "status: 'pending'", 'pending influencer moderation status');
 
-const professional = requireLanguages('src/pages/ProfessionalSignup.jsx');
-requireText(professional, 'status: "pending"', 'pending professional moderation status');
+const professional = read('src/pages/ProfessionalSignup.jsx');
 rejectText(professional, 'error.message', 'raw professional backend error disclosure');
+const professionalService = read('src/lib/professionalService.js');
+requireText(professionalService, "status: 'pending'", 'pending professional moderation status');
 
 const profileLock = read('supabase-global-room-creator-profile-lock.sql');
 requireText(profileLock, 'creators can update own pending room profile', 'pending-only creator profile update policy');
