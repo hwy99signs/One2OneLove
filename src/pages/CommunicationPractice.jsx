@@ -1,453 +1,108 @@
-
 import React, { useState } from "react";
+import { Heart, MessageCircle, RotateCcw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, ArrowRight, RotateCcw, CheckCircle, AlertCircle, Lightbulb, Heart, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { toast } from "sonner";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 
 const translations = {
   en: {
-    title: "Communication Practice Simulator",
-    subtitle: "Practice healthy communication patterns in realistic relationship scenarios",
-    back: "Back to Support",
-    selectScenario: "Select a Scenario",
-    yourResponse: "Choose Your Response",
-    feedback: "Feedback",
-    tryAgain: "Try Again",
-    nextScenario: "Next Scenario",
-    excellent: "Excellent Choice!",
-    good: "Good Approach",
-    needsWork: "Needs Improvement",
-    completed: "Scenario Complete!",
-    scenario: "Scenario",
-    of: "of",
-    scenarios: {
-      conflict: {
-        title: "Resolving a Disagreement",
-        situation: "Your partner forgot an important date you both agreed on. You feel disappointed and hurt.",
-        options: [
-          {
-            text: "Why do you always forget important things? You never listen to me!",
-            type: "poor",
-            feedback: "This response uses accusatory language ('always', 'never') and attacks the person rather than addressing the behavior. It escalates conflict."
-          },
-          {
-            text: "I feel hurt that our date was forgotten. Can we talk about what happened and how to prevent this?",
-            type: "excellent",
-            feedback: "Perfect! You used 'I' statements, expressed your feelings without blame, and opened the door for collaborative problem-solving."
-          },
-          {
-            text: "Whatever, it's fine. I didn't care about it anyway.",
-            type: "poor",
-            feedback: "This dismissive response avoids the real issue and doesn't allow for genuine communication. Suppressing feelings can lead to resentment."
-          },
-          {
-            text: "I'm disappointed this happened. I know you didn't mean to hurt me. Can we find a solution together?",
-            type: "good",
-            feedback: "Great approach! You acknowledged your feelings, gave benefit of the doubt, and invited collaboration. Consider being more specific about what happened."
-          }
-        ]
-      },
-      needs: {
-        title: "Expressing Your Needs",
-        situation: "You've been feeling disconnected lately and want more quality time together, but your partner has been very busy with work.",
-        options: [
-          {
-            text: "You care more about work than about us. I guess I'm just not a priority anymore.",
-            type: "poor",
-            feedback: "This assumes negative intent and makes accusations. It puts your partner on the defensive rather than opening a constructive dialogue."
-          },
-          {
-            text: "I miss spending quality time with you. I understand work is demanding. Can we schedule some time for just us this week?",
-            type: "excellent",
-            feedback: "Excellent! You expressed your needs clearly, showed understanding of their situation, and proposed a concrete solution."
-          },
-          {
-            text: "I'll just wait until you have time for me, I guess.",
-            type: "poor",
-            feedback: "This passive approach doesn't communicate your needs clearly and may lead to resentment. Being direct about your needs is healthier."
-          },
-          {
-            text: "I've been feeling a bit lonely lately. I know you're busy, but could we make time for a date night?",
-            type: "good",
-            feedback: "Good job expressing your feelings and making a request! To make it even better, be more specific about what quality time means to you."
-          }
-        ]
-      },
-      listening: {
-        title: "Active Listening",
-        situation: "Your partner is sharing stress about a difficult situation at work. They seem upset and need support.",
-        options: [
-          {
-            text: "That's nothing. Let me tell you what happened to me today...",
-            type: "poor",
-            feedback: "This dismisses their feelings and shifts focus to yourself. When someone needs support, center their experience."
-          },
-          {
-            text: "That sounds really stressful. Tell me more about what happened. How are you feeling about it?",
-            type: "excellent",
-            feedback: "Perfect active listening! You validated their feelings, showed interest, and invited them to share more without jumping to solutions."
-          },
-          {
-            text: "You should just quit that job. Why do you even stay there?",
-            type: "poor",
-            feedback: "Jumping straight to advice without fully listening can feel dismissive. Ask first if they want advice or just need to vent."
-          },
-          {
-            text: "I'm sorry you're going through this. That must be really hard. I'm here for you.",
-            type: "good",
-            feedback: "Good empathetic response! You validated their feelings and offered support. Consider asking follow-up questions to show deeper engagement."
-          }
-        ]
-      },
-      appreciation: {
-        title: "Showing Appreciation",
-        situation: "Your partner has been doing a lot around the house lately while you've been overwhelmed with other responsibilities.",
-        options: [
-          {
-            text: "Thanks for doing the basics. That's what partners do.",
-            type: "poor",
-            feedback: "This minimizes their effort and sounds dismissive. Genuine appreciation means recognizing and valuing specific contributions."
-          },
-          {
-            text: "I really appreciate how you've been taking care of things at home. It means so much, especially when I'm stressed. Thank you for being so supportive.",
-            type: "excellent",
-            feedback: "Beautiful! You were specific about what you appreciate, explained the impact, and expressed genuine gratitude. This strengthens your connection."
-          },
-          {
-            text: "Yeah, I noticed. Good job.",
-            type: "poor",
-            feedback: "This acknowledgment is brief and lacks warmth or detail. Taking time to express heartfelt appreciation strengthens relationships."
-          },
-          {
-            text: "Thank you for handling everything at home. You've really been helping me out.",
-            type: "good",
-            feedback: "Good acknowledgment! To make it more impactful, add specific details about what they did and how it made you feel."
-          }
-        ]
-      }
-    }
+    title: "Communication Practice",
+    subtitle: "Practice a healthier way to start difficult conversations without recording what you choose or say.",
+    privacy: "Nothing you say or select in this practice is saved or transmitted by this tool.",
+    limit: "This is an educational relationship exercise, not therapy, diagnosis, crisis care, or professional counseling.",
+    choose: "Choose a practice",
+    reset: "Start Over",
+    step: "Practice step",
+    prompts: [
+      ["Start with an “I” statement", "Instead of accusing your partner, name your own feeling and the specific situation.", "Try: “I felt disappointed when our plan changed because I was looking forward to time together.”"],
+      ["Make a clear request", "Turn a complaint into one specific request your partner can understand and respond to.", "Try: “Could we choose another evening this week and protect that time for us?”"],
+      ["Reflect before responding", "Show that you heard the meaning before defending your position.", "Try: “What I hear you saying is that you felt alone in handling this. Did I understand you?”"],
+      ["Repair after tension", "Use a small repair statement to lower defensiveness and return to the issue with care.", "Try: “I don’t want us fighting each other. Can we restart and talk about the problem as a team?”"],
+    ],
   },
   es: {
-    title: "Simulador de Práctica de Comunicación",
-    subtitle: "Practica patrones de comunicación saludables en escenarios realistas de relaciones",
-    back: "Volver al Apoyo",
-    selectScenario: "Selecciona un Escenario",
-    yourResponse: "Elige Tu Respuesta",
-    feedback: "Retroalimentación",
-    tryAgain: "Intentar de Nuevo",
-    nextScenario: "Siguiente Escenario",
-    excellent: "¡Excelente Elección!",
-    good: "Buen Enfoque",
-    needsWork: "Necesita Mejorar",
-    completed: "¡Escenario Completo!",
-    scenario: "Escenario",
-    of: "de"
+    title: "Práctica de Comunicación",
+    subtitle: "Practiquen una forma más saludable de iniciar conversaciones difíciles sin registrar lo que eligen o dicen.",
+    privacy: "Nada de lo que digan o seleccionen en esta práctica se guarda ni se transmite mediante esta herramienta.",
+    limit: "Este es un ejercicio educativo de relación, no terapia, diagnóstico, atención de crisis ni asesoramiento profesional.",
+    choose: "Elige una práctica", reset: "Empezar de Nuevo", step: "Paso de práctica",
+    prompts: [
+      ["Empieza con una frase en primera persona", "En lugar de acusar, nombra tu propio sentimiento y la situación específica.", "Prueba: “Me sentí decepcionado cuando cambió nuestro plan porque esperaba pasar tiempo juntos.”"],
+      ["Haz una petición clara", "Convierte una queja en una petición concreta que tu pareja pueda entender y responder.", "Prueba: “¿Podemos elegir otra noche esta semana y reservar ese tiempo para nosotros?”"],
+      ["Refleja antes de responder", "Demuestra que escuchaste el significado antes de defender tu posición.", "Prueba: “Lo que escucho es que te sentiste solo al manejar esto. ¿Lo entendí bien?”"],
+      ["Repara después de la tensión", "Usa una pequeña frase de reparación para bajar la defensividad y volver al tema con cuidado.", "Prueba: “No quiero que peleemos entre nosotros. ¿Podemos empezar de nuevo y abordar el problema como equipo?”"],
+    ],
   },
   fr: {
-    title: "Simulateur de Pratique de Communication",
-    subtitle: "Pratiquez des schémas de communication sains dans des scénarios de relation réalistes",
-    back: "Retour au Soutien",
-    selectScenario: "Sélectionnez un Scénario",
-    yourResponse: "Choisissez Votre Réponse",
-    feedback: "Retour",
-    tryAgain: "Réessayer",
-    nextScenario: "Scénario Suivant",
-    excellent: "Excellent Choix!",
-    good: "Bonne Approche",
-    needsWork: "Besoin d'Amélioration",
-    completed: "Scénario Terminé!",
-    scenario: "Scénario",
-    of: "de"
+    title: "Pratique de Communication",
+    subtitle: "Entraînez-vous à commencer les conversations difficiles de façon plus saine, sans enregistrer ce que vous choisissez ou dites.",
+    privacy: "Rien de ce que vous dites ou sélectionnez dans cet exercice n’est enregistré ni transmis par cet outil.",
+    limit: "Il s’agit d’un exercice éducatif sur la relation, et non d’une thérapie, d’un diagnostic, d’un service de crise ou d’un conseil professionnel.",
+    choose: "Choisissez un exercice", reset: "Recommencer", step: "Étape de pratique",
+    prompts: [
+      ["Commencez par une phrase en « je »", "Au lieu d’accuser votre partenaire, nommez votre propre émotion et la situation précise.", "Essayez : « Je me suis senti déçu quand notre projet a changé, car j’attendais ce moment ensemble. »"],
+      ["Formulez une demande claire", "Transformez une plainte en une demande précise à laquelle votre partenaire peut répondre.", "Essayez : « Pourrions-nous choisir une autre soirée cette semaine et garder ce temps pour nous ? »"],
+      ["Reformulez avant de répondre", "Montrez que vous avez compris le sens avant de défendre votre position.", "Essayez : « J’entends que tu t’es senti seul pour gérer cela. Est-ce que j’ai bien compris ? »"],
+      ["Réparez après la tension", "Utilisez une petite phrase de réparation pour réduire la défensive et revenir au problème avec attention.", "Essayez : « Je ne veux pas que nous nous battions l’un contre l’autre. Peut-on recommencer et traiter le problème en équipe ? »"],
+    ],
   },
   it: {
-    title: "Simulatore di Pratica di Comunicazione",
-    subtitle: "Pratica modelli di comunicazione sani in scenari di relazione realistici",
-    back: "Torna al Supporto",
-    selectScenario: "Seleziona uno Scenario",
-    yourResponse: "Scegli la Tua Risposta",
-    feedback: "Feedback",
-    tryAgain: "Riprova",
-    nextScenario: "Prossimo Scenario",
-    excellent: "Scelta Eccellente!",
-    good: "Buon Approccio",
-    needsWork: "Necessita Miglioramento",
-    completed: "Scenario Completato!",
-    scenario: "Scenario",
-    of: "di"
+    title: "Pratica di Comunicazione",
+    subtitle: "Esercitate un modo più sano di iniziare conversazioni difficili senza registrare ciò che scegliete o dite.",
+    privacy: "Nulla di ciò che dite o selezionate in questa pratica viene salvato o trasmesso da questo strumento.",
+    limit: "Questo è un esercizio educativo sulla relazione, non terapia, diagnosi, assistenza di crisi o consulenza professionale.",
+    choose: "Scegli una pratica", reset: "Ricomincia", step: "Passo di pratica",
+    prompts: [
+      ["Inizia con una frase in prima persona", "Invece di accusare il partner, descrivi il tuo sentimento e la situazione specifica.", "Prova: “Mi sono sentito deluso quando il nostro piano è cambiato perché aspettavo quel tempo insieme.”"],
+      ["Fai una richiesta chiara", "Trasforma una lamentela in una richiesta concreta che il partner possa capire e a cui possa rispondere.", "Prova: “Possiamo scegliere un’altra sera questa settimana e riservare quel tempo a noi?”"],
+      ["Rifletti prima di rispondere", "Mostra di aver ascoltato il significato prima di difendere la tua posizione.", "Prova: “Quello che sento è che ti sei sentito solo nel gestire questa cosa. Ho capito bene?”"],
+      ["Ripara dopo la tensione", "Usa una breve frase di riparazione per ridurre la difensiva e tornare al problema con cura.", "Prova: “Non voglio che combattiamo tra noi. Possiamo ricominciare e affrontare il problema come una squadra?”"],
+    ],
   },
   de: {
-    title: "Kommunikationspraxis-Simulator",
-    subtitle: "Üben Sie gesunde Kommunikationsmuster in realistischen Beziehungsszenarien",
-    back: "Zurück zur Unterstützung",
-    selectScenario: "Wählen Sie ein Szenario",
-    yourResponse: "Wählen Sie Ihre Antwort",
-    feedback: "Rückmeldung",
-    tryAgain: "Erneut Versuchen",
-    nextScenario: "Nächstes Szenario",
-    excellent: "Ausgezeichnete Wahl!",
-    good: "Guter Ansatz",
-    needsWork: "Verbesserungsbedarf",
-    completed: "Szenario Abgeschlossen!",
-    scenario: "Szenario",
-    of: "von"
-  }
+    title: "Kommunikationsübung",
+    subtitle: "Übt einen gesünderen Einstieg in schwierige Gespräche, ohne dass eure Auswahl oder Aussagen gespeichert werden.",
+    privacy: "Nichts, was ihr in dieser Übung sagt oder auswählt, wird von diesem Werkzeug gespeichert oder übertragen.",
+    limit: "Dies ist eine pädagogische Beziehungsübung, keine Therapie, Diagnose, Krisenhilfe oder professionelle Beratung.",
+    choose: "Übung auswählen", reset: "Neu Beginnen", step: "Übungsschritt",
+    prompts: [
+      ["Beginnt mit einer Ich-Aussage", "Statt den Partner anzuklagen, benennt das eigene Gefühl und die konkrete Situation.", "Versucht: „Ich war enttäuscht, als sich unser Plan änderte, weil ich mich auf die gemeinsame Zeit gefreut hatte.“"],
+      ["Formuliert eine klare Bitte", "Macht aus einer Beschwerde eine konkrete Bitte, die der Partner verstehen und beantworten kann.", "Versucht: „Können wir diese Woche einen anderen Abend auswählen und diese Zeit für uns schützen?“"],
+      ["Spiegelt vor der Antwort", "Zeigt zuerst, dass ihr die Bedeutung verstanden habt, bevor ihr eure Position verteidigt.", "Versucht: „Ich höre, dass du dich mit dieser Aufgabe allein gefühlt hast. Habe ich dich richtig verstanden?“"],
+      ["Repariert nach Spannung", "Nutzt eine kurze Reparaturaussage, um Abwehr zu senken und fürsorglich zum Thema zurückzukehren.", "Versucht: „Ich möchte nicht, dass wir gegeneinander kämpfen. Können wir neu anfangen und das Problem als Team besprechen?“"],
+    ],
+  },
 };
 
 export default function CommunicationPractice() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const scenarios = t.scenarios || translations.en.scenarios;
-  
-  const [selectedScenario, setSelectedScenario] = useState(null);
-  const [selectedResponse, setSelectedResponse] = useState(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [completedScenarios, setCompletedScenarios] = useState([]);
-
-  const scenarioList = Object.keys(scenarios).map(key => ({
-    id: key,
-    ...scenarios[key]
-  }));
-
-  const handleScenarioSelect = (scenario) => {
-    setSelectedScenario(scenario);
-    setSelectedResponse(null);
-    setShowFeedback(false);
-  };
-
-  const handleResponseSelect = (option) => {
-    setSelectedResponse(option);
-    setShowFeedback(true);
-    
-    if (option.type === 'excellent' && !completedScenarios.includes(selectedScenario.id)) {
-      setCompletedScenarios([...completedScenarios, selectedScenario.id]);
-      toast.success(t.completed);
-    }
-  };
-
-  const handleNextScenario = () => {
-    const currentIndex = scenarioList.findIndex(s => s.id === selectedScenario.id);
-    const nextIndex = (currentIndex + 1) % scenarioList.length;
-    handleScenarioSelect(scenarioList[nextIndex]);
-  };
-
-  const handleTryAgain = () => {
-    setSelectedResponse(null);
-    setShowFeedback(false);
-  };
-
-  const getFeedbackIcon = (type) => {
-    switch(type) {
-      case 'excellent':
-        return <CheckCircle className="w-6 h-6 text-green-600" />;
-      case 'good':
-        return <Lightbulb className="w-6 h-6 text-blue-600" />;
-      default:
-        return <AlertCircle className="w-6 h-6 text-orange-600" />;
-    }
-  };
-
-  const getFeedbackColor = (type) => {
-    switch(type) {
-      case 'excellent':
-        return 'from-green-50 to-emerald-50 border-green-300';
-      case 'good':
-        return 'from-blue-50 to-cyan-50 border-blue-300';
-      default:
-        return 'from-orange-50 to-yellow-50 border-orange-300';
-    }
-  };
+  const [selected, setSelected] = useState(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link
-            to={createPageUrl("CoupleSupport")}
-            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-rose-50 px-4 py-10 md:py-16">
+      <div className="mx-auto max-w-5xl">
+        <header className="mx-auto max-w-3xl text-center">
+          <MessageCircle className="mx-auto h-14 w-14 text-cyan-700" aria-hidden="true" />
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
+          <p className="mt-4 text-lg leading-7 text-slate-600">{t.subtitle}</p>
+          <div className="mt-5 rounded-2xl border border-cyan-100 bg-white p-4 text-left text-sm leading-6 text-slate-700"><p className="flex gap-2"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-cyan-700" aria-hidden="true" />{t.privacy}</p><p className="mt-2 flex gap-2"><Heart className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" aria-hidden="true" />{t.limit}</p></div>
+        </header>
 
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mb-6 shadow-xl">
-            <MessageCircle className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4 font-dancing">
-            {t.title}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            {t.subtitle}
-          </p>
-        </motion.div>
-
-        {!selectedScenario ? (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              {t.selectScenario}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {scenarioList.map((scenario, index) => (
-                <motion.div
-                  key={scenario.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card 
-                    className="cursor-pointer hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-purple-300 relative"
-                    onClick={() => handleScenarioSelect(scenario)}
-                  >
-                    {completedScenarios.includes(scenario.id) && (
-                      <div className="absolute top-4 right-4">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                      </div>
-                    )}
-                    <CardHeader>
-                      <CardTitle className="text-xl font-bold text-gray-900">
-                        {scenario.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-700 mb-4">{scenario.situation}</p>
-                      <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                        Start Practice
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-slate-900">{selected === null ? t.choose : t.step}</h2>
+          {selected === null ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {t.prompts.map(([title, description], index) => <button key={title} type="button" onClick={() => setSelected(index)} className="rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"><h3 className="font-bold text-slate-900">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p></button>)}
             </div>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl font-bold text-gray-900">
-                    {selectedScenario.title}
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedScenario(null)}
-                  >
-                    ← Back
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  {selectedScenario.situation}
-                </p>
-              </CardContent>
+          ) : (
+            <Card className="mt-4 border-cyan-100">
+              <CardHeader><CardTitle>{t.prompts[selected][0]}</CardTitle></CardHeader>
+              <CardContent><p className="leading-7 text-slate-700">{t.prompts[selected][1]}</p><div className="mt-5 rounded-2xl bg-cyan-50 p-5 text-cyan-950">{t.prompts[selected][2]}</div><Button type="button" variant="outline" onClick={() => setSelected(null)} className="mt-6"><RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />{t.reset}</Button></CardContent>
             </Card>
-
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t.yourResponse}
-              </h3>
-              <div className="space-y-4">
-                <AnimatePresence>
-                  {selectedScenario.options.map((option, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <button
-                        onClick={() => handleResponseSelect(option)}
-                        disabled={showFeedback}
-                        className={`w-full text-left p-6 rounded-xl border-2 transition-all ${
-                          selectedResponse === option
-                            ? 'border-purple-500 bg-purple-50 shadow-lg'
-                            : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-md'
-                        } ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                      >
-                        <p className="text-gray-900">{option.text}</p>
-                      </button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {showFeedback && selectedResponse && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <Card className={`bg-gradient-to-br ${getFeedbackColor(selectedResponse.type)} border-2`}>
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        {getFeedbackIcon(selectedResponse.type)}
-                        <CardTitle className="text-2xl font-bold text-gray-900">
-                          {selectedResponse.type === 'excellent' ? t.excellent : 
-                           selectedResponse.type === 'good' ? t.good : t.needsWork}
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-800 text-lg leading-relaxed mb-6">
-                        {selectedResponse.feedback}
-                      </p>
-                      <div className="flex gap-3">
-                        {selectedResponse.type !== 'excellent' && (
-                          <Button
-                            onClick={handleTryAgain}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            {t.tryAgain}
-                          </Button>
-                        )}
-                        <Button
-                          onClick={handleNextScenario}
-                          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                        >
-                          {t.nextScenario}
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {completedScenarios.length > 0 && !selectedScenario && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-12 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 border-2 border-green-200 text-center"
-          >
-            <Heart className="w-12 h-12 text-green-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Great Progress!
-            </h3>
-            <p className="text-gray-700">
-              You've completed {completedScenarios.length} out of {scenarioList.length} scenarios
-            </p>
-          </motion.div>
-        )}
+          )}
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
