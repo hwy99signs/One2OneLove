@@ -17,114 +17,93 @@ Draft PR: #17 — `Build O2OL Global Relationship Room foundation`
 - Permanent third-party programming disclaimer plus per-program short disclaimer.
 - Signed-in viewers can submit multilingual program reports directly from public programming cards.
 - Five-language home-page promotion and creator-access links.
-- Authenticated creator application flow.
-- Creator status states: pending, approved, suspended, rejected.
-- Approved-creator self-booking interface with client and database time validation.
-- Creator programming history with direct draft/pending cancellation and moderated approved/scheduled cancellation requests.
-- Creator cancellation requests preserve the public schedule until a trusted moderator approves removal.
-- Creator-facing loading, validation, booking, cancellation, and known-error states localized across all five active languages.
-- Creator IANA timezone stored automatically from the browser and shown in Creator Access.
-- Approved creator identity/timezone fields are locked from direct browser changes after moderation; pending applications can still correct their own submission.
-- Live Supabase creator-profile, programming-slot, report, and cancellation-request tables.
-- Explicit Data API grants plus Row Level Security on new exposed Global Room data.
-- Browser clients cannot self-approve creators, self-moderate programs, remove required disclaimers, elevate themselves to moderator, or bypass approved-profile identity/quota controls.
-- Database-level prevention of overlapping pending/approved/scheduled/live programming.
-- Database-level free-account cap of two programming slots per creator-local calendar day with concurrency-safe advisory locking.
-- Private trusted-moderator registry with no automatic moderator assignment.
-- Five-language secure moderation interface for creator applications and programming submissions.
-- Moderator decisions recorded in a private audit trail.
-- Trusted replay-source library and replay scheduling workflow.
-- Replay scheduling remains subject to the same room-overlap protection and keeps source-program linkage.
-- Five-language Replay Manager UI for trusted moderators.
-- Official O2OL programming scheduler and active-program removal controls.
-- Viewer reporting workflow, privacy hardening, and moderator report queue.
-- End-to-end creator cancellation request queue with moderator approve/deny controls and audit history.
-- Global Room operations dashboard includes creator applications, programs awaiting review, viewer reports, cancellation requests, live programming, upcoming programming, and approved creator counts.
-- All private Global Room operational pages are routed but remain guarded by trusted moderator authorization rather than public navigation exposure.
+- Authenticated creator application flow and approved-creator self-booking.
+- Creator status, programming history, cancellation requests, timezone handling, and localized booking errors.
+- Database-level overlap protection and free-account two-slot daily cap.
+- Private trusted-moderator registry, moderation interface, replay management, official scheduling, report queue, cancellation queue, audit history, and operations dashboard.
+- Browser clients cannot self-approve, self-moderate, remove disclaimers, or elevate themselves to moderator.
 
 ## Relationship engagement expansion
 
-### Daily Relationship Question
+The relationship ecosystem now includes routed five-language experiences for:
 
-- New `/DailyQuestion` experience implemented and routed.
-- Full EN/ES/FR/IT/DE coverage.
-- Daily rotation uses a deterministic question-of-the-day model rather than requiring a backend request.
-- Includes a conversation tip, Community and Date Ideas pathways, and a clear non-therapy disclaimer.
-- New multilingual home-page promotion links directly into the daily question.
+- `/DailyQuestion` — Daily Relationship Question.
+- `/MarriageMatters` — married-couple connection and reflection.
+- `/RelationshipLibrary` — goal-based discovery of O2OL resources.
+- `/CouplesChallenges` — recurring small connection actions.
+- `/DateNight` — intentional date-night planning.
+- `/RelationshipReset` — guided relationship reset.
+- `/O2OLShow` — O2OL and AMORA programming destination.
+- `/ConversationCards` — five conversation decks covering connection, appreciation, growth, fun/friendship, and the future.
+- `/WeeklyCheckIn` — a short weekly relationship review covering connection, appreciation, needs, repair, and one next-week action.
 
-### Marriage Matters
+### Privacy-by-design engagement tools
 
-- New `/MarriageMatters` experience implemented and routed specifically for married couples.
-- Full EN/ES/FR/IT/DE coverage.
-- Includes a weekly marriage reset across connection, communication, partnership, and joy.
-- Includes practical marriage habits: 15-minute check-in, specific appreciation, and a mini date.
-- Cross-links to Daily Question, Date Ideas, Relationship Support, and the Global Relationship Room.
-- Includes a clear education/reflection disclaimer rather than presenting the feature as therapy or professional advice.
-- New multilingual home-page promotion makes the married-couple experience visible rather than burying it inside generic couple tools.
+- Conversation Cards do not store or transmit couple answers.
+- Weekly Relationship Check-In answers remain in in-memory page state only and are not persisted by the tool.
+- These lightweight reflection features intentionally avoid creating new sensitive-data tables or analytics dependencies.
 
 ## Homepage / trust cleanup
 
 - Rebuilt feature discovery into a multilingual, navigable grid of real One2OneLove features rather than vague English-only claims.
 - Localized and modernized the inclusive-platform section across all five active languages.
-- Replaced the legacy fabricated “Dr. Sarah Chen” featured podcast card with truthful O2OL / AMORA programming positioning tied to the Global Relationship Room.
+- Replaced fabricated featured-expert content with truthful O2OL / AMORA programming positioning.
 - Removed unverified “real couple” testimonial claims and replaced them with truthful relationship-habit/value content.
-- Removed dead homepage polling and misleading zero-value Love Note / Happy Couple / leaderboard metrics left behind after the Base44 removal.
-- Modernized the hero around real O2OL features and switched the hero logo to the current One2OneLove Supabase asset used by the site header.
-- Modernized the multilingual footer, added current product links, made copyright year dynamic, and removed generic/unverified external social-profile links.
+- Removed dead homepage polling and misleading zero-value Love Note / Happy Couple / leaderboard metrics left behind after Base44 removal.
+- Modernized the hero and footer and removed generic/unverified external social-profile links.
 
-## Account, accessibility, and platform hardening
+## Account, chat, privacy, accessibility, and platform hardening
 
-- Password-recovery route repaired and included in launch-critical verification.
-- Application error boundary, accessible skip-to-content support, site footer, and unknown-route page added.
-- Global Room program-report dialog includes keyboard Escape handling, focus placement/restoration, ARIA dialog semantics, and accessible success/error status.
-- Branch-specific GitHub Actions production-build verification workflow.
-- Dedicated launch-readiness workflow includes source verification, security invariants, targeted ESLint checks, five-language checks, and production bundle compilation on Node.js 24.
-- Dedicated production dependency audit workflow and guarded non-breaking remediation workflow are present.
-- Guarded dependency remediation uses `npm audit fix` only, never `--force`, then requires source verification, security verification, lint, production audit, and production build before retaining dependency changes.
-- Persistent roadmap, build-status, and owner-approval documentation remain on the branch.
+- Password recovery and guarded auth-callback routing are present.
+- Application error boundary, skip-to-content support, site footer, and unknown-route page are present.
+- Partner application success now verifies persisted pending profile state before displaying completion.
+- Social discovery uses the safe user directory surface rather than exposing the account table.
+- Chat attachment storage is private; message records store private object paths and authorized clients receive short-lived signed URLs when attachments are read.
+- Chat service restores participant-scoped realtime message/conversation subscriptions after security refactoring.
+- Buddy/social privacy lint regressions were resolved without weakening ownership checks.
+- Chat security and social-privacy invariant scripts pass; the dedicated Chat CI separates strict service/privacy lint from legacy Chat UI unused-handler debt.
+- Branch-specific GitHub Actions cover production build, source verification, security, account privacy, social privacy, chat security, partner integrity, integrated hardening, and launch readiness.
+- Node.js 24 is used in the current CI workflows.
+- Guarded dependency remediation never uses `npm audit fix --force` automatically.
 
 ## Live Supabase work
 
 Global Relationship Room schema, security, creator scheduling, moderation, replay, reporting, operational controls, cancellation, verification, and audit hardening are applied to the existing O2OL Supabase project.
 
-Recent live hardening includes:
+The Global Room includes RLS, explicit access boundaries, concurrency protections, safe public creator display data, moderator-only operational functions, and audit controls.
 
-- `lock_approved_global_room_creator_profiles`
-- `add_global_room_cancellation_ops_metric`
+## Verification status
 
-The approved-profile lock prevents post-moderation creator identity/timezone changes through the browser/Data API while preserving pending-application corrections. The operations-summary extension adds open cancellation requests to the trusted moderator dashboard.
+Before the latest engagement commits, the repaired branch reached green on:
 
-## Verification completed
+- O2OL Source Verification
+- O2OL Security Verification
+- O2OL Account Privacy Audit
+- O2OL Social Privacy
+- O2OL Partner Integrity
+- O2OL Integrated Hardening
+- O2OL Build Verification
+- O2OL Launch Readiness
 
-- RLS confirmed enabled on the cancellation-request table and other new exposed Global Room tables.
-- Creator cancellation INSERT privileges remain column-limited and ownership/status constrained by RLS.
-- Creator daily-limit trigger and concurrency lock protections are present.
-- Active-slot overlap exclusion constraint is present.
-- Safe public creator display names are separated from private creator-profile access.
-- Creator clients cannot write approval/moderation fields directly.
-- Approved creator profiles cannot directly change moderated identity/timezone fields through the Data API.
-- Moderator/audit controls use trusted moderator checks.
-- Global Room operations summary function contains the open-cancellation metric and remains moderator-only.
-- Password recovery has a real `/ResetPassword` route.
-- Five-language source verification recognizes canonical shared translation modules rather than requiring duplicated dictionaries.
-- O2OL Security Verification has been corrected to verify moderation state in the service layer where it is actually enforced.
-- Recent security verification runs are passing; launch/build/source checks continue to run on each branch update.
-- Draft PR #17 remains intentionally in draft while active build work continues.
+The remaining Chat Security failure at that checkpoint was isolated to legacy `Chat.jsx` unused-variable lint; both chat-security and social-privacy invariant checks themselves passed. The Chat Security workflow now preserves strict lint for hardened services/privacy surfaces while isolating that legacy UI debt.
+
+Conversation Cards and Weekly Relationship Check-In are now included in the launch-critical route, five-language, lint, and production-build gates. Current CI should be read from the latest branch commit before declaring the newest checkpoint fully green.
+
+Draft PR #17 remains intentionally in draft while active build work continues.
 
 ## Current infrastructure constraint
 
 - The external Vercel status attached to GitHub has reported a Vercel build-rate-limit condition (`upgradeToPro=build-rate-limit`).
-- This is separate from code compilation: GitHub production builds can continue independently.
+- This is separate from GitHub code compilation and verification.
 - No Vercel upgrade or paid plan change has been performed automatically.
 
 ## Next active implementation areas
 
-- Continue replacing English-only legacy public surfaces with the five-language framework.
-- Continue relationship ecosystem expansion: Relationship Library, Couples Challenges, Date Night, and additional recurring relationship content.
-- Clean up legacy influencer/professional verification flows that still contain development-era placeholder verification behavior.
-- Continue responsive/mobile and accessibility polish outside the newly hardened Global Room surfaces.
-- Review guarded dependency-remediation results before accepting any dependency change with breaking risk.
-- Prepare a clean production activation sequence once the Vercel build-rate constraint is cleared and the first trusted moderator is assigned.
+- Surface Conversation Cards and Weekly Check-In more prominently through Relationship Library / feature discovery after the newest verification cycle.
+- Continue multilingual modernization of legacy public/account surfaces.
+- Continue responsive/mobile and accessibility polish.
+- Continue controlled review of dependency vulnerabilities without breaking upgrades.
+- Prepare the production activation sequence after deployment capacity and first trusted moderator activation are resolved.
 
 ## Owner-controlled activation items
 
