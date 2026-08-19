@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Heart, Edit, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { useLanguage } from "@/Layout";
 
 const moodEmojis = {
   happy: '😊',
@@ -15,49 +15,60 @@ const moodEmojis = {
   loving: '❤️'
 };
 
+const translations = {
+  en: { edit: 'Edit journal entry', delete: 'Delete journal entry' },
+  es: { edit: 'Editar entrada del diario', delete: 'Eliminar entrada del diario' },
+  fr: { edit: 'Modifier l’entrée du journal', delete: 'Supprimer l’entrée du journal' },
+  it: { edit: 'Modifica voce del diario', delete: 'Elimina voce del diario' },
+  de: { edit: 'Journaleintrag bearbeiten', delete: 'Journaleintrag löschen' }
+};
+
+const localeMap = {
+  en: 'en-US',
+  es: 'es',
+  fr: 'fr',
+  it: 'it',
+  de: 'de'
+};
+
 export default function JournalEntry({ entry, onEdit, onDelete }) {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+  const locale = localeMap[currentLanguage] || localeMap.en;
+  const entryDate = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${entry.entry_date}T12:00:00`));
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-    >
-      <Card className="hover:shadow-lg transition-shadow">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+      <Card className="transition-shadow hover:shadow-lg">
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{moodEmojis[entry.mood]}</span>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-2xl" aria-hidden="true">{moodEmojis[entry.mood] || '💭'}</span>
                 <CardTitle className="text-xl">{entry.title}</CardTitle>
-                {entry.is_favorite && <Heart className="w-5 h-5 text-red-500 fill-red-500" />}
+                {entry.is_favorite && <Heart className="h-5 w-5 fill-red-500 text-red-500" aria-hidden="true" />}
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Calendar className="w-4 h-4" />
-                {format(new Date(entry.entry_date), 'MMMM d, yyyy')}
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <time dateTime={entry.entry_date}>{entryDate}</time>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => onEdit(entry)}>
-                <Edit className="w-4 h-4" />
+              <Button variant="ghost" size="icon" type="button" onClick={() => onEdit(entry)} aria-label={t.edit}>
+                <Edit className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => onDelete(entry.id)}>
-                <Trash2 className="w-4 h-4 text-red-500" />
+              <Button variant="ghost" size="icon" type="button" onClick={() => onDelete(entry.id)} aria-label={t.delete}>
+                <Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" />
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-700 whitespace-pre-wrap mb-4">{entry.content}</p>
-          
-          {entry.tags && entry.tags.length > 0 && (
+          <p className="mb-4 whitespace-pre-wrap text-gray-700">{entry.content}</p>
+          {entry.tags?.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {entry.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-xs"
-                >
-                  #{tag}
-                </span>
+              {entry.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-600">#{tag}</span>
               ))}
             </div>
           )}
