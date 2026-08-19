@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock3, Globe2, Radio, ShieldCheck, XCircle } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CalendarX2, CheckCircle2, Clock3, Globe2, Radio, ShieldCheck, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,10 @@ import {
   getMyRoomSlots,
   submitRoomSlot,
 } from '@/lib/globalRelationshipRoomService';
+import {
+  getMyGlobalRoomCancellationRequests,
+  submitGlobalRoomCancellationRequest,
+} from '@/lib/globalRoomCancellationService';
 import { getRoomCreatorTranslation } from '@/lib/roomCreatorTranslations';
 import { getGlobalRoomCommonTranslation, translateGlobalRoomServiceError } from '@/lib/globalRoomI18n';
 
@@ -65,6 +69,7 @@ export default function RoomCreatorAccess() {
   const [programDescription, setProgramDescription] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [cancellationReasons, setCancellationReasons] = useState({});
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
@@ -83,6 +88,21 @@ export default function RoomCreatorAccess() {
   });
   const slots = slotsQuery.data?.success ? slotsQuery.data.slots : [];
   const slotsLoadFailed = slotsQuery.isError || (slotsQuery.data && !slotsQuery.data.success);
+
+  const cancellationQuery = useQuery({
+    queryKey: ['myRoomCancellationRequests', user?.id],
+    queryFn: () => getMyGlobalRoomCancellationRequests(user.id),
+    enabled: Boolean(user?.id),
+  });
+  const cancellationRequests = cancellationQuery.data?.success ? cancellationQuery.data.requests : [];
+  const cancellationLoadFailed = cancellationQuery.isError || (cancellationQuery.data && !cancellationQuery.data.success);
+  const latestCancellationBySlot = useMemo(() => {
+    const latest = new Map();
+    for (const request of cancellationRequests) {
+      if (!latest.has(request.slot_id)) latest.set(request.slot_id, request);
+    }
+    return latest;
+  }, [cancellationRequests]);
 
   const createProfileMutation = useMutation({
     mutationFn: () => createRoomCreatorProfile(user.id, { displayName, bio }),
@@ -147,6 +167,27 @@ export default function RoomCreatorAccess() {
     onError: () => {
       setNotice('');
       setError(common.cancelError);
+    },
+  });
+
+  const cancellationMutation = useMutation({
+    mutationFn: ({ slotId, reason }) => submitGlobalRoomCancellationRequest({ userId: user.id, slotId, reason }),
+    onSuccess: (result, variables) => {
+      if (!result.success) {
+        setNotice('');
+        setError(result.duplicate ? t.cancellationAlreadyOpen : t.cancellationRequestFailed);
+        return;
+      }
+      setError('');
+      setNotice(t.cancellationRequested);
+      setCancellationReasons((current) => ({ ...current, [variables.slotId]: '' }));
+      queryClient.invalidateQueries({ queryKey: ['myRoomCancellationRequests', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['globalRoomCancellationQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['globalRoomOpsSummary'] });
+    },
+    onError: () => {
+      setNotice('');
+      setError(t.cancellationRequestFailed);
     },
   });
 
@@ -279,18 +320,38 @@ export default function RoomCreatorAccess() {
         <Card className="mt-6 rounded-3xl">
           <CardHeader><CardTitle>{t.mySlots}</CardTitle></CardHeader>
           <CardContent>
-            {slotsQuery.isLoading ? <p role="status" className="text-slate-500">{common.loading}</p> : slotsLoadFailed ? (
+            {slotsQuery.isLoading || cancellationQuery.isLoading ? <p role="status" className="text-slate-500">{common.loading}</p> : slotsLoadFailed || cancellationLoadFailed ? (
               <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" /><span>{common.genericError}</span></div>
             ) : slots.length === 0 ? (
               <p className="rounded-2xl bg-slate-50 p-6 text-center text-slate-500">{t.noSlots}</p>
             ) : (
               <div className="space-y-3">
-                {slots.map((slot) => (
-                  <article key={slot.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div><div className="font-semibold text-slate-900">{slot.title}</div><time dateTime={slot.scheduled_start} className="mt-1 flex items-center gap-2 text-sm text-slate-500"><Clock3 aria-hidden="true" className="h-4 w-4" />{formatDateTime(slot.scheduled_start, currentLanguage)}</time><div className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{statusLabel(slot.status, t)}</div></div>
-                    {['draft', 'pending'].includes(slot.status) ? <Button variant="outline" size="sm" onClick={() => cancelMutation.mutate(slot.id)} disabled={cancelMutation.isPending}><XCircle aria-hidden="true" className="mr-2 h-4 w-4" />{t.cancel}</Button> : null}
-                  </article>
-                ))}
+                {slots.map((slot) => {
+                  const cancellation = latestCancellationBySlot.get(slot.id);
+                  const futureApprovedProgram = ['approved', 'scheduled'].includes(slot.status) && new Date(slot.scheduled_end).getTime() > Date.now();
+                  return (
+                    <article key={slot.id} className="rounded-2xl border border-slate-200 p-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div><div className="font-semibold text-slate-900">{slot.title}</div><time dateTime={slot.scheduled_start} className="mt-1 flex items-center gap-2 text-sm text-slate-500"><Clock3 aria-hidden="true" className="h-4 w-4" />{formatDateTime(slot.scheduled_start, currentLanguage)}</time><div className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{statusLabel(slot.status, t)}</div></div>
+                        {['draft', 'pending'].includes(slot.status) ? <Button variant="outline" size="sm" onClick={() => cancelMutation.mutate(slot.id)} disabled={cancelMutation.isPending}><XCircle aria-hidden="true" className="mr-2 h-4 w-4" />{t.cancel}</Button> : null}
+                      </div>
+
+                      {futureApprovedProgram && cancellation?.status === 'open' && (
+                        <div role="status" className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"><CalendarX2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>{t.cancellationPending}</span></div>
+                      )}
+
+                      {futureApprovedProgram && cancellation?.status !== 'open' && (
+                        <div className="mt-4 border-t border-slate-100 pt-4">
+                          {cancellation?.status === 'denied' && <p className="mb-3 text-xs font-medium text-slate-500">{t.cancellationDenied}</p>}
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <Input value={cancellationReasons[slot.id] || ''} onChange={(event) => setCancellationReasons((current) => ({ ...current, [slot.id]: event.target.value }))} placeholder={t.cancellationReason} aria-label={`${t.cancellationReason}: ${slot.title}`} maxLength={1000} />
+                            <Button variant="outline" onClick={() => cancellationMutation.mutate({ slotId: slot.id, reason: cancellationReasons[slot.id] || '' })} disabled={cancellationMutation.isPending}><CalendarX2 aria-hidden="true" className="mr-2 h-4 w-4" />{cancellationMutation.isPending ? t.requestingCancellation : t.requestCancellation}</Button>
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </CardContent>
