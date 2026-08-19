@@ -1,0 +1,45 @@
+name: O2OL Journal Privacy
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-journal-privacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Shared Journals privacy invariants
+        run: node scripts/verify-o2ol-journal-sharing.mjs
+
+      - name: Lint Shared Journals surfaces
+        run: >-
+          npx eslint
+          src/pages/SharedJournals.jsx
+          src/components/activities/JournalForm.jsx
+          src/components/activities/JournalEntry.jsx
+          src/lib/journalService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
