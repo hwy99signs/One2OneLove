@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowLeft, Bot, Flag, Heart, Loader2, MessageCircle, Send, Shield, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Flag, Heart, Loader2, MessageCircle, Radio, Send, Shield, Users } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
 import { LIVE_COMMUNITY_ROOMS, getLocalizedRoom } from '@/lib/liveCommunityRooms';
+import { CREATOR_PROGRAMMING_ENABLED, getGlobalProgrammingStatus } from '@/lib/creatorProgrammingService';
 import { buildPublicPresenceKey, enterPublicRoom, leavePublicRoom } from '@/lib/roomPresenceService';
 import { listLiveRoomMessages, reportLiveRoomMessage, sendLiveRoomMessage, subscribeToLiveRoomMessages, toggleLiveRoomReaction } from '@/lib/liveRoomMessageService';
 import { getLiveRoomHostPrompt } from '@/lib/liveRoomHostService';
@@ -19,6 +20,7 @@ const COPY = {
     hostLabel: 'AI conversation catalyst', hostRhythmTitle: 'Host rhythm', hostRhythmText: 'The O2OL Host may offer a brief prompt when the room is quiet, then steps back while members are talking.',
     rulesTitle: 'Keep the room human and respectful', rulesText: 'No harassment, threats, sexual exploitation, impersonation, private-information sharing, or dangerous advice. Report messages that need moderator review.',
     disclaimerTitle: 'Room notice', disclaimerText: 'Community conversations and creator programming are for discussion and education, not professional advice or emergency support.',
+    programmingLive: 'Live now', programmingNext: 'Up next', programmingLiveType: 'Live program', programmingReplayType: 'Replay',
     input: 'Share something with the room…', send: 'Send', signIn: 'Sign in to join the conversation.', signInButton: 'Sign In', sending: 'Sending…',
     loading: 'Loading room…', notFound: 'This live room is unavailable.', loadFailed: 'Unable to load room messages.', sendError: 'Unable to send your message.',
     report: 'Report', reportTitle: 'Report this message?', reportText: 'Reports are private moderator records. The reported member is not notified by this preview flow.',
@@ -26,19 +28,19 @@ const COPY = {
     reactions: 'Reactions', hostFallback: 'What is one small thing that helped you feel connected to someone this week?', roomUnavailable: 'Room unavailable',
   },
   es: {
-    back: 'Volver a Comunidad en Vivo', live: 'Sala en vivo', people: 'personas aquí', human: 'persona', humans: 'personas', topic: 'Enfoque de conversación', emptyTitle: 'Nadie ha saludado todavía', emptyText: 'La sala está abierta. Puedes ser la primera persona en hablar o dejar que el Anfitrión O2OL ofrezca un tema suave para comenzar.', hostLabel: 'Catalizador de conversación IA', hostRhythmTitle: 'Ritmo del anfitrión', hostRhythmText: 'El Anfitrión O2OL puede ofrecer un breve tema cuando la sala está tranquila y luego se aparta mientras los miembros conversan.', rulesTitle: 'Mantén la sala humana y respetuosa', rulesText: 'No se permite acoso, amenazas, explotación sexual, suplantación, compartir información privada ni consejos peligrosos. Reporta mensajes que necesiten revisión.', disclaimerTitle: 'Aviso de la sala', disclaimerText: 'Las conversaciones de la comunidad y la programación de creadores son para diálogo y educación, no asesoramiento profesional ni apoyo de emergencia.', input: 'Comparte algo con la sala…', send: 'Enviar', signIn: 'Inicia sesión para unirte a la conversación.', signInButton: 'Iniciar Sesión', sending: 'Enviando…', loading: 'Cargando sala…', notFound: 'Esta sala no está disponible.', loadFailed: 'No se pudieron cargar los mensajes.', sendError: 'No se pudo enviar tu mensaje.', report: 'Reportar', reportTitle: '¿Reportar este mensaje?', reportText: 'Los reportes son registros privados para moderación. El miembro reportado no recibe una notificación de este flujo de vista previa.', reportReason: 'Motivo', reportPlaceholder: 'Describe brevemente la preocupación…', cancel: 'Cancelar', submitReport: 'Enviar Reporte', reportFailed: 'No se pudo enviar el reporte.', reported: 'Reporte enviado.', reactions: 'Reacciones', hostFallback: '¿Qué pequeña cosa te ayudó a sentirte conectado con alguien esta semana?', roomUnavailable: 'Sala no disponible',
+    back: 'Volver a Comunidad en Vivo', live: 'Sala en vivo', people: 'personas aquí', human: 'persona', humans: 'personas', topic: 'Enfoque de conversación', emptyTitle: 'Nadie ha saludado todavía', emptyText: 'La sala está abierta. Puedes ser la primera persona en hablar o dejar que el Anfitrión O2OL ofrezca un tema suave para comenzar.', hostLabel: 'Catalizador de conversación IA', hostRhythmTitle: 'Ritmo del anfitrión', hostRhythmText: 'El Anfitrión O2OL puede ofrecer un breve tema cuando la sala está tranquila y luego se aparta mientras los miembros conversan.', rulesTitle: 'Mantén la sala humana y respetuosa', rulesText: 'No se permite acoso, amenazas, explotación sexual, suplantación, compartir información privada ni consejos peligrosos. Reporta mensajes que necesiten revisión.', disclaimerTitle: 'Aviso de la sala', disclaimerText: 'Las conversaciones de la comunidad y la programación de creadores son para diálogo y educación, no asesoramiento profesional ni apoyo de emergencia.', programmingLive: 'En vivo ahora', programmingNext: 'A continuación', programmingLiveType: 'Programa en vivo', programmingReplayType: 'Repetición', input: 'Comparte algo con la sala…', send: 'Enviar', signIn: 'Inicia sesión para unirte a la conversación.', signInButton: 'Iniciar Sesión', sending: 'Enviando…', loading: 'Cargando sala…', notFound: 'Esta sala no está disponible.', loadFailed: 'No se pudieron cargar los mensajes.', sendError: 'No se pudo enviar tu mensaje.', report: 'Reportar', reportTitle: '¿Reportar este mensaje?', reportText: 'Los reportes son registros privados para moderación. El miembro reportado no recibe una notificación de este flujo de vista previa.', reportReason: 'Motivo', reportPlaceholder: 'Describe brevemente la preocupación…', cancel: 'Cancelar', submitReport: 'Enviar Reporte', reportFailed: 'No se pudo enviar el reporte.', reported: 'Reporte enviado.', reactions: 'Reacciones', hostFallback: '¿Qué pequeña cosa te ayudó a sentirte conectado con alguien esta semana?', roomUnavailable: 'Sala no disponible',
   },
   fr: {
-    back: 'Retour à la Communauté en Direct', live: 'Salle en direct', people: 'personnes ici', human: 'personne', humans: 'personnes', topic: 'Sujet de conversation', emptyTitle: "Personne n'a encore dit bonjour", emptyText: "La salle est ouverte. Vous pouvez être la première personne à parler ou laisser l'Hôte O2OL proposer un sujet doux.", hostLabel: 'Catalyseur de conversation IA', hostRhythmTitle: "Rythme de l'hôte", hostRhythmText: "L'Hôte O2OL peut proposer un court sujet lorsque la salle est calme, puis se retire pendant que les membres discutent.", rulesTitle: 'Gardez la salle humaine et respectueuse', rulesText: "Pas de harcèlement, menaces, exploitation sexuelle, usurpation, partage d'informations privées ou conseils dangereux. Signalez les messages qui nécessitent une revue.", disclaimerTitle: 'Avis du salon', disclaimerText: "Les conversations communautaires et les programmes de créateurs servent à l'échange et à l'éducation, et ne remplacent ni un conseil professionnel ni une aide d'urgence.", input: 'Partagez quelque chose avec la salle…', send: 'Envoyer', signIn: 'Connectez-vous pour rejoindre la conversation.', signInButton: 'Se Connecter', sending: 'Envoi…', loading: 'Chargement de la salle…', notFound: 'Cette salle est indisponible.', loadFailed: 'Impossible de charger les messages.', sendError: "Impossible d'envoyer votre message.", report: 'Signaler', reportTitle: 'Signaler ce message ?', reportText: "Les signalements sont des dossiers privés de modération. Le membre signalé n'est pas averti par ce flux d'aperçu.", reportReason: 'Raison', reportPlaceholder: 'Décrivez brièvement le problème…', cancel: 'Annuler', submitReport: 'Envoyer le Signalement', reportFailed: "Impossible d'envoyer le signalement.", reported: 'Signalement envoyé.', reactions: 'Réactions', hostFallback: "Quelle petite chose vous a aidé à vous sentir proche de quelqu'un cette semaine ?", roomUnavailable: 'Salle indisponible',
+    back: 'Retour à la Communauté en Direct', live: 'Salle en direct', people: 'personnes ici', human: 'personne', humans: 'personnes', topic: 'Sujet de conversation', emptyTitle: "Personne n'a encore dit bonjour", emptyText: "La salle est ouverte. Vous pouvez être la première personne à parler ou laisser l'Hôte O2OL proposer un sujet doux.", hostLabel: 'Catalyseur de conversation IA', hostRhythmTitle: "Rythme de l'hôte", hostRhythmText: "L'Hôte O2OL peut proposer un court sujet lorsque la salle est calme, puis se retire pendant que les membres discutent.", rulesTitle: 'Gardez la salle humaine et respectueuse', rulesText: "Pas de harcèlement, menaces, exploitation sexuelle, usurpation, partage d'informations privées ou conseils dangereux. Signalez les messages qui nécessitent une revue.", disclaimerTitle: 'Avis du salon', disclaimerText: "Les conversations communautaires et les programmes de créateurs servent à l'échange et à l'éducation, et ne remplacent ni un conseil professionnel ni une aide d'urgence.", programmingLive: 'En direct maintenant', programmingNext: 'À suivre', programmingLiveType: 'Programme en direct', programmingReplayType: 'Rediffusion', input: 'Partagez quelque chose avec la salle…', send: 'Envoyer', signIn: 'Connectez-vous pour rejoindre la conversation.', signInButton: 'Se Connecter', sending: 'Envoi…', loading: 'Chargement de la salle…', notFound: 'Cette salle est indisponible.', loadFailed: 'Impossible de charger les messages.', sendError: "Impossible d'envoyer votre message.", report: 'Signaler', reportTitle: 'Signaler ce message ?', reportText: "Les signalements sont des dossiers privés de modération. Le membre signalé n'est pas averti par ce flux d'aperçu.", reportReason: 'Raison', reportPlaceholder: 'Décrivez brièvement le problème…', cancel: 'Annuler', submitReport: 'Envoyer le Signalement', reportFailed: "Impossible d'envoyer le signalement.", reported: 'Signalement envoyé.', reactions: 'Réactions', hostFallback: "Quelle petite chose vous a aidé à vous sentir proche de quelqu'un cette semaine ?", roomUnavailable: 'Salle indisponible',
   },
   it: {
-    back: 'Torna alla Community Live', live: 'Stanza live', people: 'persone qui', human: 'persona', humans: 'persone', topic: 'Focus della conversazione', emptyTitle: 'Nessuno ha ancora salutato', emptyText: "La stanza è aperta. Puoi essere la prima persona a parlare o lasciare che l'Host O2OL proponga un tema leggero.", hostLabel: 'Catalizzatore di conversazione IA', hostRhythmTitle: "Ritmo dell'host", hostRhythmText: "L'Host O2OL può proporre un breve spunto quando la stanza è tranquilla, poi si fa da parte mentre i membri parlano.", rulesTitle: 'Mantieni la stanza umana e rispettosa', rulesText: 'Niente molestie, minacce, sfruttamento sessuale, impersonificazione, condivisione di informazioni private o consigli pericolosi. Segnala i messaggi che richiedono revisione.', disclaimerTitle: 'Avviso della stanza', disclaimerText: 'Le conversazioni della community e i programmi dei creator sono destinati al confronto e alla formazione, non a consulenza professionale o supporto di emergenza.', input: 'Condividi qualcosa con la stanza…', send: 'Invia', signIn: 'Accedi per unirti alla conversazione.', signInButton: 'Accedi', sending: 'Invio…', loading: 'Caricamento stanza…', notFound: 'Questa stanza non è disponibile.', loadFailed: 'Impossibile caricare i messaggi.', sendError: 'Impossibile inviare il messaggio.', report: 'Segnala', reportTitle: 'Segnalare questo messaggio?', reportText: "Le segnalazioni sono registri privati di moderazione. Il membro segnalato non viene avvisato da questo flusso di anteprima.", reportReason: 'Motivo', reportPlaceholder: 'Descrivi brevemente il problema…', cancel: 'Annulla', submitReport: 'Invia Segnalazione', reportFailed: 'Impossibile inviare la segnalazione.', reported: 'Segnalazione inviata.', reactions: 'Reazioni', hostFallback: 'Quale piccola cosa ti ha aiutato a sentirti vicino a qualcuno questa settimana?', roomUnavailable: 'Stanza non disponibile',
+    back: 'Torna alla Community Live', live: 'Stanza live', people: 'persone qui', human: 'persona', humans: 'persone', topic: 'Focus della conversazione', emptyTitle: 'Nessuno ha ancora salutato', emptyText: "La stanza è aperta. Puoi essere la prima persona a parlare o lasciare che l'Host O2OL proponga un tema leggero.", hostLabel: 'Catalizzatore di conversazione IA', hostRhythmTitle: "Ritmo dell'host", hostRhythmText: "L'Host O2OL può proporre un breve spunto quando la stanza è tranquilla, poi si fa da parte mentre i membri parlano.", rulesTitle: 'Mantieni la stanza umana e rispettosa', rulesText: 'Niente molestie, minacce, sfruttamento sessuale, impersonificazione, condivisione di informazioni private o consigli pericolosi. Segnala i messaggi che richiedono revisione.', disclaimerTitle: 'Avviso della stanza', disclaimerText: 'Le conversazioni della community e i programmi dei creator sono destinati al confronto e alla formazione, non a consulenza professionale o supporto di emergenza.', programmingLive: 'In onda ora', programmingNext: 'Prossimamente', programmingLiveType: 'Programma live', programmingReplayType: 'Replica', input: 'Condividi qualcosa con la stanza…', send: 'Invia', signIn: 'Accedi per unirti alla conversazione.', signInButton: 'Accedi', sending: 'Invio…', loading: 'Caricamento stanza…', notFound: 'Questa stanza non è disponibile.', loadFailed: 'Impossibile caricare i messaggi.', sendError: 'Impossibile inviare il messaggio.', report: 'Segnala', reportTitle: 'Segnalare questo messaggio?', reportText: "Le segnalazioni sono registri privati di moderazione. Il membro segnalato non viene avvisato da questo flusso di anteprima.", reportReason: 'Motivo', reportPlaceholder: 'Descrivi brevemente il problema…', cancel: 'Annulla', submitReport: 'Invia Segnalazione', reportFailed: 'Impossibile inviare la segnalazione.', reported: 'Segnalazione inviata.', reactions: 'Reazioni', hostFallback: 'Quale piccola cosa ti ha aiutato a sentirti vicino a qualcuno questa settimana?', roomUnavailable: 'Stanza non disponibile',
   },
   de: {
-    back: 'Zurück zur Live-Community', live: 'Live-Raum', people: 'Personen hier', human: 'Person', humans: 'Personen', topic: 'Gesprächsfokus', emptyTitle: 'Noch niemand hat Hallo gesagt', emptyText: 'Der Raum ist offen. Du kannst als Erste oder Erster sprechen oder den O2OL-Host einen sanften Gesprächsimpuls geben lassen.', hostLabel: 'KI-Gesprächsimpuls', hostRhythmTitle: 'Host-Rhythmus', hostRhythmText: 'Der O2OL-Host kann bei Ruhe einen kurzen Impuls geben und tritt zurück, während Mitglieder sprechen.', rulesTitle: 'Menschlich und respektvoll bleiben', rulesText: 'Keine Belästigung, Drohungen, sexuelle Ausbeutung, Identitätsvortäuschung, Weitergabe privater Informationen oder gefährliche Ratschläge. Melde Nachrichten, die moderiert werden sollten.', disclaimerTitle: 'Raumhinweis', disclaimerText: 'Community-Gespräche und Creator-Programme dienen dem Austausch und der Bildung und ersetzen keine professionelle Beratung oder Notfallhilfe.', input: 'Teile etwas mit dem Raum…', send: 'Senden', signIn: 'Melde dich an, um am Gespräch teilzunehmen.', signInButton: 'Anmelden', sending: 'Wird gesendet…', loading: 'Raum wird geladen…', notFound: 'Dieser Live-Raum ist nicht verfügbar.', loadFailed: 'Raumnachrichten konnten nicht geladen werden.', sendError: 'Deine Nachricht konnte nicht gesendet werden.', report: 'Melden', reportTitle: 'Diese Nachricht melden?', reportText: 'Meldungen sind private Moderationsunterlagen. Das gemeldete Mitglied wird durch diesen Vorschauablauf nicht benachrichtigt.', reportReason: 'Grund', reportPlaceholder: 'Beschreibe kurz das Problem…', cancel: 'Abbrechen', submitReport: 'Meldung Senden', reportFailed: 'Meldung konnte nicht gesendet werden.', reported: 'Meldung gesendet.', reactions: 'Reaktionen', hostFallback: 'Welche kleine Sache hat dir diese Woche geholfen, dich jemandem verbunden zu fühlen?', roomUnavailable: 'Raum nicht verfügbar',
+    back: 'Zurück zur Live-Community', live: 'Live-Raum', people: 'Personen hier', human: 'Person', humans: 'Personen', topic: 'Gesprächsfokus', emptyTitle: 'Noch niemand hat Hallo gesagt', emptyText: 'Der Raum ist offen. Du kannst als Erste oder Erster sprechen oder den O2OL-Host einen sanften Gesprächsimpuls geben lassen.', hostLabel: 'KI-Gesprächsimpuls', hostRhythmTitle: 'Host-Rhythmus', hostRhythmText: 'Der O2OL-Host kann bei Ruhe einen kurzen Impuls geben und tritt zurück, während Mitglieder sprechen.', rulesTitle: 'Menschlich und respektvoll bleiben', rulesText: 'Keine Belästigung, Drohungen, sexuelle Ausbeutung, Identitätsvortäuschung, Weitergabe privater Informationen oder gefährliche Ratschläge. Melde Nachrichten, die moderiert werden sollten.', disclaimerTitle: 'Raumhinweis', disclaimerText: 'Community-Gespräche und Creator-Programme dienen dem Austausch und der Bildung und ersetzen keine professionelle Beratung oder Notfallhilfe.', programmingLive: 'Jetzt live', programmingNext: 'Als Nächstes', programmingLiveType: 'Live-Programm', programmingReplayType: 'Wiederholung', input: 'Teile etwas mit dem Raum…', send: 'Senden', signIn: 'Melde dich an, um am Gespräch teilzunehmen.', signInButton: 'Anmelden', sending: 'Wird gesendet…', loading: 'Raum wird geladen…', notFound: 'Dieser Live-Raum ist nicht verfügbar.', loadFailed: 'Raumnachrichten konnten nicht geladen werden.', sendError: 'Deine Nachricht konnte nicht gesendet werden.', report: 'Melden', reportTitle: 'Diese Nachricht melden?', reportText: 'Meldungen sind private Moderationsunterlagen. Das gemeldete Mitglied wird durch diesen Vorschauablauf nicht benachrichtigt.', reportReason: 'Grund', reportPlaceholder: 'Beschreibe kurz das Problem…', cancel: 'Abbrechen', submitReport: 'Meldung Senden', reportFailed: 'Meldung konnte nicht gesendet werden.', reported: 'Meldung gesendet.', reactions: 'Reaktionen', hostFallback: 'Welche kleine Sache hat dir diese Woche geholfen, dich jemandem verbunden zu fühlen?', roomUnavailable: 'Raum nicht verfügbar',
   },
   nl: {
-    back: 'Terug naar Live Community', live: 'Livekamer', people: 'mensen hier', human: 'persoon', humans: 'mensen', topic: 'Gespreksfocus', emptyTitle: 'Nog niemand heeft hallo gezegd', emptyText: 'De kamer is open. Jij kunt als eerste iets zeggen of de O2OL Host een rustige gespreksstarter laten geven.', hostLabel: 'AI-gespreksstarter', hostRhythmTitle: 'Hostritme', hostRhythmText: 'De O2OL Host kan een korte prompt geven wanneer de kamer stil is en doet daarna een stap terug terwijl leden praten.', rulesTitle: 'Houd de kamer menselijk en respectvol', rulesText: 'Geen intimidatie, bedreigingen, seksuele uitbuiting, imitatie, delen van privé-informatie of gevaarlijk advies. Meld berichten die moderatie nodig hebben.', disclaimerTitle: 'Kamerbericht', disclaimerText: 'Communitygesprekken en programma’s van makers zijn bedoeld voor gesprek en educatie, niet als professioneel advies of noodhulp.', input: 'Deel iets met de kamer…', send: 'Versturen', signIn: 'Log in om mee te praten.', signInButton: 'Inloggen', sending: 'Versturen…', loading: 'Kamer laden…', notFound: 'Deze livekamer is niet beschikbaar.', loadFailed: 'Kamerberichten konden niet worden geladen.', sendError: 'Je bericht kon niet worden verstuurd.', report: 'Melden', reportTitle: 'Dit bericht melden?', reportText: 'Meldingen zijn privé-moderatierecords. Het gemelde lid krijgt via deze preview geen melding.', reportReason: 'Reden', reportPlaceholder: 'Beschrijf kort het probleem…', cancel: 'Annuleren', submitReport: 'Melding Versturen', reportFailed: 'Melding kon niet worden verstuurd.', reported: 'Melding verstuurd.', reactions: 'Reacties', hostFallback: 'Welke kleine gebeurtenis hielp je deze week om je met iemand verbonden te voelen?', roomUnavailable: 'Kamer niet beschikbaar',
+    back: 'Terug naar Live Community', live: 'Livekamer', people: 'mensen hier', human: 'persoon', humans: 'mensen', topic: 'Gespreksfocus', emptyTitle: 'Nog niemand heeft hallo gezegd', emptyText: 'De kamer is open. Jij kunt als eerste iets zeggen of de O2OL Host een rustige gespreksstarter laten geven.', hostLabel: 'AI-gespreksstarter', hostRhythmTitle: 'Hostritme', hostRhythmText: 'De O2OL Host kan een korte prompt geven wanneer de kamer stil is en doet daarna een stap terug terwijl leden praten.', rulesTitle: 'Houd de kamer menselijk en respectvol', rulesText: 'Geen intimidatie, bedreigingen, seksuele uitbuiting, imitatie, delen van privé-informatie of gevaarlijk advies. Meld berichten die moderatie nodig hebben.', disclaimerTitle: 'Kamerbericht', disclaimerText: 'Communitygesprekken en programma’s van makers zijn bedoeld voor gesprek en educatie, niet als professioneel advies of noodhulp.', programmingLive: 'Nu live', programmingNext: 'Hierna', programmingLiveType: 'Liveprogramma', programmingReplayType: 'Herhaling', input: 'Deel iets met de kamer…', send: 'Versturen', signIn: 'Log in om mee te praten.', signInButton: 'Inloggen', sending: 'Versturen…', loading: 'Kamer laden…', notFound: 'Deze livekamer is niet beschikbaar.', loadFailed: 'Kamerberichten konden niet worden geladen.', sendError: 'Je bericht kon niet worden verstuurd.', report: 'Melden', reportTitle: 'Dit bericht melden?', reportText: 'Meldingen zijn privé-moderatierecords. Het gemelde lid krijgt via deze preview geen melding.', reportReason: 'Reden', reportPlaceholder: 'Beschrijf kort het probleem…', cancel: 'Annuleren', submitReport: 'Melding Versturen', reportFailed: 'Melding kon niet worden verstuurd.', reported: 'Melding verstuurd.', reactions: 'Reacties', hostFallback: 'Welke kleine gebeurtenis hielp je deze week om je met iemand verbonden te voelen?', roomUnavailable: 'Kamer niet beschikbaar',
   },
 };
 
@@ -71,6 +73,14 @@ function timeLabel(value, locale) {
   return date.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
 }
 
+function programmingTimeLabel(slot, locale) {
+  if (!slot?.starts_at) return '';
+  const start = new Date(slot.starts_at);
+  const end = new Date(slot.ends_at);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '';
+  return `${start.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })} – ${end.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}`;
+}
+
 function ReactionBar({ message, onReact, t }) {
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -88,6 +98,35 @@ function ReactionBar({ message, onReact, t }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function ProgrammingStatus({ status, locale, t }) {
+  if (!status?.enabled || (!status.current && !status.next)) return null;
+
+  const cards = [
+    status.current ? { slot: status.current, label: t.programmingLive, live: true } : null,
+    status.next ? { slot: status.next, label: t.programmingNext, live: false } : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="mt-5 grid gap-3 md:grid-cols-2">
+      {cards.map(({ slot, label, live }) => (
+        <div key={`${label}-${slot.id}`} className={`rounded-2xl border p-4 ${live ? 'border-rose-200 bg-rose-50' : 'border-violet-200 bg-violet-50'}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className={`inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.13em] ${live ? 'text-rose-700' : 'text-violet-700'}`}>
+              {live ? <Radio className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}{label}
+            </div>
+            <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase text-slate-600">
+              {slot.content_mode === 'replay' ? t.programmingReplayType : t.programmingLiveType}
+            </span>
+          </div>
+          <div className="mt-2 font-black text-slate-950">{slot.title}</div>
+          {slot.description ? <p className="mt-1 text-sm leading-6 text-slate-600">{slot.description}</p> : null}
+          <div className="mt-2 text-xs font-bold text-slate-500">{programmingTimeLabel(slot, locale)}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -138,6 +177,7 @@ export default function LiveRoom() {
   const [humanCount, setHumanCount] = useState(0);
   const [messages, setMessages] = useState([]);
   const [hostPrompt, setHostPrompt] = useState('');
+  const [programmingStatus, setProgrammingStatus] = useState({ enabled: false, current: null, next: null });
   const [loading, setLoading] = useState(Boolean(room));
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
@@ -165,14 +205,21 @@ export default function LiveRoom() {
     let mounted = true;
     setLoading(true);
     setError('');
+    setProgrammingStatus({ enabled: false, current: null, next: null });
+
+    const programmingRequest = room.slug === 'global-relationship-room' && CREATOR_PROGRAMMING_ENABLED && isAuthenticated
+      ? getGlobalProgrammingStatus().catch(() => ({ enabled: false, current: null, next: null }))
+      : Promise.resolve({ enabled: false, current: null, next: null });
 
     Promise.all([
       listLiveRoomMessages(room.slug, 100),
       getLiveRoomHostPrompt({ room, language, recentMessages: [] }).catch(() => null),
-    ]).then(([loadedMessages, host]) => {
+      programmingRequest,
+    ]).then(([loadedMessages, host, programming]) => {
       if (!mounted) return;
       setMessages(loadedMessages || []);
       setHostPrompt(host?.text || room.topic || t.hostFallback);
+      setProgrammingStatus(programming || { enabled: false, current: null, next: null });
       setLoading(false);
     }).catch((loadError) => {
       console.error('Unable to initialize live room:', loadError);
@@ -195,7 +242,7 @@ export default function LiveRoom() {
       unsubscribeMessages?.();
       leavePublicRoom(room.slug, presenceKey);
     };
-  }, [room?.slug, language, presenceKey]);
+  }, [room?.slug, language, presenceKey, isAuthenticated]);
 
   const activeHostPrompt = useMemo(() => hostPrompt || room?.topic || t.hostFallback, [hostPrompt, room?.topic, t.hostFallback]);
   const showHostPrompt = !messages.length;
@@ -264,6 +311,7 @@ export default function LiveRoom() {
               <div className="flex items-center gap-4"><div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${visuals.icon} text-white shadow-lg`}><Heart className="h-7 w-7 fill-white" /></div><div><p className="text-xs font-black uppercase tracking-[0.16em] text-pink-700">{t.live}</p><h1 className="text-3xl font-black text-slate-950">{room.name}</h1><p className="mt-1 text-sm text-slate-600">{room.description}</p></div></div>
               <div className="rounded-2xl bg-slate-50 px-4 py-3"><p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{t.topic}</p><p className="mt-1 max-w-sm text-sm font-semibold text-slate-700">{room.topic}</p></div>
             </div>
+            <ProgrammingStatus status={programmingStatus} locale={locale} t={t} />
             <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><span className="font-black">{t.disclaimerTitle}:</span> {t.disclaimerText}</div></div>
           </div>
 
