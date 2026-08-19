@@ -1,0 +1,52 @@
+name: Relaunch Programming Integrity
+
+on:
+  push:
+    branches:
+      - relaunch-homepage
+    paths:
+      - 'src/components/programming/**'
+      - 'src/pages/*Programming*.jsx'
+      - 'src/lib/*Programming*.js'
+      - 'src/lib/programming*.js'
+      - 'supabase/functions/*programming*/**'
+      - 'supabase/migrations/20260819_programming*.sql'
+      - 'scripts/relaunch-programming-*.mjs'
+      - '.github/workflows/relaunch-programming-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relaunch-programming-integrity
+  cancel-in-progress: true
+
+jobs:
+  safeguards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout relaunch branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run programming integrity checks
+        run: |
+          node scripts/relaunch-creator-programming-check.mjs
+          node scripts/relaunch-programming-schedule-check.mjs
+          node scripts/relaunch-programming-reminder-check.mjs
+          node scripts/relaunch-programming-reminder-cancellation-check.mjs
+          node scripts/relaunch-programming-reminder-slot-guard-check.mjs
+          node scripts/relaunch-programming-moderation-check.mjs
+
+      - name: Compile relaunch application
+        run: npm run build
