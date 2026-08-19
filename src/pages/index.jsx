@@ -55,6 +55,7 @@ import PaymentSuccess from "./PaymentSuccess";
 import Subscription from "./Subscription";
 import GlobalRelationshipRoom from "./GlobalRelationshipRoom";
 import RoomCreatorAccess from "./RoomCreatorAccess";
+import RoomModeration from "./RoomModeration";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -114,6 +115,7 @@ const PAGES = {
   Subscription,
   GlobalRelationshipRoom,
   RoomCreatorAccess,
+  RoomModeration,
 };
 
 function _getCurrentPage(url) {
@@ -197,6 +199,7 @@ function PagesContent() {
         <Route path="/Subscription" element={<Subscription />} />
         <Route path="/GlobalRelationshipRoom" element={<GlobalRelationshipRoom />} />
         <Route path="/RoomCreatorAccess" element={<RoomCreatorAccess />} />
+        <Route path="/RoomModeration" element={<RoomModeration />} />
       </Routes>
     </Layout>
   );
