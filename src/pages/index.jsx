@@ -34,6 +34,7 @@ import AIContentCreator from "./AIContentCreator";
 import Dashboard from "./Dashboard";
 import Community from "./LiveCommunity";
 import LiveRoom from "./LiveRoom";
+import ProgrammingSchedule from "./ProgrammingSchedule";
 import CreatorProgramming from "./CreatorProgramming";
 import O2OLProgrammingAdmin from "./O2OLProgrammingAdmin";
 import RelationshipMilestones from "./RelationshipMilestones";
@@ -95,6 +96,7 @@ const PAGES = {
   Dashboard,
   Community,
   LiveRoom,
+  ProgrammingSchedule,
   CreatorProgramming,
   O2OLProgrammingAdmin,
   RelationshipMilestones,
@@ -172,6 +174,7 @@ const ROUTES = [
   ["/Dashboard", Dashboard],
   ["/Community", Community],
   ["/LiveRoom", LiveRoom],
+  ["/ProgrammingSchedule", ProgrammingSchedule],
   ["/CreatorProgramming", CreatorProgramming],
   ["/O2OLProgrammingAdmin", O2OLProgrammingAdmin],
   ["/RelationshipMilestones", RelationshipMilestones, "relationship_milestones"],
