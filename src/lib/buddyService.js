@@ -86,6 +86,7 @@ export const getUserProfile = async (userId) => {
 };
 
 export const sendBuddyRequest = async (_fromUserId, toUserId) => {
+  void _fromUserId;
   try {
     const actorId = await getCurrentUserId();
     if (!toUserId || toUserId === actorId) throw new Error('Invalid buddy request');
@@ -114,6 +115,7 @@ export const sendBuddyRequest = async (_fromUserId, toUserId) => {
 };
 
 export const cancelBuddyRequest = async (requestId, _userId) => {
+  void _userId;
   try {
     const actorId = await getCurrentUserId();
     const { error } = await supabase
@@ -130,6 +132,7 @@ export const cancelBuddyRequest = async (requestId, _userId) => {
 };
 
 export const getSentBuddyRequests = async (_userId) => {
+  void _userId;
   try {
     const actorId = await getCurrentUserId();
     const { data, error } = await supabase
@@ -151,6 +154,7 @@ export const getSentBuddyRequests = async (_userId) => {
 };
 
 export const getReceivedBuddyRequests = async (_userId) => {
+  void _userId;
   try {
     const actorId = await getCurrentUserId();
     const { data, error } = await supabase
@@ -172,6 +176,7 @@ export const getReceivedBuddyRequests = async (_userId) => {
 };
 
 export const acceptBuddyRequest = async (requestId, _userId) => {
+  void _userId;
   try {
     const actorId = await getCurrentUserId();
     const { data, error } = await supabase
@@ -191,6 +196,7 @@ export const acceptBuddyRequest = async (requestId, _userId) => {
 };
 
 export const rejectBuddyRequest = async (requestId, _userId) => {
+  void _userId;
   try {
     const actorId = await getCurrentUserId();
     const { error } = await supabase
@@ -207,6 +213,7 @@ export const rejectBuddyRequest = async (requestId, _userId) => {
 };
 
 export const getMyBuddies = async (_userId) => {
+  void _userId;
   try {
     const actorId = await getCurrentUserId();
     const { data, error } = await supabase
