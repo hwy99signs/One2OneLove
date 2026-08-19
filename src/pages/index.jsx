@@ -35,6 +35,7 @@ import Dashboard from "./Dashboard";
 import Community from "./LiveCommunity";
 import LiveRoom from "./LiveRoom";
 import CreatorProgramming from "./CreatorProgramming";
+import O2OLProgrammingAdmin from "./O2OLProgrammingAdmin";
 import RelationshipMilestones from "./RelationshipMilestones";
 import RelationshipCoach from "./RelationshipCoach";
 import RelationshipGoals from "./RelationshipGoalsRelaunch";
@@ -95,6 +96,7 @@ const PAGES = {
   Community,
   LiveRoom,
   CreatorProgramming,
+  O2OLProgrammingAdmin,
   RelationshipMilestones,
   RelationshipCoach,
   RelationshipGoals,
@@ -171,6 +173,7 @@ const ROUTES = [
   ["/Community", Community],
   ["/LiveRoom", LiveRoom],
   ["/CreatorProgramming", CreatorProgramming],
+  ["/O2OLProgrammingAdmin", O2OLProgrammingAdmin],
   ["/RelationshipMilestones", RelationshipMilestones, "relationship_milestones"],
   ["/RelationshipCoach", RelationshipCoach, "relationship_coach"],
   ["/RelationshipGoals", RelationshipGoals, "relationship_goals"],
