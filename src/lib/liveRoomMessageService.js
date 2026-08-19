@@ -14,6 +14,30 @@ const isMissingRoomBackend = (error) =>
   error?.code === "42P01" ||
   /room_messages|room_message_reactions|room_message_reports/i.test(error?.message || "");
 
+const requireCurrentUser = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user?.id) throw new Error("Sign in to continue.");
+  return data.user;
+};
+
+const publicSenderName = (user) => {
+  const metadataName = String(user?.user_metadata?.display_name || user?.user_metadata?.full_name || "").trim();
+  return metadataName.slice(0, 80) || "Member";
+};
+
+const aggregateReactions = (rows = [], currentUserId = null) => {
+  const grouped = new Map();
+  for (const row of rows || []) {
+    const emoji = row?.emoji;
+    if (!emoji) continue;
+    const current = grouped.get(emoji) || { reaction: emoji, count: 0, reacted_by_me: false };
+    current.count += 1;
+    if (currentUserId && row.user_id === currentUserId) current.reacted_by_me = true;
+    grouped.set(emoji, current);
+  }
+  return Array.from(grouped.values());
+};
+
 export async function getRoomMessages(roomSlug, limit = 80) {
   const { data, error } = await supabase
     .from("room_messages")
@@ -133,5 +157,61 @@ export function subscribeToRoomMessages(roomSlug, onChange) {
 
   return () => supabase.removeChannel(channel);
 }
+
+// Relaunch compatibility layer. LiveRoom.jsx historically used the names below while
+// the hardened data service uses the room-oriented names above. Keep one database
+// implementation and adapt at this boundary rather than duplicating room logic.
+export async function listLiveRoomMessages(roomSlug, limit = 80) {
+  const [{ messages }, authResult] = await Promise.all([
+    getRoomMessages(roomSlug, limit),
+    supabase.auth.getUser().catch(() => ({ data: { user: null } })),
+  ]);
+  const currentUserId = authResult?.data?.user?.id || null;
+  return (messages || []).map((message) => ({
+    ...message,
+    sender_id: message.user_id,
+    reactions: aggregateReactions(message.room_message_reactions, currentUserId),
+  }));
+}
+
+export async function sendLiveRoomMessage(roomSlug, content) {
+  const user = await requireCurrentUser();
+  return sendRoomMessage(roomSlug, { id: user.id, name: publicSenderName(user) }, content);
+}
+
+export async function reportLiveRoomMessage(messageId, details = "") {
+  const user = await requireCurrentUser();
+  return reportRoomMessage(messageId, user.id, "other", String(details || "").slice(0, 500));
+}
+
+export async function toggleLiveRoomReaction(messageId, emoji, shouldAdd = true) {
+  const user = await requireCurrentUser();
+  if (!REACTIONS.includes(emoji)) throw new Error("Unsupported reaction.");
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("room_message_reactions")
+    .select("id")
+    .eq("message_id", messageId)
+    .eq("user_id", user.id)
+    .eq("emoji", emoji)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+
+  if (shouldAdd && !existing) {
+    const { error } = await supabase.from("room_message_reactions").insert({ message_id: messageId, user_id: user.id, emoji });
+    if (error) throw error;
+    return "added";
+  }
+
+  if (!shouldAdd && existing) {
+    const { error } = await supabase.from("room_message_reactions").delete().eq("id", existing.id).eq("user_id", user.id);
+    if (error) throw error;
+    return "removed";
+  }
+
+  return existing ? "unchanged" : "absent";
+}
+
+export const subscribeToLiveRoomMessages = subscribeToRoomMessages;
 
 export { REACTIONS };
