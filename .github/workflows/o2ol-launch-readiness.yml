@@ -41,5 +41,29 @@ jobs:
       - name: Verify launch-critical source and five active languages
         run: node scripts/verify-o2ol-launch.mjs
 
+      - name: Lint launch-critical O2OL surfaces
+        run: >-
+          npx eslint
+          src/pages/GlobalRelationshipRoom.jsx
+          src/pages/RoomCreatorAccess.jsx
+          src/pages/RoomModeration.jsx
+          src/pages/RoomReplayManager.jsx
+          src/pages/RoomProgramManager.jsx
+          src/pages/RoomOfficialScheduler.jsx
+          src/pages/RoomReportQueue.jsx
+          src/pages/RoomModerationAudit.jsx
+          src/pages/RoomOpsDashboard.jsx
+          src/pages/NotFound.jsx
+          src/components/global-room/RoomScheduleViewer.jsx
+          src/components/global-room/ProgramReportButton.jsx
+          src/components/home/GlobalRoomPromo.jsx
+          src/lib/globalRelationshipRoomService.js
+          src/lib/globalRoomModerationService.js
+          src/lib/globalRoomOfficialService.js
+          src/lib/globalRoomReportingService.js
+          src/lib/globalRoomAuditService.js
+          src/lib/globalRoomOpsService.js
+          --rule 'react/prop-types: off'
+
       - name: Production build
         run: npm run build
