@@ -124,6 +124,48 @@ const COPY = {
   },
 };
 
+// Keep the existing translated Help Center prose intact and localize product-feature names
+// at render time so newer One2OneLove naming follows the selected language consistently.
+const FEATURE_TERMS = {
+  en: [],
+  es: [
+    ['Saved Love Notes', 'Notas de Amor Guardadas'], ['Love Notes', 'Notas de Amor'], ['Love Note', 'Nota de Amor'],
+    ['Live Community', 'Comunidad en Vivo'], ['AI Host', 'Anfitrión de IA'], ['Love Language Quiz', 'Quiz de Lenguajes del Amor'],
+    ['Love Language', 'Lenguaje del Amor'], ['Date Ideas', 'Ideas para Citas'], ['Relationship Goals', 'Metas de Relación'],
+  ],
+  fr: [
+    ['Saved Love Notes', 'Mots d’Amour Sauvegardés'], ['Love Notes', 'Mots d’Amour'], ['Love Note', 'Mot d’Amour'],
+    ['Live Community', 'Communauté en Direct'], ['AI Host', 'Hôte IA'], ['Love Language Quiz', 'Quiz des Langages d’Amour'],
+    ['Love Language', 'Langage d’Amour'], ['Date Ideas', 'Idées de Rendez-vous'], ['Relationship Goals', 'Objectifs de Relation'],
+  ],
+  it: [
+    ['Saved Love Notes', 'Note d’Amore Salvate'], ['Love Notes', 'Note d’Amore'], ['Love Note', 'Nota d’Amore'],
+    ['Live Community', 'Community dal Vivo'], ['AI Host', 'Host IA'], ['Love Language Quiz', 'Quiz del Linguaggio dell’Amore'],
+    ['Love Language', 'Linguaggio dell’Amore'], ['Date Ideas', 'Idee per Appuntamenti'], ['Relationship Goals', 'Obiettivi di Relazione'],
+  ],
+  de: [
+    ['Saved Love Notes', 'Gespeicherte Liebesnotizen'], ['Love Notes', 'Liebesnotizen'], ['Love Note', 'Liebesnotiz'],
+    ['Live Community', 'Live-Community'], ['AI Host', 'KI-Host'], ['Love Language Quiz', 'Liebessprachen-Quiz'],
+    ['Love Language', 'Liebessprache'], ['Date Ideas', 'Date-Ideen'], ['Relationship Goals', 'Beziehungsziele'],
+  ],
+  nl: [
+    ['Saved Love Notes', 'Bewaarde Liefdesbriefjes'], ['Love Notes', 'Liefdesbriefjes'], ['Love Note', 'Liefdesbriefje'],
+    ['Live Community', 'Live Community'], ['AI Host', 'AI-host'], ['Love Language Quiz', 'Liefdestaalquiz'],
+    ['Love Language', 'Liefdestaal'], ['Date Ideas', 'Date-ideeën'], ['Relationship Goals', 'Relatiedoelen'],
+  ],
+};
+
+const localizeFeatureTerms = (value, replacements) => {
+  if (typeof value === 'string') {
+    return replacements.reduce((text, [from, to]) => text.split(from).join(to), value);
+  }
+  if (Array.isArray(value)) return value.map((item) => localizeFeatureTerms(item, replacements));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeFeatureTerms(item, replacements)]));
+  }
+  return value;
+};
+
 const LINK_CARDS = [
   { key: 'signIn', path: '/SignIn', icon: UserRound },
   { key: 'forgot', path: '/ForgotPassword', icon: KeyRound },
@@ -135,7 +177,8 @@ const LINK_CARDS = [
 
 export default function HelpCenterRelaunch() {
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const t = useMemo(() => localizeFeatureTerms(COPY[language], FEATURE_TERMS[language] || []), [language]);
   const [query, setQuery] = useState('');
   const [openKey, setOpenKey] = useState(null);
 
@@ -168,7 +211,7 @@ export default function HelpCenterRelaunch() {
             const open = openKey === row.key;
             return (
               <Card key={row.key} className="overflow-hidden border-gray-200 shadow-sm">
-                <button type="button" onClick={() => setOpenKey(open ? null : row.key)} className="flex w-full items-start justify-between gap-4 p-5 text-left">
+                <button type="button" aria-expanded={open} aria-label={`${open ? t.close : t.open}: ${row.question}`} onClick={() => setOpenKey(open ? null : row.key)} className="flex w-full items-start justify-between gap-4 p-5 text-left">
                   <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-purple-600">{row.groupTitle}</p><h2 className="mt-1 font-bold text-gray-900">{row.question}</h2></div>
                   <ChevronDown className={`mt-1 h-5 w-5 flex-none text-gray-500 transition ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
