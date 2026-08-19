@@ -147,6 +147,7 @@ serve(async (request) => {
     const { count: freeCount, error: countError } = await serviceClient
       .from('creator_programming_slots')
       .select('id', { head: true, count: 'exact' })
+      .eq('program_source', 'creator')
       .eq('creator_user_id', caller.id)
       .eq('creator_local_date', creatorLocalDate)
       .eq('booking_tier', 'free')
@@ -173,6 +174,7 @@ serve(async (request) => {
       .from('creator_programming_slots')
       .insert({
         creator_user_id: caller.id,
+        program_source: 'creator',
         room_slug: roomSlug,
         title,
         description,
@@ -189,7 +191,7 @@ serve(async (request) => {
         policy_acknowledged_at: new Date().toISOString(),
         status: 'booked',
       })
-      .select('id,room_slug,title,description,starts_at,ends_at,creator_timezone,creator_local_date,content_mode,replay_url,booking_tier,price_cents,payment_status,status,created_at')
+      .select('id,program_source,room_slug,title,description,starts_at,ends_at,creator_timezone,creator_local_date,content_mode,replay_url,booking_tier,price_cents,payment_status,status,created_at')
       .single()
 
     if (insertError) {
