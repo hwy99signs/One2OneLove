@@ -1,6 +1,6 @@
 -- O2OL Global Relationship Room
 -- Secure database foundation for creator accounts and 24-hour programming.
--- Apply to the existing One2OneLove Supabase project after review of the target environment.
+-- Designed for the existing One2OneLove Supabase project.
 
 create table if not exists public.room_creator_profiles (
   id uuid primary key default gen_random_uuid(),
@@ -47,6 +47,24 @@ create index if not exists idx_room_slots_owner
 
 create index if not exists idx_room_slots_status
   on public.relationship_room_slots (status, moderation_status);
+
+-- Prevent two active/pending programs from occupying the same room time.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'relationship_room_no_active_overlap'
+      and conrelid = 'public.relationship_room_slots'::regclass
+  ) then
+    alter table public.relationship_room_slots
+      add constraint relationship_room_no_active_overlap
+      exclude using gist (
+        tstzrange(scheduled_start, scheduled_end, '[)') with &&
+      )
+      where (status in ('pending','approved','scheduled','live'));
+  end if;
+end $$;
 
 alter table public.room_creator_profiles enable row level security;
 alter table public.relationship_room_slots enable row level security;
@@ -108,7 +126,7 @@ to authenticated
 using ((select auth.uid()) = user_id);
 
 -- Authenticated users may submit a creator profile only for themselves.
--- RLS also locks administrative fields to their safe initial state.
+-- Administrative fields are omitted from the INSERT grant and must remain at safe defaults.
 drop policy if exists "users can create own room profile" on public.room_creator_profiles;
 create policy "users can create own room profile"
 on public.room_creator_profiles
@@ -128,12 +146,7 @@ on public.room_creator_profiles
 for update
 to authenticated
 using ((select auth.uid()) = user_id)
-with check (
-  (select auth.uid()) = user_id
-  and status in ('pending','approved','suspended','rejected')
-  and plan in ('free','paid','partner','internal')
-  and daily_slot_limit >= 0
-);
+with check ((select auth.uid()) = user_id);
 
 -- Creators may see their own slots, including pending/draft entries.
 drop policy if exists "creators can view own room slots" on public.relationship_room_slots;
@@ -183,5 +196,70 @@ with check (
   and disclaimer_required = true
 );
 
+-- Database-level enforcement keeps the free 2-slot daily rule intact even when a creator
+-- calls the Data API directly instead of using the O2OL interface.
+create schema if not exists private;
+revoke all on schema private from public;
+
+create or replace function private.enforce_room_creator_daily_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  creator_plan text;
+  creator_limit integer;
+  existing_count integer;
+  utc_day_start timestamptz;
+  utc_day_end timestamptz;
+begin
+  if new.program_type <> 'creator'
+     or new.status not in ('draft','pending','approved','scheduled','live') then
+    return new;
+  end if;
+
+  select plan, daily_slot_limit
+  into creator_plan, creator_limit
+  from public.room_creator_profiles
+  where id = new.creator_id;
+
+  if creator_plan is null then
+    raise exception 'A valid creator profile is required.' using errcode = '23514';
+  end if;
+
+  if creator_plan <> 'free' then
+    return new;
+  end if;
+
+  utc_day_start := date_trunc('day', new.scheduled_start at time zone 'UTC') at time zone 'UTC';
+  utc_day_end := (date_trunc('day', new.scheduled_start at time zone 'UTC') + interval '1 day') at time zone 'UTC';
+
+  select count(*)
+  into existing_count
+  from public.relationship_room_slots s
+  where s.creator_id = new.creator_id
+    and s.id is distinct from new.id
+    and s.status in ('draft','pending','approved','scheduled','live')
+    and s.scheduled_start >= utc_day_start
+    and s.scheduled_start < utc_day_end;
+
+  if existing_count >= creator_limit then
+    raise exception 'Free creator accounts are limited to % programming slots per day.', creator_limit
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function private.enforce_room_creator_daily_limit() from public, anon, authenticated;
+
+drop trigger if exists enforce_room_creator_daily_limit on public.relationship_room_slots;
+create trigger enforce_room_creator_daily_limit
+before insert or update of creator_id, scheduled_start, scheduled_end, status
+on public.relationship_room_slots
+for each row execute function private.enforce_room_creator_daily_limit();
+
 comment on table public.relationship_room_slots is
-'O2OL 24-hour Global Relationship Room schedule. Paid slot sales are intentionally deferred; free creators initially receive up to two slots per day through application policy. Approval and moderation fields are protected from direct browser writes.';
+'O2OL 24-hour Global Relationship Room schedule. Paid slot sales are intentionally deferred; free creators initially receive up to two slots per day. Approval and moderation fields are protected from direct browser writes, overlapping active slots are blocked, and the daily free limit is enforced in Postgres.';
