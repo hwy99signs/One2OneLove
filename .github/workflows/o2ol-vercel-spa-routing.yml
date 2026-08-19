@@ -1,0 +1,59 @@
+name: O2OL Vercel SPA Routing
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - vercel.json
+      - scripts/ensure-vercel-spa-routing.mjs
+      - .github/workflows/o2ol-vercel-spa-routing.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ensure-spa-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure Vercel SPA fallback
+        run: node scripts/ensure-vercel-spa-routing.mjs
+
+      - name: Verify route configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const v=require('./vercel.json'); if(!v.rewrites?.some(r=>r.source==='/(.*)' && (r.destination==='/index.html'||r.destination==='/'))) process.exit(1)"
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified routing config
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- vercel.json; then
+            echo 'Vercel routing configuration already supports SPA deep links.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vercel.json
+          git commit -m 'Ensure Vercel SPA deep-link routing'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
