@@ -1,431 +1,105 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, CheckCircle, Clock, Loader2, Mail, UserCheck, UserX, Users, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, UserX, ArrowLeft, Users, Mail, Clock, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { createPageUrl } from '@/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { acceptBuddyRequest, cancelBuddyRequest, getReceivedBuddyRequests, getSentBuddyRequests, rejectBuddyRequest } from '@/lib/buddyService';
 import { useLanguage } from '@/Layout';
-import {
-  getReceivedBuddyRequests,
-  getSentBuddyRequests,
-  acceptBuddyRequest,
-  rejectBuddyRequest,
-  cancelBuddyRequest,
-} from '@/lib/buddyService';
+import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 
 const translations = {
-  en: {
-    back: "Back",
-    title: "Friend Requests",
-    subtitle: "Manage your beautiful friend connections",
-    received: "Received",
-    sent: "Sent",
-    loading: "Loading requests...",
-    noRequests: "No friend requests yet",
-    noRequestsDesc: "When someone sends you a friend request, it will appear here with love",
-    noSentRequests: "No pending sent requests",
-    noSentRequestsDesc: "Visit Find Buddies to send friend requests and connect with others",
-    findFriends: "Find Friends",
-    accept: "Accept",
-    reject: "Reject",
-    cancel: "Cancel",
-    pending: "Pending",
-    unknownUser: "Unknown User",
-    sentLabel: "Sent",
-    justNow: "Just now",
-    ago: "ago",
-    accepted: "Friend request accepted! 🎉",
-    rejected: "Friend request rejected",
-    cancelled: "Friend request cancelled",
-    errorLoading: "Failed to load friend requests. Please try again with love.",
-    errorAccept: "Failed to accept request. Please try again.",
-    errorReject: "Failed to reject request. Please try again.",
-    errorCancel: "Failed to cancel request. Please try again."
-  },
-  es: {
-    back: "Volver",
-    title: "Solicitudes de Amistad",
-    subtitle: "Gestiona tus hermosas conexiones de amistad",
-    received: "Recibidas",
-    sent: "Enviadas",
-    loading: "Cargando solicitudes...",
-    noRequests: "Aún no hay solicitudes de amistad",
-    noRequestsDesc: "Cuando alguien te envíe una solicitud de amistad, aparecerá aquí con amor",
-    noSentRequests: "No hay solicitudes enviadas pendientes",
-    noSentRequestsDesc: "Visita Encontrar Compañeros para enviar solicitudes de amistad y conectar con otros",
-    findFriends: "Encontrar Amigos",
-    accept: "Aceptar",
-    reject: "Rechazar",
-    cancel: "Cancelar",
-    pending: "Pendiente",
-    unknownUser: "Usuario Desconocido",
-    sentLabel: "Enviada",
-    justNow: "Ahora mismo",
-    ago: "hace",
-    accepted: "¡Solicitud de amistad aceptada! 🎉",
-    rejected: "Solicitud de amistad rechazada",
-    cancelled: "Solicitud de amistad cancelada",
-    errorLoading: "No se pudieron cargar las solicitudes de amistad. Por favor, inténtalo de nuevo con amor.",
-    errorAccept: "No se pudo aceptar la solicitud. Por favor, inténtalo de nuevo.",
-    errorReject: "No se pudo rechazar la solicitud. Por favor, inténtalo de nuevo.",
-    errorCancel: "No se pudo cancelar la solicitud. Por favor, inténtalo de nuevo."
-  },
-  fr: {
-    back: "Retour",
-    title: "Demandes d'Amitié",
-    subtitle: "Gérez vos belles connexions d'amitié",
-    received: "Reçues",
-    sent: "Envoyées",
-    loading: "Chargement des demandes...",
-    noRequests: "Pas encore de demandes d'amitié",
-    noRequestsDesc: "Lorsque quelqu'un vous envoie une demande d'amitié, elle apparaîtra ici avec amour",
-    noSentRequests: "Aucune demande envoyée en attente",
-    noSentRequestsDesc: "Visitez Trouver des Compagnons pour envoyer des demandes d'amitié et vous connecter avec d'autres",
-    findFriends: "Trouver des Amis",
-    accept: "Accepter",
-    reject: "Refuser",
-    cancel: "Annuler",
-    pending: "En Attente",
-    unknownUser: "Utilisateur Inconnu",
-    sentLabel: "Envoyée",
-    justNow: "À l'instant",
-    ago: "il y a",
-    accepted: "Demande d'amitié acceptée ! 🎉",
-    rejected: "Demande d'amitié refusée",
-    cancelled: "Demande d'amitié annulée",
-    errorLoading: "Échec du chargement des demandes d'amitié. Veuillez réessayer avec amour.",
-    errorAccept: "Échec de l'acceptation de la demande. Veuillez réessayer.",
-    errorReject: "Échec du refus de la demande. Veuillez réessayer.",
-    errorCancel: "Échec de l'annulation de la demande. Veuillez réessayer."
-  },
-  it: {
-    back: "Indietro",
-    title: "Richieste di Amicizia",
-    subtitle: "Gestisci le tue bellissime connessioni di amicizia",
-    received: "Ricevute",
-    sent: "Inviate",
-    loading: "Caricamento richieste...",
-    noRequests: "Nessuna richiesta di amicizia ancora",
-    noRequestsDesc: "Quando qualcuno ti invia una richiesta di amicizia, apparirà qui con amore",
-    noSentRequests: "Nessuna richiesta inviata in sospeso",
-    noSentRequestsDesc: "Visita Trova Compagni per inviare richieste di amicizia e connetterti con altri",
-    findFriends: "Trova Amici",
-    accept: "Accetta",
-    reject: "Rifiuta",
-    cancel: "Annulla",
-    pending: "In Attesa",
-    unknownUser: "Utente Sconosciuto",
-    sentLabel: "Inviata",
-    justNow: "Proprio ora",
-    ago: "fa",
-    accepted: "Richiesta di amicizia accettata! 🎉",
-    rejected: "Richiesta di amicizia rifiutata",
-    cancelled: "Richiesta di amicizia annullata",
-    errorLoading: "Impossibile caricare le richieste di amicizia. Per favore, riprova con amore.",
-    errorAccept: "Impossibile accettare la richiesta. Per favore, riprova.",
-    errorReject: "Impossibile rifiutare la richiesta. Per favore, riprova.",
-    errorCancel: "Impossibile annullare la richiesta. Per favore, riprova."
-  },
-  de: {
-    back: "Zurück",
-    title: "Freundschaftsanfragen",
-    subtitle: "Verwalte deine wunderschönen Freundschaftsverbindungen",
-    received: "Erhalten",
-    sent: "Gesendet",
-    loading: "Anfragen werden geladen...",
-    noRequests: "Noch keine Freundschaftsanfragen",
-    noRequestsDesc: "Wenn dir jemand eine Freundschaftsanfrage sendet, erscheint sie hier mit Liebe",
-    noSentRequests: "Keine ausstehenden gesendeten Anfragen",
-    noSentRequestsDesc: "Besuche Freunde Finden, um Freundschaftsanfragen zu senden und dich mit anderen zu verbinden",
-    findFriends: "Freunde Finden",
-    accept: "Annehmen",
-    reject: "Ablehnen",
-    cancel: "Abbrechen",
-    pending: "Ausstehend",
-    unknownUser: "Unbekannter Benutzer",
-    sentLabel: "Gesendet",
-    justNow: "Gerade eben",
-    ago: "vor",
-    accepted: "Freundschaftsanfrage angenommen! 🎉",
-    rejected: "Freundschaftsanfrage abgelehnt",
-    cancelled: "Freundschaftsanfrage abgebrochen",
-    errorLoading: "Freundschaftsanfragen konnten nicht geladen werden. Bitte versuche es mit Liebe erneut.",
-    errorAccept: "Anfrage konnte nicht angenommen werden. Bitte versuche es erneut.",
-    errorReject: "Anfrage konnte nicht abgelehnt werden. Bitte versuche es erneut.",
-    errorCancel: "Anfrage konnte nicht abgebrochen werden. Bitte versuche es erneut."
-  }
+  en: { back: 'Back', title: 'Friend Requests', subtitle: 'Manage your One2OneLove buddy connections.', received: 'Received', sent: 'Sent', loading: 'Loading requests…', noRequests: 'No friend requests yet', noRequestsDesc: 'When another member sends you a buddy request, it will appear here.', noSentRequests: 'No pending sent requests', noSentRequestsDesc: 'Visit Find Buddies to connect with other community members.', findFriends: 'Find Buddies', accept: 'Accept', reject: 'Reject', cancel: 'Cancel', pending: 'Pending', unknownUser: 'One2OneLove Member', accepted: 'Friend request accepted.', rejected: 'Friend request rejected.', cancelled: 'Friend request cancelled.', errorLoading: 'Friend requests could not be loaded right now.', errorAccept: 'The request could not be accepted.', errorReject: 'The request could not be rejected.', errorCancel: 'The request could not be cancelled.', signIn: 'Please sign in to manage friend requests.', privacy: 'Friend requests display community-profile information only. Account email and billing information are not shown.' },
+  es: { back: 'Volver', title: 'Solicitudes de Amistad', subtitle: 'Gestiona tus conexiones de amistad en One2OneLove.', received: 'Recibidas', sent: 'Enviadas', loading: 'Cargando solicitudes…', noRequests: 'Aún no hay solicitudes', noRequestsDesc: 'Cuando otro miembro te envíe una solicitud, aparecerá aquí.', noSentRequests: 'No hay solicitudes enviadas pendientes', noSentRequestsDesc: 'Visita Encontrar Amigos para conectar con otros miembros.', findFriends: 'Encontrar Amigos', accept: 'Aceptar', reject: 'Rechazar', cancel: 'Cancelar', pending: 'Pendiente', unknownUser: 'Miembro de One2OneLove', accepted: 'Solicitud aceptada.', rejected: 'Solicitud rechazada.', cancelled: 'Solicitud cancelada.', errorLoading: 'No se pudieron cargar las solicitudes.', errorAccept: 'No se pudo aceptar la solicitud.', errorReject: 'No se pudo rechazar la solicitud.', errorCancel: 'No se pudo cancelar la solicitud.', signIn: 'Inicia sesión para gestionar solicitudes.', privacy: 'Las solicitudes muestran solo información del perfil comunitario. No se muestra el correo de la cuenta ni información de facturación.' },
+  fr: { back: 'Retour', title: 'Demandes d’Amitié', subtitle: 'Gérez vos connexions entre membres One2OneLove.', received: 'Reçues', sent: 'Envoyées', loading: 'Chargement des demandes…', noRequests: 'Aucune demande pour le moment', noRequestsDesc: 'Lorsqu’un autre membre vous envoie une demande, elle apparaît ici.', noSentRequests: 'Aucune demande envoyée en attente', noSentRequestsDesc: 'Visitez Trouver des Amis pour vous connecter avec d’autres membres.', findFriends: 'Trouver des Amis', accept: 'Accepter', reject: 'Refuser', cancel: 'Annuler', pending: 'En attente', unknownUser: 'Membre One2OneLove', accepted: 'Demande acceptée.', rejected: 'Demande refusée.', cancelled: 'Demande annulée.', errorLoading: 'Les demandes ne peuvent pas être chargées actuellement.', errorAccept: 'La demande ne peut pas être acceptée.', errorReject: 'La demande ne peut pas être refusée.', errorCancel: 'La demande ne peut pas être annulée.', signIn: 'Connectez-vous pour gérer les demandes.', privacy: 'Les demandes affichent uniquement les informations du profil communautaire. L’e-mail du compte et les informations de facturation ne sont pas affichés.' },
+  it: { back: 'Indietro', title: 'Richieste di Amicizia', subtitle: 'Gestisci le connessioni tra membri One2OneLove.', received: 'Ricevute', sent: 'Inviate', loading: 'Caricamento richieste…', noRequests: 'Nessuna richiesta per ora', noRequestsDesc: 'Quando un altro membro ti invia una richiesta, apparirà qui.', noSentRequests: 'Nessuna richiesta inviata in sospeso', noSentRequestsDesc: 'Visita Trova Amici per connetterti con altri membri.', findFriends: 'Trova Amici', accept: 'Accetta', reject: 'Rifiuta', cancel: 'Annulla', pending: 'In attesa', unknownUser: 'Membro One2OneLove', accepted: 'Richiesta accettata.', rejected: 'Richiesta rifiutata.', cancelled: 'Richiesta annullata.', errorLoading: 'Le richieste non possono essere caricate in questo momento.', errorAccept: 'La richiesta non può essere accettata.', errorReject: 'La richiesta non può essere rifiutata.', errorCancel: 'La richiesta non può essere annullata.', signIn: 'Accedi per gestire le richieste.', privacy: 'Le richieste mostrano solo informazioni del profilo comunitario. Email dell’account e dati di fatturazione non vengono mostrati.' },
+  de: { back: 'Zurück', title: 'Freundschaftsanfragen', subtitle: 'Verwalte deine One2OneLove-Verbindungen.', received: 'Erhalten', sent: 'Gesendet', loading: 'Anfragen werden geladen…', noRequests: 'Noch keine Anfragen', noRequestsDesc: 'Wenn ein anderes Mitglied dir eine Anfrage sendet, erscheint sie hier.', noSentRequests: 'Keine ausstehenden gesendeten Anfragen', noSentRequestsDesc: 'Besuche Freunde Finden, um dich mit anderen Mitgliedern zu verbinden.', findFriends: 'Freunde Finden', accept: 'Annehmen', reject: 'Ablehnen', cancel: 'Abbrechen', pending: 'Ausstehend', unknownUser: 'One2OneLove-Mitglied', accepted: 'Anfrage angenommen.', rejected: 'Anfrage abgelehnt.', cancelled: 'Anfrage abgebrochen.', errorLoading: 'Anfragen können derzeit nicht geladen werden.', errorAccept: 'Die Anfrage kann nicht angenommen werden.', errorReject: 'Die Anfrage kann nicht abgelehnt werden.', errorCancel: 'Die Anfrage kann nicht abgebrochen werden.', signIn: 'Bitte melde dich an, um Anfragen zu verwalten.', privacy: 'Anfragen zeigen nur Community-Profilinformationen. Konto-E-Mail und Abrechnungsdaten werden nicht angezeigt.' },
 };
+
+function ProfileSummary({ profile, unknownUser }) {
+  return (
+    <div className="flex min-w-0 items-center gap-4">
+      <Avatar className="h-14 w-14 shrink-0">
+        <AvatarImage src={profile?.avatar_url || ''} alt="" />
+        <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">{profile?.name?.charAt(0)?.toUpperCase() || '?'}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold text-gray-900">{profile?.name || unknownUser}</h3>
+        {profile?.location && <p className="truncate text-sm text-gray-500">{profile.location}</p>}
+        {profile?.bio && <p className="mt-1 line-clamp-2 text-sm text-gray-500">{profile.bio}</p>}
+      </div>
+    </div>
+  );
+}
 
 export default function FriendRequests() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const navigate = useNavigate();
   const { user } = useAuth();
-  
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('received');
 
-  // Fetch requests on mount
   useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-
+    let active = true;
+    const load = async () => {
+      if (!user?.id) { setLoading(false); return; }
       setLoading(true);
       try {
-        console.log('Fetching friend requests for user:', user.id);
-        const [received, sent] = await Promise.all([
-          getReceivedBuddyRequests(user.id),
-          getSentBuddyRequests(user.id),
-        ]);
-        
-        console.log('Received requests:', received);
-        console.log('Sent requests:', sent);
-        
+        const [received, sent] = await Promise.all([getReceivedBuddyRequests(user.id), getSentBuddyRequests(user.id)]);
+        if (!active) return;
         setReceivedRequests(received);
         setSentRequests(sent);
-      } catch (error) {
-        console.error('Error fetching requests:', error);
-        toast.error(error.message || t.errorLoading);
+      } catch {
+        if (active) toast.error(t.errorLoading);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
-
-    fetchRequests();
-  }, [user?.id]);
+    load();
+    return () => { active = false; };
+  }, [user?.id, t.errorLoading]);
 
   const handleAccept = async (requestId) => {
-    try {
-      await acceptBuddyRequest(requestId, user.id);
-      setReceivedRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast.success(t.accepted);
-    } catch (error) {
-      console.error('Error accepting request:', error);
-      toast.error(error.message || t.errorAccept);
-    }
+    try { await acceptBuddyRequest(requestId, user?.id); setReceivedRequests((items) => items.filter((item) => item.id !== requestId)); toast.success(t.accepted); }
+    catch { toast.error(t.errorAccept); }
   };
-
   const handleReject = async (requestId) => {
-    try {
-      await rejectBuddyRequest(requestId, user.id);
-      setReceivedRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast.success(t.rejected);
-    } catch (error) {
-      console.error('Error rejecting request:', error);
-      toast.error(error.message || t.errorReject);
-    }
+    try { await rejectBuddyRequest(requestId, user?.id); setReceivedRequests((items) => items.filter((item) => item.id !== requestId)); toast.success(t.rejected); }
+    catch { toast.error(t.errorReject); }
+  };
+  const handleCancel = async (requestId) => {
+    try { await cancelBuddyRequest(requestId, user?.id); setSentRequests((items) => items.filter((item) => item.id !== requestId)); toast.success(t.cancelled); }
+    catch { toast.error(t.errorCancel); }
   };
 
-  const handleCancelSent = async (requestId) => {
-    try {
-      await cancelBuddyRequest(requestId, user.id);
-      setSentRequests((prev) => prev.filter((req) => req.id !== requestId));
-      toast.success(t.cancelled);
-    } catch (error) {
-      console.error('Error cancelling request:', error);
-      toast.error(error.message || t.errorCancel);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return t.justNow;
-    if (diffMins < 60) return `${diffMins}m ${t.ago}`;
-    if (diffHours < 24) return `${diffHours}h ${t.ago}`;
-    if (diffDays < 7) return `${diffDays}d ${t.ago}`;
-    return date.toLocaleDateString();
-  };
+  if (!user?.id) {
+    return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12"><Card className="mx-auto max-w-xl py-10 text-center"><CardContent><Users className="mx-auto mb-4 h-12 w-12 text-gray-300" aria-hidden="true" /><p className="text-gray-600">{t.signIn}</p><Button className="mt-5" onClick={() => navigate(createPageUrl('SignIn'))}>{t.signIn}</Button></CardContent></Card></div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(createPageUrl('Community'))}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t.back}
-          </Button>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Mail className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900">{t.title}</h1>
-          </div>
-          <p className="text-gray-600 mt-2">{t.subtitle}</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-8">
+      <div className="mx-auto max-w-4xl">
+        <Button variant="ghost" onClick={() => navigate(createPageUrl('Community'))} className="mb-4"><ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />{t.back}</Button>
+        <header className="mb-8"><div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg"><Mail className="h-6 w-6 text-white" aria-hidden="true" /></div><h1 className="text-4xl font-bold text-gray-900">{t.title}</h1></div><p className="text-gray-600">{t.subtitle}</p><p className="mt-2 text-xs leading-5 text-gray-500">{t.privacy}</p></header>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="received" className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              {t.received} ({receivedRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="sent" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              {t.sent} ({sentRequests.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Received Requests Tab */}
-          <TabsContent value="received">
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-                <p className="text-gray-600 mt-4">{t.loading}</p>
-              </div>
-            ) : receivedRequests.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent className="pt-6">
-                  <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 text-lg">{t.noRequests}</p>
-                  <p className="text-gray-400 mt-2">{t.noRequestsDesc}</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {receivedRequests.map((request) => (
-                  <Card key={request.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-16 h-16">
-                          <AvatarImage src={request.from_user?.avatar_url} />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-lg">
-                            {request.from_user?.name?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {request.from_user?.name || t.unknownUser}
-                          </h3>
-                          <p className="text-sm text-gray-600">{request.from_user?.email}</p>
-                          {request.from_user?.bio && (
-                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                              {request.from_user.bio}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2">
-                            <Clock className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs text-gray-500">
-                              {formatDate(request.created_at)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                          <Button
-                            onClick={() => handleAccept(request.id)}
-                            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                          >
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            {t.accept}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => handleReject(request.id)}
-                            className="border-red-300 text-red-600 hover:bg-red-50"
-                          >
-                            <UserX className="w-4 h-4 mr-2" />
-                            {t.reject}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Sent Requests Tab */}
-          <TabsContent value="sent">
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-                <p className="text-gray-600 mt-4">{t.loading}</p>
-              </div>
-            ) : sentRequests.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent className="pt-6">
-                  <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 text-lg">{t.noSentRequests}</p>
-                  <p className="text-gray-400 mt-2">{t.noSentRequestsDesc}</p>
-                  <Button
-                    onClick={() => navigate(createPageUrl('FindFriends'))}
-                    className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    {t.findFriends}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {sentRequests.map((request) => (
-                  <Card key={request.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-16 h-16">
-                          <AvatarImage src={request.to_user?.avatar_url} />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-lg">
-                            {request.to_user?.name?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {request.to_user?.name || t.unknownUser}
-                          </h3>
-                          <p className="text-sm text-gray-600">{request.to_user?.email}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Clock className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs text-gray-500">
-                              {t.sentLabel} {formatDate(request.created_at)}
-                            </span>
-                            <Badge variant="secondary" className="ml-2">
-                              {t.pending}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          onClick={() => handleCancelSent(request.id)}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                        >
-                          <UserX className="w-4 h-4 mr-2" />
-                          {t.cancel}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        {loading ? <Card className="py-12 text-center"><CardContent><Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-purple-500" aria-hidden="true" /><p role="status" className="text-gray-600">{t.loading}</p></CardContent></Card> : (
+          <Tabs defaultValue="received">
+            <TabsList className="mb-6 grid w-full grid-cols-2"><TabsTrigger value="received"><Mail className="mr-2 h-4 w-4" aria-hidden="true" />{t.received} ({receivedRequests.length})</TabsTrigger><TabsTrigger value="sent"><Clock className="mr-2 h-4 w-4" aria-hidden="true" />{t.sent} ({sentRequests.length})</TabsTrigger></TabsList>
+            <TabsContent value="received">
+              {receivedRequests.length === 0 ? <Card className="py-12 text-center"><CardContent><Mail className="mx-auto mb-4 h-14 w-14 text-gray-300" aria-hidden="true" /><p className="text-lg text-gray-600">{t.noRequests}</p><p className="mt-2 text-sm text-gray-400">{t.noRequestsDesc}</p></CardContent></Card> : <div className="space-y-4">{receivedRequests.map((request) => <Card key={request.id}><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><ProfileSummary profile={request.from_user} unknownUser={t.unknownUser} /><div className="flex shrink-0 gap-2"><Button onClick={() => handleAccept(request.id)}><UserCheck className="mr-2 h-4 w-4" aria-hidden="true" />{t.accept}</Button><Button variant="outline" onClick={() => handleReject(request.id)}><UserX className="mr-2 h-4 w-4" aria-hidden="true" />{t.reject}</Button></div></CardContent></Card>)}</div>}
+            </TabsContent>
+            <TabsContent value="sent">
+              {sentRequests.length === 0 ? <Card className="py-12 text-center"><CardContent><CheckCircle className="mx-auto mb-4 h-14 w-14 text-gray-300" aria-hidden="true" /><p className="text-lg text-gray-600">{t.noSentRequests}</p><p className="mt-2 text-sm text-gray-400">{t.noSentRequestsDesc}</p><Button className="mt-5" onClick={() => navigate(createPageUrl('FindFriends'))}>{t.findFriends}</Button></CardContent></Card> : <div className="space-y-4">{sentRequests.map((request) => <Card key={request.id}><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><ProfileSummary profile={request.to_user} unknownUser={t.unknownUser} /><div className="flex shrink-0 items-center gap-3"><Badge variant="secondary"><Clock className="mr-1 h-3 w-3" aria-hidden="true" />{t.pending}</Badge><Button variant="outline" onClick={() => handleCancel(request.id)}><X className="mr-2 h-4 w-4" aria-hidden="true" />{t.cancel}</Button></div></CardContent></Card>)}</div>}
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   );
 }
-
