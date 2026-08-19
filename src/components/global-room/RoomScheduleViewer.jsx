@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Clock3, Radio, RotateCcw, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/Layout';
@@ -164,7 +164,12 @@ function ProgramCard({ slot, t, language, compact = false, live = false }) {
 export default function RoomScheduleViewer({ slots = [], isLoading = false }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const nowMs = Date.now();
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const { liveSlots, upcoming, grouped } = useMemo(() => {
     const ordered = [...slots].sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
