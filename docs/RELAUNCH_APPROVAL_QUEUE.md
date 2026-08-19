@@ -50,6 +50,26 @@ This file tracks only actions that should NOT be performed automatically while d
     - Development remains on `relaunch-homepage`.
     - Do not merge to `master` or alter One2OneLove.com production without explicit approval.
 
+11. Creator programming calendar database activation.
+    - `supabase/migrations/20260819_creator_programming_calendar.sql` is DEVELOPMENT ONLY and has not been applied to live Supabase.
+    - The migration creates the 24-hour Global Relationship Room programming calendar, enforces a maximum of two free booked slots per creator/local day, prevents overlapping room programming, and adds the Global Relationship Room to both the `room_messages` table constraint and member INSERT policy.
+    - Apply only after the earlier Live Room messaging, moderation, and identity-hardening migrations have been reviewed in sequence in a development environment.
+
+12. Creator programming Edge Functions.
+    - Do not deploy `book-creator-programming-slot`, `list-creator-programming`, or `current-creator-programming` to live Supabase until the calendar migration and authentication/RLS behavior are verified together.
+    - Keep `CREATOR_PROGRAMMING_ENABLED=false` during deployment and controlled testing.
+    - The status/list endpoints intentionally exclude creator account IDs, replay URLs, and payment fields from member-facing responses.
+
+13. Creator programming frontend activation.
+    - Keep `VITE_CREATOR_PROGRAMMING_ENABLED=false` until the database migration and all three Edge Functions are deployed and tested.
+    - The `/CreatorProgramming` route is staged behind this switch; the Global Relationship Room's Live-now/Up-next strip is also dark while the switch is off.
+    - Initial eligibility uses the existing approved `users.user_type='influencer'` creator role rather than introducing another identity system.
+
+14. Paid creator programming slots.
+    - **Do not activate paid slot sales as part of the initial free-calendar rollout.**
+    - The schema is future-ready for a `paid` tier, but the booking endpoint currently rejects all non-free bookings and the frontend always requests a free booking.
+    - Paid slots require a separate approval batch covering pricing, checkout/payment provider behavior, creator terms, cancellations/refunds, disputes/chargebacks, tax/accounting treatment, moderation obligations, and any revenue-share policy before implementation is enabled.
+
 ## Safe development work that may continue without separate approval
 
 - Frontend UX and visual refinements on `relaunch-homepage`.
@@ -59,6 +79,7 @@ This file tracks only actions that should NOT be performed automatically while d
 - Read-only audits of repository code and Supabase configuration when connectors are available.
 - Refactoring member-facing reads away from private tables into purpose-built privacy-safe projections.
 - Expanding automated relaunch safety checks so production blockers are visible before launch.
+- Creator programming calendar UX, privacy-safe scheduling/status contracts, and automated checks while both creator-programming feature switches remain off.
 
 ## Current operating rule
 
