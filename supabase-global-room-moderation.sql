@@ -23,6 +23,12 @@ create table if not exists private.global_room_moderation_audit (
   created_at timestamptz not null default now()
 );
 
+create index if not exists idx_global_room_moderators_added_by
+  on private.global_room_moderators (added_by);
+
+create index if not exists idx_global_room_moderation_audit_actor
+  on private.global_room_moderation_audit (actor_user_id);
+
 alter table private.global_room_moderators enable row level security;
 alter table private.global_room_moderation_audit enable row level security;
 revoke all on table private.global_room_moderators from public, anon, authenticated;
