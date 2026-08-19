@@ -23,6 +23,8 @@ const translations = {
     items: [
       ["Love Notes", "Send thoughtful messages that keep appreciation visible.", "/LoveNotes", "heart"],
       ["Daily Relationship Question", "Use one meaningful question each day to start a better conversation.", "/DailyQuestion", "message"],
+      ["Conversation Cards", "Choose a conversation deck and take turns answering prompts designed to deepen connection.", "/ConversationCards", "message"],
+      ["Weekly Relationship Check-In", "Use a short private weekly conversation to notice what is working and what needs attention.", "/WeeklyCheckIn", "support"],
       ["Marriage Matters", "A dedicated space for married couples to reconnect and keep growing.", "/MarriageMatters", "marriage"],
       ["The O2OL Show", "Join O2OL and AMORA for thoughtful conversations about love, marriage, dating, and connection.", "/O2OLShow", "show"],
       ["Relationship Library", "Start with what your relationship needs and find the most useful O2OL tools by goal.", "/RelationshipLibrary", "book"],
@@ -45,6 +47,8 @@ const translations = {
     items: [
       ["Notas de Amor", "Envía mensajes considerados que mantengan visible el aprecio.", "/LoveNotes", "heart"],
       ["Pregunta Diaria para la Relación", "Usa una pregunta significativa cada día para iniciar una mejor conversación.", "/DailyQuestion", "message"],
+      ["Tarjetas de Conversación", "Elige un grupo de preguntas y túrnense para responder ideas diseñadas para profundizar la conexión.", "/ConversationCards", "message"],
+      ["Revisión Semanal de la Relación", "Usa una conversación privada y breve cada semana para reconocer lo que funciona y lo que necesita atención.", "/WeeklyCheckIn", "support"],
       ["El Matrimonio Importa", "Un espacio dedicado a matrimonios que quieren reconectarse y seguir creciendo.", "/MarriageMatters", "marriage"],
       ["El Programa O2OL", "Acompaña a O2OL y AMORA en conversaciones reflexivas sobre amor, matrimonio, citas y conexión.", "/O2OLShow", "show"],
       ["Biblioteca de Relaciones", "Comienza con lo que tu relación necesita y encuentra las herramientas O2OL más útiles según tu objetivo.", "/RelationshipLibrary", "book"],
@@ -67,6 +71,8 @@ const translations = {
     items: [
       ["Notes d’Amour", "Envoyez des messages attentionnés qui rendent l’appréciation visible.", "/LoveNotes", "heart"],
       ["Question Relationnelle du Jour", "Utilisez chaque jour une question significative pour ouvrir une meilleure conversation.", "/DailyQuestion", "message"],
+      ["Cartes de Conversation", "Choisissez un jeu de questions et répondez à tour de rôle à des invitations conçues pour approfondir la connexion.", "/ConversationCards", "message"],
+      ["Bilan Relationnel Hebdomadaire", "Utilisez une courte conversation privée chaque semaine pour voir ce qui fonctionne et ce qui demande de l’attention.", "/WeeklyCheckIn", "support"],
       ["Le Mariage Compte", "Un espace dédié aux couples mariés qui souhaitent se reconnecter et continuer à grandir.", "/MarriageMatters", "marriage"],
       ["L’Émission O2OL", "Retrouvez O2OL et AMORA pour des conversations réfléchies sur l’amour, le mariage, les rencontres et la connexion.", "/O2OLShow", "show"],
       ["Bibliothèque Relationnelle", "Commencez par ce dont votre relation a besoin et trouvez les outils O2OL les plus utiles selon votre objectif.", "/RelationshipLibrary", "book"],
@@ -89,6 +95,8 @@ const translations = {
     items: [
       ["Note d’Amore", "Invia messaggi premurosi che mantengono visibile l’apprezzamento.", "/LoveNotes", "heart"],
       ["Domanda Quotidiana sulla Relazione", "Usa ogni giorno una domanda significativa per iniziare una conversazione migliore.", "/DailyQuestion", "message"],
+      ["Carte di Conversazione", "Scegli un mazzo di domande e rispondete a turno a spunti pensati per approfondire la connessione.", "/ConversationCards", "message"],
+      ["Check-In Settimanale di Coppia", "Usate una breve conversazione privata ogni settimana per riconoscere ciò che funziona e ciò che richiede attenzione.", "/WeeklyCheckIn", "support"],
       ["Il Matrimonio Conta", "Uno spazio dedicato alle coppie sposate che vogliono riconnettersi e continuare a crescere.", "/MarriageMatters", "marriage"],
       ["Lo Show O2OL", "Segui O2OL e AMORA in conversazioni riflessive su amore, matrimonio, appuntamenti e connessione.", "/O2OLShow", "show"],
       ["Biblioteca delle Relazioni", "Parti da ciò di cui la relazione ha bisogno e trova gli strumenti O2OL più utili in base all’obiettivo.", "/RelationshipLibrary", "book"],
@@ -111,6 +119,8 @@ const translations = {
     items: [
       ["Liebesbotschaften", "Sende aufmerksame Nachrichten, die Wertschätzung sichtbar machen.", "/LoveNotes", "heart"],
       ["Tägliche Beziehungsfrage", "Nutze jeden Tag eine bedeutungsvolle Frage für ein besseres Gespräch.", "/DailyQuestion", "message"],
+      ["Gesprächskarten", "Wählt ein Fragenset und beantwortet abwechselnd Impulse, die eure Verbindung vertiefen sollen.", "/ConversationCards", "message"],
+      ["Wöchentlicher Beziehungs-Check-In", "Nutzt jede Woche ein kurzes privates Gespräch, um wahrzunehmen, was gut läuft und was Aufmerksamkeit braucht.", "/WeeklyCheckIn", "support"],
       ["Ehe Zählt", "Ein eigener Bereich für Ehepaare, die sich wieder näherkommen und gemeinsam wachsen möchten.", "/MarriageMatters", "marriage"],
       ["Die O2OL Show", "Begleite O2OL und AMORA bei nachdenklichen Gesprächen über Liebe, Ehe, Dating und Verbindung.", "/O2OLShow", "show"],
       ["Beziehungsbibliothek", "Beginnt mit dem, was eure Beziehung braucht, und findet passende O2OL-Werkzeuge nach Ziel.", "/RelationshipLibrary", "book"],
