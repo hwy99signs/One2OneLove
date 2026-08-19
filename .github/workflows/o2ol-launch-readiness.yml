@@ -61,6 +61,7 @@ jobs:
           test -f src/components/home/MarriageMattersPromo.jsx
           test -f src/pages/RelationshipLibrary.jsx
           test -f src/pages/CouplesChallenges.jsx
+          test -f src/pages/ConversationCards.jsx
           test -f src/pages/DateNight.jsx
           test -f src/pages/RelationshipReset.jsx
           test -f src/components/home/RelationshipResetPromo.jsx
@@ -85,6 +86,7 @@ jobs:
           grep -q 'path="/MarriageMatters"' src/pages/index.jsx
           grep -q 'path="/RelationshipLibrary"' src/pages/index.jsx
           grep -q 'path="/CouplesChallenges"' src/pages/index.jsx
+          grep -q 'path="/ConversationCards"' src/pages/index.jsx
           grep -q 'path="/DateNight"' src/pages/index.jsx
           grep -q 'path="/RelationshipReset"' src/pages/index.jsx
           grep -q 'path="/O2OLShow"' src/pages/index.jsx
@@ -126,6 +128,7 @@ jobs:
             src/components/home/MarriageMattersPromo.jsx \
             src/pages/RelationshipLibrary.jsx \
             src/pages/CouplesChallenges.jsx \
+            src/pages/ConversationCards.jsx \
             src/pages/DateNight.jsx \
             src/pages/RelationshipReset.jsx \
             src/components/home/RelationshipResetPromo.jsx \
@@ -179,6 +182,7 @@ jobs:
           src/pages/MarriageMatters.jsx
           src/pages/RelationshipLibrary.jsx
           src/pages/CouplesChallenges.jsx
+          src/pages/ConversationCards.jsx
           src/pages/DateNight.jsx
           src/pages/RelationshipReset.jsx
           src/pages/O2OLShow.jsx
