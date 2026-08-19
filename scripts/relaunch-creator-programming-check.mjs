@@ -21,6 +21,7 @@ const statusFunction = read(statusFunctionFile);
 for (const required of [
   "VITE_CREATOR_PROGRAMMING_ENABLED === 'true'",
   "booking_tier: 'free'",
+  "policy_acknowledged: policyAcknowledged === true",
   "supabase.functions.invoke('book-creator-programming-slot'",
   "supabase.functions.invoke('list-creator-programming'",
   "supabase.functions.invoke('current-creator-programming'",
@@ -34,6 +35,14 @@ for (const required of [
   'up to 2 free creator slots per day',
   'Future paid slots are prepared in the system but are not active.',
   '{t.notice}',
+  'const [policyAcknowledged, setPolicyAcknowledged] = useState(false);',
+  '!title.trim() || !startTime || !policyAcknowledged',
+  'policyAcknowledged });',
+  'checked={policyAcknowledged}',
+  'setPolicyAcknowledged(event.target.checked)',
+  '<span>{t.policyLabel}</span>',
+  'disabled={booking || !policyAcknowledged}',
+  'setPolicyAcknowledged(false);',
   'toast.error(t.loadError)',
   'toast.success(t.bookedSuccess)',
   'toast.error(t.bookError)',
@@ -52,8 +61,13 @@ for (const forbidden of [
 }
 
 for (const language of ['en', 'es', 'fr', 'it', 'de']) {
-  const languageBlock = new RegExp(`\\n\\s{2}${language}:\\s*\\{`);
-  if (!languageBlock.test(page)) failures.push(`${pageFile}: missing ${language} creator-programming copy block.`);
+  const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
+  const match = page.match(blockPattern);
+  if (!match) {
+    failures.push(`${pageFile}: missing ${language} creator-programming copy block.`);
+    continue;
+  }
+  if (!/\bpolicyLabel:\s*/.test(match[1])) failures.push(`${pageFile}: ${language} is missing policyLabel.`);
 }
 
 for (const required of [
@@ -66,6 +80,8 @@ for (const required of [
 for (const required of [
   "check (room_slug in ('global-relationship-room'))",
   "check (booking_tier in ('free','paid'))",
+  'policy_version text not null',
+  'policy_acknowledged_at timestamptz not null',
   'booked_count >= 2',
   'creator_programming_slots_no_room_overlap',
   'alter table public.creator_programming_slots enable row level security;',
@@ -81,8 +97,13 @@ for (const required of [
 
 for (const required of [
   "Deno.env.get('CREATOR_PROGRAMMING_ENABLED') !== 'true'",
+  "const CREATOR_PROGRAMMING_POLICY_VERSION = 'creator-programming-v1'",
   'FREE_DAILY_LIMIT = 2',
   "creator?.user_type !== 'influencer'",
+  "body?.policy_acknowledged === true",
+  "return json(request, { error: 'POLICY_ACK_REQUIRED' }, 400)",
+  'policy_version: CREATOR_PROGRAMMING_POLICY_VERSION',
+  'policy_acknowledged_at: new Date().toISOString()',
   "bookingTier !== 'free'",
   "String(insertError.message || '').includes('CREATOR_DAILY_FREE_LIMIT_REACHED')",
   "return json(request, { error: 'DAILY_FREE_LIMIT_REACHED' }, 409)",
@@ -95,7 +116,7 @@ for (const [file, source] of [
   [listingFunctionFile, listingFunction],
   [statusFunctionFile, statusFunction],
 ]) {
-  for (const forbidden of ["select('*')", 'creator_user_id', 'replay_url', 'booking_tier', 'price_cents', 'payment_status']) {
+  for (const forbidden of ["select('*')", 'creator_user_id', 'replay_url', 'booking_tier', 'price_cents', 'payment_status', 'policy_version', 'policy_acknowledged_at']) {
     const publicSelection = source.match(/const publicFields = '([^']+)'/)?.[1]
       || source.split('.select(')[1]?.split(')')[0]
       || '';
@@ -119,4 +140,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Creator programming remains feature-gated, multilingual, two-free-slots/day limited, overlap-protected, Global-Room compatible, privacy-minimized and paid-slot disabled.');
+console.log('✅ Creator programming remains feature-gated, multilingual, policy-acknowledged, two-free-slots/day limited, overlap-protected, Global-Room compatible, privacy-minimized and paid-slot disabled.');
