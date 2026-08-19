@@ -26,6 +26,10 @@ const requireAnyText = (content, options, label) => {
 const activeLanguages = ['en', 'es', 'fr', 'it', 'de'];
 
 const multilingualSources = [
+  ['SignIn', 'src/pages/SignIn.jsx'],
+  ['SignUp', 'src/pages/SignUp.jsx'],
+  ['RegularUserForm', 'src/components/signup/RegularUserForm.jsx'],
+  ['EmailVerificationDialog', 'src/components/signup/EmailVerificationDialog.jsx'],
   ['ForgotPassword', 'src/pages/ForgotPassword.jsx'],
   ['ResetPassword', 'src/pages/ResetPassword.jsx'],
   ['GlobalRelationshipRoom', 'src/pages/GlobalRelationshipRoom.jsx'],
@@ -51,6 +55,10 @@ for (const [surface, file] of multilingualSources) {
 
 const router = read('src/pages/index.jsx');
 const requiredRoutes = [
+  '/SignIn',
+  '/SignUp',
+  '/ForgotPassword',
+  '/ResetPassword',
   '/GlobalRelationshipRoom',
   '/RoomCreatorAccess',
   '/RoomModeration',
@@ -61,7 +69,6 @@ const requiredRoutes = [
   '/RoomCancellationQueue',
   '/RoomModerationAudit',
   '/RoomOpsDashboard',
-  '/ResetPassword',
 ];
 for (const route of requiredRoutes) requireText(router, `path="${route}"`, `route ${route}`);
 requireText(router, 'path="*"', 'NotFound catch-all route');
@@ -86,6 +93,34 @@ for (const file of privateModeratorPages) {
     requireText(content, '/RoomOpsDashboard', `operations navigation in ${file}`);
   }
 }
+
+const authContext = read('src/contexts/AuthContext.jsx');
+requireText(authContext, 'signInWithPassword', 'real Supabase password sign-in');
+requireText(authContext, 'supabase.auth.signUp', 'real Supabase account registration');
+requireText(authContext, 'onAuthStateChange', 'Supabase auth-state subscription');
+
+const signIn = read('src/pages/SignIn.jsx');
+requireText(signIn, 'getAuthUiTranslation', 'localized safe sign-in status messaging');
+requireText(signIn, 'autoComplete="email"', 'sign-in email autocomplete');
+requireText(signIn, 'autoComplete="current-password"', 'sign-in password autocomplete');
+requireText(signIn, 'authT.invalidCredentials', 'safe sign-in failure messaging');
+requireText(signIn, 'navigate(createPageUrl("Profile"), { replace: true })', 'post-sign-in profile navigation');
+
+const signUp = read('src/pages/SignUp.jsx');
+requireText(signUp, 'useLanguage', 'localized account type selection');
+requireText(signUp, '<RegularUserForm', 'regular account registration flow');
+
+const regularSignup = read('src/components/signup/RegularUserForm.jsx');
+requireText(regularSignup, 'getAuthUiTranslation', 'localized account creation status messaging');
+requireText(regularSignup, 'register({', 'real account registration call');
+requireText(regularSignup, 'minLength={8}', 'registration password minimum');
+requireText(regularSignup, 'createPageUrl("TermsOfService")', 'Terms of Service consent link');
+requireText(regularSignup, 'createPageUrl("PrivacyPolicy")', 'Privacy Policy consent link');
+requireText(regularSignup, 'result.user?.email_verified', 'verification-aware post-registration handling');
+
+const verificationDialog = read('src/components/signup/EmailVerificationDialog.jsx');
+requireText(verificationDialog, 'requiresVerification', 'verification-aware account success dialog');
+requireText(verificationDialog, 't.steps.map', 'localized verification steps');
 
 const forgotPassword = read('src/pages/ForgotPassword.jsx');
 requireText(forgotPassword, 'resetPasswordForEmail', 'real Supabase reset email call');
