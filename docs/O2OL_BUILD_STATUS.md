@@ -2,7 +2,7 @@
 
 Updated: 2026-08-18
 Branch: `o2ol-build-branch-2026-08-18`
-Draft PR: #2 — `Build O2OL Global Relationship Room foundation`
+Draft PR: #17 — `Build O2OL Global Relationship Room foundation`
 
 ## Global Relationship Room — active build
 
@@ -18,7 +18,7 @@ Draft PR: #2 — `Build O2OL Global Relationship Room foundation`
 - Authenticated creator application flow.
 - Creator status states: pending, approved, suspended, rejected.
 - Approved-creator self-booking interface.
-- Creator programming history and pending-slot cancellation.
+- Creator programming history and secure cancellation-request workflow.
 - Creator-facing loading, validation, and known booking errors localized across all five active languages.
 - Creator IANA timezone stored automatically from the browser and shown in Creator Access.
 - Live Supabase creator-profile and programming-slot tables.
@@ -32,44 +32,47 @@ Draft PR: #2 — `Build O2OL Global Relationship Room foundation`
 - Trusted replay-source library and replay scheduling workflow.
 - Replay scheduling remains subject to the same room-overlap protection and keeps source-program linkage.
 - Five-language Replay Manager UI for trusted moderators.
+- Official O2OL programming scheduler and program-management controls.
+- Viewer reporting workflow, privacy hardening, and moderator report queue.
+- Global Room operations summary/dashboard and moderation-history tooling.
+- Password-recovery route repaired and included in launch-critical verification.
+- Application error boundary, accessible skip-to-content support, site footer, and unknown-route page added.
 - Branch-specific GitHub Actions production-build verification workflow.
+- Dedicated launch-readiness and source-verification workflows.
 - Persistent roadmap, build-status, and owner-approval documentation.
 
-### Live Supabase migrations applied
+### Live Supabase work
 
-- `add_global_relationship_room`
-- `optimize_global_relationship_room_access`
-- `add_creator_timezone_to_global_room`
-- `add_global_room_moderation_controls`
-- `index_global_room_moderation_foreign_keys`
-- `add_global_room_replay_management`
+Global Relationship Room schema, security, creator scheduling, moderation, replay, reporting, operational controls, cancellation, verification, and audit hardening have been developed as isolated SQL changes for the existing O2OL Supabase architecture. New Global Room browser-access paths use explicit grants plus RLS and keep privileged operations behind trusted moderator checks.
 
 ### Verification completed
 
-- RLS confirmed enabled on both new public room tables.
-- Creator daily-limit trigger confirmed present.
-- Active-slot overlap exclusion constraint confirmed present.
-- Source-slot/replay foreign-key index confirmed present.
-- Moderator/audit foreign-key indexes confirmed present.
-- Replay discovery and scheduling functions confirmed installed as SECURITY DEFINER functions with fixed search paths, restricted execution grants, and internal trusted-moderator checks.
-- Room SELECT policies consolidated to avoid duplicate-policy overhead.
-- Supabase security and performance advisors reviewed after the new room work.
-- New room-specific missing-FK-index findings were resolved.
-- Remaining advisor warnings are legacy platform findings or intentional moderator-RPC warnings already isolated in the approval batch rather than changed blindly.
+- RLS confirmed for new exposed Global Room tables.
+- Creator daily-limit trigger and concurrency lock protections are present.
+- Active-slot overlap exclusion constraint is present.
+- Safe public creator display names are separated from private creator-profile access.
+- Creator clients cannot write approval/moderation fields directly.
+- Moderator/audit controls use trusted moderator checks.
+- Password recovery now has a real `/ResetPassword` route.
+- Five-language source verification recognizes canonical shared translation modules rather than requiring duplicated dictionaries.
+- **O2OL Source Verification: PASS** on the corrected branch.
+- **O2OL Build Verification: PASS** on Node.js 24.
+- **O2OL Launch Readiness: PASS** on Node.js 24, including production bundle build.
+- Draft PR #17 remains mergeable and intentionally stays in draft while active build work continues.
 
 ### Current infrastructure constraint
 
-- GitHub previously reported the connected Vercel deployment status as rate-limited with an `upgradeToPro=build-rate-limit` target.
+- The external Vercel status attached to GitHub is still reporting a Vercel build-rate-limit condition (`upgradeToPro=build-rate-limit`).
+- This is separate from code compilation: the GitHub production build and launch-readiness checks pass.
 - No Vercel upgrade or paid plan change has been performed automatically.
-- GitHub/Supabase development can continue while deployment availability is handled separately.
 
 ### Next active implementation areas
 
-- Trusted moderator removal/cancellation controls for approved or scheduled programming, with audit history.
-- Better public empty-state/launch programming treatment for a new 24-hour room.
-- Responsive/navigation polish while keeping operational moderation routes non-public.
-- Continue multilingual audit for any newly touched Global Room surfaces.
-- Production-build verification when the deployment/build-rate constraint permits.
+- Finish routing/integration review for private Global Room operational pages without exposing them in public navigation.
+- Continue responsive/mobile and accessibility polish on Global Room surfaces.
+- Audit legacy high-risk npm dependency findings before making breaking package upgrades.
+- Continue multilingual audit for every newly touched user-facing surface.
+- Prepare a clean production activation sequence once the Vercel build-rate constraint is cleared and the first trusted moderator is assigned.
 
 ## Owner-controlled activation items
 
