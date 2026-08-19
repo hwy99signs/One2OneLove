@@ -46,6 +46,8 @@ jobs:
           test -f src/pages/RoomCancellationQueue.jsx
           test -f src/pages/DailyQuestion.jsx
           test -f src/components/home/DailyQuestionPromo.jsx
+          test -f src/pages/MarriageMatters.jsx
+          test -f src/components/home/MarriageMattersPromo.jsx
           grep -q 'path="/SignIn"' src/pages/index.jsx
           grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
@@ -54,13 +56,19 @@ jobs:
           grep -q 'path="/RoomModeration"' src/pages/index.jsx
           grep -q 'path="/RoomCancellationQueue"' src/pages/index.jsx
           grep -q 'path="/DailyQuestion"' src/pages/index.jsx
+          grep -q 'path="/MarriageMatters"' src/pages/index.jsx
           grep -q '<DailyQuestionPromo />' src/pages/Home.jsx
+          grep -q '<MarriageMattersPromo />' src/pages/Home.jsx
 
-      - name: Verify Daily Question five-language coverage
+      - name: Verify new engagement five-language coverage
         shell: bash
         run: |
           set -euo pipefail
-          for file in src/pages/DailyQuestion.jsx src/components/home/DailyQuestionPromo.jsx; do
+          for file in \
+            src/pages/DailyQuestion.jsx \
+            src/components/home/DailyQuestionPromo.jsx \
+            src/pages/MarriageMatters.jsx \
+            src/components/home/MarriageMattersPromo.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -92,11 +100,13 @@ jobs:
           src/pages/RoomModerationAudit.jsx
           src/pages/RoomOpsDashboard.jsx
           src/pages/DailyQuestion.jsx
+          src/pages/MarriageMatters.jsx
           src/pages/NotFound.jsx
           src/components/global-room/RoomScheduleViewer.jsx
           src/components/global-room/ProgramReportButton.jsx
           src/components/home/GlobalRoomPromo.jsx
           src/components/home/DailyQuestionPromo.jsx
+          src/components/home/MarriageMattersPromo.jsx
           src/lib/globalRelationshipRoomService.js
           src/lib/globalRoomCancellationService.js
           src/lib/globalRoomModerationService.js
