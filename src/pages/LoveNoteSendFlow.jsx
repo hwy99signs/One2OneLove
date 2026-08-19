@@ -25,7 +25,6 @@ import {
   stashLoveNoteSendSession,
 } from "@/lib/loveNoteDraftService";
 
-const DEFAULT_NOTE = "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️";
 const RETURN_TO = "/LoveNotes/Send";
 
 const copy = {
@@ -48,6 +47,8 @@ const copy = {
     senderPreview: "Sender preview", noteEmpty: "Your note will appear here.", sentThrough: "Sent through One2OneLove",
     receivesFirst: (name) => `What ${name} receives first`, invitation: (sender) => `💕 ${sender} sent you a private Love Note on One2OneLove. Tap to reveal it.`, reveal: "Reveal my Love Note",
     nowLabel: "Send now", chooseDate: "Choose date & time", invalidSchedule: "Choose a future date and time before continuing.",
+    defaultNote: "You crossed my mind today, and that felt like a good enough reason to remind you how much you mean to me. ❤️",
+    loveNoteLabel: "Love Note",
   },
   es: {
     back: "Volver a Notas de Amor", eyebrow: "ENVIAR UNA NOTA DE AMOR", title: "Hazla personal. Mantén la revelación privada.",
@@ -65,6 +66,8 @@ const copy = {
     send: "Enviar Nota de Amor", notSent: "No enviada en la vista previa — la activación de entrega sigue pendiente.", preview: "Ver experiencia del destinatario", edit: "Editar entrega",
     senderPreview: "Vista del remitente", noteEmpty: "Tu nota aparecerá aquí.", sentThrough: "Enviado por One2OneLove", receivesFirst: (name) => `Lo primero que recibe ${name}`,
     invitation: (sender) => `💕 ${sender} te envió una Nota de Amor privada en One2OneLove. Toca para revelarla.`, reveal: "Revelar mi Nota de Amor", nowLabel: "Enviar ahora", chooseDate: "Elegir fecha y hora", invalidSchedule: "Elige una fecha y hora futuras antes de continuar.",
+    defaultNote: "Pensé en ti hoy, y me pareció una razón más que suficiente para recordarte cuánto significas para mí. ❤️",
+    loveNoteLabel: "Nota de Amor",
   },
   fr: {
     back: "Retour aux Mots d’Amour", eyebrow: "ENVOYER UN MOT D’AMOUR", title: "Rendez-le personnel. Gardez la révélation privée.",
@@ -82,6 +85,8 @@ const copy = {
     send: "Envoyer le Mot d’Amour", notSent: "Non envoyé dans l’aperçu — l’activation de la livraison est encore en attente.", preview: "Voir l’expérience destinataire", edit: "Modifier l’envoi",
     senderPreview: "Aperçu expéditeur", noteEmpty: "Votre mot apparaîtra ici.", sentThrough: "Envoyé via One2OneLove", receivesFirst: (name) => `Ce que ${name} reçoit d’abord`,
     invitation: (sender) => `💕 ${sender} vous a envoyé un Mot d’Amour privé sur One2OneLove. Touchez pour le révéler.`, reveal: "Révéler mon Mot d’Amour", nowLabel: "Envoyer maintenant", chooseDate: "Choisir date et heure", invalidSchedule: "Choisissez une date et une heure futures avant de continuer.",
+    defaultNote: "J’ai pensé à toi aujourd’hui, et cela m’a semblé être une raison suffisante pour te rappeler à quel point tu comptes pour moi. ❤️",
+    loveNoteLabel: "Mot d’Amour",
   },
   it: {
     back: "Torna alle Note d’Amore", eyebrow: "INVIA UNA NOTA D’AMORE", title: "Rendila personale. Mantieni privata la rivelazione.",
@@ -99,6 +104,8 @@ const copy = {
     send: "Invia Nota d’Amore", notSent: "Non inviata nell’anteprima — l’attivazione della consegna è ancora in attesa.", preview: "Anteprima esperienza destinatario", edit: "Modifica consegna",
     senderPreview: "Anteprima mittente", noteEmpty: "La tua nota apparirà qui.", sentThrough: "Inviato tramite One2OneLove", receivesFirst: (name) => `Cosa riceve prima ${name}`,
     invitation: (sender) => `💕 ${sender} ti ha inviato una Nota d’Amore privata su One2OneLove. Tocca per rivelarla.`, reveal: "Rivela la mia Nota d’Amore", nowLabel: "Invia ora", chooseDate: "Scegli data e ora", invalidSchedule: "Scegli una data e un’ora future prima di continuare.",
+    defaultNote: "Ho pensato a te oggi, e mi è sembrato un motivo più che sufficiente per ricordarti quanto sei importante per me. ❤️",
+    loveNoteLabel: "Nota d’Amore",
   },
   de: {
     back: "Zurück zu Liebesnotizen", eyebrow: "LIEBESNOTIZ SENDEN", title: "Mach sie persönlich. Die Enthüllung bleibt privat.",
@@ -116,6 +123,8 @@ const copy = {
     send: "Liebesnotiz senden", notSent: "In der Vorschau nicht gesendet — die Zustellaktivierung steht noch aus.", preview: "Empfängeransicht testen", edit: "Zustellung bearbeiten",
     senderPreview: "Absendervorschau", noteEmpty: "Deine Notiz erscheint hier.", sentThrough: "Gesendet über One2OneLove", receivesFirst: (name) => `Was ${name} zuerst erhält`,
     invitation: (sender) => `💕 ${sender} hat dir eine private Liebesnotiz auf One2OneLove geschickt. Tippe, um sie zu enthüllen.`, reveal: "Meine Liebesnotiz enthüllen", nowLabel: "Jetzt senden", chooseDate: "Datum und Uhrzeit wählen", invalidSchedule: "Wähle ein zukünftiges Datum und eine Uhrzeit, bevor du fortfährst.",
+    defaultNote: "Ich habe heute an dich gedacht, und das war Grund genug, dich daran zu erinnern, wie viel du mir bedeutest. ❤️",
+    loveNoteLabel: "Liebesnotiz",
   },
   nl: {
     back: "Terug naar Liefdesbriefjes", eyebrow: "STUUR EEN LIEFDESBRIEFJE", title: "Maak het persoonlijk. Houd de onthulling privé.",
@@ -133,18 +142,22 @@ const copy = {
     send: "Liefdesbriefje sturen", notSent: "Niet verzonden in preview — bezorgactivatie is nog in afwachting.", preview: "Voorbeeld ontvangerservaring", edit: "Bezorging wijzigen",
     senderPreview: "Afzendervoorbeeld", noteEmpty: "Je briefje verschijnt hier.", sentThrough: "Verstuurd via One2OneLove", receivesFirst: (name) => `Wat ${name} als eerste ontvangt`,
     invitation: (sender) => `💕 ${sender} stuurde je een privé Liefdesbriefje via One2OneLove. Tik om het te onthullen.`, reveal: "Mijn Liefdesbriefje onthullen", nowLabel: "Nu versturen", chooseDate: "Datum en tijd kiezen", invalidSchedule: "Kies een toekomstige datum en tijd voordat je doorgaat.",
+    defaultNote: "Ik dacht vandaag aan je, en dat was reden genoeg om je eraan te herinneren hoeveel je voor me betekent. ❤️",
+    loveNoteLabel: "Liefdesbriefje",
   },
 };
 
-const cleanDraft = () => {
+const DEFAULT_NOTES = new Set(Object.values(copy).map((entry) => entry.defaultNote));
+
+const cleanDraft = (defaultNote) => {
   const resumed = loadLoveNoteSendSession();
   if (resumed) return resumed;
   const draft = loadLoveNoteDraft();
-  if (!draft) return { source: "new", recipientName: "", message: DEFAULT_NOTE, step: 1 };
+  if (!draft) return { source: "new", recipientName: "", message: defaultNote, step: 1 };
   return {
     source: draft.source || "new",
     recipientName: draft.recipientName || "",
-    message: draft.source === "reply" ? (draft.message || "") : (draft.message || DEFAULT_NOTE),
+    message: draft.source === "reply" ? (draft.message || "") : (draft.message || defaultNote),
     step: 1,
   };
 };
@@ -155,12 +168,12 @@ export default function LoveNoteSendFlow() {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
   const scheduleAccess = useFeatureAccess("love_note_scheduling");
-  const [initial] = useState(cleanDraft);
+  const [initial] = useState(() => cleanDraft(t.defaultNote));
   const [senderName, setSenderName] = useState(initial.senderName || user?.name || "");
   const [recipientName, setRecipientName] = useState(initial.recipientName || "");
   const [delivery, setDelivery] = useState(initial.delivery === "email" ? "email" : "text");
   const [contact, setContact] = useState(initial.contact || "");
-  const [message, setMessage] = useState(initial.message || DEFAULT_NOTE);
+  const [message, setMessage] = useState(initial.message || t.defaultNote);
   const [deliveryTime, setDeliveryTime] = useState(initial.deliveryTime === "schedule" ? "schedule" : "now");
   const [scheduleDate, setScheduleDate] = useState(initial.scheduleDate || "");
   const [scheduleTime, setScheduleTime] = useState(initial.scheduleTime || "");
@@ -174,6 +187,11 @@ export default function LoveNoteSendFlow() {
   useEffect(() => {
     clearLoveNoteDraft();
   }, []);
+
+  useEffect(() => {
+    if (initial.source === "reply") return;
+    setMessage((current) => DEFAULT_NOTES.has(current) || !current.trim() ? t.defaultNote : current);
+  }, [currentLanguage, initial.source, t.defaultNote]);
 
   useEffect(() => {
     if (!message.trim()) return;
@@ -371,7 +389,7 @@ export default function LoveNoteSendFlow() {
 
           <aside className="lg:sticky lg:top-6"><div className="rounded-[2.25rem] bg-slate-950 p-4 shadow-2xl"><div className="rounded-[1.8rem] bg-gradient-to-br from-pink-50 via-violet-50 to-blue-50 p-6">
             <div className="flex items-center justify-between text-xs font-black uppercase tracking-[0.14em] text-slate-500"><span>One2OneLove</span><span>{t.senderPreview}</span></div>
-            <div className="mx-auto mt-8 max-w-[19rem] -rotate-2 rounded-sm border border-yellow-300 bg-yellow-100 p-6 shadow-xl"><div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600"><Heart className="h-4 w-4 fill-pink-500" /> Love Note</div><p className="mt-5 text-center text-lg font-semibold leading-8 text-slate-800">{message || t.noteEmpty}</p><div className="mt-5 text-right text-sm font-bold text-slate-600">— {senderLabel} 💕</div><div className="mt-2 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">{t.sentThrough}</div></div>
+            <div className="mx-auto mt-8 max-w-[19rem] -rotate-2 rounded-sm border border-yellow-300 bg-yellow-100 p-6 shadow-xl"><div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600"><Heart className="h-4 w-4 fill-pink-500" /> {t.loveNoteLabel}</div><p className="mt-5 text-center text-lg font-semibold leading-8 text-slate-800">{message || t.noteEmpty}</p><div className="mt-5 text-right text-sm font-bold text-slate-600">— {senderLabel} 💕</div><div className="mt-2 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">{t.sentThrough}</div></div>
             <div className="mt-8 rounded-2xl border border-white bg-white/85 p-5 shadow-sm"><div className="flex items-start gap-3"><MessageCircleHeart className="mt-0.5 h-5 w-5 text-pink-600" /><div><div className="font-black text-slate-950">{t.receivesFirst(recipientLabel)}</div><p className="mt-2 text-sm leading-6 text-slate-600">“{t.invitation(senderLabel)}”</p><div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2 text-xs font-black text-white"><LockKeyhole className="h-3.5 w-3.5" />{t.reveal}</div></div></div></div>
           </div></div></aside>
         </div>
