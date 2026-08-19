@@ -10,6 +10,7 @@ export const getGlobalRoomOpsSummary = async () => {
         pendingCreators: Number(data?.pending_creators || 0),
         pendingPrograms: Number(data?.pending_programs || 0),
         openReports: Number(data?.open_reports || 0),
+        openCancellations: Number(data?.open_cancellations || 0),
         liveNow: Number(data?.live_now || 0),
         next24Hours: Number(data?.next_24_hours || 0),
         next7Days: Number(data?.next_7_days || 0),
