@@ -30,8 +30,21 @@ for (const required of [
   'up to 2 free creator slots per day',
   'Future paid slots are prepared in the system but are not active.',
   '{t.notice}',
+  'toast.error(t.loadError)',
+  'toast.success(t.bookedSuccess)',
+  'toast.error(t.bookError)',
+  'toast.error(t.cancelError)',
 ]) {
   if (!page.includes(required)) failures.push(`${pageFile}: missing approved calendar behavior/copy ${required}.`);
+}
+
+for (const forbidden of [
+  "toast.error(error?.message || 'Unable to load creator programming.')",
+  "toast.success('Creator programming slot booked.')",
+  "toast.error(error?.message || 'Unable to book this programming slot.')",
+  "toast.error(error?.message || 'Unable to cancel this programming slot.')",
+]) {
+  if (page.includes(forbidden)) failures.push(`${pageFile}: hard-coded English runtime feedback remains (${forbidden}).`);
 }
 
 for (const language of ['en', 'es', 'fr', 'it', 'de']) {
@@ -54,6 +67,9 @@ for (const required of [
   'alter table public.creator_programming_slots enable row level security;',
   'revoke all on table public.creator_programming_slots from anon, authenticated;',
   'grant update (status, updated_at) on table public.creator_programming_slots to authenticated;',
+  'drop constraint if exists room_messages_room_slug_allowed;',
+  'add constraint room_messages_room_slug_allowed',
+  "'global-relationship-room',\n    'vent-room'",
   "'global-relationship-room','vent-room'",
 ]) {
   if (!migration.includes(required)) failures.push(`${migrationFile}: missing database safeguard ${required}.`);
@@ -64,6 +80,8 @@ for (const required of [
   'FREE_DAILY_LIMIT = 2',
   "creator?.user_type !== 'influencer'",
   "bookingTier !== 'free'",
+  "String(insertError.message || '').includes('CREATOR_DAILY_FREE_LIMIT_REACHED')",
+  "return json(request, { error: 'DAILY_FREE_LIMIT_REACHED' }, 409)",
   "return json(request, { error: 'SLOT_CONFLICT' }, 409)",
 ]) {
   if (!bookingFunction.includes(required)) failures.push(`${bookingFunctionFile}: missing backend booking safeguard ${required}.`);
@@ -84,4 +102,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Creator programming remains feature-gated, multilingual, two-free-slots/day limited, overlap-protected and paid-slot disabled.');
+console.log('✅ Creator programming remains feature-gated, multilingual, two-free-slots/day limited, overlap-protected, Global-Room compatible and paid-slot disabled.');
