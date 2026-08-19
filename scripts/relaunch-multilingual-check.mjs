@@ -40,6 +40,15 @@ const centralizedChatSurfaces = [
   'src/components/chat/ChatMessageRelaunch.jsx',
 ];
 
+const loveNotesHubRequiredKeys = [
+  'fallbackMessage',
+  'loveNoteLabel',
+  'fromYou',
+  'livePreview',
+  'loveNotePreview',
+  'steps',
+];
+
 const failures = [];
 
 const read = (file) => {
@@ -90,6 +99,48 @@ const chatCopy = read('src/lib/chatCopy.js');
 for (const language of ACTIVE_LANGUAGES) {
   const languageBlock = new RegExp(`(?:^|\\n)\\s*${language}:\\s*\\{`, 'm');
   if (!languageBlock.test(chatCopy)) failures.push(`chatCopy.js: missing ${language} active Chat translation.`);
+}
+
+const loveNotesHub = read('src/pages/LoveNotesHub.jsx');
+for (const language of ACTIVE_LANGUAGES) {
+  const blockPattern = new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`);
+  const match = loveNotesHub.match(blockPattern);
+  if (!match) continue;
+
+  for (const key of loveNotesHubRequiredKeys) {
+    const keyPattern = new RegExp(`\\n\\s{4}${key}:`);
+    if (!keyPattern.test(match[1])) {
+      failures.push(`LoveNotesHub.jsx: ${language} is missing required translated UI key ${key}.`);
+    }
+  }
+}
+
+const loveNotesHubRuntime = loveNotesHub.split('export default function LoveNotesHub()')[1] || '';
+const requiredLoveNotesBindings = [
+  't.fallbackMessage',
+  't.loveNoteLabel',
+  't.fromYou',
+  't.livePreview',
+  't.loveNotePreview',
+  't.steps.map',
+];
+for (const binding of requiredLoveNotesBindings) {
+  if (!loveNotesHubRuntime.includes(binding)) {
+    failures.push(`LoveNotesHub.jsx: runtime UI must use ${binding} so the Love Notes experience follows the selected language.`);
+  }
+}
+
+const forbiddenLoveNotesRuntimeLiterals = [
+  '> Love Note</div>',
+  '>— From you 💕</div>',
+  '>Live preview</span>',
+  '>Love Note preview</div>',
+  '["1. Send", "2. Invite", "3. Reveal", "4. Reply / Save"].map',
+];
+for (const literal of forbiddenLoveNotesRuntimeLiterals) {
+  if (loveNotesHubRuntime.includes(literal)) {
+    failures.push(`LoveNotesHub.jsx: hard-coded English runtime copy remains (${literal}).`);
+  }
 }
 
 if (failures.length) {

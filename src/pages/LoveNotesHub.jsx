@@ -38,6 +38,12 @@ const copy = {
     loop: "One note can start the next conversation.",
     loopText: "Receive it. Reveal it. Reply, save it, or send one back.",
     all: "See the full collection",
+    fallbackMessage: "You crossed my mind, and that felt like a good reason to remind you that you are loved.",
+    loveNoteLabel: "Love Note",
+    fromYou: "From you",
+    livePreview: "Live preview",
+    loveNotePreview: "Love Note preview",
+    steps: ["1. Send", "2. Invite", "3. Reveal", "4. Reply / Save"],
   },
   es: {
     eyebrow: "365 NOTAS DE AMOR",
@@ -62,6 +68,12 @@ const copy = {
     loop: "Una nota puede iniciar la próxima conversación.",
     loopText: "Recíbela. Revélala. Responde, guárdala o envía otra.",
     all: "Ver la colección completa",
+    fallbackMessage: "Pensé en ti, y eso me pareció una buena razón para recordarte cuánto significas para mí.",
+    loveNoteLabel: "Nota de Amor",
+    fromYou: "De ti",
+    livePreview: "Vista previa en vivo",
+    loveNotePreview: "Vista previa de Nota de Amor",
+    steps: ["1. Envía", "2. Invita", "3. Revela", "4. Responde / Guarda"],
   },
   fr: {
     eyebrow: "365 MOTS D’AMOUR",
@@ -86,6 +98,12 @@ const copy = {
     loop: "Un mot peut lancer la prochaine conversation.",
     loopText: "Recevez-le. Révélez-le. Répondez, sauvegardez ou renvoyez-en un.",
     all: "Voir toute la collection",
+    fallbackMessage: "J’ai pensé à toi, et cela m’a semblé être une belle raison de te rappeler à quel point tu comptes pour moi.",
+    loveNoteLabel: "Mot d’Amour",
+    fromYou: "De votre part",
+    livePreview: "Aperçu en direct",
+    loveNotePreview: "Aperçu du Mot d’Amour",
+    steps: ["1. Envoyer", "2. Inviter", "3. Révéler", "4. Répondre / Sauvegarder"],
   },
   it: {
     eyebrow: "365 NOTE D’AMORE",
@@ -110,6 +128,12 @@ const copy = {
     loop: "Una nota può iniziare la prossima conversazione.",
     loopText: "Ricevila. Rivelala. Rispondi, salvala o mandane un’altra.",
     all: "Vedi tutta la raccolta",
+    fallbackMessage: "Ho pensato a te, e mi è sembrato un buon motivo per ricordarti quanto sei importante per me.",
+    loveNoteLabel: "Nota d’Amore",
+    fromYou: "Da parte tua",
+    livePreview: "Anteprima in tempo reale",
+    loveNotePreview: "Anteprima Nota d’Amore",
+    steps: ["1. Invia", "2. Invita", "3. Rivela", "4. Rispondi / Salva"],
   },
   de: {
     eyebrow: "365 LIEBESNOTIZEN",
@@ -134,6 +158,12 @@ const copy = {
     loop: "Eine Notiz kann das nächste Gespräch beginnen.",
     loopText: "Empfangen. Enthüllen. Antworten, speichern oder eine zurücksenden.",
     all: "Gesamte Sammlung ansehen",
+    fallbackMessage: "Ich habe an dich gedacht, und das war für mich ein guter Grund, dich daran zu erinnern, wie viel du mir bedeutest.",
+    loveNoteLabel: "Liebesnotiz",
+    fromYou: "Von dir",
+    livePreview: "Live-Vorschau",
+    loveNotePreview: "Liebesnotiz-Vorschau",
+    steps: ["1. Senden", "2. Einladen", "3. Enthüllen", "4. Antworten / Speichern"],
   },
   nl: {
     eyebrow: "365 LIEFDESBRIEFJES",
@@ -158,6 +188,12 @@ const copy = {
     loop: "Eén briefje kan het volgende gesprek beginnen.",
     loopText: "Ontvang. Onthul. Reageer, bewaar of stuur er één terug.",
     all: "Bekijk de volledige collectie",
+    fallbackMessage: "Ik dacht aan je, en dat leek me een goede reden om je eraan te herinneren hoeveel je voor me betekent.",
+    loveNoteLabel: "Liefdesbriefje",
+    fromYou: "Van jou",
+    livePreview: "Live voorbeeld",
+    loveNotePreview: "Voorbeeld van Liefdesbriefje",
+    steps: ["1. Verstuur", "2. Nodig uit", "3. Onthul", "4. Reageer / Bewaar"],
   },
 };
 
@@ -176,7 +212,7 @@ export default function LoveNotesHub() {
   const samples = notes.slice(0, 3);
   const [draft, setDraft] = useState("");
   const [selectedSample, setSelectedSample] = useState(0);
-  const previewText = draft.trim() || samples[selectedSample]?.content || "You crossed my mind, and that felt like a good reason to remind you that you are loved.";
+  const previewText = draft.trim() || samples[selectedSample]?.content || t.fallbackMessage;
 
   const continueToSend = (source = draft.trim() ? "custom" : "collection") => {
     const message = source === "custom" ? draft.trim() : previewText.trim();
@@ -228,9 +264,9 @@ export default function LoveNotesHub() {
                   <span>One2OneLove</span><span>{t.preview}</span>
                 </div>
                 <div className="mx-auto mt-8 max-w-[18rem] -rotate-2 rounded-sm border border-yellow-300 bg-yellow-100 p-6 shadow-xl">
-                  <div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600"><Heart className="h-4 w-4 fill-pink-500" /> Love Note</div>
+                  <div className="flex items-center justify-center gap-2 text-xs font-black text-pink-600"><Heart className="h-4 w-4 fill-pink-500" /> {t.loveNoteLabel}</div>
                   <p className="mt-5 text-center text-lg font-semibold leading-8 text-slate-800">{previewText}</p>
-                  <div className="mt-5 text-right text-sm font-bold text-slate-600">— From you 💕</div>
+                  <div className="mt-5 text-right text-sm font-bold text-slate-600">— {t.fromYou} 💕</div>
                 </div>
                 <div className="mt-8 rounded-2xl border border-white bg-white/80 p-4 text-center shadow-sm">
                   <div className="text-sm font-black text-slate-900">{t.previewLabel}</div>
@@ -290,7 +326,7 @@ export default function LoveNotesHub() {
             />
             <div className="mt-2 flex items-center justify-between px-1 text-xs font-bold text-slate-400">
               <span>{draft.length}/500</span>
-              <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" />Live preview</span>
+              <span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" />{t.livePreview}</span>
             </div>
             <button
               type="button"
@@ -303,10 +339,10 @@ export default function LoveNotesHub() {
           </div>
 
           <div className="rounded-[2rem] border border-pink-100 bg-gradient-to-br from-pink-50 to-violet-50 p-7 shadow-lg">
-            <div className="flex items-center gap-2 text-sm font-black text-pink-700"><MessageCircleHeart className="h-5 w-5" />Love Note preview</div>
+            <div className="flex items-center gap-2 text-sm font-black text-pink-700"><MessageCircleHeart className="h-5 w-5" />{t.loveNotePreview}</div>
             <div className="mt-6 rounded-sm border border-yellow-300 bg-yellow-100 p-7 shadow-xl">
               <p className="text-lg font-semibold leading-8 text-slate-800">{previewText}</p>
-              <div className="mt-6 text-right text-sm font-bold text-slate-600">— From you 💕</div>
+              <div className="mt-6 text-right text-sm font-bold text-slate-600">— {t.fromYou} 💕</div>
             </div>
             <button
               type="button"
@@ -330,7 +366,7 @@ export default function LoveNotesHub() {
             <div className="text-xl font-black">{t.loop}</div>
             <p className="mt-3 text-sm leading-6 text-slate-300">{t.loopText}</p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-black">
-              {["1. Send", "2. Invite", "3. Reveal", "4. Reply / Save"].map((step) => (
+              {t.steps.map((step) => (
                 <span key={step} className="rounded-full border border-white/15 bg-white/10 px-3 py-2">{step}</span>
               ))}
             </div>
