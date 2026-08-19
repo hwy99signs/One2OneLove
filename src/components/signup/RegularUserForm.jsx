@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ArrowLeft, Mail, Lock, User, Heart, Eye, EyeOff, Calendar, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Eye, EyeOff, Heart, Loader2, Lock, Mail, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,14 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import EmailVerificationDialog from "./EmailVerificationDialog";
-import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getAuthUiTranslation } from "@/lib/authUiTranslations";
+import EmailVerificationDialog from "./EmailVerificationDialog";
 
 const translations = {
   en: {
     title: "Create Your Account",
-    subtitle: "Join thousands of couples strengthening their relationships",
+    subtitle: "Join the One2One Love community and strengthen your relationships",
     fullName: "Full Name",
     fullNamePlaceholder: "Enter your full name",
     email: "Email Address",
@@ -28,14 +29,17 @@ const translations = {
     anniversaryDate: "Anniversary Date (Optional)",
     partnerEmail: "Partner's Email (Optional)",
     partnerEmailPlaceholder: "Invite your partner to join",
-    agreeToTerms: "I agree to the Terms of Service and Privacy Policy",
+    termsPrefix: "I agree to the",
+    terms: "Terms of Service",
+    and: "and",
+    privacy: "Privacy Policy",
+    termsRequired: "Please agree to the Terms of Service and Privacy Policy.",
     createAccount: "Create Account",
-    creating: "Creating Account...",
-    back: "Back"
+    back: "Back",
   },
   es: {
     title: "Crea Tu Cuenta",
-    subtitle: "Únete a miles de parejas fortaleciendo sus relaciones",
+    subtitle: "Únete a la comunidad One2One Love y fortalece tus relaciones",
     fullName: "Nombre Completo",
     fullNamePlaceholder: "Ingresa tu nombre completo",
     email: "Correo Electrónico",
@@ -49,14 +53,17 @@ const translations = {
     anniversaryDate: "Fecha de Aniversario (Opcional)",
     partnerEmail: "Correo de tu Pareja (Opcional)",
     partnerEmailPlaceholder: "Invita a tu pareja a unirse",
-    agreeToTerms: "Acepto los Términos de Servicio y Política de Privacidad",
+    termsPrefix: "Acepto los",
+    terms: "Términos de Servicio",
+    and: "y la",
+    privacy: "Política de Privacidad",
+    termsRequired: "Acepta los Términos de Servicio y la Política de Privacidad.",
     createAccount: "Crear Cuenta",
-    creating: "Creando Cuenta...",
-    back: "Volver"
+    back: "Volver",
   },
   fr: {
     title: "Créez Votre Compte",
-    subtitle: "Rejoignez des milliers de couples renforçant leurs relations",
+    subtitle: "Rejoignez la communauté One2One Love et renforcez vos relations",
     fullName: "Nom Complet",
     fullNamePlaceholder: "Entrez votre nom complet",
     email: "Adresse E-mail",
@@ -70,14 +77,17 @@ const translations = {
     anniversaryDate: "Date d'Anniversaire (Optionnel)",
     partnerEmail: "E-mail du Partenaire (Optionnel)",
     partnerEmailPlaceholder: "Invitez votre partenaire à rejoindre",
-    agreeToTerms: "J'accepte les Conditions d'Utilisation et la Politique de Confidentialité",
+    termsPrefix: "J'accepte les",
+    terms: "Conditions d'Utilisation",
+    and: "et la",
+    privacy: "Politique de Confidentialité",
+    termsRequired: "Acceptez les Conditions d'Utilisation et la Politique de Confidentialité.",
     createAccount: "Créer un Compte",
-    creating: "Création du Compte...",
-    back: "Retour"
+    back: "Retour",
   },
   it: {
     title: "Crea Il Tuo Account",
-    subtitle: "Unisciti a migliaia di coppie che rafforzano le loro relazioni",
+    subtitle: "Unisciti alla comunità One2One Love e rafforza le tue relazioni",
     fullName: "Nome Completo",
     fullNamePlaceholder: "Inserisci il tuo nome completo",
     email: "Indirizzo Email",
@@ -91,35 +101,41 @@ const translations = {
     anniversaryDate: "Data dell'Anniversario (Opzionale)",
     partnerEmail: "Email del Partner (Opzionale)",
     partnerEmailPlaceholder: "Invita il tuo partner a unirsi",
-    agreeToTerms: "Accetto i Termini di Servizio e l'Informativa sulla Privacy",
+    termsPrefix: "Accetto i",
+    terms: "Termini di Servizio",
+    and: "e l'",
+    privacy: "Informativa sulla Privacy",
+    termsRequired: "Accetta i Termini di Servizio e l'Informativa sulla Privacy.",
     createAccount: "Crea Account",
-    creating: "Creazione Account...",
-    back: "Indietro"
+    back: "Indietro",
   },
   de: {
-    title: "Erstellen Sie Ihr Konto",
-    subtitle: "Treten Sie Tausenden von Paaren bei, die ihre Beziehungen stärken",
+    title: "Erstelle Dein Konto",
+    subtitle: "Tritt der One2One Love Community bei und stärke deine Beziehungen",
     fullName: "Vollständiger Name",
-    fullNamePlaceholder: "Geben Sie Ihren vollständigen Namen ein",
+    fullNamePlaceholder: "Gib deinen vollständigen Namen ein",
     email: "E-Mail-Adresse",
-    emailPlaceholder: "Geben Sie Ihre E-Mail ein",
+    emailPlaceholder: "Gib deine E-Mail ein",
     password: "Passwort",
-    passwordPlaceholder: "Erstellen Sie ein Passwort (mind. 8 Zeichen)",
+    passwordPlaceholder: "Erstelle ein Passwort (mind. 8 Zeichen)",
     confirmPassword: "Passwort Bestätigen",
-    confirmPasswordPlaceholder: "Bestätigen Sie Ihr Passwort",
+    confirmPasswordPlaceholder: "Bestätige dein Passwort",
     relationshipStatus: "Beziehungsstatus",
     relationshipStatuses: { single: "Single", dating: "Dating", engaged: "Verlobt", married: "Verheiratet", complicated: "Es ist Kompliziert" },
     anniversaryDate: "Jubiläumsdatum (Optional)",
     partnerEmail: "Partner-E-Mail (Optional)",
-    partnerEmailPlaceholder: "Laden Sie Ihren Partner ein",
-    agreeToTerms: "Ich stimme den Nutzungsbedingungen und der Datenschutzrichtlinie zu",
+    partnerEmailPlaceholder: "Lade deinen Partner ein",
+    termsPrefix: "Ich stimme den",
+    terms: "Nutzungsbedingungen",
+    and: "und der",
+    privacy: "Datenschutzrichtlinie",
+    termsRequired: "Stimme den Nutzungsbedingungen und der Datenschutzrichtlinie zu.",
     createAccount: "Konto Erstellen",
-    creating: "Konto Wird Erstellt...",
-    back: "Zurück"
+    back: "Zurück",
   },
   nl: {
     title: "Maak Je Account Aan",
-    subtitle: "Sluit je aan bij duizenden koppels die hun relaties versterken",
+    subtitle: "Word lid van de One2One Love-community en versterk je relaties",
     fullName: "Volledige Naam",
     fullNamePlaceholder: "Voer je volledige naam in",
     email: "E-mailadres",
@@ -133,14 +149,17 @@ const translations = {
     anniversaryDate: "Jubileumdatum (Optioneel)",
     partnerEmail: "E-mail van Partner (Optioneel)",
     partnerEmailPlaceholder: "Nodig je partner uit",
-    agreeToTerms: "Ik ga akkoord met de Servicevoorwaarden en Privacybeleid",
+    termsPrefix: "Ik ga akkoord met de",
+    terms: "Servicevoorwaarden",
+    and: "en het",
+    privacy: "Privacybeleid",
+    termsRequired: "Ga akkoord met de Servicevoorwaarden en het Privacybeleid.",
     createAccount: "Account Aanmaken",
-    creating: "Account Aanmaken...",
-    back: "Terug"
+    back: "Terug",
   },
   pt: {
     title: "Crie Sua Conta",
-    subtitle: "Junte-se a milhares de casais fortalecendo seus relacionamentos",
+    subtitle: "Junte-se à comunidade One2One Love e fortaleça seus relacionamentos",
     fullName: "Nome Completo",
     fullNamePlaceholder: "Digite seu nome completo",
     email: "Endereço de E-mail",
@@ -154,11 +173,14 @@ const translations = {
     anniversaryDate: "Data do Aniversário (Opcional)",
     partnerEmail: "E-mail do Parceiro (Opcional)",
     partnerEmailPlaceholder: "Convide seu parceiro para participar",
-    agreeToTerms: "Concordo com os Termos de Serviço e Política de Privacidade",
+    termsPrefix: "Concordo com os",
+    terms: "Termos de Serviço",
+    and: "e a",
+    privacy: "Política de Privacidade",
+    termsRequired: "Concorde com os Termos de Serviço e a Política de Privacidade.",
     createAccount: "Criar Conta",
-    creating: "Criando Conta...",
-    back: "Voltar"
-  }
+    back: "Voltar",
+  },
 };
 
 export default function RegularUserForm({ onBack }) {
@@ -166,6 +188,7 @@ export default function RegularUserForm({ onBack }) {
   const { register } = useAuth();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
+  const authT = getAuthUiTranslation(currentLanguage);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -175,67 +198,71 @@ export default function RegularUserForm({ onBack }) {
     relationshipStatus: "",
     anniversaryDate: "",
     partnerEmail: "",
-    agreeToTerms: false
+    agreeToTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [requiresVerification, setRequiresVerification] = useState(true);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    console.log('🔥 SignUp Form - Submission started');
-    console.log('Form data:', { 
-      name: formData.fullName, 
-      email: formData.email, 
-      hasPassword: !!formData.password,
-      relationshipStatus: formData.relationshipStatus,
-      agreeToTerms: formData.agreeToTerms 
-    });
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords don't match!");
+  const updateForm = (field, value) => setFormData((current) => ({ ...current, [field]: value }));
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isLoading) return;
+
+    const normalizedEmail = formData.email.trim();
+    const normalizedName = formData.fullName.trim();
+    const normalizedPartnerEmail = formData.partnerEmail.trim();
+
+    if (!normalizedName || !normalizedEmail || !formData.password || !formData.confirmPassword) {
+      toast.error(authT.accountCreateError);
       return;
     }
-
+    if (formData.password.length < 8) {
+      toast.error(authT.passwordTooShort);
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error(authT.passwordsMismatch);
+      return;
+    }
     if (!formData.agreeToTerms) {
-      toast.error("Please agree to the terms and conditions");
+      toast.error(t.termsRequired);
       return;
     }
 
     setIsLoading(true);
-    
     try {
-      console.log('Calling register function...');
       const result = await register({
-        name: formData.fullName,
-        email: formData.email,
+        name: normalizedName,
+        email: normalizedEmail,
         password: formData.password,
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
-        partnerEmail: formData.partnerEmail,
-        subscriptionPlan: 'Basic', // All new users start with free Basic plan
-        subscriptionPrice: 0, // Basic is free
+        partnerEmail: normalizedPartnerEmail,
+        subscriptionPlan: "Basic",
+        subscriptionPrice: 0,
       });
 
-      console.log('Register result:', result);
-
-      if (result.success) {
-        // Store the email and show dialog
-        setRegisteredEmail(formData.email);
-        setShowEmailDialog(true);
-        
-        // Also show a toast for good measure
-        toast.success("Account created successfully! Please check your email.");
-      } else {
-        console.error('Registration failed:', result.error);
-        toast.error(result.error || "Something went wrong. Please try again.");
+      if (!result?.success) {
+        toast.error(authT.accountCreateError);
+        return;
       }
-    } catch (err) {
-      console.error('Registration error caught:', err);
-      toast.error("Something went wrong. Please try again.");
+
+      toast.success(authT.accountCreated);
+      if (result.user?.email_verified) {
+        navigate(createPageUrl("Profile"), { replace: true });
+        return;
+      }
+
+      setRegisteredEmail(normalizedEmail);
+      setRequiresVerification(true);
+      setShowEmailDialog(true);
+    } catch {
+      toast.error(authT.accountCreateError);
     } finally {
       setIsLoading(false);
     }
@@ -243,199 +270,120 @@ export default function RegularUserForm({ onBack }) {
 
   return (
     <>
-    <Card className="max-w-2xl mx-auto shadow-2xl">
-      <CardHeader>
-        <button
-          onClick={onBack}
-          className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-4 transition-colors"
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          {t.back}
-        </button>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
-            <Heart className="w-6 h-6 text-white fill-white" />
-          </div>
-          <CardTitle className="text-3xl">{t.title}</CardTitle>
-        </div>
-        <p className="text-gray-600">{t.subtitle}</p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.fullName} *
-            </label>
-            <div className="relative">
-              <User size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type="text"
-                value={formData.fullName}
-                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                placeholder={t.fullNamePlaceholder}
-                className="pl-12"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.email} *
-            </label>
-            <div className="relative">
-              <Mail size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                placeholder={t.emailPlaceholder}
-                className="pl-12"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.password} *
-            </label>
-            <div className="relative">
-              <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                placeholder={t.passwordPlaceholder}
-                className="pl-12 pr-12"
-                required
-                minLength={8}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.confirmPassword} *
-            </label>
-            <div className="relative">
-              <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type={showConfirmPassword ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                placeholder={t.confirmPasswordPlaceholder}
-                className="pl-12 pr-12"
-                required
-                minLength={8}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.relationshipStatus}
-            </label>
-            <Select value={formData.relationshipStatus} onValueChange={(value) => setFormData({...formData, relationshipStatus: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder={t.relationshipStatus} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">{t.relationshipStatuses.single}</SelectItem>
-                <SelectItem value="dating">{t.relationshipStatuses.dating}</SelectItem>
-                <SelectItem value="engaged">{t.relationshipStatuses.engaged}</SelectItem>
-                <SelectItem value="married">{t.relationshipStatuses.married}</SelectItem>
-                <SelectItem value="complicated">{t.relationshipStatuses.complicated}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.anniversaryDate}
-            </label>
-            <div className="relative">
-              <Calendar size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type="date"
-                value={formData.anniversaryDate}
-                onChange={(e) => setFormData({...formData, anniversaryDate: e.target.value})}
-                className="pl-12"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.partnerEmail}
-            </label>
-            <div className="relative">
-              <Heart size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                type="email"
-                value={formData.partnerEmail}
-                onChange={(e) => setFormData({...formData, partnerEmail: e.target.value})}
-                placeholder={t.partnerEmailPlaceholder}
-                className="pl-12"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={formData.agreeToTerms}
-              onChange={(e) => setFormData({...formData, agreeToTerms: e.target.checked})}
-              className="mt-1"
-              required
-            />
-            <label htmlFor="terms" className="text-sm text-gray-600">
-              {t.agreeToTerms}
-            </label>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold text-lg py-6"
+      <Card className="max-w-2xl mx-auto shadow-2xl">
+        <CardHeader>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-4 transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                {t.creating}
-              </>
-            ) : (
-              t.createAccount
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-    
-    {/* Email Verification Dialog */}
-    <EmailVerificationDialog
-      isOpen={showEmailDialog}
-      onClose={() => {
-        setShowEmailDialog(false);
-        navigate(createPageUrl("SignIn"));
-      }}
-      email={registeredEmail}
-    />
+            <ArrowLeft aria-hidden="true" size={20} className="mr-2" />
+            {t.back}
+          </button>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+              <Heart aria-hidden="true" className="w-6 h-6 text-white fill-white" />
+            </div>
+            <CardTitle className="text-3xl">{t.title}</CardTitle>
+          </div>
+          <p className="text-gray-600">{t.subtitle}</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="signup-full-name" className="block text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
+              <div className="relative">
+                <User aria-hidden="true" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input id="signup-full-name" type="text" autoComplete="name" value={formData.fullName} onChange={(event) => updateForm("fullName", event.target.value)} placeholder={t.fullNamePlaceholder} className="pl-12" required />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+              <div className="relative">
+                <Mail aria-hidden="true" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input id="signup-email" type="email" inputMode="email" autoComplete="email" value={formData.email} onChange={(event) => updateForm("email", event.target.value)} placeholder={t.emailPlaceholder} className="pl-12" required />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-2">{t.password} *</label>
+              <div className="relative">
+                <Lock aria-hidden="true" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input id="signup-password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={formData.password} onChange={(event) => updateForm("password", event.target.value)} placeholder={t.passwordPlaceholder} className="pl-12 pr-12" required minLength={8} />
+                <button type="button" onClick={() => setShowPassword((current) => !current)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500" aria-label={showPassword ? authT.hidePassword : authT.showPassword}>
+                  {showPassword ? <EyeOff aria-hidden="true" size={20} /> : <Eye aria-hidden="true" size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-gray-700 mb-2">{t.confirmPassword} *</label>
+              <div className="relative">
+                <Lock aria-hidden="true" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input id="signup-confirm-password" type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" value={formData.confirmPassword} onChange={(event) => updateForm("confirmPassword", event.target.value)} placeholder={t.confirmPasswordPlaceholder} className="pl-12 pr-12" required minLength={8} />
+                <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500" aria-label={showConfirmPassword ? authT.hidePassword : authT.showPassword}>
+                  {showConfirmPassword ? <EyeOff aria-hidden="true" size={20} /> : <Eye aria-hidden="true" size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t.relationshipStatus}</label>
+              <Select value={formData.relationshipStatus} onValueChange={(value) => updateForm("relationshipStatus", value)}>
+                <SelectTrigger aria-label={t.relationshipStatus}><SelectValue placeholder={t.relationshipStatus} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">{t.relationshipStatuses.single}</SelectItem>
+                  <SelectItem value="dating">{t.relationshipStatuses.dating}</SelectItem>
+                  <SelectItem value="engaged">{t.relationshipStatuses.engaged}</SelectItem>
+                  <SelectItem value="married">{t.relationshipStatuses.married}</SelectItem>
+                  <SelectItem value="complicated">{t.relationshipStatuses.complicated}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label htmlFor="signup-anniversary" className="block text-sm font-medium text-gray-700 mb-2">{t.anniversaryDate}</label>
+              <div className="relative">
+                <Calendar aria-hidden="true" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input id="signup-anniversary" type="date" value={formData.anniversaryDate} onChange={(event) => updateForm("anniversaryDate", event.target.value)} className="pl-12" />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="signup-partner-email" className="block text-sm font-medium text-gray-700 mb-2">{t.partnerEmail}</label>
+              <div className="relative">
+                <Heart aria-hidden="true" size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input id="signup-partner-email" type="email" inputMode="email" autoComplete="email" value={formData.partnerEmail} onChange={(event) => updateForm("partnerEmail", event.target.value)} placeholder={t.partnerEmailPlaceholder} className="pl-12" />
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <input type="checkbox" id="terms" checked={formData.agreeToTerms} onChange={(event) => updateForm("agreeToTerms", event.target.checked)} className="mt-1" required />
+              <label htmlFor="terms" className="text-sm text-gray-600">
+                {t.termsPrefix}{" "}
+                <Link to={createPageUrl("TermsOfService")} className="font-medium text-pink-600 hover:underline">{t.terms}</Link>{" "}
+                {t.and}{" "}
+                <Link to={createPageUrl("PrivacyPolicy")} className="font-medium text-pink-600 hover:underline">{t.privacy}</Link>.
+              </label>
+            </div>
+
+            <Button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold text-lg py-6">
+              {isLoading ? <><Loader2 aria-hidden="true" className="w-5 h-5 mr-2 animate-spin" />{authT.creatingAccount}</> : t.createAccount}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <EmailVerificationDialog
+        isOpen={showEmailDialog}
+        onClose={() => {
+          setShowEmailDialog(false);
+          navigate(createPageUrl("SignIn"), { replace: true });
+        }}
+        email={registeredEmail}
+        requiresVerification={requiresVerification}
+      />
     </>
   );
 }
