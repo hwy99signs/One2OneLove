@@ -7,9 +7,8 @@ const translations = {
   en: {
     title: 'Conversation Cards',
     subtitle: 'Better conversations do not always need a big moment. Sometimes they just need a good question.',
-    choose: 'Choose a conversation focus',
-    next: 'Next Card',
-    tipTitle: 'How to use the cards',
+    privacy: 'Your answers are not saved or transmitted by this tool.',
+    choose: 'Choose a conversation focus', next: 'Next Card', tipTitle: 'How to use the cards',
     tip: 'Take turns answering. Listen without interrupting, ask one follow-up question, and do not use an answer as ammunition later.',
     categories: {
       connection: ['Connection', ['What is something small I did recently that made you feel cared for?', 'When do you feel closest to me lately?', 'What is one thing we could do this week to feel more connected?', 'What memory of us still makes you smile immediately?', 'What kind of affection feels most meaningful to you right now?']],
@@ -22,6 +21,7 @@ const translations = {
   es: {
     title: 'Tarjetas de Conversación',
     subtitle: 'Las mejores conversaciones no siempre necesitan un gran momento. A veces solo necesitan una buena pregunta.',
+    privacy: 'Tus respuestas no se guardan ni se transmiten mediante esta herramienta.',
     choose: 'Elige un enfoque para conversar', next: 'Siguiente Tarjeta', tipTitle: 'Cómo usar las tarjetas', tip: 'Túrnense para responder. Escuchen sin interrumpir, hagan una pregunta de seguimiento y no usen una respuesta como arma más adelante.',
     categories: {
       connection: ['Conexión', ['¿Qué cosa pequeña hice recientemente que te hizo sentir cuidado/a?', '¿Cuándo te sientes más cerca de mí últimamente?', '¿Qué podríamos hacer esta semana para sentirnos más conectados?', '¿Qué recuerdo nuestro todavía te hace sonreír de inmediato?', '¿Qué tipo de afecto se siente más significativo para ti ahora?']],
@@ -34,6 +34,7 @@ const translations = {
   fr: {
     title: 'Cartes de Conversation',
     subtitle: 'Une meilleure conversation n’exige pas toujours un grand moment. Parfois, une bonne question suffit.',
+    privacy: 'Vos réponses ne sont ni enregistrées ni transmises par cet outil.',
     choose: 'Choisissez un thème de conversation', next: 'Carte Suivante', tipTitle: 'Comment utiliser les cartes', tip: 'Répondez chacun votre tour. Écoutez sans interrompre, posez une question complémentaire et ne réutilisez pas une réponse comme une arme plus tard.',
     categories: {
       connection: ['Connexion', ['Quelle petite chose que j’ai faite récemment t’a fait te sentir aimé(e) ou soutenu(e) ?', 'Quand te sens-tu le plus proche de moi ces derniers temps ?', 'Que pourrions-nous faire cette semaine pour nous sentir plus connectés ?', 'Quel souvenir de nous te fait encore sourire immédiatement ?', 'Quel type d’affection compte le plus pour toi en ce moment ?']],
@@ -46,6 +47,7 @@ const translations = {
   it: {
     title: 'Carte di Conversazione',
     subtitle: 'Le conversazioni migliori non richiedono sempre un grande momento. A volte basta una buona domanda.',
+    privacy: 'Le vostre risposte non vengono salvate né trasmesse da questo strumento.',
     choose: 'Scegli un tema di conversazione', next: 'Carta Successiva', tipTitle: 'Come usare le carte', tip: 'Rispondete a turno. Ascoltate senza interrompere, fate una domanda di approfondimento e non usate una risposta come arma in seguito.',
     categories: {
       connection: ['Connessione', ['Quale piccola cosa che ho fatto di recente ti ha fatto sentire amato/a?', 'Quando ti senti più vicino/a a me ultimamente?', 'Cosa potremmo fare questa settimana per sentirci più connessi?', 'Quale ricordo di noi ti fa ancora sorridere subito?', 'Quale tipo di affetto è più importante per te in questo momento?']],
@@ -58,6 +60,7 @@ const translations = {
   de: {
     title: 'Gesprächskarten',
     subtitle: 'Gute Gespräche brauchen nicht immer einen großen Anlass. Manchmal reicht eine gute Frage.',
+    privacy: 'Eure Antworten werden von diesem Werkzeug nicht gespeichert oder übertragen.',
     choose: 'Wählt einen Gesprächsschwerpunkt', next: 'Nächste Karte', tipTitle: 'So nutzt ihr die Karten', tip: 'Antwortet abwechselnd. Hört ohne Unterbrechung zu, stellt eine Nachfrage und verwendet eine Antwort später nicht als Waffe.',
     categories: {
       connection: ['Verbindung', ['Welche kleine Sache, die ich kürzlich getan habe, hat dir gezeigt, dass ich mich um dich kümmere?', 'Wann fühlst du dich mir in letzter Zeit am nächsten?', 'Was könnten wir diese Woche tun, um uns verbundener zu fühlen?', 'Welche Erinnerung an uns bringt dich sofort zum Lächeln?', 'Welche Art von Zuneigung bedeutet dir gerade am meisten?']],
@@ -76,10 +79,8 @@ export default function ConversationCards() {
   const t = translations[currentLanguage] || translations.en;
   const [category, setCategory] = useState('connection');
   const [cardIndex, setCardIndex] = useState(0);
-
   const categoryData = t.categories[category];
   const question = categoryData[1][cardIndex % categoryData[1].length];
-
   const nextCard = () => setCardIndex((current) => current + 1);
   const categoryButtons = useMemo(() => CATEGORY_KEYS.map((key) => ({ key, label: t.categories[key][0] })), [t]);
 
@@ -92,26 +93,17 @@ export default function ConversationCards() {
     <main className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-indigo-50 px-4 py-10 md:py-16">
       <div className="mx-auto max-w-4xl">
         <header className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700">
-            <MessageCircle className="h-7 w-7" aria-hidden="true" />
-          </div>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700"><MessageCircle className="h-7 w-7" aria-hidden="true" /></div>
           <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">{t.subtitle}</p>
+          <p className="mx-auto mt-3 max-w-2xl text-xs font-medium text-rose-800">{t.privacy}</p>
         </header>
 
         <section className="mt-9" aria-labelledby="conversation-focus-heading">
           <h2 id="conversation-focus-heading" className="text-center text-sm font-semibold uppercase tracking-wide text-slate-500">{t.choose}</h2>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             {categoryButtons.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => changeCategory(key)}
-                aria-pressed={category === key}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${category === key ? 'bg-rose-600 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-rose-50'}`}
-              >
-                {label}
-              </button>
+              <button key={key} type="button" onClick={() => changeCategory(key)} aria-pressed={category === key} className={`rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 ${category === key ? 'bg-rose-600 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-rose-50'}`}>{label}</button>
             ))}
           </div>
         </section>
@@ -119,19 +111,13 @@ export default function ConversationCards() {
         <section className="mx-auto mt-8 max-w-2xl rounded-3xl border border-rose-100 bg-white p-7 text-center shadow-lg md:p-10" aria-live="polite">
           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-rose-50 text-rose-600"><Heart className="h-5 w-5" aria-hidden="true" /></div>
           <p className="mt-6 text-xl font-semibold leading-8 text-slate-900 md:text-2xl">{question}</p>
-          <Button type="button" onClick={nextCard} className="mt-7 bg-rose-600 hover:bg-rose-700">
-            <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
-            {t.next}
-          </Button>
+          <Button type="button" onClick={nextCard} className="mt-7 bg-rose-600 hover:bg-rose-700"><RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />{t.next}</Button>
         </section>
 
         <aside className="mx-auto mt-8 max-w-2xl rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
           <div className="flex items-start gap-3">
             <Sparkles className="mt-0.5 h-5 w-5 flex-none text-indigo-700" aria-hidden="true" />
-            <div>
-              <h2 className="font-semibold text-indigo-950">{t.tipTitle}</h2>
-              <p className="mt-1 text-sm leading-6 text-indigo-900/80">{t.tip}</p>
-            </div>
+            <div><h2 className="font-semibold text-indigo-950">{t.tipTitle}</h2><p className="mt-1 text-sm leading-6 text-indigo-900/80">{t.tip}</p></div>
           </div>
         </aside>
       </div>
