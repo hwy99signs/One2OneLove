@@ -1,0 +1,57 @@
+name: O2OL Run Auth Log Sanitizer
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-run-auth-log-sanitizer.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sanitize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Remove AuthContext browser diagnostics
+        run: node scripts/sanitize-auth-logging.mjs
+      - name: Reject remaining account diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'console\.(log|warn|error|debug|info|trace)' src/contexts/AuthContext.jsx; then
+            echo 'AuthContext still contains browser diagnostics.'
+            exit 1
+          fi
+      - name: Verify O2OL security
+        run: node scripts/verify-o2ol-security.mjs
+      - name: Verify launch invariants
+        run: node scripts/verify-o2ol-launch.mjs
+      - name: Audit users-table usage
+        run: node scripts/audit-user-table-usage.mjs
+      - name: Lint AuthContext
+        run: npx eslint src/contexts/AuthContext.jsx --rule 'react/prop-types: off'
+      - name: Production build
+        run: npm run build
+      - name: Commit verified sanitation and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-run-auth-log-sanitizer.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/contexts/AuthContext.jsx .github/workflows/o2ol-run-auth-log-sanitizer.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Remove sensitive AuthContext browser diagnostics'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
