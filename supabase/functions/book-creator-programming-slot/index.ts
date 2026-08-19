@@ -10,6 +10,7 @@ const GLOBAL_ROOM = 'global-relationship-room'
 const FREE_DAILY_LIMIT = 2
 const MIN_DURATION_MS = 15 * 60 * 1000
 const MAX_DURATION_MS = 4 * 60 * 60 * 1000
+const CREATOR_PROGRAMMING_POLICY_VERSION = 'creator-programming-v1'
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -120,10 +121,12 @@ serve(async (request) => {
     const contentMode = clean(body?.content_mode, 20) === 'replay' ? 'replay' : 'live'
     const bookingTier = clean(body?.booking_tier, 20) || 'free'
     const replayUrl = contentMode === 'replay' ? cleanReplayUrl(body?.replay_url) : null
+    const policyAcknowledged = body?.policy_acknowledged === true
     const startsAt = new Date(body?.starts_at)
     const endsAt = new Date(body?.ends_at)
 
     if (!title) return json(request, { error: 'TITLE_REQUIRED' }, 400)
+    if (!policyAcknowledged) return json(request, { error: 'POLICY_ACK_REQUIRED' }, 400)
     if (roomSlug !== GLOBAL_ROOM) return json(request, { error: 'ROOM_NOT_AVAILABLE' }, 400)
     if (!validTimezone(timezone)) return json(request, { error: 'INVALID_TIMEZONE' }, 400)
     if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) return json(request, { error: 'INVALID_TIME' }, 400)
@@ -182,6 +185,8 @@ serve(async (request) => {
         booking_tier: 'free',
         price_cents: 0,
         payment_status: 'not_required',
+        policy_version: CREATOR_PROGRAMMING_POLICY_VERSION,
+        policy_acknowledged_at: new Date().toISOString(),
         status: 'booked',
       })
       .select('id,room_slug,title,description,starts_at,ends_at,creator_timezone,creator_local_date,content_mode,replay_url,booking_tier,price_cents,payment_status,status,created_at')
