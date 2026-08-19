@@ -49,3 +49,40 @@ export const reviewGlobalRoomSlot = async (slotId, decision) => {
     return { success: false, error: handleSupabaseError(error) };
   }
 };
+
+export const getGlobalRoomReplaySources = async () => {
+  try {
+    const { data, error } = await supabase.rpc('get_global_room_replay_sources');
+    if (error) throw error;
+    return { success: true, sources: Array.isArray(data) ? data : [] };
+  } catch (error) {
+    return { success: false, sources: [], error: handleSupabaseError(error) };
+  }
+};
+
+export const scheduleGlobalRoomReplay = async ({ sourceSlotId, scheduledStart, scheduledEnd, title }) => {
+  try {
+    const start = new Date(scheduledStart);
+    const end = new Date(scheduledEnd);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return { success: false, error: 'Choose a valid replay start and end time.' };
+    }
+
+    const { data, error } = await supabase.rpc('schedule_global_room_replay', {
+      p_source_slot_id: sourceSlotId,
+      p_scheduled_start: start.toISOString(),
+      p_scheduled_end: end.toISOString(),
+      p_title: title?.trim() || null,
+    });
+
+    if (error) {
+      if (error.code === '23P01') {
+        return { success: false, error: 'That programming time is no longer available.' };
+      }
+      throw error;
+    }
+    return { success: true, replay: data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error) };
+  }
+};
