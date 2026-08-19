@@ -49,6 +49,9 @@ jobs:
           test -f src/pages/MarriageMatters.jsx
           test -f src/components/home/MarriageMattersPromo.jsx
           test -f src/components/home/FeaturesGrid.jsx
+          test -f src/components/home/DiversitySection.jsx
+          test -f src/components/home/FeaturedPodcast.jsx
+          test -f src/components/home/Testimonials.jsx
           grep -q 'path="/SignIn"' src/pages/index.jsx
           grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
@@ -61,7 +64,7 @@ jobs:
           grep -q '<DailyQuestionPromo />' src/pages/Home.jsx
           grep -q '<MarriageMattersPromo />' src/pages/Home.jsx
 
-      - name: Verify new engagement five-language coverage
+      - name: Verify new engagement and homepage five-language coverage
         shell: bash
         run: |
           set -euo pipefail
@@ -70,7 +73,10 @@ jobs:
             src/components/home/DailyQuestionPromo.jsx \
             src/pages/MarriageMatters.jsx \
             src/components/home/MarriageMattersPromo.jsx \
-            src/components/home/FeaturesGrid.jsx; do
+            src/components/home/FeaturesGrid.jsx \
+            src/components/home/DiversitySection.jsx \
+            src/components/home/FeaturedPodcast.jsx \
+            src/components/home/Testimonials.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -110,6 +116,9 @@ jobs:
           src/components/home/DailyQuestionPromo.jsx
           src/components/home/MarriageMattersPromo.jsx
           src/components/home/FeaturesGrid.jsx
+          src/components/home/DiversitySection.jsx
+          src/components/home/FeaturedPodcast.jsx
+          src/components/home/Testimonials.jsx
           src/lib/globalRelationshipRoomService.js
           src/lib/globalRoomCancellationService.js
           src/lib/globalRoomModerationService.js
