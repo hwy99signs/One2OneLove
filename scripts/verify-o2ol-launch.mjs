@@ -18,23 +18,27 @@ const requireText = (content, text, label) => {
 };
 
 const activeLanguages = ['en', 'es', 'fr', 'it', 'de'];
-const multilingualFiles = [
-  'src/pages/ForgotPassword.jsx',
-  'src/pages/ResetPassword.jsx',
-  'src/pages/GlobalRelationshipRoom.jsx',
-  'src/pages/RoomCreatorAccess.jsx',
-  'src/pages/RoomModeration.jsx',
-  'src/pages/RoomReplayManager.jsx',
-  'src/pages/RoomProgramManager.jsx',
-  'src/pages/RoomOfficialScheduler.jsx',
-  'src/pages/RoomModerationAudit.jsx',
-  'src/components/global-room/ProgramReportButton.jsx',
+
+// Verify each launch-critical surface at the canonical file that owns its translations.
+// Some pages intentionally import a shared translation module rather than duplicating large
+// dictionaries in the component itself.
+const multilingualSources = [
+  ['ForgotPassword', 'src/pages/ForgotPassword.jsx'],
+  ['ResetPassword', 'src/pages/ResetPassword.jsx'],
+  ['GlobalRelationshipRoom', 'src/pages/GlobalRelationshipRoom.jsx'],
+  ['RoomCreatorAccess', 'src/lib/roomCreatorTranslations.js'],
+  ['RoomModeration', 'src/pages/RoomModeration.jsx'],
+  ['RoomReplayManager', 'src/pages/RoomReplayManager.jsx'],
+  ['RoomProgramManager', 'src/pages/RoomProgramManager.jsx'],
+  ['RoomOfficialScheduler', 'src/pages/RoomOfficialScheduler.jsx'],
+  ['RoomModerationAudit', 'src/pages/RoomModerationAudit.jsx'],
+  ['ProgramReportButton', 'src/components/global-room/ProgramReportButton.jsx'],
 ];
 
-for (const file of multilingualFiles) {
+for (const [surface, file] of multilingualSources) {
   const content = read(file);
   for (const language of activeLanguages) {
-    requireText(content, `${language}:`, `${language} translation in ${file}`);
+    requireText(content, `${language}:`, `${language} translation for ${surface} in ${file}`);
   }
 }
 
@@ -55,13 +59,16 @@ const resetPassword = read('src/pages/ResetPassword.jsx');
 requireText(resetPassword, "event === 'PASSWORD_RECOVERY'", 'PASSWORD_RECOVERY handling');
 requireText(resetPassword, 'updateUser({ password })', 'Supabase password update');
 
+const roomCreatorAccess = read('src/pages/RoomCreatorAccess.jsx');
+requireText(roomCreatorAccess, "getRoomCreatorTranslation", 'creator translation module usage');
+
 const roomService = read('src/lib/globalRelationshipRoomService.js');
 requireText(roomService, 'creator_display_name', 'safe public creator display name');
 
 const roomSql = read('supabase-global-relationship-room.sql');
 requireText(roomSql, 'relationship_room_no_active_overlap', 'room overlap protection');
 requireText(roomSql, 'pg_advisory_xact_lock', 'concurrency-safe daily creator limit');
-requireText(roomSql, 'moderation_status = \'unreviewed\'', 'creator moderation boundary');
+requireText(roomSql, "moderation_status = 'unreviewed'", 'creator moderation boundary');
 
 const moderationSql = read('supabase-global-room-moderation.sql');
 requireText(moderationSql, 'global_room_moderators', 'trusted moderator registry');
@@ -77,4 +84,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`O2OL launch verification passed (${multilingualFiles.length} multilingual surfaces, ${requiredRoutes.length} critical routes).`);
+console.log(`O2OL launch verification passed (${multilingualSources.length} multilingual surfaces, ${requiredRoutes.length} critical routes).`);
