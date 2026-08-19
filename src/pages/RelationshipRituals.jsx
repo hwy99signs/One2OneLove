@@ -80,7 +80,7 @@ const translations = {
       ['Bewusstes Wiedersehen', 'Täglich', 'Nutzt die ersten Minuten nach Arbeit oder Zeit getrennt, um euch zu verbinden, bevor Organisatorisches übernimmt.', ['Legt Handys und Aufgaben kurz beiseite.', 'Begrüßt euch bewusst.', 'Fragt zuerst nach dem Tag des anderen, bevor ihr Aufgaben besprecht.']],
       ['Konkrete Wertschätzung', '3× Wöchentlich', 'Nennt etwas Konkretes, das euch aufgefallen ist und das ihr geschätzt habt, statt nur allgemein „Danke“ zu sagen.', ['Nennt, was euer Partner getan hat.', 'Sagt, warum es euch wichtig war.', 'Bleibt konkret und aufrichtig.']],
       ['Wöchentliches Team-Gespräch', 'Wöchentlich', 'Nehmt euch 15 Minuten, um als Team auf die kommende Woche zu schauen.', ['Besprecht wichtige Termine und Verantwortlichkeiten.', 'Nennt einen Bereich, in dem einer von euch Unterstützung brauchen könnte.', 'Schützt einen kleinen Zeitraum für Verbindung.']],
-      ['Monatliches Wir-Gespräch', 'Monatlich', 'Führt ein längeres Gespräch darüber, wie sich eure Beziehung anfühlt—not nur darüber, was erledigt werden muss.', ['Nennt eine Sache, die sich diesen Monat gut angefühlt hat.', 'Nennt einen Bereich, der mehr Aufmerksamkeit verdient.', 'Wählt eine gemeinsame Absicht für den nächsten Monat.']],
+      ['Monatliches Wir-Gespräch', 'Monatlich', 'Führt ein längeres Gespräch darüber, wie sich eure Beziehung anfühlt – nicht nur darüber, was erledigt werden muss.', ['Nennt eine Sache, die sich diesen Monat gut angefühlt hat.', 'Nennt einen Bereich, der mehr Aufmerksamkeit verdient.', 'Wählt eine gemeinsame Absicht für den nächsten Monat.']],
     ],
     note: 'Diese Rituale sind pädagogische Beziehungsübungen und ersetzen keine Beratung oder Krisenhilfe.',
   },
