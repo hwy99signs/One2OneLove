@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CalendarDays, Clock3, Radio, RotateCcw, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/Layout';
+import ProgramReportButton from '@/components/global-room/ProgramReportButton';
 
 const translations = {
   en: {
@@ -71,6 +72,7 @@ function ProgramCard({ slot, t, language, compact = false, live = false }) {
           {slot.creator_display_name && <div className="mt-1 text-sm font-medium text-rose-700">{t.presentedBy} {slot.creator_display_name}</div>}
           {!compact && slot.description && <p className="mt-2 text-sm leading-6 text-slate-600">{slot.description}</p>}
           {slot.disclaimer_required && <p className="mt-2 text-xs leading-5 text-slate-500">{t.thirdParty}</p>}
+          {!compact && <div className="mt-3"><ProgramReportButton slotId={slot.id} /></div>}
         </div>
         <time dateTime={slot.scheduled_start} className="shrink-0 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700"><Clock3 aria-hidden="true" className="mr-1.5 inline h-4 w-4 text-rose-600" />{formatTime(slot.scheduled_start, language)}</time>
       </div>
