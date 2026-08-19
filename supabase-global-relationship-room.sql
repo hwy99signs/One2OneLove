@@ -48,6 +48,9 @@ create index if not exists idx_room_slots_owner
 create index if not exists idx_room_slots_status
   on public.relationship_room_slots (status, moderation_status);
 
+create index if not exists idx_room_slots_source_slot
+  on public.relationship_room_slots (source_slot_id);
+
 -- Prevent two active/pending programs from occupying the same room time.
 do $$
 begin
@@ -106,15 +109,20 @@ using (
   and moderation_status = 'approved'
 );
 
--- Signed-in viewers may also read the public schedule.
+-- Signed-in users get one SELECT policy covering both the public schedule and their own submissions.
 drop policy if exists "authenticated can view approved room schedule" on public.relationship_room_slots;
-create policy "authenticated can view approved room schedule"
+drop policy if exists "creators can view own room slots" on public.relationship_room_slots;
+drop policy if exists "authenticated room schedule access" on public.relationship_room_slots;
+create policy "authenticated room schedule access"
 on public.relationship_room_slots
 for select
 to authenticated
 using (
-  status in ('approved','scheduled','live','completed')
-  and moderation_status = 'approved'
+  (select auth.uid()) = owner_user_id
+  or (
+    status in ('approved','scheduled','live','completed')
+    and moderation_status = 'approved'
+  )
 );
 
 -- Creators may read their own profile.
@@ -147,14 +155,6 @@ for update
 to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
-
--- Creators may see their own slots, including pending/draft entries.
-drop policy if exists "creators can view own room slots" on public.relationship_room_slots;
-create policy "creators can view own room slots"
-on public.relationship_room_slots
-for select
-to authenticated
-using ((select auth.uid()) = owner_user_id);
 
 -- Creators may submit only their own normal creator slots. Administrative fields are omitted
 -- from the INSERT grant, so clients cannot self-approve, self-moderate, or bypass disclaimers.
