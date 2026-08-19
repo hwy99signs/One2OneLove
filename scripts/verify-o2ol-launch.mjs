@@ -103,9 +103,15 @@ requireText(publicRoom, 'hasError={scheduleUnavailable}', 'public schedule backe
 const scheduleViewer = read('src/components/global-room/RoomScheduleViewer.jsx');
 requireText(scheduleViewer, 'role="alert"', 'public schedule alert state');
 requireText(scheduleViewer, 'dateTime={slot.scheduled_start}', 'semantic public schedule time');
+requireText(scheduleViewer, '<ProgramReportButton slotId={slot.id}', 'viewer reporting wired into public schedule');
 
 const reportQueue = read('src/pages/RoomReportQueue.jsx');
 requireText(reportQueue, 't.reasons[report.reason]', 'localized viewer report reasons');
+
+const auditPage = read('src/pages/RoomModerationAudit.jsx');
+requireText(auditPage, 'report_reviewed', 'localized report review audit decision');
+requireText(auditPage, 'report_actioned', 'localized report action audit decision');
+requireText(auditPage, 'report_dismissed', 'localized report dismissal audit decision');
 
 const roomService = read('src/lib/globalRelationshipRoomService.js');
 requireText(roomService, 'creator_display_name', 'safe public creator display name');
@@ -114,6 +120,11 @@ const roomSql = read('supabase-global-relationship-room.sql');
 requireText(roomSql, 'relationship_room_no_active_overlap', 'room overlap protection');
 requireText(roomSql, 'pg_advisory_xact_lock', 'concurrency-safe daily creator limit');
 requireText(roomSql, "moderation_status = 'unreviewed'", 'creator moderation boundary');
+
+const creatorProfileLockSql = read('supabase-global-room-creator-profile-lock.sql');
+requireText(creatorProfileLockSql, 'creators can update own pending room profile', 'pending-only creator profile update policy');
+requireText(creatorProfileLockSql, "status = 'pending'", 'approved creator profile lock');
+requireText(creatorProfileLockSql, 'daily_slot_limit = 2', 'creator quota integrity on profile updates');
 
 const moderationSql = read('supabase-global-room-moderation.sql');
 requireText(moderationSql, 'global_room_moderators', 'trusted moderator registry');
