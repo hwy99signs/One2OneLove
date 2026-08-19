@@ -1,5 +1,6 @@
 name: O2OL Chat Diagnostics Cleanup
 
+# One-time guarded cleanup. This edit intentionally retriggers it from the latest branch head.
 on:
   push:
     branches:
@@ -89,6 +90,7 @@ jobs:
             /const safeAvatar = \(profile, userId\) => profile\?\.avatar_url \|\| `https:\/\/api\.dicebear\.com\/7\.x\/initials\/svg\?seed=\$\{encodeURIComponent\(profile\?\.name \|\| userId \|\| 'O2OL'\)\}`;/,
             "const safeAvatar = (profile) => profile?.avatar_url || '';"
           );
+          service = service.replaceAll('safeAvatar(profile, otherUserId)', 'safeAvatar(profile)');
           fs.writeFileSync(chatService, service);
 
       - name: Verify privacy cleanup
