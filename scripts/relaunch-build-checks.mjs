@@ -22,6 +22,7 @@ const checks = [
   ['relaunch profile multilingual runtime', 'scripts/relaunch-profile-i18n-check.mjs'],
   ['relaunch Privacy Center multilingual runtime', 'scripts/relaunch-privacy-center-i18n-check.mjs'],
   ['relaunch Help Center multilingual runtime', 'scripts/relaunch-help-center-i18n-check.mjs'],
+  ['relaunch membership multilingual runtime', 'scripts/relaunch-membership-i18n-check.mjs'],
   ['relaunch acquisition', 'scripts/relaunch-acquisition-check.mjs'],
   ['relaunch route safety', 'scripts/relaunch-route-safety-check.mjs'],
   ['relaunch homepage truthfulness', 'scripts/relaunch-home-truthfulness-check.mjs'],
