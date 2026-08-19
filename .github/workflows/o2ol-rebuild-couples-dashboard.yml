@@ -1,0 +1,94 @@
+name: O2OL Rebuild Couples Dashboard
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-rebuild-couples-dashboard.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Rebuild dashboard
+        shell: bash
+        run: |
+          cat > src/pages/CouplesDashboard.jsx <<'EOF'
+          import React from "react";
+          import { BookHeart, CalendarHeart, Heart, Loader2, NotebookPen, Sparkles, Target, Users } from "lucide-react";
+          import { Link } from "react-router-dom";
+          import { Button } from "@/components/ui/button";
+          import { useAuth } from "@/contexts/AuthContext";
+          import { useLanguage } from "@/Layout";
+
+          const translations = {
+            en: {
+              title: "Couples Dashboard", subtitle: "Your private starting point for the One2OneLove tools that help you plan, remember, reflect, communicate, and grow together.", signIn: "Sign in to open your couples dashboard.", signInButton: "Sign In", privacy: "This dashboard does not invent relationship scores or activity counts. Each card opens the real tool where its data is managed.",
+              items: [["Couple Profile", "Manage your own relationship details and privacy-safe mutual partner link.", "/CouplesProfile", "users"], ["Couples Calendar", "Plan dates, appointments, milestones, and shared time.", "/CouplesCalendar", "calendar"], ["Anniversary Tracker", "Keep your anniversary visible and plan an intentional celebration.", "/AnniversaryTracker", "heart"], ["Love Notes", "Send and receive private notes with your mutually linked partner.", "/LoveNotes", "love"], ["Shared Journals", "Write reflections and meaningful relationship moments.", "/SharedJournals", "journal"], ["Memory Lane", "Revisit the memories you have recorded along the way.", "/MemoryLane", "book"], ["Relationship Goals", "Create and track meaningful goals together.", "/RelationshipGoals", "target"], ["Relationship Milestones", "Record important milestones and get celebration ideas.", "/RelationshipMilestones", "sparkles"], ["Weekly Check-In", "Use a simple recurring conversation structure without storing your answers.", "/WeeklyCheckIn", "heart"]]
+            },
+            es: {
+              title: "Panel de Pareja", subtitle: "Tu punto de partida privado para las herramientas de One2OneLove que ayudan a planear, recordar, reflexionar, comunicarse y crecer juntos.", signIn: "Inicia sesión para abrir tu panel de pareja.", signInButton: "Iniciar Sesión", privacy: "Este panel no inventa puntuaciones de relación ni conteos de actividad. Cada tarjeta abre la herramienta real donde se administran sus datos.",
+              items: [["Perfil de Pareja", "Administra tus datos de relación y el vínculo mutuo de pareja protegido por privacidad.", "/CouplesProfile", "users"], ["Calendario de Pareja", "Planifiquen citas, compromisos, hitos y tiempo compartido.", "/CouplesCalendar", "calendar"], ["Seguimiento de Aniversario", "Mantén visible tu aniversario y planifica una celebración intencional.", "/AnniversaryTracker", "heart"], ["Notas de Amor", "Envía y recibe notas privadas con tu pareja vinculada mutuamente.", "/LoveNotes", "love"], ["Diarios Compartidos", "Escriban reflexiones y momentos significativos de la relación.", "/SharedJournals", "journal"], ["Carril de Recuerdos", "Vuelvan a los recuerdos registrados durante su camino.", "/MemoryLane", "book"], ["Metas de Relación", "Creen y sigan metas significativas juntos.", "/RelationshipGoals", "target"], ["Hitos de la Relación", "Registren hitos importantes y obtengan ideas de celebración.", "/RelationshipMilestones", "sparkles"], ["Revisión Semanal", "Usen una estructura sencilla de conversación sin guardar sus respuestas.", "/WeeklyCheckIn", "heart"]]
+            },
+            fr: {
+              title: "Tableau de Bord du Couple", subtitle: "Votre point de départ privé vers les outils One2OneLove pour planifier, vous souvenir, réfléchir, communiquer et grandir ensemble.", signIn: "Connectez-vous pour ouvrir votre tableau de bord de couple.", signInButton: "Se Connecter", privacy: "Ce tableau de bord n’invente ni scores relationnels ni compteurs d’activité. Chaque carte ouvre l’outil réel où ses données sont gérées.",
+              items: [["Profil de Couple", "Gérez vos informations relationnelles et le lien partenaire mutuel respectueux de la vie privée.", "/CouplesProfile", "users"], ["Calendrier du Couple", "Planifiez rendez-vous, engagements, jalons et temps partagé.", "/CouplesCalendar", "calendar"], ["Suivi d’Anniversaire", "Gardez votre anniversaire visible et planifiez une célébration intentionnelle.", "/AnniversaryTracker", "heart"], ["Notes d’Amour", "Envoyez et recevez des notes privées avec votre partenaire mutuellement lié.", "/LoveNotes", "love"], ["Journaux Partagés", "Écrivez des réflexions et des moments relationnels significatifs.", "/SharedJournals", "journal"], ["Allée des Souvenirs", "Revenez aux souvenirs enregistrés au fil de votre parcours.", "/MemoryLane", "book"], ["Objectifs de Relation", "Créez et suivez des objectifs significatifs ensemble.", "/RelationshipGoals", "target"], ["Jalons Relationnels", "Enregistrez les jalons importants et obtenez des idées de célébration.", "/RelationshipMilestones", "sparkles"], ["Bilan Hebdomadaire", "Utilisez une structure de conversation simple sans enregistrer vos réponses.", "/WeeklyCheckIn", "heart"]]
+            },
+            it: {
+              title: "Dashboard di Coppia", subtitle: "Il vostro punto di partenza privato per gli strumenti One2OneLove che aiutano a pianificare, ricordare, riflettere, comunicare e crescere insieme.", signIn: "Accedi per aprire la dashboard di coppia.", signInButton: "Accedi", privacy: "Questa dashboard non inventa punteggi di relazione o conteggi di attività. Ogni scheda apre lo strumento reale in cui vengono gestiti i dati.",
+              items: [["Profilo di Coppia", "Gestisci i tuoi dati di relazione e il collegamento reciproco del partner protetto dalla privacy.", "/CouplesProfile", "users"], ["Calendario di Coppia", "Pianificate appuntamenti, impegni, traguardi e tempo condiviso.", "/CouplesCalendar", "calendar"], ["Monitoraggio Anniversario", "Mantieni visibile l’anniversario e pianifica una celebrazione intenzionale.", "/AnniversaryTracker", "heart"], ["Note d’Amore", "Invia e ricevi note private con il partner collegato reciprocamente.", "/LoveNotes", "love"], ["Diari Condivisi", "Scrivete riflessioni e momenti significativi della relazione.", "/SharedJournals", "journal"], ["Viale dei Ricordi", "Rivisitate i ricordi registrati lungo il percorso.", "/MemoryLane", "book"], ["Obiettivi di Relazione", "Create e monitorate obiettivi significativi insieme.", "/RelationshipGoals", "target"], ["Traguardi della Relazione", "Registrate traguardi importanti e ottenete idee per celebrarli.", "/RelationshipMilestones", "sparkles"], ["Check-In Settimanale", "Usate una semplice struttura di conversazione senza salvare le risposte.", "/WeeklyCheckIn", "heart"]]
+            },
+            de: {
+              title: "Paar-Dashboard", subtitle: "Euer privater Ausgangspunkt für One2OneLove-Werkzeuge zum Planen, Erinnern, Reflektieren, Kommunizieren und gemeinsamen Wachsen.", signIn: "Meldet euch an, um euer Paar-Dashboard zu öffnen.", signInButton: "Anmelden", privacy: "Dieses Dashboard erfindet keine Beziehungswerte oder Aktivitätszahlen. Jede Karte öffnet das echte Werkzeug, in dem die jeweiligen Daten verwaltet werden.",
+              items: [["Paar-Profil", "Verwaltet eigene Beziehungsdetails und die datenschutzfreundliche gegenseitige Partnerverknüpfung.", "/CouplesProfile", "users"], ["Paar-Kalender", "Plant Dates, Termine, Meilensteine und gemeinsame Zeit.", "/CouplesCalendar", "calendar"], ["Jahrestags-Tracker", "Haltet euren Jahrestag sichtbar und plant eine bewusste Feier.", "/AnniversaryTracker", "heart"], ["Liebesbotschaften", "Sendet und empfangt private Nachrichten mit eurem gegenseitig verknüpften Partner.", "/LoveNotes", "love"], ["Gemeinsame Journale", "Schreibt Gedanken und bedeutungsvolle Beziehungsmomente fest.", "/SharedJournals", "journal"], ["Erinnerungsgasse", "Blickt auf Erinnerungen zurück, die ihr auf eurem Weg festgehalten habt.", "/MemoryLane", "book"], ["Beziehungsziele", "Setzt und verfolgt bedeutungsvolle gemeinsame Ziele.", "/RelationshipGoals", "target"], ["Beziehungsmeilensteine", "Haltet wichtige Meilensteine fest und erhaltet Feier-Ideen.", "/RelationshipMilestones", "sparkles"], ["Wöchentlicher Check-In", "Nutzt eine einfache Gesprächsstruktur, ohne Antworten zu speichern.", "/WeeklyCheckIn", "heart"]]
+            }
+          };
+
+          const iconMap = { users: Users, calendar: CalendarHeart, heart: Heart, love: BookHeart, journal: NotebookPen, book: BookHeart, target: Target, sparkles: Sparkles };
+
+          export default function CouplesDashboard() {
+            const { currentLanguage } = useLanguage();
+            const t = translations[currentLanguage] || translations.en;
+            const { user, isLoading } = useAuth();
+            if (isLoading) return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-rose-50 via-white to-indigo-50"><Loader2 className="h-7 w-7 animate-spin text-rose-600" aria-label={t.title} /></main>;
+            if (!user) return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-rose-50 via-white to-indigo-50 px-4"><div className="max-w-lg text-center"><Heart className="mx-auto h-14 w-14 text-rose-600" aria-hidden="true" /><h1 className="mt-4 text-3xl font-bold text-slate-900">{t.title}</h1><p className="mt-3 text-slate-600">{t.signIn}</p><Button asChild className="mt-6"><Link to="/SignIn">{t.signInButton}</Link></Button></div></main>;
+            return <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-indigo-50 px-4 py-10 md:py-16"><div className="mx-auto max-w-6xl"><header className="mx-auto max-w-3xl text-center"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-700"><Heart className="h-8 w-8" aria-hidden="true" /></div><h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-4 text-lg leading-7 text-slate-600">{t.subtitle}</p><p className="mt-3 text-xs font-medium leading-5 text-rose-800">{t.privacy}</p></header><section className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3" aria-label={t.title}>{t.items.map(([title, description, href, iconKey]) => { const Icon = iconMap[iconKey] || Heart; return <Link key={href} to={href} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"><Icon className="h-7 w-7 text-rose-600" aria-hidden="true" /><h2 className="mt-4 text-lg font-bold text-slate-900">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p></Link>; })}</section></div></main>;
+          }
+          EOF
+
+      - name: Verify dashboard integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/CouplesDashboard.jsx; done
+          for route in CouplesProfile CouplesCalendar AnniversaryTracker LoveNotes SharedJournals MemoryLane RelationshipGoals RelationshipMilestones WeeklyCheckIn; do grep -q "/${route}" src/pages/CouplesDashboard.jsx; grep -q "path=\"/${route}\"" src/pages/index.jsx; done
+          if grep -Eq 'supabase|fetch\(|activityProgress|completion_percentage|relationship_score|console\.' src/pages/CouplesDashboard.jsx; then exit 1; fi
+      - name: Lint dashboard
+        run: npx eslint src/pages/CouplesDashboard.jsx --rule 'react/prop-types: off'
+      - name: Production build
+        run: npm run build
+      - name: Commit verified rebuild and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-rebuild-couples-dashboard.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/CouplesDashboard.jsx .github/workflows/o2ol-rebuild-couples-dashboard.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Rebuild Couples Dashboard around real privacy-safe tools'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
