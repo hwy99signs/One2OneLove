@@ -35,8 +35,10 @@ jobs:
           node scripts/relaunch-live-community-check.mjs
           node scripts/relaunch-live-room-i18n-check.mjs
 
-      - name: Verify creator programming safeguards
-        run: node scripts/relaunch-creator-programming-check.mjs
+      - name: Verify programming safeguards
+        run: |
+          node scripts/relaunch-creator-programming-check.mjs
+          node scripts/relaunch-programming-reminder-check.mjs
 
       - name: Compile relaunch application
         run: npm run build
