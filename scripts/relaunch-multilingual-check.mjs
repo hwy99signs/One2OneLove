@@ -72,7 +72,7 @@ const assertActiveLanguageKeys = (source, file, keys) => {
     if (!match) continue;
 
     for (const key of keys) {
-      const keyPattern = new RegExp(`\\n\\s{4}${key}:`);
+      const keyPattern = new RegExp(`\\b${key}:\\s*`);
       if (!keyPattern.test(match[1])) failures.push(`${file}: ${language} is missing required translated UI key ${key}.`);
     }
   }
