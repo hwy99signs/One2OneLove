@@ -188,6 +188,15 @@ serve(async (request) => {
       .single()
 
     if (insertError) {
+      // Database constraints are the final authority under concurrent booking attempts.
+      // Preserve the same member-facing result when the advisory-lock trigger catches a
+      // third free booking after the earlier count check already passed.
+      if (
+        insertError.code === 'P0001'
+        && String(insertError.message || '').includes('CREATOR_DAILY_FREE_LIMIT_REACHED')
+      ) {
+        return json(request, { error: 'DAILY_FREE_LIMIT_REACHED' }, 409)
+      }
       if (insertError.code === '23P01' || insertError.code === '23505') {
         return json(request, { error: 'SLOT_CONFLICT' }, 409)
       }
