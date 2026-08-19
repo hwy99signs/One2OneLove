@@ -19,11 +19,21 @@ const COPY = {
   nl: { title: 'Leden Vinden', subtitle: 'Ontdek mensen in de One2OneLove-ledendirectory. Privéchat opent nadat een verbindingsverzoek is geaccepteerd.', search: 'Zoek naam of profiel…', loading: 'Leden laden…', none: 'Geen passende leden gevonden.', signIn: 'Log in om leden te ontdekken.', request: 'Verbinden', pending: 'Verzoek in Behandeling', cancel: 'Verzoek Annuleren', connected: 'Verbonden', chat: 'Privéchat', sent: 'Verbindingsverzoek verzonden.', cancelled: 'Verbindingsverzoek geannuleerd.', member: 'One2OneLove-lid', since: 'Lid sinds', back: 'Terug naar Community', privacy: 'Bij de herlancering is leden ontdekken beperkt tot weergavenaam, optionele profielfoto, korte bio en lid-sindsdatum. Account-e-mail, locatie, relatiestatus, partner- en factureringsgegevens blijven privé.' },
 };
 
+const FIND_I18N_EXTRAS = {
+  en: { locale: 'en-US', signInButton: 'Sign In', loadError: 'Unable to load members.', sendError: 'Unable to send connection request.', cancelError: 'Unable to cancel request.' },
+  es: { locale: 'es-ES', signInButton: 'Iniciar Sesión', loadError: 'No se pudieron cargar los miembros.', sendError: 'No se pudo enviar la solicitud de conexión.', cancelError: 'No se pudo cancelar la solicitud.' },
+  fr: { locale: 'fr-FR', signInButton: 'Se Connecter', loadError: 'Impossible de charger les membres.', sendError: 'Impossible d’envoyer la demande de connexion.', cancelError: 'Impossible d’annuler la demande.' },
+  it: { locale: 'it-IT', signInButton: 'Accedi', loadError: 'Impossibile caricare i membri.', sendError: 'Impossibile inviare la richiesta di connessione.', cancelError: 'Impossibile annullare la richiesta.' },
+  de: { locale: 'de-DE', signInButton: 'Anmelden', loadError: 'Mitglieder konnten nicht geladen werden.', sendError: 'Verbindungsanfrage konnte nicht gesendet werden.', cancelError: 'Anfrage konnte nicht abgebrochen werden.' },
+  nl: { locale: 'nl-NL', signInButton: 'Inloggen', loadError: 'Leden konden niet worden geladen.', sendError: 'Verbindingsverzoek kon niet worden verzonden.', cancelError: 'Verzoek kon niet worden geannuleerd.' },
+};
+
 export default function FindFriendsRelaunch() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const t = { ...COPY[language], ...(FIND_I18N_EXTRAS[language] || FIND_I18N_EXTRAS.en) };
   const [members, setMembers] = useState([]);
   const [pendingByMember, setPendingByMember] = useState(new Map());
   const [connectedIds, setConnectedIds] = useState(new Set());
@@ -48,7 +58,7 @@ export default function FindFriendsRelaunch() {
       setConnectedIds(new Set((buddies || []).map((buddy) => buddy.id)));
     } catch (error) {
       console.error('Unable to load member discovery:', error);
-      toast.error(error?.message || 'Unable to load members.');
+      toast.error(error?.message || t.loadError);
     } finally {
       setLoading(false);
     }
@@ -71,7 +81,7 @@ export default function FindFriendsRelaunch() {
       setPendingByMember((current) => new Map(current).set(memberId, request.id));
       toast.success(t.sent);
     } catch (error) {
-      toast.error(error?.message || 'Unable to send connection request.');
+      toast.error(error?.message || t.sendError);
     } finally {
       setBusyId(null);
     }
@@ -90,14 +100,14 @@ export default function FindFriendsRelaunch() {
       });
       toast.success(t.cancelled);
     } catch (error) {
-      toast.error(error?.message || 'Unable to cancel request.');
+      toast.error(error?.message || t.cancelError);
     } finally {
       setBusyId(null);
     }
   };
 
   if (!user?.id) {
-    return <div className="min-h-[70vh] bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-16"><Card className="mx-auto max-w-lg"><CardContent className="p-8 text-center"><Users className="mx-auto h-12 w-12 text-purple-500" /><p className="mt-4 font-semibold text-gray-700">{t.signIn}</p><Button className="mt-5" onClick={() => navigate('/SignIn?returnTo=%2FFindFriends')}>Sign In</Button></CardContent></Card></div>;
+    return <div className="min-h-[70vh] bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-16"><Card className="mx-auto max-w-lg"><CardContent className="p-8 text-center"><Users className="mx-auto h-12 w-12 text-purple-500" /><p className="mt-4 font-semibold text-gray-700">{t.signIn}</p><Button className="mt-5" onClick={() => navigate('/SignIn?returnTo=%2FFindFriends')}>{t.signInButton}</Button></CardContent></Card></div>;
   }
 
   return (
@@ -121,7 +131,7 @@ export default function FindFriendsRelaunch() {
                   <CardContent>
                     {member.bio ? <p className="line-clamp-3 min-h-12 text-sm leading-6 text-gray-600">{member.bio}</p> : <div className="min-h-12" />}
                     <div className="mt-4 space-y-2 text-sm text-gray-600">
-                      {member.created_at && <div className="flex items-center gap-2"><Users className="h-4 w-4" />{t.since} {new Date(member.created_at).toLocaleDateString()}</div>}
+                      {member.created_at && <div className="flex items-center gap-2"><Users className="h-4 w-4" />{t.since} {new Date(member.created_at).toLocaleDateString(t.locale)}</div>}
                     </div>
                     <div className="mt-5">
                       {connected ? <Button className="w-full" onClick={() => navigate(`/Chat?userId=${encodeURIComponent(member.id)}`)}><MessageCircle className="mr-2 h-4 w-4" />{t.chat}</Button> : pendingRequestId ? <Button variant="outline" disabled={busy} className="w-full" onClick={() => cancelRequest(member.id)}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}{t.cancel}</Button> : <Button disabled={busy} className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white" onClick={() => sendRequest(member.id)}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}{t.request}</Button>}
