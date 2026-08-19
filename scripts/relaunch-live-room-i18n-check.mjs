@@ -31,7 +31,10 @@ for (const language of ['en', 'es', 'fr', 'it', 'de']) {
     'programmingNext',
     'programmingLiveType',
     'programmingReplayType',
+    'programmingO2OL',
+    'programmingCreator',
     'manageProgramming',
+    'manageO2OLProgramming',
   ]) {
     if (!new RegExp(`\\b${key}:\\s*`).test(match[1])) failures.push(`${file}: ${language} is missing ${key}.`);
   }
@@ -48,13 +51,19 @@ for (const binding of [
   '{t.disclaimerText}',
   'CREATOR_PROGRAMMING_ENABLED && isAuthenticated',
   'getGlobalProgrammingStatus().catch(() => ({ enabled: false, current: null, next: null }))',
+  'getO2OLProgrammingAdminAccess().catch(() => ({ enabled: true, eligible: false }))',
   '<ProgrammingStatus status={programmingStatus} locale={locale} t={t} />',
-  'slot.content_mode === \'replay\' ? t.programmingReplayType : t.programmingLiveType',
+  "slot.program_source === 'o2ol' ? t.programmingO2OL : t.programmingCreator",
+  "slot.content_mode === 'replay' ? t.programmingReplayType : t.programmingLiveType",
   "room?.slug === 'global-relationship-room'",
   "user?.user_type === 'influencer'",
   'const canManageCreatorProgramming = Boolean(',
+  'const canManageO2OLProgramming = Boolean(',
+  'o2olAdminEligible',
   "navigate('/CreatorProgramming')",
+  "navigate('/O2OLProgrammingAdmin')",
   '{t.manageProgramming}',
+  '{t.manageO2OLProgramming}',
 ]) {
   if (!source.includes(binding)) failures.push(`${file}: missing localized Live Room runtime binding ${binding}.`);
 }
@@ -73,6 +82,23 @@ for (const required of [
   if (!creatorGuard.includes(required)) failures.push(`${file}: creator management guard is missing ${required}.`);
 }
 
+const o2olGuardStart = runtime.indexOf('const canManageO2OLProgramming = Boolean(');
+const o2olGuardEnd = runtime.indexOf(');', o2olGuardStart);
+const o2olGuard = o2olGuardStart >= 0 && o2olGuardEnd > o2olGuardStart
+  ? runtime.slice(o2olGuardStart, o2olGuardEnd)
+  : '';
+for (const required of [
+  "room?.slug === 'global-relationship-room'",
+  'CREATOR_PROGRAMMING_ENABLED',
+  'isAuthenticated',
+  'o2olAdminEligible',
+]) {
+  if (!o2olGuard.includes(required)) failures.push(`${file}: O2OL management guard is missing ${required}.`);
+}
+if (/user\?\.user_type/.test(o2olGuard)) {
+  failures.push(`${file}: O2OL staff management must depend on server allowlist access, not a profile user_type.`);
+}
+
 for (const forbidden of [
   'aria-label={`React ${emoji}`}',
   '>O2OL Host</span>',
@@ -83,6 +109,8 @@ for (const forbidden of [
   'replay_url',
   'price_cents',
   'payment_status',
+  'policy_version',
+  'policy_acknowledged_at',
 ]) {
   if (runtime.includes(forbidden)) failures.push(`${file}: forbidden raw/private runtime path remains (${forbidden}).`);
 }
@@ -97,4 +125,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Live Room host identity, reactions, disclaimer, now/next strip and approved-creator management entry follow EN/ES/FR/IT/DE without private programming fields.');
+console.log('✅ Live Room host identity, reactions, disclaimers, source-labeled now/next strip and separately guarded creator/O2OL management entries follow EN/ES/FR/IT/DE without private programming fields.');
