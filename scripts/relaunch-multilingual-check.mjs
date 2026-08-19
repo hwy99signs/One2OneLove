@@ -198,6 +198,16 @@ if (dateIdeasRuntime.includes('label={t.duration} value={idea.duration}')) {
   failures.push('DateIdeasRelaunchBrowse.jsx: do not display raw English-style duration metadata directly.');
 }
 
+const relationshipGoals = read('src/pages/RelationshipGoalsRelaunch.jsx');
+assertActiveLanguageKeys(relationshipGoals, 'RelationshipGoalsRelaunch.jsx', ['locale']);
+const relationshipGoalsRuntime = relationshipGoals.split('export default function RelationshipGoalsRelaunch()')[1] || '';
+if (!relationshipGoalsRuntime.includes('target.toLocaleDateString(t.locale)')) {
+  failures.push('RelationshipGoalsRelaunch.jsx: target dates must use the locale tied to the selected One2OneLove language.');
+}
+if (relationshipGoalsRuntime.includes('target.toLocaleDateString()')) {
+  failures.push('RelationshipGoalsRelaunch.jsx: do not rely on the browser default locale for goal target dates.');
+}
+
 if (failures.length) {
   console.error('\n⛔ One2OneLove multilingual relaunch check failed:');
   failures.forEach((failure) => console.error(` - ${failure}`));
@@ -205,4 +215,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Multilingual relaunch coverage passed for the five active languages (EN/ES/FR/IT/DE) across the core account, Love Notes, Date Ideas, member, Chat and relationship-tool journey.');
+console.log('✅ Multilingual relaunch coverage passed for the five active languages (EN/ES/FR/IT/DE) across the core account, Love Notes, Date Ideas, Relationship Goals, member, Chat and relationship-tool journey.');
