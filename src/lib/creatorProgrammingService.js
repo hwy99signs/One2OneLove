@@ -35,19 +35,12 @@ export const getCreatorProgrammingAccess = async () => {
 
 export const listPublishedProgramming = async ({ from, to, roomSlug = 'global-relationship-room' } = {}) => {
   requireEnabled();
-  let query = supabase
-    .from('creator_programming_slots')
-    .select('id,room_slug,title,description,starts_at,ends_at,content_mode,status')
-    .eq('room_slug', roomSlug)
-    .eq('status', 'booked')
-    .order('starts_at', { ascending: true });
-
-  if (from) query = query.gte('starts_at', from);
-  if (to) query = query.lt('starts_at', to);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
+  const { data, error } = await supabase.functions.invoke('list-creator-programming', {
+    body: { from, to, room_slug: roomSlug },
+  });
+  if (error) throw new Error(error?.message || 'Unable to load creator programming.');
+  if (!data?.success) throw new Error('Unable to load creator programming.');
+  return data.slots || [];
 };
 
 export const listMyProgramming = async ({ from, to } = {}) => {
@@ -102,6 +95,8 @@ export const bookCreatorProgrammingSlot = async ({
       DAILY_FREE_LIMIT_REACHED: 'You have already booked the two free creator slots allowed for this day.',
       SLOT_CONFLICT: 'That programming time is no longer available.',
       INVALID_TIME: 'Choose a valid future programming time.',
+      INVALID_TIMEZONE: 'Choose a valid timezone for this booking.',
+      REPLAY_URL_REQUIRED: 'Add a valid replay link for replay programming.',
       PAID_SLOTS_NOT_ENABLED: 'Paid creator slots are not enabled yet.',
       FEATURE_DISABLED: 'Creator programming is not enabled yet.',
     };
