@@ -33,12 +33,17 @@ rejectText(chat, ".from('users')", 'chat private-account reads');
 rejectText(chat, '.getPublicUrl(', 'public chat attachment URL creation');
 rejectText(chat, 'console.log', 'chat personal-data debug logging');
 
-for (const file of ['src/pages/FindFriends.jsx', 'src/pages/FriendRequests.jsx']) {
-  const content = read(file);
+const findFriends = read('src/pages/FindFriends.jsx');
+const friendRequests = read('src/pages/FriendRequests.jsx');
+for (const [file, content] of [['src/pages/FindFriends.jsx', findFriends], ['src/pages/FriendRequests.jsx', friendRequests]]) {
   for (const language of languages) requireText(content, `${language}:`, `${language} translation in ${file}`);
   rejectText(content, '.email', `member email rendering in ${file}`);
   rejectText(content, 'console.log', `personal-data debug logging in ${file}`);
+  rejectText(content, 'api.dicebear.com', `third-party generated member avatar in ${file}`);
 }
+requireText(findFriends, 'getMyBuddies', 'accepted-buddy filtering in member discovery');
+rejectText(findFriends, "createPageUrl('Chat')", 'direct-chat shortcut before accepted connection');
+rejectText(findFriends, 'MessageCircle', 'unsolicited direct-message control in member discovery');
 
 const directorySql = read('supabase-user-directory-security.sql');
 requireText(directorySql, 'user_directory_profiles', 'safe directory table');
@@ -53,6 +58,12 @@ const chatStorageSql = read('supabase-chat-file-security.sql');
 requireText(chatStorageSql, "values ('chat-files', 'chat-files', false)", 'private chat-files bucket');
 requireText(chatStorageSql, 'chat participants can read referenced attachments', 'participant-only attachment reads');
 requireText(chatStorageSql, 'users can upload own chat attachments', 'self-owned attachment upload');
+
+const chatGateSql = read('supabase-chat-connection-gate.sql');
+requireText(chatGateSql, "br.status = 'accepted'", 'accepted-buddy conversation gate');
+requireText(chatGateSql, 'lower(trim(u1.partner_email)) = lower(trim(u2.email))', 'reciprocal-partner conversation gate');
+requireText(chatGateSql, 'if v_conversation_id is not null then return v_conversation_id', 'legacy existing-conversation continuity');
+requireText(chatGateSql, 'revoke all on function public.get_or_create_conversation(uuid, uuid) from anon', 'anonymous chat RPC denial');
 
 if (failures.length) {
   console.error('\nO2OL social privacy verification failed:\n');
