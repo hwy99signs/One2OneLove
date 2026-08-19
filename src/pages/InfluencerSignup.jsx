@@ -1,192 +1,112 @@
+import React, { useState } from 'react';
+import { CheckCircle, Heart, Loader2, LockKeyhole, Mail, Phone, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/Layout';
+import InfluencerSignupForm from '../components/signup/InfluencerSignupForm';
+import ProfilePhotoUpload from '../components/signup/ProfilePhotoUpload';
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Heart, Loader2, CheckCircle, User, Mail, Phone, Check } from "lucide-react";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import InfluencerSignupForm from "../components/signup/InfluencerSignupForm";
-import ProfilePhotoUpload from "../components/signup/ProfilePhotoUpload";
+const translations = {
+  en: {
+    title: 'Join as an Influencer', subtitle: 'Apply to collaborate with One2OneLove as a content creator or social-media influencer.', basic: 'Account Information', first: 'First Name *', last: 'Last Name *', email: 'Email Address *', phone: 'Phone Number', optional: '(Optional)', password: 'Password *', confirmPassword: 'Confirm Password *', passwordHelp: 'Use at least 8 characters. You will use this password to sign in.', consentPrefix: 'I agree to the', terms: 'Terms of Service', and: 'and', privacy: 'Privacy Policy', submit: 'Submit Influencer Application', submitting: 'Submitting application…', successTitle: 'Application Submitted', successCopy: 'Your influencer application has been received and is pending review.', successEmail: 'If email confirmation is required for your account, check your inbox before signing in.', signIn: 'Go to Sign In', home: 'Back to Home', errors: { required: 'Complete all required account fields.', passwordLength: 'Password must be at least 8 characters.', passwordMatch: 'Passwords do not match.', platform: 'Provide at least one social-media platform link.', category: 'Provide at least one content category.', collaboration: 'Provide at least one collaboration type.', bio: 'Bio must be at least 100 characters.', consent: 'You must accept the Terms of Service and Privacy Policy.', upload: 'The photo could not be uploaded. You can add it later.', submit: 'We could not submit the application. Please review the form and try again.' } },
+  es: {
+    title: 'Únete como Influencer', subtitle: 'Solicita colaborar con One2OneLove como creador de contenido o influencer de redes sociales.', basic: 'Información de la Cuenta', first: 'Nombre *', last: 'Apellido *', email: 'Correo Electrónico *', phone: 'Número de Teléfono', optional: '(Opcional)', password: 'Contraseña *', confirmPassword: 'Confirmar Contraseña *', passwordHelp: 'Usa al menos 8 caracteres. Utilizarás esta contraseña para iniciar sesión.', consentPrefix: 'Acepto los', terms: 'Términos de Servicio', and: 'y la', privacy: 'Política de Privacidad', submit: 'Enviar Solicitud de Influencer', submitting: 'Enviando solicitud…', successTitle: 'Solicitud Enviada', successCopy: 'Hemos recibido tu solicitud de influencer y está pendiente de revisión.', successEmail: 'Si tu cuenta requiere confirmación de correo, revisa tu bandeja de entrada antes de iniciar sesión.', signIn: 'Ir a Iniciar Sesión', home: 'Volver al Inicio', errors: { required: 'Completa todos los campos obligatorios de la cuenta.', passwordLength: 'La contraseña debe tener al menos 8 caracteres.', passwordMatch: 'Las contraseñas no coinciden.', platform: 'Proporciona al menos un enlace de red social.', category: 'Proporciona al menos una categoría de contenido.', collaboration: 'Proporciona al menos un tipo de colaboración.', bio: 'La biografía debe tener al menos 100 caracteres.', consent: 'Debes aceptar los Términos de Servicio y la Política de Privacidad.', upload: 'No se pudo subir la foto. Puedes añadirla más tarde.', submit: 'No pudimos enviar la solicitud. Revisa el formulario e inténtalo de nuevo.' } },
+  fr: {
+    title: 'Rejoindre comme Influenceur', subtitle: 'Candidatez pour collaborer avec One2OneLove comme créateur de contenu ou influenceur sur les réseaux sociaux.', basic: 'Informations du Compte', first: 'Prénom *', last: 'Nom *', email: 'Adresse E-mail *', phone: 'Numéro de Téléphone', optional: '(Facultatif)', password: 'Mot de Passe *', confirmPassword: 'Confirmer le Mot de Passe *', passwordHelp: 'Utilisez au moins 8 caractères. Ce mot de passe servira à vous connecter.', consentPrefix: 'J’accepte les', terms: 'Conditions d’Utilisation', and: 'et la', privacy: 'Politique de Confidentialité', submit: 'Envoyer la Candidature Influenceur', submitting: 'Envoi de la candidature…', successTitle: 'Candidature Envoyée', successCopy: 'Votre candidature influenceur a été reçue et est en attente d’examen.', successEmail: 'Si une confirmation e-mail est requise pour votre compte, consultez votre boîte de réception avant de vous connecter.', signIn: 'Aller à la Connexion', home: 'Retour à l’Accueil', errors: { required: 'Complétez tous les champs obligatoires du compte.', passwordLength: 'Le mot de passe doit comporter au moins 8 caractères.', passwordMatch: 'Les mots de passe ne correspondent pas.', platform: 'Ajoutez au moins un lien vers un réseau social.', category: 'Ajoutez au moins une catégorie de contenu.', collaboration: 'Ajoutez au moins un type de collaboration.', bio: 'La bio doit comporter au moins 100 caractères.', consent: 'Vous devez accepter les Conditions d’Utilisation et la Politique de Confidentialité.', upload: 'La photo n’a pas pu être importée. Vous pourrez l’ajouter plus tard.', submit: 'Nous n’avons pas pu envoyer la candidature. Vérifiez le formulaire et réessayez.' } },
+  it: {
+    title: 'Unisciti come Influencer', subtitle: 'Candidati per collaborare con One2OneLove come creator o influencer sui social media.', basic: 'Informazioni Account', first: 'Nome *', last: 'Cognome *', email: 'Indirizzo Email *', phone: 'Numero di Telefono', optional: '(Facoltativo)', password: 'Password *', confirmPassword: 'Conferma Password *', passwordHelp: 'Usa almeno 8 caratteri. Utilizzerai questa password per accedere.', consentPrefix: 'Accetto i', terms: 'Termini di Servizio', and: 'e la', privacy: 'Informativa Privacy', submit: 'Invia Candidatura Influencer', submitting: 'Invio candidatura…', successTitle: 'Candidatura Inviata', successCopy: 'La tua candidatura influencer è stata ricevuta ed è in attesa di revisione.', successEmail: 'Se per il tuo account è richiesta la conferma email, controlla la posta prima di accedere.', signIn: 'Vai all’Accesso', home: 'Torna alla Home', errors: { required: 'Completa tutti i campi obbligatori dell’account.', passwordLength: 'La password deve contenere almeno 8 caratteri.', passwordMatch: 'Le password non coincidono.', platform: 'Inserisci almeno un link a un social media.', category: 'Inserisci almeno una categoria di contenuto.', collaboration: 'Inserisci almeno un tipo di collaborazione.', bio: 'La bio deve contenere almeno 100 caratteri.', consent: 'Devi accettare i Termini di Servizio e l’Informativa Privacy.', upload: 'Non è stato possibile caricare la foto. Potrai aggiungerla più tardi.', submit: 'Non è stato possibile inviare la candidatura. Controlla il modulo e riprova.' } },
+  de: {
+    title: 'Als Influencer Beitreten', subtitle: 'Bewirb dich für eine Zusammenarbeit mit One2OneLove als Content-Creator oder Social-Media-Influencer.', basic: 'Kontoinformationen', first: 'Vorname *', last: 'Nachname *', email: 'E-Mail-Adresse *', phone: 'Telefonnummer', optional: '(Optional)', password: 'Passwort *', confirmPassword: 'Passwort Bestätigen *', passwordHelp: 'Verwende mindestens 8 Zeichen. Mit diesem Passwort meldest du dich später an.', consentPrefix: 'Ich akzeptiere die', terms: 'Nutzungsbedingungen', and: 'und die', privacy: 'Datenschutzrichtlinie', submit: 'Influencer-Bewerbung Senden', submitting: 'Bewerbung wird gesendet…', successTitle: 'Bewerbung Gesendet', successCopy: 'Deine Influencer-Bewerbung wurde empfangen und wartet auf Prüfung.', successEmail: 'Falls für dein Konto eine E-Mail-Bestätigung erforderlich ist, prüfe dein Postfach vor der Anmeldung.', signIn: 'Zur Anmeldung', home: 'Zurück zur Startseite', errors: { required: 'Fülle alle erforderlichen Kontofelder aus.', passwordLength: 'Das Passwort muss mindestens 8 Zeichen lang sein.', passwordMatch: 'Die Passwörter stimmen nicht überein.', platform: 'Gib mindestens einen Social-Media-Link an.', category: 'Gib mindestens eine Inhaltskategorie an.', collaboration: 'Gib mindestens eine Kooperationsart an.', bio: 'Die Bio muss mindestens 100 Zeichen lang sein.', consent: 'Du musst die Nutzungsbedingungen und die Datenschutzrichtlinie akzeptieren.', upload: 'Das Foto konnte nicht hochgeladen werden. Du kannst es später hinzufügen.', submit: 'Die Bewerbung konnte nicht gesendet werden. Prüfe das Formular und versuche es erneut.' } },
+};
 
 export default function InfluencerSignup() {
-  // Basic info
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+  const { registerInfluencer } = useAuth();
 
-  // Photo upload
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
-  // Verification state
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
-  const [phoneVerificationSent, setPhoneVerificationSent] = useState(false);
-  const [emailVerificationCode, setEmailVerificationCode] = useState("");
-  const [phoneVerificationCode, setPhoneVerificationCode] = useState("");
-
-  // Influencer specific
   const [platformLinks, setPlatformLinks] = useState({});
-  const [followerCount, setFollowerCount] = useState("");
+  const [followerCount, setFollowerCount] = useState('');
   const [contentCategories, setContentCategories] = useState([]);
   const [collaborationTypes, setCollaborationTypes] = useState([]);
-  const [mediaKitUrl, setMediaKitUrl] = useState("");
-  const [influencerBio, setInfluencerBio] = useState("");
-
-  const [signupComplete, setSignupComplete] = useState(false);
+  const [mediaKitUrl, setMediaKitUrl] = useState('');
+  const [influencerBio, setInfluencerBio] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { registerInfluencer } = useAuth();
-  const navigate = useNavigate();
+  const [signupComplete, setSignupComplete] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  // Verification handlers
-  const handleSendEmailVerification = () => {
-    toast.success("Verification code sent to email!", {
-      description: "Use code: 123456"
-    });
-    setEmailVerificationSent(true);
-  };
-
-  const handleVerifyEmail = () => {
-    if (emailVerificationCode === "123456") {
-      setEmailVerified(true);
-      toast.success("Email verified successfully!");
-    } else {
-      toast.error("Invalid code. Please try again.");
-    }
-  };
-
-  const handleSendPhoneVerification = () => {
-    toast.success("Verification code sent via SMS!", {
-      description: "Use code: 123456"
-    });
-    setPhoneVerificationSent(true);
-  };
-
-  const handleVerifyPhone = () => {
-    if (phoneVerificationCode === "123456") {
-      setPhoneVerified(true);
-      toast.success("Phone verified successfully!");
-    } else {
-      toast.error("Invalid code. Please try again.");
-    }
-  };
-
-  // Upload photo to Supabase Storage
   const uploadPhoto = async (file) => {
     if (!file) return null;
-
     try {
-        setUploadingPhoto(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `influencer-profiles/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('influencer-photos')
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('influencer-photos')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-        } catch (error) {
-      console.error('Error uploading photo:', error);
-      toast.error("Failed to upload photo. You can add it later.");
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const filePath = `influencer-profiles/${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabase.storage.from('influencer-photos').upload(filePath, file, { upsert: false });
+      if (error) return null;
+      return supabase.storage.from('influencer-photos').getPublicUrl(filePath).data.publicUrl;
+    } catch {
       return null;
-        } finally {
-          setUploadingPhoto(false);
-        }
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const validate = () => {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) return t.errors.required;
+    if (password.length < 8) return t.errors.passwordLength;
+    if (password !== confirmPassword) return t.errors.passwordMatch;
+    if (!Object.values(platformLinks).some((link) => link?.trim())) return t.errors.platform;
+    if (contentCategories.length === 0) return t.errors.category;
+    if (collaborationTypes.length === 0) return t.errors.collaboration;
+    if (influencerBio.trim().length < 100) return t.errors.bio;
+    if (!acceptedTerms) return t.errors.consent;
+    return '';
+  };
 
-    // Validate verifications
-    if (!emailVerified || !phoneVerified) {
-      toast.error("Please verify your email and phone number");
-      return;
-    }
-
-    // Validate at least one platform link
-    const hasAtLeastOnePlatform = Object.values(platformLinks).some(link => link && link.trim() !== '');
-    if (!hasAtLeastOnePlatform) {
-      toast.error("Please provide at least one social media platform link");
-      return;
-    }
-
-    if (contentCategories.length === 0) {
-      toast.error("Please provide at least one content category");
-      return;
-    }
-
-    if (collaborationTypes.length === 0) {
-      toast.error("Please provide at least one collaboration type");
-      return;
-    }
-
-    // Validate bio length
-    if (!influencerBio || influencerBio.length < 100) {
-      toast.error("Bio must be at least 100 characters");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    const validationError = validate();
+    if (validationError) {
+      setFormError(validationError);
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Upload photo if provided
-      let photoUrl = null;
-      if (photoFile) {
-        photoUrl = await uploadPhoto(photoFile);
-      }
-
-      // Generate a temporary password (influencer will need to set their own via email)
-      // For now, we'll require them to set a password
-      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-
-      // Register influencer account
+      const photoUrl = await uploadPhoto(photoFile);
       const result = await registerInfluencer(
+        { email: email.trim(), password, firstName: firstName.trim(), lastName: lastName.trim() },
         {
-          email,
-          password: tempPassword, // In production, send password reset email instead
-          firstName,
-          lastName,
-        },
-        {
-          firstName,
-          lastName,
-          phone,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim() || null,
           totalFollowerCount: followerCount,
           platformLinks,
           contentCategories,
           collaborationTypes,
-          mediaKitUrl,
-      bio: influencerBio,
+          mediaKitUrl: mediaKitUrl.trim() || null,
+          bio: influencerBio.trim(),
           profilePhotoUrl: photoUrl,
-          emailVerified,
-          phoneVerified,
-        }
+          emailVerified: false,
+          phoneVerified: false,
+        },
       );
 
-      if (result.success) {
-        setSignupComplete(true);
-        toast.success("🎉 Influencer application submitted successfully!");
-        // Note: In production, you'd send a password setup email here
-      } else {
-        toast.error(result.error || "Failed to submit application. Please try again.");
+      if (!result?.success) {
+        setFormError(t.errors.submit);
+        return;
       }
-    } catch (error) {
-      console.error('Signup error:', error);
-      toast.error("Something went wrong. Please try again.");
+      setSignupComplete(true);
+    } catch {
+      setFormError(t.errors.submit);
     } finally {
       setIsLoading(false);
     }
@@ -194,256 +114,56 @@ export default function InfluencerSignup() {
 
   if (signupComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-12 text-center">
-          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-16 h-16 text-green-600" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
+        <div className="w-full max-w-2xl rounded-3xl bg-white p-8 text-center shadow-2xl md:p-12">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100"><CheckCircle className="h-12 w-12 text-green-600" aria-hidden="true" /></div>
+          <h1 className="mt-6 text-3xl font-bold text-gray-900 md:text-4xl">{t.successTitle}</h1>
+          <p className="mt-4 text-lg text-gray-600">{t.successCopy}</p>
+          <p className="mt-3 text-sm leading-6 text-gray-500">{t.successEmail}</p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button asChild><Link to="/SignIn">{t.signIn}</Link></Button>
+            <Button asChild variant="outline"><Link to="/">{t.home}</Link></Button>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Application Submitted! 🎉
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Thank you for your interest in partnering with One 2 One Love!
-          </p>
-          <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-6 mb-8">
-            <p className="text-gray-700 mb-4">
-              <strong>{firstName} {lastName}</strong>
-            </p>
-            <p className="text-gray-600 mb-2">
-              We've received your influencer application and our team will review it shortly.
-            </p>
-            <p className="text-gray-600">
-              You'll receive an email at <strong>{email}</strong> within 3-5 business days.
-            </p>
-          </div>
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-lg px-8 py-6 h-auto"
-            onClick={() => window.location.href = "/"}
-          >
-            <Heart className="w-5 h-5 mr-2 fill-current" />
-            Back to Home
-          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-4 shadow-xl">
-            <Heart className="w-8 h-8 text-white fill-white" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-            Join as an Influencer
-          </h1>
-          <p className="text-xl text-gray-600">
-            Partner with One 2 One Love and inspire couples worldwide
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-10 md:py-12">
+      <div className="mx-auto max-w-4xl">
+        <header className="mb-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 shadow-xl"><Heart className="h-8 w-8 fill-white text-white" aria-hidden="true" /></div>
+          <h1 className="mt-4 text-4xl font-bold text-gray-900 md:text-5xl">{t.title}</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-lg text-gray-600">{t.subtitle}</p>
+        </header>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-pink-200">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Basic Information</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name *
-                </label>
-                <div className="relative">
-                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="First name"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none"
-                    required
-                  />
-                </div>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+          {formError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</div>}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name *
-                </label>
-                <div className="relative">
-                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Last name"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none"
-                      required
-                      disabled={emailVerified}
-                    />
-                  </div>
-                  {!emailVerified && (
-                    <button
-                      type="button"
-                      onClick={handleSendEmailVerification}
-                      disabled={!email}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
-                    >
-                      Verify
-                    </button>
-                  )}
-                  {emailVerified && (
-                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg flex items-center text-sm">
-                      <Check size={16} className="mr-1" /> Verified
-                    </div>
-                  )}
-                </div>
-                {emailVerificationSent && !emailVerified && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 mb-2">Enter code (use: 123456)</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={emailVerificationCode}
-                        onChange={(e) => setEmailVerificationCode(e.target.value)}
-                        placeholder="123456"
-                        className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm"
-                        maxLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyEmail}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Phone size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 123-4567"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none"
-                      required
-                      disabled={phoneVerified}
-                    />
-                  </div>
-                  {!phoneVerified && (
-                    <button
-                      type="button"
-                      onClick={handleSendPhoneVerification}
-                      disabled={phone.length < 10}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
-                    >
-                      Verify
-                    </button>
-                  )}
-                  {phoneVerified && (
-                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg flex items-center text-sm">
-                      <Check size={16} className="mr-1" /> Verified
-                    </div>
-                  )}
-                </div>
-                {phoneVerificationSent && !phoneVerified && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 mb-2">Enter code (use: 123456)</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={phoneVerificationCode}
-                        onChange={(e) => setPhoneVerificationCode(e.target.value)}
-                        placeholder="123456"
-                        className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm"
-                        maxLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyPhone}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+          <section className="rounded-xl border-2 border-pink-200 bg-white p-6 shadow-lg" aria-labelledby="influencer-account-title">
+            <h2 id="influencer-account-title" className="mb-4 text-xl font-bold text-gray-800">{t.basic}</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm font-medium text-gray-700">{t.first}<div className="relative mt-2"><User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" /><input type="text" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-pink-400" required /></div></label>
+              <label className="block text-sm font-medium text-gray-700">{t.last}<div className="relative mt-2"><User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" /><input type="text" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-pink-400" required /></div></label>
+              <label className="block text-sm font-medium text-gray-700">{t.email}<div className="relative mt-2"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" /><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-pink-400" required /></div></label>
+              <label className="block text-sm font-medium text-gray-700">{t.phone} <span className="text-xs font-normal text-gray-400">{t.optional}</span><div className="relative mt-2"><Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" /><input type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-pink-400" /></div></label>
+              <label className="block text-sm font-medium text-gray-700">{t.password}<div className="relative mt-2"><LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" /><input type="password" autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-pink-400" required /></div><span className="mt-1 block text-xs font-normal text-gray-500">{t.passwordHelp}</span></label>
+              <label className="block text-sm font-medium text-gray-700">{t.confirmPassword}<div className="relative mt-2"><LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" /><input type="password" autoComplete="new-password" minLength={8} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-pink-400" required /></div></label>
             </div>
-          </div>
+          </section>
 
-          {/* Profile Photo Upload */}
-          <ProfilePhotoUpload
-            photoFile={photoFile}
-            setPhotoFile={setPhotoFile}
-            photoPreview={photoPreview}
-            setPhotoPreview={setPhotoPreview}
-          />
+          <ProfilePhotoUpload photoFile={photoFile} setPhotoFile={setPhotoFile} photoPreview={photoPreview} setPhotoPreview={setPhotoPreview} />
+          <InfluencerSignupForm platformLinks={platformLinks} setPlatformLinks={setPlatformLinks} followerCount={followerCount} setFollowerCount={setFollowerCount} contentCategories={contentCategories} setContentCategories={setContentCategories} collaborationTypes={collaborationTypes} setCollaborationTypes={setCollaborationTypes} mediaKitUrl={mediaKitUrl} setMediaKitUrl={setMediaKitUrl} influencerBio={influencerBio} setInfluencerBio={setInfluencerBio} />
 
-          {/* Influencer Information */}
-          <InfluencerSignupForm
-            platformLinks={platformLinks}
-            setPlatformLinks={setPlatformLinks}
-            followerCount={followerCount}
-            setFollowerCount={setFollowerCount}
-            contentCategories={contentCategories}
-            setContentCategories={setContentCategories}
-            collaborationTypes={collaborationTypes}
-            setCollaborationTypes={setCollaborationTypes}
-            mediaKitUrl={mediaKitUrl}
-            setMediaKitUrl={setMediaKitUrl}
-            influencerBio={influencerBio}
-            setInfluencerBio={setInfluencerBio}
-          />
+          <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700">
+            <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-1 h-4 w-4" required />
+            <span>{t.consentPrefix} <Link className="font-semibold text-pink-700 underline" to="/TermsOfService">{t.terms}</Link> {t.and} <Link className="font-semibold text-pink-700 underline" to="/PrivacyPolicy">{t.privacy}</Link>.</span>
+          </label>
 
-          <div className="flex justify-center">
-            <Button
-              type="submit"
-              disabled={isLoading || uploadingPhoto}
-              size="lg"
-              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-lg px-12 py-6 h-auto shadow-xl"
-            >
-              {isLoading || uploadingPhoto ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  {uploadingPhoto ? "Uploading Photo..." : "Submitting..."}
-                </>
-              ) : (
-                <>
-                  <Heart className="w-5 h-5 mr-2 fill-current" />
-                  Submit Application
-                </>
-              )}
-            </Button>
-          </div>
+          <Button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-base font-semibold text-white hover:from-pink-600 hover:to-purple-700">
+            {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />{t.submitting}</> : t.submit}
+          </Button>
         </form>
       </div>
     </div>
