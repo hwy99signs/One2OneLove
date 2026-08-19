@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Clock3, Globe2, Radio, ShieldCheck, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/Layout';
@@ -192,8 +193,8 @@ export default function GlobalRelationshipRoom() {
                 </CardHeader>
                 <CardContent>
                   <p className="leading-6 text-slate-600">{t.creatorCopy}</p>
-                  <Button className="mt-5 w-full" onClick={() => { window.location.href = '/InfluencerSignup'; }}>
-                    {t.creatorButton}
+                  <Button className="mt-5 w-full" asChild>
+                    <Link to="/RoomCreatorAccess">{t.creatorButton}</Link>
                   </Button>
                 </CardContent>
               </Card>
