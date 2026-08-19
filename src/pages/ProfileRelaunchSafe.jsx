@@ -46,6 +46,18 @@ const COPY = {
   },
 };
 
+// Small relaunch additions are kept separate so the existing professionally translated
+// profile copy stays untouched while new UI receives the same language treatment.
+const PROFILE_I18N_EXTRAS = {
+  en: { locale: 'en-US', profileSetup: 'Profile setup', memberFallback: 'Member', actions: { loveNotes: 'Love Notes' } },
+  es: { locale: 'es-ES', profileSetup: 'Configuración del perfil', memberFallback: 'Miembro', actions: { loveNotes: 'Notas de Amor' } },
+  fr: { locale: 'fr-FR', profileSetup: 'Configuration du profil', memberFallback: 'Membre', actions: { loveNotes: 'Mots d’Amour' } },
+  it: { locale: 'it-IT', profileSetup: 'Configurazione del profilo', memberFallback: 'Membro', actions: { loveNotes: 'Note d’Amore' } },
+  de: { locale: 'de-DE', profileSetup: 'Profileinrichtung', memberFallback: 'Mitglied', actions: { loveNotes: 'Liebesnotizen' } },
+  nl: { locale: 'nl-NL', profileSetup: 'Profielinstelling', memberFallback: 'Lid', actions: { loveNotes: 'Liefdesbriefjes' } },
+  pt: { locale: 'pt-BR', profileSetup: 'Configuração do perfil', memberFallback: 'Membro', actions: { loveNotes: 'Notas de Amor' } },
+};
+
 const TOOL_LINKS = [
   { key: 'loveNotes', path: '/LoveNotes', icon: Heart },
   { key: 'community', path: '/Community', icon: MessageCircle },
@@ -71,16 +83,19 @@ const formFromUser = (user) => ({
 });
 
 const display = (value, fallback) => value || fallback;
-const formatDate = (value, fallback) => {
+const formatDate = (value, fallback, locale) => {
   if (!value) return fallback;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return fallback;
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
 export default function ProfileRelaunchSafe() {
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const baseCopy = COPY[language];
+  const extras = PROFILE_I18N_EXTRAS[language] || PROFILE_I18N_EXTRAS.en;
+  const t = { ...baseCopy, ...extras, actions: { ...baseCopy.actions, ...extras.actions } };
   const { user, isAuthenticated, isLoading, refreshUserProfile } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -120,7 +135,7 @@ export default function ProfileRelaunchSafe() {
   }
 
   const canEdit = !user.user_type || user.user_type === 'regular';
-  const initials = String(user.name || 'M').trim().slice(0, 1).toUpperCase() || 'M';
+  const initials = String(user.name || t.memberFallback).trim().slice(0, 1).toUpperCase() || t.memberFallback.slice(0, 1).toUpperCase();
 
   const save = async () => {
     if (!canEdit || saving) return;
@@ -152,7 +167,7 @@ export default function ProfileRelaunchSafe() {
         <div className="flex flex-col gap-5 rounded-3xl border border-pink-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20 border-4 border-pink-100">
-              {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={user.name || 'Member'} /> : null}
+              {user.avatar_url ? <AvatarImage src={user.avatar_url} alt={user.name || t.memberFallback} /> : null}
               <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-2xl font-black text-white">{initials}</AvatarFallback>
             </Avatar>
             <div>
@@ -177,9 +192,9 @@ export default function ProfileRelaunchSafe() {
               <CardHeader><CardTitle>{t.account}</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <Field icon={Mail} label={t.email} value={display(user.email, t.notSet)} />
-                <Field icon={CalendarDays} label={t.memberSince} value={formatDate(user.created_at, t.notSet)} />
+                <Field icon={CalendarDays} label={t.memberSince} value={formatDate(user.created_at, t.notSet, t.locale)} />
                 <div className="rounded-2xl bg-purple-50 p-4">
-                  <div className="flex items-center justify-between"><span className="text-sm font-bold text-purple-900">Profile setup</span><span className="text-sm font-black text-purple-700">{setupPercent}%</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-bold text-purple-900">{t.profileSetup}</span><span className="text-sm font-black text-purple-700">{setupPercent}%</span></div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-purple-100"><div className="h-full rounded-full bg-purple-600" style={{ width: `${setupPercent}%` }} /></div>
                 </div>
               </CardContent>
@@ -229,7 +244,7 @@ export default function ProfileRelaunchSafe() {
                   </>
                 ) : (
                   <>
-                    <Field icon={CalendarDays} label={t.anniversary} value={formatDate(user.anniversary_date, t.notSet)} />
+                    <Field icon={CalendarDays} label={t.anniversary} value={formatDate(user.anniversary_date, t.notSet, t.locale)} />
                     <Field icon={UserRound} label={t.partnerName} value={display(user.partner_name, t.notSet)} />
                     <Field icon={Heart} label={t.loveLanguage} value={t.loveLanguages[user.love_language] || display(user.love_language, t.notSet)} />
                   </>
