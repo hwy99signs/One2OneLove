@@ -1,0 +1,146 @@
+name: O2OL Harden Persistent Shell
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-harden-layout-shell.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden-shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Patch persistent shell
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('src/pages/Layout.jsx')
+          s = p.read_text()
+
+          translation_replacements = {
+            'nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out" }':
+              'nav: { home: "Home", globalRoom: "Global Room", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", comingSoon: "Coming Soon" }',
+            'nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión" }':
+              'nav: { home: "Inicio", globalRoom: "Sala Global", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", comingSoon: "Próximamente" }',
+            'nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S\'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter" }':
+              'nav: { home: "Accueil", globalRoom: "Salle Mondiale", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S\'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", comingSoon: "Bientôt" }',
+            'nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci" }':
+              'nav: { home: "Home", globalRoom: "Sala Globale", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", comingSoon: "Prossimamente" }',
+            'nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden" }':
+              'nav: { home: "Startseite", globalRoom: "Globaler Raum", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", comingSoon: "Demnächst" }',
+          }
+          for old, new in translation_replacements.items():
+            if old not in s:
+              raise SystemExit(f'Expected nav translation anchor missing: {old[:70]}')
+            s = s.replace(old, new, 1)
+
+          action_translation_replacements = {
+            'actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support",':
+              'actionMenu: { sendLoveNote: "Send A Love Note", aiCoach: "AI Relationship Coach", coupleSupport: "Relationship Support",',
+            'actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones",':
+              'actionMenu: { sendLoveNote: "Enviar una Nota de Amor", aiCoach: "Coach de Relaciones con IA", coupleSupport: "Apoyo para Relaciones",',
+            'actionMenu: { sendLoveNote: "Envoyer une Note d\'Amour", coupleSupport: "Soutien aux Relations",':
+              'actionMenu: { sendLoveNote: "Envoyer une Note d\'Amour", aiCoach: "Coach Relationnel IA", coupleSupport: "Soutien aux Relations",',
+            'actionMenu: { sendLoveNote: "Invia una Nota d\'Amore", coupleSupport: "Supporto per Relazioni",':
+              'actionMenu: { sendLoveNote: "Invia una Nota d\'Amore", aiCoach: "Coach Relazionale IA", coupleSupport: "Supporto per Relazioni",',
+            'actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung",':
+              'actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", aiCoach: "KI-Beziehungscoach", coupleSupport: "Beziehungsunterstützung",',
+          }
+          for old, new in action_translation_replacements.items():
+            if old not in s:
+              raise SystemExit(f'Expected action translation anchor missing: {old[:70]}')
+            s = s.replace(old, new, 1)
+
+          if 'refetchInterval: 3000' not in s:
+            raise SystemExit('Expected 3-second conversation fallback polling anchor missing')
+          s = s.replace('refetchInterval: 3000', 'refetchInterval: 30000', 1)
+
+          if s.count('<span>AI Relationship Coach</span>') != 2:
+            raise SystemExit('Expected desktop + mobile AI Relationship Coach labels were not found')
+          s = s.replace('<span>AI Relationship Coach</span>', '<span>{t.actionMenu.aiCoach}</span>')
+
+          if s.count('Coming Soon') < 1:
+            raise SystemExit('Expected disabled-language Coming Soon label missing')
+          s = s.replace('Coming Soon', '{t.nav.comingSoon}', 1)
+
+          desktop_home = '''              <Link\n                to={createPageUrl("Home")}\n                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"\n              >\n                <Home className="w-4 h-4" />\n                {t.nav.home}\n              </Link>\n'''
+          desktop_room = desktop_home + '''\n              <Link\n                to={createPageUrl("GlobalRelationshipRoom")}\n                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"\n              >\n                <Users className="w-4 h-4" />\n                {t.nav.globalRoom}\n              </Link>\n'''
+          if desktop_home not in s:
+            raise SystemExit('Desktop Home nav anchor missing')
+          s = s.replace(desktop_home, desktop_room, 1)
+
+          mobile_home = '''                <Link\n                  to={createPageUrl("Home")}\n                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"\n                  onClick={() => setMobileMenuOpen(false)}\n                >\n                  <Home className="w-5 h-5" />\n                  {t.nav.home}\n                </Link>\n'''
+          mobile_room = mobile_home + '''\n                <Link\n                  to={createPageUrl("GlobalRelationshipRoom")}\n                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"\n                  onClick={() => setMobileMenuOpen(false)}\n                >\n                  <Users className="w-5 h-5" />\n                  {t.nav.globalRoom}\n                </Link>\n'''
+          if mobile_home not in s:
+            raise SystemExit('Mobile Home nav anchor missing')
+          s = s.replace(mobile_home, mobile_room, 1)
+
+          # Remove single-line browser diagnostics in the persistent shell.
+          s = re.sub(r'^\s*console\.(?:log|warn|error|debug|info|trace)\([^\n;]*\);\s*\n', '', s, flags=re.MULTILINE)
+          # Catch parameters used only by removed diagnostics should not create lint debt.
+          s = s.replace('catch (storageError) {', 'catch {')
+          s = s.replace('catch (logoutError) {', 'catch {')
+          s = s.replace('catch (error) {\n      // Still redirect', 'catch {\n      // Still redirect')
+
+          p.write_text(s)
+
+      - name: Verify shell invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/Layout.jsx; done
+          grep -q 'globalRoom:' src/pages/Layout.jsx
+          test "$(grep -c 'createPageUrl("GlobalRelationshipRoom")' src/pages/Layout.jsx)" -ge 2
+          test "$(grep -c 't.actionMenu.aiCoach' src/pages/Layout.jsx)" -eq 2
+          grep -q 't.nav.comingSoon' src/pages/Layout.jsx
+          grep -q 'refetchInterval: 30000' src/pages/Layout.jsx
+          ! grep -q 'refetchInterval: 3000,' src/pages/Layout.jsx
+          ! grep -Eq 'console\.(log|warn|error|debug|info|trace)' src/pages/Layout.jsx
+          grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
+
+      - name: Verify launch and security source
+        run: |
+          node scripts/verify-o2ol-launch.mjs
+          node scripts/verify-o2ol-security.mjs
+
+      - name: Lint persistent shell
+        run: >-
+          npx eslint src/pages/Layout.jsx
+          --rule 'react/prop-types: off'
+          --rule 'no-unused-vars: ["error", {"varsIgnorePattern":"^(React|currentPageName|location)$"}]'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified shell hardening and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-harden-layout-shell.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/Layout.jsx .github/workflows/o2ol-harden-layout-shell.yml
+          git commit -m 'Harden persistent navigation and Global Room discovery'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
