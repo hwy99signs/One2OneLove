@@ -19,13 +19,31 @@ const COPY = {
   pt: { title: 'Privacidade e Controles da Conta', subtitle: 'Veja os limites de privacidade e gerencie solicitações da conta.', signIn: 'Entre para gerenciar solicitações de privacidade.', signInButton: 'Entrar', discovery: 'Descoberta de membros', discoveryText: 'No diretório do relançamento, outros membros conectados podem ver apenas seu nome de exibição, imagem opcional, bio curta e data de entrada.', private: 'Privado da conta', privateText: 'E-mail da conta, localização, status do relacionamento, aniversário, dados do parceiro, Linguagem do Amor, Chat privado, Love Notes e cobrança não fazem parte do diretório.', exportTitle: 'Solicitar uma cópia dos meus dados', exportText: 'Cria uma solicitação privada de exportação. Nada é gerado ou enviado até o processo revisado ser ativado.', exportButton: 'Solicitar Exportação', deleteTitle: 'Solicitar exclusão da conta', deleteText: 'Cria apenas uma solicitação. A conta e os dados não são excluídos imediatamente.', deleteConfirm: 'Digite DELETE para confirmar a solicitação de exclusão.', deleteButton: 'Solicitar Exclusão', staged: 'O recebimento de solicitações está preparado, mas não ativo neste ambiente. Nenhuma solicitação é enviada enquanto estiver desativado.', history: 'Minhas solicitações', none: 'Nenhuma solicitação registrada neste ambiente.', submitted: 'Solicitação enviada.', existing: 'Já existe uma solicitação desse tipo pendente ou em análise.' },
 };
 
-const typeLabel = (type) => type === 'account_deletion' ? 'Account deletion' : 'Data export';
+const PRIVACY_I18N_EXTRAS = {
+  en: { locale: 'en-US', loveNotesName: 'Love Notes', loading: 'Loading…', loadError: 'Unable to load privacy requests.', submitError: 'Unable to submit privacy request.', requestTypes: { account_deletion: 'Account deletion', data_export: 'Data export' }, statuses: { submitted: 'Submitted', in_review: 'In review', completed: 'Completed', declined: 'Declined', canceled: 'Canceled' } },
+  es: { locale: 'es-ES', loveNotesName: 'Notas de Amor', loading: 'Cargando…', loadError: 'No se pudieron cargar las solicitudes de privacidad.', submitError: 'No se pudo enviar la solicitud de privacidad.', requestTypes: { account_deletion: 'Eliminación de cuenta', data_export: 'Exportación de datos' }, statuses: { submitted: 'Enviada', in_review: 'En revisión', completed: 'Completada', declined: 'Rechazada', canceled: 'Cancelada' } },
+  fr: { locale: 'fr-FR', loveNotesName: 'Mots d’Amour', loading: 'Chargement…', loadError: 'Impossible de charger les demandes de confidentialité.', submitError: 'Impossible d’envoyer la demande de confidentialité.', requestTypes: { account_deletion: 'Suppression du compte', data_export: 'Export des données' }, statuses: { submitted: 'Envoyée', in_review: 'En cours de revue', completed: 'Terminée', declined: 'Refusée', canceled: 'Annulée' } },
+  it: { locale: 'it-IT', loveNotesName: 'Note d’Amore', loading: 'Caricamento…', loadError: 'Impossibile caricare le richieste privacy.', submitError: 'Impossibile inviare la richiesta privacy.', requestTypes: { account_deletion: 'Eliminazione account', data_export: 'Esportazione dati' }, statuses: { submitted: 'Inviata', in_review: 'In revisione', completed: 'Completata', declined: 'Rifiutata', canceled: 'Annullata' } },
+  de: { locale: 'de-DE', loveNotesName: 'Liebesnotizen', loading: 'Wird geladen…', loadError: 'Datenschutzanfragen konnten nicht geladen werden.', submitError: 'Datenschutzanfrage konnte nicht gesendet werden.', requestTypes: { account_deletion: 'Kontolöschung', data_export: 'Datenexport' }, statuses: { submitted: 'Eingereicht', in_review: 'In Prüfung', completed: 'Abgeschlossen', declined: 'Abgelehnt', canceled: 'Storniert' } },
+  nl: { locale: 'nl-NL', loveNotesName: 'Liefdesbriefjes', loading: 'Laden…', loadError: 'Privacyverzoeken konden niet worden geladen.', submitError: 'Privacyverzoek kon niet worden ingediend.', requestTypes: { account_deletion: 'Accountverwijdering', data_export: 'Gegevensexport' }, statuses: { submitted: 'Ingediend', in_review: 'In beoordeling', completed: 'Voltooid', declined: 'Afgewezen', canceled: 'Geannuleerd' } },
+  pt: { locale: 'pt-BR', loveNotesName: 'Notas de Amor', loading: 'Carregando…', loadError: 'Não foi possível carregar as solicitações de privacidade.', submitError: 'Não foi possível enviar a solicitação de privacidade.', requestTypes: { account_deletion: 'Exclusão da conta', data_export: 'Exportação de dados' }, statuses: { submitted: 'Enviada', in_review: 'Em análise', completed: 'Concluída', declined: 'Recusada', canceled: 'Cancelada' } },
+};
+
+const requestTypeLabel = (type, t) => t.requestTypes[type] || type;
+const requestStatusLabel = (status, t) => t.statuses[status] || status;
 
 export default function PrivacyCenter() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { currentLanguage } = useLanguage();
-  const t = COPY[currentLanguage] || COPY.en;
+  const language = COPY[currentLanguage] ? currentLanguage : 'en';
+  const baseCopy = COPY[language];
+  const extras = PRIVACY_I18N_EXTRAS[language] || PRIVACY_I18N_EXTRAS.en;
+  const t = {
+    ...baseCopy,
+    ...extras,
+    privateText: baseCopy.privateText.replace('Love Notes', extras.loveNotesName),
+  };
   const enabled = privacyRequestsEnabled();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,11 +54,11 @@ export default function PrivacyCenter() {
     if (!isAuthenticated || !enabled) return;
     setLoading(true);
     try { setRequests(await listPrivacyRequests()); }
-    catch (error) { toast.error(error?.message || 'Unable to load privacy requests.'); }
+    catch (error) { toast.error(error?.message || t.loadError); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { void load(); }, [isAuthenticated, enabled, user?.id]);
+  useEffect(() => { void load(); }, [isAuthenticated, enabled, user?.id, currentLanguage]);
 
   const submit = async (type) => {
     if (!enabled || busy) return;
@@ -54,7 +72,7 @@ export default function PrivacyCenter() {
       await load();
       return result;
     } catch (error) {
-      toast.error(error?.message || 'Unable to submit privacy request.');
+      toast.error(error?.message || t.submitError);
     } finally { setBusy(''); }
   };
 
@@ -78,7 +96,7 @@ export default function PrivacyCenter() {
           <Card className="border-red-200"><CardHeader><CardTitle className="flex items-center gap-2 text-red-900"><Trash2 className="h-5 w-5" />{t.deleteTitle}</CardTitle></CardHeader><CardContent><p className="text-sm leading-6 text-gray-600">{t.deleteText}</p><label className="mt-4 block text-sm font-semibold text-gray-700">{t.deleteConfirm}<Input className="mt-2" value={deleteConfirm} onChange={(event) => setDeleteConfirm(event.target.value.slice(0, 10))} autoComplete="off" /></label><Button variant="destructive" className="mt-5" disabled={!enabled || Boolean(busy) || deleteConfirm.trim().toUpperCase() !== 'DELETE'} onClick={() => void submit('account_deletion')}>{busy === 'account_deletion' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}{t.deleteButton}</Button></CardContent></Card>
         </div>
 
-        <Card className="mt-8"><CardHeader><CardTitle>{t.history}</CardTitle></CardHeader><CardContent>{loading ? <div className="flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" />Loading…</div> : !requests.length ? <p className="text-sm text-gray-500">{t.none}</p> : <div className="space-y-3">{requests.map((item) => <div key={item.id} className="flex flex-col justify-between gap-2 rounded-xl border border-gray-200 p-4 sm:flex-row sm:items-center"><div><p className="font-bold text-gray-900">{typeLabel(item.request_type)}</p><p className="text-xs text-gray-500">{new Date(item.created_at).toLocaleString()}</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">{item.status}</span></div>)}</div>}</CardContent></Card>
+        <Card className="mt-8"><CardHeader><CardTitle>{t.history}</CardTitle></CardHeader><CardContent>{loading ? <div className="flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" />{t.loading}</div> : !requests.length ? <p className="text-sm text-gray-500">{t.none}</p> : <div className="space-y-3">{requests.map((item) => <div key={item.id} className="flex flex-col justify-between gap-2 rounded-xl border border-gray-200 p-4 sm:flex-row sm:items-center"><div><p className="font-bold text-gray-900">{requestTypeLabel(item.request_type, t)}</p><p className="text-xs text-gray-500">{new Date(item.created_at).toLocaleString(t.locale)}</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">{requestStatusLabel(item.status, t)}</span></div>)}</div>}</CardContent></Card>
       </div>
     </main>
   );
