@@ -6,6 +6,7 @@ import HeroSection from "../components/home/HeroSection";
 import DiversitySection from "../components/home/DiversitySection";
 import FeaturedPodcast from "../components/home/FeaturedPodcast";
 import GlobalRoomPromo from "../components/home/GlobalRoomPromo";
+import DailyQuestionPromo from "../components/home/DailyQuestionPromo";
 import FeaturesGrid from "../components/home/FeaturesGrid";
 import Testimonials from "../components/home/Testimonials";
 import Footer from "../components/home/Footer";
@@ -71,6 +72,7 @@ export default function Home() {
       <DiversitySection />
       <FeaturedPodcast />
       <GlobalRoomPromo />
+      <DailyQuestionPromo />
       <FeaturesGrid />
       <Testimonials />
       <Footer />
