@@ -34,16 +34,17 @@ export default function GlobalRelationshipRoom() {
   });
 
   const slots = data?.success ? data.slots : [];
+  const scheduleUnavailable = !isLoading && Boolean(data) && !data.success;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-blue-50">
-      <section className="px-4 py-12 md:py-16">
+      <section className="px-4 py-12 md:py-16" aria-labelledby="global-room-title">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-3xl border border-rose-100 bg-white/90 p-6 shadow-sm md:p-10">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="max-w-3xl">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-sm font-medium text-rose-700"><Radio className="h-4 w-4" /> O2OL</div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-sm font-medium text-rose-700"><Radio aria-hidden="true" className="h-4 w-4" /> O2OL</div>
+                <h1 id="global-room-title" className="text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
                 <p className="mt-3 text-xl font-semibold text-rose-700">{t.tagline}</p>
                 <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">{t.intro}</p>
               </div>
@@ -53,10 +54,10 @@ export default function GlobalRelationshipRoom() {
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[['clock', t.twentyFour], ['voices', t.voices], ['shield', t.moderated], ['replay', t.replay]].map(([key, label]) => (
                 <div key={key} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-                  {key === 'clock' && <Clock3 className="h-4 w-4 text-rose-600" />}
-                  {key === 'voices' && <Users className="h-4 w-4 text-rose-600" />}
-                  {key === 'shield' && <ShieldCheck className="h-4 w-4 text-rose-600" />}
-                  {key === 'replay' && <Radio className="h-4 w-4 text-rose-600" />}
+                  {key === 'clock' && <Clock3 aria-hidden="true" className="h-4 w-4 text-rose-600" />}
+                  {key === 'voices' && <Users aria-hidden="true" className="h-4 w-4 text-rose-600" />}
+                  {key === 'shield' && <ShieldCheck aria-hidden="true" className="h-4 w-4 text-rose-600" />}
+                  {key === 'replay' && <Radio aria-hidden="true" className="h-4 w-4 text-rose-600" />}
                   {label}
                 </div>
               ))}
@@ -64,13 +65,13 @@ export default function GlobalRelationshipRoom() {
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.6fr_0.8fr]">
-            <RoomScheduleViewer slots={slots} isLoading={isLoading} />
+            <RoomScheduleViewer slots={slots} isLoading={isLoading} hasError={scheduleUnavailable} />
             <div className="space-y-6">
               <Card className="rounded-3xl border-rose-100 bg-rose-50/60">
                 <CardHeader><CardTitle>{t.creatorTitle}</CardTitle></CardHeader>
                 <CardContent><p className="leading-6 text-slate-600">{t.creatorCopy}</p><Button className="mt-5 w-full" asChild><Link to="/RoomCreatorAccess">{t.creatorButton}</Link></Button></CardContent>
               </Card>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><div className="mb-1 flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4" /> {t.disclaimerTitle}</div>{t.disclaimer}</div>
+              <aside className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900" aria-label={t.disclaimerTitle}><div className="mb-1 flex items-center gap-2 font-semibold"><ShieldCheck aria-hidden="true" className="h-4 w-4" /> {t.disclaimerTitle}</div>{t.disclaimer}</aside>
             </div>
           </div>
         </div>
