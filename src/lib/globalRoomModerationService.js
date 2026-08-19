@@ -86,3 +86,26 @@ export const scheduleGlobalRoomReplay = async ({ sourceSlotId, scheduledStart, s
     return { success: false, error: handleSupabaseError(error) };
   }
 };
+
+export const getGlobalRoomActivePrograms = async () => {
+  try {
+    const { data, error } = await supabase.rpc('get_global_room_active_programs');
+    if (error) throw error;
+    return { success: true, programs: Array.isArray(data) ? data : [] };
+  } catch (error) {
+    return { success: false, programs: [], error: handleSupabaseError(error) };
+  }
+};
+
+export const removeGlobalRoomProgram = async (slotId, reason) => {
+  try {
+    const { data, error } = await supabase.rpc('remove_global_room_program', {
+      p_slot_id: slotId,
+      p_reason: reason?.trim() || null,
+    });
+    if (error) throw error;
+    return { success: true, program: data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error) };
+  }
+};
