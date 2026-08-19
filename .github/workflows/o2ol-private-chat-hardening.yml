@@ -1,0 +1,58 @@
+name: O2OL Private Chat Hardening
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - scripts/templates/chatService.private-attachments.js
+      - .github/workflows/o2ol-private-chat-hardening.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stage private-attachment chat service
+        run: cp scripts/templates/chatService.private-attachments.js src/lib/chatService.js
+
+      - name: Verify social privacy invariants
+        run: node scripts/verify-o2ol-social-privacy.mjs
+
+      - name: Lint hardened chat service
+        run: npx eslint src/lib/chatService.js --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit only after verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/lib/chatService.js; then
+            echo 'Chat service already matches the verified private-attachment template.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/lib/chatService.js
+          git commit -m 'Serve private chat attachments with signed URLs'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
