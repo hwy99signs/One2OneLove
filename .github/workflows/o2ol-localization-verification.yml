@@ -41,7 +41,8 @@ jobs:
             src/pages/CouplesCalendar.jsx \
             src/components/calendar/CalendarEventForm.jsx \
             src/components/calendar/CalendarEventCard.jsx \
-            src/components/calendar/CalendarGrid.jsx; do
+            src/components/calendar/CalendarGrid.jsx \
+            src/pages/CouplesProfile.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -56,6 +57,10 @@ jobs:
           grep -q 'Object.entries(t.patterns)' src/components/calendar/CalendarEventForm.jsx
           grep -q 'Intl.DateTimeFormat' src/components/calendar/CalendarEventCard.jsx
           grep -q 'Intl.DateTimeFormat' src/components/calendar/CalendarGrid.jsx
+          grep -q 'getMutualPartnerDirectoryProfile' src/pages/CouplesProfile.jsx
+          grep -q 'Intl.DateTimeFormat' src/pages/CouplesProfile.jsx
+          grep -q 'Object.entries(t.statuses)' src/pages/CouplesProfile.jsx
+          grep -q 'Object.entries(t.loveLanguages)' src/pages/CouplesProfile.jsx
 
       - name: Reject misleading, hard-coded, or privacy-leaking controls
         shell: bash
@@ -73,8 +78,12 @@ jobs:
             echo 'Calendar surfaces must not log event or user data to the browser console.'
             exit 1
           fi
-          if grep -Eq '"Daily"|"Weekly"|"Monthly"|"Yearly"' src/components/calendar/CalendarEventForm.jsx | grep -q '\|\|'; then
-            echo 'Calendar recurrence labels must not silently fall back to hard-coded English.'
+          if grep -Eq 'console\.(log|debug|info)' src/pages/CouplesProfile.jsx src/lib/coupleProfileService.js; then
+            echo 'Couple Profile surfaces must not log account or relationship data to the browser console.'
+            exit 1
+          fi
+          if grep -Eq '\.from\(["'"']users["'"']\).*\.select' src/pages/CouplesProfile.jsx; then
+            echo 'Couple Profile must not restore direct private-account partner reads.'
             exit 1
           fi
 
@@ -90,6 +99,8 @@ jobs:
           src/components/calendar/CalendarEventForm.jsx
           src/components/calendar/CalendarEventCard.jsx
           src/components/calendar/CalendarGrid.jsx
+          src/pages/CouplesProfile.jsx
+          src/lib/coupleProfileService.js
           --rule 'react/prop-types: off'
 
       - name: Production build
