@@ -51,6 +51,8 @@ jobs:
           test -f src/pages/RelationshipLibrary.jsx
           test -f src/pages/CouplesChallenges.jsx
           test -f src/pages/DateNight.jsx
+          test -f src/pages/RelationshipReset.jsx
+          test -f src/components/home/RelationshipResetPromo.jsx
           test -f src/pages/O2OLShow.jsx
           test -f src/components/home/HeroSection.jsx
           test -f src/components/home/FeaturesGrid.jsx
@@ -70,9 +72,11 @@ jobs:
           grep -q 'path="/RelationshipLibrary"' src/pages/index.jsx
           grep -q 'path="/CouplesChallenges"' src/pages/index.jsx
           grep -q 'path="/DateNight"' src/pages/index.jsx
+          grep -q 'path="/RelationshipReset"' src/pages/index.jsx
           grep -q 'path="/O2OLShow"' src/pages/index.jsx
           grep -q '<DailyQuestionPromo />' src/pages/Home.jsx
           grep -q '<MarriageMattersPromo />' src/pages/Home.jsx
+          grep -q '<RelationshipResetPromo />' src/pages/Home.jsx
           if grep -q 'love-notes-stats' src/pages/Home.jsx; then
             echo 'Legacy dead homepage stats polling must not return.'
             exit 1
@@ -90,6 +94,8 @@ jobs:
             src/pages/RelationshipLibrary.jsx \
             src/pages/CouplesChallenges.jsx \
             src/pages/DateNight.jsx \
+            src/pages/RelationshipReset.jsx \
+            src/components/home/RelationshipResetPromo.jsx \
             src/pages/O2OLShow.jsx \
             src/components/home/HeroSection.jsx \
             src/components/home/FeaturesGrid.jsx \
@@ -133,6 +139,7 @@ jobs:
           src/pages/RelationshipLibrary.jsx
           src/pages/CouplesChallenges.jsx
           src/pages/DateNight.jsx
+          src/pages/RelationshipReset.jsx
           src/pages/O2OLShow.jsx
           src/pages/NotFound.jsx
           src/components/global-room/RoomScheduleViewer.jsx
@@ -141,6 +148,7 @@ jobs:
           src/components/home/GlobalRoomPromo.jsx
           src/components/home/DailyQuestionPromo.jsx
           src/components/home/MarriageMattersPromo.jsx
+          src/components/home/RelationshipResetPromo.jsx
           src/components/home/FeaturesGrid.jsx
           src/components/home/DiversitySection.jsx
           src/components/home/FeaturedPodcast.jsx
