@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Star, ThumbsUp } from "lucide-react";
+import { Heart, Star, ThumbsUp } from "lucide-react";
 import { useLanguage } from "@/Layout";
 
 const translations = {
@@ -103,7 +103,7 @@ export default function StoryCard({ story, onLike, onMarkHelpful }) {
         </div>
         <CardTitle className="text-xl font-bold text-gray-900">{story.title}</CardTitle>
         <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
-          <span>{story.is_anonymous ? t.anonymous : story.author_name}</span>
+          <span>{story.is_anonymous ? t.anonymous : (story.author_name || t.anonymous)}</span>
           {story.relationship_length && (
             <>
               <span>•</span>
@@ -114,17 +114,13 @@ export default function StoryCard({ story, onLike, onMarkHelpful }) {
       </CardHeader>
       <CardContent>
         <p className="text-gray-700 leading-relaxed mb-4 line-clamp-4">{story.content}</p>
-        
         {story.tags && story.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {story.tags.slice(0, 3).map((tag, idx) => (
-              <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                #{tag}
-              </span>
+              <span key={`${tag}-${idx}`} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">#{tag}</span>
             ))}
           </div>
         )}
-
         <div className="flex items-center gap-4">
           <Button size="sm" variant="ghost" onClick={() => onLike(story)} className="gap-1">
             <Heart className={`w-4 h-4 ${story.userHasLiked ? 'fill-pink-500 text-pink-500' : ''}`} />
