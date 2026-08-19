@@ -8,6 +8,13 @@ This file collects owner decisions that should not interrupt active build work. 
 
 _No approval is currently required to continue the present Global Relationship Room build._
 
+### Global Relationship Room operational activation — batch for later owner review
+
+The moderation system is now built and secured, but two activation decisions should remain owner-controlled rather than being guessed during development.
+
+- **Initial moderator account:** choose which existing One2OneLove user account should receive the first trusted Global Relationship Room moderator/admin assignment. No account is auto-elevated. Until this is assigned, the moderation route remains securely inaccessible to ordinary users.
+- **Vercel build-rate limit:** GitHub currently reports the connected One2OneLove Vercel deployment check as failed with a Vercel `upgradeToPro=build-rate-limit` target. Development can continue in GitHub and Supabase, but production/preview deployment availability may require either waiting for the plan limit to reset or approving a Vercel plan change. Do not upgrade or incur cost automatically.
+
 ### Legacy platform security / infrastructure review — batch for later owner review
 
 A live Supabase security-advisor pass identified several pre-existing platform items that are outside the new Global Relationship Room work. They are intentionally not being changed blindly because some may affect existing production behavior.
