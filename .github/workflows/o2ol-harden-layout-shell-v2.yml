@@ -1,0 +1,158 @@
+name: O2OL Harden Persistent Shell V2
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-harden-layout-shell-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden-shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout current build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Patch persistent shell
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('src/pages/Layout.jsx')
+          s = p.read_text()
+
+          prefix_replacements = [
+            ('nav: { home: "Home", action:', 'nav: { home: "Home", globalRoom: "Global Room", action:'),
+            ('nav: { home: "Inicio", action:', 'nav: { home: "Inicio", globalRoom: "Sala Global", action:'),
+            ('nav: { home: "Accueil", action:', 'nav: { home: "Accueil", globalRoom: "Salle Mondiale", action:'),
+            ('nav: { home: "Home", action: "Azione",', 'nav: { home: "Home", globalRoom: "Sala Globale", action: "Azione",'),
+            ('nav: { home: "Startseite", action:', 'nav: { home: "Startseite", globalRoom: "Globaler Raum", action:'),
+            ('actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport:', 'actionMenu: { sendLoveNote: "Send A Love Note", aiCoach: "AI Relationship Coach", coupleSupport:'),
+            ('actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport:', 'actionMenu: { sendLoveNote: "Enviar una Nota de Amor", aiCoach: "Coach de Relaciones con IA", coupleSupport:'),
+            ('actionMenu: { sendLoveNote: "Envoyer une Note d\'Amour", coupleSupport:', 'actionMenu: { sendLoveNote: "Envoyer une Note d\'Amour", aiCoach: "Coach Relationnel IA", coupleSupport:'),
+            ('actionMenu: { sendLoveNote: "Invia una Nota d\'Amore", coupleSupport:', 'actionMenu: { sendLoveNote: "Invia una Nota d\'Amore", aiCoach: "Coach Relazionale IA", coupleSupport:'),
+            ('actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport:', 'actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", aiCoach: "KI-Beziehungscoach", coupleSupport:'),
+          ]
+          for old, new in prefix_replacements:
+            if old not in s:
+              raise SystemExit(f'Missing shell translation prefix: {old}')
+            s = s.replace(old, new, 1)
+
+          suffix_replacements = [
+            ('chat: "Chat", signOut: "Sign Out" }', 'chat: "Chat", signOut: "Sign Out", comingSoon: "Coming Soon" }'),
+            ('chat: "Chat", signOut: "Cerrar Sesión" }', 'chat: "Chat", signOut: "Cerrar Sesión", comingSoon: "Próximamente" }'),
+            ('chat: "Chat", signOut: "Se Déconnecter" }', 'chat: "Chat", signOut: "Se Déconnecter", comingSoon: "Bientôt" }'),
+            ('chat: "Chat", signOut: "Esci" }', 'chat: "Chat", signOut: "Esci", comingSoon: "Prossimamente" }'),
+            ('chat: "Chat", signOut: "Abmelden" }', 'chat: "Chat", signOut: "Abmelden", comingSoon: "Demnächst" }'),
+          ]
+          for old, new in suffix_replacements:
+            if old not in s:
+              raise SystemExit(f'Missing shell translation suffix: {old}')
+            s = s.replace(old, new, 1)
+
+          if 'refetchInterval: 3000' not in s:
+            raise SystemExit('Missing 3-second fallback polling anchor')
+          s = s.replace('refetchInterval: 3000', 'refetchInterval: 30000', 1)
+
+          if '<span>AI Relationship Coach</span>' not in s:
+            raise SystemExit('Missing desktop AI coach label')
+          s = s.replace('<span>AI Relationship Coach</span>', '<span>{t.actionMenu.aiCoach}</span>', 1)
+          if '                        AI Relationship Coach\n' not in s:
+            raise SystemExit('Missing mobile AI coach label')
+          s = s.replace('                        AI Relationship Coach\n', '                        {t.actionMenu.aiCoach}\n', 1)
+
+          if '                            Coming Soon\n' not in s:
+            raise SystemExit('Missing disabled-language Coming Soon label')
+          s = s.replace('                            Coming Soon\n', '                            {t.nav.comingSoon}\n', 1)
+
+          desktop_home = '''              <Link\n                to={createPageUrl("Home")}\n                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"\n              >\n                <Home className="w-4 h-4" />\n                {t.nav.home}\n              </Link>\n'''
+          if desktop_home not in s:
+            raise SystemExit('Missing desktop Home nav')
+          desktop_room = desktop_home + '''\n              <Link\n                to={createPageUrl("GlobalRelationshipRoom")}\n                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"\n              >\n                <Users className="w-4 h-4" />\n                {t.nav.globalRoom}\n              </Link>\n'''
+          s = s.replace(desktop_home, desktop_room, 1)
+
+          mobile_home = '''                <Link\n                  to={createPageUrl("Home")}\n                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"\n                  onClick={() => setMobileMenuOpen(false)}\n                >\n                  <Home className="w-5 h-5" />\n                  {t.nav.home}\n                </Link>\n'''
+          if mobile_home not in s:
+            raise SystemExit('Missing mobile Home nav')
+          mobile_room = mobile_home + '''\n                <Link\n                  to={createPageUrl("GlobalRelationshipRoom")}\n                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"\n                  onClick={() => setMobileMenuOpen(false)}\n                >\n                  <Users className="w-5 h-5" />\n                  {t.nav.globalRoom}\n                </Link>\n'''
+          s = s.replace(mobile_home, mobile_room, 1)
+
+          for page_name in ['Developer', 'WinACruise']:
+            if s.count(f'createPageUrl("{page_name}")') != 2:
+              raise SystemExit(f'Expected desktop/mobile {page_name} shell links')
+            pattern = re.compile(r'\n\s*<Link\n\s*to=\{createPageUrl\("' + page_name + r'"\)\}.*?</Link>\n', re.DOTALL)
+            s, removed = pattern.subn('\n', s)
+            if removed != 2:
+              raise SystemExit(f'Failed to remove both {page_name} shell links')
+
+          s = s.replace(' Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell,', ' Target, Rainbow, UserCheck, MessageCircle, Bell,')
+
+          s = re.sub(r'^\s*console\.(?:log|warn|error|debug|info|trace)\([^\n;]*\);\s*\n', '', s, flags=re.MULTILINE)
+          s = s.replace('catch (storageError) {', 'catch {')
+          s = s.replace('catch (logoutError) {', 'catch {')
+          s = s.replace('catch (error) {\n      // Still redirect', 'catch {\n      // Still redirect')
+
+          p.write_text(s)
+
+      - name: Verify shell source invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'globalRoom: "Global Room"' src/pages/Layout.jsx
+          grep -q 'globalRoom: "Sala Global"' src/pages/Layout.jsx
+          grep -q 'globalRoom: "Salle Mondiale"' src/pages/Layout.jsx
+          grep -q 'globalRoom: "Sala Globale"' src/pages/Layout.jsx
+          grep -q 'globalRoom: "Globaler Raum"' src/pages/Layout.jsx
+          test "$(grep -c 'createPageUrl("GlobalRelationshipRoom")' src/pages/Layout.jsx)" -eq 2
+          test "$(grep -c 't.actionMenu.aiCoach' src/pages/Layout.jsx)" -eq 2
+          grep -q 't.nav.comingSoon' src/pages/Layout.jsx
+          grep -q 'refetchInterval: 30000' src/pages/Layout.jsx
+          ! grep -q 'refetchInterval: 3000,' src/pages/Layout.jsx
+          ! grep -Eq 'console\.(log|warn|error|debug|info|trace)' src/pages/Layout.jsx
+          ! grep -q 'createPageUrl("Developer")' src/pages/Layout.jsx
+          ! grep -q 'createPageUrl("WinACruise")' src/pages/Layout.jsx
+          ! grep -q '<Code ' src/pages/Layout.jsx
+          ! grep -q '<Gift ' src/pages/Layout.jsx
+
+      - name: Verify launch and security source
+        run: |
+          node scripts/verify-o2ol-launch.mjs
+          node scripts/verify-o2ol-security.mjs
+
+      - name: Lint persistent shell
+        run: >-
+          npx eslint src/pages/Layout.jsx
+          --rule 'react/prop-types: off'
+          --rule 'no-unused-vars: ["error", {"varsIgnorePattern":"^(React|currentPageName|location)$"}]'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified shell hardening and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-harden-layout-shell-v2.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/Layout.jsx .github/workflows/o2ol-harden-layout-shell-v2.yml
+          git commit -m 'Harden persistent navigation and Global Room discovery'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
