@@ -26,6 +26,8 @@ for (const required of [
   "supabase.functions.invoke('list-creator-programming'",
   "supabase.functions.invoke('current-creator-programming'",
   'export const getGlobalProgrammingStatus = async () =>',
+  "if (to) query = query.lt('starts_at', to);",
+  "if (from) query = query.gt('ends_at', from);",
 ]) {
   if (!service.includes(required)) failures.push(`${serviceFile}: missing staged creator-programming guard ${required}.`);
 }
@@ -36,12 +38,20 @@ for (const required of [
   'Future paid slots are prepared in the system but are not active.',
   '{t.notice}',
   'const [policyAcknowledged, setPolicyAcknowledged] = useState(false);',
-  '!title.trim() || !startTime || !policyAcknowledged',
+  'const overlaps = (slot, starts, ends)',
+  'schedule.filter((slot) => overlaps(slot, hourStart, hourEnd))',
+  'const selectedSlotConflict = useMemo(',
+  'schedule.some((slot) => overlaps(slot, selectedWindow.starts, selectedWindow.ends))',
+  'const freeSlotsUsed = useMemo(',
+  "slot.creator_local_date === date",
+  '{freeSlotsUsed}/2 {t.freeUsed}',
+  '{t.conflictWarning}',
+  'selectedSlotConflict || freeSlotsUsed >= 2',
+  '!title.trim() || !startTime || !policyAcknowledged || selectedSlotConflict || freeSlotsUsed >= 2 || !selectedWindow',
   'policyAcknowledged });',
   'checked={policyAcknowledged}',
   'setPolicyAcknowledged(event.target.checked)',
   '<span>{t.policyLabel}</span>',
-  'disabled={booking || !policyAcknowledged}',
   'setPolicyAcknowledged(false);',
   'toast.error(t.loadError)',
   'toast.success(t.bookedSuccess)',
@@ -67,7 +77,9 @@ for (const language of ['en', 'es', 'fr', 'it', 'de']) {
     failures.push(`${pageFile}: missing ${language} creator-programming copy block.`);
     continue;
   }
-  if (!/\bpolicyLabel:\s*/.test(match[1])) failures.push(`${pageFile}: ${language} is missing policyLabel.`);
+  for (const key of ['policyLabel', 'freeUsed', 'conflictWarning']) {
+    if (!new RegExp(`\\b${key}:\\s*`).test(match[1])) failures.push(`${pageFile}: ${language} is missing ${key}.`);
+  }
 }
 
 for (const required of [
@@ -112,6 +124,14 @@ for (const required of [
   if (!bookingFunction.includes(required)) failures.push(`${bookingFunctionFile}: missing backend booking safeguard ${required}.`);
 }
 
+for (const required of [
+  ".lt('starts_at', to.toISOString())",
+  ".gt('ends_at', requestedFrom.toISOString())",
+  'Return every booking that overlaps the requested calendar window',
+]) {
+  if (!listingFunction.includes(required)) failures.push(`${listingFunctionFile}: missing overlap-window schedule behavior ${required}.`);
+}
+
 for (const [file, source] of [
   [listingFunctionFile, listingFunction],
   [statusFunctionFile, statusFunction],
@@ -140,4 +160,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Creator programming remains feature-gated, multilingual, policy-acknowledged, two-free-slots/day limited, overlap-protected, Global-Room compatible, privacy-minimized and paid-slot disabled.');
+console.log('✅ Creator programming remains feature-gated, multilingual, policy-acknowledged, overlap-accurate, conflict-aware, two-free-slots/day limited, Global-Room compatible, privacy-minimized and paid-slot disabled.');
