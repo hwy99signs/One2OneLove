@@ -1,7 +1,7 @@
 // Supabase Edge Function: current-creator-programming
 // DEVELOPMENT CODE ONLY. Supplies the Global Relationship Room with a minimized
 // "live now / up next" programming status. It never returns creator account IDs,
-// booking/payment fields, or replay URLs.
+// booking/payment fields, policy records, or replay URLs.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
@@ -42,6 +42,7 @@ const publicSlot = (slot: Record<string, unknown> | null) => {
   if (!slot) return null
   return {
     id: slot.id,
+    program_source: slot.program_source,
     room_slug: slot.room_slug,
     title: slot.title,
     description: slot.description,
@@ -83,7 +84,7 @@ serve(async (request) => {
     })
 
     const now = new Date().toISOString()
-    const publicFields = 'id,room_slug,title,description,starts_at,ends_at,content_mode'
+    const publicFields = 'id,program_source,room_slug,title,description,starts_at,ends_at,content_mode'
 
     const [{ data: currentRows, error: currentError }, { data: nextRows, error: nextError }] = await Promise.all([
       serviceClient
