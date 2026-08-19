@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { getMutualPartnerDirectoryProfile } from "@/lib/coupleProfileService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, User, Mail, Calendar, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Users, ArrowLeft } from "lucide-react";
+import { Heart, User, Mail, Calendar, MapPin, Edit, Save, X, Sparkles, ArrowRight, MessageCircle, Users, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,688 +16,277 @@ import { toast } from "sonner";
 
 const translations = {
   en: {
-    title: "Our Couple Profile",
-    subtitle: "Your shared journey together",
-    back: "Back",
-    memberSince: "Member since",
-    partner1: "Partner 1",
-    partner2: "Partner 2",
-    personalInfo: "Personal Information",
-    relationshipInfo: "Relationship Info",
-    email: "Email",
-    location: "Location",
-    partner: "Partner",
-    anniversary: "Anniversary",
-    loveLanguage: "Love Language",
-    relationshipStatus: "Relationship Status",
-    activity: "Activity",
-    loveNotesSent: "Love Notes Sent",
-    memoriesCreated: "Memories Created",
-    quizzesTaken: "Quizzes Taken",
-    streakDays: "Day Streak",
-    editProfile: "Edit Profile",
-    saveChanges: "Save Changes",
-    cancel: "Cancel",
-    notSet: "Not set",
-    quickActions: "Quick Actions Together",
-    recentActivity: "Recent Activity",
-    recommendationsTitle: "Recommendations for You Both",
-    noActivity: "No recent activity",
-    viewAll: "View All",
-    actions: {
-      sendLoveNote: "Send Love Note",
-      createMemory: "Create Memory",
-      aiCreator: "AI Creator",
-      dateIdeas: "Date Ideas"
-    },
-    recommendations: {
-      loveQuiz: "Take the Love Language Quiz",
-      loveQuizDesc: "Discover how you both express love",
-      planDate: "Plan a Date Night",
-      planDateDesc: "Browse creative date ideas for your next adventure",
-      createMemory: "Create a Memory",
-      createMemoryDesc: "Capture a special moment from your relationship",
-      setGoals: "Set Relationship Goals",
-      setGoalsDesc: "Work together on shared goals"
-    },
-    loveLanguages: {
-      words_of_affirmation: "Words of Affirmation",
-      quality_time: "Quality Time",
-      receiving_gifts: "Receiving Gifts",
-      acts_of_service: "Acts of Service",
-      physical_touch: "Physical Touch"
-    },
-    statuses: {
-      single: "Single",
-      dating: "Dating",
-      engaged: "Engaged",
-      married: "Married"
-    }
+    title: "Our Couple Profile", subtitle: "A private home base for the relationship details you choose to share.", back: "Back",
+    yourProfile: "Your Profile", partnerProfile: "Partner Profile", memberSince: "Member since", personalInfo: "Personal Information", relationshipInfo: "Relationship Information",
+    email: "Email", location: "Location", partnerName: "Partner Name", partnerEmail: "Partner Email", anniversary: "Anniversary", loveLanguage: "Love Language", relationshipStatus: "Relationship Status", bio: "About", interests: "Interests",
+    editProfile: "Edit Profile", saveChanges: "Save Changes", saving: "Saving...", cancel: "Cancel", notSet: "Not set", signIn: "Please sign in to view your couple profile.",
+    partnerNotLinked: "No mutual partner profile is linked yet.", mutualRequired: "For privacy, a partner profile appears only when both accounts list each other’s email address. Enter your partner’s email in your profile, and your partner must enter yours in theirs.",
+    privacyTitle: "Mutual-link privacy", privacyCopy: "One2OneLove does not expose another member’s private account row here. Only safe directory fields are shown after the relationship link is reciprocal.",
+    quickActions: "Do Something Together", updateSuccess: "Profile updated successfully.", updateError: "We could not update your profile.",
+    locationPlaceholder: "City or area", partnerNamePlaceholder: "Partner's name", partnerEmailPlaceholder: "partner@example.com",
+    actions: [
+      ["Conversation Cards", "Start a private conversation with a thoughtful prompt.", "/ConversationCards", "message"],
+      ["Date Night", "Turn available time and budget into intentional time together.", "/DateNight", "heart"],
+      ["Relationship Rituals", "Choose a small repeatable habit for connection.", "/RelationshipRituals", "sparkles"],
+      ["Relationship Goals", "Create a shared goal and work on it together.", "/RelationshipGoals", "users"]
+    ],
+    statuses: { single: "Single", dating: "Dating", engaged: "Engaged", married: "Married" },
+    loveLanguages: { words_of_affirmation: "Words of Affirmation", quality_time: "Quality Time", receiving_gifts: "Receiving Gifts", acts_of_service: "Acts of Service", physical_touch: "Physical Touch" }
   },
   es: {
-    title: "Nuestro Perfil de Pareja",
-    subtitle: "Su viaje compartido juntos",
-    back: "Volver",
-    memberSince: "Miembro desde",
-    partner1: "Pareja 1",
-    partner2: "Pareja 2",
-    personalInfo: "Información Personal",
-    relationshipInfo: "Información de Relación",
-    email: "Correo Electrónico",
-    location: "Ubicación",
-    partner: "Pareja",
-    anniversary: "Aniversario",
-    loveLanguage: "Lenguaje del Amor",
-    relationshipStatus: "Estado de Relación",
-    activity: "Actividad",
-    loveNotesSent: "Notas de Amor Enviadas",
-    memoriesCreated: "Recuerdos Creados",
-    quizzesTaken: "Cuestionarios Realizados",
-    streakDays: "Racha de Días",
-    editProfile: "Editar Perfil",
-    saveChanges: "Guardar Cambios",
-    cancel: "Cancelar",
-    notSet: "No establecido",
-    quickActions: "Acciones Rápidas Juntos",
-    recentActivity: "Actividad Reciente",
-    recommendationsTitle: "Recomendaciones para Ambos",
-    noActivity: "No hay actividad reciente",
-    viewAll: "Ver Todo"
+    title: "Nuestro Perfil de Pareja", subtitle: "Un espacio privado para los detalles de la relación que ustedes decidan compartir.", back: "Volver",
+    yourProfile: "Tu Perfil", partnerProfile: "Perfil de tu Pareja", memberSince: "Miembro desde", personalInfo: "Información Personal", relationshipInfo: "Información de la Relación",
+    email: "Correo Electrónico", location: "Ubicación", partnerName: "Nombre de la Pareja", partnerEmail: "Correo de la Pareja", anniversary: "Aniversario", loveLanguage: "Lenguaje del Amor", relationshipStatus: "Estado de la Relación", bio: "Acerca de", interests: "Intereses",
+    editProfile: "Editar Perfil", saveChanges: "Guardar Cambios", saving: "Guardando...", cancel: "Cancelar", notSet: "No establecido", signIn: "Inicia sesión para ver tu perfil de pareja.",
+    partnerNotLinked: "Todavía no hay un perfil de pareja vinculado mutuamente.", mutualRequired: "Por privacidad, el perfil de una pareja aparece solo cuando ambas cuentas indican el correo de la otra. Ingresa el correo de tu pareja en tu perfil y tu pareja debe ingresar el tuyo en el suyo.",
+    privacyTitle: "Privacidad por vínculo mutuo", privacyCopy: "One2OneLove no expone aquí la cuenta privada de otro miembro. Solo se muestran campos seguros del directorio después de que el vínculo sea recíproco.",
+    quickActions: "Hagan Algo Juntos", updateSuccess: "Perfil actualizado correctamente.", updateError: "No pudimos actualizar tu perfil.",
+    locationPlaceholder: "Ciudad o zona", partnerNamePlaceholder: "Nombre de tu pareja", partnerEmailPlaceholder: "pareja@ejemplo.com",
+    actions: [
+      ["Tarjetas de Conversación", "Inicien una conversación privada con una pregunta significativa.", "/ConversationCards", "message"],
+      ["Noche de Cita", "Conviertan el tiempo y presupuesto disponibles en tiempo intencional juntos.", "/DateNight", "heart"],
+      ["Rituales de Relación", "Elijan un pequeño hábito repetible para fortalecer la conexión.", "/RelationshipRituals", "sparkles"],
+      ["Metas de Relación", "Creen una meta compartida y trabajen en ella juntos.", "/RelationshipGoals", "users"]
+    ],
+    statuses: { single: "Soltero/a", dating: "Saliendo", engaged: "Comprometido/a", married: "Casado/a" },
+    loveLanguages: { words_of_affirmation: "Palabras de Afirmación", quality_time: "Tiempo de Calidad", receiving_gifts: "Recibir Regalos", acts_of_service: "Actos de Servicio", physical_touch: "Contacto Físico" }
   },
   fr: {
-    title: "Notre Profil de Couple",
-    subtitle: "Votre parcours partagé ensemble",
-    back: "Retour",
-    memberSince: "Membre depuis",
-    partner1: "Partenaire 1",
-    partner2: "Partenaire 2",
-    personalInfo: "Informations Personnelles",
-    relationshipInfo: "Informations sur la Relation",
-    email: "E-mail",
-    location: "Localisation",
-    partner: "Partenaire",
-    anniversary: "Anniversaire",
-    loveLanguage: "Langage d'Amour",
-    relationshipStatus: "Statut de Relation",
-    activity: "Activité",
-    loveNotesSent: "Notes d'Amour Envoyées",
-    memoriesCreated: "Souvenirs Créés",
-    quizzesTaken: "Quiz Réalisés",
-    streakDays: "Série de Jours",
-    editProfile: "Modifier le Profil",
-    saveChanges: "Enregistrer les Modifications",
-    cancel: "Annuler",
-    notSet: "Non défini",
-    quickActions: "Actions Rapides Ensemble",
-    recentActivity: "Activité Récente",
-    recommendationsTitle: "Recommandations pour Vous Deux",
-    noActivity: "Aucune activité récente",
-    viewAll: "Voir Tout"
+    title: "Notre Profil de Couple", subtitle: "Un espace privé pour les informations relationnelles que vous choisissez de partager.", back: "Retour",
+    yourProfile: "Votre Profil", partnerProfile: "Profil du Partenaire", memberSince: "Membre depuis", personalInfo: "Informations Personnelles", relationshipInfo: "Informations sur la Relation",
+    email: "E-mail", location: "Localisation", partnerName: "Nom du Partenaire", partnerEmail: "E-mail du Partenaire", anniversary: "Anniversaire", loveLanguage: "Langage d’Amour", relationshipStatus: "Statut de la Relation", bio: "À Propos", interests: "Centres d’Intérêt",
+    editProfile: "Modifier le Profil", saveChanges: "Enregistrer", saving: "Enregistrement...", cancel: "Annuler", notSet: "Non défini", signIn: "Connectez-vous pour voir votre profil de couple.",
+    partnerNotLinked: "Aucun profil partenaire mutuellement lié pour le moment.", mutualRequired: "Pour protéger la vie privée, le profil du partenaire apparaît uniquement lorsque les deux comptes indiquent l’adresse e-mail de l’autre. Ajoutez l’e-mail de votre partenaire à votre profil et votre partenaire doit ajouter le vôtre au sien.",
+    privacyTitle: "Confidentialité par lien mutuel", privacyCopy: "One2OneLove n’expose pas ici la ligne de compte privée d’un autre membre. Seuls les champs sûrs du répertoire sont affichés lorsque le lien est réciproque.",
+    quickActions: "Faire Quelque Chose Ensemble", updateSuccess: "Profil mis à jour avec succès.", updateError: "Nous n’avons pas pu mettre à jour votre profil.",
+    locationPlaceholder: "Ville ou région", partnerNamePlaceholder: "Nom de votre partenaire", partnerEmailPlaceholder: "partenaire@exemple.com",
+    actions: [
+      ["Cartes de Conversation", "Commencez une conversation privée avec une question réfléchie.", "/ConversationCards", "message"],
+      ["Soirée en Couple", "Transformez votre temps et votre budget disponibles en moment intentionnel.", "/DateNight", "heart"],
+      ["Rituels de Relation", "Choisissez une petite habitude répétée pour renforcer la connexion.", "/RelationshipRituals", "sparkles"],
+      ["Objectifs de Relation", "Créez un objectif commun et avancez ensemble.", "/RelationshipGoals", "users"]
+    ],
+    statuses: { single: "Célibataire", dating: "En Couple", engaged: "Fiancé(e)", married: "Marié(e)" },
+    loveLanguages: { words_of_affirmation: "Paroles Valorissantes", quality_time: "Moments de Qualité", receiving_gifts: "Recevoir des Cadeaux", acts_of_service: "Services Rendus", physical_touch: "Contact Physique" }
   },
   it: {
-    title: "Il Nostro Profilo di Coppia",
-    subtitle: "Il vostro viaggio condiviso insieme",
-    back: "Indietro",
-    memberSince: "Membro dal",
-    partner1: "Partner 1",
-    partner2: "Partner 2",
-    personalInfo: "Informazioni Personali",
-    relationshipInfo: "Informazioni sulla Relazione",
-    email: "Email",
-    location: "Posizione",
-    partner: "Partner",
-    anniversary: "Anniversario",
-    loveLanguage: "Linguaggio dell'Amore",
-    relationshipStatus: "Stato della Relazione",
-    activity: "Attività",
-    loveNotesSent: "Note d'Amore Inviate",
-    memoriesCreated: "Ricordi Creati",
-    quizzesTaken: "Quiz Completati",
-    streakDays: "Serie di Giorni",
-    editProfile: "Modifica Profilo",
-    saveChanges: "Salva Modifiche",
-    cancel: "Annulla",
-    notSet: "Non impostato",
-    quickActions: "Azioni Rapide Insieme",
-    recentActivity: "Attività Recente",
-    recommendationsTitle: "Raccomandazioni per Entrambi",
-    noActivity: "Nessuna attività recente",
-    viewAll: "Visualizza Tutto"
+    title: "Il Nostro Profilo di Coppia", subtitle: "Uno spazio privato per i dettagli della relazione che scegliete di condividere.", back: "Indietro",
+    yourProfile: "Il Tuo Profilo", partnerProfile: "Profilo del Partner", memberSince: "Membro dal", personalInfo: "Informazioni Personali", relationshipInfo: "Informazioni sulla Relazione",
+    email: "Email", location: "Posizione", partnerName: "Nome del Partner", partnerEmail: "Email del Partner", anniversary: "Anniversario", loveLanguage: "Linguaggio dell’Amore", relationshipStatus: "Stato della Relazione", bio: "Informazioni", interests: "Interessi",
+    editProfile: "Modifica Profilo", saveChanges: "Salva Modifiche", saving: "Salvataggio...", cancel: "Annulla", notSet: "Non impostato", signIn: "Accedi per vedere il profilo di coppia.",
+    partnerNotLinked: "Non è ancora collegato un profilo partner reciproco.", mutualRequired: "Per proteggere la privacy, il profilo del partner appare solo quando entrambi gli account indicano l’email dell’altro. Inserisci l’email del partner nel tuo profilo e il partner deve inserire la tua nel proprio.",
+    privacyTitle: "Privacy con collegamento reciproco", privacyCopy: "One2OneLove non espone qui la riga privata dell’account di un altro membro. Vengono mostrati solo campi sicuri della directory dopo che il collegamento è reciproco.",
+    quickActions: "Fate Qualcosa Insieme", updateSuccess: "Profilo aggiornato con successo.", updateError: "Non è stato possibile aggiornare il profilo.",
+    locationPlaceholder: "Città o zona", partnerNamePlaceholder: "Nome del partner", partnerEmailPlaceholder: "partner@esempio.com",
+    actions: [
+      ["Carte di Conversazione", "Iniziate una conversazione privata con una domanda significativa.", "/ConversationCards", "message"],
+      ["Serata di Coppia", "Trasformate il tempo e il budget disponibili in tempo intenzionale insieme.", "/DateNight", "heart"],
+      ["Rituali di Coppia", "Scegliete una piccola abitudine ripetibile per la connessione.", "/RelationshipRituals", "sparkles"],
+      ["Obiettivi di Relazione", "Create un obiettivo condiviso e lavorateci insieme.", "/RelationshipGoals", "users"]
+    ],
+    statuses: { single: "Single", dating: "In Coppia", engaged: "Fidanzato/a", married: "Sposato/a" },
+    loveLanguages: { words_of_affirmation: "Parole di Affermazione", quality_time: "Tempo di Qualità", receiving_gifts: "Ricevere Regali", acts_of_service: "Gesti di Servizio", physical_touch: "Contatto Fisico" }
   },
   de: {
-    title: "Unser Paar-Profil",
-    subtitle: "Eure gemeinsame Reise",
-    back: "Zurück",
-    memberSince: "Mitglied seit",
-    partner1: "Partner 1",
-    partner2: "Partner 2",
-    personalInfo: "Persönliche Informationen",
-    relationshipInfo: "Beziehungsinformationen",
-    email: "E-Mail",
-    location: "Standort",
-    partner: "Partner",
-    anniversary: "Jubiläum",
-    loveLanguage: "Liebessprache",
-    relationshipStatus: "Beziehungsstatus",
-    activity: "Aktivität",
-    loveNotesSent: "Gesendete Liebesbotschaften",
-    memoriesCreated: "Erstellte Erinnerungen",
-    quizzesTaken: "Absolvierte Quiz",
-    streakDays: "Tage-Serie",
-    editProfile: "Profil Bearbeiten",
-    saveChanges: "Änderungen Speichern",
-    cancel: "Abbrechen",
-    notSet: "Nicht festgelegt",
-    quickActions: "Schnellaktionen Zusammen",
-    recentActivity: "Letzte Aktivität",
-    recommendationsTitle: "Empfehlungen für Euch Beide",
-    noActivity: "Keine letzte Aktivität",
-    viewAll: "Alle Anzeigen"
+    title: "Unser Paar-Profil", subtitle: "Ein privater Ausgangspunkt für Beziehungsdetails, die ihr freiwillig teilt.", back: "Zurück",
+    yourProfile: "Dein Profil", partnerProfile: "Partnerprofil", memberSince: "Mitglied seit", personalInfo: "Persönliche Informationen", relationshipInfo: "Beziehungsinformationen",
+    email: "E-Mail", location: "Standort", partnerName: "Name des Partners", partnerEmail: "E-Mail des Partners", anniversary: "Jahrestag", loveLanguage: "Liebessprache", relationshipStatus: "Beziehungsstatus", bio: "Über", interests: "Interessen",
+    editProfile: "Profil Bearbeiten", saveChanges: "Änderungen Speichern", saving: "Wird gespeichert...", cancel: "Abbrechen", notSet: "Nicht festgelegt", signIn: "Bitte melde dich an, um euer Paar-Profil zu sehen.",
+    partnerNotLinked: "Noch kein gegenseitig verknüpftes Partnerprofil.", mutualRequired: "Zum Schutz der Privatsphäre erscheint ein Partnerprofil nur, wenn beide Konten die E-Mail-Adresse des jeweils anderen hinterlegt haben. Trage die E-Mail deines Partners in deinem Profil ein; dein Partner muss deine E-Mail im eigenen Profil eintragen.",
+    privacyTitle: "Datenschutz durch gegenseitige Verknüpfung", privacyCopy: "One2OneLove zeigt hier nicht die private Kontenzeile eines anderen Mitglieds. Erst bei gegenseitiger Verknüpfung werden ausschließlich sichere Verzeichnisfelder angezeigt.",
+    quickActions: "Gemeinsam Aktiv Werden", updateSuccess: "Profil erfolgreich aktualisiert.", updateError: "Dein Profil konnte nicht aktualisiert werden.",
+    locationPlaceholder: "Stadt oder Region", partnerNamePlaceholder: "Name deines Partners", partnerEmailPlaceholder: "partner@beispiel.de",
+    actions: [
+      ["Gesprächskarten", "Startet ein privates Gespräch mit einer durchdachten Frage.", "/ConversationCards", "message"],
+      ["Date Night", "Macht aus verfügbarer Zeit und Budget bewusste gemeinsame Zeit.", "/DateNight", "heart"],
+      ["Beziehungsrituale", "Wählt eine kleine wiederholbare Gewohnheit für mehr Verbindung.", "/RelationshipRituals", "sparkles"],
+      ["Beziehungsziele", "Setzt ein gemeinsames Ziel und arbeitet zusammen daran.", "/RelationshipGoals", "users"]
+    ],
+    statuses: { single: "Single", dating: "In einer Beziehung", engaged: "Verlobt", married: "Verheiratet" },
+    loveLanguages: { words_of_affirmation: "Worte der Anerkennung", quality_time: "Gemeinsame Zeit", receiving_gifts: "Geschenke Erhalten", acts_of_service: "Hilfsbereitschaft", physical_touch: "Körperliche Nähe" }
   }
 };
 
-const ProfileCard = ({ partnerLabel, user, isEditing, editData, onEditChange, t, isCurrentUser }) => {
-  const joinDate = user?.created_date ? new Date(user.created_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
-  
-  const stats = [
-    { icon: Heart, label: t.loveNotesSent, value: user?.love_notes_sent || 0, color: "text-pink-600", bg: "bg-pink-100" },
-    { icon: Calendar, label: t.memoriesCreated, value: 0, color: "text-purple-600", bg: "bg-purple-100" },
-    { icon: TrendingUp, label: t.streakDays, value: user?.streak_days || 0, color: "text-blue-600", bg: "bg-blue-100" },
-    { icon: Award, label: t.quizzesTaken, value: 0, color: "text-orange-600", bg: "bg-orange-100" }
-  ];
+const localeMap = { en: 'en-US', es: 'es', fr: 'fr', it: 'it', de: 'de' };
+const actionIcons = { message: MessageCircle, heart: Heart, sparkles: Sparkles, users: Users };
+
+function formatMonthYear(value, language) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(localeMap[language] || localeMap.en, { month: 'long', year: 'numeric' }).format(date);
+}
+
+function formatDate(value, language) {
+  if (!value) return null;
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(localeMap[language] || localeMap.en, { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
+}
+
+function ProfileIdentity({ profile, label, t, language, showEmail = false }) {
+  const name = profile?.name || profile?.full_name || label;
+  const memberSince = formatMonthYear(profile?.created_at || profile?.created_date, language);
+  const interests = Array.isArray(profile?.interests) ? profile.interests.filter(Boolean).slice(0, 8) : [];
 
   return (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-4 shadow-xl">
-          <User className="w-10 h-10 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-1">
-          {user?.full_name || partnerLabel}
-        </h2>
-        <p className="text-gray-600 text-sm">{t.memberSince} {joinDate}</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index}>
-              <CardContent className="pt-4">
-                <div className="flex flex-col items-center text-center">
-                  <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center mb-2`}>
-                    <Icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs text-gray-600">{stat.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Personal Info */}
-      <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-lg">{t.personalInfo}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-start gap-3">
-            <Mail className="w-4 h-4 text-pink-500 mt-1" />
-            <div className="flex-1">
-              <p className="text-xs text-gray-500">{t.email}</p>
-              <p className="font-medium text-gray-900 text-sm">{user?.email || t.notSet}</p>
-            </div>
+    <Card className="h-full border-slate-200 shadow-sm">
+      <CardHeader className="text-center">
+        {profile?.avatar_url ? (
+          <img src={profile.avatar_url} alt="" className="mx-auto h-20 w-20 rounded-full object-cover shadow-md" loading="lazy" />
+        ) : (
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 shadow-md">
+            <User className="h-10 w-10 text-white" aria-hidden="true" />
           </div>
-          <div className="flex items-start gap-3">
-            <MapPin className="w-4 h-4 text-pink-500 mt-1" />
-            <div className="flex-1">
-              <p className="text-xs text-gray-500">{t.location}</p>
-              {isEditing && isCurrentUser ? (
-                <Input
-                  value={editData.location || ""}
-                  onChange={(e) => onEditChange({...editData, location: e.target.value})}
-                  placeholder="Enter location"
-                  className="h-8 text-sm"
-                />
-              ) : (
-                <p className="font-medium text-gray-900 text-sm">{user?.location || t.notSet}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Relationship Info */}
-      <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-lg">{t.relationshipInfo}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-start gap-3">
-            <Heart className="w-4 h-4 text-pink-500 mt-1" />
-            <div className="flex-1">
-              <p className="text-xs text-gray-500">{t.relationshipStatus}</p>
-              {isEditing && isCurrentUser ? (
-                <Select 
-                  value={editData.relationship_status || ""} 
-                  onValueChange={(value) => onEditChange({...editData, relationship_status: value})}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(translations.en.statuses).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="font-medium text-gray-900 text-sm">
-                  {user?.relationship_status ? t.statuses[user.relationship_status] : t.notSet}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Heart className="w-4 h-4 text-pink-500 mt-1 fill-current" />
-            <div className="flex-1">
-              <p className="text-xs text-gray-500">{t.partner}</p>
-              {isEditing && isCurrentUser ? (
-                <Input
-                  value={editData.partner_name || ""}
-                  onChange={(e) => onEditChange({...editData, partner_name: e.target.value})}
-                  placeholder="Partner's name"
-                  className="h-8 text-sm"
-                />
-              ) : (
-                <p className="font-medium text-gray-900 text-sm">{user?.partner_name || t.notSet}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Calendar className="w-4 h-4 text-pink-500 mt-1" />
-            <div className="flex-1">
-              <p className="text-xs text-gray-500">{t.anniversary}</p>
-              {isEditing && isCurrentUser ? (
-                <Input
-                  type="date"
-                  value={editData.anniversary_date || ""}
-                  onChange={(e) => onEditChange({...editData, anniversary_date: e.target.value})}
-                  className="h-8 text-sm"
-                />
-              ) : (
-                <p className="font-medium text-gray-900 text-sm">
-                  {user?.anniversary_date ? new Date(user.anniversary_date).toLocaleDateString() : t.notSet}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Heart className="w-4 h-4 text-pink-500 mt-1" />
-            <div className="flex-1">
-              <p className="text-xs text-gray-500">{t.loveLanguage}</p>
-              {isEditing && isCurrentUser ? (
-                <Select 
-                  value={editData.love_language || ""} 
-                  onValueChange={(value) => onEditChange({...editData, love_language: value})}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Select love language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(translations.en.loveLanguages).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="font-medium text-gray-900 text-sm">
-                  {user?.love_language ? t.loveLanguages[user.love_language] : t.notSet}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+        <CardTitle className="mt-3 text-2xl">{name}</CardTitle>
+        {memberSince && <p className="text-sm text-slate-500">{t.memberSince} {memberSince}</p>}
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {showEmail && profile?.email && (
+          <div className="flex items-start gap-3"><Mail className="mt-0.5 h-4 w-4 text-pink-600" aria-hidden="true" /><div><p className="text-xs text-slate-500">{t.email}</p><p className="break-all font-medium text-slate-800">{profile.email}</p></div></div>
+        )}
+        {profile?.location && (
+          <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-pink-600" aria-hidden="true" /><div><p className="text-xs text-slate-500">{t.location}</p><p className="font-medium text-slate-800">{profile.location}</p></div></div>
+        )}
+        {profile?.relationship_status && (
+          <div className="flex items-start gap-3"><Heart className="mt-0.5 h-4 w-4 text-pink-600" aria-hidden="true" /><div><p className="text-xs text-slate-500">{t.relationshipStatus}</p><p className="font-medium text-slate-800">{t.statuses[profile.relationship_status] || profile.relationship_status}</p></div></div>
+        )}
+        {profile?.bio && <div><p className="text-xs text-slate-500">{t.bio}</p><p className="mt-1 leading-6 text-slate-700">{profile.bio}</p></div>}
+        {interests.length > 0 && (
+          <div><p className="text-xs text-slate-500">{t.interests}</p><div className="mt-2 flex flex-wrap gap-2">{interests.map((interest) => <span key={interest} className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">{interest}</span>)}</div></div>
+        )}
+      </CardContent>
+    </Card>
   );
-};
+}
 
 export default function CouplesProfile() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const { user: currentUser, isLoading, refreshUserProfile } = useAuth();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
-  const queryClient = useQueryClient();
-
-  const { user: currentUser, isLoading } = useAuth();
 
   const { data: partnerUser, isLoading: partnerLoading } = useQuery({
-    queryKey: ['partnerUser', currentUser?.partner_email],
-    queryFn: async () => {
-      if (!currentUser?.partner_email) return null;
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', currentUser.partner_email)
-          .single();
-        if (error) return null;
-        return data;
-      } catch {
-        return null;
-      }
-    },
-    enabled: !!currentUser?.partner_email,
-    initialData: null
-  });
-
-  const { data: memories = [] } = useQuery({
-    queryKey: ['memories', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (error) {
-        console.error('Error fetching memories:', error);
-        return [];
-      }
-      return data || [];
-    },
+    queryKey: ['mutualPartnerDirectory', currentUser?.id],
+    queryFn: getMutualPartnerDirectoryProfile,
     enabled: !!currentUser?.id,
-    initialData: [],
+    retry: false,
+    staleTime: 30000,
   });
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data) => {
-      if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('users')
-        .update(data)
-        .eq('id', currentUser.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setIsEditing(false);
-      toast.success("Profile updated successfully!");
-    },
-    onError: () => {
-      toast.error("Failed to update profile");
-    }
-  });
-
-  const handleEdit = () => {
+  useEffect(() => {
+    if (!isEditing || !currentUser) return;
     setEditData({
-      location: currentUser?.location || "",
-      partner_name: currentUser?.partner_name || "",
-      partner_email: currentUser?.partner_email || "",
-      anniversary_date: currentUser?.anniversary_date || "",
-      love_language: currentUser?.love_language || "",
-      relationship_status: currentUser?.relationship_status || ""
+      location: currentUser.location || '',
+      partner_name: currentUser.partner_name || '',
+      partner_email: currentUser.partner_email || '',
+      anniversary_date: currentUser.anniversary_date || '',
+      love_language: currentUser.love_language || '',
+      relationship_status: currentUser.relationship_status || '',
     });
-    setIsEditing(true);
-  };
+  }, [isEditing, currentUser]);
 
-  const handleSave = () => {
-    updateProfileMutation.mutate(editData);
-  };
+  const updateMutation = useMutation({
+    mutationFn: async (values) => {
+      if (!currentUser?.id) throw new Error('Authentication required');
+      const updates = {
+        location: values.location.trim() || null,
+        partner_name: values.partner_name.trim() || null,
+        partner_email: values.partner_email.trim().toLowerCase() || null,
+        anniversary_date: values.anniversary_date || null,
+        love_language: values.love_language || null,
+        relationship_status: values.relationship_status || null,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('users').update(updates).eq('id', currentUser.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await refreshUserProfile();
+      await queryClient.invalidateQueries({ queryKey: ['mutualPartnerDirectory', currentUser?.id] });
+      setIsEditing(false);
+      toast.success(t.updateSuccess);
+    },
+    onError: () => toast.error(t.updateError),
+  });
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditData({});
-  };
+  const currentRelationship = useMemo(() => ([
+    [t.partnerName, currentUser?.partner_name || t.notSet],
+    [t.anniversary, formatDate(currentUser?.anniversary_date, currentLanguage) || t.notSet],
+    [t.loveLanguage, currentUser?.love_language ? (t.loveLanguages[currentUser.love_language] || currentUser.love_language) : t.notSet],
+  ]), [currentUser, currentLanguage, t]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading couple profile...</p>
-        </div>
-      </div>
-    );
+    return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50"><div className="flex items-center gap-3 text-slate-600" role="status"><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />{t.title}</div></main>;
   }
 
-  const quickActions = [
-    { icon: Heart, label: t.actions.sendLoveNote, color: "from-pink-500 to-rose-500", link: "LoveNotes" },
-    { icon: Calendar, label: t.actions.createMemory, color: "from-purple-500 to-indigo-500", link: "MemoryLane" },
-    { icon: Sparkles, label: t.actions.aiCreator, color: "from-blue-500 to-cyan-500", link: "AIContentCreator" },
-    { icon: Gift, label: t.actions.dateIdeas, color: "from-orange-500 to-yellow-500", link: "DateIdeas" }
-  ];
-
-  const recommendationsList = [
-    { title: t.recommendations?.loveQuiz || "Take the Love Language Quiz", description: t.recommendations?.loveQuizDesc || "Discover how you both express love", link: "LoveLanguageQuiz", icon: Heart },
-    { title: t.recommendations?.planDate || "Plan a Date Night", description: t.recommendations?.planDateDesc || "Browse creative date ideas", link: "DateIdeas", icon: Calendar },
-    { title: t.recommendations?.createMemory || "Create a Memory", description: t.recommendations?.createMemoryDesc || "Capture a special moment", link: "MemoryLane", icon: MessageCircle },
-    { title: t.recommendations?.setGoals || "Set Relationship Goals", description: t.recommendations?.setGoalsDesc || "Work together on shared goals", link: "RelationshipGoals", icon: TrendingUp }
-  ];
+  if (!currentUser) {
+    return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4"><Card className="max-w-lg"><CardContent className="p-8 text-center"><User className="mx-auto h-10 w-10 text-pink-600" aria-hidden="true" /><p className="mt-4 text-slate-700">{t.signIn}</p></CardContent></Card></main>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <Link
-            to={createPageUrl("Home")}
-            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-6xl">
+        <Link to={createPageUrl('CouplesDashboard')} className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-pink-700"><ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />{t.back}</Link>
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Users className="w-12 h-12 text-white" />
+        <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mt-7 max-w-3xl text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 shadow-xl"><Heart className="h-8 w-8 fill-white text-white" aria-hidden="true" /></div>
+          <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
+          <p className="mt-3 text-lg leading-7 text-slate-600">{t.subtitle}</p>
+        </motion.header>
+
+        <section className="mt-9 grid gap-6 lg:grid-cols-2" aria-label={t.title}>
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-xl font-bold text-slate-900">{t.yourProfile}</h2><Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" aria-hidden="true" />{t.editProfile}</Button></div>
+            <ProfileIdentity profile={currentUser} label={t.yourProfile} t={t} language={currentLanguage} showEmail />
+            <Card className="mt-4 border-slate-200"><CardHeader><CardTitle className="text-lg">{t.relationshipInfo}</CardTitle></CardHeader><CardContent className="space-y-3">{currentRelationship.map(([label, value]) => <div key={label}><p className="text-xs text-slate-500">{label}</p><p className="font-medium text-slate-800">{value}</p></div>)}</CardContent></Card>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2 font-dancing">
-            {t.title}
-          </h1>
-          <p className="text-xl text-gray-600">{t.subtitle}</p>
-        </motion.div>
 
-        {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.quickActions}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Link to={createPageUrl(action.link)}>
-                    <Card className="hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:border-pink-200">
-                      <CardContent className="pt-6 text-center">
-                        <div className={`w-16 h-16 bg-gradient-to-br ${action.color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                          <Icon className="w-8 h-8 text-white" />
-                        </div>
-                        <p className="font-semibold text-gray-900">{action.label}</p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </motion.div>
-              );
+          <div>
+            <h2 className="mb-3 text-xl font-bold text-slate-900">{t.partnerProfile}</h2>
+            {partnerLoading ? (
+              <Card><CardContent className="flex min-h-64 items-center justify-center gap-3 p-8 text-slate-600" role="status"><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />{t.partnerProfile}</CardContent></Card>
+            ) : partnerUser ? (
+              <ProfileIdentity profile={partnerUser} label={t.partnerProfile} t={t} language={currentLanguage} />
+            ) : (
+              <Card className="border-dashed border-pink-200 bg-white/80"><CardContent className="p-8 text-center"><Users className="mx-auto h-10 w-10 text-pink-600" aria-hidden="true" /><h3 className="mt-4 text-lg font-bold text-slate-900">{t.partnerNotLinked}</h3><p className="mt-3 text-sm leading-6 text-slate-600">{t.mutualRequired}</p></CardContent></Card>
+            )}
+          </div>
+        </section>
+
+        <aside className="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50 p-5"><div className="flex gap-3"><Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-indigo-700" aria-hidden="true" /><div><h2 className="font-bold text-indigo-950">{t.privacyTitle}</h2><p className="mt-1 text-sm leading-6 text-indigo-900/80">{t.privacyCopy}</p></div></div></aside>
+
+        <section className="mt-10" aria-labelledby="couple-actions-heading">
+          <h2 id="couple-actions-heading" className="text-2xl font-bold text-slate-900">{t.quickActions}</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {t.actions.map(([title, description, href, iconKey]) => {
+              const Icon = actionIcons[iconKey] || Heart;
+              return <Link key={href} to={href} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-pink-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"><Icon className="h-6 w-6 text-pink-600" aria-hidden="true" /><h3 className="mt-4 font-bold text-slate-900">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p><ArrowRight className="mt-4 h-4 w-4 text-pink-600 transition group-hover:translate-x-1" aria-hidden="true" /></Link>;
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Two Partner Profiles Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <ProfileCard
-              partnerLabel={t.partner1}
-              user={currentUser}
-              isEditing={isEditing}
-              editData={editData}
-              onEditChange={setEditData}
-              t={t}
-              isCurrentUser={true}
-            />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <ProfileCard
-              partnerLabel={t.partner2}
-              user={partnerUser}
-              isEditing={false}
-              editData={{}}
-              onEditChange={() => {}}
-              t={t}
-              isCurrentUser={false}
-            />
-          </motion.div>
-        </div>
-
-        {/* Shared Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-12"
-        >
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                {t.recentActivity}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {memories.length > 0 ? (
-                <div className="space-y-4">
-                  {memories.slice(0, 5).map((memory) => (
-                    <div key={memory.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <Calendar className="w-5 h-5 text-purple-600 mt-1" />
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{memory.title}</p>
-                        <p className="text-sm text-gray-600">{new Date(memory.memory_date).toLocaleDateString()}</p>
-                        <p className="text-xs text-gray-500 mt-1">By {memory.created_by}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <Link to={createPageUrl("MemoryLane")}>
-                    <Button variant="outline" className="w-full">
-                      {t.viewAll}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 mb-4">{t.noActivity}</p>
-                  <Link to={createPageUrl("MemoryLane")}>
-                    <Button variant="outline">
-                      {t.actions.createMemory}
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Recommendations */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mb-12"
-        >
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                {t.recommendationsTitle}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {recommendationsList.map((rec, index) => {
-                  const Icon = rec.icon;
-                  return (
-                    <Link key={index} to={createPageUrl(rec.link)}>
-                      <div className="flex flex-col items-start gap-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg hover:shadow-md transition-all cursor-pointer border border-purple-100 h-full">
-                        <Icon className="w-5 h-5 text-purple-600" />
-                        <div>
-                          <p className="font-semibold text-gray-900">{rec.title}</p>
-                          <p className="text-sm text-gray-600">{rec.description}</p>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto mt-auto" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Edit/Save Buttons */}
-        {isEditing ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-4 justify-center"
-          >
-            <Button
-              onClick={handleSave}
-              disabled={updateProfileMutation.isPending}
-              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-8"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {t.saveChanges}
-            </Button>
-            <Button onClick={handleCancel} variant="outline" className="px-8">
-              <X className="w-4 h-4 mr-2" />
-              {t.cancel}
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex flex-wrap gap-4 justify-center"
-          >
-            <Button 
-              onClick={handleEdit}
-              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-8 py-6 text-lg"
-            >
-              <Edit className="w-5 h-5 mr-2" />
-              {t.editProfile}
-            </Button>
-          </motion.div>
+        {isEditing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={() => !updateMutation.isPending && setIsEditing(false)}>
+            <Card className="max-h-[90vh] w-full max-w-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="couple-profile-edit-title" onClick={(event) => event.stopPropagation()}>
+              <CardHeader><div className="flex items-center justify-between gap-4"><CardTitle id="couple-profile-edit-title">{t.editProfile}</CardTitle><Button type="button" variant="ghost" size="icon" onClick={() => setIsEditing(false)} disabled={updateMutation.isPending} aria-label={t.cancel}><X className="h-5 w-5" aria-hidden="true" /></Button></div></CardHeader>
+              <CardContent className="space-y-4">
+                <label className="block text-sm font-medium text-slate-700">{t.location}<Input className="mt-2" value={editData.location || ''} onChange={(e) => setEditData({ ...editData, location: e.target.value })} placeholder={t.locationPlaceholder} /></label>
+                <label className="block text-sm font-medium text-slate-700">{t.partnerName}<Input className="mt-2" value={editData.partner_name || ''} onChange={(e) => setEditData({ ...editData, partner_name: e.target.value })} placeholder={t.partnerNamePlaceholder} /></label>
+                <label className="block text-sm font-medium text-slate-700">{t.partnerEmail}<Input className="mt-2" type="email" autoComplete="email" value={editData.partner_email || ''} onChange={(e) => setEditData({ ...editData, partner_email: e.target.value })} placeholder={t.partnerEmailPlaceholder} /></label>
+                <label className="block text-sm font-medium text-slate-700">{t.anniversary}<Input className="mt-2" type="date" value={editData.anniversary_date || ''} onChange={(e) => setEditData({ ...editData, anniversary_date: e.target.value })} /></label>
+                <div><label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="couple-status">{t.relationshipStatus}</label><Select value={editData.relationship_status || ''} onValueChange={(value) => setEditData({ ...editData, relationship_status: value })}><SelectTrigger id="couple-status"><SelectValue placeholder={t.notSet} /></SelectTrigger><SelectContent>{Object.entries(t.statuses).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+                <div><label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="couple-love-language">{t.loveLanguage}</label><Select value={editData.love_language || ''} onValueChange={(value) => setEditData({ ...editData, love_language: value })}><SelectTrigger id="couple-love-language"><SelectValue placeholder={t.notSet} /></SelectTrigger><SelectContent>{Object.entries(t.loveLanguages).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+                <p className="rounded-xl bg-pink-50 p-3 text-xs leading-5 text-pink-900">{t.mutualRequired}</p>
+                <div className="flex gap-3 pt-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditing(false)} disabled={updateMutation.isPending}>{t.cancel}</Button><Button type="button" className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600" onClick={() => updateMutation.mutate(editData)} disabled={updateMutation.isPending}>{updateMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />{t.saving}</> : <><Save className="mr-2 h-4 w-4" aria-hidden="true" />{t.saveChanges}</>}</Button></div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
