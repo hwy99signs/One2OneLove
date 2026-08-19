@@ -1,0 +1,22 @@
+-- Pin legacy function name resolution to trusted schemas.
+alter function public.cleanup_expired_pins() set search_path = public, pg_temp;
+alter function public.cleanup_stale_presence() set search_path = public, pg_temp;
+alter function public.is_message_pinned(uuid, uuid) set search_path = public, pg_temp;
+alter function public.is_message_starred(uuid, uuid) set search_path = public, pg_temp;
+alter function public.recalculate_unread_count(uuid, uuid) set search_path = public, pg_temp;
+alter function public.update_buddy_requests_updated_at() set search_path = public, pg_temp;
+alter function public.update_calendar_events_updated_at() set search_path = public, pg_temp;
+alter function public.update_comment_likes_count() set search_path = public, pg_temp;
+alter function public.update_community_member_count() set search_path = public, pg_temp;
+alter function public.update_community_post_count() set search_path = public, pg_temp;
+alter function public.update_conversation_on_message() set search_path = public, pg_temp;
+alter function public.update_goal_completed_date() set search_path = public, pg_temp;
+alter function public.update_post_comments_count() set search_path = public, pg_temp;
+alter function public.update_post_likes_count() set search_path = public, pg_temp;
+alter function public.update_post_shares_count() set search_path = public, pg_temp;
+alter function public.update_profile_completion() set search_path = public, pg_temp;
+alter function public.update_shared_journals_updated_at() set search_path = public, pg_temp;
+alter function public.update_story_helpful_count() set search_path = public, pg_temp;
+alter function public.update_story_likes_count() set search_path = public, pg_temp;
+alter function public.update_updated_at_column() set search_path = public, pg_temp;
+alter function public.update_user_presence_timestamp() set search_path = public, pg_temp;
