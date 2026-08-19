@@ -1,466 +1,362 @@
-
 import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Plus, Heart, Calendar, Sparkles, Gift, Link as LinkIcon, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useLanguage } from "@/Layout";
-import { toast } from "sonner";
+import { Calendar, Heart, Plus, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-
-import MilestoneForm from "../components/milestones/MilestoneForm";
-import MilestoneCard from "../components/milestones/MilestoneCard";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/Layout";
 import CelebrationIdeas from "../components/milestones/CelebrationIdeas";
-import { getMilestones, createMilestone, updateMilestone, deleteMilestone } from "@/lib/milestonesService";
+import MilestoneCard from "../components/milestones/MilestoneCard";
+import MilestoneForm from "../components/milestones/MilestoneForm";
+import {
+  createMilestone,
+  deleteMilestone,
+  getMilestones,
+  updateMilestone,
+} from "@/lib/milestonesService";
 
 const translations = {
   en: {
-    title: "Relationship Milestones & Anniversaries",
-    subtitle: "Celebrate and treasure every precious moment that weaves your beautiful love story. Never let a special date pass by!",
-    addMilestone: "Add a Milestone",
-    noMilestones: "No Milestones Yet",
-    noMilestonesDesc: "Begin documenting your magical journey together by adding your first milestone of love!",
+    title: "Relationship Milestones",
+    subtitle: "Keep meaningful relationship dates visible and celebrate the moments that matter to you.",
+    add: "Add Milestone",
     upcoming: "Upcoming Celebrations",
-    past: "Your Beautiful Love Story Timeline",
-    celebrationIdeas: "Celebration Ideas",
-    days: "days",
+    history: "Milestone History",
+    empty: "No milestones yet",
+    emptyDesc: "Add a meaningful date when you are ready to begin your relationship timeline.",
+    ideas: "Celebration Ideas",
     today: "Today!",
-    milestoneAdded: "Your beautiful milestone has been added! 💕",
-    milestoneUpdated: "Your milestone has been updated with love! ✨",
-    milestoneDeleted: "Milestone removed",
-    errorAdding: "Couldn't add your milestone. Please try again with love.",
-    errorUpdating: "Couldn't update your milestone. Please try again.",
-    errorDeleting: "Couldn't delete milestone. Please try again.",
-    quickActions: "Quick Celebration Actions",
-    quickActionsSubtitle: "Make your special days absolutely unforgettable",
-    sendLoveNote: "Send a Love Note",
-    sendLoveNoteDesc: "Express your deepest feelings with a heartfelt message",
-    browseDateIdeas: "Browse Date Ideas",
-    browseDateIdeasDesc: "Discover inspiration for the most romantic dates",
-    shopGifts: "Gift Suggestions",
-    shopGiftsDesc: "Thoughtful presents that speak to your loved one's heart",
-    back: "Back",
+    days: "days",
+    added: "Milestone added.",
+    updated: "Milestone updated.",
+    deleted: "Milestone deleted.",
+    addError: "We could not add that milestone.",
+    updateError: "We could not update that milestone.",
+    deleteError: "We could not delete that milestone.",
+    deleteConfirm: "Delete this milestone? This cannot be undone.",
+    quick: "Keep the Celebration Going",
+    quickDesc: "Use another real One2OneLove tool to make the moment intentional.",
+    loveNote: "Send a Love Note",
+    loveNoteDesc: "Write a private note to your mutually linked partner.",
+    dateNight: "Plan a Date Night",
+    dateNightDesc: "Make intentional time together around your schedule and preferences.",
   },
   es: {
-    title: "Hitos de la Relación y Aniversarios",
-    subtitle: "Celebra y atesora cada momento precioso que teje tu hermosa historia de amor. ¡Nunca dejes pasar una fecha especial!",
-    addMilestone: "Agregar un Hito",
-    noMilestones: "Aún No Hay Hitos",
-    noMilestonesDesc: "¡Comienza a documentar tu viaje mágico juntos agregando tu primer hito de amor!",
-    upcoming: "Celebraciones Próximas",
-    past: "La Hermosa Línea de Tiempo de Tu Historia de Amor",
-    celebrationIdeas: "Ideas de Celebración",
-    days: "días",
+    title: "Hitos de la Relación",
+    subtitle: "Mantengan visibles las fechas significativas y celebren los momentos que importan para ustedes.",
+    add: "Agregar Hito",
+    upcoming: "Próximas Celebraciones",
+    history: "Historia de Hitos",
+    empty: "Aún no hay hitos",
+    emptyDesc: "Agreguen una fecha significativa cuando estén listos para comenzar su línea de tiempo.",
+    ideas: "Ideas de Celebración",
     today: "¡Hoy!",
-    milestoneAdded: "¡Tu hermoso hito ha sido agregado! 💕",
-    milestoneUpdated: "¡Tu hito ha sido actualizado con amor! ✨",
-    milestoneDeleted: "Hito eliminado",
-    errorAdding: "No se pudo agregar tu hito. Por favor, inténtalo de nuevo con amor.",
-    errorUpdating: "No se pudo actualizar tu hito. Por favor, inténtalo de nuevo.",
-    errorDeleting: "No se pudo eliminar el hito. Por favor, inténtalo de nuevo.",
-    quickActions: "Acciones Rápidas de Celebración",
-    quickActionsSubtitle: "Haz tus días especiales absolutamente inolvidables",
-    sendLoveNote: "Enviar una Nota de Amor",
-    sendLoveNoteDesc: "Expresa tus sentimientos más profundos con un mensaje sincero",
-    browseDateIdeas: "Explorar Ideas de Citas",
-    browseDateIdeasDesc: "Descubre inspiración para las citas más románticas",
-    shopGifts: "Sugerencias de Regalos",
-    shopGiftsDesc: "Regalos considerados que hablan al corazón de tu ser querido",
-    back: "Volver",
+    days: "días",
+    added: "Hito agregado.",
+    updated: "Hito actualizado.",
+    deleted: "Hito eliminado.",
+    addError: "No pudimos agregar ese hito.",
+    updateError: "No pudimos actualizar ese hito.",
+    deleteError: "No pudimos eliminar ese hito.",
+    deleteConfirm: "¿Eliminar este hito? Esta acción no se puede deshacer.",
+    quick: "Continúen la Celebración",
+    quickDesc: "Usen otra herramienta real de One2OneLove para hacer el momento más intencional.",
+    loveNote: "Enviar una Nota de Amor",
+    loveNoteDesc: "Escribe una nota privada a tu pareja vinculada mutuamente.",
+    dateNight: "Planear una Noche de Cita",
+    dateNightDesc: "Creen tiempo intencional juntos según su horario y preferencias.",
   },
   fr: {
-    title: "Jalons de la Relation et Anniversaires",
-    subtitle: "Célébrez et chérissez chaque moment précieux qui tisse votre belle histoire d'amour. Ne laissez jamais passer une date spéciale!",
-    addMilestone: "Ajouter un Jalon",
-    noMilestones: "Pas Encore de Jalons",
-    noMilestonesDesc: "Commencez à documenter votre voyage magique ensemble en ajoutant votre premier jalon d'amour!",
+    title: "Jalons de la Relation",
+    subtitle: "Gardez les dates importantes visibles et célébrez les moments qui comptent pour vous.",
+    add: "Ajouter un Jalon",
     upcoming: "Célébrations à Venir",
-    past: "La Belle Chronologie de Votre Histoire d'Amour",
-    celebrationIdeas: "Idées de Célébration",
+    history: "Historique des Jalons",
+    empty: "Aucun jalon pour le moment",
+    emptyDesc: "Ajoutez une date importante lorsque vous êtes prêts à commencer votre chronologie relationnelle.",
+    ideas: "Idées de Célébration",
+    today: "Aujourd’hui !",
     days: "jours",
-    today: "Aujourd'hui!",
-    milestoneAdded: "Votre beau jalon a été ajouté! 💕",
-    milestoneUpdated: "Votre jalon a été mis à jour avec amour! ✨",
-    milestoneDeleted: "Jalon supprimé",
-    errorAdding: "Impossible d'ajouter votre jalon. Veuillez réessayer avec amour.",
-    errorUpdating: "Impossible de mettre à jour votre jalon. Veuillez réessayer.",
-    errorDeleting: "Impossible de supprimer le jalon. Veuillez réessayer.",
-    quickActions: "Actions Rapides de Célébration",
-    quickActionsSubtitle: "Rendez vos jours spéciaux absolument inoubliables",
-    sendLoveNote: "Envoyer une Note d'Amour",
-    sendLoveNoteDesc: "Exprimez vos sentiments les plus profonds avec un message sincère",
-    browseDateIdeas: "Parcourir Idées de Rendez-vous",
-    browseDateIdeasDesc: "Découvrez l'inspiration pour les rendez-vous les plus romantiques",
-    shopGifts: "Suggestions de Cadeaux",
-    shopGiftsDesc: "Cadeaux attentionnés qui parlent au cœur de votre bien-aimé(e)",
-    back: "Retour",
+    added: "Jalon ajouté.",
+    updated: "Jalon mis à jour.",
+    deleted: "Jalon supprimé.",
+    addError: "Nous n’avons pas pu ajouter ce jalon.",
+    updateError: "Nous n’avons pas pu mettre à jour ce jalon.",
+    deleteError: "Nous n’avons pas pu supprimer ce jalon.",
+    deleteConfirm: "Supprimer ce jalon ? Cette action est irréversible.",
+    quick: "Poursuivre la Célébration",
+    quickDesc: "Utilisez un autre outil One2OneLove réellement disponible pour rendre ce moment intentionnel.",
+    loveNote: "Envoyer une Note d’Amour",
+    loveNoteDesc: "Écrivez une note privée à votre partenaire lié réciproquement.",
+    dateNight: "Planifier une Soirée",
+    dateNightDesc: "Créez du temps intentionnel ensemble selon votre emploi du temps et vos préférences.",
   },
   it: {
-    title: "Traguardi della Relazione e Anniversari",
-    subtitle: "Celebra e custodisci ogni momento prezioso che intesse la tua bellissima storia d'amore. Non lasciare mai passare una data speciale!",
-    addMilestone: "Aggiungi un Traguardo",
-    noMilestones: "Nessun Traguardo Ancora",
-    noMilestonesDesc: "Inizia a documentare il tuo viaggio magico insieme aggiungendo il tuo primo traguardo d'amore!",
+    title: "Traguardi della Relazione",
+    subtitle: "Tenete visibili le date significative e celebrate i momenti importanti per voi.",
+    add: "Aggiungi Traguardo",
     upcoming: "Celebrazioni in Arrivo",
-    past: "La Bellissima Cronologia della Tua Storia d'Amore",
-    celebrationIdeas: "Idee per la Celebrazione",
-    days: "giorni",
+    history: "Storia dei Traguardi",
+    empty: "Nessun traguardo per ora",
+    emptyDesc: "Aggiungete una data significativa quando siete pronti a iniziare la vostra cronologia di coppia.",
+    ideas: "Idee per la Celebrazione",
     today: "Oggi!",
-    milestoneAdded: "Il tuo bellissimo traguardo è stato aggiunto! 💕",
-    milestoneUpdated: "Il tuo traguardo è stato aggiornato con amore! ✨",
-    milestoneDeleted: "Traguardo eliminato",
-    errorAdding: "Impossibile aggiungere il tuo traguardo. Per favore, riprova con amore.",
-    errorUpdating: "Impossibile aggiornare il tuo traguardo. Per favore, riprova.",
-    errorDeleting: "Impossibile eliminare il traguardo. Per favore, riprova.",
-    quickActions: "Azioni Rapide per la Celebrazione",
-    quickActionsSubtitle: "Rendi i tuoi giorni speciali assolutamente indimenticabili",
-    sendLoveNote: "Invia una Nota d'Amore",
-    sendLoveNoteDesc: "Esprimi i tuoi sentimenti più profondi con un messaggio sincero",
-    browseDateIdeas: "Sfoglia Idee per Appuntamenti",
-    browseDateIdeasDesc: "Scopri ispirazione per gli appuntamenti più romantici",
-    shopGifts: "Suggerimenti per Regali",
-    shopGiftsDesc: "Regali premurosi che parlano al cuore della persona amata",
-    back: "Indietro",
+    days: "giorni",
+    added: "Traguardo aggiunto.",
+    updated: "Traguardo aggiornato.",
+    deleted: "Traguardo eliminato.",
+    addError: "Non è stato possibile aggiungere quel traguardo.",
+    updateError: "Non è stato possibile aggiornare quel traguardo.",
+    deleteError: "Non è stato possibile eliminare quel traguardo.",
+    deleteConfirm: "Eliminare questo traguardo? L’azione non può essere annullata.",
+    quick: "Continuate la Celebrazione",
+    quickDesc: "Usate un altro strumento One2OneLove realmente disponibile per rendere il momento intenzionale.",
+    loveNote: "Invia una Nota d’Amore",
+    loveNoteDesc: "Scrivi una nota privata al partner collegato reciprocamente.",
+    dateNight: "Pianifica una Serata di Coppia",
+    dateNightDesc: "Create tempo intenzionale insieme in base al vostro programma e alle preferenze.",
   },
   de: {
-    title: "Beziehungs-Meilensteine & Jahrestage",
-    subtitle: "Feiere und schätze jeden kostbaren Moment, der eure wunderschöne Liebesgeschichte webt. Lass nie ein besonderes Datum vorbeigehen!",
-    addMilestone: "Einen Meilenstein Hinzufügen",
-    noMilestones: "Noch Keine Meilensteine",
-    noMilestonesDesc: "Beginne, eure magische gemeinsame Reise zu dokumentieren, indem du deinen ersten Meilenstein der Liebe hinzufügst!",
+    title: "Beziehungsmeilensteine",
+    subtitle: "Haltet wichtige Beziehungsdaten sichtbar und feiert die Momente, die für euch Bedeutung haben.",
+    add: "Meilenstein Hinzufügen",
     upcoming: "Bevorstehende Feiern",
-    past: "Eure Wunderschöne Liebesgeschichte-Zeitlinie",
-    celebrationIdeas: "Feier-Ideen",
-    days: "Tage",
+    history: "Meilenstein-Verlauf",
+    empty: "Noch keine Meilensteine",
+    emptyDesc: "Fügt ein wichtiges Datum hinzu, sobald ihr eure Beziehungszeitlinie beginnen möchtet.",
+    ideas: "Feier-Ideen",
     today: "Heute!",
-    milestoneAdded: "Dein wunderschöner Meilenstein wurde hinzugefügt! 💕",
-    milestoneUpdated: "Dein Meilenstein wurde mit Liebe aktualisiert! ✨",
-    milestoneDeleted: "Meilenstein gelöscht",
-    errorAdding: "Meilenstein konnte nicht hinzugefügt werden. Bitte versuche es mit Liebe erneut.",
-    errorUpdating: "Meilenstein konnte nicht aktualisiert werden. Bitte versuche es erneut.",
-    errorDeleting: "Meilenstein konnte nicht gelöscht werden. Bitte versuche es erneut.",
-    quickActions: "Schnelle Feier-Aktionen",
-    quickActionsSubtitle: "Mach deine besonderen Tage absolut unvergesslich",
-    sendLoveNote: "Eine Liebesbotschaft Senden",
-    sendLoveNoteDesc: "Drücke deine tiefsten Gefühle mit einer herzlichen Nachricht aus",
-    browseDateIdeas: "Date-Ideen Durchsuchen",
-    browseDateIdeasDesc: "Entdecke Inspiration für die romantischsten Dates",
-    shopGifts: "Geschenkvorschläge",
-    shopGiftsDesc: "Durchdachte Geschenke, die zum Herzen deiner Liebsten sprechen",
-    back: "Zurück",
-  }
+    days: "Tage",
+    added: "Meilenstein hinzugefügt.",
+    updated: "Meilenstein aktualisiert.",
+    deleted: "Meilenstein gelöscht.",
+    addError: "Dieser Meilenstein konnte nicht hinzugefügt werden.",
+    updateError: "Dieser Meilenstein konnte nicht aktualisiert werden.",
+    deleteError: "Dieser Meilenstein konnte nicht gelöscht werden.",
+    deleteConfirm: "Diesen Meilenstein löschen? Dies kann nicht rückgängig gemacht werden.",
+    quick: "Die Feier Fortsetzen",
+    quickDesc: "Nutzt ein weiteres tatsächlich verfügbares One2OneLove-Werkzeug, um den Moment bewusst zu gestalten.",
+    loveNote: "Liebesbotschaft Senden",
+    loveNoteDesc: "Schreibt eine private Nachricht an euren gegenseitig verknüpften Partner.",
+    dateNight: "Date Night Planen",
+    dateNightDesc: "Schafft bewusste gemeinsame Zeit passend zu eurem Zeitplan und euren Vorlieben.",
+  },
 };
+
+function toLocalDate(value) {
+  return new Date(`${String(value).slice(0, 10)}T12:00:00`);
+}
+
+function daysUntil(value) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  return Math.ceil((toLocalDate(value).getTime() - today.getTime()) / 86400000);
+}
+
+function nextRecurringDate(value) {
+  const original = toLocalDate(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
+  let next = new Date(today.getFullYear(), original.getMonth(), original.getDate(), 12);
+  if (next < today) next = new Date(today.getFullYear() + 1, original.getMonth(), original.getDate(), 12);
+  return next.toISOString().slice(0, 10);
+}
 
 export default function RelationshipMilestones() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
-
   const [showForm, setShowForm] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState(null);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
 
-  const { data: milestones = [], isLoading } = useQuery({
-    queryKey: ['milestones'],
-    queryFn: () => getMilestones('-date'),
+  const { data: milestones = [] } = useQuery({
+    queryKey: ["milestones"],
+    queryFn: () => getMilestones("-date"),
     initialData: [],
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => createMilestone(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['milestones'] });
+    mutationFn: createMilestone,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["milestones"] });
       setShowForm(false);
       setEditingMilestone(null);
-      toast.success(t.milestoneAdded);
+      toast.success(t.added);
     },
-    onError: (error) => {
-      console.error('Create error:', error);
-      toast.error(t.errorAdding);
-    }
+    onError: () => toast.error(t.addError),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => updateMilestone(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['milestones'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["milestones"] });
       setShowForm(false);
       setEditingMilestone(null);
-      toast.success(t.milestoneUpdated);
+      toast.success(t.updated);
     },
-    onError: (error) => {
-      console.error('Update error:', error);
-      toast.error(t.errorUpdating);
-    }
+    onError: () => toast.error(t.updateError),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => deleteMilestone(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['milestones'] });
-      toast.success(t.milestoneDeleted);
+    mutationFn: deleteMilestone,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["milestones"] });
+      toast.success(t.deleted);
     },
-    onError: (error) => {
-      console.error('Delete error:', error);
-      toast.error(t.errorDeleting);
-    }
+    onError: () => toast.error(t.deleteError),
   });
 
-  const handleSubmit = (data) => {
-    if (editingMilestone) {
-      updateMutation.mutate({ id: editingMilestone.id, data });
-    } else {
-      createMutation.mutate(data);
-    }
+  const displayMilestones = milestones.map((milestone) => ({
+    ...milestone,
+    displayDate: milestone.is_recurring ? nextRecurringDate(milestone.date) : milestone.date,
+  }));
+
+  const upcomingMilestones = displayMilestones
+    .filter((milestone) => {
+      const remaining = daysUntil(milestone.displayDate);
+      return remaining >= 0 && remaining <= 60;
+    })
+    .sort((a, b) => daysUntil(a.displayDate) - daysUntil(b.displayDate));
+
+  const historyMilestones = milestones
+    .filter((milestone) => milestone.is_recurring || daysUntil(milestone.date) < 0)
+    .sort((a, b) => toLocalDate(b.date) - toLocalDate(a.date));
+
+  const openNew = () => {
+    setEditingMilestone(null);
+    setShowForm(true);
   };
 
-  const handleEdit = (milestone) => {
+  const editMilestone = (milestone) => {
     setEditingMilestone(milestone);
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this milestone?')) {
-      deleteMutation.mutate(id);
-    }
+  const removeMilestone = (id) => {
+    if (window.confirm(t.deleteConfirm)) deleteMutation.mutate(id);
   };
-
-  const getDaysUntil = (date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const milestoneDate = new Date(date);
-    milestoneDate.setHours(0, 0, 0, 0);
-    const diffTime = milestoneDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const getNextAnniversary = (originalDate) => {
-    const today = new Date();
-    const original = new Date(originalDate);
-    const thisYear = new Date(today.getFullYear(), original.getMonth(), original.getDate());
-    
-    if (thisYear < today) {
-      return new Date(today.getFullYear() + 1, original.getMonth(), original.getDate());
-    }
-    return thisYear;
-  };
-
-  const upcomingMilestones = milestones
-    .map(m => {
-      if (m.is_recurring) {
-        const nextDate = getNextAnniversary(m.date);
-        return { ...m, displayDate: nextDate.toISOString().split('T')[0] };
-      }
-      return { ...m, displayDate: m.date };
-    })
-    .filter(m => {
-      const days = getDaysUntil(m.displayDate);
-      return days >= 0 && days <= 60;
-    })
-    .sort((a, b) => getDaysUntil(a.displayDate) - getDaysUntil(b.displayDate));
-
-  const pastMilestones = milestones
-    .filter(m => !m.is_recurring && getDaysUntil(m.date) < 0)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link
-            to={createPageUrl("Home")}
-            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Heart className="w-10 h-10 text-white fill-white" />
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-10 md:py-16">
+      <div className="mx-auto max-w-7xl">
+        <header className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-xl">
+            <Heart className="h-10 w-10 fill-current" aria-hidden="true" />
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4 font-dancing">
-            {t.title}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-            {t.subtitle}
-          </p>
-          <Button
-            onClick={() => {
-              setEditingMilestone(null);
-              setShowForm(true);
-            }}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-6 text-lg shadow-xl"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            {t.addMilestone}
+          <h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
+          <p className="mt-4 text-lg leading-7 text-slate-600">{t.subtitle}</p>
+          <Button type="button" onClick={openNew} className="mt-6 bg-gradient-to-r from-pink-500 to-purple-600">
+            <Plus className="mr-2 h-5 w-5" aria-hidden="true" />
+            {t.add}
           </Button>
-        </motion.div>
+        </header>
 
-        {/* Form Modal */}
         <AnimatePresence>
           {showForm && (
-            <MilestoneForm
-              milestone={editingMilestone}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingMilestone(null);
-              }}
-              isLoading={createMutation.isPending || updateMutation.isPending}
-            />
+            <div className="mt-8">
+              <MilestoneForm
+                milestone={editingMilestone}
+                onSubmit={(data) => {
+                  if (editingMilestone) updateMutation.mutate({ id: editingMilestone.id, data });
+                  else createMutation.mutate(data);
+                }}
+                onCancel={() => {
+                  setShowForm(false);
+                  setEditingMilestone(null);
+                }}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+              />
+            </div>
           )}
         </AnimatePresence>
 
-        {/* Upcoming Celebrations */}
         {upcomingMilestones.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <Calendar className="w-6 h-6 text-pink-600" />
-              <h2 className="text-3xl font-bold text-gray-900">{t.upcoming}</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <section className="mt-12" aria-labelledby="upcoming-milestones-heading">
+            <h2 id="upcoming-milestones-heading" className="flex items-center gap-3 text-2xl font-bold text-slate-900">
+              <Calendar className="h-6 w-6 text-pink-600" aria-hidden="true" />
+              {t.upcoming}
+            </h2>
+            <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {upcomingMilestones.map((milestone) => {
-                const daysUntil = getDaysUntil(milestone.displayDate);
+                const remaining = daysUntil(milestone.displayDate);
                 return (
-                  <motion.div
-                    key={milestone.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className={`rounded-2xl p-6 border-2 shadow-lg ${
-                      daysUntil === 0 
-                        ? 'bg-gradient-to-br from-yellow-100 to-orange-100 border-yellow-300 animate-pulse' 
-                        : 'bg-gradient-to-br from-pink-100 to-purple-100 border-pink-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`text-sm font-semibold ${
-                        daysUntil === 0 ? 'text-orange-700' : 'text-pink-700'
-                      }`}>
-                        {daysUntil === 0 ? `🎉 ${t.today}` : `${daysUntil} ${t.days}`}
-                      </span>
-                      <Sparkles className={`w-5 h-5 ${
-                        daysUntil === 0 ? 'text-yellow-500' : 'text-purple-500'
-                      }`} />
+                  <motion.article key={milestone.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-pink-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-pink-700">{remaining === 0 ? t.today : `${remaining} ${t.days}`}</span>
+                      <Sparkles className="h-5 w-5 text-purple-500" aria-hidden="true" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{milestone.title}</h3>
-                    <p className="text-gray-700 text-sm mb-4 line-clamp-2">{milestone.description}</p>
-                    <Button
-                      onClick={() => setSelectedMilestone(milestone)}
-                      className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      {t.celebrationIdeas}
+                    <h3 className="mt-3 text-xl font-bold text-slate-900">{milestone.title}</h3>
+                    {milestone.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{milestone.description}</p>}
+                    <Button type="button" onClick={() => setSelectedMilestone(milestone)} className="mt-5 w-full" variant="outline">
+                      <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {t.ideas}
                     </Button>
-                  </motion.div>
+                  </motion.article>
                 );
               })}
             </div>
-          </motion.div>
+          </section>
         )}
 
-        {/* Past Milestones */}
-        {pastMilestones.length > 0 || milestones.filter(m => m.is_recurring).length > 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <Heart className="w-6 h-6 text-purple-600" />
-              <h2 className="text-3xl font-bold text-gray-900">{t.past}</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...milestones.filter(m => m.is_recurring), ...pastMilestones].map((milestone) => (
+        {historyMilestones.length > 0 && (
+          <section className="mt-12" aria-labelledby="milestone-history-heading">
+            <h2 id="milestone-history-heading" className="flex items-center gap-3 text-2xl font-bold text-slate-900">
+              <Heart className="h-6 w-6 text-purple-600" aria-hidden="true" />
+              {t.history}
+            </h2>
+            <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {historyMilestones.map((milestone) => (
                 <MilestoneCard
                   key={milestone.id}
                   milestone={milestone}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onEdit={editMilestone}
+                  onDelete={removeMilestone}
                   onCelebrate={() => setSelectedMilestone(milestone)}
                 />
               ))}
             </div>
-          </motion.div>
-        ) : null}
+          </section>
+        )}
 
-        {/* Empty State */}
         {!showForm && milestones.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-16"
-          >
-            <Heart className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-gray-600 mb-3">{t.noMilestones}</h3>
-            <p className="text-gray-500 text-lg max-w-md mx-auto">
-              {t.noMilestonesDesc}
-            </p>
-          </motion.div>
+          <section className="py-20 text-center">
+            <Heart className="mx-auto h-20 w-20 text-slate-300" aria-hidden="true" />
+            <h2 className="mt-5 text-2xl font-bold text-slate-700">{t.empty}</h2>
+            <p className="mx-auto mt-2 max-w-xl text-slate-500">{t.emptyDesc}</p>
+            <Button type="button" onClick={openNew} className="mt-6">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              {t.add}
+            </Button>
+          </section>
         )}
 
-        {/* Quick Actions Section */}
         {milestones.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-16 bg-gradient-to-r from-pink-600 to-purple-600 rounded-3xl p-12 text-center text-white shadow-2xl"
-          >
-            <Gift className="w-16 h-16 mx-auto mb-6" />
-            <h2 className="text-4xl font-bold mb-4">
-              {t.quickActions}
-            </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              {t.quickActionsSubtitle}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-              <Link to={createPageUrl("LoveNotes")}>
-                <div className="bg-white/20 rounded-xl p-6 backdrop-blur-sm hover:bg-white/30 transition-all cursor-pointer">
-                  <Heart className="w-8 h-8 mb-3 fill-current" />
-                  <h3 className="font-bold text-lg mb-2">{t.sendLoveNote}</h3>
-                  <p className="text-sm opacity-90">{t.sendLoveNoteDesc}</p>
-                </div>
+          <section className="mt-14 rounded-3xl bg-gradient-to-r from-pink-600 to-purple-600 p-8 text-white shadow-xl md:p-10">
+            <h2 className="text-2xl font-bold">{t.quick}</h2>
+            <p className="mt-2 max-w-2xl text-white/90">{t.quickDesc}</p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <Link to="/LoveNotes" className="rounded-2xl bg-white/15 p-5 transition hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                <Heart className="h-6 w-6" aria-hidden="true" />
+                <h3 className="mt-3 font-bold">{t.loveNote}</h3>
+                <p className="mt-1 text-sm text-white/90">{t.loveNoteDesc}</p>
               </Link>
-              <Link to={createPageUrl("DateIdeas")}>
-                <div className="bg-white/20 rounded-xl p-6 backdrop-blur-sm hover:bg-white/30 transition-all cursor-pointer">
-                  <Calendar className="w-8 h-8 mb-3" />
-                  <h3 className="font-bold text-lg mb-2">{t.browseDateIdeas}</h3>
-                  <p className="text-sm opacity-90">{t.browseDateIdeasDesc}</p>
-                </div>
+              <Link to="/DateNight" className="rounded-2xl bg-white/15 p-5 transition hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                <Calendar className="h-6 w-6" aria-hidden="true" />
+                <h3 className="mt-3 font-bold">{t.dateNight}</h3>
+                <p className="mt-1 text-sm text-white/90">{t.dateNightDesc}</p>
               </Link>
-              <div className="bg-white/20 rounded-xl p-6 backdrop-blur-sm hover:bg-white/30 transition-all cursor-pointer"
-                   onClick={() => selectedMilestone && setSelectedMilestone(upcomingMilestones[0] || milestones[0])}>
-                <Gift className="w-8 h-8 mb-3" />
-                <h3 className="font-bold text-lg mb-2">{t.shopGifts}</h3>
-                <p className="text-sm opacity-90">{t.shopGiftsDesc}</p>
-              </div>
             </div>
-          </motion.div>
+          </section>
         )}
 
-        {/* Celebration Ideas Modal */}
         <AnimatePresence>
           {selectedMilestone && (
-            <CelebrationIdeas
-              milestone={selectedMilestone}
-              onClose={() => setSelectedMilestone(null)}
-            />
+            <CelebrationIdeas milestone={selectedMilestone} onClose={() => setSelectedMilestone(null)} />
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </main>
   );
 }
