@@ -23,6 +23,7 @@ create table if not exists public.relationship_room_slots (
   title text not null,
   description text,
   program_type text not null default 'creator' check (program_type in ('o2ol','creator','replay','partner','special')),
+  creator_display_name text,
   scheduled_start timestamptz not null,
   scheduled_end timestamptz not null,
   source_slot_id uuid references public.relationship_room_slots(id) on delete set null,
@@ -34,23 +35,12 @@ create table if not exists public.relationship_room_slots (
   constraint room_slot_valid_time check (scheduled_end > scheduled_start)
 );
 
-create index if not exists idx_room_creator_profiles_user
-  on public.room_creator_profiles (user_id);
-
-create index if not exists idx_room_slots_schedule
-  on public.relationship_room_slots (scheduled_start, scheduled_end);
-
-create index if not exists idx_room_slots_creator_day
-  on public.relationship_room_slots (creator_id, scheduled_start);
-
-create index if not exists idx_room_slots_owner
-  on public.relationship_room_slots (owner_user_id);
-
-create index if not exists idx_room_slots_status
-  on public.relationship_room_slots (status, moderation_status);
-
-create index if not exists idx_room_slots_source_slot
-  on public.relationship_room_slots (source_slot_id);
+create index if not exists idx_room_creator_profiles_user on public.room_creator_profiles (user_id);
+create index if not exists idx_room_slots_schedule on public.relationship_room_slots (scheduled_start, scheduled_end);
+create index if not exists idx_room_slots_creator_day on public.relationship_room_slots (creator_id, scheduled_start);
+create index if not exists idx_room_slots_owner on public.relationship_room_slots (owner_user_id);
+create index if not exists idx_room_slots_status on public.relationship_room_slots (status, moderation_status);
+create index if not exists idx_room_slots_source_slot on public.relationship_room_slots (source_slot_id);
 
 -- Prevent two active/pending programs from occupying the same room time.
 do $$
@@ -80,8 +70,9 @@ revoke all on table public.room_creator_profiles from authenticated;
 revoke all on table public.relationship_room_slots from authenticated;
 
 grant select (
-  id, title, description, program_type, scheduled_start, scheduled_end,
-  status, moderation_status, disclaimer_required, source_slot_id
+  id, title, description, program_type, creator_display_name,
+  scheduled_start, scheduled_end, status, moderation_status,
+  disclaimer_required, source_slot_id
 ) on table public.relationship_room_slots to anon;
 
 grant select on table public.room_creator_profiles to authenticated;
@@ -135,7 +126,6 @@ to authenticated
 using ((select auth.uid()) = user_id);
 
 -- Authenticated users may submit a creator profile only for themselves.
--- Administrative fields are omitted from the INSERT grant and must remain at safe defaults.
 drop policy if exists "users can create own room profile" on public.room_creator_profiles;
 create policy "users can create own room profile"
 on public.room_creator_profiles
@@ -197,12 +187,47 @@ with check (
   and disclaimer_required = true
 );
 
--- Database-level enforcement keeps the free 2-slot daily rule intact even when a creator
--- calls the Data API directly instead of using the O2OL interface. The creator's stored
--- IANA timezone determines what counts as a calendar day for the limit.
 create schema if not exists private;
 revoke all on schema private from public;
 
+-- Populate only a safe public presenter name onto the schedule row. Public viewers never need
+-- direct access to creator profile records.
+create or replace function private.populate_room_creator_display_name()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+begin
+  if new.creator_id is null then
+    if new.program_type = 'o2ol' then
+      new.creator_display_name := 'One2OneLove';
+    else
+      new.creator_display_name := null;
+    end if;
+    return new;
+  end if;
+
+  select p.display_name
+  into new.creator_display_name
+  from public.room_creator_profiles p
+  where p.id = new.creator_id;
+
+  return new;
+end;
+$$;
+
+revoke all on function private.populate_room_creator_display_name() from public, anon, authenticated;
+
+drop trigger if exists populate_room_creator_display_name on public.relationship_room_slots;
+create trigger populate_room_creator_display_name
+before insert or update of creator_id, program_type
+on public.relationship_room_slots
+for each row execute function private.populate_room_creator_display_name();
+
+-- Database-level enforcement keeps the free 2-slot daily rule intact even when a creator
+-- calls the Data API directly instead of using the O2OL interface. The creator's stored
+-- IANA timezone determines what counts as a calendar day for the limit.
 create or replace function private.enforce_room_creator_daily_limit()
 returns trigger
 language plpgsql
@@ -215,6 +240,7 @@ declare
   creator_timezone text;
   existing_count integer;
   local_day date;
+  lock_key bigint;
 begin
   if new.program_type <> 'creator'
      or new.status not in ('draft','pending','approved','scheduled','live') then
@@ -236,6 +262,11 @@ begin
 
   creator_timezone := coalesce(nullif(creator_timezone, ''), 'UTC');
   local_day := (new.scheduled_start at time zone creator_timezone)::date;
+
+  -- Serialize concurrent reservations for the same creator-local day so simultaneous direct
+  -- API requests cannot both pass the count check and exceed the free daily allowance.
+  lock_key := hashtextextended(new.creator_id::text || ':' || local_day::text, 0);
+  perform pg_advisory_xact_lock(lock_key);
 
   select count(*)
   into existing_count
@@ -266,4 +297,4 @@ on public.relationship_room_slots
 for each row execute function private.enforce_room_creator_daily_limit();
 
 comment on table public.relationship_room_slots is
-'O2OL 24-hour Global Relationship Room schedule. Paid slot sales are intentionally deferred; free creators initially receive up to two slots per creator-local day. Approval and moderation fields are protected from direct browser writes, overlapping active slots are blocked, and the daily free limit is enforced in Postgres.';
+'O2OL 24-hour Global Relationship Room schedule. Paid slot sales are intentionally deferred; free creators initially receive up to two slots per creator-local day. Approval and moderation fields are protected from direct browser writes, overlapping active slots are blocked, safe creator display names are denormalized into public schedule rows, and the daily free limit is concurrency-safe in Postgres.';
