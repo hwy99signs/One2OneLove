@@ -57,6 +57,7 @@ import GlobalRelationshipRoom from "./GlobalRelationshipRoom";
 import RoomCreatorAccess from "./RoomCreatorAccess";
 import RoomModeration from "./RoomModeration";
 import RoomReplayManager from "./RoomReplayManager";
+import RoomProgramManager from "./RoomProgramManager";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -118,6 +119,7 @@ const PAGES = {
   RoomCreatorAccess,
   RoomModeration,
   RoomReplayManager,
+  RoomProgramManager,
 };
 
 function _getCurrentPage(url) {
@@ -196,6 +198,7 @@ function PagesContent() {
         <Route path="/RoomCreatorAccess" element={<RoomCreatorAccess />} />
         <Route path="/RoomModeration" element={<RoomModeration />} />
         <Route path="/RoomReplayManager" element={<RoomReplayManager />} />
+        <Route path="/RoomProgramManager" element={<RoomProgramManager />} />
       </Routes>
     </Layout>
   );
