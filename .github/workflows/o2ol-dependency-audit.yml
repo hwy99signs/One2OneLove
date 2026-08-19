@@ -4,10 +4,9 @@ on:
   push:
     branches:
       - o2ol-build-branch-2026-08-18
-    paths:
-      - package.json
-      - package-lock.json
-      - .github/workflows/o2ol-dependency-audit.yml
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
@@ -30,17 +29,53 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Audit production dependencies
+      - name: Capture production dependency audit
         shell: bash
         run: |
-          echo '--- Production dependency audit ---'
-          npm audit --omit=dev || true
+          set +e
+          npm audit --omit=dev --json > npm-audit-production.json
+          production_status=$?
+          set -e
+          echo "production_audit_exit=$production_status"
 
-      - name: Audit full dependency tree
+      - name: Capture full dependency audit
         shell: bash
         run: |
-          echo '--- Full dependency audit ---'
-          npm audit || true
+          set +e
+          npm audit --json > npm-audit-full.json
+          full_status=$?
+          set -e
+          node - <<'NODE'
+          const fs = require('fs');
+          for (const file of ['npm-audit-production.json', 'npm-audit-full.json']) {
+            const audit = JSON.parse(fs.readFileSync(file, 'utf8'));
+            const v = audit.metadata?.vulnerabilities || {};
+            console.log(`REPORT ${file}: total=${v.total || 0} critical=${v.critical || 0} high=${v.high || 0} moderate=${v.moderate || 0} low=${v.low || 0}`);
+            const entries = Object.entries(audit.vulnerabilities || {}).map(([name, item]) => ({
+              name,
+              severity: item.severity,
+              direct: Boolean(item.isDirect),
+              range: item.range,
+              via: Array.isArray(item.via) ? item.via.map((x) => typeof x === 'string' ? x : x.title).filter(Boolean).slice(0, 4) : [],
+              fix: item.fixAvailable === true ? 'available' : item.fixAvailable === false ? 'none' : item.fixAvailable ? `${item.fixAvailable.name}@${item.fixAvailable.version}${item.fixAvailable.isSemVerMajor ? ' (major)' : ''}` : 'unknown',
+            }));
+            entries.sort((a, b) => Number(b.direct) - Number(a.direct) || a.name.localeCompare(b.name));
+            for (const entry of entries) console.log(JSON.stringify(entry));
+          }
+          NODE
+          echo "full_audit_exit=$full_status"
 
-      - name: Explain audit policy
-        run: echo 'Audit is informational until each remediation is reviewed for runtime and breaking-change risk. Do not use npm audit fix --force automatically.'
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-npm-audit
+          path: |
+            npm-audit-production.json
+            npm-audit-full.json
+          retention-days: 7
+
+      - name: Production build remains required
+        run: npm run build
+
+      - name: Explain remediation policy
+        run: echo 'Audit is informational until each remediation is reviewed for runtime and breaking-change risk. Never use npm audit fix --force automatically.'
