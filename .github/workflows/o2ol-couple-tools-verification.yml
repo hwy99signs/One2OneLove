@@ -49,7 +49,11 @@ jobs:
           grep -q 'Intl.DateTimeFormat' src/pages/AnniversaryTracker.jsx
           grep -q '.eq("id", user.id)' src/pages/AnniversaryTracker.jsx
           grep -q 'anniversary_date' src/pages/AnniversaryTracker.jsx
-          if grep -Eq '\.from\(["'"']users["'"']\).*\.select' src/pages/AnniversaryTracker.jsx; then
+          if grep -F '.from("users")' src/pages/AnniversaryTracker.jsx | grep -q '.select'; then
+            echo 'Anniversary Tracker must not read another member account row.'
+            exit 1
+          fi
+          if grep -F ".from('users')" src/pages/AnniversaryTracker.jsx | grep -q '.select'; then
             echo 'Anniversary Tracker must not read another member account row.'
             exit 1
           fi
