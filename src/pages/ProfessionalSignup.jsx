@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getProfessionalProfile } from '@/lib/professionalService';
 import { useLanguage } from '@/Layout';
 import OtherUserSignupForm from '../components/signup/OtherUserSignupForm';
 import ProfilePhotoUpload from '../components/signup/ProfilePhotoUpload';
@@ -98,10 +99,17 @@ export default function ProfessionalSignup() {
         },
       );
 
-      if (!result?.success) {
+      if (!result?.success || !result?.user?.id) {
         setFormError(t.errors.submit);
         return;
       }
+
+      const persisted = await getProfessionalProfile(result.user.id);
+      if (!persisted?.success || !persisted.profile || persisted.profile.status !== 'pending') {
+        setFormError(t.errors.submit);
+        return;
+      }
+
       setSignupComplete(true);
     } catch {
       setFormError(t.errors.submit);
