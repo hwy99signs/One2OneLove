@@ -65,6 +65,20 @@ jobs:
           NODE
           echo "full_audit_exit=$full_status"
 
+      - name: Map production vulnerability ancestry
+        shell: bash
+        run: |
+          set +e
+          npm ls --omit=dev --all postcss react-router-dom react-router lodash mdast-util-to-hast nanoid picomatch ws
+          set -e
+
+      - name: Map development vulnerability ancestry
+        shell: bash
+        run: |
+          set +e
+          npm ls --all vite rollup shell-quote js-yaml flatted minimatch brace-expansion ajv @babel/core @flydotio/dockerfile diff
+          set -e
+
       - name: Upload audit reports
         uses: actions/upload-artifact@v4
         with:
