@@ -14,14 +14,35 @@ const currentHostLanguage = () => {
   return SUPPORTED_HOST_LANGUAGES.has(stored) ? stored : 'en';
 };
 
-export async function getLiveRoomHostPrompt(roomSlug, recentMessages = [], reason = 'room_empty') {
+const normalizeRequest = (roomOrOptions, recentMessages = [], reason = 'room_empty') => {
+  if (roomOrOptions && typeof roomOrOptions === 'object') {
+    return {
+      roomSlug: roomOrOptions.room?.slug || roomOrOptions.room?.id || roomOrOptions.roomSlug || '',
+      recentMessages: roomOrOptions.recentMessages || recentMessages,
+      reason: roomOrOptions.reason || reason,
+      language: roomOrOptions.language || currentHostLanguage(),
+    };
+  }
+
+  return {
+    roomSlug: roomOrOptions || '',
+    recentMessages,
+    reason,
+    language: currentHostLanguage(),
+  };
+};
+
+export async function getLiveRoomHostPrompt(roomOrOptions, recentMessages = [], reason = 'room_empty') {
+  const request = normalizeRequest(roomOrOptions, recentMessages, reason);
+  if (!request.roomSlug) return null;
+
   try {
     const { data, error } = await supabase.functions.invoke('live-room-host', {
       body: {
-        room_slug: roomSlug,
-        reason: reason === 'room_quiet' ? 'room_quiet' : 'room_empty',
-        language: currentHostLanguage(),
-        recent_messages: normalizeRecentMessages(recentMessages),
+        room_slug: request.roomSlug,
+        reason: request.reason === 'room_quiet' ? 'room_quiet' : 'room_empty',
+        language: SUPPORTED_HOST_LANGUAGES.has(request.language) ? request.language : 'en',
+        recent_messages: normalizeRecentMessages(request.recentMessages),
       },
     });
 
@@ -32,8 +53,10 @@ export async function getLiveRoomHostPrompt(roomSlug, recentMessages = [], reaso
 
     if (!data?.prompt || typeof data.prompt !== 'string') return null;
 
+    const prompt = data.prompt.trim();
     return {
-      prompt: data.prompt.trim(),
+      prompt,
+      text: prompt,
       source: data.source === 'ai' ? 'ai' : 'fallback',
     };
   } catch (error) {
