@@ -14,6 +14,14 @@ const PUBLIC_SLOT_COLUMNS = [
   'source_slot_id',
 ].join(',');
 
+const getBrowserTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+};
+
 export const getRoomSchedule = async (startIso, endIso) => {
   try {
     let query = supabase
@@ -63,6 +71,7 @@ export const createRoomCreatorProfile = async (userId, profile) => {
         user_id: userId,
         display_name: profile.displayName.trim(),
         bio: profile.bio?.trim() || null,
+        timezone: profile.timezone || getBrowserTimezone(),
         terms_accepted_at: new Date().toISOString(),
       })
       .select()
@@ -80,6 +89,7 @@ export const updateMyRoomCreatorProfile = async (userId, profile) => {
     const updates = {
       display_name: profile.displayName?.trim(),
       bio: profile.bio?.trim() || null,
+      timezone: profile.timezone || getBrowserTimezone(),
       updated_at: new Date().toISOString(),
     };
 
@@ -174,24 +184,11 @@ export const submitRoomSlot = async ({
       return { success: false, error: 'Choose a valid start and end time.' };
     }
     if (!(start < end)) return { success: false, error: 'End time must be after start time.' };
+    if (start.getTime() <= Date.now()) return { success: false, error: 'Programming must be scheduled in the future.' };
 
-    const dayStart = new Date(start);
-    dayStart.setUTCHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
-
-    const dailyResult = await getCreatorSlotsForDay(
-      creatorProfile.id,
-      dayStart.toISOString(),
-      dayEnd.toISOString()
-    );
-    if (!dailyResult.success) return dailyResult;
-
-    const limit = creatorProfile.daily_slot_limit ?? 2;
-    if (creatorProfile.plan === 'free' && dailyResult.slots.length >= limit) {
-      return { success: false, error: `Free creator accounts are limited to ${limit} programming slots per day.` };
-    }
-
+    // The browser check provides quick feedback for conflicts the current viewer is allowed to see.
+    // Postgres independently blocks *all* overlapping active/pending slots, including another
+    // creator's unreviewed submission, so direct API calls cannot create double-bookings.
     const availability = await checkRoomSlotAvailability(start.toISOString(), end.toISOString());
     if (!availability.success) return availability;
     if (!availability.available) {
@@ -212,7 +209,16 @@ export const submitRoomSlot = async ({
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23P01') {
+        return { success: false, error: 'That programming time is no longer available.' };
+      }
+      if (error.code === '23514' && error.message?.includes('programming slots per creator-local day')) {
+        return { success: false, error: `Free creator accounts are limited to ${creatorProfile.daily_slot_limit ?? 2} programming slots per day.` };
+      }
+      throw error;
+    }
+
     return { success: true, slot: data };
   } catch (error) {
     return { success: false, error: handleSupabaseError(error) };
