@@ -89,15 +89,12 @@ export default function HeroSection() {
   const t = translations[currentLanguage] || translations.en;
 
   return (
-    <section className="relative flex min-h-[82vh] items-center justify-center overflow-hidden px-4 py-14" aria-labelledby="home-hero-title">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: "url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png')",
-        }}
-        aria-hidden="true"
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-black/55" />
+    <section className="relative flex min-h-[82vh] items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-rose-950 px-4 py-14" aria-labelledby="home-hero-title">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute -left-24 top-12 h-80 w-80 rounded-full bg-pink-500/20 blur-3xl" />
+        <div className="absolute right-[-5rem] top-1/3 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute bottom-[-8rem] left-1/3 h-96 w-96 rounded-full bg-purple-400/20 blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/35" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-5xl text-center">
@@ -114,7 +111,7 @@ export default function HeroSection() {
         </h1>
         <p className="mt-4 text-2xl font-bold italic text-yellow-300 drop-shadow-lg sm:text-3xl">{t.slogan}</p>
         <p className="mx-auto mt-6 max-w-4xl text-xl font-medium leading-relaxed text-white drop-shadow-lg md:text-2xl">{t.subtitle}</p>
-        <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-white/95 drop-shadow-lg md:text-lg">{t.description}</p>
+        <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-white/90 md:text-lg">{t.description}</p>
 
         <div className="mx-auto mt-9 flex max-w-4xl flex-wrap justify-center gap-3">
           {primaryActions.map(([labelKey, target, Icon]) => (
