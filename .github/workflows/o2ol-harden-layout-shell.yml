@@ -77,13 +77,16 @@ jobs:
             raise SystemExit('Expected 3-second conversation fallback polling anchor missing')
           s = s.replace('refetchInterval: 3000', 'refetchInterval: 30000', 1)
 
-          if s.count('<span>AI Relationship Coach</span>') != 2:
-            raise SystemExit('Expected desktop + mobile AI Relationship Coach labels were not found')
-          s = s.replace('<span>AI Relationship Coach</span>', '<span>{t.actionMenu.aiCoach}</span>')
+          desktop_ai = '<span>AI Relationship Coach</span>'
+          mobile_ai = '                        AI Relationship Coach\n'
+          if desktop_ai not in s or mobile_ai not in s:
+            raise SystemExit('Expected desktop/mobile AI Relationship Coach labels missing')
+          s = s.replace(desktop_ai, '<span>{t.actionMenu.aiCoach}</span>', 1)
+          s = s.replace(mobile_ai, '                        {t.actionMenu.aiCoach}\n', 1)
 
-          if s.count('Coming Soon') < 1:
+          if '                            Coming Soon\n' not in s:
             raise SystemExit('Expected disabled-language Coming Soon label missing')
-          s = s.replace('Coming Soon', '{t.nav.comingSoon}', 1)
+          s = s.replace('                            Coming Soon\n', '                            {t.nav.comingSoon}\n', 1)
 
           desktop_home = '''              <Link\n                to={createPageUrl("Home")}\n                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"\n              >\n                <Home className="w-4 h-4" />\n                {t.nav.home}\n              </Link>\n'''
           desktop_room = desktop_home + '''\n              <Link\n                to={createPageUrl("GlobalRelationshipRoom")}\n                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"\n              >\n                <Users className="w-4 h-4" />\n                {t.nav.globalRoom}\n              </Link>\n'''
@@ -97,9 +100,21 @@ jobs:
             raise SystemExit('Mobile Home nav anchor missing')
           s = s.replace(mobile_home, mobile_room, 1)
 
+          # Internal Developer directory and inactive prize promotion must not be public navigation destinations.
+          for page_name in ['Developer', 'WinACruise']:
+            count = s.count(f'createPageUrl("{page_name}")')
+            if count != 2:
+              raise SystemExit(f'Expected exactly two persistent-shell links for {page_name}, found {count}')
+            pattern = re.compile(r'\n\s*<Link\n\s*to=\{createPageUrl\("' + page_name + r'"\)\}.*?</Link>\n', re.DOTALL)
+            s, removed = pattern.subn('\n', s)
+            if removed != 2:
+              raise SystemExit(f'Expected two {page_name} links removed, removed {removed}')
+
+          # Remove icons that become unused after removing the public Developer/contest links.
+          s = s.replace(', Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell', ', Target, Rainbow, UserCheck, MessageCircle, Bell')
+
           # Remove single-line browser diagnostics in the persistent shell.
           s = re.sub(r'^\s*console\.(?:log|warn|error|debug|info|trace)\([^\n;]*\);\s*\n', '', s, flags=re.MULTILINE)
-          # Catch parameters used only by removed diagnostics should not create lint debt.
           s = s.replace('catch (storageError) {', 'catch {')
           s = s.replace('catch (logoutError) {', 'catch {')
           s = s.replace('catch (error) {\n      // Still redirect', 'catch {\n      // Still redirect')
@@ -118,7 +133,11 @@ jobs:
           grep -q 'refetchInterval: 30000' src/pages/Layout.jsx
           ! grep -q 'refetchInterval: 3000,' src/pages/Layout.jsx
           ! grep -Eq 'console\.(log|warn|error|debug|info|trace)' src/pages/Layout.jsx
+          ! grep -q 'createPageUrl("Developer")' src/pages/Layout.jsx
+          ! grep -q 'createPageUrl("WinACruise")' src/pages/Layout.jsx
           grep -q 'path="/GlobalRelationshipRoom"' src/pages/index.jsx
+          grep -q 'path="/Developer"' src/pages/index.jsx
+          grep -q 'path="/WinACruise"' src/pages/index.jsx
 
       - name: Verify launch and security source
         run: |
