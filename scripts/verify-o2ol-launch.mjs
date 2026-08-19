@@ -47,6 +47,8 @@ const multilingualSources = [
   ['RelationshipLibrary', 'src/pages/RelationshipLibrary.jsx'],
   ['CouplesChallenges', 'src/pages/CouplesChallenges.jsx'],
   ['DateNight', 'src/pages/DateNight.jsx'],
+  ['RelationshipReset', 'src/pages/RelationshipReset.jsx'],
+  ['RelationshipResetPromo', 'src/components/home/RelationshipResetPromo.jsx'],
   ['O2OLShow', 'src/pages/O2OLShow.jsx'],
   ['HomeFeatures', 'src/components/home/FeaturesGrid.jsx'],
   ['NotFound', 'src/pages/NotFound.jsx'],
@@ -81,6 +83,7 @@ const requiredRoutes = [
   '/RelationshipLibrary',
   '/CouplesChallenges',
   '/DateNight',
+  '/RelationshipReset',
   '/O2OLShow',
 ];
 for (const route of requiredRoutes) requireText(router, `path="${route}"`, `route ${route}`);
@@ -195,6 +198,14 @@ const dateNight = read('src/pages/DateNight.jsx');
 requireText(dateNight, 'budgets:', 'Date Night budget selection');
 requireText(dateNight, 'times:', 'Date Night time selection');
 requireText(dateNight, 'plans:', 'Date Night plan library');
+
+const relationshipReset = read('src/pages/RelationshipReset.jsx');
+requireText(relationshipReset, 'o2ol-relationship-reset-', 'Relationship Reset local-only storage namespace');
+requireText(relationshipReset, 'localStorage', 'Relationship Reset browser-only completion');
+requireText(relationshipReset, 'One2OneLove does not receive your answers', 'Relationship Reset privacy disclosure');
+
+const resetPromo = read('src/components/home/RelationshipResetPromo.jsx');
+requireText(resetPromo, '/RelationshipReset', 'homepage Relationship Reset route');
 
 const o2olShow = read('src/pages/O2OLShow.jsx');
 requireText(o2olShow, 'O2OL', 'O2OL Show host identity');
