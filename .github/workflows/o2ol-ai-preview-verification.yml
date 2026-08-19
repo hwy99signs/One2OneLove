@@ -1,0 +1,65 @@
+name: O2OL AI Preview Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-ai-previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language truthful previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/pages/RelationshipCoach.jsx src/pages/AIContentCreator.jsx; do
+            for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
+            grep -q 'Preview' "$file"
+            grep -q 'not available yet' "$file"
+          done
+          grep -q 'does not save or transmit' src/pages/RelationshipCoach.jsx
+          grep -q 'does not diagnose' src/pages/RelationshipCoach.jsx
+          grep -q 'does not save or transmit' src/pages/AIContentCreator.jsx
+          grep -q 'not therapy' src/pages/AIContentCreator.jsx
+          grep -q 'createPageUrl("CommunicationPractice")' src/pages/RelationshipCoach.jsx
+          grep -q 'createPageUrl("RelationshipLibrary")' src/pages/RelationshipCoach.jsx
+          grep -q 'createPageUrl("WeeklyCheckIn")' src/pages/RelationshipCoach.jsx
+          grep -q 'createPageUrl("LoveNotes")' src/pages/AIContentCreator.jsx
+          grep -q 'createPageUrl("DateNight")' src/pages/AIContentCreator.jsx
+          grep -q 'createPageUrl("ConversationCards")' src/pages/AIContentCreator.jsx
+
+      - name: Reject dead AI inputs or hidden data collection
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'supabase|fetch\(|localStorage|sessionStorage|console\.|<Input|<Textarea|useMutation|useQuery|partnerName|additionalDetails|handleGenerate' src/pages/RelationshipCoach.jsx src/pages/AIContentCreator.jsx; then
+            echo 'AI preview surfaces must not collect, store, transmit, or imply live AI generation.'
+            exit 1
+          fi
+
+      - name: Lint AI preview surfaces
+        run: npx eslint src/pages/RelationshipCoach.jsx src/pages/AIContentCreator.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
