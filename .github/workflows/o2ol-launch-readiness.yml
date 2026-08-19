@@ -31,7 +31,7 @@ jobs:
           echo 'Production dependency audit is informational until remediation is reviewed for breaking-change risk.'
           npm audit --omit=dev || true
 
-      - name: Verify critical account and Global Room routes
+      - name: Verify critical account, Global Room, and engagement routes
         shell: bash
         run: |
           set -euo pipefail
@@ -44,6 +44,8 @@ jobs:
           test -f src/pages/RoomCreatorAccess.jsx
           test -f src/pages/RoomModeration.jsx
           test -f src/pages/RoomCancellationQueue.jsx
+          test -f src/pages/DailyQuestion.jsx
+          test -f src/components/home/DailyQuestionPromo.jsx
           grep -q 'path="/SignIn"' src/pages/index.jsx
           grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
@@ -51,9 +53,24 @@ jobs:
           grep -q 'path="/RoomCreatorAccess"' src/pages/index.jsx
           grep -q 'path="/RoomModeration"' src/pages/index.jsx
           grep -q 'path="/RoomCancellationQueue"' src/pages/index.jsx
+          grep -q 'path="/DailyQuestion"' src/pages/index.jsx
+          grep -q '<DailyQuestionPromo />' src/pages/Home.jsx
+
+      - name: Verify Daily Question five-language coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/pages/DailyQuestion.jsx src/components/home/DailyQuestionPromo.jsx; do
+            for lang in en es fr it de; do
+              grep -q "${lang}:" "$file"
+            done
+          done
 
       - name: Verify launch-critical source and five active languages
         run: node scripts/verify-o2ol-launch.mjs
+
+      - name: Verify account and security invariants
+        run: node scripts/verify-o2ol-security.mjs
 
       - name: Lint launch-critical O2OL surfaces
         run: >-
@@ -74,10 +91,12 @@ jobs:
           src/pages/RoomCancellationQueue.jsx
           src/pages/RoomModerationAudit.jsx
           src/pages/RoomOpsDashboard.jsx
+          src/pages/DailyQuestion.jsx
           src/pages/NotFound.jsx
           src/components/global-room/RoomScheduleViewer.jsx
           src/components/global-room/ProgramReportButton.jsx
           src/components/home/GlobalRoomPromo.jsx
+          src/components/home/DailyQuestionPromo.jsx
           src/lib/globalRelationshipRoomService.js
           src/lib/globalRoomCancellationService.js
           src/lib/globalRoomModerationService.js
