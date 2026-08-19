@@ -36,6 +36,18 @@ const assertConversationParticipant = async (conversationId, userId) => {
   return data;
 };
 
+const getSignedAttachmentUrl = async (storedPath) => {
+  if (!storedPath) return null;
+  if (/^https?:\/\//i.test(storedPath)) return storedPath;
+
+  const { data, error } = await supabase.storage
+    .from('chat-files')
+    .createSignedUrl(storedPath, 3600);
+
+  if (error) return null;
+  return data?.signedUrl || null;
+};
+
 export const getOrCreateConversation = async (otherUserId) => {
   try {
     const user = await requireCurrentUser();
@@ -146,11 +158,12 @@ export const getMessages = async (conversationId, limit = 100) => {
       replyMap = new Map((replies || []).map((message) => [message.id, message]));
     }
 
-    return messages.map((message) => {
+    return Promise.all(messages.map(async (message) => {
       const sender = profiles.get(message.sender_id) || { id: message.sender_id, name: 'One2OneLove Member' };
       const reply = message.reply_to_id ? replyMap.get(message.reply_to_id) : null;
       const replySender = reply ? profiles.get(reply.sender_id) : null;
       const status = message.read_at || message.is_read ? 'read' : message.delivered_at ? 'delivered' : 'sent';
+      const attachmentUrl = await getSignedAttachmentUrl(message.file_url);
 
       const transformed = {
         id: message.id,
@@ -162,7 +175,7 @@ export const getMessages = async (conversationId, limit = 100) => {
         type: message.message_type,
         text: message.content,
         content: message.content,
-        fileUrl: message.file_url,
+        fileUrl: attachmentUrl,
         fileName: message.file_name,
         fileSize: message.file_size,
         fileType: message.file_type,
@@ -190,10 +203,10 @@ export const getMessages = async (conversationId, limit = 100) => {
       };
 
       if (message.message_type === 'image') {
-        transformed.imageUrl = message.file_url;
+        transformed.imageUrl = attachmentUrl;
         transformed.caption = message.content;
       } else if (message.message_type === 'voice' || message.message_type === 'audio') {
-        transformed.audioUrl = message.file_url;
+        transformed.audioUrl = attachmentUrl;
         transformed.duration = message.duration || 0;
       } else if (message.message_type === 'location') {
         transformed.latitude = message.location_lat;
@@ -202,7 +215,7 @@ export const getMessages = async (conversationId, limit = 100) => {
       }
 
       return transformed;
-    });
+    }));
   } catch (error) {
     throw new Error(handleSupabaseError(error));
   }
@@ -253,7 +266,6 @@ export const sendFileMessage = async (conversationId, receiverId, file, messageT
     const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file, { upsert: false });
     if (uploadError) throw uploadError;
 
-    const { data: publicUrlData } = supabase.storage.from('chat-files').getPublicUrl(filePath);
     const { data, error } = await supabase
       .from('messages')
       .insert({
@@ -262,7 +274,7 @@ export const sendFileMessage = async (conversationId, receiverId, file, messageT
         receiver_id: receiverId,
         content: String(file.name || '').slice(0, 255),
         message_type: messageType,
-        file_url: publicUrlData.publicUrl,
+        file_url: filePath,
         file_name: String(file.name || '').slice(0, 255),
         file_size: file.size,
         file_type: file.type || null,
@@ -270,8 +282,12 @@ export const sendFileMessage = async (conversationId, receiverId, file, messageT
       .select()
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      await supabase.storage.from('chat-files').remove([filePath]);
+      throw error;
+    }
+
+    return { ...data, file_url: await getSignedAttachmentUrl(filePath) };
   } catch (error) {
     throw new Error(handleSupabaseError(error));
   }
@@ -431,6 +447,10 @@ export const updateConversationSettings = async (conversationId, settings) => {
   }
 };
 
+export const deleteConversation = async (conversationId) => {
+  await updateConversationSettings(conversationId, { isArchived: true });
+};
+
 export const getOnlineStatus = async (userId) => {
   try {
     await requireCurrentUser();
@@ -440,4 +460,30 @@ export const getOnlineStatus = async (userId) => {
   } catch (error) {
     throw new Error(handleSupabaseError(error));
   }
+};
+
+export const subscribeToMessages = (conversationId, callback) => {
+  if (!conversationId || typeof callback !== 'function') return null;
+
+  return supabase
+    .channel(`messages-${conversationId}-${crypto.randomUUID()}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
+      (payload) => callback(payload.new || payload.old || payload),
+    )
+    .subscribe();
+};
+
+export const unsubscribeFromMessages = (channel) => {
+  if (channel) supabase.removeChannel(channel);
+};
+
+export const subscribeToConversations = (callback) => {
+  if (typeof callback !== 'function') return null;
+
+  return supabase
+    .channel(`conversations-${crypto.randomUUID()}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, callback)
+    .subscribe();
 };
