@@ -15,6 +15,7 @@ import DateIdeas from "./DateIdeas";
 import DailyQuestion from "./DailyQuestion";
 import MarriageMatters from "./MarriageMatters";
 import RelationshipLibrary from "./RelationshipLibrary";
+import CouplesChallenges from "./CouplesChallenges";
 import Profile from "./Profile";
 import WinACruise from "./WinACruise";
 import Invite from "./Invite";
@@ -87,6 +88,7 @@ const PAGES = {
   DailyQuestion,
   MarriageMatters,
   RelationshipLibrary,
+  CouplesChallenges,
   Profile,
   WinACruise,
   Invite,
@@ -175,6 +177,7 @@ function PagesContent() {
         <Route path="/DailyQuestion" element={<DailyQuestion />} />
         <Route path="/MarriageMatters" element={<MarriageMatters />} />
         <Route path="/RelationshipLibrary" element={<RelationshipLibrary />} />
+        <Route path="/CouplesChallenges" element={<CouplesChallenges />} />
         <Route path="/Profile" element={<Profile />} />
         <Route path="/WinACruise" element={<WinACruise />} />
         <Route path="/Invite" element={<Invite />} />
