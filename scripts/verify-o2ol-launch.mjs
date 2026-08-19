@@ -79,7 +79,9 @@ for (const file of privateModeratorPages) {
   requireText(content, 'isGlobalRoomModerator', `trusted moderator gate in ${file}`);
   requireAnyText(content, ['accessQuery.data.isModerator', 'accessQuery.data?.isModerator', 'data?.isModerator'], `moderator authorization result in ${file}`);
   requireAnyText(content, ['!moderator', '!isModerator'], `restricted moderator rendering in ${file}`);
-  requireText(content, '/RoomOpsDashboard', `operations navigation in ${file}`);
+  if (!file.endsWith('/RoomOpsDashboard.jsx')) {
+    requireText(content, '/RoomOpsDashboard', `operations navigation in ${file}`);
+  }
 }
 
 const forgotPassword = read('src/pages/ForgotPassword.jsx');
