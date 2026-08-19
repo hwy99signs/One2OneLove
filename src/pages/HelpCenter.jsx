@@ -1,232 +1,44 @@
-import React, { useState } from "react";
-import { useLanguage } from "@/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Search, HelpCircle, Book, Mail, ArrowLeft, Settings, Wrench, Sparkles } from "lucide-react";
+import React from "react";
+import { BookOpen, Heart, HelpCircle, MessageCircle, Radio, ShieldCheck, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLanguage } from "@/Layout";
 
 const translations = {
   en: {
-    title: "Help Center",
-    subtitle: "Find answers to your questions and get support",
-    searchPlaceholder: "Search for help...",
-    categories: "Help Categories",
-    popularArticles: "Popular Articles",
-    articlesIn: "Articles in",
-    stillNeedHelp: "Still need help?",
-    contactUs: "Contact Us",
-    back: "Back",
-    gettingStarted: { title: "Getting Started", desc: "Learn the basics of using One 2 One Love" },
-    accountSettings: { title: "Account Settings", desc: "Manage your account preferences and settings" },
-    features: { title: "Features Guide", desc: "Explore all the features and how to use them" },
-    troubleshooting: { title: "Troubleshooting", desc: "Solve common issues and technical problems" },
-    articles: {
-      gettingStarted: [
-        { title: "How to create your account", desc: "Step-by-step guide to signing up and getting started" },
-        { title: "Complete your profile", desc: "Add your information and personalize your experience" },
-        { title: "Invite your partner", desc: "Connect with your partner to start using the app together" },
-        { title: "Your first love note", desc: "Learn how to send your first romantic message" }
-      ],
-      accountSettings: [
-        { title: "Update your profile information", desc: "Change your name, email, and other details" },
-        { title: "Notification preferences", desc: "Manage how and when you receive notifications" },
-        { title: "Privacy settings", desc: "Control your privacy and data sharing options" },
-        { title: "Change your password", desc: "Keep your account secure by updating your password" }
-      ],
-      features: [
-        { title: "Using the AI Relationship Coach", desc: "Get personalized relationship advice from our AI coach" },
-        { title: "Setting up relationship milestones", desc: "Track important dates and anniversaries" },
-        { title: "Creating shared memories", desc: "Build your digital memory lane together" },
-        { title: "Scheduling love notes", desc: "Set up automatic messages for special occasions" },
-        { title: "Exploring date ideas", desc: "Discover creative activities to do together" },
-        { title: "Using relationship quizzes", desc: "Learn more about each other with fun quizzes" }
-      ],
-      troubleshooting: [
-        { title: "Can't log in to my account", desc: "Reset your password or recover your account" },
-        { title: "Love notes not being delivered", desc: "Check delivery settings and troubleshoot issues" },
-        { title: "App not loading properly", desc: "Clear cache and fix common loading problems" },
-        { title: "Payment or subscription issues", desc: "Resolve billing and subscription problems" }
-      ]
-    }
-  },
+    title: "Help Center", subtitle: "Quick guidance for the One2OneLove launch experience.", account: "Account & Profile", accountCopy: "Create an account, sign in, recover your password, and maintain your own profile information.", couple: "Couple Tools", coupleCopy: "Use Love Notes, Shared Journals, Memory Lane, goals, milestones, anniversary tools, calendar, check-ins, rituals, and date activities.", community: "Community & Chat", communityCopy: "Find members through the privacy-safe directory, send a buddy request, and use private chat after the connection is accepted. Community stories are reviewed before publication.", room: "Global Relationship Room", roomCopy: "View live and upcoming programming. Approved creators can use Creator Access to manage scheduling under current Room rules.", ai: "AI features", aiCopy: "The AI Relationship Coach and AI Content Creator are previews at launch. They do not collect relationship details or provide live AI generation yet.", paid: "Paid membership", paidCopy: "Paid membership checkout is not active at launch. No paid tier or charge should be inferred from older test links.", professional: "Professional support", professionalCopy: "O2OL does not operate a verified therapist directory or professional booking service at launch. Relationship Support is educational and not therapy or crisis care.", privacy: "Privacy & sharing", privacyCopy: "Private relationship data stays account-scoped by default. Partner sharing is explicit where supported, and community discovery excludes account email and billing information.", needHelp: "Still need help?", contact: "Contact One2OneLove", library: "Relationship Library" },
   es: {
-    title: "Centro de Ayuda",
-    subtitle: "Encuentra respuestas a tus preguntas y obtén soporte",
-    searchPlaceholder: "Buscar ayuda...",
-    categories: "Categorías de Ayuda",
-    popularArticles: "Artículos Populares",
-    articlesIn: "Artículos en",
-    stillNeedHelp: "¿Aún necesitas ayuda?",
-    contactUs: "Contáctanos",
-    back: "Volver",
-    gettingStarted: { title: "Primeros Pasos", desc: "Aprende lo básico de usar One 2 One Love" },
-    accountSettings: { title: "Configuración de Cuenta", desc: "Gestiona tus preferencias y configuración" },
-    features: { title: "Guía de Funciones", desc: "Explora todas las funciones y cómo usarlas" },
-    troubleshooting: { title: "Solución de Problemas", desc: "Resuelve problemas comunes y técnicos" }
-  },
+    title: "Centro de Ayuda", subtitle: "Guía rápida para la experiencia de lanzamiento de One2OneLove.", account: "Cuenta y Perfil", accountCopy: "Crea una cuenta, inicia sesión, recupera tu contraseña y administra la información de tu propio perfil.", couple: "Herramientas de Pareja", coupleCopy: "Usa Notas de Amor, Diarios Compartidos, Camino de Recuerdos, metas, hitos, aniversario, calendario, revisiones semanales, rituales y actividades para citas.", community: "Comunidad y Chat", communityCopy: "Encuentra miembros mediante el directorio seguro, envía una solicitud y usa el chat privado después de aceptar la conexión. Las historias se revisan antes de publicarse.", room: "Sala Global de Relaciones", roomCopy: "Consulta programación en vivo y próxima. Los creadores aprobados pueden usar Acceso de Creadores para gestionar horarios según las reglas actuales.", ai: "Funciones de IA", aiCopy: "El Coach de Relaciones con IA y el Creador de Contenido con IA son vistas previas en el lanzamiento. No recopilan detalles de la relación ni generan contenido con IA todavía.", paid: "Membresía de pago", paidCopy: "El checkout de membresía de pago no está activo en el lanzamiento. Ningún plan de pago o cargo debe inferirse de enlaces de prueba antiguos.", professional: "Apoyo profesional", professionalCopy: "O2OL no opera un directorio verificado de terapeutas ni un servicio de reservas profesionales en el lanzamiento. El Apoyo para Relaciones es educativo y no es terapia ni atención de crisis.", privacy: "Privacidad y uso compartido", privacyCopy: "Los datos privados de la relación permanecen limitados a la cuenta por defecto. Compartir con la pareja es explícito cuando se admite y el descubrimiento comunitario excluye correo y facturación.", needHelp: "¿Aún necesitas ayuda?", contact: "Contactar a One2OneLove", library: "Biblioteca de Relaciones" },
   fr: {
-    title: "Centre d'Aide",
-    subtitle: "Trouvez des réponses à vos questions et obtenez de l'aide",
-    searchPlaceholder: "Rechercher de l'aide...",
-    categories: "Catégories d'Aide",
-    popularArticles: "Articles Populaires",
-    articlesIn: "Articles dans",
-    stillNeedHelp: "Besoin d'aide supplémentaire?",
-    contactUs: "Nous Contacter",
-    back: "Retour",
-    gettingStarted: { title: "Premiers Pas", desc: "Apprenez les bases de One 2 One Love" },
-    accountSettings: { title: "Paramètres du Compte", desc: "Gérez vos préférences et paramètres" },
-    features: { title: "Guide des Fonctionnalités", desc: "Explorez toutes les fonctionnalités" },
-    troubleshooting: { title: "Dépannage", desc: "Résolvez les problèmes courants" }
-  },
+    title: "Centre d’Aide", subtitle: "Guide rapide de l’expérience de lancement One2OneLove.", account: "Compte et Profil", accountCopy: "Créez un compte, connectez-vous, récupérez votre mot de passe et gérez les informations de votre propre profil.", couple: "Outils de Couple", coupleCopy: "Utilisez Notes d’Amour, Journaux Partagés, Souvenirs, objectifs, jalons, anniversaire, calendrier, bilans, rituels et activités de rendez-vous.", community: "Communauté et Chat", communityCopy: "Trouvez des membres via l’annuaire sécurisé, envoyez une demande et utilisez le chat privé après acceptation. Les histoires sont examinées avant publication.", room: "Salle Mondiale des Relations", roomCopy: "Consultez les programmes en direct et à venir. Les créateurs approuvés peuvent gérer leurs horaires via l’Accès Créateur selon les règles actuelles.", ai: "Fonctions IA", aiCopy: "Le Coach Relationnel IA et le Créateur de Contenu IA sont des aperçus au lancement. Ils ne collectent pas de détails relationnels et ne génèrent pas encore de contenu IA en direct.", paid: "Abonnement payant", paidCopy: "Le paiement des abonnements n’est pas actif au lancement. Aucun tarif ou débit ne doit être déduit d’anciens liens de test.", professional: "Soutien professionnel", professionalCopy: "O2OL n’exploite pas d’annuaire vérifié de thérapeutes ni de service de réservation professionnelle au lancement. Le soutien relationnel est éducatif et ne constitue ni thérapie ni aide de crise.", privacy: "Confidentialité et partage", privacyCopy: "Les données relationnelles privées restent limitées au compte par défaut. Le partage partenaire est explicite lorsqu’il existe et la découverte communautaire exclut e-mail et facturation.", needHelp: "Encore besoin d’aide ?", contact: "Contacter One2OneLove", library: "Bibliothèque Relationnelle" },
   it: {
-    title: "Centro Assistenza",
-    subtitle: "Trova risposte alle tue domande e ottieni supporto",
-    searchPlaceholder: "Cerca aiuto...",
-    categories: "Categorie di Aiuto",
-    popularArticles: "Articoli Popolari",
-    articlesIn: "Articoli in",
-    stillNeedHelp: "Hai ancora bisogno di aiuto?",
-    contactUs: "Contattaci",
-    back: "Indietro",
-    gettingStarted: { title: "Iniziare", desc: "Impara le basi di One 2 One Love" },
-    accountSettings: { title: "Impostazioni Account", desc: "Gestisci le tue preferenze" },
-    features: { title: "Guida alle Funzionalità", desc: "Esplora tutte le funzionalità" },
-    troubleshooting: { title: "Risoluzione Problemi", desc: "Risolvi problemi comuni" }
-  },
+    title: "Centro Assistenza", subtitle: "Guida rapida all’esperienza di lancio One2OneLove.", account: "Account e Profilo", accountCopy: "Crea un account, accedi, recupera la password e gestisci le informazioni del tuo profilo.", couple: "Strumenti di Coppia", coupleCopy: "Usa Note d’Amore, Diari Condivisi, Ricordi, obiettivi, traguardi, anniversario, calendario, check-in, rituali e attività per appuntamenti.", community: "Comunità e Chat", communityCopy: "Trova membri tramite la directory sicura, invia una richiesta e usa la chat privata dopo l’accettazione. Le storie vengono revisionate prima della pubblicazione.", room: "Sala Globale delle Relazioni", roomCopy: "Consulta programmazione live e prossima. I creator approvati possono gestire gli orari tramite Accesso Creator secondo le regole attuali.", ai: "Funzioni IA", aiCopy: "Il Coach Relazionale IA e il Creatore di Contenuti IA sono anteprime al lancio. Non raccolgono dettagli della relazione e non effettuano ancora generazione IA live.", paid: "Abbonamento a pagamento", paidCopy: "Il checkout degli abbonamenti a pagamento non è attivo al lancio. Nessun piano o addebito deve essere dedotto da vecchi link di test.", professional: "Supporto professionale", professionalCopy: "O2OL non gestisce un elenco verificato di terapeuti né un servizio di prenotazione professionale al lancio. Il supporto relazionale è educativo e non è terapia o assistenza di crisi.", privacy: "Privacy e condivisione", privacyCopy: "I dati privati della relazione restano limitati all’account per impostazione predefinita. La condivisione con il partner è esplicita dove supportata e la scoperta community esclude email e fatturazione.", needHelp: "Serve ancora aiuto?", contact: "Contatta One2OneLove", library: "Biblioteca delle Relazioni" },
   de: {
-    title: "Hilfezentrum",
-    subtitle: "Finden Sie Antworten auf Ihre Fragen und erhalten Sie Unterstützung",
-    searchPlaceholder: "Nach Hilfe suchen...",
-    categories: "Hilfe-Kategorien",
-    popularArticles: "Beliebte Artikel",
-    articlesIn: "Artikel in",
-    stillNeedHelp: "Benötigen Sie weitere Hilfe?",
-    contactUs: "Kontaktieren Sie Uns",
-    back: "Zurück",
-    gettingStarted: { title: "Erste Schritte", desc: "Lernen Sie die Grundlagen von One 2 One Love" },
-    accountSettings: { title: "Kontoeinstellungen", desc: "Verwalten Sie Ihre Einstellungen" },
-    features: { title: "Funktionshandbuch", desc: "Entdecken Sie alle Funktionen" },
-    troubleshooting: { title: "Fehlerbehebung", desc: "Lösen Sie häufige Probleme" }
-  }
+    title: "Hilfezentrum", subtitle: "Kurze Hilfe zur One2OneLove-Starterfahrung.", account: "Konto & Profil", accountCopy: "Erstelle ein Konto, melde dich an, stelle dein Passwort wieder her und verwalte deine eigenen Profilinformationen.", couple: "Paar-Werkzeuge", coupleCopy: "Nutze Liebesbotschaften, Gemeinsame Journale, Erinnerungen, Ziele, Meilensteine, Jahrestag, Kalender, Check-ins, Rituale und Date-Aktivitäten.", community: "Community & Chat", communityCopy: "Finde Mitglieder über das datenschutzsichere Verzeichnis, sende eine Anfrage und nutze privaten Chat nach Annahme der Verbindung. Community-Geschichten werden vor Veröffentlichung geprüft.", room: "Globaler Beziehungsraum", roomCopy: "Sieh Live- und kommende Programme. Genehmigte Creator können ihre Zeitplanung über Creator-Zugang nach den aktuellen Regeln verwalten.", ai: "KI-Funktionen", aiCopy: "KI-Beziehungscoach und KI-Content-Creator sind zum Start Vorschauen. Sie sammeln keine Beziehungsdetails und bieten noch keine Live-KI-Generierung.", paid: "Bezahlte Mitgliedschaft", paidCopy: "Der Checkout für bezahlte Mitgliedschaften ist zum Start nicht aktiv. Aus alten Testlinks darf kein Tarif oder eine Belastung abgeleitet werden.", professional: "Professionelle Unterstützung", professionalCopy: "O2OL betreibt zum Start kein verifiziertes Therapeutenverzeichnis und keinen professionellen Buchungsdienst. Beziehungsunterstützung ist pädagogisch und keine Therapie oder Krisenversorgung.", privacy: "Datenschutz & Teilen", privacyCopy: "Private Beziehungsdaten bleiben standardmäßig kontogebunden. Partnerfreigabe ist ausdrücklich, wo sie unterstützt wird, und Community-Suche schließt Konto-E-Mail und Abrechnungsdaten aus.", needHelp: "Noch Hilfe nötig?", contact: "One2OneLove Kontaktieren", library: "Beziehungsbibliothek" },
 };
 
 export default function HelpCenter() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(null);
-
-  const categories = [
-    { id: 'gettingStarted', icon: Book, title: t.gettingStarted.title, desc: t.gettingStarted.desc, color: "from-blue-500 to-cyan-500" },
-    { id: 'accountSettings', icon: Settings, title: t.accountSettings.title, desc: t.accountSettings.desc, color: "from-purple-500 to-pink-500" },
-    { id: 'features', icon: Sparkles, title: t.features.title, desc: t.features.desc, color: "from-green-500 to-emerald-500" },
-    { id: 'troubleshooting', icon: Wrench, title: t.troubleshooting.title, desc: t.troubleshooting.desc, color: "from-orange-500 to-red-500" }
+  const sections = [
+    [Heart, t.account, t.accountCopy],
+    [Users, t.couple, t.coupleCopy],
+    [MessageCircle, t.community, t.communityCopy],
+    [Radio, t.room, t.roomCopy],
+    [BookOpen, t.ai, t.aiCopy],
+    [ShieldCheck, t.paid, t.paidCopy],
+    [HelpCircle, t.professional, t.professionalCopy],
+    [ShieldCheck, t.privacy, t.privacyCopy],
   ];
 
-  const articles = t.articles || {};
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <HelpCircle className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
-        </motion.div>
-
-        <div className="max-w-2xl mx-auto mb-12">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input placeholder={t.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-12 h-14 text-lg shadow-lg" />
-          </div>
-        </div>
-
-        {!selectedCategory ? (
-          <div className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">{t.categories}</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {categories.map((category, index) => {
-                const Icon = category.icon;
-                return (
-                  <motion.div key={index} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.1 }}>
-                    <Card 
-                      onClick={() => setSelectedCategory(category)}
-                      className="h-full hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:border-blue-200"
-                    >
-                      <CardContent className="p-6">
-                        <div className={`w-14 h-14 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
-                          <Icon className="w-7 h-7 text-white" />
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">{category.title}</h3>
-                        <p className="text-sm text-gray-600">{category.desc}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="mb-16">
-            <button 
-              onClick={() => setSelectedCategory(null)}
-              className="mb-6 inline-flex items-center px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-            >
-              <ArrowLeft size={20} className="mr-2" />
-              {t.back}
-            </button>
-            
-            <div className="mb-8">
-              <div className={`inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-br ${selectedCategory.color} rounded-2xl shadow-xl`}>
-                <selectedCategory.icon className="w-8 h-8 text-white" />
-                <div>
-                  <h2 className="text-2xl font-bold text-white">{selectedCategory.title}</h2>
-                  <p className="text-white/90 text-sm">{selectedCategory.desc}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
-              {articles[selectedCategory.id]?.map((article, index) => (
-                <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                  <Card className="hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:border-purple-200 h-full">
-                    <CardHeader>
-                      <CardTitle className="text-lg">{article.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">{article.desc}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-center text-white shadow-2xl">
-          <Mail className="w-16 h-16 mx-auto mb-6" />
-          <h2 className="text-4xl font-bold mb-4">{t.stillNeedHelp}</h2>
-          <p className="text-xl mb-8 opacity-90">We're here to help you!</p>
-          <Link to={createPageUrl("ContactUs")}>
-            <button className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-lg inline-flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              {t.contactUs}
-            </button>
-          </Link>
-        </motion.div>
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-6xl">
+        <header className="mx-auto max-w-3xl text-center"><HelpCircle className="mx-auto h-14 w-14 text-blue-700" aria-hidden="true" /><h1 className="mt-4 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-3 text-lg text-slate-600">{t.subtitle}</p></header>
+        <section className="mt-10 grid gap-5 md:grid-cols-2" aria-label={t.title}>{sections.map(([Icon, title, copy]) => <Card key={title} className="border-slate-200"><CardContent className="p-6"><Icon className="h-6 w-6 text-blue-700" aria-hidden="true" /><h2 className="mt-3 text-lg font-bold text-slate-900">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{copy}</p></CardContent></Card>)}</section>
+        <div className="mt-10 rounded-3xl bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center text-white"><h2 className="text-2xl font-bold">{t.needHelp}</h2><div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center"><Button asChild variant="secondary"><Link to="/ContactUs">{t.contact}</Link></Button><Button asChild variant="outline" className="border-white bg-transparent text-white hover:bg-white/10"><Link to="/RelationshipLibrary">{t.library}</Link></Button></div></div>
       </div>
-    </div>
+    </main>
   );
 }
