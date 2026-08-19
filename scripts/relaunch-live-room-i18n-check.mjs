@@ -24,7 +24,14 @@ for (const language of ['en', 'es', 'fr', 'it', 'de']) {
     failures.push(`${file}: missing ${language} Live Room copy block.`);
     continue;
   }
-  for (const key of ['disclaimerTitle', 'disclaimerText']) {
+  for (const key of [
+    'disclaimerTitle',
+    'disclaimerText',
+    'programmingLive',
+    'programmingNext',
+    'programmingLiveType',
+    'programmingReplayType',
+  ]) {
     if (!new RegExp(`\\b${key}:\\s*`).test(match[1])) failures.push(`${file}: ${language} is missing ${key}.`);
   }
 }
@@ -38,6 +45,10 @@ for (const binding of [
   'toast.error(t.reportFailed)',
   '{t.disclaimerTitle}:',
   '{t.disclaimerText}',
+  'CREATOR_PROGRAMMING_ENABLED && isAuthenticated',
+  'getGlobalProgrammingStatus().catch(() => ({ enabled: false, current: null, next: null }))',
+  '<ProgrammingStatus status={programmingStatus} locale={locale} t={t} />',
+  'slot.content_mode === \'replay\' ? t.programmingReplayType : t.programmingLiveType',
 ]) {
   if (!source.includes(binding)) failures.push(`${file}: missing localized Live Room runtime binding ${binding}.`);
 }
@@ -48,8 +59,12 @@ for (const forbidden of [
   'toast.error(error?.message || t.loadFailed)',
   'toast.error(error?.message || t.sendError)',
   'toast.error(error?.message || t.reportFailed)',
+  'creator_user_id',
+  'replay_url',
+  'price_cents',
+  'payment_status',
 ]) {
-  if (runtime.includes(forbidden) || source.includes(forbidden)) failures.push(`${file}: English/raw runtime path remains (${forbidden}).`);
+  if (runtime.includes(forbidden)) failures.push(`${file}: forbidden raw/private runtime path remains (${forbidden}).`);
 }
 
 if (!source.includes("const REACTION_OPTIONS = ['❤️', '👍', '🤔'];")) {
@@ -62,4 +77,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Live Room host identity, reactions, in-room disclaimer and member-facing failure states follow EN/ES/FR/IT/DE.');
+console.log('✅ Live Room host identity, reactions, disclaimer, now/next programming strip and member-facing failure states follow EN/ES/FR/IT/DE without private programming fields.');
