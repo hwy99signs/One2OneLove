@@ -106,7 +106,9 @@ requireText(contactSql, 'grant insert on table public.contact_messages to anon',
 requireText(contactSql, 'grant insert on table public.contact_messages to authenticated', 'authenticated contact insert');
 
 const room = requireLanguages('src/pages/GlobalRelationshipRoom.jsx');
-requireText(room, 'ProgramReportButton', 'Global Room viewer reporting');
+requireText(room, 'RoomScheduleViewer', 'Global Room schedule viewer');
+const roomScheduleViewer = read('src/components/global-room/RoomScheduleViewer.jsx');
+requireText(roomScheduleViewer, 'ProgramReportButton', 'Global Room viewer reporting');
 const creator = read('src/pages/RoomCreatorAccess.jsx');
 requireText(creator, 'submitGlobalRoomCancellationRequest', 'creator cancellation flow');
 for (const file of ['src/pages/RoomModeration.jsx','src/pages/RoomReplayManager.jsx','src/pages/RoomProgramManager.jsx','src/pages/RoomOfficialScheduler.jsx','src/pages/RoomReportQueue.jsx','src/pages/RoomCancellationQueue.jsx','src/pages/RoomModerationAudit.jsx','src/pages/RoomOpsDashboard.jsx']) {
