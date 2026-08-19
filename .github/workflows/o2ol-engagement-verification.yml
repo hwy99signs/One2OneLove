@@ -35,14 +35,18 @@ jobs:
           set -euo pipefail
           test -f src/pages/ConversationCards.jsx
           test -f src/pages/WeeklyCheckIn.jsx
+          test -f src/pages/RelationshipRituals.jsx
           test -f src/pages/RelationshipLibrary.jsx
           test -f src/components/home/FeaturesGrid.jsx
           grep -q 'path="/ConversationCards"' src/pages/index.jsx
           grep -q 'path="/WeeklyCheckIn"' src/pages/index.jsx
+          grep -q 'path="/RelationshipRituals"' src/pages/index.jsx
           grep -q '"/ConversationCards"' src/pages/RelationshipLibrary.jsx
           grep -q '"/WeeklyCheckIn"' src/pages/RelationshipLibrary.jsx
+          grep -q '"/RelationshipRituals"' src/pages/RelationshipLibrary.jsx
           grep -q '"/ConversationCards"' src/components/home/FeaturesGrid.jsx
           grep -q '"/WeeklyCheckIn"' src/components/home/FeaturesGrid.jsx
+          grep -q '"/RelationshipRituals"' src/components/home/FeaturesGrid.jsx
 
       - name: Verify five active languages
         shell: bash
@@ -51,6 +55,7 @@ jobs:
           for file in \
             src/pages/ConversationCards.jsx \
             src/pages/WeeklyCheckIn.jsx \
+            src/pages/RelationshipRituals.jsx \
             src/pages/RelationshipLibrary.jsx \
             src/components/home/FeaturesGrid.jsx; do
             for lang in en es fr it de; do
@@ -62,18 +67,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -Eq "supabase|localStorage|sessionStorage|fetch\(" src/pages/ConversationCards.jsx src/pages/WeeklyCheckIn.jsx; then
-            echo 'Privacy-first engagement tools must not persist or transmit user answers.'
+          if grep -Eq "supabase|localStorage|sessionStorage|fetch\(" src/pages/ConversationCards.jsx src/pages/WeeklyCheckIn.jsx src/pages/RelationshipRituals.jsx; then
+            echo 'Privacy-first engagement tools must not persist or transmit user answers or selections.'
             exit 1
           fi
           grep -q 'not saved' src/pages/ConversationCards.jsx
           grep -q 'not saved' src/pages/WeeklyCheckIn.jsx
+          grep -q 'does not save or transmit' src/pages/RelationshipRituals.jsx
 
       - name: Lint engagement surfaces
         run: >-
           npx eslint
           src/pages/ConversationCards.jsx
           src/pages/WeeklyCheckIn.jsx
+          src/pages/RelationshipRituals.jsx
           src/pages/RelationshipLibrary.jsx
           src/components/home/FeaturesGrid.jsx
           --rule 'react/prop-types: off'
