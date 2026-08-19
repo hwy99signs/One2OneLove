@@ -48,10 +48,12 @@ jobs:
           test -f src/components/home/DailyQuestionPromo.jsx
           test -f src/pages/MarriageMatters.jsx
           test -f src/components/home/MarriageMattersPromo.jsx
+          test -f src/components/home/HeroSection.jsx
           test -f src/components/home/FeaturesGrid.jsx
           test -f src/components/home/DiversitySection.jsx
           test -f src/components/home/FeaturedPodcast.jsx
           test -f src/components/home/Testimonials.jsx
+          test -f src/components/home/Footer.jsx
           grep -q 'path="/SignIn"' src/pages/index.jsx
           grep -q 'path="/SignUp"' src/pages/index.jsx
           grep -q 'path="/ResetPassword"' src/pages/index.jsx
@@ -63,6 +65,10 @@ jobs:
           grep -q 'path="/MarriageMatters"' src/pages/index.jsx
           grep -q '<DailyQuestionPromo />' src/pages/Home.jsx
           grep -q '<MarriageMattersPromo />' src/pages/Home.jsx
+          if grep -q 'love-notes-stats' src/pages/Home.jsx; then
+            echo 'Legacy dead homepage stats polling must not return.'
+            exit 1
+          fi
 
       - name: Verify new engagement and homepage five-language coverage
         shell: bash
@@ -73,10 +79,12 @@ jobs:
             src/components/home/DailyQuestionPromo.jsx \
             src/pages/MarriageMatters.jsx \
             src/components/home/MarriageMattersPromo.jsx \
+            src/components/home/HeroSection.jsx \
             src/components/home/FeaturesGrid.jsx \
             src/components/home/DiversitySection.jsx \
             src/components/home/FeaturedPodcast.jsx \
-            src/components/home/Testimonials.jsx; do
+            src/components/home/Testimonials.jsx \
+            src/components/home/Footer.jsx; do
             for lang in en es fr it de; do
               grep -q "${lang}:" "$file"
             done
@@ -91,6 +99,7 @@ jobs:
       - name: Lint launch-critical O2OL surfaces
         run: >-
           npx eslint
+          src/pages/Home.jsx
           src/pages/SignIn.jsx
           src/pages/SignUp.jsx
           src/components/signup/RegularUserForm.jsx
@@ -112,6 +121,7 @@ jobs:
           src/pages/NotFound.jsx
           src/components/global-room/RoomScheduleViewer.jsx
           src/components/global-room/ProgramReportButton.jsx
+          src/components/home/HeroSection.jsx
           src/components/home/GlobalRoomPromo.jsx
           src/components/home/DailyQuestionPromo.jsx
           src/components/home/MarriageMattersPromo.jsx
@@ -119,6 +129,7 @@ jobs:
           src/components/home/DiversitySection.jsx
           src/components/home/FeaturedPodcast.jsx
           src/components/home/Testimonials.jsx
+          src/components/home/Footer.jsx
           src/lib/globalRelationshipRoomService.js
           src/lib/globalRoomCancellationService.js
           src/lib/globalRoomModerationService.js
