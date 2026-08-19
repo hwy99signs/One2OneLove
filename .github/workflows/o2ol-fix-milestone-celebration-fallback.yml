@@ -1,5 +1,6 @@
 name: O2OL Fix Milestone Celebration Fallback
 
+# Retry from the current O2OL build head after the previous guarded run encountered branch advancement.
 on:
   push:
     branches:
