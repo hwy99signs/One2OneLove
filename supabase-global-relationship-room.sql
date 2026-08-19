@@ -10,6 +10,7 @@ create table if not exists public.room_creator_profiles (
   status text not null default 'pending' check (status in ('pending','approved','suspended','rejected')),
   plan text not null default 'free' check (plan in ('free','paid','partner','internal')),
   daily_slot_limit integer not null default 2 check (daily_slot_limit >= 0),
+  timezone text not null default 'UTC',
   terms_accepted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -84,9 +85,9 @@ grant select (
 ) on table public.relationship_room_slots to anon;
 
 grant select on table public.room_creator_profiles to authenticated;
-grant insert (user_id, display_name, bio, terms_accepted_at)
+grant insert (user_id, display_name, bio, timezone, terms_accepted_at)
   on table public.room_creator_profiles to authenticated;
-grant update (display_name, bio, terms_accepted_at, updated_at)
+grant update (display_name, bio, timezone, terms_accepted_at, updated_at)
   on table public.room_creator_profiles to authenticated;
 
 grant select on table public.relationship_room_slots to authenticated;
@@ -197,7 +198,8 @@ with check (
 );
 
 -- Database-level enforcement keeps the free 2-slot daily rule intact even when a creator
--- calls the Data API directly instead of using the O2OL interface.
+-- calls the Data API directly instead of using the O2OL interface. The creator's stored
+-- IANA timezone determines what counts as a calendar day for the limit.
 create schema if not exists private;
 revoke all on schema private from public;
 
@@ -210,17 +212,17 @@ as $$
 declare
   creator_plan text;
   creator_limit integer;
+  creator_timezone text;
   existing_count integer;
-  utc_day_start timestamptz;
-  utc_day_end timestamptz;
+  local_day date;
 begin
   if new.program_type <> 'creator'
      or new.status not in ('draft','pending','approved','scheduled','live') then
     return new;
   end if;
 
-  select plan, daily_slot_limit
-  into creator_plan, creator_limit
+  select plan, daily_slot_limit, timezone
+  into creator_plan, creator_limit, creator_timezone
   from public.room_creator_profiles
   where id = new.creator_id;
 
@@ -232,8 +234,8 @@ begin
     return new;
   end if;
 
-  utc_day_start := date_trunc('day', new.scheduled_start at time zone 'UTC') at time zone 'UTC';
-  utc_day_end := (date_trunc('day', new.scheduled_start at time zone 'UTC') + interval '1 day') at time zone 'UTC';
+  creator_timezone := coalesce(nullif(creator_timezone, ''), 'UTC');
+  local_day := (new.scheduled_start at time zone creator_timezone)::date;
 
   select count(*)
   into existing_count
@@ -241,15 +243,17 @@ begin
   where s.creator_id = new.creator_id
     and s.id is distinct from new.id
     and s.status in ('draft','pending','approved','scheduled','live')
-    and s.scheduled_start >= utc_day_start
-    and s.scheduled_start < utc_day_end;
+    and (s.scheduled_start at time zone creator_timezone)::date = local_day;
 
   if existing_count >= creator_limit then
-    raise exception 'Free creator accounts are limited to % programming slots per day.', creator_limit
+    raise exception 'Free creator accounts are limited to % programming slots per creator-local day.', creator_limit
       using errcode = '23514';
   end if;
 
   return new;
+exception
+  when invalid_parameter_value then
+    raise exception 'Creator timezone is invalid.' using errcode = '23514';
 end;
 $$;
 
@@ -262,4 +266,4 @@ on public.relationship_room_slots
 for each row execute function private.enforce_room_creator_daily_limit();
 
 comment on table public.relationship_room_slots is
-'O2OL 24-hour Global Relationship Room schedule. Paid slot sales are intentionally deferred; free creators initially receive up to two slots per day. Approval and moderation fields are protected from direct browser writes, overlapping active slots are blocked, and the daily free limit is enforced in Postgres.';
+'O2OL 24-hour Global Relationship Room schedule. Paid slot sales are intentionally deferred; free creators initially receive up to two slots per creator-local day. Approval and moderation fields are protected from direct browser writes, overlapping active slots are blocked, and the daily free limit is enforced in Postgres.';
