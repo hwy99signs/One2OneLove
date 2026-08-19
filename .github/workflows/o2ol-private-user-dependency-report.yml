@@ -1,0 +1,58 @@
+name: O2OL Private User Dependency Report
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - 'src/**'
+      - 'scripts/audit-private-user-relations.mjs'
+      - '.github/workflows/o2ol-private-user-dependency-report.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Generate report
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p docs/generated
+          {
+            echo '# O2OL Private Account Dependency Audit'
+            echo
+            echo 'Generated automatically. Cross-member social reads should use `user_directory_profiles`; own-account reads may remain on `users`.'
+            echo
+            echo '```text'
+            node scripts/audit-private-user-relations.mjs
+            echo '```'
+          } > docs/generated/O2OL_PRIVATE_USER_DEPENDENCIES.md
+
+      - name: Commit changed report
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/generated/O2OL_PRIVATE_USER_DEPENDENCIES.md; then
+            echo 'Private user dependency report unchanged.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add docs/generated/O2OL_PRIVATE_USER_DEPENDENCIES.md
+          git commit -m 'Update O2OL private user dependency report'
+          git push origin HEAD:o2ol-build-branch-2026-08-18
