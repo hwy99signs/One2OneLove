@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Report production dependency audit
+        shell: bash
+        run: |
+          echo 'Production dependency audit is informational until remediation is reviewed for breaking-change risk.'
+          npm audit --omit=dev || true
+
       - name: Verify critical recovery and Global Room routes
         shell: bash
         run: |
