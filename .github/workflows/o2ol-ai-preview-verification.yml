@@ -39,7 +39,7 @@ jobs:
             grep -q 'not available yet' "$file"
           done
           grep -q 'does not save or transmit' src/pages/RelationshipCoach.jsx
-          grep -q 'does not diagnose' src/pages/RelationshipCoach.jsx
+          grep -q 'will not diagnose' src/pages/RelationshipCoach.jsx
           grep -q 'does not save or transmit' src/pages/AIContentCreator.jsx
           grep -q 'not therapy' src/pages/AIContentCreator.jsx
           grep -q 'createPageUrl("CommunicationPractice")' src/pages/RelationshipCoach.jsx
