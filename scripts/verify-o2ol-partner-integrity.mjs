@@ -17,24 +17,26 @@ const read = (file) => {
 const requireText = (content, text, label) => {
   if (!content.includes(text)) failures.push(`Missing ${label}: ${text}`);
 };
-
-const rejectText = (content, text, label) => {
-  if (content.includes(text)) failures.push(`Unsafe ${label}: ${text}`);
+const rejectPattern = (content, pattern, label) => {
+  if (pattern.test(content)) failures.push(`Unsafe ${label}: ${pattern}`);
 };
 
-for (const [page, profileLookup] of [
-  ['src/pages/InfluencerSignup.jsx', 'getInfluencerProfile'],
-  ['src/pages/ProfessionalSignup.jsx', 'getProfessionalProfile'],
+const influencerPage = read('src/pages/InfluencerSignup.jsx');
+const professionalPage = read('src/pages/ProfessionalSignup.jsx');
+const therapistPage = read('src/pages/TherapistSignup.jsx');
+for (const [page, content] of [
+  ['src/pages/InfluencerSignup.jsx', influencerPage],
+  ['src/pages/ProfessionalSignup.jsx', professionalPage],
+  ['src/pages/TherapistSignup.jsx', therapistPage],
 ]) {
-  const content = read(page);
   for (const language of languages) requireText(content, `${language}:`, `${language} translation in ${page}`);
-  requireText(content, profileLookup, `persisted profile verification in ${page}`);
-  requireText(content, "persisted.profile.status !== 'pending'", `pending moderation verification in ${page}`);
-  requireText(content, 'result?.user?.id', `created user identity verification in ${page}`);
-  rejectText(content, '123456', `placeholder verification code in ${page}`);
-  rejectText(content, 'tempPassword', `temporary password in ${page}`);
+  rejectPattern(content, /123456|tempPassword|<form|<Input|<Textarea|registerInfluencer|registerProfessional|registerTherapist|supabase|useAuth/, `active legacy partner intake in ${page}`);
 }
+requireText(influencerPage, '/RoomCreatorAccess', 'Global Room creator pathway');
+requireText(professionalPage, 'Post Launch', 'professional post-launch state');
+requireText(therapistPage, 'Post Launch', 'therapist post-launch state');
 
+// Preserve hardened future partner infrastructure even while its public intake is inactive.
 const influencerService = read('src/lib/influencerService.js');
 requireText(influencerService, "status: 'pending'", 'influencer pending default');
 const professionalService = read('src/lib/professionalService.js');
@@ -43,6 +45,7 @@ requireText(professionalService, "status: 'pending'", 'professional pending defa
 const partnerSql = read('supabase-partner-profile-security.sql');
 requireText(partnerSql, 'influencers can create pending own profile', 'influencer pending insert RLS');
 requireText(partnerSql, 'professionals can create pending own profile', 'professional pending insert RLS');
+rejectPattern(partnerSql, /status\s*=\s*'approved'.*auth\.uid\(\)/s, 'self-approval policy');
 
 if (failures.length) {
   console.error('\nO2OL partner integrity verification failed:\n');
