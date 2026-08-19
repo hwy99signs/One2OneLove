@@ -1,0 +1,83 @@
+name: O2OL Community Privacy
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-community:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language Community surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/pages/Community.jsx src/components/community/PostStoryForm.jsx src/components/community/StoryCard.jsx src/components/community/BuddyCard.jsx; do
+            for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
+          done
+          grep -q 'Discussion Forums — Post Launch' src/pages/Community.jsx
+          grep -q 'Submit for Review' src/components/community/PostStoryForm.jsx
+          grep -q "rpc('submit_community_story'" src/lib/successStoriesService.js
+          grep -q "'pending'" supabase-community-story-submission.sql
+
+      - name: Verify moderated story submission
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq "moderation_status:[[:space:]]*['\"]approved|moderation_status[[:space:]]*=[[:space:]]*['\"]approved" src/lib/successStoriesService.js src/components/community/PostStoryForm.jsx; then
+            echo 'Browser story submission must not self-approve.'
+            exit 1
+          fi
+          grep -q 'revoke insert, update on table public.success_stories from authenticated' supabase-community-story-submission.sql
+          grep -q "grant execute on function public.submit_community_story" supabase-community-story-submission.sql
+          if grep -Eq "from\('success_stories'\).*\.(insert|update)" src/lib/successStoriesService.js; then
+            echo 'Community stories must use the submission RPC rather than direct browser writes.'
+            exit 1
+          fi
+
+      - name: Verify buddy privacy and forum retirement
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'buddyEmail|buddy\.email|<Mail|console\.' src/components/community/BuddyCard.jsx src/pages/Community.jsx src/lib/successStoriesService.js; then
+            echo 'Community must not expose buddy email or browser diagnostics.'
+            exit 1
+          fi
+          if grep -Eq 'ForumCard|ForumPostCard|selectedForum|forumPosts|Base44|Promise\.resolve\(\[\]\).*forums' src/pages/Community.jsx; then
+            echo 'Dead legacy forum behavior must not return to the launch Community.'
+            exit 1
+          fi
+
+      - name: Lint Community surfaces
+        run: >-
+          npx eslint
+          src/pages/Community.jsx
+          src/components/community/PostStoryForm.jsx
+          src/components/community/StoryCard.jsx
+          src/components/community/BuddyCard.jsx
+          src/lib/successStoriesService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
