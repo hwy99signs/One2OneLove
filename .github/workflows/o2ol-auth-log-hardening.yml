@@ -1,26 +1,24 @@
-name: O2OL Auth Log Hardening
+name: O2OL Auth Privacy
 
 on:
   push:
     branches:
       - o2ol-build-branch-2026-08-18
-    paths:
-      - scripts/sanitize-auth-logging.mjs
-      - .github/workflows/o2ol-auth-log-hardening.yml
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  sanitize:
+  verify-auth-privacy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
-      - name: Checkout active build branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: o2ol-build-branch-2026-08-18
 
       - name: Use Node.js 24
         uses: actions/setup-node@v4
@@ -31,17 +29,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Remove AuthContext console diagnostics
-        run: node scripts/sanitize-auth-logging.mjs
-
-      - name: Verify no AuthContext console diagnostics remain
+      - name: Verify AuthContext privacy and session invariants
         shell: bash
         run: |
           set -euo pipefail
-          if grep -Eq 'console\.(log|warn|error|debug|info)' src/contexts/AuthContext.jsx; then
-            echo 'AuthContext still contains browser-console diagnostics.'
+          test -f src/contexts/AuthContext.jsx
+          if grep -Eq 'console\.(log|warn|error|debug|info|trace)' src/contexts/AuthContext.jsx; then
+            echo 'AuthContext must not emit account/session diagnostics to the browser console.'
             exit 1
           fi
+          grep -q 'onAuthStateChange' src/contexts/AuthContext.jsx
+          grep -q 'getSession' src/contexts/AuthContext.jsx
+          grep -q 'signInWithPassword' src/contexts/AuthContext.jsx
+          grep -q 'signOut' src/contexts/AuthContext.jsx
+          grep -q 'signUp' src/contexts/AuthContext.jsx
+          grep -q 'refreshUserProfile' src/contexts/AuthContext.jsx
+          grep -q "eq('id', authUser.id)" src/contexts/AuthContext.jsx
+          grep -q "upsert(profilePayload" src/contexts/AuthContext.jsx
 
       - name: Verify O2OL account security
         run: node scripts/verify-o2ol-security.mjs
@@ -54,17 +58,3 @@ jobs:
 
       - name: Production build
         run: npm run build
-
-      - name: Commit only after verification
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- src/contexts/AuthContext.jsx; then
-            echo 'AuthContext diagnostics already sanitized.'
-            exit 0
-          fi
-          git config user.name 'O2OL Build Automation'
-          git config user.email 'actions@users.noreply.github.com'
-          git add src/contexts/AuthContext.jsx
-          git commit -m 'Remove sensitive auth browser diagnostics'
-          git push origin HEAD:o2ol-build-branch-2026-08-18
