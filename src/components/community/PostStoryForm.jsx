@@ -1,245 +1,46 @@
 import React, { useState } from "react";
+import { Heart, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/Layout";
 
 const translations = {
-  en: {
-    title: "Share Your Love Story",
-    storyType: "Story Type",
-    storyTitle: "Title",
-    yourStory: "Your Story",
-    relationshipLength: "Relationship Length",
-    tags: "Tags (comma separated)",
-    postAnonymously: "Post anonymously",
-    cancel: "Cancel",
-    shareStory: "Share Your Story",
-    types: {
-      success: "💕 Success Story",
-      challenge: "💪 Challenge Overcome",
-      advice: "💡 Heartfelt Advice",
-      milestone: "🏆 Beautiful Milestone",
-      transformation: "✨ Love Transformation"
-    },
-    placeholders: {
-      title: "Give your love story a beautiful title...",
-      story: "Share your heartwarming experience and inspire others with your journey of love...",
-      length: "e.g., 2 years, 6 months of pure bliss",
-      tags: "e.g., communication, trust, growth, forever"
-    }
-  },
-  es: {
-    title: "Comparte Tu Historia de Amor",
-    storyType: "Tipo de Historia",
-    storyTitle: "Título",
-    yourStory: "Tu Historia",
-    relationshipLength: "Duración de la Relación",
-    tags: "Etiquetas (separadas por comas)",
-    postAnonymously: "Publicar de forma anónima",
-    cancel: "Cancelar",
-    shareStory: "Comparte Tu Historia",
-    types: {
-      success: "💕 Historia de Éxito",
-      challenge: "💪 Desafío Superado",
-      advice: "💡 Consejo Sincero",
-      milestone: "🏆 Hermoso Hito",
-      transformation: "✨ Transformación del Amor"
-    },
-    placeholders: {
-      title: "Dale un hermoso título a tu historia de amor...",
-      story: "Comparte tu experiencia conmovedora e inspira a otros con tu viaje de amor...",
-      length: "ej., 2 años, 6 meses de pura felicidad",
-      tags: "ej., comunicación, confianza, crecimiento, para siempre"
-    }
-  },
-  fr: {
-    title: "Partagez Votre Histoire d'Amour",
-    storyType: "Type d'Histoire",
-    storyTitle: "Titre",
-    yourStory: "Votre Histoire",
-    relationshipLength: "Durée de la Relation",
-    tags: "Tags (séparés par des virgules)",
-    postAnonymously: "Publier anonymement",
-    cancel: "Annuler",
-    shareStory: "Partagez Votre Histoire",
-    types: {
-      success: "💕 Histoire de Succès",
-      challenge: "💪 Défi Surmonté",
-      advice: "💡 Conseil Sincère",
-      milestone: "🏆 Beau Jalon",
-      transformation: "✨ Transformation de l'Amour"
-    },
-    placeholders: {
-      title: "Donnez un beau titre à votre histoire d'amour...",
-      story: "Partagez votre expérience touchante et inspirez les autres avec votre parcours d'amour...",
-      length: "ex., 2 ans, 6 mois de pur bonheur",
-      tags: "ex., communication, confiance, croissance, pour toujours"
-    }
-  },
-  it: {
-    title: "Condividi la Tua Storia d'Amore",
-    storyType: "Tipo di Storia",
-    storyTitle: "Titolo",
-    yourStory: "La Tua Storia",
-    relationshipLength: "Durata della Relazione",
-    tags: "Tag (separati da virgole)",
-    postAnonymously: "Pubblica in modo anonimo",
-    cancel: "Annulla",
-    shareStory: "Condividi la Tua Storia",
-    types: {
-      success: "💕 Storia di Successo",
-      challenge: "💪 Sfida Superata",
-      advice: "💡 Consiglio Sincero",
-      milestone: "🏆 Bellissimo Traguardo",
-      transformation: "✨ Trasformazione dell'Amore"
-    },
-    placeholders: {
-      title: "Dai un bellissimo titolo alla tua storia d'amore...",
-      story: "Condividi la tua esperienza commovente e ispira gli altri con il tuo viaggio d'amore...",
-      length: "es., 2 anni, 6 mesi di pura felicità",
-      tags: "es., comunicazione, fiducia, crescita, per sempre"
-    }
-  },
-  de: {
-    title: "Teile Deine Liebesgeschichte",
-    storyType: "Geschichtentyp",
-    storyTitle: "Titel",
-    yourStory: "Deine Geschichte",
-    relationshipLength: "Beziehungsdauer",
-    tags: "Tags (durch Kommas getrennt)",
-    postAnonymously: "Anonym veröffentlichen",
-    cancel: "Abbrechen",
-    shareStory: "Teile Deine Geschichte",
-    types: {
-      success: "💕 Erfolgsgeschichte",
-      challenge: "💪 Herausforderung Überwunden",
-      advice: "💡 Herzlicher Rat",
-      milestone: "🏆 Wunderschöner Meilenstein",
-      transformation: "✨ Liebestransformation"
-    },
-    placeholders: {
-      title: "Gib deiner Liebesgeschichte einen wunderschönen Titel...",
-      story: "Teile deine herzerwärmende Erfahrung und inspiriere andere mit deiner Liebesreise...",
-      length: "z.B., 2 Jahre, 6 Monate reines Glück",
-      tags: "z.B., Kommunikation, Vertrauen, Wachstum, für immer"
-    }
-  }
+  en: { title: "Share Your Relationship Story", storyType: "Story Type", storyTitle: "Title", yourStory: "Your Story", relationshipLength: "Relationship Length", tags: "Tags (comma separated)", postAnonymously: "Post anonymously if approved", review: "Every new story is submitted for review first. It will not become public unless it is approved.", cancel: "Cancel", shareStory: "Submit for Review", types: { success: "💕 Success Story", challenge: "💪 Challenge Overcome", advice: "💡 Heartfelt Advice", milestone: "🏆 Beautiful Milestone", transformation: "✨ Relationship Transformation" }, placeholders: { title: "Give your story a clear title...", story: "Share the experience you would like the community to learn from...", length: "e.g., 2 years", tags: "e.g., communication, trust, growth" } },
+  es: { title: "Comparte Tu Historia de Relación", storyType: "Tipo de Historia", storyTitle: "Título", yourStory: "Tu Historia", relationshipLength: "Duración de la Relación", tags: "Etiquetas (separadas por comas)", postAnonymously: "Publicar de forma anónima si se aprueba", review: "Cada nueva historia se envía primero a revisión. No será pública a menos que sea aprobada.", cancel: "Cancelar", shareStory: "Enviar para Revisión", types: { success: "💕 Historia de Éxito", challenge: "💪 Desafío Superado", advice: "💡 Consejo Sincero", milestone: "🏆 Hermoso Hito", transformation: "✨ Transformación de la Relación" }, placeholders: { title: "Dale un título claro a tu historia...", story: "Comparte la experiencia que deseas que la comunidad conozca...", length: "ej., 2 años", tags: "ej., comunicación, confianza, crecimiento" } },
+  fr: { title: "Partagez Votre Histoire Relationnelle", storyType: "Type d’Histoire", storyTitle: "Titre", yourStory: "Votre Histoire", relationshipLength: "Durée de la Relation", tags: "Tags (séparés par des virgules)", postAnonymously: "Publier anonymement si approuvé", review: "Chaque nouvelle histoire est d’abord soumise à examen. Elle ne devient publique qu’après approbation.", cancel: "Annuler", shareStory: "Soumettre pour Examen", types: { success: "💕 Histoire de Succès", challenge: "💪 Défi Surmonté", advice: "💡 Conseil Sincère", milestone: "🏆 Beau Jalon", transformation: "✨ Transformation Relationnelle" }, placeholders: { title: "Donnez un titre clair à votre histoire...", story: "Partagez l’expérience dont vous souhaitez faire profiter la communauté...", length: "ex., 2 ans", tags: "ex., communication, confiance, croissance" } },
+  it: { title: "Condividi la Tua Storia di Relazione", storyType: "Tipo di Storia", storyTitle: "Titolo", yourStory: "La Tua Storia", relationshipLength: "Durata della Relazione", tags: "Tag (separati da virgole)", postAnonymously: "Pubblica in forma anonima se approvata", review: "Ogni nuova storia viene prima inviata alla revisione. Non diventerà pubblica senza approvazione.", cancel: "Annulla", shareStory: "Invia per Revisione", types: { success: "💕 Storia di Successo", challenge: "💪 Sfida Superata", advice: "💡 Consiglio Sincero", milestone: "🏆 Bellissimo Traguardo", transformation: "✨ Trasformazione della Relazione" }, placeholders: { title: "Dai un titolo chiaro alla tua storia...", story: "Condividi l’esperienza che vorresti far conoscere alla community...", length: "es., 2 anni", tags: "es., comunicazione, fiducia, crescita" } },
+  de: { title: "Teile Deine Beziehungsgeschichte", storyType: "Geschichtentyp", storyTitle: "Titel", yourStory: "Deine Geschichte", relationshipLength: "Beziehungsdauer", tags: "Tags (durch Kommas getrennt)", postAnonymously: "Bei Genehmigung anonym veröffentlichen", review: "Jede neue Geschichte wird zuerst zur Prüfung eingereicht. Sie wird nur nach Genehmigung öffentlich.", cancel: "Abbrechen", shareStory: "Zur Prüfung Einreichen", types: { success: "💕 Erfolgsgeschichte", challenge: "💪 Herausforderung Überwunden", advice: "💡 Herzlicher Rat", milestone: "🏆 Besonderer Meilenstein", transformation: "✨ Beziehungsveränderung" }, placeholders: { title: "Gib deiner Geschichte einen klaren Titel...", story: "Teile die Erfahrung, von der die Community lernen kann...", length: "z.B., 2 Jahre", tags: "z.B., Kommunikation, Vertrauen, Wachstum" } },
 };
 
 export default function PostStoryForm({ onSubmit, onCancel }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [formData, setFormData] = useState({
-    story_type: "success",
-    title: "",
-    content: "",
-    is_anonymous: true,
-    relationship_length: "",
-    tags: ""
-  });
+  const [formData, setFormData] = useState({ story_type: "success", title: "", content: "", is_anonymous: true, relationship_length: "", tags: "" });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-    onSubmit({
-      ...formData,
-      tags: tagsArray
-      // moderation_status is automatically set to 'approved' in the service
-    });
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const tags = formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 10);
+    onSubmit({ ...formData, tags });
   };
 
   return (
     <Card className="bg-white shadow-xl">
       <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Heart className="w-6 h-6" />
-            {t.title}
-          </CardTitle>
-          <button onClick={onCancel} className="text-white hover:text-gray-200">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+        <div className="flex items-center justify-between gap-3"><CardTitle className="flex items-center gap-2 text-2xl"><Heart className="h-6 w-6" aria-hidden="true" />{t.title}</CardTitle><button type="button" onClick={onCancel} aria-label={t.cancel} className="rounded-lg p-1 text-white hover:bg-white/10"><X className="h-6 w-6" aria-hidden="true" /></button></div>
       </CardHeader>
       <CardContent className="pt-6">
+        <div className="mb-5 flex gap-3 rounded-xl bg-purple-50 p-4 text-sm leading-6 text-purple-950"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /><p>{t.review}</p></div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.storyType} *</label>
-            <Select value={formData.story_type} onValueChange={(value) => setFormData({...formData, story_type: value})}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="success">{t.types.success}</SelectItem>
-                <SelectItem value="challenge">{t.types.challenge}</SelectItem>
-                <SelectItem value="advice">{t.types.advice}</SelectItem>
-                <SelectItem value="milestone">{t.types.milestone}</SelectItem>
-                <SelectItem value="transformation">{t.types.transformation}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.storyTitle} *</label>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-              placeholder={t.placeholders.title}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.yourStory} *</label>
-            <Textarea
-              value={formData.content}
-              onChange={(e) => setFormData({...formData, content: e.target.value})}
-              placeholder={t.placeholders.story}
-              className="h-32"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.relationshipLength}</label>
-            <Input
-              value={formData.relationship_length}
-              onChange={(e) => setFormData({...formData, relationship_length: e.target.value})}
-              placeholder={t.placeholders.length}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tags}</label>
-            <Input
-              value={formData.tags}
-              onChange={(e) => setFormData({...formData, tags: e.target.value})}
-              placeholder={t.placeholders.tags}
-            />
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.is_anonymous}
-                onChange={(e) => setFormData({...formData, is_anonymous: e.target.checked})}
-                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-              />
-              <span className="text-sm text-gray-700">{t.postAnonymously}</span>
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
-              {t.cancel}
-            </Button>
-            <Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-              {t.shareStory}
-            </Button>
-          </div>
+          <label className="block text-sm font-semibold text-gray-700">{t.storyType} *<Select value={formData.story_type} onValueChange={(value) => setFormData({ ...formData, story_type: value })}><SelectTrigger className="mt-2"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(t.types).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></label>
+          <label className="block text-sm font-semibold text-gray-700">{t.storyTitle} *<Input className="mt-2" value={formData.title} onChange={(event) => setFormData({ ...formData, title: event.target.value })} placeholder={t.placeholders.title} minLength={3} maxLength={160} required /></label>
+          <label className="block text-sm font-semibold text-gray-700">{t.yourStory} *<Textarea className="mt-2 min-h-36" value={formData.content} onChange={(event) => setFormData({ ...formData, content: event.target.value })} placeholder={t.placeholders.story} minLength={20} maxLength={10000} required /></label>
+          <label className="block text-sm font-semibold text-gray-700">{t.relationshipLength}<Input className="mt-2" value={formData.relationship_length} onChange={(event) => setFormData({ ...formData, relationship_length: event.target.value })} placeholder={t.placeholders.length} maxLength={120} /></label>
+          <label className="block text-sm font-semibold text-gray-700">{t.tags}<Input className="mt-2" value={formData.tags} onChange={(event) => setFormData({ ...formData, tags: event.target.value })} placeholder={t.placeholders.tags} maxLength={300} /></label>
+          <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" checked={formData.is_anonymous} onChange={(event) => setFormData({ ...formData, is_anonymous: event.target.checked })} className="h-4 w-4 rounded text-purple-600 focus:ring-purple-500" /><span className="text-sm text-gray-700">{t.postAnonymously}</span></label>
+          <div className="flex gap-3 pt-3"><Button type="button" variant="outline" className="flex-1" onClick={onCancel}>{t.cancel}</Button><Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">{t.shareStory}</Button></div>
         </form>
       </CardContent>
     </Card>
