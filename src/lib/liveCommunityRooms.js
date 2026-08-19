@@ -1,5 +1,13 @@
 export const LIVE_COMMUNITY_ROOMS = [
   {
+    slug: "global-relationship-room",
+    name: "Global Relationship Room",
+    description: "One Room. Many Voices. Stronger Relationships.",
+    topic: "What relationship lesson have you learned that you think people in other cultures, generations, or life stages could benefit from hearing?",
+    accent: "violet",
+    isGlobal: true,
+  },
+  {
     slug: "vent-room",
     name: "Vent Room",
     description: "Say what you need to say — without turning people into targets.",
@@ -38,6 +46,11 @@ export const LIVE_COMMUNITY_ROOMS = [
 
 const ROOM_TRANSLATIONS = {
   es: {
+    "global-relationship-room": {
+      name: "Sala Global de Relaciones",
+      description: "Una sala. Muchas voces. Relaciones más fuertes.",
+      topic: "¿Qué lección sobre las relaciones has aprendido que crees que podría ayudar a personas de otras culturas, generaciones o etapas de la vida?",
+    },
     "vent-room": {
       name: "Sala para Desahogarse",
       description: "Di lo que necesitas decir — sin convertir a nadie en un blanco.",
@@ -65,6 +78,11 @@ const ROOM_TRANSLATIONS = {
     },
   },
   fr: {
+    "global-relationship-room": {
+      name: "Salon Mondial des Relations",
+      description: "Une salle. De nombreuses voix. Des relations plus fortes.",
+      topic: "Quelle leçon sur les relations avez-vous apprise qui pourrait, selon vous, aider des personnes d’autres cultures, générations ou étapes de la vie ?",
+    },
     "vent-room": {
       name: "Le Coin pour Vider son Sac",
       description: "Dites ce que vous avez à dire — sans transformer quelqu’un en cible.",
@@ -92,6 +110,11 @@ const ROOM_TRANSLATIONS = {
     },
   },
   it: {
+    "global-relationship-room": {
+      name: "Sala Globale delle Relazioni",
+      description: "Una stanza. Tante voci. Relazioni più forti.",
+      topic: "Quale lezione sulle relazioni hai imparato che pensi possa essere utile a persone di altre culture, generazioni o fasi della vita?",
+    },
     "vent-room": {
       name: "Vent Room",
       description: "Dì quello che devi dire — senza trasformare nessuno in un bersaglio.",
@@ -119,6 +142,11 @@ const ROOM_TRANSLATIONS = {
     },
   },
   de: {
+    "global-relationship-room": {
+      name: "Globaler Beziehungsraum",
+      description: "Ein Raum. Viele Stimmen. Stärkere Beziehungen.",
+      topic: "Welche Beziehungslektion hast du gelernt, von der Menschen aus anderen Kulturen, Generationen oder Lebensphasen profitieren könnten?",
+    },
     "vent-room": {
       name: "Vent Room",
       description: "Sag, was du sagen musst — ohne andere Menschen zur Zielscheibe zu machen.",
@@ -146,6 +174,11 @@ const ROOM_TRANSLATIONS = {
     },
   },
   nl: {
+    "global-relationship-room": {
+      name: "Wereldwijde Relatiekamer",
+      description: "Eén kamer. Veel stemmen. Sterkere relaties.",
+      topic: "Welke relatieles heb je geleerd waarvan mensen uit andere culturen, generaties of levensfasen volgens jou kunnen profiteren?",
+    },
     "vent-room": {
       name: "Uitpraatkamer",
       description: "Zeg wat je kwijt moet — zonder iemand tot doelwit te maken.",
@@ -184,12 +217,14 @@ const ACTIVITY_COPY = {
 };
 
 export function getLiveCommunityRoom(slug) {
-  return LIVE_COMMUNITY_ROOMS.find((room) => room.slug === slug) || LIVE_COMMUNITY_ROOMS[2];
+  return LIVE_COMMUNITY_ROOMS.find((room) => room.slug === slug) || LIVE_COMMUNITY_ROOMS[0];
 }
+
+export const getRoomBySlug = getLiveCommunityRoom;
 
 export function getLocalizedRoom(roomOrSlug, language = "en") {
   const room = typeof roomOrSlug === "string" ? getLiveCommunityRoom(roomOrSlug) : roomOrSlug;
-  if (!room) return LIVE_COMMUNITY_ROOMS[2];
+  if (!room) return LIVE_COMMUNITY_ROOMS[0];
   const translated = ROOM_TRANSLATIONS[language]?.[room.slug];
   return translated ? { ...room, ...translated } : room;
 }
