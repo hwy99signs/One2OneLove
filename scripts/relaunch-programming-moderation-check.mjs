@@ -31,6 +31,8 @@ for (const required of [
 
 for (const required of [
   "Deno.env.get('PROGRAMMING_MODERATION_ENABLED') !== 'true'",
+  'const UUID_PATTERN =',
+  "if (!UUID_PATTERN.test(slotId)) return json(request, { error: 'SLOT_ID_INVALID' }, 400)",
   'VALID_REASONS',
   ".eq('reporter_id', caller.id)",
   'endsAt.getTime() > Date.now() - (24 * 60 * 60 * 1000)',
@@ -42,8 +44,11 @@ for (const required of [
 
 for (const required of [
   "Deno.env.get('O2OL_PROGRAMMING_ADMIN_USER_IDS')",
+  'const UUID_PATTERN =',
+  '.filter((value) => UUID_PATTERN.test(value))',
   'allowedAdminIds().has(caller.id)',
   "if (!eligible) return json(request, { error: 'O2OL_PROGRAMMING_ADMIN_REQUIRED' }, 403)",
+  "if (!UUID_PATTERN.test(reportId)) return json(request, { error: 'REPORT_ID_INVALID' }, 400)",
   ".eq('status', 'pending')",
   "if (action === 'remove')",
   ".update({ status: 'cancelled', updated_at: new Date().toISOString() })",
@@ -121,4 +126,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Programming moderation is private, duplicate-safe, allowlist-controlled, routed, reporter-minimized and connected to program/reminder removal integrity.');
+console.log('✅ Programming moderation is private, duplicate-safe, UUID-validated, allowlist-controlled, routed, reporter-minimized and connected to program/reminder removal integrity.');
