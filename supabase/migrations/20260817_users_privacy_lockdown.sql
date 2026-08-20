@@ -6,8 +6,14 @@
 --   * public.users remains the private account/profile record.
 --   * authenticated members may read only their own full users row.
 --   * member discovery uses public.member_directory, which intentionally excludes
---     email, partner_email, verification, subscription/billing and other private data.
+--     email, partner_email, interests, role/account type, verification,
+--     subscription/billing and other private data.
 --   * service_role remains unaffected because it bypasses RLS.
+--
+-- Live-drift note (2026-08-20): the connected live users table already has RLS and
+-- authenticated own-row SELECT/INSERT/UPDATE policies. public.member_directory is
+-- absent live. Do not apply this migration blindly; reconcile the equivalent live
+-- own-row policies and preserve the stricter directory projection below.
 
 begin;
 
@@ -40,17 +46,21 @@ begin
 end
 $$;
 
--- Canonical own-profile read policy for the relaunch.
+-- Normalize the known historical/current own-row policy names to one canonical
+-- relaunch policy. Both predicates are equivalent; dropping/recreating inside this
+-- transaction prevents duplicate same-purpose policies after an approved cutover.
 drop policy if exists "Users can view own profile" on public.users;
-create policy "Users can view own profile"
+drop policy if exists "users can read own account row" on public.users;
+create policy "users can read own account row"
 on public.users
 for select
 to authenticated
-using (auth.uid() = id);
+using ((select auth.uid()) = id);
 
--- Defense-in-depth: ensure the public member projection still exposes only the
--- intentionally public profile fields. The view is owner-executed by design so it
--- can provide a safe directory even though public.users is own-row only under RLS.
+-- Defense-in-depth: public.member_directory must stay IDENTICAL in sensitivity to the
+-- stricter member-directory migration. This file intentionally does NOT expose
+-- interests or user_type and limits ordinary discovery to regular active members.
+-- Keeping both migration definitions aligned prevents migration-order widening.
 create or replace view public.member_directory
 with (security_barrier = true)
 as
@@ -60,12 +70,11 @@ select
   avatar_url,
   bio,
   relationship_status,
-  user_type,
   location,
-  interests,
   created_at
 from public.users
-where coalesce(is_active, true) = true;
+where coalesce(is_active, true) = true
+  and coalesce(user_type, 'regular') = 'regular';
 
 revoke all on public.member_directory from public;
 revoke all on public.member_directory from anon;
@@ -74,7 +83,7 @@ grant select on public.member_directory to authenticated;
 comment on table public.users is
   'Private authenticated account/profile data. Full rows are readable only by the owning user (service_role bypasses RLS).';
 comment on view public.member_directory is
-  'Authenticated member-discovery projection. Intentionally excludes email and other account-private fields.';
+  'Authenticated regular-member discovery projection. Intentionally excludes email, partner data, interests, role/account type, billing and other account-private fields.';
 
 commit;
 
@@ -82,6 +91,7 @@ commit;
 -- 1. Buddy Finder uses public.member_directory. (completed in development)
 -- 2. Pairwise chat identity lookups use public.member_directory and no longer request member email. (completed in development)
 -- 3. Audit any remaining public/community/member-card consumers for broad public.users reads. (still required)
--- 4. Test own profile load/update, Buddy Finder, chat, community and admin workflows against the tightened policy.
--- 5. Inspect the live users policies before applying; do not assume repository SQL exactly matches production state.
--- 6. Keep a rollback script ready before applying to live data.
+-- 4. Confirm the live users SELECT policy is still an own-row predicate before any apply.
+-- 5. Confirm public.member_directory is absent or has the exact approved seven-column regular-member projection before any apply.
+-- 6. Test own profile load/update, Buddy Finder, chat, community and admin workflows against the tightened policy.
+-- 7. Keep a rollback script ready before applying to live data.
