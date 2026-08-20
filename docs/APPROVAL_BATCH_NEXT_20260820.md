@@ -58,9 +58,11 @@ Authorize the live Twilio delivery path, production switches and controlled SMS 
 **Type:** PRODUCTION DEPLOYMENT  
 **Status:** NOT READY.
 
-Authorize approved relaunch changes to move to the production branch and production Vercel release only after strict preflight and actual application compile/runtime verification. The earlier Vercel build-rate-limit failure is not proof of application compile success or failure.
+Authorize approved relaunch changes to move to the production branch and production Vercel release only after strict preflight and actual application compile/runtime verification.
 
-**Current verification limitation (2026-08-20):** the connected Vercel account available to this build session exposes the ERANT/ICG projects but does not expose the One2OneLove Vercel team/project. No substitute project was used and no deployment was triggered. O2OL compile/deployment verification therefore remains unresolved until the correct Vercel project is available or another verified build path is used.
+**Current verification facts (2026-08-20):** GitHub's status API now confirms that the actual One2OneLove Vercel integration is receiving relaunch commits. Preview deployment statuses for multiple development commits, including `91ac7fd...` and `16d409...`, completed as **failure**. This is real failure evidence, but the failure cause is not currently visible: the connected Vercel OAuth session is authorized to a different team and receives HTTP 403 when reading the One2OneLove deployment scope. The Vercel response identified the O2OL scope as `one2one-loves-projects` / `team_9TYBA3RySeBXIA5ujaqrNAeo` and requires re-authentication for that scope. No substitute project was used and no deployment was manually triggered.
+
+The repository's `relaunch-branch-build.yml` has been expanded to run the latest security/integrity checks before `npm run build`, providing a second compile path when GitHub Actions run details are available. Until either the Vercel failure log or a successful independent compile is verified, #10 remains blocked.
 
 ---
 
@@ -89,6 +91,14 @@ Expose the creator scheduling experience once #11/#12 are verified, preserving t
 **Status:** STAGED.
 
 Activate official O2OL programming management using server-side authorized UUID allowlists only.
+
+### #14A — Live Room AI Host model/provider activation
+**Type:** COST / AI / PRODUCTION CONFIGURATION  
+**Status:** STAGED DARK; NO MODEL/COST ACTIVATION AUTHORIZED.
+
+The existing Live Room AI Host development path now supports the Global Relationship Room while remaining behind `LIVE_ROOM_AI_ENABLED`. It requires confirmed authentication, accepts only EN/ES/FR/IT/DE, strips member identity from context, caps request/context size, validates generated output, stores no provider response history (`store:false`), uses a server-only cache, and permits at most one AI generation per room/language/reason/time bucket regardless of caller-supplied message variation. Cache helpers are non-public and browser roles cannot read/write the cache.
+
+The server no longer silently chooses a default billable model. `OPENAI_MODEL` must be deliberately configured and pass validation; without it the endpoint falls back to the already-localized room topic and spends no AI tokens. Before setting `LIVE_ROOM_AI_ENABLED=true`, approve the model/provider cost choice and verify the existing provider credential/configuration without exposing or rotating secrets unnecessarily.
 
 ### #15 — Paid creator programming slots
 **Type:** COST / BILLING / PRODUCT DESIGN  
@@ -126,7 +136,7 @@ Authorize paid/external email/SMS/push reminder delivery providers and their ass
 **Type:** PRIVACY / SAFETY / PRODUCTION / PRODUCT DESIGN  
 **Status:** STAGED; production disabled pending the product decision below.
 
-The staged security model now enforces blocked-pair privacy at the database source rather than relying only on UI filtering. It covers the privacy-safe member directory source, presence source, Live Room messages/reactions, pairwise conversations/messages, the current `buddy_requests` model, reviewed legacy connection/request models, and defense-in-depth member discovery. Pending buddy/connection requests are removed when a block is created. Privileged helpers use the established non-exposed `o2ol_private` schema with fixed search paths.
+The staged security model now enforces blocked-pair privacy at the database source rather than relying only on UI filtering. It covers the privacy-safe member directory source, presence source, Live Room messages/reactions, pairwise conversations/messages, the current `buddy_requests` model, reviewed legacy connection/request models, and defense-in-depth member discovery. Pending buddy/connection requests are removed when a block is created. Privileged helpers use the established non-exposed `o2ol_private` schema with fixed search paths. Member discovery now applies both server-calculated inbound/outbound exclusions and the authenticated caller's directory RLS. Block-list display names are resolved only from the minimized directory source and missing names are localized by the client rather than synthesized in English by the server.
 
 **One explicit product decision remains required before activation:** what should happen to an already **accepted** connection when either member blocks the other?
 
@@ -170,7 +180,8 @@ Reconcile legacy billing/subscription state with the relaunch membership model, 
 - subscription create/update/delete handlers re-fetch current Stripe subscription state before entitlement synchronization instead of blindly trusting potentially stale delivery payloads;
 - released Stripe schedules are cleared from the current attached-schedule field rather than remaining falsely attached;
 - `my_membership` is staged as `security_invoker=true` + `security_barrier=true`, backed by own-row RLS and column-level grants for safe membership status fields only; Stripe IDs, raw price IDs, checkout internals and reconciliation state remain browser-inaccessible;
-- the checkout, webhook replay, and membership projection rules are now independent strict relaunch preflight groups.
+- billing portal staging derives the customer only from server-side membership/legacy state, validates Stripe customer/configuration ID shapes and rejects non-HTTPS portal URLs;
+- checkout, webhook replay, billing portal and membership projection rules are independent strict relaunch preflight groups.
 
 **Still required before #22 can be approved:** inventory/preserve any genuine existing paid customer state; verify the correct Stripe account/mode and live webhook endpoint; run controlled test-mode checkout, retry, duplicate-webhook, out-of-order-event, cancellation, portal and intro-to-standard schedule tests; confirm production secrets without exposing them; and deliberately approve the entitlement/billing cutover. `VITE_PAYMENTS_ENABLED` and server `PAYMENTS_ENABLED` remain OFF until then.
 
