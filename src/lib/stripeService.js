@@ -3,14 +3,20 @@ import { supabase } from './supabase';
 const PAYMENTS_ENABLED = import.meta.env.VITE_PAYMENTS_ENABLED === 'true';
 const MEMBERSHIP_PLAN_KEY = 'membership';
 
+const codedError = (code = 'BILLING_REQUEST_FAILED') => {
+  const error = new Error('');
+  error.code = code;
+  return error;
+};
+
 const requireConfirmedUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error('You must be signed in to manage membership.');
-  if (!user.email_confirmed_at && !user.confirmed_at) {
-    throw new Error('Please confirm your email before managing membership.');
-  }
+  if (error || !user) throw codedError('AUTH_REQUIRED');
+  if (!user.email_confirmed_at && !user.confirmed_at) throw codedError('EMAIL_CONFIRMATION_REQUIRED');
   return user;
 };
+
+const internalCode = (error, fallback) => String(error?.code || fallback);
 
 export const isStripeConfigured = () => PAYMENTS_ENABLED;
 export const isPaymentsEnabled = () => PAYMENTS_ENABLED;
@@ -22,9 +28,7 @@ export const isPaymentsEnabled = () => PAYMENTS_ENABLED;
  */
 export const createCheckoutSession = async () => {
   try {
-    if (!PAYMENTS_ENABLED) {
-      throw new Error('Membership payments are not enabled yet.');
-    }
+    if (!PAYMENTS_ENABLED) throw codedError('PAYMENTS_DISABLED');
 
     await requireConfirmedUser();
 
@@ -33,17 +37,12 @@ export const createCheckoutSession = async () => {
     });
 
     if (error) throw error;
-    if (!data?.url || typeof data.url !== 'string') {
-      throw new Error('No secure checkout URL was returned.');
-    }
+    if (!data?.url || typeof data.url !== 'string') throw codedError('CHECKOUT_URL_MISSING');
 
     return { success: true, sessionId: data.sessionId || null, url: data.url };
   } catch (error) {
     console.error('createCheckoutSession error:', error);
-    return {
-      success: false,
-      error: error?.message || 'Failed to create a checkout session.',
-    };
+    return { success: false, error: '', errorCode: internalCode(error, 'CHECKOUT_FAILED') };
   }
 };
 
@@ -124,7 +123,7 @@ export const getPaymentHistory = async () => {
 /** Create a short-lived Stripe-hosted billing portal session on demand. */
 export const createBillingPortalSession = async () => {
   try {
-    if (!PAYMENTS_ENABLED) throw new Error('Membership billing is not enabled yet.');
+    if (!PAYMENTS_ENABLED) throw codedError('PAYMENTS_DISABLED');
     await requireConfirmedUser();
 
     const { data, error } = await supabase.functions.invoke('create-billing-portal-session', {
@@ -132,14 +131,12 @@ export const createBillingPortalSession = async () => {
     });
 
     if (error) throw error;
-    if (!data?.url || typeof data.url !== 'string') {
-      throw new Error('No secure billing portal URL was returned.');
-    }
+    if (!data?.url || typeof data.url !== 'string') throw codedError('PORTAL_URL_MISSING');
 
     return { success: true, url: data.url };
   } catch (error) {
     console.error('createBillingPortalSession error:', error);
-    return { success: false, error: error?.message || 'Unable to open billing management.' };
+    return { success: false, error: '', errorCode: internalCode(error, 'PORTAL_FAILED') };
   }
 };
 
