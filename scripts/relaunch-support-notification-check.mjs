@@ -39,7 +39,9 @@ for (const required of [
 }
 
 for (const language of ['en','es','fr','it','de']) {
-  if (!new RegExp(`\\n\\s{2}${language}:\\s*\\{`).test(center)) failures.push(`${centerFile}: missing ${language} support-notification copy.`);
+  const block = center.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([^\\n]+)`))?.[1] || '';
+  if (!block) failures.push(`${centerFile}: missing ${language} support-notification copy.`);
+  if (block && !/\bopenSupport:\s*/.test(block)) failures.push(`${centerFile}: ${language} is missing the direct member-support entry label.`);
 }
 for (const required of [
   "export default function SupportNotificationCenter({ languageCode = 'en' })",
@@ -47,6 +49,8 @@ for (const required of [
   '!item.member_response_read_at',
   'markSupportResponseRead(item.id)',
   "navigate('/SupportRequests')",
+  'const openSupport = () =>',
+  '{t.openSupport}',
   'window.setInterval(() => void load(), 60_000)',
 ]) {
   if (!center.includes(required)) failures.push(`${centerFile}: missing private/localized support-notification behavior ${required}.`);
@@ -68,4 +72,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Support response notifications remain private, multilingual, read-state aware and in-app only.');
+console.log('✅ Support response notifications remain private, multilingual, read-state aware, directly navigable and in-app only.');
