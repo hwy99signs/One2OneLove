@@ -6,9 +6,11 @@ const strictFromEnvironment = String(process.env.RELAUNCH_STRICT_CHECKS || '').t
 const strict = strictRequested || strictFromEnvironment || vercelEnvironment === 'production';
 
 const checks = [
+  ['production approval lock', 'scripts/relaunch-production-approval-check.mjs'],
   ['relaunch safety', 'scripts/relaunch-safety-check.mjs'],
   ['relaunch security', 'scripts/relaunch-security-check.mjs'],
   ['relaunch authentication flow', 'scripts/relaunch-auth-flow-check.mjs'],
+  ['relaunch authentication safety', 'scripts/relaunch-auth-safety-check.mjs'],
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
   ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
@@ -86,7 +88,7 @@ if (failures.length === 0) {
 }
 
 if (strict) {
-  console.error(`\n⛔ ${failures.length} relaunch check group(s) failed in STRICT mode. Application build is blocked.\n`);
+  console.error(`\n⛔ ${failures.length} relaunch check group(s) failed in STRICT mode. Application build is blocked.\n');
   process.exit(1);
 }
 
