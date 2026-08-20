@@ -90,4 +90,25 @@ Approved and staged in development. **No production SMS activation occurred.**
 - Rollout/compliance design is documented in `docs/LOVE_NOTES_SMS_TWILIO_ROLLOUT.md`.
 - The SMS migration was **not** applied to live Supabase.
 - No Twilio account was created or connected, no A2P registration was submitted, no production secret was created/changed, no Love Notes function was switched away from `production-dark.ts`, no SMS was sent, and no SMS/provider cost was incurred.
-- A later explicit approval is still required for Twilio account/billing, A2P registration/fees, public consent flow, legal-policy disclosures, production secrets, and controlled live SMS activation.
+
+## Approval #9B — Recipient-controlled SMS consent + legal foundation
+Approved and staged in development. **No production consent capture or SMS activation occurred.**
+- Added a five-language `SmsConsent` page and public staging routes at `/SmsConsent` and `/LoveNotes/SmsConsent`.
+- All SMS consent controls start unchecked.
+- The consent page states that SMS is optional, email Love Notes remain available, message frequency varies, message/data rates may apply, STOP cancels, HELP provides help, and this consent excludes marketing/promotional SMS.
+- Terms of Service and Privacy Policy links remain adjacent to the opt-in disclosure.
+- Existing public Terms/Privacy pages remain explicitly marked `final review pending`; SMS legal wording is not presented as final.
+- Added `docs/SMS_MESSAGING_LEGAL_DRAFT_20260820.md` as a development/counsel-review source only, not final legal advice or final policy.
+- Hardened the staged SMS consent table so it stores no second raw or partial phone number and no IP address. It stores a server-peppered phone hash plus the program/disclosure/Terms/Privacy versions accepted and consent state/timestamps.
+- Added a development-only `manage-love-note-sms-consent` Edge Function source. It is fail-closed behind a separate consent-capture switch, validates E.164, requires explicit recipient self-attestation, uses service-role only on the server, and never echoes the phone/hash.
+- Added a development-only `twilio-love-note-sms-webhook` source for future Advanced Opt-Out STOP/START/HELP synchronization. It is designed to reject unsigned Twilio requests using `X-Twilio-Signature` validation with the server-only Twilio Auth Token and exact public HTTPS webhook URL.
+- STOP revokes known O2OL consent state; HELP does not change consent; START only reactivates an existing known consent record and does not create fresh O2OL consent for an unknown number.
+- The SMS build guard was expanded to verify the consent page, legal-review gate, browser-private consent evidence and signed Twilio webhook protections.
+- A production recipient/number-control verification mechanism remains a required design decision before consent capture is activated; the build did not silently choose a paid verification product.
+- No SMS migration was applied live, no new SMS/consent/webhook function was deployed live, no Twilio secret was created/changed, no A2P/provider configuration was performed, and no SMS/provider cost was incurred.
+
+## Development approval batching preference
+The owner subsequently instructed the build to continue uninterrupted and requested a new approval batch for later review.
+- Low-risk security hardening may continue under the owner's standing authorization when it only adds protection and does not materially change product behavior/cost/legal obligations/design.
+- Medium/high security, cost, legal/compliance, meaningful design, production deployment/mutation, secret, billing, and irreversible actions remain held for later approval.
+- The current future-approval batch is maintained at `docs/APPROVAL_BATCH_NEXT_20260820.md`.
