@@ -16,7 +16,12 @@ begin;
 
 alter table public.community_members enable row level security;
 
-create or replace function public.is_community_active_member(p_community_id uuid)
+-- Privileged RLS helpers live outside the exposed public API schema.
+create schema if not exists o2ol_private;
+revoke all on schema o2ol_private from public;
+grant usage on schema o2ol_private to authenticated;
+
+create or replace function o2ol_private.is_community_active_member(p_community_id uuid)
 returns boolean
 language sql
 stable
@@ -32,7 +37,7 @@ as $$
   );
 $$;
 
-create or replace function public.is_community_moderator_or_admin(p_community_id uuid)
+create or replace function o2ol_private.is_community_moderator_or_admin(p_community_id uuid)
 returns boolean
 language sql
 stable
@@ -49,13 +54,13 @@ as $$
   );
 $$;
 
-revoke all on function public.is_community_active_member(uuid) from public;
-revoke all on function public.is_community_moderator_or_admin(uuid) from public;
-grant execute on function public.is_community_active_member(uuid) to authenticated;
-grant execute on function public.is_community_moderator_or_admin(uuid) to authenticated;
+revoke all on function o2ol_private.is_community_active_member(uuid) from public;
+revoke all on function o2ol_private.is_community_moderator_or_admin(uuid) from public;
+grant execute on function o2ol_private.is_community_active_member(uuid) to authenticated;
+grant execute on function o2ol_private.is_community_moderator_or_admin(uuid) to authenticated;
 
 -- The database, not the browser, grants the creator's initial admin role.
-create or replace function public.ensure_community_creator_membership()
+create or replace function o2ol_private.ensure_community_creator_membership()
 returns trigger
 language plpgsql
 security definer
@@ -70,15 +75,15 @@ begin
 end;
 $$;
 
-revoke all on function public.ensure_community_creator_membership() from public, anon, authenticated;
+revoke all on function o2ol_private.ensure_community_creator_membership() from public, anon, authenticated;
 
 drop trigger if exists ensure_community_creator_membership on public.communities;
 create trigger ensure_community_creator_membership
 after insert on public.communities
-for each row execute function public.ensure_community_creator_membership();
+for each row execute function o2ol_private.ensure_community_creator_membership();
 
 -- Field/role boundary for UPDATE/DELETE on membership rows.
-create or replace function public.enforce_community_membership_management()
+create or replace function o2ol_private.enforce_community_membership_management()
 returns trigger
 language plpgsql
 security invoker
@@ -163,13 +168,13 @@ begin
 end;
 $$;
 
-revoke all on function public.enforce_community_membership_management() from public, anon, authenticated;
+revoke all on function o2ol_private.enforce_community_membership_management() from public, anon, authenticated;
 
 drop trigger if exists protect_community_creator_membership on public.community_members;
 drop trigger if exists enforce_community_membership_management on public.community_members;
 create trigger enforce_community_membership_management
 before update or delete on public.community_members
-for each row execute function public.enforce_community_membership_management();
+for each row execute function o2ol_private.enforce_community_membership_management();
 
 -- Member-list visibility: a member can always see their own row; otherwise the viewer
 -- must already be an active member. Public community discovery does not expose the raw
@@ -182,7 +187,7 @@ for select
 to authenticated
 using (
   (select auth.uid()) = user_id
-  or public.is_community_active_member(community_id)
+  or o2ol_private.is_community_active_member(community_id)
 );
 
 -- Self-service join is member-role only for normal members. The creator-admin branch is
@@ -236,16 +241,16 @@ create policy "Admins can manage members"
 on public.community_members
 for all
 to authenticated
-using (public.is_community_moderator_or_admin(community_id))
-with check (public.is_community_moderator_or_admin(community_id));
+using (o2ol_private.is_community_moderator_or_admin(community_id))
+with check (o2ol_private.is_community_moderator_or_admin(community_id));
 
-comment on function public.is_community_active_member(uuid) is
+comment on function o2ol_private.is_community_active_member(uuid) is
   'RLS-safe caller-bound active-membership check for private community membership visibility.';
-comment on function public.is_community_moderator_or_admin(uuid) is
+comment on function o2ol_private.is_community_moderator_or_admin(uuid) is
   'RLS-safe caller-bound moderator/admin role check used to avoid recursive community_members policies.';
-comment on function public.ensure_community_creator_membership() is
+comment on function o2ol_private.ensure_community_creator_membership() is
   'Database-created active admin membership for each new community creator; browser cannot self-assign this role to a noncreator.';
-comment on function public.enforce_community_membership_management() is
+comment on function o2ol_private.enforce_community_membership_management() is
   'Field/role boundary preventing membership rerouting, creator mutation, and moderator role escalation while permitting the legacy creator duplicate-join no-op.';
 
 commit;
