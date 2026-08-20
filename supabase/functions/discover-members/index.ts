@@ -73,6 +73,8 @@ serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
+    // service_role is used only to calculate both directions of the block relationship;
+    // normal member RLS intentionally exposes only the caller's own block rows.
     const [{ data: outbound, error: outboundError }, { data: inbound, error: inboundError }] = await Promise.all([
       serviceClient.from('member_blocks').select('blocked_id').eq('blocker_id', caller.id),
       serviceClient.from('member_blocks').select('blocker_id').eq('blocked_id', caller.id),
@@ -84,7 +86,10 @@ serve(async (request) => {
     for (const row of outbound || []) excluded.add(row.blocked_id)
     for (const row of inbound || []) excluded.add(row.blocker_id)
 
-    let query = serviceClient
+    // Run the actual directory lookup as the authenticated caller, not service_role.
+    // This preserves member_directory/security_invoker source RLS as a second barrier if
+    // manual exclusion logic is ever changed or regresses.
+    let query = callerClient
       .from('member_directory')
       .select('id,name,avatar_url,bio,created_at')
       .order('name', { ascending: true })
@@ -108,8 +113,8 @@ serve(async (request) => {
     }))
 
     return json(request, { success: true, enabled: true, members: safeMembers })
-  } catch (error) {
-    console.error('Member discovery failed:', error instanceof Error ? error.message : 'unknown')
+  } catch {
+    console.error('Member discovery failed')
     return json(request, { error: 'MEMBER_DISCOVERY_FAILED' }, 500)
   }
 })
