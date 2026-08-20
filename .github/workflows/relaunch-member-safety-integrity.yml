@@ -6,12 +6,15 @@ on:
       - relaunch-homepage
     paths:
       - 'src/components/safety/**'
+      - 'src/components/privacy/BlockedMembersControl.jsx'
       - 'src/pages/BlockedMembers.jsx'
+      - 'src/pages/PrivacyCenter.jsx'
+      - 'src/pages/index.jsx'
       - 'src/lib/memberBlockService.js'
       - 'supabase/functions/member-block/**'
       - 'supabase/functions/list-blocked-members/**'
       - 'supabase/migrations/20260819_member_block*.sql'
-      - 'scripts/relaunch-member-blocking-foundation-check.mjs'
+      - 'scripts/relaunch-member-blocking-*.mjs'
       - 'docs/MEMBER_BLOCKING_APPROVAL.md'
       - '.github/workflows/relaunch-member-safety-integrity.yml'
   workflow_dispatch:
@@ -40,8 +43,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify member blocking foundation
-        run: node scripts/relaunch-member-blocking-foundation-check.mjs
+      - name: Verify member blocking safeguards
+        run: |
+          node scripts/relaunch-member-blocking-foundation-check.mjs
+          node scripts/relaunch-member-blocking-discovery-check.mjs
+          node scripts/relaunch-member-blocking-request-cleanup-check.mjs
 
       - name: Compile relaunch application
         run: npm run build
