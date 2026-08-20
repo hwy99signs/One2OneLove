@@ -7,11 +7,13 @@
 
 begin;
 
-create or replace function public.enforce_member_support_open_request_limit()
+create schema if not exists o2ol_private;
+
+create or replace function o2ol_private.enforce_member_support_open_request_limit()
 returns trigger
 language plpgsql
-security definer
-set search_path = public, pg_temp
+security invoker
+set search_path = ''
 as $$
 declare
   open_count integer;
@@ -42,24 +44,25 @@ begin
 end;
 $$;
 
-revoke all on function public.enforce_member_support_open_request_limit() from public, anon, authenticated;
+revoke all on function o2ol_private.enforce_member_support_open_request_limit() from public, anon, authenticated;
 
 drop trigger if exists support_requests_open_quota_guard on public.support_requests;
 create trigger support_requests_open_quota_guard
 before insert or update of user_id, status
 on public.support_requests
 for each row
-execute function public.enforce_member_support_open_request_limit();
+execute function o2ol_private.enforce_member_support_open_request_limit();
 
-comment on function public.enforce_member_support_open_request_limit() is
-  'Database concurrency backstop: a member may have at most five support requests in open/in_progress state.';
+comment on function o2ol_private.enforce_member_support_open_request_limit() is
+  'Non-public, SECURITY INVOKER database concurrency backstop: a member may have at most five support requests in open/in_progress state.';
 
 commit;
 
 -- PRE-APPLY CHECKLIST
 -- 1. Apply only after 20260819_support_requests.sql.
--- 2. Verify five open/in_progress requests succeed and a sixth fails.
--- 3. Verify two concurrent attempts at the ceiling cannot both succeed.
--- 4. Verify resolved/closed requests do not count against the ceiling.
--- 5. Verify resolving/closing one request frees one open slot.
--- 6. Verify staff reopen to in_progress also respects the same five-open ceiling.
+-- 2. Confirm o2ol_private is not a PostgREST-exposed schema and browser roles have no EXECUTE on the helper.
+-- 3. Verify five open/in_progress requests succeed and a sixth fails.
+-- 4. Verify two concurrent attempts at the ceiling cannot both succeed.
+-- 5. Verify resolved/closed requests do not count against the ceiling.
+-- 6. Verify resolving/closing one request frees one open slot.
+-- 7. Verify staff reopen to in_progress also respects the same five-open ceiling.
