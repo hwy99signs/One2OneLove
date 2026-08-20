@@ -5,12 +5,15 @@ on:
     branches:
       - relaunch-homepage
     paths:
+      - 'src/components/support/**'
       - 'src/pages/Support*.jsx'
+      - 'src/pages/LayoutRelaunch.jsx'
+      - 'src/pages/index.jsx'
       - 'src/lib/supportRequestService.js'
       - 'supabase/functions/support-request/**'
       - 'supabase/functions/manage-support-requests/**'
-      - 'supabase/migrations/20260819_support_requests.sql'
-      - 'scripts/relaunch-support-request-check.mjs'
+      - 'supabase/migrations/20260819_support*.sql'
+      - 'scripts/relaunch-support-*.mjs'
       - '.github/workflows/relaunch-support-integrity.yml'
   workflow_dispatch:
 
@@ -39,7 +42,11 @@ jobs:
         run: npm ci
 
       - name: Verify private support safeguards
-        run: node scripts/relaunch-support-request-check.mjs
+        run: |
+          node scripts/relaunch-support-request-check.mjs
+          node scripts/relaunch-support-notification-check.mjs
+          node scripts/relaunch-support-quota-check.mjs
+          node scripts/relaunch-support-state-check.mjs
 
       - name: Compile relaunch application
         run: npm run build
