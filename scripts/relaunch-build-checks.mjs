@@ -21,6 +21,7 @@ const checks = [
   ['relaunch premium data', 'scripts/relaunch-premium-data-check.mjs'],
   ['relaunch premium routes', 'scripts/relaunch-premium-route-check.mjs'],
   ['relaunch staged premium tools', 'scripts/relaunch-staged-premium-tools-check.mjs'],
+  ['relaunch fallback shells multilingual runtime', 'scripts/relaunch-fallback-shell-i18n-check.mjs'],
   ['relaunch member connections/chat', 'scripts/relaunch-connection-chat-check.mjs'],
   ['relaunch member-connections multilingual runtime', 'scripts/relaunch-member-connections-i18n-check.mjs'],
   ['relaunch member blocking foundation', 'scripts/relaunch-member-blocking-foundation-check.mjs'],
