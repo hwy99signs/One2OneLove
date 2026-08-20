@@ -1,0 +1,45 @@
+name: Relaunch Support Integrity
+
+on:
+  push:
+    branches:
+      - relaunch-homepage
+    paths:
+      - 'src/pages/Support*.jsx'
+      - 'src/lib/supportRequestService.js'
+      - 'supabase/functions/support-request/**'
+      - 'supabase/functions/manage-support-requests/**'
+      - 'supabase/migrations/20260819_support_requests.sql'
+      - 'scripts/relaunch-support-request-check.mjs'
+      - '.github/workflows/relaunch-support-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relaunch-support-integrity
+  cancel-in-progress: true
+
+jobs:
+  safeguards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout relaunch branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify private support safeguards
+        run: node scripts/relaunch-support-request-check.mjs
+
+      - name: Compile relaunch application
+        run: npm run build
