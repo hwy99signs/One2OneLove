@@ -6,6 +6,8 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
+const CUSTOMER_ID_PATTERN = /^cus_[A-Za-z0-9]+$/
+const PORTAL_CONFIGURATION_ID_PATTERN = /^bpc_[A-Za-z0-9]+$/
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -41,8 +43,19 @@ const json = (request: Request, body: unknown, status = 200) =>
 
 const requireHttpsSiteUrl = () => {
   const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
-  if (!siteUrl || !/^https:\/\//i.test(siteUrl)) throw new Error('SITE_URL must use HTTPS')
+  if (!siteUrl || !/^https:\/\//i.test(siteUrl)) throw new Error('SITE_URL_HTTPS_REQUIRED')
   return siteUrl
+}
+
+const validHttpsUrl = (value: unknown) => {
+  const candidate = clean(value, 2000)
+  if (!candidate) return ''
+  try {
+    const url = new URL(candidate)
+    return url.protocol === 'https:' ? url.toString().slice(0, 2000) : ''
+  } catch {
+    return ''
+  }
 }
 
 serve(async (request) => {
@@ -51,10 +64,7 @@ serve(async (request) => {
 
   const origin = request.headers.get('origin') || DEFAULT_ORIGIN
   if (!allowedOrigins().has(origin)) return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)
-
-  if (Deno.env.get('PAYMENTS_ENABLED') !== 'true') {
-    return json(request, { error: 'PAYMENTS_NOT_ENABLED' }, 503)
-  }
+  if (Deno.env.get('PAYMENTS_ENABLED') !== 'true') return json(request, { error: 'PAYMENTS_NOT_ENABLED' }, 503)
 
   try {
     const authHeader = request.headers.get('Authorization')
@@ -82,30 +92,38 @@ serve(async (request) => {
       return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)
     }
 
-    const { data: membership } = await serviceClient
+    const { data: membership, error: membershipError } = await serviceClient
       .from('member_subscriptions')
       .select('stripe_customer_id')
       .eq('user_id', user.id)
       .maybeSingle()
+    if (membershipError) return json(request, { error: 'BILLING_ACCOUNT_UNAVAILABLE' }, 503)
 
     let customerId = clean(membership?.stripe_customer_id, 200)
     if (!customerId) {
-      const { data: legacyProfile } = await serviceClient
+      const { data: legacyProfile, error: legacyError } = await serviceClient
         .from('users')
         .select('stripe_customer_id')
         .eq('id', user.id)
         .maybeSingle()
+      if (legacyError) return json(request, { error: 'BILLING_ACCOUNT_UNAVAILABLE' }, 503)
       customerId = clean(legacyProfile?.stripe_customer_id, 200)
     }
 
     if (!customerId) return json(request, { error: 'NO_BILLING_ACCOUNT' }, 404)
+    if (!CUSTOMER_ID_PATTERN.test(customerId)) return json(request, { error: 'BILLING_ACCOUNT_RECONCILIATION_REQUIRED' }, 503)
 
     const form = new URLSearchParams()
     form.set('customer', customerId)
     form.set('return_url', `${requireHttpsSiteUrl()}/Subscription`)
 
     const portalConfigurationId = clean(Deno.env.get('STRIPE_PORTAL_CONFIGURATION_ID'), 200)
-    if (portalConfigurationId) form.set('configuration', portalConfigurationId)
+    if (portalConfigurationId) {
+      if (!PORTAL_CONFIGURATION_ID_PATTERN.test(portalConfigurationId)) {
+        return json(request, { error: 'BILLING_PORTAL_CONFIGURATION_INVALID' }, 503)
+      }
+      form.set('configuration', portalConfigurationId)
+    }
 
     const response = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
       method: 'POST',
@@ -116,17 +134,23 @@ serve(async (request) => {
       body: form.toString(),
     })
 
-    const payload = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      console.error('Stripe billing portal session failed:', response.status, clean(payload?.error?.message, 300))
-      return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 502)
-    }
+    await response.json().then(async (payload) => {
+      if (!response.ok) throw new Error(`STRIPE_API_${response.status}`)
+      const url = validHttpsUrl(payload?.url)
+      if (!url) throw new Error('STRIPE_PORTAL_URL_INVALID')
+      return url
+    }).then((url) => {
+      throw { __o2olPortalResponse: true, response: json(request, { url }) }
+    }).catch((error) => {
+      if (error?.__o2olPortalResponse) throw error
+      throw error
+    })
 
-    const url = clean(payload?.url, 2000)
-    if (!url) return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 502)
-
-    return json(request, { url })
+    return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 500)
   } catch (error) {
+    if (error && typeof error === 'object' && '__o2olPortalResponse' in error) {
+      return (error as any).response
+    }
     console.error('create-billing-portal-session error:', error instanceof Error ? error.message : 'unknown')
     return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 500)
   }
