@@ -9,16 +9,18 @@
 
 begin;
 
-create or replace function public.cleanup_pending_member_requests_on_block()
+create schema if not exists o2ol_private;
+revoke all on schema o2ol_private from public, anon;
+
+create or replace function o2ol_private.cleanup_pending_member_requests_on_block()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
   candidate record;
   has_status boolean;
-  matched_count integer := 0;
 begin
   for candidate in
     select * from (values
@@ -36,8 +38,6 @@ begin
       select 1 from information_schema.columns
       where table_schema = 'public' and table_name = candidate.table_name and column_name = candidate.right_column
     ) then
-      matched_count := matched_count + 1;
-
       select exists (
         select 1 from information_schema.columns
         where table_schema = 'public'
@@ -76,22 +76,23 @@ begin
 end;
 $$;
 
-revoke all on function public.cleanup_pending_member_requests_on_block() from public, anon, authenticated;
+revoke all on function o2ol_private.cleanup_pending_member_requests_on_block() from public, anon, authenticated;
 
 drop trigger if exists member_blocks_cleanup_pending_requests on public.member_blocks;
 create trigger member_blocks_cleanup_pending_requests
 after insert on public.member_blocks
-for each row execute function public.cleanup_pending_member_requests_on_block();
+for each row execute function o2ol_private.cleanup_pending_member_requests_on_block();
 
-comment on function public.cleanup_pending_member_requests_on_block() is
-  'Removes pending friend/connection request rows between a newly blocked pair without deleting accepted connection records.';
+comment on function o2ol_private.cleanup_pending_member_requests_on_block() is
+  'Non-public trigger helper that removes pending friend/connection requests between a newly blocked pair without deleting accepted connection records.';
 
 commit;
 
 -- PRE-APPLY CHECKLIST
 -- 1. Review detected request-table shapes in the target database.
--- 2. Verify A -> B pending request is removed when A blocks B.
--- 3. Verify B -> A pending request is removed when A blocks B.
--- 4. Verify accepted connection rows are NOT deleted by this migration.
--- 5. Verify unrelated requests are unaffected.
--- 6. Verify blocking still succeeds if no legacy request table exists.
+-- 2. Confirm the helper is in non-exposed o2ol_private with empty search_path and no browser EXECUTE grant.
+-- 3. Verify A -> B pending request is removed when A blocks B.
+-- 4. Verify B -> A pending request is removed when A blocks B.
+-- 5. Verify accepted connection rows are NOT deleted by this migration.
+-- 6. Verify unrelated requests are unaffected.
+-- 7. Verify blocking still succeeds if no legacy request table exists.
