@@ -100,14 +100,15 @@ export default function ProgrammingNotificationCenter({ languageCode = 'en' }) {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={t.label}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+        title={t.label}
+        className="relative flex h-10 w-10 items-center justify-center rounded-xl text-white/85 transition hover:bg-white/10 hover:text-white"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 ? <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[10px] font-black leading-4 text-white">{Math.min(unreadCount, 99)}</span> : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-12 z-[80] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="absolute right-0 top-12 z-[80] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <div className="flex items-center gap-2 font-black text-slate-900"><Bell className="h-4 w-4 text-violet-600" />{t.label}</div>
             {loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
