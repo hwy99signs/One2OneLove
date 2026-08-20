@@ -2,15 +2,22 @@ import { supabase } from './supabase';
 
 export const MEMBER_BLOCKING_ENABLED = import.meta.env.VITE_MEMBER_BLOCKING_ENABLED === 'true';
 
+const serviceError = (code) => {
+  const error = new Error(code);
+  error.code = code;
+  return error;
+};
+
 const requireEnabled = () => {
-  if (!MEMBER_BLOCKING_ENABLED) throw new Error('Member blocking is not enabled yet.');
+  if (!MEMBER_BLOCKING_ENABLED) throw serviceError('O2OL_MEMBER_BLOCKING_DISABLED');
 };
 
 const invokeBlock = async (body) => {
   requireEnabled();
   const { data, error } = await supabase.functions.invoke('member-block', { body });
-  if (error) throw new Error(error?.message || 'Unable to update member block.');
-  if (!data?.success) throw new Error('Unable to update member block.');
+  if (error || !data?.success) {
+    throw serviceError(data?.error || 'O2OL_MEMBER_BLOCK_UPDATE_FAILED');
+  }
   return data;
 };
 
@@ -33,7 +40,8 @@ export const listBlockedMemberIds = async () => {
 export const listBlockedMembers = async () => {
   if (!MEMBER_BLOCKING_ENABLED) return [];
   const { data, error } = await supabase.functions.invoke('list-blocked-members', { body: {} });
-  if (error) throw new Error(error?.message || 'Unable to load blocked members.');
-  if (!data?.success) throw new Error('Unable to load blocked members.');
+  if (error || !data?.success) {
+    throw serviceError(data?.error || 'O2OL_MEMBER_BLOCK_LIST_FAILED');
+  }
   return data.members || [];
 };
