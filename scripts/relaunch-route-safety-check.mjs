@@ -17,8 +17,14 @@ const aboutAliasFile = 'src/pages/AboutUs.jsx';
 const layoutFile = 'src/pages/LayoutRelaunch.jsx';
 const homeFile = 'src/pages/Home.jsx';
 const communityFile = 'src/pages/LiveCommunity.jsx';
+const unavailableAliasFiles = [
+  'src/pages/CounselingSupport.jsx',
+  'src/pages/PodcastsSupport.jsx',
+  'src/pages/ArticlesSupport.jsx',
+  'src/pages/InfluencersSupport.jsx',
+];
 
-for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, layoutFile, homeFile, communityFile]) {
+for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
   check(`required: ${file}`, exists(file), exists(file) ? 'present' : 'missing');
 }
 
@@ -51,6 +57,15 @@ for (const route of blockedRoutes) {
     `legacy route fenced: ${route}`,
     pattern.test(router),
     `${route} must stay preserved in source but unavailable from the relaunch route surface until reviewed.`
+  );
+}
+
+for (const file of unavailableAliasFiles) {
+  const source = exists(file) ? read(file).trim() : '';
+  check(
+    `unreviewed content alias fenced: ${file}`,
+    source === "export { default } from './RelaunchUnavailable';",
+    `${file} must remain an unavailable alias until the underlying directory/content source is explicitly reviewed for truthfulness, privacy and current availability.`
   );
 }
 
