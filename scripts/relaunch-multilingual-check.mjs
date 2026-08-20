@@ -32,6 +32,7 @@ const requiredSurfaces = [
   'src/pages/PremiumFeatures.jsx',
   'src/pages/RelationshipGoalsRelaunch.jsx',
   'src/lib/chatCopy.js',
+  'src/lib/presenceService.js',
 ];
 
 const centralizedChatSurfaces = [
@@ -208,6 +209,48 @@ if (relationshipGoalsRuntime.includes('target.toLocaleDateString()')) {
   failures.push('RelationshipGoalsRelaunch.jsx: do not rely on the browser default locale for goal target dates.');
 }
 
+// Presence is a cross-cutting account surface. Keep the database neutral and derive
+// human-readable relative time only from the selected One2OneLove language in the client.
+const presenceService = read('src/lib/presenceService.js');
+if (presenceService && !presenceService.includes("localStorage?.getItem('preferredLanguage')")) {
+  failures.push('presenceService.js: presence localization must follow preferredLanguage.');
+}
+if (/const\s+PRESENCE_SELECT\s*=\s*['"][^'"]*last_seen_text/.test(presenceService)) {
+  failures.push('presenceService.js: do not request database-generated last_seen_text; derive it from last_seen in the client.');
+}
+for (const language of ACTIVE_LANGUAGES) {
+  const languageBlock = new RegExp(`(?:^|\\n)\\s*${language}:\\s*\\{`, 'm');
+  if (!languageBlock.test(presenceService)) failures.push(`presenceService.js: missing ${language} presence translation block.`);
+}
+
+const presencePrivacyMigration = read('supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql');
+if (presencePrivacyMigration) {
+  const memberDirectoryBlock = presencePrivacyMigration.split('create view public.member_directory')[1]?.split('revoke all on public.member_directory')[0] || '';
+  const presenceViewBlock = presencePrivacyMigration.split('create view public.user_presence_view')[1]?.split('revoke all on public.user_presence_view')[0] || '';
+
+  if (!/security_invoker\s*=\s*true/i.test(memberDirectoryBlock)) {
+    failures.push('presence-directory reconciliation: member_directory must remain security_invoker=true.');
+  }
+  if (!memberDirectoryBlock.includes('public.user_directory_profiles')) {
+    failures.push('presence-directory reconciliation: member_directory must read from the synchronized privacy-safe directory source, not public.users.');
+  }
+  if (/\bpublic\.users\b/i.test(memberDirectoryBlock)) {
+    failures.push('presence-directory reconciliation: member_directory must not directly bypass the private users table.');
+  }
+  if (!/security_invoker\s*=\s*true/i.test(presenceViewBlock)) {
+    failures.push('presence-directory reconciliation: user_presence_view must remain security_invoker=true.');
+  }
+  if (/\bemail\b/i.test(presenceViewBlock)) {
+    failures.push('presence-directory reconciliation: user_presence_view must never expose email.');
+  }
+  if (/\blast_seen_text\b/i.test(presenceViewBlock)) {
+    failures.push('presence-directory reconciliation: SQL must not generate localized last-seen prose.');
+  }
+  if (!presencePrivacyMigration.includes('o2ol_private.write_user_presence')) {
+    failures.push('presence-directory reconciliation: privileged presence writes must remain in the non-exposed o2ol_private schema.');
+  }
+}
+
 if (failures.length) {
   console.error('\n⛔ One2OneLove multilingual relaunch check failed:');
   failures.forEach((failure) => console.error(` - ${failure}`));
@@ -215,4 +258,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Multilingual relaunch coverage passed for the five active languages (EN/ES/FR/IT/DE) across the core account, Love Notes, Date Ideas, Relationship Goals, member, Chat and relationship-tool journey.');
+console.log('✅ Multilingual relaunch coverage passed for the five active languages (EN/ES/FR/IT/DE) across the core account, Love Notes, Date Ideas, Relationship Goals, member, Chat, presence and relationship-tool journey.');
