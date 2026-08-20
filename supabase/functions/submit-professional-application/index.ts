@@ -179,9 +179,7 @@ const json = (request: Request, body: unknown, status = 200) =>
     headers: { ...corsHeadersFor(request), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
 
-const verifyTurnstileIfRequired = async (request: Request, token: string) => {
-  if (Deno.env.get('PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED') !== 'true') return true
-
+const verifyTurnstile = async (request: Request, token: string) => {
   const secret = Deno.env.get('TURNSTILE_SECRET_KEY') || ''
   const expectedHostnames = allowedHostnames()
   if (!secret || !token || expectedHostnames.size === 0) return false
@@ -202,8 +200,8 @@ const verifyTurnstileIfRequired = async (request: Request, token: string) => {
       body: form,
       signal: AbortSignal.timeout(10_000),
     })
-  } catch (error) {
-    console.error('Turnstile verification request failed:', error instanceof Error ? error.message : 'unknown')
+  } catch {
+    console.error('Professional application anti-abuse verification unavailable')
     return false
   }
 
@@ -236,6 +234,13 @@ serve(async (request) => {
     return json(request, { error: 'APPLICATIONS_NOT_ENABLED' }, 503)
   }
 
+  // Public pre-membership intake must never be activated in an unprotected mode. The
+  // separate requirement flag exists so configuration drift fails closed rather than
+  // silently turning Turnstile into an optional control in production.
+  if (Deno.env.get('PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED') !== 'true') {
+    return json(request, { error: 'ANTI_ABUSE_NOT_CONFIGURED' }, 503)
+  }
+
   try {
     const body = await request.json()
     const applicationType = clean(body?.applicationType, 30).toLowerCase()
@@ -260,7 +265,7 @@ serve(async (request) => {
 
     const details = sanitizeDetails(applicationType, body?.details)
 
-    const turnstileValid = await verifyTurnstileIfRequired(request, turnstileToken)
+    const turnstileValid = await verifyTurnstile(request, turnstileToken)
     if (!turnstileValid) {
       return json(request, { error: 'ANTI_ABUSE_CHECK_FAILED' }, 403)
     }
@@ -268,7 +273,7 @@ serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('Professional application backend is missing Supabase service configuration')
+      console.error('Professional application backend configuration incomplete')
       return json(request, { error: 'BACKEND_NOT_CONFIGURED' }, 503)
     }
 
@@ -296,7 +301,7 @@ serve(async (request) => {
       if (error.code === '23505') {
         return json(request, { error: 'ACTIVE_APPLICATION_EXISTS' }, 409)
       }
-      console.error('Professional application insert failed:', error)
+      console.error('Professional application insert failed:', error.code || 'unknown')
       return json(request, { error: 'APPLICATION_SAVE_FAILED' }, 500)
     }
 
@@ -324,7 +329,7 @@ serve(async (request) => {
     if (validationErrors.has(message)) {
       return json(request, { error: message }, 400)
     }
-    console.error('Professional application request failed:', error instanceof Error ? error.message : 'unknown')
+    console.error('Professional application request rejected')
     return json(request, { error: 'INVALID_REQUEST' }, 400)
   }
 })
