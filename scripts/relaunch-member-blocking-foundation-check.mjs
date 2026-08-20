@@ -25,14 +25,20 @@ for (const required of [
 }
 
 for (const required of [
-  'create schema if not exists private;',
-  'create or replace function private.is_member_pair_blocked(other_user_id uuid)',
+  'create schema if not exists o2ol_private;',
+  'revoke all on schema o2ol_private from public, anon;',
+  'create or replace function o2ol_private.is_member_pair_blocked(other_user_id uuid)',
   'security definer',
-  'grant execute on function private.is_member_pair_blocked(uuid) to authenticated;',
+  "set search_path = ''",
+  'revoke all on function o2ol_private.is_member_pair_blocked(uuid) from public, anon;',
+  'grant execute on function o2ol_private.is_member_pair_blocked(uuid) to authenticated;',
   'as restrictive',
-  'using (not private.is_member_pair_blocked(user_id));',
+  'using (not o2ol_private.is_member_pair_blocked(user_id));',
 ]) {
   if (!pairwiseMigration.includes(required)) failures.push(`pairwise block migration missing ${required}.`);
+}
+if (/\bprivate\.is_member_pair_blocked/.test(pairwiseMigration + chatMigration)) {
+  failures.push('member blocking must use the established o2ol_private helper schema, not a second generic private schema.');
 }
 if (!roomMigration.includes('as restrictive')) failures.push('initial Live Room block policy must remain restrictive for migration-order safety.');
 
@@ -45,6 +51,7 @@ for (const required of [
   'messages_hide_blocked_pairs',
   'messages_prevent_blocked_pair_insert',
   'messages_prevent_blocked_pair_update',
+  'o2ol_private.is_member_pair_blocked',
   "raise exception 'EXPECTED_MESSAGES_CONVERSATION_ID_MISSING';",
 ]) {
   if (!chatMigration.includes(required)) failures.push(`pairwise chat block enforcement missing ${required}.`);
@@ -52,6 +59,8 @@ for (const required of [
 
 for (const required of [
   "Deno.env.get('MEMBER_BLOCKING_ENABLED') !== 'true'",
+  'const UUID_PATTERN =',
+  "return json(request, { error: 'BLOCKED_USER_INVALID' }, 400)",
   ".eq('blocker_id', caller.id)",
   'if (blockedId === caller.id)',
   "if (action === 'unblock')",
@@ -75,8 +84,13 @@ for (const required of [
   "VITE_MEMBER_BLOCKING_ENABLED === 'true'",
   "supabase.functions.invoke('member-block'",
   "supabase.functions.invoke('list-blocked-members'",
+  'O2OL_MEMBER_BLOCK_UPDATE_FAILED',
+  'O2OL_MEMBER_BLOCK_LIST_FAILED',
 ]) {
   if (!service.includes(required)) failures.push(`memberBlockService missing ${required}.`);
+}
+if (/Member blocking is not enabled yet|Unable to update member block|Unable to load blocked members/.test(service)) {
+  failures.push('memberBlockService must use stable language-neutral internal error codes rather than English service errors.');
 }
 
 for (const language of ['en','es','fr','it','de']) {
@@ -123,4 +137,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member blocking is private, mutually enforced, multilingual, routed, manageable from Privacy Center, and feature-gated for relaunch activation.');
+console.log('✅ Member blocking is private, mutually enforced, multilingual, input-validated, routed, manageable from Privacy Center, and feature-gated for relaunch activation.');
