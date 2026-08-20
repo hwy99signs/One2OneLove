@@ -1,24 +1,41 @@
 import { supabase } from "./supabase";
 
+const ROOM_SLUGS = new Set([
+  "global-relationship-room",
+  "vent-room",
+  "modern-dating-unfiltered",
+  "love-talk",
+  "marriage-matters",
+  "starting-over",
+]);
+
+const requireRoomSlug = (roomSlug) => {
+  const slug = String(roomSlug || "").trim();
+  if (!ROOM_SLUGS.has(slug)) return null;
+  return slug;
+};
+
 const roomChannelName = (roomSlug) => `o2ol-live-room:${roomSlug}`;
 const countPresenceMembers = (state) => Object.keys(state || {}).length;
 
 const opaqueLocalKey = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-const privatePresenceKey = async (userId) => {
+// Stable within one room so multiple tabs for the same signed-in member count as one
+// human, but different across rooms so Presence keys cannot be correlated cross-room.
+const privatePresenceKey = async (roomSlug, userId) => {
   try {
     if (globalThis.crypto?.subtle) {
-      const bytes = new TextEncoder().encode(`one2onelove-room-presence:${userId}`);
+      const bytes = new TextEncoder().encode(`one2onelove-room-presence:${roomSlug}:${userId}`);
       const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
       return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
     }
-  } catch (error) {
-    console.warn("Unable to hash Live Room presence key:", error);
+  } catch {
+    console.warn("Live Room presence-key hashing unavailable");
   }
 
-  // Older-browser fallback: keep an opaque local identifier rather than broadcasting
-  // the account UUID or member name through Realtime Presence.
-  const storageKey = `o2ol-presence:${userId}`;
+  // Older-browser fallback stays opaque and room-scoped rather than broadcasting or
+  // persisting an account UUID/name. One member gets a different local key per room.
+  const storageKey = `o2ol-presence:${roomSlug}:${userId}`;
   try {
     let value = localStorage.getItem(storageKey);
     if (!value) {
@@ -31,8 +48,23 @@ const privatePresenceKey = async (userId) => {
   }
 };
 
+const cleanupPresenceChannel = (channel) => {
+  if (!channel) return;
+  void Promise.resolve(channel.untrack?.())
+    .catch(() => {})
+    .finally(() => {
+      void supabase.removeChannel(channel);
+    });
+};
+
 export function observeRoomPresence(roomSlug, onCountChange) {
-  const channel = supabase.channel(roomChannelName(roomSlug));
+  const slug = requireRoomSlug(roomSlug);
+  if (!slug) {
+    onCountChange?.(0);
+    return () => {};
+  }
+
+  const channel = supabase.channel(roomChannelName(slug));
 
   const emitCount = () => {
     const count = countPresenceMembers(channel.presenceState());
@@ -46,21 +78,34 @@ export function observeRoomPresence(roomSlug, onCountChange) {
     .subscribe();
 
   return () => {
-    supabase.removeChannel(channel);
+    void supabase.removeChannel(channel);
   };
 }
 
-export function joinRoomPresence(roomSlug, user, onCountChange) {
-  if (!user?.id) return () => {};
+// Compatibility signature retained, but `user` is deliberately ignored; the signed-in
+// account is resolved from Supabase Auth before Presence tracking begins.
+export function joinRoomPresence(roomSlug, _user, onCountChange) {
+  const slug = requireRoomSlug(roomSlug);
+  if (!slug) {
+    onCountChange?.(0);
+    return () => {};
+  }
 
   let channel = null;
   let cancelled = false;
 
   void (async () => {
-    const presenceKey = await privatePresenceKey(user.id);
+    const { data, error } = await supabase.auth.getUser();
+    const userId = error ? null : data?.user?.id;
+    if (cancelled || !userId) {
+      onCountChange?.(0);
+      return;
+    }
+
+    const presenceKey = await privatePresenceKey(slug, userId);
     if (cancelled) return;
 
-    channel = supabase.channel(roomChannelName(roomSlug), {
+    channel = supabase.channel(roomChannelName(slug), {
       config: {
         presence: {
           key: presenceKey,
@@ -79,8 +124,7 @@ export function joinRoomPresence(roomSlug, user, onCountChange) {
       .on("presence", { event: "leave" }, emitCount)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED" && !cancelled) {
-          // Presence is used only for an aggregate human count. Do not broadcast
-          // account IDs, names, email addresses, or profile data to room clients.
+          // Presence is aggregate-only: no account ID, name, email or profile data.
           await channel.track({ joined_at: new Date().toISOString() });
         }
       });
@@ -88,37 +132,40 @@ export function joinRoomPresence(roomSlug, user, onCountChange) {
 
   return () => {
     cancelled = true;
-    if (!channel) return;
-    try {
-      channel.untrack();
-    } finally {
-      supabase.removeChannel(channel);
-    }
+    const current = channel;
+    channel = null;
+    cleanupPresenceChannel(current);
   };
 }
 
-// Legacy LiveRoom compatibility. The public key remains opaque; authenticated
-// membership is verified before tracking so community counts do not inflate with
-// anonymous page views.
+// Legacy LiveRoom compatibility. The supplied public key is never authoritative;
+// authenticated membership and a room-scoped opaque key are derived before tracking.
 export function buildPublicPresenceKey() {
   return opaqueLocalKey();
 }
 
-export function enterPublicRoom(roomSlug, presenceKey, onCountChange) {
+export function enterPublicRoom(roomSlug, _presenceKey, onCountChange) {
+  const slug = requireRoomSlug(roomSlug);
+  if (!slug) {
+    onCountChange?.(0);
+    return () => {};
+  }
+
   let channel = null;
   let cancelled = false;
 
   void (async () => {
-    const { data } = await supabase.auth.getUser();
-    if (cancelled || !data?.user?.id) {
+    const { data, error } = await supabase.auth.getUser();
+    const userId = error ? null : data?.user?.id;
+    if (cancelled || !userId) {
       onCountChange?.(0);
       return;
     }
 
-    const key = await privatePresenceKey(data.user.id).catch(() => presenceKey || opaqueLocalKey());
+    const key = await privatePresenceKey(slug, userId);
     if (cancelled) return;
 
-    channel = supabase.channel(roomChannelName(roomSlug), {
+    channel = supabase.channel(roomChannelName(slug), {
       config: { presence: { key } },
     });
 
@@ -136,12 +183,9 @@ export function enterPublicRoom(roomSlug, presenceKey, onCountChange) {
 
   return () => {
     cancelled = true;
-    if (!channel) return;
-    try {
-      channel.untrack();
-    } finally {
-      supabase.removeChannel(channel);
-    }
+    const current = channel;
+    channel = null;
+    cleanupPresenceChannel(current);
   };
 }
 
