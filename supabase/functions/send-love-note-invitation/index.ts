@@ -4,6 +4,13 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import {
+  buildLoveNoteSmsCopy,
+  normalizeE164,
+  normalizeSmsLanguage,
+  requireVerifiedSmsConsent,
+  sendLoveNoteSmsWithTwilio,
+} from '../_shared/loveNoteSms.ts'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -87,8 +94,7 @@ const requireSchedulingMembership = async (serviceClient: any, userId: string) =
   return { allowed: true, reason: null }
 }
 
-const buildCopy = (senderName: string, revealUrl: string) => ({
-  sms: `💕 ${senderName} sent you a private Love Note on One2OneLove. Tap to reveal it: ${revealUrl}`,
+const buildEmailCopy = (senderName: string, revealUrl: string) => ({
   emailSubject: `${senderName} sent you a private Love Note 💕`,
   emailBody: `${senderName} sent you a private Love Note on One2OneLove.\n\nYour message is being kept private until you open it.\n\nReveal your Love Note: ${revealUrl}`,
 })
@@ -123,38 +129,6 @@ const deliverEmailWithResend = async ({ to, invitationId, copy }: any) => {
   return clean(payload?.id, 200) || null
 }
 
-const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: any) => {
-  if (Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
-    throw new Error('SMS delivery is not enabled')
-  }
-
-  const endpoint = Deno.env.get('LOVE_NOTE_SMS_ENDPOINT') || ''
-  const providerKey = Deno.env.get('LOVE_NOTE_SMS_PROVIDER_KEY') || ''
-  if (!endpoint || !providerKey) throw new Error('SMS delivery provider is not configured')
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${providerKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      channel: 'sms',
-      to,
-      text: copy.sms,
-      metadata: { invitation_id: invitationId, product: 'one2onelove_love_notes' },
-    }),
-  })
-
-  if (!response.ok) throw new Error(`SMS provider returned ${response.status}`)
-  try {
-    const payload = await response.json()
-    return clean(payload?.id || payload?.message_id, 200) || null
-  } catch {
-    return null
-  }
-}
-
 const idempotentResponse = (request: Request, existing: any) => {
   if (!existing) return null
   if (['scheduled', 'sent', 'delivered', 'revealed'].includes(existing.status)) {
@@ -178,6 +152,24 @@ const idempotentResponse = (request: Request, existing: any) => {
     invitation_id: existing.id,
     status: existing.status,
   }, 409)
+}
+
+const smsConsentErrorResponse = (request: Request, error: unknown) => {
+  const code = clean(error instanceof Error ? error.message : String(error), 100)
+  if (code === 'O2OL_SMS_RECIPIENT_CONSENT_REQUIRED') {
+    return json(request, { error: code, code: 'SMS_RECIPIENT_CONSENT_REQUIRED' }, 403)
+  }
+  if (code === 'O2OL_SMS_RECIPIENT_OPTED_OUT') {
+    return json(request, { error: code, code: 'SMS_RECIPIENT_OPTED_OUT' }, 403)
+  }
+  if (
+    code === 'O2OL_SMS_COMPLIANCE_NOT_READY'
+    || code === 'O2OL_SMS_CONSENT_PEPPER_MISSING'
+    || code === 'O2OL_SMS_CONSENT_LOOKUP_FAILED'
+  ) {
+    return json(request, { error: code, code: 'SMS_COMPLIANCE_NOT_READY' }, 503)
+  }
+  return null
 }
 
 serve(async (request) => {
@@ -228,6 +220,7 @@ serve(async (request) => {
     const clientRequestId = clean(body?.client_request_id || body?.clientRequestId, 80)
     const recipientName = clean(body?.recipient_name || body?.recipientName, 80)
     const deliveryMethod = clean(body?.delivery_method || body?.deliveryMethod, 20).toLowerCase()
+    const deliveryLanguage = normalizeSmsLanguage(body?.delivery_language || body?.deliveryLanguage)
     const noteContent = clean(body?.note_content || body?.noteContent || body?.message, 500)
     const scheduleTimezone = clean(body?.schedule_timezone || body?.scheduleTimezone || body?.timezone, 80) || null
     const scheduledRaw = clean(body?.scheduled_for || body?.scheduledFor || body?.scheduledAt, 80)
@@ -236,18 +229,22 @@ serve(async (request) => {
     if (!['email', 'sms'].includes(deliveryMethod)) return json(request, { error: 'INVALID_DELIVERY_METHOD' }, 400)
     if (!noteContent) return json(request, { error: 'LOVE_NOTE_REQUIRED' }, 400)
     if (deliveryMethod === 'sms' && Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
-      return json(request, { error: 'SMS delivery is not enabled.', code: 'SMS_DISABLED' }, 503)
+      return json(request, { error: 'O2OL_SMS_DISABLED', code: 'SMS_DISABLED' }, 503)
     }
 
+    const rawRecipientContact = body?.recipient_contact || body?.recipientContact
     const recipientContact = deliveryMethod === 'email'
-      ? normalizeEmail(body?.recipient_contact || body?.recipientContact)
-      : clean(body?.recipient_contact || body?.recipientContact, 160)
+      ? normalizeEmail(rawRecipientContact)
+      : normalizeE164(rawRecipientContact) || ''
     if (!recipientContact || (deliveryMethod === 'email' && !EMAIL_PATTERN.test(recipientContact))) {
-      return json(request, { error: 'VALID_RECIPIENT_REQUIRED' }, 400)
+      return json(request, {
+        error: deliveryMethod === 'sms' ? 'O2OL_SMS_PHONE_INVALID' : 'VALID_RECIPIENT_REQUIRED',
+        code: deliveryMethod === 'sms' ? 'SMS_PHONE_E164_REQUIRED' : 'VALID_RECIPIENT_REQUIRED',
+      }, 400)
     }
 
-    // Return the existing result before rate-limit or entitlement checks so a network
-    // retry of an already-created logical submission never creates or sends a duplicate.
+    // Return the existing result before rate-limit, consent, or entitlement checks so a
+    // network retry of an already-created logical submission never creates a duplicate.
     const { data: existing, error: existingError } = await serviceClient
       .from('love_note_invitations')
       .select('id, status')
@@ -257,6 +254,19 @@ serve(async (request) => {
     if (existingError) throw existingError
     const existingResponse = idempotentResponse(request, existing)
     if (existingResponse) return existingResponse
+
+    // A sender cannot consent on the recipient's behalf. Twilio A2P rules require a
+    // verifiable recipient opt-in before the first application-to-person SMS. This check
+    // is deliberately before invitation insertion and is repeated by the scheduled worker.
+    if (deliveryMethod === 'sms') {
+      try {
+        await requireVerifiedSmsConsent(serviceClient, recipientContact)
+      } catch (consentError) {
+        const response = smsConsentErrorResponse(request, consentError)
+        if (response) return response
+        throw consentError
+      }
+    }
 
     let senderName = ''
     const { data: profile } = await serviceClient
@@ -318,6 +328,7 @@ serve(async (request) => {
       recipient_name: recipientName || null,
       recipient_contact: recipientContact,
       delivery_method: deliveryMethod,
+      delivery_language: deliveryLanguage,
       note_content: noteContent,
       token_hash: tokenHash,
       token_expires_at: tokenExpiresAt,
@@ -351,12 +362,18 @@ serve(async (request) => {
     }
 
     const revealUrl = `${siteUrl}/LoveNoteReveal?token=${encodeURIComponent(rawToken || '')}`
-    const copy = buildCopy(senderName, revealUrl)
 
     try {
       const providerMessageId = deliveryMethod === 'email'
-        ? await deliverEmailWithResend({ to: recipientContact, invitationId: invitation.id, copy })
-        : await deliverSmsThroughConfiguredAdapter({ to: recipientContact, invitationId: invitation.id, copy })
+        ? await deliverEmailWithResend({
+            to: recipientContact,
+            invitationId: invitation.id,
+            copy: buildEmailCopy(senderName, revealUrl),
+          })
+        : await sendLoveNoteSmsWithTwilio({
+            to: recipientContact,
+            body: buildLoveNoteSmsCopy({ senderName, revealUrl, language: deliveryLanguage }),
+          })
 
       const { error: sentStateError } = await serviceClient
         .from('love_note_invitations')
