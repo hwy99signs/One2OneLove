@@ -1,12 +1,13 @@
 -- One2OneLove Love Notes SMS compliance foundation.
--- DEVELOPMENT MIGRATION ONLY. DO NOT APPLY TO PRODUCTION under Approval #9A.
+-- DEVELOPMENT MIGRATION ONLY. DO NOT APPLY TO PRODUCTION under Approval #9A/#9B.
 -- Production application requires a later cost/legal activation approval after Twilio
--- A2P registration, public consent flow, Terms/Privacy updates, and controlled testing.
+-- A2P registration, final public Terms/Privacy review, and controlled testing.
 --
--- Privacy model:
---   * no raw phone number is duplicated into the consent table;
+-- Privacy / compliance model:
+--   * no raw or partial phone number is duplicated into the consent table;
 --   * a server-peppered SHA-256 hash is used for consent lookup;
 --   * browser roles receive no grants/policies on consent evidence;
+--   * consent evidence records the exact program/disclosure/legal versions accepted;
 --   * SMS language is limited to the five active O2OL languages;
 --   * SMS must fail closed when no active prior recipient consent exists.
 
@@ -53,15 +54,18 @@ grant select on public.love_note_invitation_history to authenticated;
 create table if not exists public.love_note_sms_consents (
   id uuid primary key default gen_random_uuid(),
   -- Server computes SHA-256(LOVE_NOTE_SMS_CONSENT_PEPPER || ':' || E164).
-  -- The raw phone remains only where operationally required for the invitation itself.
+  -- The raw phone remains only where operationally required for an invitation itself.
   phone_hash text not null unique check (phone_hash ~ '^[0-9a-f]{64}$'),
-  phone_last4 text not null check (phone_last4 ~ '^[0-9]{4}$'),
   status text not null default 'active' check (status in ('active', 'revoked')),
   consent_method text not null check (consent_method in ('web_form', 'inbound_keyword')),
   language text not null default 'en' check (language in ('en', 'es', 'fr', 'it', 'de')),
-  -- evidence_ref is an opaque server-generated reference to the consent event/audit
-  -- record; never place free-form user content, URLs with tokens, or a phone number here.
-  evidence_ref text not null check (char_length(evidence_ref) between 16 and 160),
+  program_version text not null check (char_length(program_version) between 1 and 40),
+  disclosure_version text not null check (char_length(disclosure_version) between 1 and 80),
+  terms_version text not null check (char_length(terms_version) between 1 and 80),
+  privacy_version text not null check (char_length(privacy_version) between 1 and 80),
+  -- evidence_ref is an opaque server-generated reference for the consent event.
+  -- Never place free-form content, a phone number, an IP address, or a tokenized URL here.
+  evidence_ref text not null unique check (char_length(evidence_ref) between 16 and 160),
   consented_at timestamptz not null,
   revoked_at timestamptz,
   created_at timestamptz not null default now(),
@@ -79,11 +83,12 @@ alter table public.love_note_sms_consents enable row level security;
 revoke all on table public.love_note_sms_consents from public, anon, authenticated;
 
 -- Intentionally no browser RLS policies. Only trusted server/service-role workflows may
--- create, read, or revoke consent evidence. A future recipient opt-in endpoint must be
--- caller-bound and separately reviewed before this migration is approved for production.
+-- create, read, or revoke consent evidence. The public opt-in Edge Function validates the
+-- explicit checkbox, accepted disclosure versions, origin and phone format before using
+-- service_role; browsers never write this table directly.
 
 comment on table public.love_note_sms_consents is
-  'Server-only Love Notes SMS consent evidence keyed by a server-peppered phone hash. No browser grants or policies. Production use requires explicit legal/cost activation approval.';
+  'Server-only Love Notes SMS consent evidence keyed by a server-peppered phone hash. Records disclosure/legal versions but no raw/partial phone, IP, or browser-readable consent data.';
 comment on column public.love_note_invitations.delivery_language is
   'Recipient-facing Love Note invitation language. Limited to the five active One2OneLove languages: en/es/fr/it/de.';
 
