@@ -5,6 +5,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -81,6 +82,7 @@ serve(async (request) => {
 
     const blockedId = clean(body?.blocked_user_id, 80)
     if (!blockedId) return json(request, { error: 'BLOCKED_USER_REQUIRED' }, 400)
+    if (!UUID_PATTERN.test(blockedId)) return json(request, { error: 'BLOCKED_USER_INVALID' }, 400)
     if (blockedId === caller.id) return json(request, { error: 'CANNOT_BLOCK_SELF' }, 400)
 
     if (action === 'unblock') {
