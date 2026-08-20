@@ -10,11 +10,12 @@
 -- This migration removes the unnecessary private fields from the synchronized source so
 -- both the source table and its public view contain only the five member-discovery fields
 -- actually used by Buddy Finder and pairwise Chat.
+--
+-- user_presence_view depends on member_directory, so it is temporarily dropped and
+-- recreated with the same privacy-safe #8C definition in the same transaction.
 
 begin;
 
--- Rebuild the sync helper first so future user writes never expect the fields we are
--- about to remove from the synchronized source table.
 create or replace function o2ol_private.sync_user_directory_profile()
 returns trigger
 language plpgsql
@@ -51,7 +52,9 @@ $$;
 
 revoke all on function o2ol_private.sync_user_directory_profile() from public, anon, authenticated;
 
--- The existing view depends on user_type, so remove it before minimizing the source.
+-- Presence depends on the member directory. Drop only the safe projection and recreate
+-- it unchanged below after the directory source has been minimized.
+drop view if exists public.user_presence_view;
 drop view if exists public.member_directory;
 
 drop index if exists public.user_directory_profiles_user_type_idx;
@@ -63,9 +66,6 @@ alter table public.user_directory_profiles
   drop column if exists interests,
   drop column if exists updated_at;
 
--- Remove any non-regular account that might already be present, then reconcile regular
--- accounts. Current production audit shows all 11 existing accounts are regular, so this
--- is expected to preserve all current directory rows.
 delete from public.user_directory_profiles d
 where not exists (
   select 1
@@ -119,10 +119,32 @@ from public.user_directory_profiles d;
 revoke all on public.member_directory from public, anon, authenticated;
 grant select on public.member_directory to authenticated;
 
+-- Restore the #8C neutral presence projection exactly: no email and no database-generated
+-- localized prose. Relative-time copy remains a client-side translation responsibility.
+create view public.user_presence_view
+with (security_barrier = true, security_invoker = true)
+as
+select
+  up.user_id,
+  up.status,
+  up.last_seen,
+  up.last_active,
+  up.updated_at,
+  md.name,
+  md.avatar_url,
+  (up.last_active > now() - interval '5 minutes' and up.status = 'online') as is_online
+from public.user_presence up
+left join public.member_directory md on md.id = up.user_id;
+
+revoke all on public.user_presence_view from public, anon, authenticated;
+grant select on public.user_presence_view to authenticated;
+
 comment on table public.user_directory_profiles is
   'Minimal synchronized member-discovery source containing only id, display name, optional avatar, short bio and member-since date. No email, location, relationship status, interests, account type, partner, verification, subscription or billing fields.';
 comment on view public.member_directory is
   'Authenticated regular-member discovery projection: id, display name, optional avatar, short bio and member-since date only.';
+comment on view public.user_presence_view is
+  'Authenticated neutral presence projection. No email and no localized display prose; relative time is formatted by the client language layer.';
 
 commit;
 
@@ -135,3 +157,5 @@ commit;
 --    additional fields remain in the source table.
 -- 6. Updating a regular user's safe profile fields keeps the source synchronized.
 -- 7. Changing an account to a non-regular user_type removes it from discovery.
+-- 8. user_presence_view is restored with security_invoker/security_barrier and still
+--    contains neither email nor last_seen_text.
