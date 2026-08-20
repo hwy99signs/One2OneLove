@@ -71,5 +71,19 @@ No scheduler was created. No Resend configuration was changed. No SMS provider w
 - The identity trigger exists exactly once on `public.room_messages`.
 - Applying the staged #7 migration now would only drop/recreate protections that are already live, so the redundant production write is retired.
 
+### Approval #8B — Community membership security hardening
+- Applied `community_member_policy_hardening` to live Supabase.
+- Confirmed `public.community_members` remains RLS-enabled.
+- Replaced the recursive legacy admin/moderator policy with caller-bound helper functions in the non-public `o2ol_private` schema.
+- Anonymous users have no USAGE privilege on `o2ol_private`; authenticated users receive only the schema/function privileges needed for RLS evaluation.
+- Normal self-service joins are constrained to `role='member'` with database-enforced `active` versus `pending` status based on community approval requirements.
+- The only browser-compatible `admin` join path is restricted to the authenticated creator of that exact community, preserving the legacy creator duplicate-join flow without permitting role self-escalation.
+- New communities automatically receive one active creator-admin membership through a database trigger.
+- Membership update/delete management is guarded by an identity/role trigger that prevents creator-admin mutation, membership rerouting, and moderator role escalation.
+- Database enforcement uses stable `O2OL_*` codes rather than member-facing English prose.
+- A signed-in-role read test completed without RLS recursion.
+- The project still contains 0 communities and 0 community memberships, so the migration rewrote no existing community data.
+- Supabase Security Advisor added no new public SECURITY DEFINER warning for the `o2ol_private` helpers; unrelated pre-existing advisor warnings remain outside this approval.
+
 ## Resend production dependency note
 The existing live `send-waitlist-notifications` Edge Function reads `Deno.env.get('RESEND_API_KEY')` and sends through the Resend API. Therefore the existing `RESEND_API_KEY` must continue to be treated as production-relevant and must not be overwritten blindly. The connector does not expose secret values, so any key verification/rotation must preserve waitlist compatibility and be handled without pasting secret material into chat or source control.
