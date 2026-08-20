@@ -11,39 +11,72 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/Layout';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { createPageUrl } from '@/utils';
-import {
-  generateRelationshipContent,
-  newAiContentRequestId,
-} from '@/lib/aiContentCreatorService';
+import { generateRelationshipContent, newAiContentRequestId } from '@/lib/aiContentCreatorService';
 
 const translations = {
   en: {
     title: 'AI Content Creator', subtitle: 'Create a thoughtful starting draft, then make it yours.', back: 'Back',
+    safetyNote: 'AI drafts are suggestions, not facts about your relationship. Review anything personal before using it.',
     generator: 'Create relationship content', contentType: 'Content type', tone: 'Tone', length: 'Length',
     partnerName: "Partner's name (optional)", partnerPlaceholder: "Your partner's name", details: 'Details (optional)',
     detailsPlaceholder: 'Add the real details, memories, or context you want the draft to reflect…', generate: 'Generate with AI', generating: 'Creating…',
-    result: 'Your draft', resultHint: 'Review and edit it before you send or use it.', copy: 'Copy', copied: 'Copied!', download: 'Download',
-    again: 'Generate a new version', retry: 'Retry same request', staged: 'AI generation is staged but not activated in this environment yet.',
-    membership: 'AI Content Creator is a Membership feature.', upgrade: 'View Membership', signIn: 'Sign in', limit: 'You reached the current AI usage limit. Try again later.',
-    unavailable: 'AI Content Creator is temporarily unavailable.', selectFirst: 'Choose a content type and tone first.',
+    result: 'Your draft', resultHint: 'Review and edit it before you send or use it.', emptyResult: 'Your generated draft will appear here. Nothing is automatically sent to anyone.',
+    copy: 'Copy', copied: 'Copied!', download: 'Download', again: 'Generate a new version', retry: 'Retry same request', recovered: 'Recovered your completed draft.',
+    staged: 'AI generation is staged but not activated in this environment yet.', membership: 'AI Content Creator is a Membership feature.', upgrade: 'View Membership', signIn: 'Sign in',
+    limit: 'You reached the current AI usage limit. Try again later.', unavailable: 'AI Content Creator is temporarily unavailable.', selectFirst: 'Choose a content type and tone first.',
     contentTypes: { loveNote: 'Love Note', apology: 'Apology Message', anniversary: 'Anniversary Message', dateIdea: 'Date Night Idea', conversation: 'Conversation Starter', appreciation: 'Words of Appreciation' },
     tones: { romantic: 'Romantic', playful: 'Playful', sincere: 'Sincere', passionate: 'Passionate', sweet: 'Sweet', funny: 'Funny' },
     lengths: { short: 'Short', medium: 'Medium', long: 'Long' },
   },
   es: {
-    title: 'Creador de Contenido IA', subtitle: 'Crea un borrador útil y luego hazlo tuyo.', back: 'Volver', generator: 'Crear contenido para la relación', contentType: 'Tipo de contenido', tone: 'Tono', length: 'Longitud', partnerName: 'Nombre de tu pareja (opcional)', partnerPlaceholder: 'Nombre de tu pareja', details: 'Detalles (opcional)', detailsPlaceholder: 'Agrega detalles, recuerdos o contexto reales que quieras reflejar…', generate: 'Generar con IA', generating: 'Creando…', result: 'Tu borrador', resultHint: 'Revísalo y edítalo antes de enviarlo o usarlo.', copy: 'Copiar', copied: '¡Copiado!', download: 'Descargar', again: 'Generar una nueva versión', retry: 'Reintentar la misma solicitud', staged: 'La generación con IA está preparada pero aún no está activada en este entorno.', membership: 'El Creador de Contenido IA es una función de Membresía.', upgrade: 'Ver Membresía', signIn: 'Iniciar sesión', limit: 'Alcanzaste el límite actual de uso de IA. Intenta más tarde.', unavailable: 'El Creador de Contenido IA no está disponible temporalmente.', selectFirst: 'Elige primero el tipo de contenido y el tono.', contentTypes: { loveNote: 'Nota de Amor', apology: 'Mensaje de Disculpa', anniversary: 'Mensaje de Aniversario', dateIdea: 'Idea para una Cita', conversation: 'Iniciador de Conversación', appreciation: 'Palabras de Aprecio' }, tones: { romantic: 'Romántico', playful: 'Juguetón', sincere: 'Sincero', passionate: 'Apasionado', sweet: 'Dulce', funny: 'Divertido' }, lengths: { short: 'Corto', medium: 'Medio', long: 'Largo' },
+    title: 'Creador de Contenido IA', subtitle: 'Crea un borrador útil y luego hazlo tuyo.', back: 'Volver',
+    safetyNote: 'Los borradores de IA son sugerencias, no hechos sobre tu relación. Revisa cualquier contenido personal antes de usarlo.',
+    generator: 'Crear contenido para la relación', contentType: 'Tipo de contenido', tone: 'Tono', length: 'Longitud', partnerName: 'Nombre de tu pareja (opcional)', partnerPlaceholder: 'Nombre de tu pareja', details: 'Detalles (opcional)', detailsPlaceholder: 'Agrega detalles, recuerdos o contexto reales que quieras reflejar…', generate: 'Generar con IA', generating: 'Creando…',
+    result: 'Tu borrador', resultHint: 'Revísalo y edítalo antes de enviarlo o usarlo.', emptyResult: 'Tu borrador generado aparecerá aquí. No se envía nada automáticamente a nadie.',
+    copy: 'Copiar', copied: '¡Copiado!', download: 'Descargar', again: 'Generar una nueva versión', retry: 'Reintentar la misma solicitud', recovered: 'Se recuperó tu borrador completado.',
+    staged: 'La generación con IA está preparada pero aún no está activada en este entorno.', membership: 'El Creador de Contenido IA es una función de Membresía.', upgrade: 'Ver Membresía', signIn: 'Iniciar sesión', limit: 'Alcanzaste el límite actual de uso de IA. Intenta más tarde.', unavailable: 'El Creador de Contenido IA no está disponible temporalmente.', selectFirst: 'Elige primero el tipo de contenido y el tono.',
+    contentTypes: { loveNote: 'Nota de Amor', apology: 'Mensaje de Disculpa', anniversary: 'Mensaje de Aniversario', dateIdea: 'Idea para una Cita', conversation: 'Iniciador de Conversación', appreciation: 'Palabras de Aprecio' },
+    tones: { romantic: 'Romántico', playful: 'Juguetón', sincere: 'Sincero', passionate: 'Apasionado', sweet: 'Dulce', funny: 'Divertido' }, lengths: { short: 'Corto', medium: 'Medio', long: 'Largo' },
   },
   fr: {
-    title: 'Créateur de Contenu IA', subtitle: 'Créez un bon premier brouillon, puis personnalisez-le.', back: 'Retour', generator: 'Créer du contenu relationnel', contentType: 'Type de contenu', tone: 'Ton', length: 'Longueur', partnerName: 'Nom du partenaire (facultatif)', partnerPlaceholder: 'Nom de votre partenaire', details: 'Détails (facultatif)', detailsPlaceholder: 'Ajoutez les vrais détails, souvenirs ou contexte à refléter…', generate: "Générer avec l'IA", generating: 'Création…', result: 'Votre brouillon', resultHint: "Relisez-le et modifiez-le avant de l'envoyer ou de l'utiliser.", copy: 'Copier', copied: 'Copié !', download: 'Télécharger', again: 'Générer une nouvelle version', retry: 'Réessayer la même demande', staged: "La génération IA est préparée mais n'est pas encore activée dans cet environnement.", membership: 'Le Créateur de Contenu IA est une fonction Membresía.', upgrade: "Voir l'abonnement", signIn: 'Se connecter', limit: "Vous avez atteint la limite actuelle d'utilisation de l'IA. Réessayez plus tard.", unavailable: 'Le Créateur de Contenu IA est temporairement indisponible.', selectFirst: "Choisissez d'abord le type de contenu et le ton.", contentTypes: { loveNote: "Mot d'Amour", apology: "Message d'Excuses", anniversary: "Message d'Anniversaire", dateIdea: 'Idée de Rendez-vous', conversation: 'Début de Conversation', appreciation: "Mots d'Appréciation" }, tones: { romantic: 'Romantique', playful: 'Enjoué', sincere: 'Sincère', passionate: 'Passionné', sweet: 'Doux', funny: 'Drôle' }, lengths: { short: 'Court', medium: 'Moyen', long: 'Long' },
+    title: 'Créateur de Contenu IA', subtitle: 'Créez un bon premier brouillon, puis personnalisez-le.', back: 'Retour',
+    safetyNote: 'Les brouillons IA sont des suggestions, pas des faits sur votre relation. Relisez tout contenu personnel avant de l’utiliser.',
+    generator: 'Créer du contenu relationnel', contentType: 'Type de contenu', tone: 'Ton', length: 'Longueur', partnerName: 'Nom du partenaire (facultatif)', partnerPlaceholder: 'Nom de votre partenaire', details: 'Détails (facultatif)', detailsPlaceholder: 'Ajoutez les vrais détails, souvenirs ou contexte à refléter…', generate: "Générer avec l'IA", generating: 'Création…',
+    result: 'Votre brouillon', resultHint: "Relisez-le et modifiez-le avant de l'envoyer ou de l'utiliser.", emptyResult: 'Votre brouillon généré apparaîtra ici. Rien n’est envoyé automatiquement à qui que ce soit.',
+    copy: 'Copier', copied: 'Copié !', download: 'Télécharger', again: 'Générer une nouvelle version', retry: 'Réessayer la même demande', recovered: 'Votre brouillon terminé a été récupéré.',
+    staged: "La génération IA est préparée mais n'est pas encore activée dans cet environnement.", membership: 'Le Créateur de Contenu IA est une fonction d’adhésion.', upgrade: "Voir l'abonnement", signIn: 'Se connecter', limit: "Vous avez atteint la limite actuelle d'utilisation de l'IA. Réessayez plus tard.", unavailable: 'Le Créateur de Contenu IA est temporairement indisponible.', selectFirst: "Choisissez d'abord le type de contenu et le ton.",
+    contentTypes: { loveNote: "Mot d'Amour", apology: "Message d'Excuses", anniversary: "Message d'Anniversaire", dateIdea: 'Idée de Rendez-vous', conversation: 'Début de Conversation', appreciation: "Mots d'Appréciation" },
+    tones: { romantic: 'Romantique', playful: 'Enjoué', sincere: 'Sincère', passionate: 'Passionné', sweet: 'Doux', funny: 'Drôle' }, lengths: { short: 'Court', medium: 'Moyen', long: 'Long' },
   },
   it: {
-    title: 'Creatore di Contenuti IA', subtitle: 'Crea una buona prima bozza, poi rendila tua.', back: 'Indietro', generator: 'Crea contenuti per la relazione', contentType: 'Tipo di contenuto', tone: 'Tono', length: 'Lunghezza', partnerName: 'Nome del partner (facoltativo)', partnerPlaceholder: 'Nome del tuo partner', details: 'Dettagli (facoltativo)', detailsPlaceholder: 'Aggiungi dettagli, ricordi o contesto reali da riflettere…', generate: 'Genera con IA', generating: 'Creazione…', result: 'La tua bozza', resultHint: 'Rileggila e modificala prima di inviarla o usarla.', copy: 'Copia', copied: 'Copiato!', download: 'Scarica', again: 'Genera una nuova versione', retry: 'Riprova la stessa richiesta', staged: "La generazione IA è pronta ma non è ancora attivata in questo ambiente.", membership: 'Il Creatore di Contenuti IA è una funzione Membership.', upgrade: 'Vedi Membership', signIn: 'Accedi', limit: "Hai raggiunto il limite attuale di utilizzo dell'IA. Riprova più tardi.", unavailable: 'Il Creatore di Contenuti IA è temporaneamente non disponibile.', selectFirst: 'Scegli prima il tipo di contenuto e il tono.', contentTypes: { loveNote: "Nota d'Amore", apology: 'Messaggio di Scuse', anniversary: 'Messaggio di Anniversario', dateIdea: 'Idea per Appuntamento', conversation: 'Spunto di Conversazione', appreciation: 'Parole di Apprezzamento' }, tones: { romantic: 'Romantico', playful: 'Giocoso', sincere: 'Sincero', passionate: 'Appassionato', sweet: 'Dolce', funny: 'Divertente' }, lengths: { short: 'Breve', medium: 'Media', long: 'Lunga' },
+    title: 'Creatore di Contenuti IA', subtitle: 'Crea una buona prima bozza, poi rendila tua.', back: 'Indietro',
+    safetyNote: 'Le bozze IA sono suggerimenti, non fatti sulla tua relazione. Rivedi qualsiasi contenuto personale prima di usarlo.',
+    generator: 'Crea contenuti per la relazione', contentType: 'Tipo di contenuto', tone: 'Tono', length: 'Lunghezza', partnerName: 'Nome del partner (facoltativo)', partnerPlaceholder: 'Nome del tuo partner', details: 'Dettagli (facoltativo)', detailsPlaceholder: 'Aggiungi dettagli, ricordi o contesto reali da riflettere…', generate: 'Genera con IA', generating: 'Creazione…',
+    result: 'La tua bozza', resultHint: 'Rileggila e modificala prima di inviarla o usarla.', emptyResult: 'La bozza generata apparirà qui. Nulla viene inviato automaticamente a nessuno.',
+    copy: 'Copia', copied: 'Copiato!', download: 'Scarica', again: 'Genera una nuova versione', retry: 'Riprova la stessa richiesta', recovered: 'La tua bozza completata è stata recuperata.',
+    staged: 'La generazione IA è pronta ma non è ancora attivata in questo ambiente.', membership: 'Il Creatore di Contenuti IA è una funzione di abbonamento.', upgrade: 'Vedi Abbonamento', signIn: 'Accedi', limit: "Hai raggiunto il limite attuale di utilizzo dell'IA. Riprova più tardi.", unavailable: 'Il Creatore di Contenuti IA è temporaneamente non disponibile.', selectFirst: 'Scegli prima il tipo di contenuto e il tono.',
+    contentTypes: { loveNote: "Nota d'Amore", apology: 'Messaggio di Scuse', anniversary: 'Messaggio di Anniversario', dateIdea: 'Idea per Appuntamento', conversation: 'Spunto di Conversazione', appreciation: 'Parole di Apprezzamento' },
+    tones: { romantic: 'Romantico', playful: 'Giocoso', sincere: 'Sincero', passionate: 'Appassionato', sweet: 'Dolce', funny: 'Divertente' }, lengths: { short: 'Breve', medium: 'Media', long: 'Lunga' },
   },
   de: {
-    title: 'KI-Content-Ersteller', subtitle: 'Erstellen Sie einen guten ersten Entwurf und machen Sie ihn dann zu Ihrem eigenen.', back: 'Zurück', generator: 'Beziehungsinhalt erstellen', contentType: 'Inhaltstyp', tone: 'Ton', length: 'Länge', partnerName: 'Name des Partners (optional)', partnerPlaceholder: 'Name Ihres Partners', details: 'Details (optional)', detailsPlaceholder: 'Fügen Sie echte Details, Erinnerungen oder Kontext hinzu…', generate: 'Mit KI generieren', generating: 'Wird erstellt…', result: 'Ihr Entwurf', resultHint: 'Prüfen und bearbeiten Sie ihn vor dem Senden oder Verwenden.', copy: 'Kopieren', copied: 'Kopiert!', download: 'Herunterladen', again: 'Neue Version generieren', retry: 'Dieselbe Anfrage erneut versuchen', staged: 'Die KI-Generierung ist vorbereitet, aber in dieser Umgebung noch nicht aktiviert.', membership: 'Der KI-Content-Ersteller ist eine Membership-Funktion.', upgrade: 'Membership ansehen', signIn: 'Anmelden', limit: 'Sie haben das aktuelle KI-Nutzungslimit erreicht. Versuchen Sie es später erneut.', unavailable: 'Der KI-Content-Ersteller ist vorübergehend nicht verfügbar.', selectFirst: 'Wählen Sie zuerst Inhaltstyp und Ton.', contentTypes: { loveNote: 'Liebesbotschaft', apology: 'Entschuldigung', anniversary: 'Jubiläumsnachricht', dateIdea: 'Date-Idee', conversation: 'Gesprächsstarter', appreciation: 'Worte der Wertschätzung' }, tones: { romantic: 'Romantisch', playful: 'Verspielt', sincere: 'Aufrichtig', passionate: 'Leidenschaftlich', sweet: 'Liebevoll', funny: 'Lustig' }, lengths: { short: 'Kurz', medium: 'Mittel', long: 'Lang' },
+    title: 'KI-Content-Ersteller', subtitle: 'Erstellen Sie einen guten ersten Entwurf und machen Sie ihn dann zu Ihrem eigenen.', back: 'Zurück',
+    safetyNote: 'KI-Entwürfe sind Vorschläge, keine Tatsachen über Ihre Beziehung. Prüfen Sie persönliche Inhalte, bevor Sie sie verwenden.',
+    generator: 'Beziehungsinhalt erstellen', contentType: 'Inhaltstyp', tone: 'Ton', length: 'Länge', partnerName: 'Name des Partners (optional)', partnerPlaceholder: 'Name Ihres Partners', details: 'Details (optional)', detailsPlaceholder: 'Fügen Sie echte Details, Erinnerungen oder Kontext hinzu…', generate: 'Mit KI generieren', generating: 'Wird erstellt…',
+    result: 'Ihr Entwurf', resultHint: 'Prüfen und bearbeiten Sie ihn vor dem Senden oder Verwenden.', emptyResult: 'Ihr erstellter Entwurf erscheint hier. Nichts wird automatisch an andere gesendet.',
+    copy: 'Kopieren', copied: 'Kopiert!', download: 'Herunterladen', again: 'Neue Version generieren', retry: 'Dieselbe Anfrage erneut versuchen', recovered: 'Ihr fertiger Entwurf wurde wiederhergestellt.',
+    staged: 'Die KI-Generierung ist vorbereitet, aber in dieser Umgebung noch nicht aktiviert.', membership: 'Der KI-Content-Ersteller ist eine Mitgliedschaftsfunktion.', upgrade: 'Mitgliedschaft ansehen', signIn: 'Anmelden', limit: 'Sie haben das aktuelle KI-Nutzungslimit erreicht. Versuchen Sie es später erneut.', unavailable: 'Der KI-Content-Ersteller ist vorübergehend nicht verfügbar.', selectFirst: 'Wählen Sie zuerst Inhaltstyp und Ton.',
+    contentTypes: { loveNote: 'Liebesbotschaft', apology: 'Entschuldigung', anniversary: 'Jubiläumsnachricht', dateIdea: 'Date-Idee', conversation: 'Gesprächsstarter', appreciation: 'Worte der Wertschätzung' },
+    tones: { romantic: 'Romantisch', playful: 'Verspielt', sincere: 'Aufrichtig', passionate: 'Leidenschaftlich', sweet: 'Liebevoll', funny: 'Lustig' }, lengths: { short: 'Kurz', medium: 'Mittel', long: 'Lang' },
   },
   nl: {
-    title: 'AI Contentmaker', subtitle: 'Maak een sterke eerste versie en pas die daarna aan tot hij echt van jou is.', back: 'Terug', generator: 'Relatiecontent maken', contentType: 'Soort content', tone: 'Toon', length: 'Lengte', partnerName: 'Naam van je partner (optioneel)', partnerPlaceholder: 'Naam van je partner', details: 'Details (optioneel)', detailsPlaceholder: 'Voeg echte details, herinneringen of context toe die je wilt laten terugkomen…', generate: 'Genereren met AI', generating: 'Bezig met maken…', result: 'Je concept', resultHint: 'Lees en bewerk het voordat je het verstuurt of gebruikt.', copy: 'Kopiëren', copied: 'Gekopieerd!', download: 'Downloaden', again: 'Nieuwe versie genereren', retry: 'Dezelfde aanvraag opnieuw proberen', staged: 'AI-generatie is voorbereid maar in deze omgeving nog niet geactiveerd.', membership: 'AI Contentmaker is een Membership-functie.', upgrade: 'Bekijk Membership', signIn: 'Inloggen', limit: 'Je hebt de huidige AI-gebruikslimiet bereikt. Probeer het later opnieuw.', unavailable: 'AI Contentmaker is tijdelijk niet beschikbaar.', selectFirst: 'Kies eerst het soort content en de toon.', contentTypes: { loveNote: 'Liefdesbriefje', apology: 'Excuses', anniversary: 'Jubileumbericht', dateIdea: 'Date-idee', conversation: 'Gespreksstarter', appreciation: 'Woorden van waardering' }, tones: { romantic: 'Romantisch', playful: 'Speels', sincere: 'Oprecht', passionate: 'Gepassioneerd', sweet: 'Lief', funny: 'Grappig' }, lengths: { short: 'Kort', medium: 'Gemiddeld', long: 'Lang' },
+    title: 'AI Contentmaker', subtitle: 'Maak een sterke eerste versie en pas die daarna aan tot hij echt van jou is.', back: 'Terug',
+    safetyNote: 'AI-concepten zijn suggesties, geen feiten over je relatie. Controleer persoonlijke inhoud voordat je die gebruikt.',
+    generator: 'Relatiecontent maken', contentType: 'Soort content', tone: 'Toon', length: 'Lengte', partnerName: 'Naam van je partner (optioneel)', partnerPlaceholder: 'Naam van je partner', details: 'Details (optioneel)', detailsPlaceholder: 'Voeg echte details, herinneringen of context toe die je wilt laten terugkomen…', generate: 'Genereren met AI', generating: 'Bezig met maken…',
+    result: 'Je concept', resultHint: 'Lees en bewerk het voordat je het verstuurt of gebruikt.', emptyResult: 'Je gegenereerde concept verschijnt hier. Er wordt niets automatisch naar iemand verzonden.',
+    copy: 'Kopiëren', copied: 'Gekopieerd!', download: 'Downloaden', again: 'Nieuwe versie genereren', retry: 'Dezelfde aanvraag opnieuw proberen', recovered: 'Je voltooide concept is hersteld.',
+    staged: 'AI-generatie is voorbereid maar in deze omgeving nog niet geactiveerd.', membership: 'AI Contentmaker is een lidmaatschapsfunctie.', upgrade: 'Bekijk Lidmaatschap', signIn: 'Inloggen', limit: 'Je hebt de huidige AI-gebruikslimiet bereikt. Probeer het later opnieuw.', unavailable: 'AI Contentmaker is tijdelijk niet beschikbaar.', selectFirst: 'Kies eerst het soort content en de toon.',
+    contentTypes: { loveNote: 'Liefdesbriefje', apology: 'Excuses', anniversary: 'Jubileumbericht', dateIdea: 'Date-idee', conversation: 'Gespreksstarter', appreciation: 'Woorden van waardering' },
+    tones: { romantic: 'Romantisch', playful: 'Speels', sincere: 'Oprecht', passionate: 'Gepassioneerd', sweet: 'Lief', funny: 'Grappig' }, lengths: { short: 'Kort', medium: 'Gemiddeld', long: 'Lang' },
   },
 };
 
@@ -81,8 +114,7 @@ export default function AIContentCreator() {
     if (code === 'MEMBERSHIP_REQUIRED') return t.membership;
     if (code === 'AUTHENTICATION_REQUIRED' || code === 'EMAIL_NOT_CONFIRMED') return t.signIn;
     if (code === 'AI_USAGE_LIMIT_REACHED') return t.limit;
-    if (code === 'REQUEST_IN_PROGRESS') return t.unavailable;
-    if (code === 'AI_RESULT_RECONCILIATION_REQUIRED') return t.unavailable;
+    if (code === 'REQUEST_IN_PROGRESS' || code === 'AI_RESULT_RECONCILIATION_REQUIRED') return t.unavailable;
     return t.unavailable;
   };
 
@@ -107,17 +139,12 @@ export default function AIContentCreator() {
     setIsGenerating(true);
 
     try {
-      const result = await generateRelationshipContent({
-        ...formData,
-        language,
-        requestId,
-      });
+      const result = await generateRelationshipContent({ ...formData, language, requestId });
       setGeneratedContent(result.content);
       setGenerationError(null);
-      if (result.idempotent) toast.success('Recovered your completed draft.');
+      if (result.idempotent) toast.success(t.recovered);
     } catch (error) {
-      const message = presentError(error);
-      toast.error(message);
+      toast.error(presentError(error));
     } finally {
       setIsGenerating(false);
     }
@@ -161,14 +188,12 @@ export default function AIContentCreator() {
           </div>
           <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl">{t.title}</h1>
           <p className="mx-auto mt-3 max-w-2xl text-lg text-gray-600">{t.subtitle}</p>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-gray-500">AI drafts are suggestions, not facts about your relationship. Review anything personal before using it.</p>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-gray-500">{t.safetyNote}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-purple-600" />{t.generator}</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-purple-600" />{t.generator}</CardTitle></CardHeader>
             <CardContent className="space-y-5">
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">{t.contentType} *</label>
@@ -187,9 +212,7 @@ export default function AIContentCreator() {
                 <label className="mb-2 block text-sm font-medium text-gray-700">{t.tone} *</label>
                 <Select value={formData.tone} onValueChange={(value) => updateField('tone', value)}>
                   <SelectTrigger><SelectValue placeholder={t.tone} /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(t.tones).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
-                  </SelectContent>
+                  <SelectContent>{Object.entries(t.tones).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
 
@@ -253,7 +276,7 @@ export default function AIContentCreator() {
                   <div>
                     <Sparkles className="mx-auto mb-4 h-12 w-12 text-purple-300" />
                     <p className="font-medium text-gray-600">{t.result}</p>
-                    <p className="mt-2 max-w-sm text-sm text-gray-400">Your generated draft will appear here. Nothing is automatically sent to anyone.</p>
+                    <p className="mt-2 max-w-sm text-sm text-gray-400">{t.emptyResult}</p>
                   </div>
                 </div>
               )}
