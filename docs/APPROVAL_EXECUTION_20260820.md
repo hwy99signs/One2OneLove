@@ -40,5 +40,17 @@ No scheduler was created. No Resend configuration was changed. No SMS provider w
 - Verified the table/view exist, the security-invoker setting is active, and the table currently contains 0 saved rows.
 - Supabase Security Advisor reports no Security Definer warning for `saved_love_notes`. Its signed-in GraphQL discoverability warning is expected because the authenticated app intentionally reads the feature, with RLS limiting row access.
 
+### Approval #5 — Live Room messaging foundation
+- Applied the corrected `live_room_messaging` migration to live Supabase.
+- Created `public.room_messages` and `public.room_message_reactions` with RLS enabled.
+- Anonymous roles have no SELECT or INSERT access to either messaging surface.
+- Authenticated members have the required SELECT/INSERT/DELETE privileges; UPDATE is intentionally not granted.
+- The allowed room constraint includes exactly the six relaunch rooms, including `global-relationship-room`.
+- Member message identity is derived by the active `set_room_member_identity` trigger using a `SECURITY INVOKER` function; browser-supplied user IDs/display names are not trusted.
+- No email address is used as the public-name fallback; an account without a profile name receives a language-neutral stable pseudonym.
+- Both `room_messages` and `room_message_reactions` are registered with the `supabase_realtime` publication.
+- Verified the live tables currently contain 0 messages and 0 reactions.
+- Supabase Security Advisor shows only expected signed-in GraphQL discoverability warnings for the two messaging tables; it reports no Security Definer warning for the identity function.
+
 ## Resend production dependency note
 The existing live `send-waitlist-notifications` Edge Function reads `Deno.env.get('RESEND_API_KEY')` and sends through the Resend API. Therefore the existing `RESEND_API_KEY` must continue to be treated as production-relevant and must not be overwritten blindly. The connector does not expose secret values, so any key verification/rotation must preserve waitlist compatibility and be handled without pasting secret material into chat or source control.
