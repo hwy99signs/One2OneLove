@@ -36,6 +36,7 @@ const checks = [
   ['relaunch member blocking request cleanup', 'scripts/relaunch-member-blocking-request-cleanup-check.mjs'],
   ['relaunch blocked-member list privacy', 'scripts/relaunch-member-blocking-list-privacy-check.mjs'],
   ['relaunch live community', 'scripts/relaunch-live-community-check.mjs'],
+  ['relaunch Live Room AI host security', 'scripts/relaunch-live-room-host-security-check.mjs'],
   ['relaunch live-room multilingual runtime', 'scripts/relaunch-live-room-i18n-check.mjs'],
   ['relaunch creator programming', 'scripts/relaunch-creator-programming-check.mjs'],
   ['relaunch programming schedule', 'scripts/relaunch-programming-schedule-check.mjs'],
