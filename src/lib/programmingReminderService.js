@@ -2,8 +2,13 @@ import { supabase } from './supabase';
 
 export const PROGRAMMING_REMINDERS_ENABLED = import.meta.env.VITE_PROGRAMMING_REMINDERS_ENABLED === 'true';
 
+const ERROR = {
+  disabled: 'O2OL_PROGRAMMING_REMINDERS_DISABLED',
+  update: 'O2OL_PROGRAMMING_REMINDER_UPDATE_FAILED',
+};
+
 const requireEnabled = () => {
-  if (!PROGRAMMING_REMINDERS_ENABLED) throw new Error('Programming reminders are not enabled yet.');
+  if (!PROGRAMMING_REMINDERS_ENABLED) throw new Error(ERROR.disabled);
 };
 
 const invokeReminder = async (action, slotId) => {
@@ -11,8 +16,8 @@ const invokeReminder = async (action, slotId) => {
   const { data, error } = await supabase.functions.invoke('programming-reminder', {
     body: { action, slot_id: slotId },
   });
-  if (error) throw new Error(error?.message || 'Unable to update programming reminder.');
-  if (!data?.success) throw new Error('Unable to update programming reminder.');
+  if (error) throw new Error(ERROR.update);
+  if (!data?.success) throw new Error(ERROR.update);
   return data;
 };
 
@@ -40,7 +45,7 @@ export const listProgrammingNotifications = async (limit = 20) => {
     .select('id,reminder_id,slot_id,notification_type,program_title,program_source,content_mode,starts_at,action_path,read_at,created_at')
     .order('created_at', { ascending: false })
     .limit(safeLimit);
-  if (error) throw error;
+  if (error) throw new Error(ERROR.update);
   return data || [];
 };
 
@@ -53,6 +58,6 @@ export const markProgrammingNotificationRead = async (notificationId) => {
     .is('read_at', null)
     .select('id,read_at')
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw new Error(ERROR.update);
   return data || null;
 };
