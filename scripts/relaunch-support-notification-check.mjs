@@ -15,11 +15,18 @@ const layout = fs.readFileSync(layoutFile, 'utf8');
 
 for (const required of [
   'add column if not exists member_response_read_at timestamptz null',
+  'create or replace function o2ol_private.reset_support_response_read_state()',
+  'security invoker',
+  "set search_path = ''",
   'new.member_response_read_at = null;',
   'before update of staff_response, responded_at',
-  'revoke all on function public.reset_support_response_read_state() from public, anon, authenticated;',
+  'revoke all on function o2ol_private.reset_support_response_read_state() from public, anon, authenticated;',
+  'execute function o2ol_private.reset_support_response_read_state();',
 ]) {
   if (!migration.includes(required)) failures.push(`${migrationFile}: missing support-response read-state safeguard ${required}.`);
+}
+if (migration.includes('function public.reset_support_response_read_state')) {
+  failures.push(`${migrationFile}: support read-state trigger helper must remain outside the public schema.`);
 }
 
 for (const required of [
@@ -72,4 +79,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Support response notifications remain private, multilingual, read-state aware, directly navigable and in-app only.');
+console.log('✅ Support response notifications remain private, multilingual, read-state aware, privately-triggered, directly navigable and in-app only.');
