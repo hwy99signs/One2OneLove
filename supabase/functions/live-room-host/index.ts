@@ -7,16 +7,20 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
+const MAX_BODY_BYTES = 64 * 1024
 const SUPPORTED_LANGUAGES: Record<string, string> = {
   en: 'English',
   es: 'Spanish',
   fr: 'French',
   it: 'Italian',
   de: 'German',
-  nl: 'Dutch',
 }
 
 const rooms: Record<string, { name: string; topic: string }> = {
+  'global-relationship-room': {
+    name: 'Global Relationship Room',
+    topic: 'Invite people from different relationship experiences and perspectives into a respectful conversation they can all answer.',
+  },
   'vent-room': {
     name: 'Vent Room',
     topic: 'When you need to vent about your relationship, what do you actually want from the other person: advice, validation, or just somebody to listen?',
@@ -130,12 +134,14 @@ const claimGenerationSlot = async (
     return { ownsSlot: false, id: null, cachedPrompt: null }
   }
 
+  // Important cost boundary: lookup intentionally ignores context_hash. A caller cannot
+  // vary recent_messages to manufacture another generation inside the same time bucket.
   const { data: existing, error: lookupError } = await serviceClient
     .from('live_room_host_prompt_cache')
-    .select('id, status, prompt, source')
+    .select('id,status,prompt,source')
     .eq('room_slug', roomSlug)
     .eq('language', language)
-    .eq('context_hash', contextHash)
+    .eq('reason', reason)
     .eq('bucket_start', bucket)
     .maybeSingle()
 
@@ -155,22 +161,29 @@ serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeadersFor(request) })
   }
-  if (request.method !== 'POST') return json(request, { error: 'Method not allowed' }, 405)
+  if (request.method !== 'POST') return json(request, { error: 'METHOD_NOT_ALLOWED' }, 405)
 
   const origin = request.headers.get('origin') || DEFAULT_ORIGIN
   if (!allowedOrigins().has(origin)) {
-    return json(request, { error: 'Origin not allowed', code: 'ORIGIN_NOT_ALLOWED' }, 403)
+    return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)
+  }
+
+  const contentLength = Number.parseInt(request.headers.get('content-length') || '0', 10)
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return json(request, { error: 'REQUEST_TOO_LARGE' }, 413)
   }
 
   try {
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader) return json(request, { error: 'Authentication required' }, 401)
+    const authHeader = request.headers.get('Authorization') || ''
+    if (!authHeader.toLowerCase().startsWith('bearer ')) {
+      return json(request, { error: 'AUTHENTICATION_REQUIRED' }, 401)
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      return json(request, { error: 'Server configuration is incomplete' }, 500)
+      return json(request, { error: 'BACKEND_NOT_CONFIGURED' }, 503)
     }
 
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -182,23 +195,26 @@ serve(async (request) => {
     })
 
     const { data: { user }, error: userError } = await userClient.auth.getUser()
-    if (userError || !user) return json(request, { error: 'Authentication required' }, 401)
+    if (userError || !user) return json(request, { error: 'AUTHENTICATION_REQUIRED' }, 401)
     if (!user.email_confirmed_at && !user.confirmed_at) {
-      return json(request, { error: 'Confirm your email before using the Live Community AI Host.', code: 'EMAIL_NOT_CONFIRMED' }, 403)
+      return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') return json(request, { error: 'INVALID_REQUEST' }, 400)
+
     const roomSlug = cleanText(body?.room_slug, 80)
     const room = rooms[roomSlug]
-    if (!room) return json(request, { error: 'Unknown live room' }, 400)
+    if (!room) return json(request, { error: 'ROOM_NOT_AVAILABLE' }, 400)
 
     const reason = body?.reason === 'room_quiet' ? 'room_quiet' : 'room_empty'
     const requestedLanguage = cleanText(body?.language, 5).toLowerCase()
     const language = SUPPORTED_LANGUAGES[requestedLanguage] ? requestedLanguage : 'en'
     const languageName = SUPPORTED_LANGUAGES[language]
 
-    // Recent public text is untrusted context, never identity data. The client already
-    // strips names; the function ignores any sender field even if a caller supplies one.
+    // Recent public text is untrusted context, never identity data. The function ignores
+    // any sender/identity field even if a caller supplies one and caps both item count and
+    // length before hashing or sending text to the AI provider.
     const recentMessages = Array.isArray(body?.recent_messages)
       ? body.recent_messages
           .slice(-8)
@@ -258,6 +274,7 @@ The default room topic is: ${room.topic}`
         instructions,
         input: `Recent room conversation:\n${conversationContext}`,
       }),
+      signal: AbortSignal.timeout(15_000),
     })
 
     if (!openAIResponse.ok) {
@@ -270,7 +287,7 @@ The default room topic is: ${room.topic}`
       return fallbackResponse(request)
     }
 
-    const payload = await openAIResponse.json()
+    const payload = await openAIResponse.json().catch(() => ({}))
     const prompt = cleanText(extractResponseText(payload), 500)
     if (!prompt) {
       await serviceClient
@@ -294,8 +311,8 @@ The default room topic is: ${room.topic}`
     }
 
     return json(request, { prompt, source: 'ai' })
-  } catch (error) {
-    console.error('live-room-host error:', error instanceof Error ? error.message : 'unknown')
+  } catch {
+    console.error('live-room-host request failed')
     return fallbackResponse(request)
   }
 })
