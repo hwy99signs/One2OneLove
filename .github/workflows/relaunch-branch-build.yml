@@ -36,6 +36,10 @@ jobs:
           node scripts/relaunch-auth-flow-check.mjs
           node scripts/relaunch-auth-safety-check.mjs
           node scripts/relaunch-billing-reconciliation-check.mjs
+          node scripts/relaunch-billing-webhook-idempotency-check.mjs
+          node scripts/relaunch-billing-checkout-idempotency-check.mjs
+          node scripts/relaunch-billing-portal-security-check.mjs
+          node scripts/relaunch-membership-projection-security-check.mjs
 
       - name: Verify legal release gates
         run: |
@@ -45,6 +49,7 @@ jobs:
       - name: Verify Live Community safeguards
         run: |
           node scripts/relaunch-live-community-check.mjs
+          node scripts/relaunch-live-room-host-security-check.mjs
           node scripts/relaunch-live-room-i18n-check.mjs
 
       - name: Verify member-safety safeguards
@@ -52,6 +57,7 @@ jobs:
           node scripts/relaunch-member-blocking-foundation-check.mjs
           node scripts/relaunch-member-blocking-discovery-check.mjs
           node scripts/relaunch-member-blocking-request-cleanup-check.mjs
+          node scripts/relaunch-member-blocking-list-privacy-check.mjs
 
       - name: Verify programming safeguards
         run: |
@@ -62,15 +68,17 @@ jobs:
           node scripts/relaunch-programming-reminder-cancellation-check.mjs
           node scripts/relaunch-programming-reminder-slot-guard-check.mjs
 
-      - name: Verify private support safeguards
+      - name: Verify private support and professional intake safeguards
         run: |
           node scripts/relaunch-support-request-check.mjs
           node scripts/relaunch-support-notification-check.mjs
           node scripts/relaunch-support-quota-check.mjs
           node scripts/relaunch-support-state-check.mjs
+          node scripts/relaunch-professional-application-check.mjs
 
       - name: Verify reviewed relationship-tool and navigation safeguards
         run: |
+          node scripts/relaunch-service-i18n-boundary-check.mjs
           node scripts/relaunch-ai-content-i18n-check.mjs
           node scripts/relaunch-relationship-coach-i18n-check.mjs
           node scripts/relaunch-relationship-support-i18n-check.mjs
