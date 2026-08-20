@@ -11,8 +11,6 @@ begin;
 create schema if not exists o2ol_private;
 revoke all on schema o2ol_private from public, anon;
 
-authentication_placeholder: 
-
 create table if not exists public.professional_applications (
   id uuid primary key default gen_random_uuid(),
   application_type text not null check (application_type in ('therapist', 'influencer', 'professional')),
