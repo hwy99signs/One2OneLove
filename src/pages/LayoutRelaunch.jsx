@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Heart, Home, Languages as LanguagesIcon, LogIn, LogOut, Menu, MessageCircle, Sparkles, Target, User, UserPlus, Users, X } from 'lucide-react';
+import { ChevronDown, Heart, Home, LogIn, LogOut, Menu, MessageCircle, Sparkles, Target, User, UserPlus, Users, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -14,22 +14,22 @@ const LanguageContext = createContext(null);
 
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: 'us', active: true },
-  { code: 'es', name: 'Spanish', flag: 'es', active: true },
-  { code: 'fr', name: 'French', flag: 'fr', active: true },
-  { code: 'it', name: 'Italian', flag: 'it', active: true },
-  { code: 'de', name: 'German', flag: 'de', active: true },
-  { code: 'nl', name: 'Dutch', flag: 'nl', active: false },
-  { code: 'pt', name: 'Portuguese', flag: 'pt', active: false },
+  { code: 'es', name: 'Español', flag: 'es', active: true },
+  { code: 'fr', name: 'Français', flag: 'fr', active: true },
+  { code: 'it', name: 'Italiano', flag: 'it', active: true },
+  { code: 'de', name: 'Deutsch', flag: 'de', active: true },
+  { code: 'nl', name: 'Nederlands', flag: 'nl', active: false },
+  { code: 'pt', name: 'Português', flag: 'pt', active: false },
 ];
 
 const COPY = {
-  en: { home: 'Home', community: 'Community', loveNotes: 'Love Notes', tools: 'Tools', quiz: 'Love Language Quiz', dateIdeas: 'Date Ideas', goals: 'Relationship Goals', aiCreator: 'AI Content Creator', coach: 'AI Relationship Coach', profile: 'Profile', chat: 'Chat', signIn: 'Sign In', signUp: 'Sign Up', signOut: 'Sign Out', comingSoon: 'Coming Soon' },
-  es: { home: 'Inicio', community: 'Comunidad', loveNotes: 'Notas de Amor', tools: 'Herramientas', quiz: 'Quiz de Lenguaje del Amor', dateIdeas: 'Ideas para Citas', goals: 'Metas de Relación', aiCreator: 'Creador de Contenido IA', coach: 'Coach de Relaciones IA', profile: 'Perfil', chat: 'Chat', signIn: 'Iniciar Sesión', signUp: 'Registrarse', signOut: 'Cerrar Sesión', comingSoon: 'Próximamente' },
-  fr: { home: 'Accueil', community: 'Communauté', loveNotes: "Notes d'Amour", tools: 'Outils', quiz: "Quiz des Langages d'Amour", dateIdeas: 'Idées de Rendez-vous', goals: 'Objectifs de Relation', aiCreator: 'Créateur de Contenu IA', coach: 'Coach Relationnel IA', profile: 'Profil', chat: 'Chat', signIn: 'Se Connecter', signUp: "S'inscrire", signOut: 'Se Déconnecter', comingSoon: 'Bientôt' },
-  it: { home: 'Home', community: 'Comunità', loveNotes: "Note d'Amore", tools: 'Strumenti', quiz: "Quiz del Linguaggio dell'Amore", dateIdeas: 'Idee per Appuntamenti', goals: 'Obiettivi di Relazione', aiCreator: 'Creatore di Contenuti IA', coach: 'Coach Relazionale IA', profile: 'Profilo', chat: 'Chat', signIn: 'Accedi', signUp: 'Iscriviti', signOut: 'Esci', comingSoon: 'Prossimamente' },
-  de: { home: 'Startseite', community: 'Community', loveNotes: 'Love Notes', tools: 'Werkzeuge', quiz: 'Liebessprachen-Quiz', dateIdeas: 'Date-Ideen', goals: 'Beziehungsziele', aiCreator: 'KI-Content-Ersteller', coach: 'KI-Beziehungscoach', profile: 'Profil', chat: 'Chat', signIn: 'Anmelden', signUp: 'Registrieren', signOut: 'Abmelden', comingSoon: 'Demnächst' },
-  nl: { home: 'Home', community: 'Community', loveNotes: 'Love Notes', tools: 'Tools', quiz: 'Liefdestaalquiz', dateIdeas: 'Date-ideeën', goals: 'Relatiedoelen', aiCreator: 'AI Content Maker', coach: 'AI Relatiecoach', profile: 'Profiel', chat: 'Chat', signIn: 'Inloggen', signUp: 'Aanmelden', signOut: 'Uitloggen', comingSoon: 'Binnenkort' },
-  pt: { home: 'Início', community: 'Comunidade', loveNotes: 'Notas de Amor', tools: 'Ferramentas', quiz: 'Quiz de Linguagem do Amor', dateIdeas: 'Ideias para Encontros', goals: 'Metas de Relacionamento', aiCreator: 'Criador de Conteúdo IA', coach: 'Coach de Relacionamento IA', profile: 'Perfil', chat: 'Chat', signIn: 'Entrar', signUp: 'Inscrever-se', signOut: 'Sair', comingSoon: 'Em breve' },
+  en: { home: 'Home', community: 'Community', loveNotes: 'Love Notes', tools: 'Tools', quiz: 'Love Language Quiz', dateIdeas: 'Date Ideas', goals: 'Relationship Goals', aiCreator: 'AI Content Creator', coach: 'AI Relationship Coach', profile: 'Profile', chat: 'Chat', signIn: 'Sign In', signUp: 'Sign Up', signOut: 'Sign Out', comingSoon: 'Coming Soon', homeAria: 'One2OneLove home', languageAria: 'Language', menuAria: 'Menu' },
+  es: { home: 'Inicio', community: 'Comunidad', loveNotes: 'Notas de Amor', tools: 'Herramientas', quiz: 'Quiz de Lenguaje del Amor', dateIdeas: 'Ideas para Citas', goals: 'Metas de Relación', aiCreator: 'Creador de Contenido IA', coach: 'Coach de Relaciones IA', profile: 'Perfil', chat: 'Chat', signIn: 'Iniciar Sesión', signUp: 'Registrarse', signOut: 'Cerrar Sesión', comingSoon: 'Próximamente', homeAria: 'Inicio de One2OneLove', languageAria: 'Idioma', menuAria: 'Menú' },
+  fr: { home: 'Accueil', community: 'Communauté', loveNotes: "Notes d'Amour", tools: 'Outils', quiz: "Quiz des Langages d'Amour", dateIdeas: 'Idées de Rendez-vous', goals: 'Objectifs de Relation', aiCreator: 'Créateur de Contenu IA', coach: 'Coach Relationnel IA', profile: 'Profil', chat: 'Chat', signIn: 'Se Connecter', signUp: "S'inscrire", signOut: 'Se Déconnecter', comingSoon: 'Bientôt', homeAria: 'Accueil One2OneLove', languageAria: 'Langue', menuAria: 'Menu' },
+  it: { home: 'Home', community: 'Comunità', loveNotes: "Note d'Amore", tools: 'Strumenti', quiz: "Quiz del Linguaggio dell'Amore", dateIdeas: 'Idee per Appuntamenti', goals: 'Obiettivi di Relazione', aiCreator: 'Creatore di Contenuti IA', coach: 'Coach Relazionale IA', profile: 'Profilo', chat: 'Chat', signIn: 'Accedi', signUp: 'Iscriviti', signOut: 'Esci', comingSoon: 'Prossimamente', homeAria: 'Home One2OneLove', languageAria: 'Lingua', menuAria: 'Menu' },
+  de: { home: 'Startseite', community: 'Community', loveNotes: 'Love Notes', tools: 'Werkzeuge', quiz: 'Liebessprachen-Quiz', dateIdeas: 'Date-Ideen', goals: 'Beziehungsziele', aiCreator: 'KI-Content-Ersteller', coach: 'KI-Beziehungscoach', profile: 'Profil', chat: 'Chat', signIn: 'Anmelden', signUp: 'Registrieren', signOut: 'Abmelden', comingSoon: 'Demnächst', homeAria: 'One2OneLove-Startseite', languageAria: 'Sprache', menuAria: 'Menü' },
+  nl: { home: 'Home', community: 'Community', loveNotes: 'Love Notes', tools: 'Tools', quiz: 'Liefdestaalquiz', dateIdeas: 'Date-ideeën', goals: 'Relatiedoelen', aiCreator: 'AI Content Maker', coach: 'AI Relatiecoach', profile: 'Profiel', chat: 'Chat', signIn: 'Inloggen', signUp: 'Aanmelden', signOut: 'Uitloggen', comingSoon: 'Binnenkort', homeAria: 'One2OneLove-home', languageAria: 'Taal', menuAria: 'Menu' },
+  pt: { home: 'Início', community: 'Comunidade', loveNotes: 'Notas de Amor', tools: 'Ferramentas', quiz: 'Quiz de Linguagem do Amor', dateIdeas: 'Ideias para Encontros', goals: 'Metas de Relacionamento', aiCreator: 'Criador de Conteúdo IA', coach: 'Coach de Relacionamento IA', profile: 'Perfil', chat: 'Chat', signIn: 'Entrar', signUp: 'Inscrever-se', signOut: 'Sair', comingSoon: 'Em breve', homeAria: 'Início do One2OneLove', languageAria: 'Idioma', menuAria: 'Menu' },
 };
 
 function LanguageProvider({ children }) {
@@ -125,7 +125,7 @@ function LayoutContent({ children }) {
       <header className="sticky top-0 z-50 bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-3">
-            <Link to="/Home" className="flex flex-shrink-0 items-center gap-3 transition hover:opacity-90" aria-label="One2OneLove home">
+            <Link to="/Home" className="flex flex-shrink-0 items-center gap-3 transition hover:opacity-90" aria-label={t.homeAria}>
               <img
                 src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png"
                 alt="One2OneLove"
@@ -174,7 +174,7 @@ function LayoutContent({ children }) {
               )}
 
               <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className="h-9 w-[94px] border-white/30 bg-white/20 text-white hover:bg-white/30 sm:w-[118px]" aria-label="Language">
+                <SelectTrigger className="h-9 w-[94px] border-white/30 bg-white/20 text-white hover:bg-white/30 sm:w-[118px]" aria-label={t.languageAria}>
                   <SelectValue>
                     <div className="flex items-center gap-2"><img src={`https://flagcdn.com/w20/${selectedLanguage.flag}.png`} width="18" alt="" /><span className="text-xs font-semibold">{selectedLanguage.code.toUpperCase()}</span></div>
                   </SelectValue>
@@ -197,7 +197,7 @@ function LayoutContent({ children }) {
                 <Button size="sm" variant="ghost" className="hidden text-white/90 hover:bg-white/10 hover:text-white md:flex" onClick={handleLogout}><LogOut className="mr-1.5 h-4 w-4" />{t.signOut}</Button>
               )}
 
-              <button type="button" onClick={() => setMobileOpen((value) => !value)} className="rounded-lg p-2 text-white transition hover:bg-white/10 lg:hidden" aria-label="Menu">
+              <button type="button" onClick={() => setMobileOpen((value) => !value)} className="rounded-lg p-2 text-white transition hover:bg-white/10 lg:hidden" aria-label={t.menuAria}>
                 {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
