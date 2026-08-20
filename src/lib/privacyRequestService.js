@@ -5,21 +5,34 @@ const ALLOWED_TYPES = new Set(['data_export', 'account_deletion']);
 
 export const privacyRequestsEnabled = () => PRIVACY_REQUESTS_ENABLED;
 
+const codedError = (code = 'PRIVACY_REQUEST_FAILED') => {
+  const error = new Error('');
+  error.code = code;
+  return error;
+};
+
+const functionErrorCode = (data, error, fallback = 'PRIVACY_REQUEST_FAILED') => {
+  if (data?.error) return String(data.error);
+  const context = error?.context;
+  if (context && typeof context === 'object') {
+    if (context.error) return String(context.error);
+    if (context.body?.error) return String(context.body.error);
+  }
+  return fallback;
+};
+
 const requireConfirmedUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error('Please sign in to manage account privacy requests.');
-  if (!user.email_confirmed_at && !user.confirmed_at) throw new Error('Please confirm your email first.');
+  if (error || !user) throw codedError('AUTH_REQUIRED');
+  if (!user.email_confirmed_at && !user.confirmed_at) throw codedError('EMAIL_CONFIRMATION_REQUIRED');
   return user;
 };
 
 const invoke = async (body) => {
   await requireConfirmedUser();
   const { data, error } = await supabase.functions.invoke('privacy-request', { body });
-  if (error) throw new Error(error?.message || 'Privacy request service is unavailable right now.');
-  if (!data?.success) {
-    if (data?.error === 'REQUESTS_NOT_ENABLED') throw new Error('Privacy request intake is not active yet.');
-    if (data?.error === 'EMAIL_CONFIRMATION_REQUIRED') throw new Error('Please confirm your email first.');
-    throw new Error('Privacy request could not be completed right now.');
+  if (error || !data?.success) {
+    throw codedError(functionErrorCode(data, error));
   }
   return data;
 };
@@ -31,9 +44,9 @@ export const listPrivacyRequests = async () => {
 };
 
 export const createPrivacyRequest = async (requestType, memberNote = '') => {
-  if (!PRIVACY_REQUESTS_ENABLED) throw new Error('Privacy request intake is not active yet.');
+  if (!PRIVACY_REQUESTS_ENABLED) throw codedError('REQUESTS_NOT_ENABLED');
   const type = String(requestType || '').trim().toLowerCase();
-  if (!ALLOWED_TYPES.has(type)) throw new Error('Invalid privacy request type.');
+  if (!ALLOWED_TYPES.has(type)) throw codedError('INVALID_REQUEST_TYPE');
   const data = await invoke({ action: 'create', requestType: type, memberNote: String(memberNote || '').trim().slice(0, 500) });
   return data.request;
 };
