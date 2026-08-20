@@ -11,6 +11,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import ProgrammingScheduleLink from "@/components/programming/ProgrammingScheduleLink";
 import { LIVE_COMMUNITY_ROOMS, getLocalizedRoom, getRoomActivityLabel } from "@/lib/liveCommunityRooms";
 import { observeRoomPresence } from "@/lib/roomPresenceService";
 import { useLanguage } from "@/Layout";
@@ -107,6 +108,7 @@ export default function LiveCommunity() {
           <div className="mx-auto max-w-4xl text-center"><div className="mx-auto inline-flex items-center gap-2 rounded-full border border-pink-200 bg-white/90 px-4 py-2 text-sm font-black text-pink-700 shadow-sm"><Radio className="h-4 w-4" />{t.badge}</div><h1 className="mt-6 text-4xl font-black tracking-tight text-slate-950 sm:text-6xl">{t.title}</h1><p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-600 sm:text-xl">{t.intro}</p></div>
           <div className="mx-auto mt-9 flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm font-bold text-slate-600"><span className="inline-flex items-center gap-2"><Users className="h-4 w-4 text-cyan-600" />{t.live}</span><span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4 text-violet-600" />{t.host}</span><span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-600" />{t.rules}</span></div>
           <div className="mx-auto mt-8 flex max-w-4xl items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/95 p-4 text-left text-sm leading-6 text-slate-700 shadow-sm"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><div className="font-black text-slate-900">{t.programmingTitle}</div><div className="mt-1">{t.programmingText}</div></div></div>
+          <div className="mx-auto mt-4 flex max-w-4xl justify-end"><ProgrammingScheduleLink className="border-violet-200 bg-white text-violet-700 hover:bg-violet-50" /></div>
         </div>
       </section>
 
