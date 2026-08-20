@@ -48,6 +48,8 @@ for (const forbidden of [
 
 for (const required of [
   "Deno.env.get('PROGRAMMING_REMINDERS_ENABLED') !== 'true'",
+  'const UUID_PATTERN =',
+  "if (!UUID_PATTERN.test(slotId)) return json(request, { error: 'SLOT_ID_INVALID' }, 400)",
   "const action = clean(body?.action, 20) || 'status'",
   "if (action === 'status')",
   "if (action === 'cancel')",
@@ -146,4 +148,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Programming reminders remain feature-gated, private, language-neutral in storage, localized in Up-next/header UI, race-aware, idempotent and in-app only.');
+console.log('✅ Programming reminders remain feature-gated, UUID-validated, private, language-neutral in storage, localized in Up-next/header UI, race-aware, idempotent and in-app only.');
