@@ -52,5 +52,24 @@ No scheduler was created. No Resend configuration was changed. No SMS provider w
 - Verified the live tables currently contain 0 messages and 0 reactions.
 - Supabase Security Advisor shows only expected signed-in GraphQL discoverability warnings for the two messaging tables; it reports no Security Definer warning for the identity function.
 
+### Approval #6 — Live Room private report intake
+- Applied the hardened `live_room_moderation` migration to live Supabase.
+- Created `public.room_message_reports` with RLS enabled and one authenticated INSERT policy.
+- Anonymous users have no SELECT or INSERT access.
+- Authenticated browser users have no SELECT, UPDATE, or DELETE access to the private report queue.
+- Authenticated INSERT privilege is limited to exactly `message_id`, `reporter_id`, `reason`, and `details`.
+- Browser users cannot supply `id`, `status`, `created_at`, or `reviewed_at`; those remain database/server-controlled.
+- RLS requires the reporter to be the signed-in account, the target message to be an active member-authored message, and the reporter to be someone other than the message author.
+- The table currently contains 0 reports.
+- Supabase Security Advisor reports no new warning specific to `room_message_reports`.
+
+### Approval #7 — Live Room identity hardening
+- No separate production mutation is required.
+- The full #7 hardening was intentionally folded into Approval #5 before messaging was activated, avoiding a temporary insecure state.
+- Read-only verification confirms the live six-room constraint includes `global-relationship-room`, `vent-room`, `modern-dating-unfiltered`, `love-talk`, `marriage-matters`, and `starting-over`.
+- Read-only verification confirms `public.set_room_member_identity()` is SECURITY INVOKER, uses `search_path=public`, derives `user_id` from `auth.uid()`, derives the public name from the signed-in user's own profile, uses a language-neutral stable pseudonym when no profile name exists, and does not derive a public identity from email.
+- The identity trigger exists exactly once on `public.room_messages`.
+- Applying the staged #7 migration now would only drop/recreate protections that are already live, so the redundant production write is retired.
+
 ## Resend production dependency note
 The existing live `send-waitlist-notifications` Edge Function reads `Deno.env.get('RESEND_API_KEY')` and sends through the Resend API. Therefore the existing `RESEND_API_KEY` must continue to be treated as production-relevant and must not be overwritten blindly. The connector does not expose secret values, so any key verification/rotation must preserve waitlist compatibility and be handled without pasting secret material into chat or source control.
