@@ -32,8 +32,18 @@ for (const required of [
   "set search_path = ''",
   'revoke all on function o2ol_private.is_member_pair_blocked(uuid) from public, anon;',
   'grant execute on function o2ol_private.is_member_pair_blocked(uuid) to authenticated;',
-  'as restrictive',
+  "raise exception 'O2OL_BLOCK_MEMBER_DIRECTORY_SOURCE_MISSING';",
+  "raise exception 'O2OL_BLOCK_PRESENCE_SOURCE_MISSING';",
+  'user_directory_profiles_hide_blocked_pairs',
+  'user_presence_hide_blocked_pairs',
+  'room_messages_hide_blocked_pairs',
+  'room_reactions_hide_blocked_pairs',
+  'room_reactions_prevent_blocked_pair_insert',
+  'alter table public.user_directory_profiles enable row level security;',
+  'alter table public.user_presence enable row level security;',
+  'using (not o2ol_private.is_member_pair_blocked(id));',
   'using (not o2ol_private.is_member_pair_blocked(user_id));',
+  'visible_message.id = room_message_reactions.message_id',
 ]) {
   if (!pairwiseMigration.includes(required)) failures.push(`pairwise block migration missing ${required}.`);
 }
@@ -137,4 +147,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member blocking is private, mutually enforced, multilingual, input-validated, routed, manageable from Privacy Center, and feature-gated for relaunch activation.');
+console.log('✅ Member blocking is private, mutually enforced at directory/presence/chat/room sources, multilingual, input-validated, routed, manageable from Privacy Center, and feature-gated for relaunch activation.');
