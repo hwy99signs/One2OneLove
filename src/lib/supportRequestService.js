@@ -33,6 +33,11 @@ export const closeSupportRequest = async (requestId) => {
   return data.request || null;
 };
 
+export const markSupportResponseRead = async (requestId) => {
+  const data = await invokeMemberSupport({ action: 'mark_response_read', request_id: requestId });
+  return data.request || null;
+};
+
 const invokeSupportAdmin = async (body) => {
   requireEnabled();
   const { data, error } = await supabase.functions.invoke('manage-support-requests', { body });
