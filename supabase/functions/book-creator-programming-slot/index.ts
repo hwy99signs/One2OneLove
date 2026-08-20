@@ -65,7 +65,7 @@ const cleanReplayUrl = (value: unknown) => {
   if (!candidate) return null
   try {
     const url = new URL(candidate)
-    return ['https:', 'http:'].includes(url.protocol) ? url.toString().slice(0, 1000) : null
+    return url.protocol === 'https:' ? url.toString().slice(0, 1000) : null
   } catch {
     return null
   }
@@ -103,6 +103,8 @@ serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
+    // Creator eligibility is a product role, not staff/admin authority. Internal O2OL
+    // administrative actions are separately restricted to server-side UUID allowlists.
     const { data: creator, error: creatorError } = await serviceClient
       .from('users')
       .select('id,user_type')
@@ -136,7 +138,7 @@ serve(async (request) => {
       return json(request, { error: 'INVALID_TIME' }, 400)
     }
 
-    if (contentMode === 'replay' && !replayUrl) return json(request, { error: 'REPLAY_URL_REQUIRED' }, 400)
+    if (contentMode === 'replay' && !replayUrl) return json(request, { error: 'REPLAY_URL_HTTPS_REQUIRED' }, 400)
 
     // The schema is future-ready for paid bookings, but v1 intentionally accepts free
     // creator slots only. A future paid rollout requires its own approved payment flow.
