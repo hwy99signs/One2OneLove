@@ -64,13 +64,14 @@ jobs:
           node scripts/relaunch-support-quota-check.mjs
           node scripts/relaunch-support-state-check.mjs
 
-      - name: Verify reviewed relationship-tool safeguards
+      - name: Verify reviewed relationship-tool and navigation safeguards
         run: |
           node scripts/relaunch-ai-content-i18n-check.mjs
           node scripts/relaunch-relationship-coach-i18n-check.mjs
           node scripts/relaunch-relationship-support-i18n-check.mjs
           node scripts/relaunch-staged-premium-tools-check.mjs
           node scripts/relaunch-fallback-shell-i18n-check.mjs
+          node scripts/relaunch-layout-accessibility-i18n-check.mjs
 
       - name: Compile relaunch application
         run: npm run build
