@@ -153,6 +153,8 @@ for (const required of [
   "creator?.user_type !== 'influencer'",
   "body?.policy_acknowledged === true",
   "return json(request, { error: 'POLICY_ACK_REQUIRED' }, 400)",
+  "url.protocol === 'https:'",
+  "return json(request, { error: 'REPLAY_URL_HTTPS_REQUIRED' }, 400)",
   "program_source: 'creator'",
   ".eq('program_source', 'creator')",
   'policy_version: CREATOR_PROGRAMMING_POLICY_VERSION',
@@ -166,6 +168,8 @@ for (const required of [
 }
 
 for (const required of [
+  'const MAX_WINDOW_DAYS = 31',
+  'const maxTo = new Date(requestedFrom.getTime() + MAX_WINDOW_DAYS * 24 * 60 * 60 * 1000)',
   ".lt('starts_at', to.toISOString())",
   ".gt('ends_at', requestedFrom.toISOString())",
   'Return every booking that overlaps the requested calendar window',
@@ -185,9 +189,14 @@ for (const required of [
 
 for (const required of [
   "Deno.env.get('O2OL_PROGRAMMING_ADMIN_USER_IDS')",
+  'const UUID_PATTERN =',
+  '.filter((value) => UUID_PATTERN.test(value))',
   'allowedAdminIds().has(caller.id)',
   "if (action === 'access')",
   "if (!eligible) return json(request, { error: 'O2OL_PROGRAMMING_ADMIN_REQUIRED' }, 403)",
+  "if (!UUID_PATTERN.test(slotId)) return json(request, { error: 'SLOT_ID_INVALID' }, 400)",
+  "url.protocol === 'https:'",
+  "return json(request, { error: 'REPLAY_URL_HTTPS_REQUIRED' }, 400)",
   "program_source: 'o2ol'",
   'creator_user_id: null',
   "booking_tier: 'internal'",
@@ -226,4 +235,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Programming remains feature-gated, multilingual, creator/O2OL source-separated, allowlist-administered, overlap-accurate, conflict-aware, two-free-slots/day limited, privacy-minimized and paid-slot disabled.');
+console.log('✅ Programming remains feature-gated, multilingual, HTTPS-replay-only, UUID-validated, creator/O2OL source-separated, allowlist-administered, bounded-window, conflict-aware, two-free-slots/day limited, privacy-minimized and paid-slot disabled.');
