@@ -58,7 +58,9 @@ Authorize the live Twilio delivery path, production switches and controlled SMS 
 **Type:** PRODUCTION DEPLOYMENT  
 **Status:** NOT READY.
 
-Authorize approved relaunch changes to move to the production branch and production Vercel release only after strict preflight and actual application compile/runtime verification. The current Vercel build-rate-limit failure is not proof of application compile success or failure.
+Authorize approved relaunch changes to move to the production branch and production Vercel release only after strict preflight and actual application compile/runtime verification. The earlier Vercel build-rate-limit failure is not proof of application compile success or failure.
+
+**Current verification limitation (2026-08-20):** the connected Vercel account available to this build session exposes the ERANT/ICG projects but does not expose the One2OneLove Vercel team/project. No substitute project was used and no deployment was triggered. O2OL compile/deployment verification therefore remains unresolved until the correct Vercel project is available or another verified build path is used.
 
 ---
 
@@ -72,9 +74,9 @@ Apply the approved 24-hour creator programming calendar foundation, including th
 
 ### #12 — Creator programming Edge Functions
 **Type:** PRODUCTION SERVER ACTIONS / SECURITY  
-**Status:** STAGED.
+**Status:** STAGED; security audit advanced.
 
-Deploy booking/list/current/manage programming server functions after final caller/authority audit. Staff/admin authority must remain server UUID allowlist based and must never be inferred from `users.user_type`.
+Deploy booking/list/current/manage programming server functions after final caller/authority audit. Staff/admin authority remains server UUID allowlist based and is never inferred from `users.user_type`. Current staging additionally validates administrative UUID inputs, filters malformed allowlist entries, requires HTTPS replay URLs, bounds schedule query windows, keeps paid creator bookings disabled, and preserves the two-free-slots/day database backstop.
 
 ### #13 — Creator programming frontend activation
 **Type:** PRODUCT / DESIGN / PRODUCTION  
@@ -100,15 +102,15 @@ Add paid creator slot sales only after pricing, refund/cancellation rules, billi
 
 ### #16 — Programming reminder database/API
 **Type:** PRODUCTION DATA / PRODUCT  
-**Status:** STAGED.
+**Status:** STAGED; security audit advanced.
 
-Activate member reminder records and caller-bound APIs with existing cancellation/slot guards.
+Activate member reminder records and caller-bound APIs with cancellation/slot guards. Current staging validates slot UUIDs before privileged queries, keeps reminder ownership bound to the authenticated caller, and prevents re-arming already-processing/sent reminders.
 
 ### #17 — Reminder dispatcher
 **Type:** PRODUCTION AUTOMATION  
 **Status:** STAGED.
 
-Activate server-side reminder dispatch only after duplicate prevention, cancellation behavior and schedule handling are verified.
+Activate server-side reminder dispatch only after duplicate prevention, cancellation behavior and schedule handling are verified. Current design is in-app only, uses a dispatch secret, claims reminders before work, recovers stale claims, and relies on unique `reminder_id` notification rows to prevent duplicate delivery.
 
 ### #18 — External reminder channels
 **Type:** COST / PROVIDER / COMPLIANCE  
@@ -137,15 +139,15 @@ Production activation must include controlled two-account tests for: mutual dire
 
 ### #20 — Programming moderation production activation
 **Type:** MODERATION / SECURITY / PRODUCT  
-**Status:** STAGED.
+**Status:** STAGED; security audit advanced.
 
-Activate creator-program reporting/moderation workflows and authorized staff controls after final authority/audit review.
+Activate creator-program reporting/moderation workflows and authorized staff controls after final authority/audit review. Current staging keeps reporter identity out of the moderation payload, requires server-side UUID allowlist authority, filters malformed admin allowlist entries, validates program/report UUIDs before service-role queries, and preserves reminder cancellation when reported programming is removed.
 
 ### #21 — Private member support production activation
 **Type:** PRIVACY / OPERATIONS / PRODUCTION  
-**Status:** STAGED.
+**Status:** STAGED; security audit advanced.
 
-Activate private support requests/responses, quotas, status guards and staff access after final privacy/authority verification.
+Activate private support requests/responses, quotas, status guards and staff access after final privacy/authority verification. Current staging binds member actions to the authenticated user, validates request UUIDs before privileged queries, filters malformed staff allowlist entries, omits member UUIDs from the ordinary staff queue, and keeps quota/lifecycle/read-state trigger helpers in non-public `o2ol_private` as `SECURITY INVOKER` functions with empty search paths. Support delivery remains in-app only.
 
 ---
 
