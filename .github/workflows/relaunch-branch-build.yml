@@ -66,6 +66,7 @@ jobs:
 
       - name: Verify reviewed relationship-tool safeguards
         run: |
+          node scripts/relaunch-ai-content-i18n-check.mjs
           node scripts/relaunch-relationship-coach-i18n-check.mjs
           node scripts/relaunch-relationship-support-i18n-check.mjs
           node scripts/relaunch-staged-premium-tools-check.mjs
