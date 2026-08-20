@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProgrammingNotificationCenter from '@/components/programming/ProgrammingNotificationCenter';
+import SupportNotificationCenter from '@/components/support/SupportNotificationCenter';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMyConversations } from '@/lib/chatService';
 import { supabase } from '@/lib/supabase';
@@ -162,6 +163,7 @@ function LayoutContent({ children }) {
             </nav>
 
             <div className="flex items-center gap-1.5">
+              {isAuthenticated ? <SupportNotificationCenter languageCode={currentLanguage} /> : null}
               {isAuthenticated ? <ProgrammingNotificationCenter languageCode={currentLanguage} /> : null}
 
               {isAuthenticated && (
