@@ -23,6 +23,8 @@ import DateIdeas from "./DateIdeas";
 import Profile from "./ProfileRelaunch";
 import PrivacyCenter from "./PrivacyCenter";
 import BlockedMembers from "./BlockedMembers";
+import SupportRequests from "./SupportRequests";
+import SupportAdmin from "./SupportAdmin";
 import Invite from "./InviteRelaunch";
 import CounselingSupport from "./CounselingSupport";
 import PodcastsSupport from "./PodcastsSupport";
@@ -87,6 +89,8 @@ const PAGES = {
   Profile,
   PrivacyCenter,
   BlockedMembers,
+  SupportRequests,
+  SupportAdmin,
   Invite,
   CounselingSupport,
   PodcastsSupport,
@@ -166,6 +170,8 @@ const ROUTES = [
   ["/Profile", Profile],
   ["/PrivacyCenter", PrivacyCenter],
   ["/BlockedMembers", BlockedMembers],
+  ["/SupportRequests", SupportRequests],
+  ["/SupportAdmin", SupportAdmin],
   ["/WinACruise", RelaunchUnavailable],
   ["/Invite", Invite],
   ["/CounselingSupport", CounselingSupport],
