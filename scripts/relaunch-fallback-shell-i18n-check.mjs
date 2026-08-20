@@ -14,13 +14,13 @@ for (const [file, keys] of surfaces) {
   }
   const source = fs.readFileSync(file, 'utf8');
   for (const language of ['en', 'es', 'fr', 'it', 'de']) {
-    const block = source.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`));
-    if (!block) {
+    const row = source.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([^\\n]+)\\},?`));
+    if (!row) {
       failures.push(`${file}: missing ${language} copy block.`);
       continue;
     }
     for (const key of keys) {
-      if (!block[1].includes(`${key}:`)) failures.push(`${file}: ${language} copy missing ${key}.`);
+      if (!row[1].includes(`${key}:`)) failures.push(`${file}: ${language} copy missing ${key}.`);
     }
   }
   if (!source.includes('COPY[currentLanguage] || COPY.en')) {
