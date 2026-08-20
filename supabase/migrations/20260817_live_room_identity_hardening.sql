@@ -1,7 +1,7 @@
 -- One2OneLove Live Community sender-identity hardening.
 -- DEVELOPMENT MIGRATION ONLY. Apply to production only through an approved batch.
--- Browser clients should never be able to impersonate another display name in a room,
--- and room display names should never be derived from private account email.
+-- Idempotent follow-up to the messaging foundation: preserve all six rooms, keep the
+-- trigger SECURITY INVOKER, never trust browser identity, and never derive a public name from email.
 
 begin;
 
@@ -18,6 +18,7 @@ alter table public.room_messages
 alter table public.room_messages
   add constraint room_messages_room_slug_allowed
   check (room_slug in (
+    'global-relationship-room',
     'vent-room',
     'modern-dating-unfiltered',
     'love-talk',
@@ -28,12 +29,11 @@ alter table public.room_messages
 create or replace function public.set_room_member_identity()
 returns trigger
 language plpgsql
-security definer
-set search_path = public, auth
+security invoker
+set search_path = public
 as $$
 declare
   profile_name text;
-  metadata_name text;
 begin
   -- Host/system records are reserved for trusted server-side writes. The room_messages
   -- INSERT RLS policy separately restricts authenticated browser clients to `member`.
@@ -41,34 +41,30 @@ begin
     return new;
   end if;
 
-  if auth.uid() is null then
+  if (select auth.uid()) is null then
     raise exception 'Authentication required for member room messages';
   end if;
 
-  new.user_id := auth.uid();
+  new.user_id := (select auth.uid());
 
   select nullif(trim(u.name), '')
     into profile_name
     from public.users u
-   where u.id = auth.uid()
+   where u.id = (select auth.uid())
    limit 1;
 
-  if profile_name is null then
-    select nullif(trim(coalesce(au.raw_user_meta_data ->> 'name', '')), '')
-      into metadata_name
-      from auth.users au
-     where au.id = auth.uid()
-     limit 1;
-  end if;
-
-  -- Do not fall back to the email address or its local part in a public room.
-  new.sender_name := left(coalesce(profile_name, metadata_name, 'Member'), 80);
+  -- Do not fall back to the email address, metadata email, or its local part in a public room.
+  -- The pseudonym is language-neutral and stable for the signed-in account.
+  new.sender_name := left(
+    coalesce(profile_name, '@' || substr(md5((select auth.uid())::text), 1, 10)),
+    80
+  );
 
   return new;
 end;
 $$;
 
-revoke all on function public.set_room_member_identity() from public;
+revoke all on function public.set_room_member_identity() from public, anon, authenticated;
 
 drop trigger if exists set_room_member_identity on public.room_messages;
 create trigger set_room_member_identity
@@ -76,6 +72,6 @@ before insert on public.room_messages
 for each row execute function public.set_room_member_identity();
 
 comment on function public.set_room_member_identity() is
-  'For member-authored Live Room messages, derives user_id and public sender_name from authenticated profile/metadata; never trusts browser identity or derives a public name from email.';
+  'For member-authored Live Room messages, derives user_id and public sender_name from the authenticated account; SECURITY INVOKER; never trusts browser identity or derives public identity from email.';
 
 commit;
