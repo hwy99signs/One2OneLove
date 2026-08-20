@@ -9,6 +9,7 @@ const check = (name, pass, detail) => checks.push({ name, pass: Boolean(pass), d
 
 const routerFile = 'src/pages/index.jsx';
 const helpFile = 'src/pages/HelpCenterRelaunch.jsx';
+const helpShellFile = 'src/pages/HelpCenterRelaunchWithSupport.jsx';
 const unavailableFile = 'src/pages/RelaunchUnavailable.jsx';
 const notFoundFile = 'src/pages/NotFoundRelaunch.jsx';
 const aboutFile = 'src/pages/AboutUsRelaunch.jsx';
@@ -17,15 +18,16 @@ const layoutFile = 'src/pages/LayoutRelaunch.jsx';
 const homeFile = 'src/pages/Home.jsx';
 const communityFile = 'src/pages/LiveCommunity.jsx';
 
-for (const file of [routerFile, helpFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, layoutFile, homeFile, communityFile]) {
+for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, layoutFile, homeFile, communityFile]) {
   check(`required: ${file}`, exists(file), exists(file) ? 'present' : 'missing');
 }
 
 const router = exists(routerFile) ? read(routerFile) : '';
 const help = exists(helpFile) ? read(helpFile) : '';
+const helpShell = exists(helpShellFile) ? read(helpShellFile) : '';
 const about = exists(aboutFile) ? read(aboutFile) : '';
 const aboutAlias = exists(aboutAliasFile) ? read(aboutAliasFile) : '';
-const generalNavigationSurface = [layoutFile, homeFile, helpFile, communityFile]
+const generalNavigationSurface = [layoutFile, homeFile, helpFile, helpShellFile, communityFile]
   .filter(exists)
   .map((file) => read(file))
   .join('\n');
@@ -93,10 +95,14 @@ check(
   'Guessable/unknown URLs should never fall through to a blank or unintended legacy screen.'
 );
 check(
-  'Help Center route uses reviewed relaunch help',
-  router.includes('import HelpCenter from "./HelpCenterRelaunch"')
-    && router.includes('["/HelpCenter", HelpCenter]'),
-  'Help must document current relaunch behavior rather than unfinished legacy promises.'
+  'Help Center route composes reviewed relaunch help with real support control',
+  router.includes('import HelpCenter from "./HelpCenterRelaunchWithSupport"')
+    && router.includes('["/HelpCenter", HelpCenter]')
+    && helpShell.includes("import HelpCenterRelaunch from './HelpCenterRelaunch'")
+    && helpShell.includes("import HelpCenterSupportControl from '@/components/support/HelpCenterSupportControl'")
+    && helpShell.includes('<HelpCenterRelaunch />')
+    && helpShell.includes('<HelpCenterSupportControl languageCode={currentLanguage} />'),
+  'Help must preserve the reviewed relaunch FAQ/search while adding only the real feature-gated in-app support entry.'
 );
 check(
   'Help Center search is real',
