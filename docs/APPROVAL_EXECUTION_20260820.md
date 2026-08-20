@@ -105,5 +105,28 @@ No scheduler was created. No Resend configuration was changed. No SMS provider w
 - Anonymous SELECT is revoked from both source and view. Authenticated SELECT remains intentionally enabled for member discovery, so Supabase may continue to report GraphQL discoverability; the discoverable source now contains only approved public-member fields.
 - The sync trigger on `public.users` continues to call `o2ol_private.sync_user_directory_profile()`. Browser roles cannot execute that trigger helper directly.
 
+### Approval #9 — SMS provider direction
+- User approved moving forward with SMS provider activation work.
+- Audit confirmed there was no configured SMS provider/account/credential available to activate, so no provider was invented or silently connected.
+- Live Love Notes Edge Functions remained production-dark.
+
+### Approval #9A — Twilio + compliant Love Notes SMS design
+- Staged only in the `relaunch-homepage` development branch; no production mutation was performed.
+- Replaced the generic staged SMS adapter with a Twilio Messaging Service design using server-only API credentials.
+- Added fail-closed gates for `LOVE_NOTE_SMS_ENABLED` and `LOVE_NOTE_SMS_COMPLIANCE_READY`.
+- Added E.164 phone validation.
+- Added verifiable prior-recipient-consent checks; the sender cannot opt in another person.
+- Added a development-only `love_note_sms_consents` schema design using a server-peppered SHA-256 phone hash and no duplicate raw phone number.
+- Added `delivery_language` staging for EN/ES/FR/IT/DE so scheduled SMS preserves intended recipient language.
+- Added five-language SMS invitation copy plus five-language consent/opt-out UI copy.
+- Scheduled SMS re-checks consent before provider submission; missing/revoked consent cancels rather than sends.
+- Twilio provider error 21610 is interpreted as recipient opt-out.
+- Added `scripts/relaunch-love-note-sms-check.mjs` to the main relaunch build-check chain so strict builds require the consent gate, Twilio Messaging Service configuration contract, five-language copy, browser-private consent evidence, E.164 validation, and production-dark entrypoints.
+- Documented the activation plan in `docs/LOVE_NOTES_SMS_TWILIO_ROLLOUT.md`.
+- Verified after staging that live `send-love-note-invitation` and `dispatch-scheduled-love-notes` still point to `production-dark.ts`.
+- Verified the development-only SMS compliance migration is absent from live Supabase migration history.
+- No Twilio account was created/connected, no A2P registration was submitted, no SMS secret was set, no SMS was sent, and no SMS/provider fee was incurred.
+- Vercel status for the latest branch commit remains a build-rate-limit failure, so application compile success is not claimed from Vercel.
+
 ## Resend production dependency note
 The existing live `send-waitlist-notifications` Edge Function reads `Deno.env.get('RESEND_API_KEY')` and sends through the Resend API. Therefore the existing `RESEND_API_KEY` must continue to be treated as production-relevant and must not be overwritten blindly. The connector does not expose secret values, so any key verification/rotation must preserve waitlist compatibility and be handled without pasting secret material into chat or source control.
