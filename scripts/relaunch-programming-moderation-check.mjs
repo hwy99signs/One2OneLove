@@ -8,6 +8,7 @@ const serviceFile = 'src/lib/programmingModerationService.js';
 const reportButtonFile = 'src/components/programming/ProgrammingReportButton.jsx';
 const consoleFile = 'src/pages/ProgrammingModerationAdmin.jsx';
 const cancellationFile = 'supabase/migrations/20260819_programming_reminder_cancellation.sql';
+const routesFile = 'src/pages/index.jsx';
 
 const migration = fs.readFileSync(migrationFile, 'utf8');
 const reportFunction = fs.readFileSync(reportFunctionFile, 'utf8');
@@ -16,6 +17,7 @@ const service = fs.readFileSync(serviceFile, 'utf8');
 const reportButton = fs.readFileSync(reportButtonFile, 'utf8');
 const consolePage = fs.readFileSync(consoleFile, 'utf8');
 const cancellation = fs.readFileSync(cancellationFile, 'utf8');
+const routes = fs.readFileSync(routesFile, 'utf8');
 
 for (const required of [
   'unique (slot_id, reporter_id)',
@@ -99,6 +101,14 @@ for (const required of [
 if (consolePage.includes('report.reporter_id')) failures.push(`${consoleFile}: moderator UI must not render reporter identity.`);
 
 for (const required of [
+  'import ProgrammingModerationAdmin from "./ProgrammingModerationAdmin";',
+  'ProgrammingModerationAdmin,',
+  '["/ProgrammingModerationAdmin", ProgrammingModerationAdmin]',
+]) {
+  if (!routes.includes(required)) failures.push(`${routesFile}: missing private programming moderation route ${required}.`);
+}
+
+for (const required of [
   "if old.status = 'booked' and new.status <> 'booked' then",
   "and status = 'active';",
 ]) {
@@ -111,4 +121,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Programming moderation is private, duplicate-safe, allowlist-controlled, reporter-minimized and connected to program/reminder removal integrity.');
+console.log('✅ Programming moderation is private, duplicate-safe, allowlist-controlled, routed, reporter-minimized and connected to program/reminder removal integrity.');
