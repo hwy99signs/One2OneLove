@@ -7,6 +7,7 @@ const adminFunctionFile = 'supabase/functions/manage-support-requests/index.ts';
 const serviceFile = 'src/lib/supportRequestService.js';
 const memberPageFile = 'src/pages/SupportRequests.jsx';
 const adminPageFile = 'src/pages/SupportAdmin.jsx';
+const routesFile = 'src/pages/index.jsx';
 
 const migration = fs.readFileSync(migrationFile, 'utf8');
 const memberFunction = fs.readFileSync(memberFunctionFile, 'utf8');
@@ -14,6 +15,7 @@ const adminFunction = fs.readFileSync(adminFunctionFile, 'utf8');
 const service = fs.readFileSync(serviceFile, 'utf8');
 const memberPage = fs.readFileSync(memberPageFile, 'utf8');
 const adminPage = fs.readFileSync(adminPageFile, 'utf8');
+const routes = fs.readFileSync(routesFile, 'utf8');
 
 for (const required of [
   'user_id uuid not null references auth.users(id) on delete cascade',
@@ -36,6 +38,7 @@ for (const required of [
   ".eq('user_id', caller.id)",
   "if (action === 'list')",
   "if (action === 'get')",
+  "if (action === 'mark_response_read')",
   "if (action === 'close')",
   "if (action !== 'create')",
   "action: 'created'",
@@ -77,6 +80,7 @@ for (const required of [
   "VITE_SUPPORT_REQUESTS_ENABLED === 'true'",
   "supabase.functions.invoke('support-request'",
   "supabase.functions.invoke('manage-support-requests'",
+  'markSupportResponseRead',
   'getSupportAdminAccess',
   'listSupportQueue',
 ]) {
@@ -84,14 +88,56 @@ for (const required of [
 }
 
 for (const language of ['en','es','fr','it','de']) {
-  if (!new RegExp(`\\n\\s{2}${language}:\\s*\\{`).test(memberPage)) failures.push(`${memberPageFile}: missing ${language} member-support copy.`);
-  if (!new RegExp(`\\n\\s{2}${language}:\\s*\\{`).test(adminPage)) failures.push(`${adminPageFile}: missing ${language} support-admin copy.`);
+  const memberBlock = memberPage.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`))?.[1] || '';
+  const adminBlock = adminPage.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`))?.[1] || '';
+  if (!memberBlock) failures.push(`${memberPageFile}: missing ${language} member-support copy.`);
+  if (!adminBlock) failures.push(`${adminPageFile}: missing ${language} support-admin copy.`);
+  for (const key of ['signInButton', 'back', 'boundary', 'safetyNotice']) {
+    if (memberBlock && !new RegExp(`\\b${key}:\\s*`).test(memberBlock)) failures.push(`${memberPageFile}: ${language} missing ${key}.`);
+  }
+  for (const key of ['categories', 'statuses']) {
+    if (adminBlock && !new RegExp(`\\b${key}:\\s*`).test(adminBlock)) failures.push(`${adminPageFile}: ${language} missing ${key}.`);
+  }
 }
-for (const required of ['createSupportRequest({ category, subject, message })', 'listMySupportRequests()', 'closeSupportRequest(requestId)', 'item.staff_response']) {
+
+for (const required of [
+  'createSupportRequest({ category, subject, message })',
+  'listMySupportRequests()',
+  'markSupportResponseRead(item.id)',
+  'closeSupportRequest(requestId)',
+  'item.staff_response',
+  "navigate('/SignIn?returnTo=%2FSupportRequests')",
+  "navigate('/HelpCenter')",
+  "category === 'safety'",
+  '{t.safetyNotice}',
+  '{t.boundary}',
+]) {
   if (!memberPage.includes(required)) failures.push(`${memberPageFile}: missing member support behavior ${required}.`);
 }
-for (const required of ['getSupportAdminAccess()', 'listSupportQueue(filter)', "act(item.id, 'respond')", "act(item.id, 'start')", "act(item.id, 'close')", "act(item.id, 'reopen')"]) {
+
+for (const required of [
+  'getSupportAdminAccess()',
+  'listSupportQueue(filter)',
+  "act(item.id, 'respond')",
+  "act(item.id, 'start')",
+  "act(item.id, 'close')",
+  "act(item.id, 'reopen')",
+  't.categories[item.category] || item.category',
+  't.statuses[item.status] || item.status',
+]) {
   if (!adminPage.includes(required)) failures.push(`${adminPageFile}: missing support-admin behavior ${required}.`);
+}
+if (adminPage.includes('>{item.category}</span>') || adminPage.includes('>{item.status}</span>')) {
+  failures.push(`${adminPageFile}: staff queue must not render raw category/status enums as the primary label.`);
+}
+
+for (const required of [
+  'import SupportRequests from "./SupportRequests";',
+  'import SupportAdmin from "./SupportAdmin";',
+  '["/SupportRequests", SupportRequests]',
+  '["/SupportAdmin", SupportAdmin]',
+]) {
+  if (!routes.includes(required)) failures.push(`${routesFile}: missing private support route ${required}.`);
 }
 
 if (failures.length) {
@@ -100,4 +146,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member support requests remain signed-in, private, allowlist-administered, audited, multilingual and external-provider-free.');
+console.log('✅ Member support requests remain signed-in, private, routed, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
