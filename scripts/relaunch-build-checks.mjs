@@ -53,6 +53,7 @@ const checks = [
   ['relaunch homepage truthfulness', 'scripts/relaunch-home-truthfulness-check.mjs'],
   ['relaunch multilingual coverage', 'scripts/relaunch-multilingual-check.mjs'],
   ['relaunch relationship support', 'scripts/relaunch-support-safety-check.mjs'],
+  ['relaunch legal content', 'scripts/relaunch-legal-content-check.mjs'],
   ['relaunch legal readiness', 'scripts/relaunch-legal-readiness-check.mjs'],
 ];
 
