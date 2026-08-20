@@ -120,11 +120,20 @@ Authorize paid/external email/SMS/push reminder delivery providers and their ass
 
 ## Member safety / moderation / support
 
-### #19 — Member blocking production activation
-**Type:** PRIVACY / SAFETY / PRODUCTION  
-**Status:** STAGED.
+### #19 — Member blocking production activation + accepted-connection behavior
+**Type:** PRIVACY / SAFETY / PRODUCTION / PRODUCT DESIGN  
+**Status:** STAGED; production disabled pending the product decision below.
 
-Apply staged blocking enforcement across discovery, connections/chat and live-room visibility after dependency audit. Low-risk hardening may continue in development without interrupting the owner.
+The staged security model now enforces blocked-pair privacy at the database source rather than relying only on UI filtering. It covers the privacy-safe member directory source, presence source, Live Room messages/reactions, pairwise conversations/messages, the current `buddy_requests` model, reviewed legacy connection/request models, and defense-in-depth member discovery. Pending buddy/connection requests are removed when a block is created. Privileged helpers use the established non-exposed `o2ol_private` schema with fixed search paths.
+
+**One explicit product decision remains required before activation:** what should happen to an already **accepted** connection when either member blocks the other?
+
+- **Option A — Permanently sever the accepted connection.** Blocking ends/deletes the accepted connection. Unblocking does not restore it; the two members must intentionally reconnect. Stronger safety expectation, but destructive and requires clear confirmation copy.
+- **Option B — Preserve but suppress while blocked.** Keep the accepted connection row inaccessible while either side blocks the other. If the block is removed, the old accepted connection becomes available again. Non-destructive, but the restored connection could surprise users.
+
+Current staging does **not** silently finalize either option. The RLS layer suppresses blocked access for safety, while accepted rows are not deleted until the owner approves Option A or Option B and the block-confirmation UX reflects that choice.
+
+Production activation must include controlled two-account tests for: mutual directory disappearance, mutual presence hiding, Live Room message/reaction hiding, chat/request denial, pending-request cleanup, unrelated-member isolation, unblock behavior, and no block-list enumeration.
 
 ### #20 — Programming moderation production activation
 **Type:** MODERATION / SECURITY / PRODUCT  
