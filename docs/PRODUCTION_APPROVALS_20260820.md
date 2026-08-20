@@ -66,3 +66,28 @@ Approved and applied to live Supabase.
 - Anonymous SELECT remains revoked from the source table and both views.
 - The directory sync trigger remains on `public.users` and invokes the non-browser-executable `o2ol_private.sync_user_directory_profile()` helper.
 - The security advisor still reports authenticated GraphQL discoverability for the source/view because signed-in member discovery intentionally requires SELECT; this is now acceptable because only the five approved discovery fields exist in that source.
+
+## Approval #9 — SMS provider direction
+Approved in conversation.
+- The user approved proceeding with SMS provider activation work.
+- Read-only verification showed that no SMS vendor/account/credential was currently configured and the live Love Notes functions remained production-dark.
+- Because selecting/connecting a paid provider introduces cost and compliance obligations, no vendor was silently invented or activated under #9 alone.
+
+## Approval #9A — Twilio + compliant Love Notes SMS design
+Approved and staged in development. **No production SMS activation occurred.**
+- Provider design locked to Twilio Programmable Messaging through a Twilio Messaging Service.
+- US application-to-person SMS is designed for A2P 10DLC registration before activation.
+- A sender cannot consent on behalf of the recipient. The staged server path requires verifiable prior recipient SMS opt-in and fails closed when consent/compliance infrastructure is unavailable.
+- Immediate and scheduled SMS use the same Twilio-specific server adapter.
+- Scheduled SMS re-checks recipient consent immediately before provider submission so a later STOP/revocation overrides an earlier schedule.
+- Twilio error 21610 is treated as recipient opt-out rather than a retryable delivery failure.
+- SMS destinations require E.164 international format.
+- Recipient-facing SMS invitation copy and SMS consent/opt-out UI copy are staged in English, Spanish, French, Italian, and German.
+- A development-only migration stages `delivery_language` and a browser-inaccessible `love_note_sms_consents` evidence table keyed by a server-peppered phone hash; the raw phone number is not duplicated into that consent table.
+- Server configuration is designed around restricted Twilio API credentials plus `TWILIO_MESSAGING_SERVICE_SID`, `LOVE_NOTE_SMS_CONSENT_PEPPER`, `LOVE_NOTE_SMS_COMPLIANCE_READY`, and `LOVE_NOTE_SMS_ENABLED`.
+- The legacy arbitrary `LOVE_NOTE_SMS_ENDPOINT` / `LOVE_NOTE_SMS_PROVIDER_KEY` adapter is retired from the staged real implementations.
+- A dedicated `relaunch-love-note-sms-check.mjs` safety check is now part of the relaunch build-check chain.
+- Rollout/compliance design is documented in `docs/LOVE_NOTES_SMS_TWILIO_ROLLOUT.md`.
+- The SMS migration was **not** applied to live Supabase.
+- No Twilio account was created or connected, no A2P registration was submitted, no production secret was created/changed, no Love Notes function was switched away from `production-dark.ts`, no SMS was sent, and no SMS/provider cost was incurred.
+- A later explicit approval is still required for Twilio account/billing, A2P registration/fees, public consent flow, legal-policy disclosures, production secrets, and controlled live SMS activation.
