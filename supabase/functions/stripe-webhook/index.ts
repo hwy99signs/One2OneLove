@@ -2,7 +2,7 @@
 // Server-owned Stripe state synchronization for the One2OneLove relaunch membership.
 //
 // DEVELOPMENT CODE. Do not replace the production webhook until existing Stripe usage
-// has been inventoried and Approval Batch 001 authorizes the controlled migration.
+// has been inventoried and Approval #22 authorizes the controlled migration.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
@@ -11,7 +11,9 @@ const PLAN_KEY = 'membership'
 const PRICING_VERSION = 'launch_2026'
 const INTRO_MONTHS = 6
 const STANDARD_RELEASE_MONTHS = 1
+const WEBHOOK_CLAIM_STALE_MS = 5 * 60 * 1000
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const STRIPE_EVENT_ID_PATTERN = /^evt_[A-Za-z0-9]+$/
 const ALLOWED_STATUSES = new Set([
   'inactive', 'checkout_pending', 'trialing', 'active', 'past_due', 'canceled',
   'unpaid', 'incomplete', 'incomplete_expired', 'paused',
@@ -70,7 +72,7 @@ const verifyStripeSignature = async (rawBody: string, signatureHeader: string, s
 
 const stripeRequest = async (path: string, body?: URLSearchParams) => {
   const secretKey = Deno.env.get('STRIPE_SECRET_KEY') || ''
-  if (!secretKey) throw new Error('STRIPE_SECRET_KEY is not configured')
+  if (!secretKey) throw new Error('STRIPE_SECRET_KEY_NOT_CONFIGURED')
 
   const response = await fetch(`https://api.stripe.com${path}`, {
     method: body ? 'POST' : 'GET',
@@ -82,9 +84,7 @@ const stripeRequest = async (path: string, body?: URLSearchParams) => {
   })
 
   const payload = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(clean(payload?.error?.message, 500) || `Stripe returned ${response.status}`)
-  }
+  if (!response.ok) throw new Error(`STRIPE_API_${response.status}`)
   return payload
 }
 
@@ -124,17 +124,112 @@ const launchMetadata = (object: any) => {
   return { userId, planKey, pricingVersion }
 }
 
+const claimWebhookEvent = async (serviceClient: any, event: any, eventId: string, eventType: string) => {
+  const now = new Date()
+  const eventCreated = Number(event?.created)
+  const row = {
+    event_id: eventId,
+    event_type: eventType,
+    livemode: Boolean(event?.livemode),
+    event_created: Number.isFinite(eventCreated) && eventCreated > 0 ? Math.floor(eventCreated) : null,
+    status: 'processing',
+    attempts: 1,
+    last_attempt_at: now.toISOString(),
+    processed_at: null,
+    last_error_code: null,
+  }
+
+  const { data: inserted, error: insertError } = await serviceClient
+    .from('stripe_webhook_events')
+    .insert(row)
+    .select('event_id,event_type,livemode,status,attempts,last_attempt_at')
+    .maybeSingle()
+
+  if (!insertError && inserted) return { claimed: true, duplicate: '' }
+  if (insertError?.code !== '23505') throw insertError
+
+  const { data: existing, error: existingError } = await serviceClient
+    .from('stripe_webhook_events')
+    .select('event_id,event_type,livemode,status,attempts,last_attempt_at')
+    .eq('event_id', eventId)
+    .single()
+  if (existingError) throw existingError
+
+  if (existing.event_type !== eventType || Boolean(existing.livemode) !== Boolean(event?.livemode)) {
+    throw new Error('STRIPE_EVENT_ID_COLLISION')
+  }
+  if (existing.status === 'processed') return { claimed: false, duplicate: 'processed' }
+
+  const staleBefore = new Date(now.getTime() - WEBHOOK_CLAIM_STALE_MS).toISOString()
+  let retryQuery = serviceClient
+    .from('stripe_webhook_events')
+    .update({
+      status: 'processing',
+      attempts: Math.min(Number(existing.attempts || 1) + 1, 1000),
+      last_attempt_at: now.toISOString(),
+      processed_at: null,
+      last_error_code: null,
+    })
+    .eq('event_id', eventId)
+
+  if (existing.status === 'failed') {
+    retryQuery = retryQuery.eq('status', 'failed')
+  } else {
+    const lastAttemptAt = new Date(existing.last_attempt_at)
+    if (!Number.isNaN(lastAttemptAt.getTime()) && lastAttemptAt.getTime() > now.getTime() - WEBHOOK_CLAIM_STALE_MS) {
+      return { claimed: false, duplicate: 'processing' }
+    }
+    retryQuery = retryQuery.eq('status', 'processing').lt('last_attempt_at', staleBefore)
+  }
+
+  const { data: reclaimed, error: reclaimError } = await retryQuery
+    .select('event_id')
+    .maybeSingle()
+  if (reclaimError) throw reclaimError
+  return reclaimed ? { claimed: true, duplicate: '' } : { claimed: false, duplicate: 'processing' }
+}
+
+const completeWebhookEvent = async (serviceClient: any, eventId: string, body: Record<string, unknown>) => {
+  const { data, error } = await serviceClient
+    .from('stripe_webhook_events')
+    .update({
+      status: 'processed',
+      processed_at: new Date().toISOString(),
+      last_error_code: null,
+    })
+    .eq('event_id', eventId)
+    .eq('status', 'processing')
+    .select('event_id')
+    .maybeSingle()
+  if (error) throw error
+  if (!data) throw new Error('STRIPE_EVENT_COMPLETION_STATE_LOST')
+  return json(body)
+}
+
+const failWebhookEvent = async (serviceClient: any, eventId: string) => {
+  const { error } = await serviceClient
+    .from('stripe_webhook_events')
+    .update({
+      status: 'failed',
+      processed_at: null,
+      last_error_code: 'WEBHOOK_PROCESSING_FAILED',
+    })
+    .eq('event_id', eventId)
+    .eq('status', 'processing')
+  if (error) console.error('Stripe event failure-state persistence failed:', eventId)
+}
+
 const retrieveSubscription = async (subscriptionId: string) => {
-  if (!subscriptionId) throw new Error('Subscription ID is missing')
+  if (!subscriptionId) throw new Error('STRIPE_SUBSCRIPTION_ID_MISSING')
   return stripeRequest(`/v1/subscriptions/${encodeURIComponent(subscriptionId)}`)
 }
 
 const configureLaunchPricingSchedule = async (subscription: any, metadata: { userId: string }) => {
   const introPriceId = clean(Deno.env.get('STRIPE_PRICE_INTRO'), 200)
   const standardPriceId = clean(Deno.env.get('STRIPE_PRICE_STANDARD'), 200)
-  if (!introPriceId || !standardPriceId) throw new Error('Launch Stripe Price IDs are not configured')
+  if (!introPriceId || !standardPriceId) throw new Error('STRIPE_LAUNCH_PRICE_IDS_NOT_CONFIGURED')
   if (currentPriceId(subscription) !== introPriceId) {
-    throw new Error('Checkout subscription does not use the configured intro price')
+    throw new Error('STRIPE_INTRO_PRICE_MISMATCH')
   }
 
   const existingScheduleId = stripeId(subscription?.schedule)
@@ -142,7 +237,7 @@ const configureLaunchPricingSchedule = async (subscription: any, metadata: { use
     const existingSchedule = await stripeRequest(`/v1/subscription_schedules/${encodeURIComponent(existingScheduleId)}`)
     const scheduleMetadata = launchMetadata(existingSchedule)
     if (!scheduleMetadata || scheduleMetadata.userId !== metadata.userId) {
-      throw new Error('Subscription is already attached to an unrecognized schedule')
+      throw new Error('STRIPE_SCHEDULE_METADATA_MISMATCH')
     }
     return existingSchedule
   }
@@ -151,11 +246,11 @@ const configureLaunchPricingSchedule = async (subscription: any, metadata: { use
   createBody.set('from_subscription', subscription.id)
   const created = await stripeRequest('/v1/subscription_schedules', createBody)
   const scheduleId = stripeId(created)
-  if (!scheduleId) throw new Error('Stripe did not return a subscription schedule ID')
+  if (!scheduleId) throw new Error('STRIPE_SCHEDULE_ID_MISSING')
 
   const phaseStart = Number(created?.phases?.[0]?.start_date || subscription?.current_period_start)
   if (!Number.isFinite(phaseStart) || phaseStart <= 0) {
-    throw new Error('Unable to determine subscription schedule phase start')
+    throw new Error('STRIPE_SCHEDULE_PHASE_START_INVALID')
   }
 
   const updateBody = new URLSearchParams()
@@ -245,6 +340,30 @@ const recordPayment = async (serviceClient: any, invoice: any, userId: string, s
   if (error) throw error
 }
 
+const recordCancellationChange = async (serviceClient: any, userId: string, eventId: string) => {
+  const { error } = await serviceClient.from('subscription_changes').insert({
+    user_id: userId,
+    from_plan: 'Membership',
+    to_plan: null,
+    change_type: 'cancel',
+    stripe_event_id: eventId,
+    created_at: new Date().toISOString(),
+  })
+
+  if (!error) return
+  if (error.code !== '23505') throw error
+
+  const { data: existing, error: existingError } = await serviceClient
+    .from('subscription_changes')
+    .select('user_id,change_type,stripe_event_id')
+    .eq('stripe_event_id', eventId)
+    .maybeSingle()
+  if (existingError) throw existingError
+  if (!existing || existing.user_id !== userId || existing.change_type !== 'cancel') {
+    throw new Error('STRIPE_CANCELLATION_EVENT_COLLISION')
+  }
+}
+
 serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405)
 
@@ -266,10 +385,16 @@ serve(async (request) => {
     return json({ error: 'INVALID_PAYLOAD' }, 400)
   }
 
+  const eventId = clean(event?.id, 200)
+  const eventType = clean(event?.type, 120)
+  if (!STRIPE_EVENT_ID_PATTERN.test(eventId) || !eventType) {
+    return json({ error: 'INVALID_EVENT_IDENTITY' }, 400)
+  }
+
   const expectedLivemode = clean(Deno.env.get('STRIPE_EXPECT_LIVEMODE'), 10)
   if (expectedLivemode === 'true' || expectedLivemode === 'false') {
     if (Boolean(event?.livemode) !== (expectedLivemode === 'true')) {
-      console.error('Stripe event livemode mismatch:', event?.id)
+      console.error('Stripe event livemode mismatch:', eventId)
       return json({ error: 'LIVEMODE_MISMATCH' }, 400)
     }
   }
@@ -282,20 +407,26 @@ serve(async (request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
+  let claimed = false
   try {
-    const type = clean(event?.type, 100)
+    const claim = await claimWebhookEvent(serviceClient, event, eventId, eventType)
+    if (!claim.claimed) {
+      return json({ received: true, duplicate: claim.duplicate || 'processing' })
+    }
+    claimed = true
+
     const object = event?.data?.object
 
-    if (type === 'checkout.session.completed') {
+    if (eventType === 'checkout.session.completed') {
       const metadata = launchMetadata(object)
-      if (!metadata) return json({ received: true, ignored: 'not_launch_membership' })
+      if (!metadata) return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'not_launch_membership' })
 
       const subscriptionId = stripeId(object?.subscription)
-      if (!subscriptionId) throw new Error('Completed membership checkout has no subscription ID')
+      if (!subscriptionId) throw new Error('STRIPE_CHECKOUT_SUBSCRIPTION_ID_MISSING')
       const subscription = await retrieveSubscription(subscriptionId)
       const subscriptionMetadata = launchMetadata(subscription)
       if (!subscriptionMetadata || subscriptionMetadata.userId !== metadata.userId) {
-        throw new Error('Checkout/subscription membership metadata mismatch')
+        throw new Error('STRIPE_CHECKOUT_SUBSCRIPTION_METADATA_MISMATCH')
       }
 
       await upsertMembershipFromSubscription(serviceClient, subscription, metadata, {
@@ -319,66 +450,70 @@ serve(async (request) => {
           .eq('stripe_subscription_id', subscriptionId)
         if (error) throw error
       } catch (scheduleError) {
-        console.error('Launch pricing schedule configuration failed:', metadata.userId, scheduleError instanceof Error ? scheduleError.message : 'unknown')
+        console.error('Launch pricing schedule configuration failed:', metadata.userId)
         await serviceClient
           .from('member_subscriptions')
           .update({ pricing_transition_status: 'reconciliation_required' })
           .eq('user_id', metadata.userId)
         throw scheduleError
       }
-    } else if (type === 'customer.subscription.created' || type === 'customer.subscription.updated') {
-      const metadata = launchMetadata(object)
-      if (!metadata) return json({ received: true, ignored: 'not_launch_membership' })
+    } else if (eventType === 'customer.subscription.created' || eventType === 'customer.subscription.updated') {
+      // Re-fetch current Stripe state instead of trusting a potentially stale delivery.
+      const subscriptionId = stripeId(object)
+      if (!subscriptionId) throw new Error('STRIPE_SUBSCRIPTION_ID_MISSING')
+      const subscription = await retrieveSubscription(subscriptionId)
+      const metadata = launchMetadata(subscription)
+      if (!metadata) return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'not_launch_membership' })
 
       const allowedPriceIds = new Set([
         clean(Deno.env.get('STRIPE_PRICE_INTRO'), 200),
         clean(Deno.env.get('STRIPE_PRICE_STANDARD'), 200),
       ].filter(Boolean))
-      const priceId = currentPriceId(object)
+      const priceId = currentPriceId(subscription)
       if (!priceId || !allowedPriceIds.has(priceId)) {
-        throw new Error('Launch membership subscription uses an unrecognized Price ID')
+        throw new Error('STRIPE_MEMBERSHIP_PRICE_UNRECOGNIZED')
       }
 
-      await upsertMembershipFromSubscription(serviceClient, object, metadata)
-    } else if (type === 'customer.subscription.deleted') {
-      const metadata = launchMetadata(object)
-      if (!metadata) return json({ received: true, ignored: 'not_launch_membership' })
+      await upsertMembershipFromSubscription(serviceClient, subscription, metadata)
+    } else if (eventType === 'customer.subscription.deleted') {
+      // Stripe can deliver an older update after a deletion. Re-fetching the current
+      // subscription means entitlement state follows Stripe's latest subscription state.
+      const subscriptionId = stripeId(object)
+      if (!subscriptionId) throw new Error('STRIPE_SUBSCRIPTION_ID_MISSING')
+      const subscription = await retrieveSubscription(subscriptionId)
+      const metadata = launchMetadata(subscription) || launchMetadata(object)
+      if (!metadata) return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'not_launch_membership' })
 
-      await upsertMembershipFromSubscription(serviceClient, object, metadata, {
+      await upsertMembershipFromSubscription(serviceClient, subscription, metadata, {
         status: 'canceled',
         canceled_at: new Date().toISOString(),
       })
-
-      await serviceClient.from('subscription_changes').insert({
-        user_id: metadata.userId,
-        from_plan: 'Membership',
-        to_plan: null,
-        change_type: 'cancel',
-        created_at: new Date().toISOString(),
-      })
-    } else if (type === 'invoice.payment_succeeded' || type === 'invoice.payment_failed') {
+      await recordCancellationChange(serviceClient, metadata.userId, eventId)
+    } else if (eventType === 'invoice.payment_succeeded' || eventType === 'invoice.payment_failed') {
       const subscriptionId = subscriptionIdFromInvoice(object)
-      if (!subscriptionId) return json({ received: true, ignored: 'invoice_without_subscription' })
+      if (!subscriptionId) return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'invoice_without_subscription' })
 
       const subscription = await retrieveSubscription(subscriptionId)
       const metadata = launchMetadata(subscription)
-      if (!metadata) return json({ received: true, ignored: 'not_launch_membership' })
+      if (!metadata) return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'not_launch_membership' })
 
-      if (type === 'invoice.payment_succeeded') {
+      if (eventType === 'invoice.payment_succeeded') {
         await recordPayment(serviceClient, object, metadata.userId, 'succeeded')
         await upsertMembershipFromSubscription(serviceClient, subscription, metadata)
       } else {
         await recordPayment(serviceClient, object, metadata.userId, 'failed')
         await upsertMembershipFromSubscription(serviceClient, subscription, metadata, { status: 'past_due' })
       }
-    } else if (type === 'subscription_schedule.released' || type === 'subscription_schedule.updated') {
+    } else if (eventType === 'subscription_schedule.released' || eventType === 'subscription_schedule.updated') {
       const metadata = launchMetadata(object)
-      if (!metadata) return json({ received: true, ignored: 'not_launch_membership' })
+      if (!metadata) return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'not_launch_membership' })
 
       const scheduleId = stripeId(object)
       const subscriptionId = stripeId(object?.subscription) || stripeId(object?.released_subscription)
       const updates: Record<string, unknown> = {
-        stripe_schedule_id: scheduleId || null,
+        // Once Stripe releases a schedule, the subscription continues independently and
+        // O2OL should no longer present that released schedule as attached/current.
+        stripe_schedule_id: eventType === 'subscription_schedule.released' ? null : (scheduleId || null),
         pricing_transition_status: 'configured',
       }
       if (subscriptionId) updates.stripe_subscription_id = subscriptionId
@@ -389,14 +524,15 @@ serve(async (request) => {
         .eq('user_id', metadata.userId)
       if (error) throw error
     } else {
-      return json({ received: true, ignored: 'unhandled_event' })
+      return await completeWebhookEvent(serviceClient, eventId, { received: true, ignored: 'unhandled_event' })
     }
 
-    return json({ received: true })
+    return await completeWebhookEvent(serviceClient, eventId, { received: true })
   } catch (error) {
+    if (claimed) await failWebhookEvent(serviceClient, eventId)
     // 5xx asks Stripe to retry transient or incomplete processing. No secret/provider
     // detail is returned to the caller; diagnostics stay in server logs.
-    console.error('stripe-webhook processing error:', event?.id, error instanceof Error ? error.message : 'unknown')
+    console.error('stripe-webhook processing error:', eventId, error instanceof Error ? error.message : 'unknown')
     return json({ error: 'WEBHOOK_PROCESSING_FAILED' }, 500)
   }
 })
