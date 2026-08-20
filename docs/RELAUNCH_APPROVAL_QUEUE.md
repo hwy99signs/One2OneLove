@@ -118,6 +118,15 @@ This file tracks only actions that should NOT be performed automatically while d
     - Support responses and notifications are staged as **in-app only**. Do not add email, SMS, push, outbound ticketing, or another external provider without a separate approval covering cost, consent/opt-out, privacy, retention, and operational ownership.
     - The support channel is not an emergency or crisis-response service and must not be presented as continuously monitored. The member UI must continue showing this boundary, especially for the `safety` category.
 
+22. Legacy-to-relaunch membership billing reconciliation and production cutover.
+    - Live Supabase currently has active legacy Stripe functions named `create-checkout-session`, `stripe-webhook`, and `create-billing-portal`; read-only inspection confirmed they implement the old Basic/Premiere/Exclusive production contract and match the current `master` client.
+    - **Do not disable, overwrite, rename, delete, or repoint those live functions/webhooks during normal relaunch development.** They must be treated as potentially production-relevant until Stripe-side usage is reconciled.
+    - Aggregate live database checks found 11 `Basic` / `active` accounts in `public.users` and zero `payment_history` rows. This does not prove that no Stripe customers/subscriptions exist externally; preserve any existing paid customer/subscription state found during reconciliation.
+    - The relaunch uses a deliberately different contract: one server-owned `membership` SKU, `VITE_PAYMENTS_ENABLED` in the browser, `PAYMENTS_ENABLED` on the server, checkout body `{ planKey: 'membership' }`, the hardened `create-billing-portal-session` endpoint, `member_subscriptions`/`my_membership`, and `membership` / `launch_2026` webhook metadata.
+    - Keep `VITE_PAYMENTS_ENABLED=false` and server `PAYMENTS_ENABLED=false` until an explicitly approved billing cutover.
+    - Before activation, inventory legacy endpoint usage; verify Stripe environment/configuration and Price IDs without exposing secret values; inspect Stripe customers/subscriptions/webhooks; reconcile legacy `users` fields to `member_subscriptions`; preserve existing paid accounts; apply the reviewed membership schema; deploy hardened relaunch checkout/portal functions dark/off first; validate the new webhook separately; test checkout/payment failure/cancellation/portal/webhook idempotency and the approved intro-to-standard price transition; maintain a rollback path.
+    - The production reconciliation plan is documented in `docs/MEMBERSHIP_BILLING_RECONCILIATION.md`, and the current live-state snapshot is documented in `docs/LIVE_DRIFT_AUDIT_20260820.md`.
+
 ## Safe development work that may continue without separate approval
 
 - Frontend UX and visual refinements on `relaunch-homepage`.
@@ -130,6 +139,7 @@ This file tracks only actions that should NOT be performed automatically while d
 - Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming moderation/reporting UX, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
 - Member-blocking safety UX, route integration, privacy-safe blocked-list management, and automated checks while the blocking database/function/client switches remain off.
 - Private member-support UX, in-app response notification/read-state plumbing, allowlisted support-console UX, and automated checks while support database/functions/client switches remain off.
+- Membership billing source hardening, static reconciliation checks, and development-only dark/off billing preparation may continue while both payment switches remain off and live legacy Stripe functions/configuration remain untouched.
 
 ## Current operating rule
 
