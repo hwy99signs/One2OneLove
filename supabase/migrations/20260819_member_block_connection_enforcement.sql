@@ -1,6 +1,6 @@
 -- One2OneLove connection/request enforcement for member blocks.
 -- DEVELOPMENT MIGRATION ONLY. Do not apply to live Supabase until explicitly approved.
--- Depends on private.is_member_pair_blocked(uuid).
+-- Depends on o2ol_private.is_member_pair_blocked(uuid).
 --
 -- This migration detects reviewed pair-table shapes used by common/legacy relaunch
 -- connection models and adds RESTRICTIVE SELECT/INSERT/UPDATE policies. It intentionally
@@ -51,7 +51,7 @@ begin
 
       execute format('drop policy if exists %I on public.%I', select_policy, candidate.table_name);
       execute format(
-        'create policy %I on public.%I as restrictive for select to authenticated using (not private.is_member_pair_blocked(%s))',
+        'create policy %I on public.%I as restrictive for select to authenticated using (not o2ol_private.is_member_pair_blocked(%s))',
         select_policy,
         candidate.table_name,
         other_member_expression
@@ -59,7 +59,7 @@ begin
 
       execute format('drop policy if exists %I on public.%I', insert_policy, candidate.table_name);
       execute format(
-        'create policy %I on public.%I as restrictive for insert to authenticated with check (not private.is_member_pair_blocked(%s))',
+        'create policy %I on public.%I as restrictive for insert to authenticated with check (not o2ol_private.is_member_pair_blocked(%s))',
         insert_policy,
         candidate.table_name,
         other_member_expression
@@ -67,7 +67,7 @@ begin
 
       execute format('drop policy if exists %I on public.%I', update_policy, candidate.table_name);
       execute format(
-        'create policy %I on public.%I as restrictive for update to authenticated using (not private.is_member_pair_blocked(%s)) with check (not private.is_member_pair_blocked(%s))',
+        'create policy %I on public.%I as restrictive for update to authenticated using (not o2ol_private.is_member_pair_blocked(%s)) with check (not o2ol_private.is_member_pair_blocked(%s))',
         update_policy,
         candidate.table_name,
         other_member_expression,
@@ -85,8 +85,9 @@ commit;
 
 -- PRE-APPLY CHECKLIST
 -- 1. Review the target database schema and confirm every detected pair table is expected.
--- 2. If a new/renamed connection table exists, add its reviewed pair columns before applying.
--- 3. Verify blocked pairs cannot SELECT/INSERT/UPDATE requests or accepted connections.
--- 4. Verify DELETE behavior remains governed only by normal ownership policies so cleanup is possible.
--- 5. Verify unrelated member pairs are unaffected.
--- 6. Discovery/Buddy Finder exclusion remains a separate required activation dependency.
+-- 2. Confirm o2ol_private is not an exposed PostgREST schema and anon has no USAGE.
+-- 3. If a new/renamed connection table exists, add its reviewed pair columns before applying.
+-- 4. Verify blocked pairs cannot SELECT/INSERT/UPDATE requests or accepted connections.
+-- 5. Verify DELETE behavior remains governed only by normal ownership policies so cleanup is possible.
+-- 6. Verify unrelated member pairs are unaffected.
+-- 7. Discovery/Buddy Finder exclusion remains a separate required activation dependency.
