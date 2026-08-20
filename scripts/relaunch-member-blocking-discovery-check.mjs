@@ -48,6 +48,7 @@ if (/Unable to discover members/.test(service)) failures.push(`${serviceFile}: i
 for (const required of [
   'user_directory_profiles_hide_blocked_pairs',
   'user_presence_hide_blocked_pairs',
+  'room_reactions_hide_blocked_pairs',
   'as restrictive',
   'using (not o2ol_private.is_member_pair_blocked(id));',
 ]) {
@@ -55,6 +56,7 @@ for (const required of [
 }
 
 for (const required of [
+  "('buddy_requests',       'from_user_id', 'to_user_id')",
   "('friend_requests',      'sender_id',    'receiver_id')",
   "('connection_requests',  'requester_id', 'recipient_id')",
   "('connections',          'user1_id',     'user2_id')",
@@ -64,6 +66,7 @@ for (const required of [
   'as restrictive for update to authenticated',
   'o2ol_private.is_member_pair_blocked',
   "raise exception 'NO_REVIEWED_MEMBER_CONNECTION_PAIR_TABLE_FOUND';",
+  "raise exception 'O2OL_CURRENT_BUDDY_REQUEST_MODEL_MISSING';",
 ]) {
   if (!connectionMigration.includes(required)) failures.push(`${connectionMigrationFile}: missing connection/request block enforcement ${required}.`);
 }
@@ -74,4 +77,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Blocked-member privacy is enforced at the directory source and defense-in-depth discovery endpoint, with pairwise connection/request restrictions staged.');
+console.log('✅ Blocked-member privacy is enforced at directory/presence/room sources and across the current buddy-request connection model.');
