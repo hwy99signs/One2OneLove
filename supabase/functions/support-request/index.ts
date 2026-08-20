@@ -9,6 +9,7 @@ const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const MAX_OPEN_REQUESTS = 5
 const VALID_CATEGORIES = new Set(['account','technical','billing','safety','feedback','other'])
 const MEMBER_FIELDS = 'id,category,subject,message,status,staff_response,responded_at,member_response_read_at,closed_at,created_at,updated_at'
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -37,6 +38,13 @@ const json = (request: Request, body: unknown, status = 200) =>
     status,
     headers: { ...corsHeadersFor(request), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
+
+const requireRequestId = (request: Request, value: unknown) => {
+  const requestId = clean(value, 80)
+  if (!requestId) return { response: json(request, { error: 'REQUEST_ID_REQUIRED' }, 400), requestId: '' }
+  if (!UUID_PATTERN.test(requestId)) return { response: json(request, { error: 'REQUEST_ID_INVALID' }, 400), requestId: '' }
+  return { response: null, requestId }
+}
 
 serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeadersFor(request) })
@@ -84,8 +92,8 @@ serve(async (request) => {
     }
 
     if (action === 'get') {
-      const requestId = clean(body?.request_id, 80)
-      if (!requestId) return json(request, { error: 'REQUEST_ID_REQUIRED' }, 400)
+      const { response, requestId } = requireRequestId(request, body?.request_id)
+      if (response) return response
       const { data, error } = await serviceClient
         .from('support_requests')
         .select(MEMBER_FIELDS)
@@ -97,8 +105,8 @@ serve(async (request) => {
     }
 
     if (action === 'mark_response_read') {
-      const requestId = clean(body?.request_id, 80)
-      if (!requestId) return json(request, { error: 'REQUEST_ID_REQUIRED' }, 400)
+      const { response, requestId } = requireRequestId(request, body?.request_id)
+      if (response) return response
       const readAt = new Date().toISOString()
       const { data, error } = await serviceClient
         .from('support_requests')
@@ -113,8 +121,8 @@ serve(async (request) => {
     }
 
     if (action === 'close') {
-      const requestId = clean(body?.request_id, 80)
-      if (!requestId) return json(request, { error: 'REQUEST_ID_REQUIRED' }, 400)
+      const { response, requestId } = requireRequestId(request, body?.request_id)
+      if (response) return response
       const closedAt = new Date().toISOString()
       const { data, error } = await serviceClient
         .from('support_requests')
