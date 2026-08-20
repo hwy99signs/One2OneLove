@@ -7,6 +7,8 @@ const adminFunctionFile = 'supabase/functions/manage-support-requests/index.ts';
 const serviceFile = 'src/lib/supportRequestService.js';
 const memberPageFile = 'src/pages/SupportRequests.jsx';
 const adminPageFile = 'src/pages/SupportAdmin.jsx';
+const helpControlFile = 'src/components/support/HelpCenterSupportControl.jsx';
+const helpShellFile = 'src/pages/HelpCenterRelaunchWithSupport.jsx';
 const routesFile = 'src/pages/index.jsx';
 
 const migration = fs.readFileSync(migrationFile, 'utf8');
@@ -15,6 +17,8 @@ const adminFunction = fs.readFileSync(adminFunctionFile, 'utf8');
 const service = fs.readFileSync(serviceFile, 'utf8');
 const memberPage = fs.readFileSync(memberPageFile, 'utf8');
 const adminPage = fs.readFileSync(adminPageFile, 'utf8');
+const helpControl = fs.readFileSync(helpControlFile, 'utf8');
+const helpShell = fs.readFileSync(helpShellFile, 'utf8');
 const routes = fs.readFileSync(routesFile, 'utf8');
 
 for (const required of [
@@ -90,13 +94,18 @@ for (const required of [
 for (const language of ['en','es','fr','it','de']) {
   const memberBlock = memberPage.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`))?.[1] || '';
   const adminBlock = adminPage.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`))?.[1] || '';
+  const helpBlock = helpControl.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([^\\n]+)`))?.[1] || '';
   if (!memberBlock) failures.push(`${memberPageFile}: missing ${language} member-support copy.`);
   if (!adminBlock) failures.push(`${adminPageFile}: missing ${language} support-admin copy.`);
+  if (!helpBlock) failures.push(`${helpControlFile}: missing ${language} Help Center support copy.`);
   for (const key of ['signInButton', 'back', 'boundary', 'safetyNotice']) {
     if (memberBlock && !new RegExp(`\\b${key}:\\s*`).test(memberBlock)) failures.push(`${memberPageFile}: ${language} missing ${key}.`);
   }
   for (const key of ['categories', 'statuses']) {
     if (adminBlock && !new RegExp(`\\b${key}:\\s*`).test(adminBlock)) failures.push(`${adminPageFile}: ${language} missing ${key}.`);
+  }
+  for (const key of ['title', 'text', 'boundary', 'open', 'signIn']) {
+    if (helpBlock && !new RegExp(`\\b${key}:\\s*`).test(helpBlock)) failures.push(`${helpControlFile}: ${language} missing ${key}.`);
   }
 }
 
@@ -132,12 +141,35 @@ if (adminPage.includes('>{item.category}</span>') || adminPage.includes('>{item.
 }
 
 for (const required of [
+  'if (!SUPPORT_REQUESTS_ENABLED) return null;',
+  "? '/SupportRequests'",
+  ": '/SignIn?returnTo=%2FSupportRequests'",
+  '{t.boundary}',
+]) {
+  if (!helpControl.includes(required)) failures.push(`${helpControlFile}: missing feature-gated Help Center support behavior ${required}.`);
+}
+for (const forbidden of ['mailto:', 'sms:', 'tel:', '/ContactUs']) {
+  if (helpControl.includes(forbidden)) failures.push(`${helpControlFile}: Help Center support must not revive an unverified external/contact delivery path (${forbidden}).`);
+}
+
+for (const required of [
+  "import HelpCenterRelaunch from './HelpCenterRelaunch'",
+  "import HelpCenterSupportControl from '@/components/support/HelpCenterSupportControl'",
+  '<HelpCenterRelaunch />',
+  '<HelpCenterSupportControl languageCode={currentLanguage} />',
+]) {
+  if (!helpShell.includes(required)) failures.push(`${helpShellFile}: missing reviewed Help + member-support composition ${required}.`);
+}
+
+for (const required of [
   'import SupportRequests from "./SupportRequests";',
   'import SupportAdmin from "./SupportAdmin";',
+  'import HelpCenter from "./HelpCenterRelaunchWithSupport";',
   '["/SupportRequests", SupportRequests]',
   '["/SupportAdmin", SupportAdmin]',
+  '["/HelpCenter", HelpCenter]',
 ]) {
-  if (!routes.includes(required)) failures.push(`${routesFile}: missing private support route ${required}.`);
+  if (!routes.includes(required)) failures.push(`${routesFile}: missing private support/help route ${required}.`);
 }
 
 if (failures.length) {
@@ -146,4 +178,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member support requests remain signed-in, private, routed, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
+console.log('✅ Member support requests remain signed-in, private, discoverable through reviewed Help, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
