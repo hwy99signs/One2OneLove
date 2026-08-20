@@ -93,6 +93,14 @@ This file tracks only actions that should NOT be performed automatically while d
     - Email, SMS, mobile push, web push, or any paid/third-party delivery channel is **not part of the staged reminder system**.
     - Do not add a provider, incur messaging cost, request push permission, or reuse unrelated messaging credentials without a separate explicit approval covering provider, cost, consent, unsubscribe/opt-out, deliverability, privacy, and regional requirements.
 
+19. Member-blocking safety activation.
+    - The member-blocking stack is DEVELOPMENT ONLY. Keep both `VITE_MEMBER_BLOCKING_ENABLED=false` and `MEMBER_BLOCKING_ENABLED=false` until the full safety batch is reviewed.
+    - Do not apply `20260819_member_blocks.sql` or its chat, connection, Live Room, pairwise-visibility, and pending-request cleanup enforcement migrations to live Supabase without explicit approval and an ordered rollback plan.
+    - Do not deploy `member-block` or `list-blocked-members` until those migrations are verified together in development.
+    - Blocking is a private, one-way member safety choice; the browser cannot directly insert/delete block rows and the blocked-member list must never expose email, partner, subscription, billing, or verification fields.
+    - Before activation, verify both directions of visibility/enforcement across member discovery, connection requests, pairwise chat, and Live Rooms; verify blocking clears or suppresses pending connection requests as designed; verify unblock restores only future eligible interaction and does not recreate prior relationships or requests.
+    - The `/BlockedMembers` route and Privacy Center management control are already staged, but the Privacy Center control remains hidden while the client feature switch is off.
+
 ## Safe development work that may continue without separate approval
 
 - Frontend UX and visual refinements on `relaunch-homepage`.
@@ -103,6 +111,7 @@ This file tracks only actions that should NOT be performed automatically while d
 - Refactoring member-facing reads away from private tables into purpose-built privacy-safe projections.
 - Expanding automated relaunch safety checks so production blockers are visible before launch.
 - Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
+- Member-blocking safety UX, route integration, privacy-safe blocked-list management, and automated checks while the blocking database/function/client switches remain off.
 
 ## Current operating rule
 
