@@ -101,6 +101,14 @@ This file tracks only actions that should NOT be performed automatically while d
     - Before activation, verify both directions of visibility/enforcement across member discovery, connection requests, pairwise chat, and Live Rooms; verify blocking clears or suppresses pending connection requests as designed; verify unblock restores only future eligible interaction and does not recreate prior relationships or requests.
     - The `/BlockedMembers` route and Privacy Center management control are already staged, but the Privacy Center control remains hidden while the client feature switch is off.
 
+20. Programming moderation activation.
+    - `supabase/migrations/20260819_programming_moderation.sql` and the `report-programming` / `moderate-programming` Edge Functions are DEVELOPMENT ONLY.
+    - Keep both `VITE_PROGRAMMING_MODERATION_ENABLED=false` and `PROGRAMMING_MODERATION_ENABLED=false` until programming itself is active and the moderation workflow has been reviewed end-to-end.
+    - Moderator authority reuses the server-side `O2OL_PROGRAMMING_ADMIN_USER_IDS` allowlist; no public profile/user type may grant moderation authority.
+    - Member reports are private, duplicate-safe records. The moderator payload/UI must continue omitting reporter identity and must not expose a reporter UUID merely for convenience.
+    - Removing reported programming changes the program to cancelled and must continue cancelling active member reminders for that program.
+    - `/ProgrammingModerationAdmin` is staged as a private route; do not expose it through general member navigation. Access must remain denied unless both moderation is enabled and the authenticated account is allowlisted.
+
 ## Safe development work that may continue without separate approval
 
 - Frontend UX and visual refinements on `relaunch-homepage`.
@@ -110,7 +118,7 @@ This file tracks only actions that should NOT be performed automatically while d
 - Read-only audits of repository code and Supabase configuration when connectors are available.
 - Refactoring member-facing reads away from private tables into purpose-built privacy-safe projections.
 - Expanding automated relaunch safety checks so production blockers are visible before launch.
-- Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
+- Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming moderation/reporting UX, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
 - Member-blocking safety UX, route integration, privacy-safe blocked-list management, and automated checks while the blocking database/function/client switches remain off.
 
 ## Current operating rule
