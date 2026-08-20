@@ -8,6 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const REMINDER_LEAD_MS = 15 * 60 * 1000
 const REMINDER_FIELDS = 'id,slot_id,remind_at,status,created_at,updated_at'
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -69,6 +70,7 @@ serve(async (request) => {
     const action = clean(body?.action, 20) || 'status'
     const slotId = clean(body?.slot_id, 80)
     if (!slotId) return json(request, { error: 'SLOT_ID_REQUIRED' }, 400)
+    if (!UUID_PATTERN.test(slotId)) return json(request, { error: 'SLOT_ID_INVALID' }, 400)
 
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
