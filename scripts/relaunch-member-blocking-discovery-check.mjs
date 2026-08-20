@@ -16,8 +16,10 @@ for (const required of [
   "serviceClient.from('member_blocks').select('blocked_id').eq('blocker_id', caller.id)",
   "serviceClient.from('member_blocks').select('blocker_id').eq('blocked_id', caller.id)",
   "const excluded = new Set<string>([caller.id])",
+  'let query = callerClient',
   ".from('member_directory')",
   ".select('id,name,avatar_url,bio,created_at')",
+  'Run the actual directory lookup as the authenticated caller, not service_role.',
   'const safeMembers = (members || []).map',
   'id: member.id',
   'name: clean(member.name, 80) || null',
@@ -26,6 +28,9 @@ for (const required of [
   'created_at: member.created_at || null',
 ]) {
   if (!endpoint.includes(required)) failures.push(`${endpointFile}: missing block-aware discovery safeguard ${required}.`);
+}
+if (/serviceClient\s*\n\s*\.from\('member_directory'\)/.test(endpoint) || /serviceClient\.from\('member_directory'\)/.test(endpoint)) {
+  failures.push(`${endpointFile}: final member_directory lookup must run with the authenticated caller so source RLS remains a second privacy barrier.`);
 }
 if (/\|\|\s*['"]Member['"]/.test(endpoint)) {
   failures.push(`${endpointFile}: server discovery must not synthesize an English-only member-name fallback.`);
@@ -77,4 +82,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Blocked-member privacy is enforced at directory/presence/room sources and across the current buddy-request connection model.');
+console.log('✅ Blocked-member privacy is enforced by manual pair exclusion plus authenticated directory RLS, and at presence/room/connection sources.');
