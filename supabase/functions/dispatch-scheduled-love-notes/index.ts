@@ -1,10 +1,17 @@
 // Supabase Edge Function: dispatch-scheduled-love-notes
 // Claims due scheduled Love Notes, creates their private reveal token at send time,
-// and delivers only the invitation copy through the configured provider adapter.
+// and delivers only the invitation copy through the configured provider.
 // DEVELOPMENT CODE. Deploy/schedule only through the approved controlled rollout.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import {
+  buildLoveNoteSmsCopy,
+  normalizeE164,
+  normalizeSmsLanguage,
+  requireVerifiedSmsConsent,
+  sendLoveNoteSmsWithTwilio,
+} from '../_shared/loveNoteSms.ts'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -47,8 +54,7 @@ const dispatchBatchSize = () => {
   return Math.min(configured, 100)
 }
 
-const buildCopy = (senderName: string, revealUrl: string) => ({
-  sms: `💕 ${senderName} sent you a private Love Note on One2OneLove. Tap to reveal it: ${revealUrl}`,
+const buildEmailCopy = (senderName: string, revealUrl: string) => ({
   emailSubject: `${senderName} sent you a private Love Note 💕`,
   emailBody: `${senderName} sent you a private Love Note on One2OneLove.\n\nYour message is being kept private until you open it.\n\nReveal your Love Note: ${revealUrl}`,
 })
@@ -83,37 +89,17 @@ const deliverEmailWithResend = async ({ to, invitationId, copy }: any) => {
   return clean(payload?.id, 200) || null
 }
 
-const deliverSmsThroughConfiguredAdapter = async ({ to, invitationId, copy }: any) => {
-  if (Deno.env.get('LOVE_NOTE_SMS_ENABLED') !== 'true') {
-    throw new Error('SMS delivery is not enabled')
-  }
+const isComplianceNotReady = (error: unknown) => {
+  const code = clean(error instanceof Error ? error.message : String(error), 100)
+  return code === 'O2OL_SMS_COMPLIANCE_NOT_READY'
+    || code === 'O2OL_SMS_CONSENT_PEPPER_MISSING'
+    || code === 'O2OL_SMS_CONSENT_LOOKUP_FAILED'
+}
 
-  const endpoint = Deno.env.get('LOVE_NOTE_SMS_ENDPOINT') || ''
-  const providerKey = Deno.env.get('LOVE_NOTE_SMS_PROVIDER_KEY') || ''
-  if (!endpoint || !providerKey) throw new Error('SMS delivery provider is not configured')
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${providerKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      channel: 'sms',
-      to,
-      text: copy.sms,
-      metadata: { invitation_id: invitationId, product: 'one2onelove_love_notes' },
-    }),
-  })
-
-  if (!response.ok) throw new Error(`SMS provider returned ${response.status}`)
-
-  try {
-    const payload = await response.json()
-    return clean(payload?.id || payload?.message_id, 200) || null
-  } catch {
-    return null
-  }
+const isConsentDenied = (error: unknown) => {
+  const code = clean(error instanceof Error ? error.message : String(error), 100)
+  return code === 'O2OL_SMS_RECIPIENT_CONSENT_REQUIRED'
+    || code === 'O2OL_SMS_RECIPIENT_OPTED_OUT'
 }
 
 serve(async (request) => {
@@ -148,7 +134,7 @@ serve(async (request) => {
 
     const { data: due, error: dueError } = await serviceClient
       .from('love_note_invitations')
-      .select('id, delivery_method')
+      .select('id, delivery_method, recipient_contact, delivery_language')
       .eq('status', 'scheduled')
       .lte('scheduled_for', now)
       .order('scheduled_for', { ascending: true })
@@ -162,11 +148,50 @@ serve(async (request) => {
     const results: Array<{ id: string; status: string }> = []
 
     for (const row of due || []) {
-      // Email can be activated independently. SMS records remain scheduled and
-      // untouched until the account owner separately approves and enables SMS.
+      // Email can be activated independently. SMS records remain scheduled and untouched
+      // while SMS/provider/compliance gates are OFF.
       if (row.delivery_method === 'sms' && !smsEnabled) {
         results.push({ id: row.id, status: 'sms_disabled' })
         continue
+      }
+
+      if (row.delivery_method === 'sms') {
+        const e164 = normalizeE164(row.recipient_contact)
+        if (!e164) {
+          await serviceClient
+            .from('love_note_invitations')
+            .update({ status: 'failed', failure_reason: 'O2OL_SMS_PHONE_INVALID' })
+            .eq('id', row.id)
+            .eq('status', 'scheduled')
+          results.push({ id: row.id, status: 'failed' })
+          continue
+        }
+
+        try {
+          await requireVerifiedSmsConsent(serviceClient, e164)
+        } catch (consentError) {
+          if (isComplianceNotReady(consentError)) {
+            // Infrastructure not ready is not a recipient failure. Leave the note safely
+            // scheduled so activation can proceed later without losing the request.
+            results.push({ id: row.id, status: 'sms_compliance_not_ready' })
+            continue
+          }
+          if (isConsentDenied(consentError)) {
+            // Never send after missing/revoked consent. Preserve the stable reason for
+            // operations without exposing the phone number or consent evidence.
+            await serviceClient
+              .from('love_note_invitations')
+              .update({
+                status: 'canceled',
+                failure_reason: clean(consentError instanceof Error ? consentError.message : String(consentError), 120),
+              })
+              .eq('id', row.id)
+              .eq('status', 'scheduled')
+            results.push({ id: row.id, status: 'canceled' })
+            continue
+          }
+          throw consentError
+        }
       }
 
       const { data: claimed, error: claimError } = await serviceClient
@@ -175,7 +200,7 @@ serve(async (request) => {
         .eq('id', row.id)
         .eq('status', 'scheduled')
         .lte('scheduled_for', now)
-        .select('id, sender_name, recipient_contact, delivery_method')
+        .select('id, sender_name, recipient_contact, delivery_method, delivery_language')
         .maybeSingle()
 
       if (claimError) {
@@ -185,9 +210,10 @@ serve(async (request) => {
       if (!claimed) continue
 
       const senderName = clean(claimed.sender_name, 80) || 'One2OneLove member'
+      const deliveryLanguage = normalizeSmsLanguage(claimed.delivery_language)
       const recipientContact = claimed.delivery_method === 'email'
         ? normalizeEmail(claimed.recipient_contact)
-        : clean(claimed.recipient_contact, 160)
+        : normalizeE164(claimed.recipient_contact) || ''
 
       if (!recipientContact || (claimed.delivery_method === 'email' && !EMAIL_PATTERN.test(recipientContact))) {
         await serviceClient
@@ -203,9 +229,14 @@ serve(async (request) => {
       const tokenHash = await sha256(rawToken)
       const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       const revealUrl = `${siteUrl}/LoveNoteReveal?token=${encodeURIComponent(rawToken)}`
-      const copy = buildCopy(senderName, revealUrl)
 
       try {
+        // Re-check immediately before provider submission to close the window between the
+        // due-row scan and actual send. A STOP/revocation must win over a scheduled send.
+        if (claimed.delivery_method === 'sms') {
+          await requireVerifiedSmsConsent(serviceClient, recipientContact)
+        }
+
         const { error: tokenError } = await serviceClient
           .from('love_note_invitations')
           .update({ token_hash: tokenHash, token_expires_at: tokenExpiresAt })
@@ -215,8 +246,15 @@ serve(async (request) => {
         if (tokenError) throw tokenError
 
         const providerMessageId = claimed.delivery_method === 'email'
-          ? await deliverEmailWithResend({ to: recipientContact, invitationId: claimed.id, copy })
-          : await deliverSmsThroughConfiguredAdapter({ to: recipientContact, invitationId: claimed.id, copy })
+          ? await deliverEmailWithResend({
+              to: recipientContact,
+              invitationId: claimed.id,
+              copy: buildEmailCopy(senderName, revealUrl),
+            })
+          : await sendLoveNoteSmsWithTwilio({
+              to: recipientContact,
+              body: buildLoveNoteSmsCopy({ senderName, revealUrl, language: deliveryLanguage }),
+            })
 
         const { error: sentStateError } = await serviceClient
           .from('love_note_invitations')
@@ -231,9 +269,7 @@ serve(async (request) => {
 
         if (sentStateError) {
           // Do not retry automatically after provider success. The provider idempotency
-          // key protects against duplicates, but a new raw token would change the body.
-          // Leave the row queued for operator reconciliation rather than risk duplicate
-          // or mismatched invitations.
+          // behavior cannot make a new reveal token/body equivalent to the prior send.
           console.error('Scheduled Love Note provider succeeded but sent-state update failed:', claimed.id, sentStateError)
           results.push({ id: claimed.id, status: 'reconciliation_required' })
           continue
@@ -242,6 +278,22 @@ serve(async (request) => {
         results.push({ id: claimed.id, status: 'sent' })
       } catch (error) {
         console.error('Scheduled Love Note delivery failed:', claimed.id, error)
+
+        if (claimed.delivery_method === 'sms' && isConsentDenied(error)) {
+          await serviceClient
+            .from('love_note_invitations')
+            .update({
+              status: 'canceled',
+              token_hash: null,
+              token_expires_at: null,
+              failure_reason: clean(error instanceof Error ? error.message : String(error), 120),
+            })
+            .eq('id', claimed.id)
+            .eq('status', 'queued')
+          results.push({ id: claimed.id, status: 'canceled' })
+          continue
+        }
+
         await serviceClient
           .from('love_note_invitations')
           .update({
