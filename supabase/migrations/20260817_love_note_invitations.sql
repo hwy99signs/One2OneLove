@@ -3,8 +3,12 @@
 --
 -- Privacy / reliability model:
 --   * Raw reveal tokens are never stored; only SHA-256 hashes are persisted.
---   * Browser clients never read/write the delivery table directly.
+--   * Browser clients cannot write the delivery table directly.
 --   * Authenticated sender/recipient history is exposed only through a safe projection.
+--   * The safe history projection runs as SECURITY INVOKER so caller RLS is enforced.
+--   * Authenticated callers receive SELECT only on the exact safe base-table columns
+--     needed by the history projection; recipient contact, token/provider and failure
+--     internals remain unavailable to browser roles.
 --   * All delivery/reveal state changes are performed server-side with validated callers.
 --   * Each sender submission carries a client_request_id so network retries cannot create
 --     or send a second invitation for the same logical submission.
@@ -61,12 +65,10 @@ create index if not exists love_note_invitations_status_idx
 
 alter table public.love_note_invitations enable row level security;
 
--- Browser roles do not need raw-table access. This prevents token hashes, provider IDs,
--- raw recipient contact information and failure internals from being selected directly.
+-- Close raw-table access by default. A narrow column-level SELECT grant is added
+-- below only so the SECURITY INVOKER history view can evaluate under caller RLS.
 revoke all on table public.love_note_invitations from anon, authenticated;
 
--- Defense-in-depth row policy for any future controlled direct grant. The current
--- relaunch does NOT grant browser SELECT on the table itself.
 drop policy if exists "love_note_sender_select_own" on public.love_note_invitations;
 drop policy if exists "love_note_participants_select_own" on public.love_note_invitations;
 create policy "love_note_participants_select_own"
@@ -77,6 +79,27 @@ create policy "love_note_participants_select_own"
 
 -- No direct INSERT/UPDATE/DELETE policy is granted to browser clients.
 -- Edge Functions perform writes using service_role after validating the caller.
+
+-- SECURITY INVOKER views require the caller to have privileges on the referenced
+-- base columns. Grant only the safe history fields. Sensitive recipient contact,
+-- request IDs, token hashes/expiry, provider IDs and failure details stay revoked.
+grant select (
+  id,
+  sender_user_id,
+  recipient_user_id,
+  sender_name,
+  recipient_name,
+  delivery_method,
+  note_content,
+  scheduled_for,
+  schedule_timezone,
+  status,
+  sent_at,
+  delivered_at,
+  revealed_at,
+  created_at,
+  updated_at
+) on table public.love_note_invitations to authenticated;
 
 create or replace function public.set_love_note_invitation_updated_at()
 returns trigger
@@ -99,7 +122,7 @@ for each row execute function public.set_love_note_invitation_updated_at();
 -- client_request_id, token_hash/token_expires_at, provider_message_id and failure_reason.
 drop view if exists public.love_note_invitation_history;
 create view public.love_note_invitation_history
-with (security_barrier = true)
+with (security_barrier = true, security_invoker = true)
 as
 select
   id,
@@ -125,8 +148,8 @@ revoke all on public.love_note_invitation_history from anon;
 grant select on public.love_note_invitation_history to authenticated;
 
 comment on table public.love_note_invitations is
-  'Private Love Notes delivery records. Raw reveal tokens are never stored; browser roles have no direct table access; sender client_request_id prevents duplicate logical submissions.';
+  'Private Love Notes delivery records. Raw reveal tokens are never stored; browser writes are blocked; authenticated SELECT is limited to safe history columns and participant RLS.';
 comment on view public.love_note_invitation_history is
-  'Participant-only Love Note history projection. Excludes raw recipient contact, request IDs, token hashes and provider/delivery internals.';
+  'Participant-only Love Note history projection. SECURITY INVOKER enforces caller RLS; excludes recipient contact, request IDs, token hashes, provider IDs and failure internals.';
 
 commit;
