@@ -22,7 +22,7 @@ as restrictive
 for select
 to authenticated
 using (
-  not private.is_member_pair_blocked(
+  not o2ol_private.is_member_pair_blocked(
     case
       when user1_id = (select auth.uid()) then user2_id
       else user1_id
@@ -37,7 +37,7 @@ as restrictive
 for insert
 to authenticated
 with check (
-  not private.is_member_pair_blocked(
+  not o2ol_private.is_member_pair_blocked(
     case
       when user1_id = (select auth.uid()) then user2_id
       else user1_id
@@ -52,7 +52,7 @@ as restrictive
 for update
 to authenticated
 using (
-  not private.is_member_pair_blocked(
+  not o2ol_private.is_member_pair_blocked(
     case
       when user1_id = (select auth.uid()) then user2_id
       else user1_id
@@ -60,7 +60,7 @@ using (
   )
 )
 with check (
-  not private.is_member_pair_blocked(
+  not o2ol_private.is_member_pair_blocked(
     case
       when user1_id = (select auth.uid()) then user2_id
       else user1_id
@@ -97,7 +97,7 @@ using (
     select 1
     from public.conversations conversation_row
     where conversation_row.id = messages.conversation_id
-      and not private.is_member_pair_blocked(
+      and not o2ol_private.is_member_pair_blocked(
         case
           when conversation_row.user1_id = (select auth.uid()) then conversation_row.user2_id
           else conversation_row.user1_id
@@ -117,7 +117,7 @@ with check (
     select 1
     from public.conversations conversation_row
     where conversation_row.id = messages.conversation_id
-      and not private.is_member_pair_blocked(
+      and not o2ol_private.is_member_pair_blocked(
         case
           when conversation_row.user1_id = (select auth.uid()) then conversation_row.user2_id
           else conversation_row.user1_id
@@ -137,7 +137,7 @@ using (
     select 1
     from public.conversations conversation_row
     where conversation_row.id = messages.conversation_id
-      and not private.is_member_pair_blocked(
+      and not o2ol_private.is_member_pair_blocked(
         case
           when conversation_row.user1_id = (select auth.uid()) then conversation_row.user2_id
           else conversation_row.user1_id
@@ -150,7 +150,7 @@ with check (
     select 1
     from public.conversations conversation_row
     where conversation_row.id = messages.conversation_id
-      and not private.is_member_pair_blocked(
+      and not o2ol_private.is_member_pair_blocked(
         case
           when conversation_row.user1_id = (select auth.uid()) then conversation_row.user2_id
           else conversation_row.user1_id
@@ -167,7 +167,7 @@ comment on policy "messages_prevent_blocked_pair_insert" on public.messages is
 commit;
 
 -- PRE-APPLY CHECKLIST
--- 1. Verify private.is_member_pair_blocked exists and private schema is not PostgREST-exposed.
+-- 1. Verify o2ol_private.is_member_pair_blocked exists and o2ol_private schema is not PostgREST-exposed.
 -- 2. Verify normal unblocked chat still reads/sends/marks receipts.
 -- 3. Verify A blocks B: both A and B lose conversation/message visibility.
 -- 4. Verify neither A nor B can create a new conversation or message across the block.
