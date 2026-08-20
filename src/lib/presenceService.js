@@ -2,8 +2,9 @@
  * User Presence Service
  * Handles online/offline status tracking and real-time updates.
  *
- * Privacy rule: client presence queries request only the fields required to render
- * status. They do not request profile/email fields from user_presence_view.
+ * Privacy rule: the database returns neutral presence timestamps/status only. It never
+ * returns account email or English display prose. Relative “last seen” copy is derived
+ * here from One2OneLove's selected language (`preferredLanguage`).
  */
 
 import { supabase } from './supabase';
@@ -12,15 +13,114 @@ let heartbeatInterval = null;
 let presenceSubscription = null;
 let lifecycleListenersBound = false;
 
-const PRESENCE_SELECT = 'user_id,status,last_active,is_online,last_seen_text';
+const PRESENCE_SELECT = 'user_id,status,last_seen,last_active,updated_at,name,avatar_url,is_online';
 const ALLOWED_STATUSES = new Set(['online', 'offline', 'away', 'busy']);
+const ACTIVE_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de']);
 
-const offlinePresence = (userId) => ({
+const PRESENCE_COPY = {
+  en: {
+    online: 'Online',
+    longAgo: 'Long time ago',
+    justNow: 'Just now',
+    minutesAgo: (count) => `${count} min${count === 1 ? '' : 's'} ago`,
+    hoursAgo: (count) => `${count} hour${count === 1 ? '' : 's'} ago`,
+    daysAgo: (count) => `${count} day${count === 1 ? '' : 's'} ago`,
+  },
+  es: {
+    online: 'En línea',
+    longAgo: 'Hace tiempo',
+    justNow: 'Ahora mismo',
+    minutesAgo: (count) => `Hace ${count} min`,
+    hoursAgo: (count) => `Hace ${count} h`,
+    daysAgo: (count) => `Hace ${count} d`,
+  },
+  fr: {
+    online: 'En ligne',
+    longAgo: 'Il y a longtemps',
+    justNow: 'À l’instant',
+    minutesAgo: (count) => `Il y a ${count} min`,
+    hoursAgo: (count) => `Il y a ${count} h`,
+    daysAgo: (count) => `Il y a ${count} j`,
+  },
+  it: {
+    online: 'Online',
+    longAgo: 'Molto tempo fa',
+    justNow: 'Adesso',
+    minutesAgo: (count) => `${count} min fa`,
+    hoursAgo: (count) => `${count} h fa`,
+    daysAgo: (count) => `${count} g fa`,
+  },
+  de: {
+    online: 'Online',
+    longAgo: 'Vor längerer Zeit',
+    justNow: 'Gerade eben',
+    minutesAgo: (count) => `vor ${count} Min.`,
+    hoursAgo: (count) => `vor ${count} Std.`,
+    daysAgo: (count) => `vor ${count} T.`,
+  },
+  // Inactive compatibility block only. Dutch is not part of the five-language launch.
+  nl: {
+    online: 'Online',
+    longAgo: 'Lang geleden',
+    justNow: 'Zojuist',
+    minutesAgo: (count) => `${count} min geleden`,
+    hoursAgo: (count) => `${count} uur geleden`,
+    daysAgo: (count) => `${count} d geleden`,
+  },
+};
+
+const resolvePresenceLanguage = (requestedLanguage = null) => {
+  const requested = String(requestedLanguage || '').trim().toLowerCase();
+  if (ACTIVE_LANGUAGES.has(requested)) return requested;
+
+  if (typeof window !== 'undefined') {
+    const preferred = String(window.localStorage?.getItem('preferredLanguage') || '').trim().toLowerCase();
+    if (ACTIVE_LANGUAGES.has(preferred)) return preferred;
+  }
+
+  return 'en';
+};
+
+export const formatLastSeen = (lastSeen, language = null) => {
+  const copy = PRESENCE_COPY[resolvePresenceLanguage(language)];
+  if (!lastSeen) return copy.longAgo;
+
+  const lastSeenDate = new Date(lastSeen);
+  if (Number.isNaN(lastSeenDate.getTime())) return copy.longAgo;
+
+  const diffMs = Math.max(0, Date.now() - lastSeenDate.getTime());
+  const diffMins = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
+
+  if (diffMins < 1) return copy.justNow;
+  if (diffMins < 60) return copy.minutesAgo(diffMins);
+  if (diffHours < 24) return copy.hoursAgo(diffHours);
+  if (diffDays < 7) return copy.daysAgo(diffDays);
+  return copy.longAgo;
+};
+
+export const localizePresence = (presence, language = null) => {
+  const resolvedLanguage = resolvePresenceLanguage(language);
+  const copy = PRESENCE_COPY[resolvedLanguage];
+  if (!presence) return null;
+
+  return {
+    ...presence,
+    last_seen_text: presence.is_online ? copy.online : formatLastSeen(presence.last_seen, resolvedLanguage),
+  };
+};
+
+const offlinePresence = (userId, language = null) => localizePresence({
   user_id: userId,
   status: 'offline',
+  last_seen: null,
+  last_active: null,
+  updated_at: null,
+  name: null,
+  avatar_url: null,
   is_online: false,
-  last_seen_text: 'Long time ago',
-});
+}, language);
 
 const getAuthenticatedUser = async () => {
   const { data, error } = await supabase.auth.getUser();
@@ -123,8 +223,8 @@ const stopHeartbeat = () => {
 // PRESENCE QUERIES
 // =====================================================
 
-export const getUserPresence = async (userId) => {
-  if (!userId) return offlinePresence(userId);
+export const getUserPresence = async (userId, language = null) => {
+  if (!userId) return offlinePresence(userId, language);
 
   try {
     const { data, error } = await supabase
@@ -134,14 +234,14 @@ export const getUserPresence = async (userId) => {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data || offlinePresence(userId);
+    return data ? localizePresence(data, language) : offlinePresence(userId, language);
   } catch (error) {
     console.warn('Unable to fetch user presence:', error);
-    return offlinePresence(userId);
+    return offlinePresence(userId, language);
   }
 };
 
-export const getMultipleUserPresence = async (userIds) => {
+export const getMultipleUserPresence = async (userIds, language = null) => {
   try {
     const uniqueIds = [...new Set((userIds || []).filter(Boolean))];
     if (!uniqueIds.length) return {};
@@ -155,10 +255,10 @@ export const getMultipleUserPresence = async (userIds) => {
 
     const presenceMap = {};
     (data || []).forEach((presence) => {
-      presenceMap[presence.user_id] = presence;
+      presenceMap[presence.user_id] = localizePresence(presence, language);
     });
     uniqueIds.forEach((userId) => {
-      if (!presenceMap[userId]) presenceMap[userId] = offlinePresence(userId);
+      if (!presenceMap[userId]) presenceMap[userId] = offlinePresence(userId, language);
     });
     return presenceMap;
   } catch (error) {
@@ -167,7 +267,7 @@ export const getMultipleUserPresence = async (userIds) => {
   }
 };
 
-export const getOnlineUsers = async () => {
+export const getOnlineUsers = async (language = null) => {
   try {
     const { data, error } = await supabase
       .from('user_presence_view')
@@ -176,7 +276,7 @@ export const getOnlineUsers = async () => {
       .order('last_active', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map((presence) => localizePresence(presence, language));
   } catch (error) {
     console.warn('Unable to fetch online users:', error);
     return [];
@@ -287,25 +387,8 @@ export const cleanupPresence = async () => {
 };
 
 // =====================================================
-// UTILITY FUNCTIONS
+// VISUAL UTILITY FUNCTIONS
 // =====================================================
-
-export const formatLastSeen = (lastSeen) => {
-  if (!lastSeen) return 'Long time ago';
-
-  const now = new Date();
-  const lastSeenDate = new Date(lastSeen);
-  const diffMs = now - lastSeenDate;
-  const diffMins = Math.floor(diffMs / 60_000);
-  const diffHours = Math.floor(diffMs / 3_600_000);
-  const diffDays = Math.floor(diffMs / 86_400_000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  return 'Long time ago';
-};
 
 export const getStatusColor = (isOnline) =>
   isOnline ? 'bg-green-500' : 'bg-gray-400';
@@ -326,6 +409,7 @@ export default {
   initializePresence,
   cleanupPresence,
   formatLastSeen,
+  localizePresence,
   getStatusColor,
   getStatusTextColor,
 };
