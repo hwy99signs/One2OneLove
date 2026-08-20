@@ -3,22 +3,30 @@ import { supabase } from './supabase';
 export const CREATOR_PROGRAMMING_ENABLED = import.meta.env.VITE_CREATOR_PROGRAMMING_ENABLED === 'true';
 
 const SLOT_FIELDS = 'id,creator_user_id,program_source,room_slug,title,description,starts_at,ends_at,creator_timezone,creator_local_date,content_mode,replay_url,booking_tier,price_cents,payment_status,status,created_at,updated_at';
+const ERROR = {
+  disabled: 'O2OL_CREATOR_PROGRAMMING_DISABLED',
+  auth: 'O2OL_CREATOR_PROGRAMMING_AUTH_REQUIRED',
+  access: 'O2OL_CREATOR_PROGRAMMING_ACCESS_DENIED',
+  load: 'O2OL_CREATOR_PROGRAMMING_LOAD_FAILED',
+  book: 'O2OL_CREATOR_PROGRAMMING_BOOK_FAILED',
+  cancel: 'O2OL_CREATOR_PROGRAMMING_CANCEL_FAILED',
+};
 
 const requireEnabled = () => {
-  if (!CREATOR_PROGRAMMING_ENABLED) throw new Error('Creator programming is not enabled yet.');
+  if (!CREATOR_PROGRAMMING_ENABLED) throw new Error(ERROR.disabled);
 };
 
 const getAuthenticatedCreator = async () => {
   const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError || !authData?.user?.id) throw new Error('Sign in to manage creator programming.');
+  if (authError || !authData?.user?.id) throw new Error(ERROR.auth);
 
   const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('id,user_type,name')
     .eq('id', authData.user.id)
     .single();
-  if (profileError) throw profileError;
-  if (profile?.user_type !== 'influencer') throw new Error('Creator programming is available only to approved creator accounts.');
+  if (profileError) throw new Error(ERROR.access);
+  if (profile?.user_type !== 'influencer') throw new Error(ERROR.access);
 
   return profile;
 };
@@ -29,7 +37,7 @@ export const getCreatorProgrammingAccess = async () => {
     const profile = await getAuthenticatedCreator();
     return { enabled: true, eligible: true, profile };
   } catch (error) {
-    return { enabled: true, eligible: false, profile: null, reason: error?.message || 'Creator access unavailable.' };
+    return { enabled: true, eligible: false, profile: null, reason: error?.message || ERROR.access };
   }
 };
 
@@ -39,8 +47,8 @@ export const getGlobalProgrammingStatus = async () => {
   }
 
   const { data, error } = await supabase.functions.invoke('current-creator-programming', { body: {} });
-  if (error) throw new Error(error?.message || 'Unable to load current programming.');
-  if (!data?.success) throw new Error('Unable to load current programming.');
+  if (error) throw new Error(ERROR.load);
+  if (!data?.success) throw new Error(ERROR.load);
 
   return {
     enabled: Boolean(data.enabled),
@@ -54,8 +62,8 @@ export const listPublishedProgramming = async ({ from, to, roomSlug = 'global-re
   const { data, error } = await supabase.functions.invoke('list-creator-programming', {
     body: { from, to, room_slug: roomSlug },
   });
-  if (error) throw new Error(error?.message || 'Unable to load creator programming.');
-  if (!data?.success) throw new Error('Unable to load creator programming.');
+  if (error) throw new Error(ERROR.load);
+  if (!data?.success) throw new Error(ERROR.load);
   return data.slots || [];
 };
 
@@ -75,7 +83,7 @@ export const listMyProgramming = async ({ from, to } = {}) => {
   if (from) query = query.gt('ends_at', from);
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) throw new Error(ERROR.load);
   return data || [];
 };
 
@@ -108,21 +116,10 @@ export const bookCreatorProgrammingSlot = async ({
     },
   });
 
-  if (error) throw new Error(error?.message || 'Unable to book this programming slot.');
+  if (error) throw new Error(ERROR.book);
   if (!data?.success) {
-    const code = data?.error || 'BOOKING_FAILED';
-    const messages = {
-      CREATOR_NOT_APPROVED: 'Creator programming is available only to approved creator accounts.',
-      POLICY_ACK_REQUIRED: 'Confirm the creator programming rules before booking.',
-      DAILY_FREE_LIMIT_REACHED: 'You have already booked the two free creator slots allowed for this day.',
-      SLOT_CONFLICT: 'That programming time is no longer available.',
-      INVALID_TIME: 'Choose a valid future programming time.',
-      INVALID_TIMEZONE: 'Choose a valid timezone for this booking.',
-      REPLAY_URL_REQUIRED: 'Add a valid replay link for replay programming.',
-      PAID_SLOTS_NOT_ENABLED: 'Paid creator slots are not enabled yet.',
-      FEATURE_DISABLED: 'Creator programming is not enabled yet.',
-    };
-    throw new Error(messages[code] || 'Unable to book this programming slot.');
+    const providerCode = String(data?.error || 'BOOKING_FAILED').replace(/[^A-Z0-9_]/g, '').slice(0, 80) || 'BOOKING_FAILED';
+    throw new Error(`O2OL_CREATOR_PROGRAMMING_${providerCode}`);
   }
 
   return data.slot;
@@ -141,6 +138,6 @@ export const cancelCreatorProgrammingSlot = async (slotId) => {
     .select(SLOT_FIELDS)
     .single();
 
-  if (error) throw error;
+  if (error) throw new Error(ERROR.cancel);
   return data;
 };
