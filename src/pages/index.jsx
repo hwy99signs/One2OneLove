@@ -52,7 +52,7 @@ import CooperativeGames from "./CooperativeGames";
 import CouplesDashboard from "./CouplesDashboard";
 import CouplesCalendar from "./CouplesCalendar";
 import LGBTQSupport from "./LGBTQSupport";
-import HelpCenter from "./HelpCenterRelaunch";
+import HelpCenter from "./HelpCenterRelaunchWithSupport";
 import PrivacyPolicy from "./PrivacyPolicy";
 import TermsOfService from "./TermsOfService";
 import PremiumFeatures from "./PremiumFeatures";
