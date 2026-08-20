@@ -50,6 +50,7 @@ jobs:
         run: |
           node scripts/relaunch-live-community-check.mjs
           node scripts/relaunch-live-room-host-security-check.mjs
+          node scripts/relaunch-live-room-write-identity-check.mjs
           node scripts/relaunch-live-room-i18n-check.mjs
 
       - name: Verify member-safety safeguards
