@@ -8,6 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const MAX_OPEN_REQUESTS = 5
 const VALID_CATEGORIES = new Set(['account','technical','billing','safety','feedback','other'])
+const MEMBER_FIELDS = 'id,category,subject,message,status,staff_response,responded_at,member_response_read_at,closed_at,created_at,updated_at'
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -66,7 +67,7 @@ serve(async (request) => {
     if (callerError || !caller?.id) return json(request, { error: 'UNAUTHORIZED' }, 401)
 
     const body = await request.json().catch(() => ({}))
-    const action = clean(body?.action, 20) || 'list'
+    const action = clean(body?.action, 30) || 'list'
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
@@ -74,7 +75,7 @@ serve(async (request) => {
     if (action === 'list') {
       const { data, error } = await serviceClient
         .from('support_requests')
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(MEMBER_FIELDS)
         .eq('user_id', caller.id)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -87,9 +88,25 @@ serve(async (request) => {
       if (!requestId) return json(request, { error: 'REQUEST_ID_REQUIRED' }, 400)
       const { data, error } = await serviceClient
         .from('support_requests')
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(MEMBER_FIELDS)
         .eq('id', requestId)
         .eq('user_id', caller.id)
+        .maybeSingle()
+      if (error) throw error
+      return json(request, { success: true, enabled: true, request: data || null })
+    }
+
+    if (action === 'mark_response_read') {
+      const requestId = clean(body?.request_id, 80)
+      if (!requestId) return json(request, { error: 'REQUEST_ID_REQUIRED' }, 400)
+      const readAt = new Date().toISOString()
+      const { data, error } = await serviceClient
+        .from('support_requests')
+        .update({ member_response_read_at: readAt })
+        .eq('id', requestId)
+        .eq('user_id', caller.id)
+        .not('staff_response', 'is', null)
+        .select(MEMBER_FIELDS)
         .maybeSingle()
       if (error) throw error
       return json(request, { success: true, enabled: true, request: data || null })
@@ -105,7 +122,7 @@ serve(async (request) => {
         .eq('id', requestId)
         .eq('user_id', caller.id)
         .in('status', ['open','in_progress','resolved'])
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(MEMBER_FIELDS)
         .maybeSingle()
       if (error) throw error
       if (data) {
@@ -135,9 +152,17 @@ serve(async (request) => {
     const { data: created, error: insertError } = await serviceClient
       .from('support_requests')
       .insert({ user_id: caller.id, category, subject, message, status: 'open' })
-      .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+      .select(MEMBER_FIELDS)
       .single()
-    if (insertError) throw insertError
+    if (insertError) {
+      if (
+        insertError.code === 'P0001'
+        && String(insertError.message || '').includes('SUPPORT_OPEN_REQUEST_LIMIT_REACHED')
+      ) {
+        return json(request, { error: 'OPEN_REQUEST_LIMIT_REACHED' }, 409)
+      }
+      throw insertError
+    }
 
     const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: created.id, actor_user_id: caller.id, action: 'created' })
     if (auditError) throw auditError
