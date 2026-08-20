@@ -9,7 +9,10 @@ const actionFunction = fs.readFileSync('supabase/functions/member-block/index.ts
 const listFunction = fs.readFileSync('supabase/functions/list-blocked-members/index.ts', 'utf8');
 const service = fs.readFileSync('src/lib/memberBlockService.js', 'utf8');
 const button = fs.readFileSync('src/components/safety/MemberBlockButton.jsx', 'utf8');
+const privacyControl = fs.readFileSync('src/components/privacy/BlockedMembersControl.jsx', 'utf8');
 const page = fs.readFileSync('src/pages/BlockedMembers.jsx', 'utf8');
+const privacyCenter = fs.readFileSync('src/pages/PrivacyCenter.jsx', 'utf8');
+const routes = fs.readFileSync('src/pages/index.jsx', 'utf8');
 
 for (const required of [
   'primary key (blocker_id, blocked_id)',
@@ -75,9 +78,43 @@ for (const required of [
 ]) {
   if (!service.includes(required)) failures.push(`memberBlockService missing ${required}.`);
 }
+
 for (const language of ['en','es','fr','it','de']) {
   if (!new RegExp(`\\n\\s{2}${language}:\\s*\\{`).test(button)) failures.push(`MemberBlockButton missing ${language} copy.`);
   if (!new RegExp(`\\n\\s{2}${language}:\\s*\\{`).test(page)) failures.push(`BlockedMembers page missing ${language} copy.`);
+  if (!new RegExp(`\\n\\s{2}${language}:\\s*\\{`).test(privacyControl)) failures.push(`BlockedMembersControl missing ${language} copy.`);
+}
+
+for (const required of [
+  "const navigate = useNavigate();",
+  "navigate('/SignIn?returnTo=%2FBlockedMembers')",
+  "navigate('/PrivacyCenter')",
+  'member.name || t.memberFallback',
+]) {
+  if (!page.includes(required)) failures.push(`BlockedMembers page missing safe navigation/localization behavior ${required}.`);
+}
+if (page.includes("member.name || 'Member'")) failures.push('BlockedMembers page must not retain an English-only fallback member label.');
+
+for (const required of [
+  "if (!MEMBER_BLOCKING_ENABLED) return null;",
+  "navigate('/BlockedMembers')",
+]) {
+  if (!privacyControl.includes(required)) failures.push(`Privacy Center blocking control missing feature gate/navigation ${required}.`);
+}
+
+for (const required of [
+  "import BlockedMembersControl from '@/components/privacy/BlockedMembersControl';",
+  '<BlockedMembersControl className="mt-8" />',
+]) {
+  if (!privacyCenter.includes(required)) failures.push(`PrivacyCenter missing blocked-member management integration ${required}.`);
+}
+
+for (const required of [
+  'import BlockedMembers from "./BlockedMembers";',
+  'BlockedMembers,',
+  '["/BlockedMembers", BlockedMembers]',
+]) {
+  if (!routes.includes(required)) failures.push(`Relaunch routes missing BlockedMembers binding ${required}.`);
 }
 
 if (failures.length) {
@@ -86,4 +123,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member blocking foundation is private, mutual in Live Rooms, enforced in pairwise chat, and still held from activation pending discovery/request enforcement.');
+console.log('✅ Member blocking is private, mutually enforced, multilingual, routed, manageable from Privacy Center, and feature-gated for relaunch activation.');
