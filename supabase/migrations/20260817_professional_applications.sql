@@ -8,6 +8,11 @@
 
 begin;
 
+create schema if not exists o2ol_private;
+revoke all on schema o2ol_private from public, anon;
+
+authentication_placeholder: 
+
 create table if not exists public.professional_applications (
   id uuid primary key default gen_random_uuid(),
   application_type text not null check (application_type in ('therapist', 'influencer', 'professional')),
@@ -46,11 +51,14 @@ revoke all on table public.professional_applications from anon, authenticated;
 
 -- Do not create browser INSERT/SELECT policies. Public submission is mediated by the
 -- `submit-professional-application` Edge Function, which validates and inserts with
--- the service role only when PROFESSIONAL_APPLICATIONS_ENABLED=true.
+-- the service role only when PROFESSIONAL_APPLICATIONS_ENABLED=true and required
+-- anti-abuse verification is configured.
 
-create or replace function public.set_professional_application_updated_at()
+create or replace function o2ol_private.set_professional_application_updated_at()
 returns trigger
 language plpgsql
+security invoker
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
@@ -58,18 +66,26 @@ begin
 end;
 $$;
 
+revoke all on function o2ol_private.set_professional_application_updated_at() from public, anon, authenticated;
+
+drop function if exists public.set_professional_application_updated_at() cascade;
 drop trigger if exists professional_applications_updated_at on public.professional_applications;
 create trigger professional_applications_updated_at
 before update on public.professional_applications
-for each row execute function public.set_professional_application_updated_at();
+for each row execute function o2ol_private.set_professional_application_updated_at();
 
 comment on table public.professional_applications is
   'Private pre-membership applications for therapist, influencer and professional partner roles. Browser roles have no direct access.';
+comment on function o2ol_private.set_professional_application_updated_at() is
+  'Private SECURITY INVOKER trigger helper that updates only the application updated_at timestamp.';
 
 commit;
 
 -- PRE-APPLY CHECKLIST
 -- 1. Deploy submit-professional-application with verify_jwt=false and its kill switch OFF.
 -- 2. Confirm public browser roles cannot SELECT/INSERT/UPDATE/DELETE this table directly.
--- 3. Enable intake only for a controlled test after rate-limit/anti-abuse review.
--- 4. Confirm review workflow before approving any application or creating a member account.
+-- 3. Confirm PROFESSIONAL_APPLICATIONS_ENABLED=true fails closed unless
+--    PROFESSIONAL_APPLICATION_TURNSTILE_REQUIRED=true and Turnstile is configured.
+-- 4. Enable intake only for a controlled test after rate-limit/anti-abuse review.
+-- 5. Confirm the private trigger helper is not executable by public/anon/authenticated.
+-- 6. Confirm review workflow before approving any application or creating a member account.
