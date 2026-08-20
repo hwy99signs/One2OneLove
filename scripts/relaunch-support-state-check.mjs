@@ -7,6 +7,9 @@ const quota = fs.readFileSync(quotaFile, 'utf8');
 const state = fs.readFileSync(stateFile, 'utf8');
 
 for (const required of [
+  'create or replace function o2ol_private.enforce_member_support_open_request_limit()',
+  'security invoker',
+  "set search_path = ''",
   'pg_advisory_xact_lock(lock_key)',
   "status in ('open','in_progress')",
   'open_count >= 5',
@@ -16,6 +19,9 @@ for (const required of [
 }
 
 for (const required of [
+  'create or replace function o2ol_private.enforce_support_request_state_integrity()',
+  'security invoker',
+  "set search_path = ''",
   'SUPPORT_REQUEST_MEMBER_CONTENT_IMMUTABLE',
   'SUPPORT_REQUEST_INVALID_STATUS_TRANSITION',
   "old.status = 'open' and new.status in ('in_progress','resolved','closed')",
@@ -27,8 +33,15 @@ for (const required of [
   'SUPPORT_REQUEST_RESPONDED_AT_REQUIRED',
   'SUPPORT_REQUEST_RESPONSE_REQUIRED',
   'before insert or update on public.support_requests',
+  'execute function o2ol_private.enforce_support_request_state_integrity();',
 ]) {
   if (!state.includes(required)) failures.push(`${stateFile}: missing support state/content safeguard ${required}.`);
+}
+for (const [file, source] of [[quotaFile, quota], [stateFile, state]]) {
+  if (source.includes('security definer')) failures.push(`${file}: support integrity trigger helpers must not use SECURITY DEFINER.`);
+  if (/function public\.enforce_(member_support_open_request_limit|support_request_state_integrity)/.test(source)) {
+    failures.push(`${file}: support integrity trigger helper must remain outside the public schema.`);
+  }
 }
 
 if (failures.length) {
@@ -37,4 +50,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Support requests have a serialized five-open ceiling, immutable member-authored content and database-enforced lifecycle integrity.');
+console.log('✅ Support requests have a serialized five-open ceiling, immutable member-authored content, database-enforced lifecycle integrity and non-public SECURITY INVOKER trigger helpers.');
