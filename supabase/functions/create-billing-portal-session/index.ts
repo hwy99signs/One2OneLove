@@ -111,7 +111,9 @@ serve(async (request) => {
     }
 
     if (!customerId) return json(request, { error: 'NO_BILLING_ACCOUNT' }, 404)
-    if (!CUSTOMER_ID_PATTERN.test(customerId)) return json(request, { error: 'BILLING_ACCOUNT_RECONCILIATION_REQUIRED' }, 503)
+    if (!CUSTOMER_ID_PATTERN.test(customerId)) {
+      return json(request, { error: 'BILLING_ACCOUNT_RECONCILIATION_REQUIRED' }, 503)
+    }
 
     const form = new URLSearchParams()
     form.set('customer', customerId)
@@ -134,23 +136,16 @@ serve(async (request) => {
       body: form.toString(),
     })
 
-    await response.json().then(async (payload) => {
-      if (!response.ok) throw new Error(`STRIPE_API_${response.status}`)
-      const url = validHttpsUrl(payload?.url)
-      if (!url) throw new Error('STRIPE_PORTAL_URL_INVALID')
-      return url
-    }).then((url) => {
-      throw { __o2olPortalResponse: true, response: json(request, { url }) }
-    }).catch((error) => {
-      if (error?.__o2olPortalResponse) throw error
-      throw error
-    })
-
-    return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 500)
-  } catch (error) {
-    if (error && typeof error === 'object' && '__o2olPortalResponse' in error) {
-      return (error as any).response
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      console.error('Stripe billing portal session failed:', response.status)
+      return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 502)
     }
+
+    const url = validHttpsUrl(payload?.url)
+    if (!url) return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 502)
+    return json(request, { url })
+  } catch (error) {
     console.error('create-billing-portal-session error:', error instanceof Error ? error.message : 'unknown')
     return json(request, { error: 'BILLING_PORTAL_UNAVAILABLE' }, 500)
   }
