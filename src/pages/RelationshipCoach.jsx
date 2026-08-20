@@ -23,6 +23,9 @@ const COPY = {
     premium: 'Relationship Coach is a membership feature.', membership: 'View Membership',
     unavailable: 'Relationship Coach is still being prepared for the controlled relaunch. No AI request was sent.',
     note: 'AI guidance can be useful for reflection, but it is not therapy, legal advice, medical advice, or emergency support.',
+    signInBody: 'Sign in to use your private Relationship Coach conversations.', signInButton: 'Sign in',
+    deleteConfirm: 'Delete this coaching conversation?', startFirst: 'Start a conversation first.', noConversations: 'No conversations yet.',
+    sessionTitle: 'Coaching Session', deleteAria: 'Delete conversation', privatePrefix: 'Private to your account.', thinking: 'Thinking…',
     prompts: ['Help us communicate better', 'Give me a practical relationship check-in idea', 'How can I bring up a difficult subject calmly?', 'Suggest a simple way to reconnect this week'],
   },
   es: {
@@ -33,6 +36,9 @@ const COPY = {
     premium: 'El Coach de Relaciones es una función de membresía.', membership: 'Ver membresía',
     unavailable: 'El Coach de Relaciones todavía se está preparando para el relanzamiento controlado. No se envió ninguna solicitud de IA.',
     note: 'La orientación de IA puede ayudar a reflexionar, pero no sustituye terapia, asesoría legal o médica ni servicios de emergencia.',
+    signInBody: 'Inicia sesión para usar tus conversaciones privadas con el Coach de Relaciones.', signInButton: 'Iniciar sesión',
+    deleteConfirm: '¿Eliminar esta conversación de coaching?', startFirst: 'Primero inicia una conversación.', noConversations: 'Aún no hay conversaciones.',
+    sessionTitle: 'Sesión de coaching', deleteAria: 'Eliminar conversación', privatePrefix: 'Privado para tu cuenta.', thinking: 'Pensando…',
     prompts: ['Ayúdanos a comunicarnos mejor', 'Dame una idea práctica para revisar nuestra relación', '¿Cómo saco un tema difícil con calma?', 'Sugiere una forma sencilla de reconectarnos esta semana'],
   },
   fr: {
@@ -43,6 +49,9 @@ const COPY = {
     premium: 'Le Coach Relationnel est une fonctionnalité réservée aux membres.', membership: 'Voir l’abonnement',
     unavailable: 'Le Coach Relationnel est encore en préparation pour la relance contrôlée. Aucune requête IA n’a été envoyée.',
     note: 'Les conseils de l’IA peuvent aider à réfléchir, mais ne remplacent pas une thérapie, un avis juridique ou médical, ni les services d’urgence.',
+    signInBody: 'Connectez-vous pour utiliser vos conversations privées avec le Coach Relationnel.', signInButton: 'Se connecter',
+    deleteConfirm: 'Supprimer cette conversation de coaching ?', startFirst: 'Commencez d’abord une conversation.', noConversations: 'Aucune conversation pour le moment.',
+    sessionTitle: 'Session de coaching', deleteAria: 'Supprimer la conversation', privatePrefix: 'Privé pour votre compte.', thinking: 'Réflexion…',
     prompts: ['Aidez-nous à mieux communiquer', 'Donnez-moi une idée pratique de bilan de couple', 'Comment aborder calmement un sujet difficile ?', 'Suggérez une façon simple de nous reconnecter cette semaine'],
   },
   it: {
@@ -53,6 +62,9 @@ const COPY = {
     premium: 'Il Coach Relazionale è una funzione riservata agli abbonati.', membership: 'Vedi abbonamento',
     unavailable: 'Il Coach Relazionale è ancora in preparazione per il rilancio controllato. Non è stata inviata alcuna richiesta IA.',
     note: 'La guida dell’IA può aiutare a riflettere, ma non sostituisce terapia, consulenza legale o medica né servizi di emergenza.',
+    signInBody: 'Accedi per usare le tue conversazioni private con il Coach Relazionale.', signInButton: 'Accedi',
+    deleteConfirm: 'Eliminare questa conversazione di coaching?', startFirst: 'Inizia prima una conversazione.', noConversations: 'Nessuna conversazione ancora.',
+    sessionTitle: 'Sessione di coaching', deleteAria: 'Elimina conversazione', privatePrefix: 'Privato per il tuo account.', thinking: 'Sto pensando…',
     prompts: ['Aiutaci a comunicare meglio', 'Dammi un’idea pratica per fare il punto sulla relazione', 'Come posso affrontare con calma un argomento difficile?', 'Suggerisci un modo semplice per riconnetterci questa settimana'],
   },
   de: {
@@ -63,6 +75,9 @@ const COPY = {
     premium: 'Der Beziehungscoach ist eine Mitgliedschaftsfunktion.', membership: 'Mitgliedschaft ansehen',
     unavailable: 'Der Beziehungscoach wird noch für den kontrollierten Relaunch vorbereitet. Es wurde keine KI-Anfrage gesendet.',
     note: 'KI-Hinweise können beim Nachdenken helfen, ersetzen aber keine Therapie, Rechts- oder medizinische Beratung und keinen Notfalldienst.',
+    signInBody: 'Melde dich an, um deine privaten Gespräche mit dem Beziehungscoach zu nutzen.', signInButton: 'Anmelden',
+    deleteConfirm: 'Dieses Coaching-Gespräch löschen?', startFirst: 'Beginne zuerst ein Gespräch.', noConversations: 'Noch keine Gespräche.',
+    sessionTitle: 'Coaching-Sitzung', deleteAria: 'Gespräch löschen', privatePrefix: 'Privat für dein Konto.', thinking: 'Denkt nach…',
     prompts: ['Hilf uns, besser zu kommunizieren', 'Gib mir eine praktische Idee für einen Beziehungs-Check-in', 'Wie spreche ich ein schwieriges Thema ruhig an?', 'Schlage eine einfache Möglichkeit vor, wie wir uns diese Woche wieder näherkommen'],
   },
   nl: {
@@ -73,6 +88,9 @@ const COPY = {
     premium: 'De Relatiecoach is een lidmaatschapsfunctie.', membership: 'Bekijk lidmaatschap',
     unavailable: 'De Relatiecoach wordt nog voorbereid voor de gecontroleerde herlancering. Er is geen AI-verzoek verzonden.',
     note: 'AI-begeleiding kan helpen bij reflectie, maar vervangt geen therapie, juridisch of medisch advies of noodhulp.',
+    signInBody: 'Log in om je privégesprekken met de Relatiecoach te gebruiken.', signInButton: 'Inloggen',
+    deleteConfirm: 'Dit coachinggesprek verwijderen?', startFirst: 'Start eerst een gesprek.', noConversations: 'Nog geen gesprekken.',
+    sessionTitle: 'Coachingsessie', deleteAria: 'Gesprek verwijderen', privatePrefix: 'Privé voor je account.', thinking: 'Denken…',
     prompts: ['Help ons beter communiceren', 'Geef me een praktisch idee voor een relatiecheck-in', 'Hoe bespreek ik rustig een moeilijk onderwerp?', 'Stel een eenvoudige manier voor om deze week opnieuw verbinding te maken'],
   },
 };
@@ -176,7 +194,7 @@ export default function RelationshipCoach() {
   };
 
   const removeConversation = async (id) => {
-    if (!window.confirm('Delete this coaching conversation?')) return;
+    if (!window.confirm(t.deleteConfirm)) return;
     setNotice('');
     try {
       await deleteCoachConversation(id, currentLanguage);
@@ -195,7 +213,7 @@ export default function RelationshipCoach() {
     if (!message || sending) return;
 
     if (!conversationId) {
-      setNotice('Start a conversation first.');
+      setNotice(t.startFirst);
       return;
     }
 
@@ -230,9 +248,9 @@ export default function RelationshipCoach() {
         <div className="mx-auto max-w-xl rounded-3xl bg-white p-8 text-center shadow-xl">
           <Sparkles className="mx-auto h-12 w-12 text-purple-600" />
           <h1 className="mt-4 text-3xl font-black text-gray-900">{t.title}</h1>
-          <p className="mt-3 text-gray-600">Sign in to use your private Relationship Coach conversations.</p>
+          <p className="mt-3 text-gray-600">{t.signInBody}</p>
           <Button className="mt-6 bg-gradient-to-r from-pink-600 to-purple-600 text-white" onClick={() => navigate(`/SignIn?returnTo=${encodeURIComponent('/RelationshipCoach')}`)}>
-            Sign in
+            {t.signInButton}
           </Button>
         </div>
       </div>
@@ -285,14 +303,14 @@ export default function RelationshipCoach() {
               {loading && conversations.length === 0 ? (
                 <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-purple-600" /></div>
               ) : conversations.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 p-3 text-sm text-gray-500">No conversations yet.</p>
+                <p className="rounded-xl bg-slate-50 p-3 text-sm text-gray-500">{t.noConversations}</p>
               ) : conversations.map((conversation) => (
                 <div key={conversation.id} className={`flex items-center gap-2 rounded-xl border p-2 ${conversationId === conversation.id ? 'border-purple-300 bg-purple-50' : 'border-transparent bg-slate-50'}`}>
                   <button type="button" onClick={() => openConversation(conversation.id)} className="min-w-0 flex-1 text-left">
-                    <p className="truncate text-sm font-semibold text-gray-800">{conversation.title || 'Coaching Session'}</p>
+                    <p className="truncate text-sm font-semibold text-gray-800">{conversation.title || t.sessionTitle}</p>
                     <p className="text-xs text-gray-500">{new Date(conversation.updated_at || conversation.created_at).toLocaleDateString()}</p>
                   </button>
-                  <button type="button" onClick={() => removeConversation(conversation.id)} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label="Delete conversation">
+                  <button type="button" onClick={() => removeConversation(conversation.id)} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={t.deleteAria}>
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -303,7 +321,7 @@ export default function RelationshipCoach() {
           <section className="flex min-h-[650px] flex-col overflow-hidden rounded-3xl bg-white shadow-lg">
             <div className="border-b border-gray-100 px-6 py-4">
               <p className="font-bold text-gray-900">{activeConversation?.title || t.empty}</p>
-              <p className="mt-1 text-xs text-gray-500">Private to your account. {t.note}</p>
+              <p className="mt-1 text-xs text-gray-500">{t.privatePrefix} {t.note}</p>
             </div>
 
             <div className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
@@ -329,7 +347,7 @@ export default function RelationshipCoach() {
                   </div>
                 </div>
               ))}
-              {sending && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /> Thinking…</div>}
+              {sending && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /> {t.thinking}</div>}
               <div ref={endRef} />
             </div>
 
