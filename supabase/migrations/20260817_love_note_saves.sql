@@ -18,7 +18,8 @@ create index if not exists love_note_saves_user_created_idx
 alter table public.love_note_saves enable row level security;
 
 -- Explicit browser grants: members can operate only on their own save-link rows under
--- RLS. The private invitation table itself remains inaccessible to browser roles.
+-- RLS. The invitation table remains restricted to the safe column grants established
+-- by the Love Notes invitation/history hardening; contact/token/provider internals remain unavailable.
 revoke all on table public.love_note_saves from anon, authenticated;
 grant select, insert, delete on table public.love_note_saves to authenticated;
 
@@ -27,7 +28,7 @@ create policy "Recipients can view their saved Love Notes"
   on public.love_note_saves
   for select
   to authenticated
-  using (user_id = auth.uid());
+  using ((select auth.uid()) is not null and user_id = (select auth.uid()));
 
 drop policy if exists "Recipients can save revealed Love Notes" on public.love_note_saves;
 create policy "Recipients can save revealed Love Notes"
@@ -35,12 +36,13 @@ create policy "Recipients can save revealed Love Notes"
   for insert
   to authenticated
   with check (
-    user_id = auth.uid()
+    (select auth.uid()) is not null
+    and user_id = (select auth.uid())
     and exists (
       select 1
       from public.love_note_invitations invitation
       where invitation.id = invitation_id
-        and invitation.recipient_user_id = auth.uid()
+        and invitation.recipient_user_id = (select auth.uid())
         and invitation.status = 'revealed'
     )
   );
@@ -50,13 +52,13 @@ create policy "Recipients can remove their own saved Love Notes"
   on public.love_note_saves
   for delete
   to authenticated
-  using (user_id = auth.uid());
+  using ((select auth.uid()) is not null and user_id = (select auth.uid()));
 
--- Safe saved-note projection. The browser does not need SELECT permission on the
--- private love_note_invitations table to render a recipient's own saved notes.
+-- Safe saved-note projection. security_invoker makes the view obey the caller's grants
+-- and RLS rather than running with the view owner's privileges.
 drop view if exists public.saved_love_notes;
 create view public.saved_love_notes
-with (security_barrier = true)
+with (security_barrier = true, security_invoker = true)
 as
 select
   save.id,
@@ -69,8 +71,8 @@ select
   invitation.revealed_at
 from public.love_note_saves save
 join public.love_note_invitations invitation on invitation.id = save.invitation_id
-where save.user_id = auth.uid()
-  and invitation.recipient_user_id = auth.uid()
+where save.user_id = (select auth.uid())
+  and invitation.recipient_user_id = (select auth.uid())
   and invitation.status = 'revealed';
 
 revoke all on public.saved_love_notes from public;
@@ -80,6 +82,6 @@ grant select on public.saved_love_notes to authenticated;
 comment on table public.love_note_saves is
   'Recipient-owned save links for securely revealed private Love Notes.';
 comment on view public.saved_love_notes is
-  'Authenticated recipient-only Saved Love Notes projection. Excludes delivery contact, token and provider internals.';
+  'Authenticated recipient-only Saved Love Notes projection. Uses security_invoker and excludes delivery contact, token and provider internals.';
 
 commit;
