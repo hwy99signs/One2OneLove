@@ -92,7 +92,10 @@ export const requireVerifiedSmsConsent = async (serviceClient: any, e164: string
     .maybeSingle()
 
   if (error) throw new Error('O2OL_SMS_CONSENT_LOOKUP_FAILED')
-  if (!data || data.status !== 'active' || !data.consented_at || data.revoked_at) {
+  if (data?.status === 'revoked' || data?.revoked_at) {
+    throw new Error('O2OL_SMS_RECIPIENT_OPTED_OUT')
+  }
+  if (!data || data.status !== 'active' || !data.consented_at) {
     throw new Error('O2OL_SMS_RECIPIENT_CONSENT_REQUIRED')
   }
 
