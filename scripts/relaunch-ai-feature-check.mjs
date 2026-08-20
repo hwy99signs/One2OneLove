@@ -142,9 +142,20 @@ check(
   'Spanish/French/etc. labels must not be sent as server enum values.'
 );
 check(
-  'AI Content Creator tells member nothing is auto-sent',
-  creatorPage.includes('Nothing is automatically sent to anyone.'),
-  'Generated relationship text remains a draft under member control.'
+  'AI Content Creator tells member nothing is auto-sent through localized copy',
+  creatorPage.includes('emptyResult:') && creatorPage.includes('{t.emptyResult}'),
+  'Generated relationship text must remain a localized draft under member control.'
+);
+check(
+  'AI Content Creator backend is generation-only and has no delivery provider path',
+  creatorFunction.includes("fetch('https://api.openai.com/v1/responses'")
+    && !creatorFunction.includes('resend.com')
+    && !creatorFunction.includes('twilio')
+    && !creatorFunction.includes('send-love-note')
+    && !creatorFunction.includes('recipient_email')
+    && !creatorFunction.includes('recipient_phone')
+    && !creatorFunction.includes('delivery_method'),
+  'The generator may return a draft to the authenticated caller but must not send it to another person or messaging provider.'
 );
 
 console.log('\nOne2OneLove premium AI relaunch check\n');
