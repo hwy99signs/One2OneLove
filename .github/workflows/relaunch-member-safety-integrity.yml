@@ -48,6 +48,7 @@ jobs:
           node scripts/relaunch-member-blocking-foundation-check.mjs
           node scripts/relaunch-member-blocking-discovery-check.mjs
           node scripts/relaunch-member-blocking-request-cleanup-check.mjs
+          node scripts/relaunch-member-blocking-list-privacy-check.mjs
 
       - name: Compile relaunch application
         run: npm run build
