@@ -5,14 +5,23 @@ export const SUPPORT_REQUESTS_ENABLED = import.meta.env.VITE_SUPPORT_REQUESTS_EN
 export const SUPPORT_CATEGORIES = ['account','technical','billing','safety','feedback','other'];
 
 const requireEnabled = () => {
-  if (!SUPPORT_REQUESTS_ENABLED) throw new Error('Support requests are not enabled yet.');
+  if (!SUPPORT_REQUESTS_ENABLED) throw new Error('SUPPORT_REQUESTS_DISABLED');
+};
+
+const functionErrorCode = (data, error, fallback) => {
+  if (data?.error) return String(data.error);
+  const context = error?.context;
+  if (context && typeof context === 'object') {
+    if (context.error) return String(context.error);
+    if (context.body?.error) return String(context.body.error);
+  }
+  return error?.message || fallback;
 };
 
 const invokeMemberSupport = async (body) => {
   requireEnabled();
   const { data, error } = await supabase.functions.invoke('support-request', { body });
-  if (error) throw new Error(error?.message || 'Unable to update support request.');
-  if (!data?.success) throw new Error('Unable to update support request.');
+  if (error || !data?.success) throw new Error(functionErrorCode(data, error, 'SUPPORT_REQUEST_FAILED'));
   return data;
 };
 
@@ -23,7 +32,7 @@ export const listMySupportRequests = async () => {
 };
 
 export const createSupportRequest = async ({ category, subject, message } = {}) => {
-  if (!SUPPORT_CATEGORIES.includes(category)) throw new Error('Choose a support category.');
+  if (!SUPPORT_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
   const data = await invokeMemberSupport({ action: 'create', category, subject, message });
   return data.request || null;
 };
@@ -41,7 +50,7 @@ export const markSupportResponseRead = async (requestId) => {
 const invokeSupportAdmin = async (body) => {
   requireEnabled();
   const { data, error } = await supabase.functions.invoke('manage-support-requests', { body });
-  if (error) throw new Error(error?.message || 'Unable to manage support requests.');
+  if (error || !data?.success) throw new Error(functionErrorCode(data, error, 'SUPPORT_ADMIN_FAILED'));
   return data;
 };
 
@@ -57,7 +66,7 @@ export const getSupportAdminAccess = async () => {
 
 export const listSupportQueue = async (status = '') => {
   const data = await invokeSupportAdmin({ action: 'list', status });
-  if (!data?.success || !data?.eligible) throw new Error('Support admin access is required.');
+  if (!data?.eligible) throw new Error('O2OL_SUPPORT_ADMIN_REQUIRED');
   return data.requests || [];
 };
 
