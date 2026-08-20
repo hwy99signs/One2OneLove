@@ -85,5 +85,25 @@ No scheduler was created. No Resend configuration was changed. No SMS provider w
 - The project still contains 0 communities and 0 community memberships, so the migration rewrote no existing community data.
 - Supabase Security Advisor added no new public SECURITY DEFINER warning for the `o2ol_private` helpers; unrelated pre-existing advisor warnings remain outside this approval.
 
+### Approval #8C — Presence and member-directory privacy reconciliation
+- Applied `presence_directory_privacy_reconciliation` to live Supabase.
+- Removed email and database-generated English `last_seen_text` from `public.user_presence_view`.
+- Preserved 28 existing presence rows and 11 synchronized member-directory rows.
+- Browser presence writes are now mediated; authenticated users have no direct INSERT/UPDATE/DELETE grant on `public.user_presence`.
+- Controlled verification confirmed own presence updates succeed and another-member updates are rejected with `O2OL_PRESENCE_OWN_ONLY`.
+- Presence views remain `security_invoker=true` and `security_barrier=true`.
+- Client-side presence copy is staged for EN/ES/FR/IT/DE using the selected language rather than database prose.
+
+### Approval #8C-A — Member-directory source minimization
+- Applied `member_directory_source_minimization` to live Supabase after explicit approval.
+- The first application attempt was rejected transactionally because `public.user_presence_view` depended on `public.member_directory`; the database rolled that attempt back with no state change.
+- Corrected the migration in development so `user_presence_view` is dropped/recreated within the same transaction while preserving its #8C privacy-safe definition.
+- `public.user_directory_profiles` now contains exactly `id`, `name`, `avatar_url`, `bio`, and `created_at`—no email, relationship status, location, interests, account type, partner, verification, subscription, or billing fields.
+- All 11 current regular-member directory records remain present.
+- `public.member_directory` exposes the same five safe fields and remains `security_invoker=true` / `security_barrier=true`.
+- `public.user_presence_view` remains `security_invoker=true` / `security_barrier=true`, with 28 presence rows preserved and no `email` or `last_seen_text` column.
+- Anonymous SELECT is revoked from both source and view. Authenticated SELECT remains intentionally enabled for member discovery, so Supabase may continue to report GraphQL discoverability; the discoverable source now contains only approved public-member fields.
+- The sync trigger on `public.users` continues to call `o2ol_private.sync_user_directory_profile()`. Browser roles cannot execute that trigger helper directly.
+
 ## Resend production dependency note
 The existing live `send-waitlist-notifications` Edge Function reads `Deno.env.get('RESEND_API_KEY')` and sends through the Resend API. Therefore the existing `RESEND_API_KEY` must continue to be treated as production-relevant and must not be overwritten blindly. The connector does not expose secret values, so any key verification/rotation must preserve waitlist compatibility and be handled without pasting secret material into chat or source control.
