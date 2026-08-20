@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const SUPPORTED_HOST_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de', 'nl']);
+const SUPPORTED_HOST_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de']);
 
 // Keep AI-host context minimal: recent public room text only, no member names or profile fields.
 const normalizeRecentMessages = (messages = []) =>
@@ -47,7 +47,7 @@ export async function getLiveRoomHostPrompt(roomOrOptions, recentMessages = [], 
     });
 
     if (error) {
-      console.warn('Live room host function unavailable:', error);
+      console.warn('Live room host function unavailable');
       return null;
     }
 
@@ -59,8 +59,8 @@ export async function getLiveRoomHostPrompt(roomOrOptions, recentMessages = [], 
       text: prompt,
       source: data.source === 'ai' ? 'ai' : 'fallback',
     };
-  } catch (error) {
-    console.warn('Live room host request failed:', error);
+  } catch {
+    console.warn('Live room host request failed');
     return null;
   }
 }
