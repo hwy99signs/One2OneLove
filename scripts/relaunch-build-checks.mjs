@@ -14,6 +14,7 @@ const checks = [
   ['relaunch billing reconciliation', 'scripts/relaunch-billing-reconciliation-check.mjs'],
   ['relaunch billing webhook idempotency', 'scripts/relaunch-billing-webhook-idempotency-check.mjs'],
   ['relaunch billing checkout idempotency', 'scripts/relaunch-billing-checkout-idempotency-check.mjs'],
+  ['relaunch membership projection security', 'scripts/relaunch-membership-projection-security-check.mjs'],
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
   ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
