@@ -34,10 +34,27 @@ for (const route of ['/Developer', '/WinACruise', '/ContactUs', '/Blog', '/Revie
   if (!router.includes(`["${route}", RelaunchUnavailable]`)) failures.push(`src/pages/index.jsx: ${route} must remain fenced through the multilingual unavailable shell.`);
 }
 
+const fencedSupportPages = [
+  'src/pages/CounselingSupport.jsx',
+  'src/pages/PodcastsSupport.jsx',
+  'src/pages/ArticlesSupport.jsx',
+  'src/pages/InfluencersSupport.jsx',
+];
+for (const file of fencedSupportPages) {
+  if (!fs.existsSync(file)) {
+    failures.push(`${file}: missing fenced legacy support destination.`);
+    continue;
+  }
+  const source = fs.readFileSync(file, 'utf8').trim();
+  if (source !== "export { default } from './RelaunchUnavailable';") {
+    failures.push(`${file}: legacy support directory/feed must remain fenced until its content, credentials, moderation and multilingual review are complete.`);
+  }
+}
+
 if (failures.length) {
   console.error('\n⛔ Relaunch fallback-shell multilingual check failed:');
   failures.forEach((failure) => console.error(` - ${failure}`));
   process.exit(1);
 }
 
-console.log('✅ Not-found, fenced-route and staged-premium fallback shells remain multilingual across all active One2OneLove languages.');
+console.log('✅ Not-found, fenced legacy/support routes and staged-premium fallback shells remain multilingual and unavailable until their relaunch review is complete.');
