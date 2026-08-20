@@ -13,8 +13,11 @@ const unavailableFile = 'src/pages/RelaunchUnavailable.jsx';
 const notFoundFile = 'src/pages/NotFoundRelaunch.jsx';
 const aboutFile = 'src/pages/AboutUsRelaunch.jsx';
 const aboutAliasFile = 'src/pages/AboutUs.jsx';
+const layoutFile = 'src/pages/LayoutRelaunch.jsx';
+const homeFile = 'src/pages/Home.jsx';
+const communityFile = 'src/pages/LiveCommunity.jsx';
 
-for (const file of [routerFile, helpFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile]) {
+for (const file of [routerFile, helpFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, layoutFile, homeFile, communityFile]) {
   check(`required: ${file}`, exists(file), exists(file) ? 'present' : 'missing');
 }
 
@@ -22,6 +25,10 @@ const router = exists(routerFile) ? read(routerFile) : '';
 const help = exists(helpFile) ? read(helpFile) : '';
 const about = exists(aboutFile) ? read(aboutFile) : '';
 const aboutAlias = exists(aboutAliasFile) ? read(aboutAliasFile) : '';
+const generalNavigationSurface = [layoutFile, homeFile, helpFile, communityFile]
+  .filter(exists)
+  .map((file) => read(file))
+  .join('\n');
 
 const blockedRoutes = [
   '/Developer',
@@ -42,6 +49,40 @@ for (const route of blockedRoutes) {
     `legacy route fenced: ${route}`,
     pattern.test(router),
     `${route} must stay preserved in source but unavailable from the relaunch route surface until reviewed.`
+  );
+}
+
+const requiredPrivateMemberRoutes = [
+  ['/PrivacyCenter', 'PrivacyCenter'],
+  ['/BlockedMembers', 'BlockedMembers'],
+  ['/SupportRequests', 'SupportRequests'],
+  ['/ProgrammingSchedule', 'ProgrammingSchedule'],
+];
+
+for (const [route, component] of requiredPrivateMemberRoutes) {
+  check(
+    `private member route wired: ${route}`,
+    router.includes(`["${route}", ${component}]`),
+    `${route} is a reviewed member control and must not silently disappear from the relaunch router.`
+  );
+}
+
+const staffConsoleRoutes = [
+  '/SupportAdmin',
+  '/O2OLProgrammingAdmin',
+  '/ProgrammingModerationAdmin',
+];
+
+for (const route of staffConsoleRoutes) {
+  check(
+    `staff console routed privately: ${route}`,
+    router.includes(`["${route}",`),
+    `${route} must remain routable for server-authorized staff while its page enforces the feature switch and server allowlist.`
+  );
+  check(
+    `staff console absent from general navigation: ${route}`,
+    !generalNavigationSurface.includes(route),
+    `${route} must not be exposed from the main header, Home, Help Center or Community navigation surfaces.`
   );
 }
 
