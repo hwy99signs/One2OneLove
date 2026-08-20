@@ -10,7 +10,10 @@ for (const required of [
   "in ('pending','requested','open')",
   'after insert on public.member_blocks',
   'new.blocker_id, new.blocked_id',
-  'revoke all on function public.cleanup_pending_member_requests_on_block() from public, anon, authenticated;',
+  'create or replace function o2ol_private.cleanup_pending_member_requests_on_block()',
+  "set search_path = ''",
+  'revoke all on function o2ol_private.cleanup_pending_member_requests_on_block() from public, anon, authenticated;',
+  'execute function o2ol_private.cleanup_pending_member_requests_on_block();',
   'without deleting accepted connection records',
 ]) {
   if (!source.includes(required)) failures.push(`${file}: missing pending-request cleanup safeguard ${required}.`);
@@ -19,8 +22,10 @@ for (const required of [
 for (const forbidden of [
   "delete from public.connections",
   "delete from public.friendships",
+  'function public.cleanup_pending_member_requests_on_block',
+  'set search_path = public',
 ]) {
-  if (source.includes(forbidden)) failures.push(`${file}: accepted connection data must not be deleted before the explicit product decision (${forbidden}).`);
+  if (source.includes(forbidden)) failures.push(`${file}: blocked-pair cleanup contains disallowed behavior (${forbidden}).`);
 }
 
 if (failures.length) {
@@ -29,4 +34,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ New member blocks remove pending pair requests without silently deleting accepted connections.');
+console.log('✅ New member blocks remove pending pair requests through a non-public fixed-search-path helper without silently deleting accepted connections.');
