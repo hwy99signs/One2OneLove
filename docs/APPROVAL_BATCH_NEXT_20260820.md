@@ -155,9 +155,24 @@ Activate private support requests/responses, quotas, status guards and staff acc
 
 ### #22 — Membership billing reconciliation / cutover
 **Type:** BILLING / COST / PRODUCTION / HIGH IMPACT  
-**Status:** HOLD.
+**Status:** HOLD; development security/idempotency audit advanced.
 
 Reconcile legacy billing/subscription state with the relaunch membership model, run controlled Stripe tests, verify webhook/idempotency behavior, and approve production entitlement gating/cutover. Do not activate new charging behavior from this batch file alone.
+
+**Current staged safeguards:**
+- browser checkout still sends only the single server-recognized membership plan key; browser price IDs, amounts, user IDs and billing email are not trusted;
+- configured Stripe Price objects are revalidated against the locked launch amounts/currency/monthly recurrence before checkout;
+- one server-only `stripe_checkout_attempts` row per member prevents rapid/retried requests from manufacturing multiple concurrent Checkout Sessions;
+- retries preserve the checkout attempt token and Stripe `Idempotency-Key`; a non-expired open Checkout Session is reused, and only Stripe's explicit `expired` status permits a new session;
+- ambiguous/open-without-URL Checkout state fails closed to reconciliation rather than silently creating a replacement;
+- signed webhook events are claimed in a browser-inaccessible `stripe_webhook_events` ledger with processing/processed/failed states and controlled stale/failed retry behavior;
+- cancellation audit history is linked to a unique Stripe event ID, while invoice history remains unique by Stripe invoice ID;
+- subscription create/update/delete handlers re-fetch current Stripe subscription state before entitlement synchronization instead of blindly trusting potentially stale delivery payloads;
+- released Stripe schedules are cleared from the current attached-schedule field rather than remaining falsely attached;
+- `my_membership` is staged as `security_invoker=true` + `security_barrier=true`, backed by own-row RLS and column-level grants for safe membership status fields only; Stripe IDs, raw price IDs, checkout internals and reconciliation state remain browser-inaccessible;
+- the checkout, webhook replay, and membership projection rules are now independent strict relaunch preflight groups.
+
+**Still required before #22 can be approved:** inventory/preserve any genuine existing paid customer state; verify the correct Stripe account/mode and live webhook endpoint; run controlled test-mode checkout, retry, duplicate-webhook, out-of-order-event, cancellation, portal and intro-to-standard schedule tests; confirm production secrets without exposing them; and deliberately approve the entitlement/billing cutover. `VITE_PAYMENTS_ENABLED` and server `PAYMENTS_ENABLED` remain OFF until then.
 
 ---
 
