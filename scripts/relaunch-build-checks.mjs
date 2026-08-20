@@ -15,6 +15,7 @@ const checks = [
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
   ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
+  ['Love Notes SMS compliance', 'scripts/relaunch-love-note-sms-check.mjs'],
   ['relaunch premium AI', 'scripts/relaunch-ai-feature-check.mjs'],
   ['relaunch AI Content Creator multilingual runtime', 'scripts/relaunch-ai-content-i18n-check.mjs'],
   ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
