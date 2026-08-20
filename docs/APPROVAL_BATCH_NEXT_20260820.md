@@ -22,25 +22,27 @@ Still batch/hold for approval:
 
 ## SMS / Love Notes
 
-### #9C — Final SMS legal publication + support identity
+### #9C — Final SMS legal publication + support identity + recipient verification choice
 **Type:** LEGAL / COMPLIANCE / DESIGN  
 **Status:** NOT READY FOR PRODUCTION; development draft exists.
 
 Approve final launch-market review and publication of SMS-specific Terms/Privacy language, including the actual support method/contact to be used for HELP and compliance inquiries. Final legal wording must preserve the five-language O2OL framework and must not be represented as final until reviewed.
 
-**Current development:** recipient-controlled optional opt-in page and legal draft are staged; existing public Terms/Privacy remain clearly marked final-review-pending.
+Also approve the production method used to bind web SMS consent to the actual recipient/number. The staged public form currently includes explicit recipient self-attestation, but production consent capture must not rely on a sender being able to forge another person's checkbox submission. Candidate approaches include a provider verification/OTP flow or an authenticated/server-bound recipient flow. A paid verification product is **not** selected by the current development code.
 
-### #9D — Twilio account, Messaging Service and A2P registration
+**Current development:** recipient-controlled optional opt-in page, server-only consent capture source, signed Twilio opt-out webhook source, and legal draft are staged; existing public Terms/Privacy remain clearly marked final-review-pending.
+
+### #9D — Twilio account, Messaging Service, webhook credentials and A2P registration
 **Type:** COST / LEGAL / PROVIDER / SECRETS  
 **Status:** BLOCKED FOR LATER APPROVAL.
 
-Authorize actual Twilio account/provider setup, Messaging Service configuration, applicable U.S. A2P 10DLC registration, provider fees, and creation/storage of server-only credentials. Do not paste credentials into chat, GitHub, or browser code.
+Authorize actual Twilio account/provider setup, Messaging Service configuration, applicable U.S. A2P 10DLC registration, provider fees, and creation/storage of server-only credentials. This includes the outbound restricted API key/secret and the separate Account Auth Token required for `X-Twilio-Signature` webhook validation. If #9C selects a paid phone-verification product, its provider fees/configuration also belong here. Do not paste credentials into chat, GitHub, or browser code.
 
-### #9E — Production SMS consent foundation
+### #9E — Production SMS consent + opt-out foundation
 **Type:** PRODUCTION / PRIVACY / MEDIUM SECURITY  
 **Status:** STAGED, NOT LIVE.
 
-Authorize applying the SMS compliance schema to live Supabase and deploying the recipient consent endpoint with consent capture still isolated from SMS sending. Run RLS/grant/advisor verification and a controlled consent-only test. No SMS send under this item.
+Authorize applying the SMS compliance schema to live Supabase and deploying the recipient consent endpoint plus signed Twilio STOP/START/HELP synchronization endpoint. Consent capture must remain isolated from SMS sending until recipient verification, final legal copy and provider configuration are verified. Run RLS/grant/advisor verification and controlled consent/opt-out tests. No Love Note SMS send under this item.
 
 ### #9F — Live Love Notes SMS sending
 **Type:** COST / PRODUCTION / COMPLIANCE  
