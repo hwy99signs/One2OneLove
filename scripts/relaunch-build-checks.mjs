@@ -13,6 +13,7 @@ const checks = [
   ['relaunch authentication safety', 'scripts/relaunch-auth-safety-check.mjs'],
   ['relaunch billing reconciliation', 'scripts/relaunch-billing-reconciliation-check.mjs'],
   ['relaunch billing webhook idempotency', 'scripts/relaunch-billing-webhook-idempotency-check.mjs'],
+  ['relaunch billing checkout idempotency', 'scripts/relaunch-billing-checkout-idempotency-check.mjs'],
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
   ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
