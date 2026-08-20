@@ -13,6 +13,7 @@ const helper = read('supabase/functions/_shared/loveNoteSms.ts');
 const send = read('supabase/functions/send-love-note-invitation/index.ts');
 const dispatcher = read('supabase/functions/dispatch-scheduled-love-notes/index.ts');
 const consentEndpoint = read('supabase/functions/manage-love-note-sms-consent/index.ts');
+const twilioWebhook = read('supabase/functions/twilio-love-note-sms-webhook/index.ts');
 const migration = read('supabase/migrations/20260820154500_love_note_sms_compliance.sql');
 const client = read('src/lib/loveNoteInvitationService.js');
 const consentClient = read('src/lib/smsConsentService.js');
@@ -62,6 +63,20 @@ requireText(consentEndpoint, /consentHashFor\(phone\)/, 'Recipient endpoint must
 requireText(consentEndpoint, /program_version:[\s\S]*disclosure_version:[\s\S]*terms_version:[\s\S]*privacy_version:/, 'Recipient endpoint must persist accepted disclosure/legal versions.');
 forbidText(consentEndpoint, /console\.(log|error)\([^\n]*phone|phone_last4|ip_address/i, 'Recipient endpoint must not log/store raw phone or IP evidence.');
 
+requireText(twilioWebhook, /DEVELOPMENT ONLY[\s\S]*do not deploy\/configure/i, 'Twilio opt-out webhook must remain explicitly development-only.');
+requireText(twilioWebhook, /LOVE_NOTE_SMS_WEBHOOK_ENABLED/, 'Twilio webhook must fail closed behind a dedicated production gate.');
+requireText(twilioWebhook, /TWILIO_AUTH_TOKEN/, 'Twilio webhook must use the server-only Auth Token for signature validation.');
+requireText(twilioWebhook, /x-twilio-signature/i, 'Twilio webhook must require X-Twilio-Signature.');
+requireText(twilioWebhook, /HMAC[\s\S]*SHA-1/, 'Twilio webhook must implement Twilio form-signature HMAC-SHA1 validation.');
+requireText(twilioWebhook, /TWILIO_SMS_WEBHOOK_PUBLIC_URL/, 'Twilio signature validation must use the exact configured public HTTPS webhook URL.');
+requireText(twilioWebhook, /OptOutType/, 'Twilio webhook must consume Advanced Opt-Out OptOutType rather than guess from arbitrary message text.');
+requireText(twilioWebhook, /\['STOP', 'START', 'HELP'\]/, 'Twilio webhook must constrain opt-out event types.');
+requireText(twilioWebhook, /status:\s*'revoked'/, 'Twilio STOP must revoke O2OL consent state.');
+requireText(twilioWebhook, /status:\s*'active'/, 'Known Twilio START must restore active O2OL consent state.');
+requireText(twilioWebhook, /if \(!existing\?\.id\) return emptyTwiml\(200\)/, 'Unknown inbound START must not create fresh O2OL consent.');
+forbidText(twilioWebhook, /\.get\(['"]Body['"]\)[\s\S]*\.(insert|update|upsert)/, 'Opt-out webhook must not persist ordinary inbound SMS message bodies.');
+forbidText(twilioWebhook, /console\.(log|error)\([^\n]*(From|from|phone)/, 'Twilio webhook must not log raw recipient phone data.');
+
 requireText(client, /LOVE_NOTE_DELIVERY_LANGUAGES = \['en', 'es', 'fr', 'it', 'de'\]/, 'Client invitation payload support must preserve all five active O2OL languages.');
 requireText(client, /SMS_PHONE_E164_REQUIRED/, 'Client invitation validation must require an international E.164 SMS destination.');
 requireText(client, /delivery_language:\s*validated\.deliveryLanguage/, 'Client invitation payload must send the recipient delivery language.');
@@ -95,4 +110,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Love Notes SMS compliance preflight passed: Twilio-specific, recipient-consent-gated, five-language, browser-private, legal-review-gated, and production-dark.');
+console.log('✅ Love Notes SMS compliance preflight passed: Twilio-specific, recipient-consent-gated, signed-webhook-aware, five-language, browser-private, legal-review-gated, and production-dark.');
