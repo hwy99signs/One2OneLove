@@ -109,6 +109,15 @@ This file tracks only actions that should NOT be performed automatically while d
     - Removing reported programming changes the program to cancelled and must continue cancelling active member reminders for that program.
     - `/ProgrammingModerationAdmin` is staged as a private route; do not expose it through general member navigation. Access must remain denied unless both moderation is enabled and the authenticated account is allowlisted.
 
+21. Private member support activation.
+    - `supabase/migrations/20260819_support_requests.sql`, `20260819_support_request_quota_guard.sql`, `20260819_support_request_state_guard.sql`, and `20260819_support_response_read_state.sql` are DEVELOPMENT ONLY and must be applied/reviewed together in a development environment before live activation.
+    - Do not deploy `support-request` or `manage-support-requests` to live Supabase until the table/RLS, five-open-request quota, immutable member-authored content, lifecycle transitions, and response read-state have been verified end-to-end.
+    - Keep both `VITE_SUPPORT_REQUESTS_ENABLED=false` and `SUPPORT_REQUESTS_ENABLED=false` during deployment and controlled testing.
+    - O2OL staff support authority must come only from the server-side `O2OL_SUPPORT_ADMIN_USER_IDS` allowlist. Do not infer staff authority from `regular`, `professional`, `therapist`, `influencer`, or any other public profile role.
+    - `/SupportAdmin` is a private route and must not be exposed through general member navigation. `/SupportRequests` is the authenticated member path and the header response center remains hidden while support is disabled.
+    - Support responses and notifications are staged as **in-app only**. Do not add email, SMS, push, outbound ticketing, or another external provider without a separate approval covering cost, consent/opt-out, privacy, retention, and operational ownership.
+    - The support channel is not an emergency or crisis-response service and must not be presented as continuously monitored. The member UI must continue showing this boundary, especially for the `safety` category.
+
 ## Safe development work that may continue without separate approval
 
 - Frontend UX and visual refinements on `relaunch-homepage`.
@@ -120,6 +129,7 @@ This file tracks only actions that should NOT be performed automatically while d
 - Expanding automated relaunch safety checks so production blockers are visible before launch.
 - Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming moderation/reporting UX, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
 - Member-blocking safety UX, route integration, privacy-safe blocked-list management, and automated checks while the blocking database/function/client switches remain off.
+- Private member-support UX, in-app response notification/read-state plumbing, allowlisted support-console UX, and automated checks while support database/functions/client switches remain off.
 
 ## Current operating rule
 
