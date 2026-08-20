@@ -6,6 +6,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -22,7 +23,7 @@ const allowedAdminIds = () => new Set(
   (Deno.env.get('O2OL_PROGRAMMING_ADMIN_USER_IDS') || '')
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean)
+    .filter((value) => UUID_PATTERN.test(value))
 )
 
 const corsHeadersFor = (request: Request) => {
@@ -103,6 +104,7 @@ serve(async (request) => {
 
     const reportId = clean(body?.report_id, 80)
     if (!reportId) return json(request, { error: 'REPORT_ID_REQUIRED' }, 400)
+    if (!UUID_PATTERN.test(reportId)) return json(request, { error: 'REPORT_ID_INVALID' }, 400)
 
     const { data: report, error: reportError } = await serviceClient
       .from('programming_reports')
