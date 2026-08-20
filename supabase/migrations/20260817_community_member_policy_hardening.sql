@@ -8,6 +8,9 @@
 --   * community creators depended on a browser-supplied `asAdmin` insert;
 --   * moderators could promote themselves/others to admin through the broad policy;
 --   * membership identity/routing fields could otherwise be rewritten.
+--
+-- Multilingual rule: database enforcement raises stable O2OL_* codes rather than
+-- user-facing English prose. The client translation layer owns displayed copy.
 
 begin;
 
@@ -18,13 +21,13 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
-  select auth.uid() is not null and exists (
+  select (select auth.uid()) is not null and exists (
     select 1
     from public.community_members cm
     where cm.community_id = p_community_id
-      and cm.user_id = auth.uid()
+      and cm.user_id = (select auth.uid())
       and cm.status = 'active'
   );
 $$;
@@ -34,13 +37,13 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
-  select auth.uid() is not null and exists (
+  select (select auth.uid()) is not null and exists (
     select 1
     from public.community_members cm
     where cm.community_id = p_community_id
-      and cm.user_id = auth.uid()
+      and cm.user_id = (select auth.uid())
       and cm.role in ('admin', 'moderator')
       and cm.status = 'active'
   );
@@ -56,7 +59,7 @@ create or replace function public.ensure_community_creator_membership()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   insert into public.community_members (community_id, user_id, role, status)
@@ -67,7 +70,7 @@ begin
 end;
 $$;
 
-revoke all on function public.ensure_community_creator_membership() from public;
+revoke all on function public.ensure_community_creator_membership() from public, anon, authenticated;
 
 drop trigger if exists ensure_community_creator_membership on public.communities;
 create trigger ensure_community_creator_membership
@@ -79,19 +82,20 @@ create or replace function public.enforce_community_membership_management()
 returns trigger
 language plpgsql
 security invoker
-set search_path = public
+set search_path = ''
 as $$
 declare
   creator_id uuid;
   actor_role text;
 begin
-  if auth.role() is null or auth.role() = 'service_role' then
+  -- Trusted database/service-role writes are not browser actions and may pass through.
+  if current_user in ('postgres', 'service_role') then
     if tg_op = 'DELETE' then return old; end if;
     return new;
   end if;
 
-  if auth.uid() is null then
-    raise exception 'Authentication required';
+  if (select auth.uid()) is null then
+    raise exception 'O2OL_AUTH_REQUIRED' using errcode = '42501';
   end if;
 
   select c.creator_id into creator_id
@@ -104,7 +108,7 @@ begin
   -- for compatibility; demotion, rerouting and deletion remain blocked.
   if old.user_id = creator_id then
     if tg_op = 'DELETE' then
-      raise exception 'The community creator admin membership cannot be deleted directly';
+      raise exception 'O2OL_COMMUNITY_CREATOR_MEMBERSHIP_DELETE_BLOCKED' using errcode = '42501';
     end if;
 
     if new.id is distinct from old.id
@@ -113,7 +117,7 @@ begin
        or new.joined_at is distinct from old.joined_at
        or new.role is distinct from old.role
        or new.status is distinct from old.status then
-      raise exception 'The community creator admin membership cannot be changed directly';
+      raise exception 'O2OL_COMMUNITY_CREATOR_MEMBERSHIP_IMMUTABLE' using errcode = '42501';
     end if;
 
     return new;
@@ -124,14 +128,14 @@ begin
        or new.community_id is distinct from old.community_id
        or new.user_id is distinct from old.user_id
        or new.joined_at is distinct from old.joined_at then
-      raise exception 'Community membership identity fields are immutable';
+      raise exception 'O2OL_COMMUNITY_MEMBERSHIP_IDENTITY_IMMUTABLE' using errcode = '42501';
     end if;
   end if;
 
   select cm.role into actor_role
   from public.community_members cm
   where cm.community_id = old.community_id
-    and cm.user_id = auth.uid()
+    and cm.user_id = (select auth.uid())
     and cm.status = 'active'
   limit 1;
 
@@ -139,19 +143,19 @@ begin
     -- Moderators may manage the status of ordinary members only. They cannot alter
     -- roles, manage another moderator/admin, or promote themselves.
     if old.role <> 'member' then
-      raise exception 'Moderators cannot manage moderator/admin memberships';
+      raise exception 'O2OL_COMMUNITY_MODERATOR_SCOPE_DENIED' using errcode = '42501';
     end if;
     if tg_op = 'UPDATE' and new.role is distinct from old.role then
-      raise exception 'Moderators cannot change member roles';
+      raise exception 'O2OL_COMMUNITY_ROLE_CHANGE_DENIED' using errcode = '42501';
     end if;
   elsif actor_role = 'admin' then
     -- Admin management is allowed; the creator and immutable fields remain protected.
     null;
-  elsif tg_op = 'DELETE' and auth.uid() = old.user_id and old.role = 'member' then
+  elsif tg_op = 'DELETE' and (select auth.uid()) = old.user_id and old.role = 'member' then
     -- Ordinary members may leave their own membership.
     null;
   else
-    raise exception 'You are not allowed to manage this community membership';
+    raise exception 'O2OL_COMMUNITY_MANAGEMENT_DENIED' using errcode = '42501';
   end if;
 
   if tg_op = 'DELETE' then return old; end if;
@@ -159,7 +163,7 @@ begin
 end;
 $$;
 
-revoke all on function public.enforce_community_membership_management() from public;
+revoke all on function public.enforce_community_membership_management() from public, anon, authenticated;
 
 drop trigger if exists protect_community_creator_membership on public.community_members;
 drop trigger if exists enforce_community_membership_management on public.community_members;
@@ -177,7 +181,7 @@ on public.community_members
 for select
 to authenticated
 using (
-  auth.uid() = user_id
+  (select auth.uid()) = user_id
   or public.is_community_active_member(community_id)
 );
 
@@ -191,7 +195,7 @@ on public.community_members
 for insert
 to authenticated
 with check (
-  auth.uid() = user_id
+  (select auth.uid()) = user_id
   and (
     (
       role = 'member'
@@ -211,7 +215,7 @@ with check (
         select 1
         from public.communities c
         where c.id = community_id
-          and c.creator_id = auth.uid()
+          and c.creator_id = (select auth.uid())
       )
     )
   )
@@ -223,7 +227,7 @@ create policy "Users can leave communities"
 on public.community_members
 for delete
 to authenticated
-using (auth.uid() = user_id);
+using ((select auth.uid()) = user_id);
 
 -- RLS-safe moderator/admin management replaces the recursive legacy policy. The trigger
 -- above further distinguishes moderator versus admin capabilities.
@@ -236,9 +240,9 @@ using (public.is_community_moderator_or_admin(community_id))
 with check (public.is_community_moderator_or_admin(community_id));
 
 comment on function public.is_community_active_member(uuid) is
-  'RLS-safe active-membership check for private community membership visibility.';
+  'RLS-safe caller-bound active-membership check for private community membership visibility.';
 comment on function public.is_community_moderator_or_admin(uuid) is
-  'RLS-safe moderator/admin role check used to avoid recursive community_members policies.';
+  'RLS-safe caller-bound moderator/admin role check used to avoid recursive community_members policies.';
 comment on function public.ensure_community_creator_membership() is
   'Database-created active admin membership for each new community creator; browser cannot self-assign this role to a noncreator.';
 comment on function public.enforce_community_membership_management() is
