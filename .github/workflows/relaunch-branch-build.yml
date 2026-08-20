@@ -50,5 +50,12 @@ jobs:
           node scripts/relaunch-programming-reminder-cancellation-check.mjs
           node scripts/relaunch-programming-reminder-slot-guard-check.mjs
 
+      - name: Verify private support safeguards
+        run: |
+          node scripts/relaunch-support-request-check.mjs
+          node scripts/relaunch-support-notification-check.mjs
+          node scripts/relaunch-support-quota-check.mjs
+          node scripts/relaunch-support-state-check.mjs
+
       - name: Compile relaunch application
         run: npm run build
