@@ -6,6 +6,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const VALID_REASONS = new Set([
   'harassment_or_hate',
   'sexual_or_exploitative',
@@ -78,6 +79,7 @@ serve(async (request) => {
     const details = clean(body?.details, 1000)
 
     if (!slotId) return json(request, { error: 'SLOT_ID_REQUIRED' }, 400)
+    if (!UUID_PATTERN.test(slotId)) return json(request, { error: 'SLOT_ID_INVALID' }, 400)
     if (!VALID_REASONS.has(reason)) return json(request, { error: 'INVALID_REASON' }, 400)
 
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
