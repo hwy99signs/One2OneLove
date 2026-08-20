@@ -3,6 +3,7 @@ import { Archive, Download, Loader2, LockKeyhole, ShieldCheck, Trash2 } from 'lu
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import BlockedMembersControl from '@/components/privacy/BlockedMembersControl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
@@ -90,6 +91,8 @@ export default function PrivacyCenter() {
           <Card className="border-blue-200"><CardHeader><CardTitle className="flex items-center gap-2"><Archive className="h-5 w-5 text-blue-700" />{t.discovery}</CardTitle></CardHeader><CardContent className="text-sm leading-6 text-gray-700">{t.discoveryText}</CardContent></Card>
           <Card className="border-slate-200"><CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-slate-700" />{t.private}</CardTitle></CardHeader><CardContent className="text-sm leading-6 text-gray-700">{t.privateText}</CardContent></Card>
         </div>
+
+        <BlockedMembersControl className="mt-8" />
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <Card><CardHeader><CardTitle className="flex items-center gap-2"><Download className="h-5 w-5 text-purple-700" />{t.exportTitle}</CardTitle></CardHeader><CardContent><p className="text-sm leading-6 text-gray-600">{t.exportText}</p><Button className="mt-5" disabled={!enabled || Boolean(busy)} onClick={() => void submit('data_export')}>{busy === 'data_export' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}{t.exportButton}</Button></CardContent></Card>
