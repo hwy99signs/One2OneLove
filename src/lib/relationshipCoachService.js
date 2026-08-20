@@ -3,6 +3,15 @@ import { supabase } from './supabase';
 const clean = (value, max = 4000) =>
   typeof value === 'string' ? value.trim().slice(0, max) : '';
 
+const DEFAULT_TITLES = {
+  en: 'Coaching Session',
+  es: 'Sesión de coaching',
+  fr: 'Session de coaching',
+  it: 'Sessione di coaching',
+  de: 'Coaching-Sitzung',
+  nl: 'Coachingsessie',
+};
+
 const createRequestId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
@@ -47,8 +56,10 @@ export const listCoachConversations = async (language = 'en') => {
   return data?.conversations || [];
 };
 
-export const createCoachConversation = async ({ title = 'Coaching Session', language = 'en' } = {}) => {
-  const data = await invoke({ action: 'create_conversation', title: clean(title, 120), language });
+export const createCoachConversation = async ({ title = '', language = 'en' } = {}) => {
+  const languageKey = DEFAULT_TITLES[language] ? language : 'en';
+  const localizedTitle = clean(title, 120) || DEFAULT_TITLES[languageKey];
+  const data = await invoke({ action: 'create_conversation', title: localizedTitle, language: languageKey });
   return data?.conversation || null;
 };
 
@@ -67,7 +78,11 @@ export const deleteCoachConversation = async (conversationId, language = 'en') =
  */
 export const sendCoachMessage = async ({ conversationId, message, language = 'en', requestId = null }) => {
   const text = clean(message, 4000);
-  if (!text) throw new Error('Type a message first.');
+  if (!text) {
+    const empty = new Error('MESSAGE_REQUIRED');
+    empty.code = 'MESSAGE_REQUIRED';
+    throw empty;
+  }
   return invoke({
     action: 'send_message',
     conversation_id: conversationId,
