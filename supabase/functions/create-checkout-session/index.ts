@@ -12,6 +12,7 @@ const PLAN_KEY = 'membership'
 const PRICING_VERSION = 'launch_2026'
 const INTRO_CENTS = 199
 const STANDARD_CENTS = 599
+const CHECKOUT_CLAIM_STALE_MS = 2 * 60 * 1000
 const BLOCKING_STATUSES = new Set(['trialing', 'active', 'past_due', 'unpaid'])
 
 const clean = (value: unknown, max = 500) =>
@@ -46,24 +47,22 @@ const json = (request: Request, body: unknown, status = 200) =>
     },
   })
 
-const stripeRequest = async (path: string, body?: URLSearchParams) => {
+const stripeRequest = async (path: string, body?: URLSearchParams, idempotencyKey = '') => {
   const secretKey = Deno.env.get('STRIPE_SECRET_KEY') || ''
-  if (!secretKey) throw new Error('STRIPE_SECRET_KEY is not configured')
+  if (!secretKey) throw new Error('STRIPE_SECRET_KEY_NOT_CONFIGURED')
 
   const response = await fetch(`https://api.stripe.com${path}`, {
     method: body ? 'POST' : 'GET',
     headers: {
       'Authorization': `Bearer ${secretKey}`,
       ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+      ...(body && idempotencyKey ? { 'Idempotency-Key': idempotencyKey.slice(0, 255) } : {}),
     },
     body: body?.toString(),
   })
 
   const payload = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    const message = clean(payload?.error?.message, 500) || `Stripe returned ${response.status}`
-    throw new Error(message)
-  }
+  if (!response.ok) throw new Error(`STRIPE_API_${response.status}`)
   return payload
 }
 
@@ -83,14 +82,152 @@ const validateLaunchPrices = async (introPriceId: string, standardPriceId: strin
     && clean(price?.currency, 10).toLowerCase() === expectedCurrency
 
   if (!validMonthlyPrice(intro, INTRO_CENTS) || !validMonthlyPrice(standard, STANDARD_CENTS)) {
-    throw new Error('Configured Stripe prices do not match the approved launch monthly pricing')
+    throw new Error('STRIPE_LAUNCH_PRICE_VALIDATION_FAILED')
   }
 }
 
 const requireHttpsSiteUrl = () => {
   const siteUrl = (Deno.env.get('SITE_URL') || '').replace(/\/$/, '')
-  if (!siteUrl || !/^https:\/\//i.test(siteUrl)) throw new Error('SITE_URL must be configured with HTTPS')
+  if (!siteUrl || !/^https:\/\//i.test(siteUrl)) throw new Error('SITE_URL_HTTPS_REQUIRED')
   return siteUrl
+}
+
+const validHttpsUrl = (value: unknown) => {
+  const candidate = clean(value, 2000)
+  if (!candidate) return ''
+  try {
+    const url = new URL(candidate)
+    return url.protocol === 'https:' ? url.toString().slice(0, 2000) : ''
+  } catch {
+    return ''
+  }
+}
+
+const claimCheckoutAttempt = async (serviceClient: any, userId: string) => {
+  const now = new Date()
+  const token = crypto.randomUUID()
+  const initial = {
+    user_id: userId,
+    attempt_token: token,
+    status: 'processing',
+    attempts: 1,
+    started_at: now.toISOString(),
+    updated_at: now.toISOString(),
+    stripe_checkout_session_id: null,
+    expires_at: null,
+    last_error_code: null,
+  }
+
+  const { data: inserted, error: insertError } = await serviceClient
+    .from('stripe_checkout_attempts')
+    .insert(initial)
+    .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+    .maybeSingle()
+
+  if (!insertError && inserted) return { state: 'processing', attempt: inserted }
+  if (insertError?.code !== '23505') throw insertError
+
+  const { data: existing, error: existingError } = await serviceClient
+    .from('stripe_checkout_attempts')
+    .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+    .eq('user_id', userId)
+    .single()
+  if (existingError) throw existingError
+
+  if (existing.status === 'open') return { state: 'open', attempt: existing }
+  if (existing.status === 'completed') return { state: 'completed', attempt: existing }
+
+  if (existing.status === 'processing') {
+    const updatedAt = new Date(existing.updated_at)
+    if (!Number.isNaN(updatedAt.getTime()) && updatedAt.getTime() > now.getTime() - CHECKOUT_CLAIM_STALE_MS) {
+      return { state: 'busy', attempt: existing }
+    }
+  }
+
+  if (existing.status === 'failed' || existing.status === 'processing') {
+    // Preserve the existing attempt token. If Stripe succeeded but O2OL lost the response,
+    // retrying with the same Idempotency-Key returns the same customer/session operation.
+    let retry = serviceClient
+      .from('stripe_checkout_attempts')
+      .update({
+        status: 'processing',
+        attempts: Math.min(Number(existing.attempts || 1) + 1, 1000),
+        updated_at: now.toISOString(),
+        last_error_code: null,
+      })
+      .eq('user_id', userId)
+      .eq('attempt_token', existing.attempt_token)
+
+    if (existing.status === 'failed') retry = retry.eq('status', 'failed')
+    else retry = retry.eq('status', 'processing').eq('updated_at', existing.updated_at)
+
+    const { data: reclaimed, error: retryError } = await retry
+      .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+      .maybeSingle()
+    if (retryError) throw retryError
+    return reclaimed ? { state: 'processing', attempt: reclaimed } : { state: 'busy', attempt: existing }
+  }
+
+  // Expired attempts deliberately receive a new token so Stripe may create a fresh
+  // Checkout Session after the earlier session can no longer be used.
+  if (existing.status === 'expired') {
+    const { data: reset, error: resetError } = await serviceClient
+      .from('stripe_checkout_attempts')
+      .update({
+        attempt_token: token,
+        status: 'processing',
+        stripe_checkout_session_id: null,
+        attempts: Math.min(Number(existing.attempts || 1) + 1, 1000),
+        started_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        expires_at: null,
+        last_error_code: null,
+      })
+      .eq('user_id', userId)
+      .eq('attempt_token', existing.attempt_token)
+      .eq('status', 'expired')
+      .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+      .maybeSingle()
+    if (resetError) throw resetError
+    return reset ? { state: 'processing', attempt: reset } : { state: 'busy', attempt: existing }
+  }
+
+  return { state: 'busy', attempt: existing }
+}
+
+const resetExpiredOpenAttempt = async (serviceClient: any, attempt: any) => {
+  const now = new Date()
+  const newToken = crypto.randomUUID()
+  const { data, error } = await serviceClient
+    .from('stripe_checkout_attempts')
+    .update({
+      attempt_token: newToken,
+      status: 'processing',
+      stripe_checkout_session_id: null,
+      attempts: Math.min(Number(attempt.attempts || 1) + 1, 1000),
+      started_at: now.toISOString(),
+      updated_at: now.toISOString(),
+      expires_at: null,
+      last_error_code: null,
+    })
+    .eq('user_id', attempt.user_id)
+    .eq('attempt_token', attempt.attempt_token)
+    .eq('status', 'open')
+    .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+    .maybeSingle()
+  if (error) throw error
+  return data || null
+}
+
+const markCheckoutAttemptFailed = async (serviceClient: any, userId: string, attemptToken: string) => {
+  if (!attemptToken) return
+  const { error } = await serviceClient
+    .from('stripe_checkout_attempts')
+    .update({ status: 'failed', updated_at: new Date().toISOString(), last_error_code: 'CHECKOUT_UNAVAILABLE' })
+    .eq('user_id', userId)
+    .eq('attempt_token', attemptToken)
+    .eq('status', 'processing')
+  if (error) console.error('Checkout attempt failure-state persistence failed:', userId)
 }
 
 serve(async (request) => {
@@ -103,6 +240,10 @@ serve(async (request) => {
   if (Deno.env.get('PAYMENTS_ENABLED') !== 'true') {
     return json(request, { error: 'PAYMENTS_NOT_ENABLED' }, 503)
   }
+
+  let serviceClient: any = null
+  let callerUserId = ''
+  let activeAttemptToken = ''
 
   try {
     const authHeader = request.headers.get('Authorization')
@@ -130,7 +271,7 @@ serve(async (request) => {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false, autoRefreshToken: false },
     })
-    const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+    serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
@@ -140,9 +281,10 @@ serve(async (request) => {
       return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)
     }
     if (!user.email) return json(request, { error: 'ACCOUNT_EMAIL_REQUIRED' }, 400)
+    callerUserId = user.id
 
-    // Fail closed before creating a customer/session if either configured Price ID has
-    // the wrong amount, currency, recurrence, or active state.
+    // Fail closed before claiming/creating a checkout if configured launch prices are
+    // not exactly the approved amount, currency, recurrence and active state.
     await validateLaunchPrices(introPriceId, standardPriceId)
 
     const { data: membership, error: membershipError } = await serviceClient
@@ -159,6 +301,38 @@ serve(async (request) => {
     if (membership?.stripe_subscription_id && BLOCKING_STATUSES.has(membership.status)) {
       return json(request, { error: 'MEMBERSHIP_ALREADY_EXISTS' }, 409)
     }
+
+    let claim = await claimCheckoutAttempt(serviceClient, user.id)
+    if (claim.state === 'busy') return json(request, { error: 'CHECKOUT_ALREADY_IN_PROGRESS' }, 409)
+    if (claim.state === 'completed') return json(request, { error: 'CHECKOUT_PROCESSING' }, 409)
+
+    if (claim.state === 'open') {
+      const sessionId = clean(claim.attempt?.stripe_checkout_session_id, 200)
+      if (!sessionId) throw new Error('CHECKOUT_ATTEMPT_SESSION_ID_MISSING')
+      const session = await stripeRequest(`/v1/checkout/sessions/${encodeURIComponent(sessionId)}`)
+      const status = clean(session?.status, 40)
+      const checkoutUrl = validHttpsUrl(session?.url)
+
+      if (status === 'open' && checkoutUrl) {
+        return json(request, { sessionId, url: checkoutUrl, reused: true })
+      }
+      if (status === 'complete') {
+        await serviceClient
+          .from('stripe_checkout_attempts')
+          .update({ status: 'completed', updated_at: new Date().toISOString(), last_error_code: null })
+          .eq('user_id', user.id)
+          .eq('attempt_token', claim.attempt.attempt_token)
+          .eq('status', 'open')
+        return json(request, { error: 'CHECKOUT_PROCESSING' }, 409)
+      }
+
+      const reset = await resetExpiredOpenAttempt(serviceClient, claim.attempt)
+      if (!reset) return json(request, { error: 'CHECKOUT_ALREADY_IN_PROGRESS' }, 409)
+      claim = { state: 'processing', attempt: reset }
+    }
+
+    activeAttemptToken = String(claim.attempt?.attempt_token || '')
+    if (!activeAttemptToken) throw new Error('CHECKOUT_ATTEMPT_TOKEN_MISSING')
 
     let customerId = clean(membership?.stripe_customer_id, 200)
 
@@ -178,9 +352,9 @@ serve(async (request) => {
       customerBody.set('email', user.email)
       customerBody.set('metadata[o2ol_user_id]', user.id)
       customerBody.set('metadata[o2ol_product]', 'membership')
-      const customer = await stripeRequest('/v1/customers', customerBody)
+      const customer = await stripeRequest('/v1/customers', customerBody, `o2ol-customer-${user.id}`)
       customerId = clean(customer?.id, 200)
-      if (!customerId) throw new Error('Stripe did not return a customer ID')
+      if (!customerId) throw new Error('STRIPE_CUSTOMER_ID_MISSING')
     }
 
     const siteUrl = requireHttpsSiteUrl()
@@ -199,10 +373,31 @@ serve(async (request) => {
     sessionBody.set('subscription_data[metadata][o2ol_plan_key]', PLAN_KEY)
     sessionBody.set('subscription_data[metadata][o2ol_pricing_version]', PRICING_VERSION)
 
-    const session = await stripeRequest('/v1/checkout/sessions', sessionBody)
+    const session = await stripeRequest('/v1/checkout/sessions', sessionBody, `o2ol-checkout-${activeAttemptToken}`)
     const sessionId = clean(session?.id, 200)
-    const checkoutUrl = clean(session?.url, 2000)
-    if (!sessionId || !checkoutUrl) throw new Error('Stripe did not return a checkout session URL')
+    const checkoutUrl = validHttpsUrl(session?.url)
+    const expiresAtSeconds = Number(session?.expires_at)
+    if (!sessionId || !checkoutUrl || !Number.isFinite(expiresAtSeconds) || expiresAtSeconds <= 0) {
+      throw new Error('STRIPE_CHECKOUT_SESSION_INVALID')
+    }
+    const expiresAt = new Date(expiresAtSeconds * 1000).toISOString()
+
+    const { data: openedAttempt, error: attemptError } = await serviceClient
+      .from('stripe_checkout_attempts')
+      .update({
+        status: 'open',
+        stripe_checkout_session_id: sessionId,
+        updated_at: new Date().toISOString(),
+        expires_at: expiresAt,
+        last_error_code: null,
+      })
+      .eq('user_id', user.id)
+      .eq('attempt_token', activeAttemptToken)
+      .eq('status', 'processing')
+      .select('user_id')
+      .maybeSingle()
+    if (attemptError) throw attemptError
+    if (!openedAttempt) throw new Error('CHECKOUT_ATTEMPT_STATE_LOST')
 
     const { error: stateError } = await serviceClient
       .from('member_subscriptions')
@@ -217,15 +412,18 @@ serve(async (request) => {
       }, { onConflict: 'user_id' })
 
     if (stateError) {
-      // A Stripe session now exists. Do not manufacture another one; surface a controlled
-      // reconciliation error so the operator can inspect the single created session.
-      console.error('Checkout state persistence failed after Stripe session creation:', stateError)
+      // The one active Stripe session is safely retained in stripe_checkout_attempts;
+      // later retry can reuse it instead of manufacturing a second session.
+      console.error('Checkout membership state persistence failed after Stripe session creation:', user.id)
       return json(request, { error: 'CHECKOUT_RECONCILIATION_REQUIRED', sessionId }, 503)
     }
 
-    return json(request, { sessionId, url: checkoutUrl })
+    return json(request, { sessionId, url: checkoutUrl, reused: false })
   } catch (error) {
-    console.error('create-checkout-session error:', error instanceof Error ? error.message : 'unknown')
+    if (serviceClient && callerUserId && activeAttemptToken) {
+      await markCheckoutAttemptFailed(serviceClient, callerUserId, activeAttemptToken)
+    }
+    console.error('create-checkout-session error:', callerUserId || 'unknown', error instanceof Error ? error.message : 'unknown')
     return json(request, { error: 'CHECKOUT_UNAVAILABLE' }, 500)
   }
 })
