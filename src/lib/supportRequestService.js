@@ -8,14 +8,24 @@ const requireEnabled = () => {
   if (!SUPPORT_REQUESTS_ENABLED) throw new Error('SUPPORT_REQUESTS_DISABLED');
 };
 
+const safeErrorCode = (value) => {
+  const code = String(value || '').trim().toUpperCase();
+  return /^[A-Z][A-Z0-9_]{2,79}$/.test(code) ? code : '';
+};
+
 const functionErrorCode = (data, error, fallback) => {
-  if (data?.error) return String(data.error);
+  const direct = safeErrorCode(data?.error);
+  if (direct) return direct;
+
   const context = error?.context;
   if (context && typeof context === 'object') {
-    if (context.error) return String(context.error);
-    if (context.body?.error) return String(context.body.error);
+    const contextCode = safeErrorCode(context.error) || safeErrorCode(context.body?.error);
+    if (contextCode) return contextCode;
   }
-  return error?.message || fallback;
+
+  // Never surface connector/provider prose to the member UI. Components translate
+  // stable application codes into the currently selected One2OneLove language.
+  return fallback;
 };
 
 const invokeMemberSupport = async (body) => {
