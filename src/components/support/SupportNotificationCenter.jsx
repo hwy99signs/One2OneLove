@@ -9,12 +9,12 @@ import {
 } from '@/lib/supportRequestService';
 
 const COPY = {
-  en: { label: 'Support responses', empty: 'No support responses yet.', response: 'One2OneLove replied', view: 'Open support request', status: { open: 'Open', in_progress: 'In progress', resolved: 'Resolved', closed: 'Closed' } },
-  es: { label: 'Respuestas de soporte', empty: 'Aún no hay respuestas de soporte.', response: 'One2OneLove respondió', view: 'Abrir solicitud de soporte', status: { open: 'Abierta', in_progress: 'En progreso', resolved: 'Resuelta', closed: 'Cerrada' } },
-  fr: { label: 'Réponses du support', empty: 'Aucune réponse du support pour le moment.', response: 'One2OneLove a répondu', view: 'Ouvrir la demande', status: { open: 'Ouverte', in_progress: 'En cours', resolved: 'Résolue', closed: 'Fermée' } },
-  it: { label: 'Risposte assistenza', empty: 'Nessuna risposta di assistenza.', response: 'One2OneLove ha risposto', view: 'Apri richiesta di assistenza', status: { open: 'Aperta', in_progress: 'In lavorazione', resolved: 'Risolta', closed: 'Chiusa' } },
-  de: { label: 'Supportantworten', empty: 'Noch keine Supportantworten.', response: 'One2OneLove hat geantwortet', view: 'Supportanfrage öffnen', status: { open: 'Offen', in_progress: 'In Bearbeitung', resolved: 'Gelöst', closed: 'Geschlossen' } },
-  nl: { label: 'Supportantwoorden', empty: 'Nog geen supportantwoorden.', response: 'One2OneLove heeft geantwoord', view: 'Supportverzoek openen', status: { open: 'Open', in_progress: 'In behandeling', resolved: 'Opgelost', closed: 'Gesloten' } },
+  en: { label: 'Support responses', empty: 'No support responses yet.', response: 'One2OneLove replied', view: 'Open support request', openSupport: 'Open member support', status: { open: 'Open', in_progress: 'In progress', resolved: 'Resolved', closed: 'Closed' } },
+  es: { label: 'Respuestas de soporte', empty: 'Aún no hay respuestas de soporte.', response: 'One2OneLove respondió', view: 'Abrir solicitud de soporte', openSupport: 'Abrir soporte para miembros', status: { open: 'Abierta', in_progress: 'En progreso', resolved: 'Resuelta', closed: 'Cerrada' } },
+  fr: { label: 'Réponses du support', empty: 'Aucune réponse du support pour le moment.', response: 'One2OneLove a répondu', view: 'Ouvrir la demande', openSupport: 'Ouvrir l’assistance membres', status: { open: 'Ouverte', in_progress: 'En cours', resolved: 'Résolue', closed: 'Fermée' } },
+  it: { label: 'Risposte assistenza', empty: 'Nessuna risposta di assistenza.', response: 'One2OneLove ha risposto', view: 'Apri richiesta di assistenza', openSupport: 'Apri assistenza membri', status: { open: 'Aperta', in_progress: 'In lavorazione', resolved: 'Risolta', closed: 'Chiusa' } },
+  de: { label: 'Supportantworten', empty: 'Noch keine Supportantworten.', response: 'One2OneLove hat geantwortet', view: 'Supportanfrage öffnen', openSupport: 'Mitglieder-Support öffnen', status: { open: 'Offen', in_progress: 'In Bearbeitung', resolved: 'Gelöst', closed: 'Geschlossen' } },
+  nl: { label: 'Supportantwoorden', empty: 'Nog geen supportantwoorden.', response: 'One2OneLove heeft geantwoord', view: 'Supportverzoek openen', openSupport: 'Ledenondersteuning openen', status: { open: 'Open', in_progress: 'In behandeling', resolved: 'Opgelost', closed: 'Gesloten' } },
 };
 
 const localeByLanguage = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE', nl: 'nl-NL' };
@@ -99,6 +99,11 @@ export default function SupportNotificationCenter({ languageCode = 'en' }) {
     navigate('/SupportRequests');
   };
 
+  const openSupport = () => {
+    setOpen(false);
+    navigate('/SupportRequests');
+  };
+
   return (
     <div ref={panelRef} className="relative">
       <button
@@ -137,6 +142,9 @@ export default function SupportNotificationCenter({ languageCode = 'en' }) {
                 </button>
               );
             }) : <div className="px-4 py-8 text-center text-sm text-slate-500">{t.empty}</div>}
+          </div>
+          <div className="border-t border-slate-100 p-2">
+            <button type="button" onClick={openSupport} className="w-full rounded-xl px-3 py-2.5 text-sm font-black text-violet-700 transition hover:bg-violet-50">{t.openSupport}</button>
           </div>
         </div>
       ) : null}
