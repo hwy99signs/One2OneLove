@@ -49,13 +49,20 @@ Approved and applied to live Supabase.
 - Existing counts remained stable after migration: 11 users, 11 synchronized directory rows, 28 presence rows.
 - The client-side presence service is staged to format relative-time text in the selected O2OL language (EN/ES/FR/IT/DE), keeping the database language-neutral.
 
-### Post-deployment #8C advisor finding — corrective approval required
-The Supabase security advisor correctly flagged `public.user_directory_profiles` as discoverable to signed-in users because authenticated SELECT is required by the security-invoker directory view. The synchronized source table still contains `relationship_status`, `user_type`, `location`, and `interests`, even though `member_directory` itself does not expose them.
+### Post-deployment #8C advisor finding
+The Supabase security advisor flagged `public.user_directory_profiles` as discoverable to signed-in users because authenticated SELECT is required by the security-invoker directory view. At that point the synchronized source still contained `relationship_status`, `user_type`, `location`, and `interests`, even though `member_directory` itself did not expose them.
 
-No unapproved production correction was made after this finding.
+No unapproved production correction was made. A separate Approval #8C-A was requested and granted.
 
-A development-only corrective migration is staged as:
-- `supabase/migrations/20260820151000_member_directory_source_minimization.sql`
-- Approval label: **#8C-A**
-
-The correction removes those unnecessary fields from the synchronized source itself so both the source table and public view contain only the five approved discovery fields. Current production audit shows all 11 existing accounts are `regular`, so the staged correction is expected to preserve all current directory rows.
+## Approval #8C-A — Member-directory source minimization
+Approved and applied to live Supabase.
+- Applied production migration `member_directory_source_minimization` from `supabase/migrations/20260820151000_member_directory_source_minimization.sql`.
+- The first application attempt was rejected transactionally because `user_presence_view` depended on `member_directory`; no production state changed during that failed attempt.
+- The migration was corrected in development to drop/recreate the privacy-safe presence view in the same transaction, then successfully applied.
+- `public.user_directory_profiles` now contains exactly five columns: `id`, `name`, `avatar_url`, `bio`, and `created_at`.
+- All 11 current regular-member directory rows were preserved.
+- `public.member_directory` exposes the same five fields only and remains `security_barrier=true`, `security_invoker=true`.
+- `public.user_presence_view` was restored unchanged from #8C with no `email` and no `last_seen_text`, and remains `security_barrier=true`, `security_invoker=true`.
+- Anonymous SELECT remains revoked from the source table and both views.
+- The directory sync trigger remains on `public.users` and invokes the non-browser-executable `o2ol_private.sync_user_directory_profile()` helper.
+- The security advisor still reports authenticated GraphQL discoverability for the source/view because signed-in member discovery intentionally requires SELECT; this is now acceptable because only the five approved discovery fields exist in that source.
