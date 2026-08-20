@@ -1,6 +1,12 @@
 import { supabase } from './supabase';
 import { MEMBER_BLOCKING_ENABLED } from './memberBlockService';
 
+const discoveryError = (code) => {
+  const error = new Error(code);
+  error.code = code;
+  return error;
+};
+
 export const discoverMembers = async ({ search = '', limit = 25 } = {}) => {
   if (!MEMBER_BLOCKING_ENABLED) return [];
 
@@ -11,7 +17,8 @@ export const discoverMembers = async ({ search = '', limit = 25 } = {}) => {
     },
   });
 
-  if (error) throw new Error(error?.message || 'Unable to discover members.');
-  if (!data?.success) throw new Error('Unable to discover members.');
+  if (error || !data?.success) {
+    throw discoveryError(data?.error || 'O2OL_MEMBER_DISCOVERY_FAILED');
+  }
   return data.members || [];
 };
