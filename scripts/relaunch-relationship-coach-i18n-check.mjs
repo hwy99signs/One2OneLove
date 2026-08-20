@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 
 const file = 'src/pages/RelationshipCoach.jsx';
+const serviceFile = 'src/lib/relationshipCoachService.js';
 const source = fs.readFileSync(file, 'utf8');
+const service = fs.readFileSync(serviceFile, 'utf8');
 const failures = [];
 
 for (const language of ['en', 'es', 'fr', 'it', 'de']) {
@@ -53,10 +55,28 @@ for (const forbidden of [
   if (source.includes(forbidden)) failures.push(`${file}: hard-coded English runtime string remains: ${forbidden}.`);
 }
 
+for (const required of [
+  "en: 'Coaching Session'",
+  "es: 'Sesión de coaching'",
+  "fr: 'Session de coaching'",
+  "it: 'Sessione di coaching'",
+  "de: 'Coaching-Sitzung'",
+  "const localizedTitle = clean(title, 120) || DEFAULT_TITLES[languageKey]",
+  "empty.code = 'MESSAGE_REQUIRED'",
+]) {
+  if (!service.includes(required)) failures.push(`${serviceFile}: missing localized/service-safe Coach behavior ${required}.`);
+}
+if (service.includes("title = 'Coaching Session'")) {
+  failures.push(`${serviceFile}: do not persist an English-only default title for every language.`);
+}
+if (service.includes("throw new Error('Type a message first.')")) {
+  failures.push(`${serviceFile}: service layer must return a machine code rather than English-only member copy.`);
+}
+
 if (failures.length) {
   console.error('\n⛔ Relationship Coach multilingual runtime check failed:');
   failures.forEach((failure) => console.error(` - ${failure}`));
   process.exit(1);
 }
 
-console.log('✅ Relationship Coach signed-out, empty, confirmation, accessibility and sending states remain localized in all active languages.');
+console.log('✅ Relationship Coach runtime and service defaults remain localized in all active languages without English-only transport copy.');
