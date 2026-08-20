@@ -3,8 +3,10 @@ import fs from 'node:fs';
 const failures = [];
 const migrationFile = 'supabase/migrations/20260817_live_room_host_cache.sql';
 const functionFile = 'supabase/functions/live-room-host/index.ts';
+const serviceFile = 'src/lib/liveRoomHostService.js';
 const migration = fs.readFileSync(migrationFile, 'utf8');
 const fn = fs.readFileSync(functionFile, 'utf8');
+const service = fs.readFileSync(serviceFile, 'utf8');
 
 for (const required of [
   "'global-relationship-room'",
@@ -30,32 +32,49 @@ for (const forbidden of [
 
 for (const required of [
   'const MAX_BODY_BYTES = 64 * 1024',
+  'const MODEL_PATTERN = /^[A-Za-z0-9._:-]{2,80}$/',
+  'const validateGeneratedPrompt =',
   "'global-relationship-room':",
   "if (request.method !== 'POST') return json(request, { error: 'METHOD_NOT_ALLOWED' }, 405)",
   "return json(request, { error: 'REQUEST_TOO_LARGE' }, 413)",
   "if (!authHeader.toLowerCase().startsWith('bearer '))",
   "return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)",
   "if (Deno.env.get('LIVE_ROOM_AI_ENABLED') !== 'true') return fallbackResponse(request)",
+  "const model = cleanText(Deno.env.get('OPENAI_MODEL'), 80)",
+  'if (!apiKey || !MODEL_PATTERN.test(model)) return fallbackResponse(request)',
   'const contextHash = await sha256Hex',
-  "eq('reason', reason)",
-  "eq('bucket_start', bucket)",
+  ".eq('reason', reason)",
+  ".eq('bucket_start', bucket)",
   'lookup intentionally ignores context_hash',
-  "model: Deno.env.get('OPENAI_MODEL') || 'gpt-5.6'",
+  'const prompt = validateGeneratedPrompt(extractResponseText(payload))',
+  'model,',
   'store: false',
   'signal: AbortSignal.timeout(15_000)',
 ]) {
-  if (!fn.includes(required)) failures.push(`${functionFile}: missing AI-host request/cost safeguard ${required}.`);
+  if (!fn.includes(required)) failures.push(`${functionFile}: missing AI-host request/cost/output safeguard ${required}.`);
 }
 
 for (const forbidden of [
-  "eq('context_hash', contextHash)",
+  ".eq('context_hash', contextHash)",
+  "model: Deno.env.get('OPENAI_MODEL') ||",
   "error: 'Method not allowed'",
   "error: 'Origin not allowed'",
   "error: 'Authentication required'",
   "error: 'Confirm your email",
   "nl: 'Dutch'",
 ]) {
-  if (fn.includes(forbidden)) failures.push(`${functionFile}: AI-host must not permit context-keyed generation, member-facing English error prose, or inactive Dutch runtime (${forbidden}).`);
+  if (fn.includes(forbidden)) failures.push(`${functionFile}: AI-host must not permit context-keyed generation, silently choose a billable model, expose English error prose, or enable inactive Dutch runtime (${forbidden}).`);
+}
+
+for (const required of [
+  "const SUPPORTED_HOST_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de']);",
+  "console.warn('Live room host function unavailable');",
+  "console.warn('Live room host request failed');",
+]) {
+  if (!service.includes(required)) failures.push(`${serviceFile}: missing five-language/error-minimized host-service behavior ${required}.`);
+}
+for (const forbidden of ["'nl'", "console.warn('Live room host function unavailable:', error)", "console.warn('Live room host request failed:', error)"]) {
+  if (service.includes(forbidden)) failures.push(`${serviceFile}: host service must not enable inactive Dutch or log raw backend error objects (${forbidden}).`);
 }
 
 if (failures.length) {
@@ -64,4 +83,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Live Room AI host is authenticated, five-language scoped, request-bounded, provider-secret isolated and generation-bucket cost guarded.');
+console.log('✅ Live Room AI host is authenticated, five-language scoped, request/output bounded, explicit-model gated, provider-secret isolated and generation-bucket cost guarded.');
