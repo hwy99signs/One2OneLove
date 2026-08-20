@@ -1,6 +1,8 @@
 // Supabase Edge Function: list-blocked-members
 // DEVELOPMENT CODE ONLY. Returns only the current member's blocked account IDs plus
-// display names resolved server-side; no email, partner, billing or verification data.
+// display names resolved from the privacy-minimized directory source; no email, partner,
+// billing or verification data. Missing display names stay blank so the client can render
+// the correct localized fallback rather than receiving server-authored English prose.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
@@ -75,16 +77,20 @@ serve(async (request) => {
     const ids = (blocks || []).map((row) => row.blocked_id)
     if (!ids.length) return json(request, { success: true, enabled: true, members: [] })
 
+    // Resolve display-only identity from the same minimized five-field directory source
+    // used elsewhere in the relaunch. service_role is used only so a member can continue
+    // to see/manage their own block list even though the pairwise directory RLS hides the
+    // blocked account during normal discovery.
     const { data: profiles, error: profileError } = await serviceClient
-      .from('users')
+      .from('user_directory_profiles')
       .select('id,name')
       .in('id', ids)
     if (profileError) throw profileError
 
-    const names = new Map((profiles || []).map((profile) => [profile.id, String(profile.name || '').trim() || 'Member']))
+    const names = new Map((profiles || []).map((profile) => [profile.id, String(profile.name || '').trim()]))
     const members = (blocks || []).map((block) => ({
       id: block.blocked_id,
-      name: names.get(block.blocked_id) || 'Member',
+      name: names.get(block.blocked_id) || '',
       blocked_at: block.created_at,
     }))
 
