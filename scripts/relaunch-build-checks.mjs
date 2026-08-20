@@ -24,6 +24,7 @@ const checks = [
   ['relaunch staged premium tools', 'scripts/relaunch-staged-premium-tools-check.mjs'],
   ['relaunch fallback shells multilingual runtime', 'scripts/relaunch-fallback-shell-i18n-check.mjs'],
   ['relaunch layout accessibility multilingual runtime', 'scripts/relaunch-layout-accessibility-i18n-check.mjs'],
+  ['relaunch service multilingual boundary', 'scripts/relaunch-service-i18n-boundary-check.mjs'],
   ['relaunch member connections/chat', 'scripts/relaunch-connection-chat-check.mjs'],
   ['relaunch member-connections multilingual runtime', 'scripts/relaunch-member-connections-i18n-check.mjs'],
   ['relaunch member blocking foundation', 'scripts/relaunch-member-blocking-foundation-check.mjs'],
