@@ -14,6 +14,7 @@ const INTRO_CENTS = 199
 const STANDARD_CENTS = 599
 const CHECKOUT_CLAIM_STALE_MS = 2 * 60 * 1000
 const BLOCKING_STATUSES = new Set(['trialing', 'active', 'past_due', 'unpaid'])
+const ATTEMPT_FIELDS = 'user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at'
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -121,15 +122,14 @@ const claimCheckoutAttempt = async (serviceClient: any, userId: string) => {
   const { data: inserted, error: insertError } = await serviceClient
     .from('stripe_checkout_attempts')
     .insert(initial)
-    .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+    .select(ATTEMPT_FIELDS)
     .maybeSingle()
-
   if (!insertError && inserted) return { state: 'processing', attempt: inserted }
   if (insertError?.code !== '23505') throw insertError
 
   const { data: existing, error: existingError } = await serviceClient
     .from('stripe_checkout_attempts')
-    .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+    .select(ATTEMPT_FIELDS)
     .eq('user_id', userId)
     .single()
   if (existingError) throw existingError
@@ -145,11 +145,10 @@ const claimCheckoutAttempt = async (serviceClient: any, userId: string) => {
   }
 
   if (existing.status === 'failed' || existing.status === 'processing') {
-    // Preserve the existing attempt token. If Stripe succeeded but O2OL lost the response,
-    // retrying with the same Idempotency-Key returns the same customer/session operation.
     let retry = serviceClient
       .from('stripe_checkout_attempts')
       .update({
+        // Preserve attempt_token so a lost Stripe response reuses the same Idempotency-Key.
         status: 'processing',
         attempts: Math.min(Number(existing.attempts || 1) + 1, 1000),
         updated_at: now.toISOString(),
@@ -161,15 +160,11 @@ const claimCheckoutAttempt = async (serviceClient: any, userId: string) => {
     if (existing.status === 'failed') retry = retry.eq('status', 'failed')
     else retry = retry.eq('status', 'processing').eq('updated_at', existing.updated_at)
 
-    const { data: reclaimed, error: retryError } = await retry
-      .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
-      .maybeSingle()
+    const { data: reclaimed, error: retryError } = await retry.select(ATTEMPT_FIELDS).maybeSingle()
     if (retryError) throw retryError
     return reclaimed ? { state: 'processing', attempt: reclaimed } : { state: 'busy', attempt: existing }
   }
 
-  // Expired attempts deliberately receive a new token so Stripe may create a fresh
-  // Checkout Session after the earlier session can no longer be used.
   if (existing.status === 'expired') {
     const { data: reset, error: resetError } = await serviceClient
       .from('stripe_checkout_attempts')
@@ -186,7 +181,7 @@ const claimCheckoutAttempt = async (serviceClient: any, userId: string) => {
       .eq('user_id', userId)
       .eq('attempt_token', existing.attempt_token)
       .eq('status', 'expired')
-      .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+      .select(ATTEMPT_FIELDS)
       .maybeSingle()
     if (resetError) throw resetError
     return reset ? { state: 'processing', attempt: reset } : { state: 'busy', attempt: existing }
@@ -195,7 +190,7 @@ const claimCheckoutAttempt = async (serviceClient: any, userId: string) => {
   return { state: 'busy', attempt: existing }
 }
 
-const resetExpiredOpenAttempt = async (serviceClient: any, attempt: any) => {
+const resetExplicitlyExpiredOpenAttempt = async (serviceClient: any, attempt: any) => {
   const now = new Date()
   const newToken = crypto.randomUUID()
   const { data, error } = await serviceClient
@@ -213,7 +208,7 @@ const resetExpiredOpenAttempt = async (serviceClient: any, attempt: any) => {
     .eq('user_id', attempt.user_id)
     .eq('attempt_token', attempt.attempt_token)
     .eq('status', 'open')
-    .select('user_id,attempt_token,status,stripe_checkout_session_id,attempts,started_at,updated_at,expires_at')
+    .select(ATTEMPT_FIELDS)
     .maybeSingle()
   if (error) throw error
   return data || null
@@ -236,10 +231,7 @@ serve(async (request) => {
 
   const origin = request.headers.get('origin') || DEFAULT_ORIGIN
   if (!allowedOrigins().has(origin)) return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)
-
-  if (Deno.env.get('PAYMENTS_ENABLED') !== 'true') {
-    return json(request, { error: 'PAYMENTS_NOT_ENABLED' }, 503)
-  }
+  if (Deno.env.get('PAYMENTS_ENABLED') !== 'true') return json(request, { error: 'PAYMENTS_NOT_ENABLED' }, 503)
 
   let serviceClient: any = null
   let callerUserId = ''
@@ -252,20 +244,14 @@ serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      return json(request, { error: 'BACKEND_NOT_CONFIGURED' }, 503)
-    }
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) return json(request, { error: 'BACKEND_NOT_CONFIGURED' }, 503)
 
     const introPriceId = clean(Deno.env.get('STRIPE_PRICE_INTRO'), 200)
     const standardPriceId = clean(Deno.env.get('STRIPE_PRICE_STANDARD'), 200)
-    if (!introPriceId || !standardPriceId) {
-      return json(request, { error: 'MEMBERSHIP_PRICING_NOT_CONFIGURED' }, 503)
-    }
+    if (!introPriceId || !standardPriceId) return json(request, { error: 'MEMBERSHIP_PRICING_NOT_CONFIGURED' }, 503)
 
     const body = await request.json().catch(() => ({}))
-    if (body?.planKey && body.planKey !== PLAN_KEY) {
-      return json(request, { error: 'UNKNOWN_PLAN' }, 400)
-    }
+    if (body?.planKey && body.planKey !== PLAN_KEY) return json(request, { error: 'UNKNOWN_PLAN' }, 400)
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -277,14 +263,10 @@ serve(async (request) => {
 
     const { data: { user }, error: userError } = await userClient.auth.getUser()
     if (userError || !user) return json(request, { error: 'AUTHENTICATION_REQUIRED' }, 401)
-    if (!user.email_confirmed_at && !user.confirmed_at) {
-      return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)
-    }
+    if (!user.email_confirmed_at && !user.confirmed_at) return json(request, { error: 'EMAIL_NOT_CONFIRMED' }, 403)
     if (!user.email) return json(request, { error: 'ACCOUNT_EMAIL_REQUIRED' }, 400)
     callerUserId = user.id
 
-    // Fail closed before claiming/creating a checkout if configured launch prices are
-    // not exactly the approved amount, currency, recurrence and active state.
     await validateLaunchPrices(introPriceId, standardPriceId)
 
     const { data: membership, error: membershipError } = await serviceClient
@@ -292,12 +274,10 @@ serve(async (request) => {
       .select('status, stripe_customer_id, stripe_subscription_id')
       .eq('user_id', user.id)
       .maybeSingle()
-
     if (membershipError) {
-      console.error('Membership lookup failed:', membershipError)
+      console.error('Membership lookup failed:', user.id)
       return json(request, { error: 'MEMBERSHIP_BACKEND_UNAVAILABLE' }, 503)
     }
-
     if (membership?.stripe_subscription_id && BLOCKING_STATUSES.has(membership.status)) {
       return json(request, { error: 'MEMBERSHIP_ALREADY_EXISTS' }, 409)
     }
@@ -308,12 +288,16 @@ serve(async (request) => {
 
     if (claim.state === 'open') {
       const sessionId = clean(claim.attempt?.stripe_checkout_session_id, 200)
-      if (!sessionId) throw new Error('CHECKOUT_ATTEMPT_SESSION_ID_MISSING')
+      if (!sessionId) return json(request, { error: 'CHECKOUT_RECONCILIATION_REQUIRED' }, 503)
+
       const session = await stripeRequest(`/v1/checkout/sessions/${encodeURIComponent(sessionId)}`)
       const status = clean(session?.status, 40)
       const checkoutUrl = validHttpsUrl(session?.url)
 
-      if (status === 'open' && checkoutUrl) {
+      if (status === 'open') {
+        // An open session is never replaced. Missing/invalid URL is an operator
+        // reconciliation condition, not permission to manufacture a second session.
+        if (!checkoutUrl) return json(request, { error: 'CHECKOUT_RECONCILIATION_REQUIRED', sessionId }, 503)
         return json(request, { sessionId, url: checkoutUrl, reused: true })
       }
       if (status === 'complete') {
@@ -325,8 +309,11 @@ serve(async (request) => {
           .eq('status', 'open')
         return json(request, { error: 'CHECKOUT_PROCESSING' }, 409)
       }
+      if (status !== 'expired') {
+        return json(request, { error: 'CHECKOUT_RECONCILIATION_REQUIRED', sessionId }, 503)
+      }
 
-      const reset = await resetExpiredOpenAttempt(serviceClient, claim.attempt)
+      const reset = await resetExplicitlyExpiredOpenAttempt(serviceClient, claim.attempt)
       if (!reset) return json(request, { error: 'CHECKOUT_ALREADY_IN_PROGRESS' }, 409)
       claim = { state: 'processing', attempt: reset }
     }
@@ -335,9 +322,6 @@ serve(async (request) => {
     if (!activeAttemptToken) throw new Error('CHECKOUT_ATTEMPT_TOKEN_MISSING')
 
     let customerId = clean(membership?.stripe_customer_id, 200)
-
-    // During transition, reuse a legacy server-side customer ID if one already exists on
-    // the private users record. Never expose or accept this ID from browser code.
     if (!customerId) {
       const { data: legacyProfile } = await serviceClient
         .from('users')
@@ -412,8 +396,6 @@ serve(async (request) => {
       }, { onConflict: 'user_id' })
 
     if (stateError) {
-      // The one active Stripe session is safely retained in stripe_checkout_attempts;
-      // later retry can reuse it instead of manufacturing a second session.
       console.error('Checkout membership state persistence failed after Stripe session creation:', user.id)
       return json(request, { error: 'CHECKOUT_RECONCILIATION_REQUIRED', sessionId }, 503)
     }
