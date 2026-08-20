@@ -152,7 +152,7 @@ export const sendLoveNoteSmsWithTwilio = async ({
 
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
-    const code = clean(payload?.code, 40)
+    const code = clean(String(payload?.code || ''), 40)
     // Twilio 21610 means the destination has opted out. Do not mask that condition.
     if (code === '21610') throw new Error('O2OL_SMS_RECIPIENT_OPTED_OUT')
     throw new Error(`O2OL_SMS_TWILIO_${code || response.status}`)
