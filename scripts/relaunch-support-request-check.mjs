@@ -39,6 +39,9 @@ for (const forbidden of ['email text', 'phone text', 'grant select on table publ
 for (const required of [
   "Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'",
   'MAX_OPEN_REQUESTS = 5',
+  'const UUID_PATTERN =',
+  'const requireRequestId =',
+  "error: 'REQUEST_ID_INVALID'",
   ".eq('user_id', caller.id)",
   "if (action === 'list')",
   "if (action === 'get')",
@@ -56,8 +59,11 @@ if (memberFunction.includes('staff_response: body') || memberFunction.includes('
 
 for (const required of [
   "Deno.env.get('O2OL_SUPPORT_ADMIN_USER_IDS')",
+  'const UUID_PATTERN =',
+  '.filter((value) => UUID_PATTERN.test(value))',
   'allowedAdminIds().has(caller.id)',
   "if (!eligible) return json(request, { error: 'O2OL_SUPPORT_ADMIN_REQUIRED' }, 403)",
+  "if (!UUID_PATTERN.test(requestId)) return json(request, { error: 'REQUEST_ID_INVALID' }, 400)",
   "if (action === 'list')",
   "if (action === 'start')",
   "if (action === 'respond')",
@@ -178,4 +184,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member support requests remain signed-in, private, discoverable through reviewed Help, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
+console.log('✅ Member support requests remain signed-in, UUID-validated, private, discoverable through reviewed Help, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
