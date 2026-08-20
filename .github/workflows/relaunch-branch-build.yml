@@ -30,6 +30,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify release and authentication locks
+        run: |
+          node scripts/relaunch-production-approval-check.mjs
+          node scripts/relaunch-auth-flow-check.mjs
+          node scripts/relaunch-auth-safety-check.mjs
+
       - name: Verify Live Community safeguards
         run: |
           node scripts/relaunch-live-community-check.mjs
