@@ -38,6 +38,7 @@ import LiveRoom from "./LiveRoom";
 import ProgrammingSchedule from "./ProgrammingSchedule";
 import CreatorProgramming from "./CreatorProgramming";
 import O2OLProgrammingAdmin from "./O2OLProgrammingAdmin";
+import ProgrammingModerationAdmin from "./ProgrammingModerationAdmin";
 import RelationshipMilestones from "./RelationshipMilestones";
 import RelationshipCoach from "./RelationshipCoach";
 import RelationshipGoals from "./RelationshipGoalsRelaunch";
@@ -101,6 +102,7 @@ const PAGES = {
   ProgrammingSchedule,
   CreatorProgramming,
   O2OLProgrammingAdmin,
+  ProgrammingModerationAdmin,
   RelationshipMilestones,
   RelationshipCoach,
   RelationshipGoals,
@@ -180,6 +182,7 @@ const ROUTES = [
   ["/ProgrammingSchedule", ProgrammingSchedule],
   ["/CreatorProgramming", CreatorProgramming],
   ["/O2OLProgrammingAdmin", O2OLProgrammingAdmin],
+  ["/ProgrammingModerationAdmin", ProgrammingModerationAdmin],
   ["/RelationshipMilestones", RelationshipMilestones, "relationship_milestones"],
   ["/RelationshipCoach", RelationshipCoach, "relationship_coach"],
   ["/RelationshipGoals", RelationshipGoals, "relationship_goals"],
