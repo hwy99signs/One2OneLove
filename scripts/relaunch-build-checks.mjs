@@ -16,6 +16,7 @@ const checks = [
   ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
   ['relaunch premium AI', 'scripts/relaunch-ai-feature-check.mjs'],
+  ['relaunch AI Content Creator multilingual runtime', 'scripts/relaunch-ai-content-i18n-check.mjs'],
   ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
   ['relaunch premium data', 'scripts/relaunch-premium-data-check.mjs'],
   ['relaunch premium routes', 'scripts/relaunch-premium-route-check.mjs'],
