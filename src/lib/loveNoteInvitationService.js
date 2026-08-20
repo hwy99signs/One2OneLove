@@ -80,7 +80,7 @@ export const validateLoveNoteInvitation = ({
   } else {
     contact = normalizeLoveNoteSmsNumber(recipientContact) || '';
     if (!contact) {
-      const error = new Error('SMS phone numbers must include the country code, for example +15551234567.');
+      const error = new Error('SMS_PHONE_E164_REQUIRED');
       error.code = 'SMS_PHONE_E164_REQUIRED';
       throw error;
     }
@@ -98,6 +98,14 @@ export const validateLoveNoteInvitation = ({
     deliveryLanguage: language,
     noteContent: content,
   };
+};
+
+const senderFallback = {
+  en: 'One2OneLove member',
+  es: 'miembro de One2OneLove',
+  fr: 'membre de One2OneLove',
+  it: 'membro di One2OneLove',
+  de: 'One2OneLove-Mitglied',
 };
 
 const invitationCopy = {
@@ -124,11 +132,11 @@ const invitationCopy = {
 };
 
 export const buildLoveNoteInvitationCopy = ({
-  senderName = 'One2OneLove member',
+  senderName = '',
   deliveryLanguage = preferredLoveNoteDeliveryLanguage(),
 } = {}) => {
   const language = normalizeLoveNoteDeliveryLanguage(deliveryLanguage);
-  const sender = clean(senderName, 80) || 'One2OneLove member';
+  const sender = clean(senderName, 80) || senderFallback[language];
   return invitationCopy[language](sender);
 };
 
