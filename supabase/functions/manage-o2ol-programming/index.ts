@@ -10,6 +10,7 @@ const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const GLOBAL_ROOM = 'global-relationship-room'
 const MIN_DURATION_MS = 15 * 60 * 1000
 const MAX_DURATION_MS = 4 * 60 * 60 * 1000
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -26,7 +27,7 @@ const allowedAdminIds = () => new Set(
   (Deno.env.get('O2OL_PROGRAMMING_ADMIN_USER_IDS') || '')
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean)
+    .filter((value) => UUID_PATTERN.test(value))
 )
 
 const corsHeadersFor = (request: Request) => {
@@ -71,7 +72,7 @@ const cleanReplayUrl = (value: unknown) => {
   if (!candidate) return null
   try {
     const url = new URL(candidate)
-    return ['https:', 'http:'].includes(url.protocol) ? url.toString().slice(0, 1000) : null
+    return url.protocol === 'https:' ? url.toString().slice(0, 1000) : null
   } catch {
     return null
   }
@@ -121,6 +122,7 @@ serve(async (request) => {
     if (action === 'cancel') {
       const slotId = clean(body?.slot_id, 80)
       if (!slotId) return json(request, { error: 'SLOT_ID_REQUIRED' }, 400)
+      if (!UUID_PATTERN.test(slotId)) return json(request, { error: 'SLOT_ID_INVALID' }, 400)
 
       const { data: slot, error } = await serviceClient
         .from('creator_programming_slots')
@@ -155,7 +157,7 @@ serve(async (request) => {
     if (startsAt.getTime() <= Date.now() || duration < MIN_DURATION_MS || duration > MAX_DURATION_MS) {
       return json(request, { error: 'INVALID_TIME' }, 400)
     }
-    if (contentMode === 'replay' && !replayUrl) return json(request, { error: 'REPLAY_URL_REQUIRED' }, 400)
+    if (contentMode === 'replay' && !replayUrl) return json(request, { error: 'REPLAY_URL_HTTPS_REQUIRED' }, 400)
 
     const { data: conflicts, error: conflictError } = await serviceClient
       .from('creator_programming_slots')
