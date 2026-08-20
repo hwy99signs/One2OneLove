@@ -65,7 +65,7 @@ serve(async (request) => {
     if (callerError || !caller?.id) return json(request, { error: 'UNAUTHORIZED' }, 401)
 
     const body = await request.json().catch(() => ({}))
-    const search = clean(body?.search, 80)
+    const search = clean(body?.search, 80).replace(/[%_]/g, '')
     const requestedLimit = Number.parseInt(String(body?.limit || ''), 10)
     const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(requestedLimit, MAX_RESULTS)) : 25
 
@@ -86,21 +86,25 @@ serve(async (request) => {
 
     let query = serviceClient
       .from('member_directory')
-      .select('id,name')
+      .select('id,name,avatar_url,bio,created_at')
       .order('name', { ascending: true })
       .limit(limit)
 
-    if (search) query = query.ilike('name', `%${search.replace(/[%_]/g, '')}%`)
+    if (search) query = query.ilike('name', `%${search}%`)
     if (excluded.size) query = query.not('id', 'in', `(${Array.from(excluded).join(',')})`)
 
     const { data: members, error: directoryError } = await query
     if (directoryError) throw directoryError
 
     // Explicit output mapping prevents a future expansion of member_directory from
-    // silently expanding this endpoint's public payload.
+    // silently expanding this endpoint's public payload. Do not synthesize English
+    // display names here; the multilingual client supplies its localized fallback.
     const safeMembers = (members || []).map((member) => ({
       id: member.id,
-      name: String(member.name || '').trim() || 'Member',
+      name: clean(member.name, 80) || null,
+      avatar_url: clean(member.avatar_url, 1000) || null,
+      bio: clean(member.bio, 500) || null,
+      created_at: member.created_at || null,
     }))
 
     return json(request, { success: true, enabled: true, members: safeMembers })
