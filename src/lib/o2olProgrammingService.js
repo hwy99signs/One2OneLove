@@ -1,14 +1,21 @@
 import { supabase } from './supabase';
 import { CREATOR_PROGRAMMING_ENABLED } from './creatorProgrammingService';
 
+const ERROR = {
+  disabled: 'O2OL_PROGRAMMING_DISABLED',
+  manage: 'O2OL_PROGRAMMING_MANAGE_FAILED',
+  book: 'O2OL_PROGRAMMING_BOOK_FAILED',
+  cancel: 'O2OL_PROGRAMMING_CANCEL_FAILED',
+};
+
 const requireEnabled = () => {
-  if (!CREATOR_PROGRAMMING_ENABLED) throw new Error('O2OL programming is not enabled yet.');
+  if (!CREATOR_PROGRAMMING_ENABLED) throw new Error(ERROR.disabled);
 };
 
 const invokeAdmin = async (body) => {
   requireEnabled();
   const { data, error } = await supabase.functions.invoke('manage-o2ol-programming', { body });
-  if (error) throw new Error(error?.message || 'Unable to manage O2OL programming.');
+  if (error) throw new Error(ERROR.manage);
   return data;
 };
 
@@ -47,12 +54,12 @@ export const bookO2OLProgrammingSlot = async ({
     room_slug: roomSlug,
   });
 
-  if (!data?.success) throw new Error('Unable to book O2OL programming.');
+  if (!data?.success) throw new Error(ERROR.book);
   return data.slot;
 };
 
 export const cancelO2OLProgrammingSlot = async (slotId) => {
   const data = await invokeAdmin({ action: 'cancel', slot_id: slotId });
-  if (!data?.success) throw new Error('Unable to cancel O2OL programming.');
+  if (!data?.success) throw new Error(ERROR.cancel);
   return data.slot;
 };
