@@ -5,6 +5,7 @@ const file = 'supabase/migrations/20260819_member_block_pending_request_cleanup.
 const source = fs.readFileSync(file, 'utf8');
 
 for (const required of [
+  "('buddy_requests',      'from_user_id', 'to_user_id')",
   "('friend_requests',     'sender_id',    'receiver_id')",
   "('connection_requests', 'requester_id', 'recipient_id')",
   "in ('pending','requested','open')",
@@ -22,6 +23,7 @@ for (const required of [
 for (const forbidden of [
   "delete from public.connections",
   "delete from public.friendships",
+  "status::text, '') in ('accepted'",
   'function public.cleanup_pending_member_requests_on_block',
   'set search_path = public',
 ]) {
@@ -34,4 +36,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ New member blocks remove pending pair requests through a non-public fixed-search-path helper without silently deleting accepted connections.');
+console.log('✅ New member blocks remove current buddy and legacy pending requests through a non-public fixed-search-path helper without silently deleting accepted connections.');
