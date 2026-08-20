@@ -8,11 +8,13 @@
 
 begin;
 
-create or replace function public.enforce_support_request_state_integrity()
+create schema if not exists o2ol_private;
+
+create or replace function o2ol_private.enforce_support_request_state_integrity()
 returns trigger
 language plpgsql
-security definer
-set search_path = public, pg_temp
+security invoker
+set search_path = ''
 as $$
 begin
   if tg_op = 'UPDATE' then
@@ -67,23 +69,24 @@ begin
 end;
 $$;
 
-revoke all on function public.enforce_support_request_state_integrity() from public, anon, authenticated;
+revoke all on function o2ol_private.enforce_support_request_state_integrity() from public, anon, authenticated;
 
 drop trigger if exists support_requests_state_integrity on public.support_requests;
 create trigger support_requests_state_integrity
 before insert or update on public.support_requests
 for each row
-execute function public.enforce_support_request_state_integrity();
+execute function o2ol_private.enforce_support_request_state_integrity();
 
-comment on function public.enforce_support_request_state_integrity() is
-  'Locks original member support content and validates support workflow status/timestamp consistency.';
+comment on function o2ol_private.enforce_support_request_state_integrity() is
+  'Non-public, SECURITY INVOKER trigger helper that locks original member support content and validates workflow status/timestamp consistency.';
 
 commit;
 
 -- PRE-APPLY CHECKLIST
 -- 1. Apply after 20260819_support_requests.sql.
--- 2. Verify member-authored user/category/subject/message fields cannot change after creation.
--- 3. Verify reviewed status transitions succeed and invalid jumps fail.
--- 4. Verify closed rows require closed_at and non-closed rows reject closed_at.
--- 5. Verify staff_response/responded_at must appear together.
--- 6. Verify support Edge Functions still satisfy every database invariant.
+-- 2. Confirm o2ol_private is not a PostgREST-exposed schema and browser roles have no EXECUTE on the helper.
+-- 3. Verify member-authored user/category/subject/message fields cannot change after creation.
+-- 4. Verify reviewed status transitions succeed and invalid jumps fail.
+-- 5. Verify closed rows require closed_at and non-closed rows reject closed_at.
+-- 6. Verify staff_response/responded_at must appear together.
+-- 7. Verify support Edge Functions still satisfy every database invariant.
