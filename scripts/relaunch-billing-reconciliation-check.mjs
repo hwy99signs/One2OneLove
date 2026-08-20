@@ -3,6 +3,8 @@ import fs from 'node:fs';
 const failures = [];
 const stripeServiceFile = 'src/lib/stripeService.js';
 const membershipConfigFile = 'src/lib/membershipConfig.js';
+const subscriptionFile = 'src/pages/Subscription.jsx';
+const paymentSuccessFile = 'src/pages/PaymentSuccess.jsx';
 const checkoutFile = 'supabase/functions/create-checkout-session/index.ts';
 const portalFile = 'supabase/functions/create-billing-portal-session/index.ts';
 const webhookFile = 'supabase/functions/stripe-webhook/index.ts';
@@ -13,6 +15,8 @@ const driftFile = 'docs/LIVE_DRIFT_AUDIT_20260820.md';
 const read = (file) => fs.readFileSync(file, 'utf8');
 const stripeService = read(stripeServiceFile);
 const membershipConfig = read(membershipConfigFile);
+const subscription = read(subscriptionFile);
+const paymentSuccess = read(paymentSuccessFile);
 const checkout = read(checkoutFile);
 const portal = read(portalFile);
 const webhook = read(webhookFile);
@@ -23,10 +27,16 @@ const drift = read(driftFile);
 for (const required of [
   "const PAYMENTS_ENABLED = import.meta.env.VITE_PAYMENTS_ENABLED === 'true';",
   "const MEMBERSHIP_PLAN_KEY = 'membership';",
+  "const codedError = (code = 'BILLING_REQUEST_FAILED')",
+  "throw codedError('AUTH_REQUIRED')",
+  "throw codedError('EMAIL_CONFIRMATION_REQUIRED')",
+  "throw codedError('PAYMENTS_DISABLED')",
   "export const createCheckoutSession = async () =>",
   "body: { planKey: MEMBERSHIP_PLAN_KEY }",
   "supabase.functions.invoke('create-billing-portal-session'",
   ".from('my_membership')",
+  "return { success: false, error: '', errorCode: internalCode(error, 'CHECKOUT_FAILED') };",
+  "return { success: false, error: '', errorCode: internalCode(error, 'PORTAL_FAILED') };",
   'export const featureAccess = Object.freeze({});',
   'export const hasFeatureAccess = () => false;',
 ]) {
@@ -47,6 +57,19 @@ for (const forbidden of [
   if (checkoutCall.includes(forbidden)) failures.push(`${stripeServiceFile}: browser checkout/portal path must not revive legacy caller-controlled billing field ${forbidden}.`);
 }
 
+for (const displayLeak of [
+  'You must be signed in to manage membership.',
+  'Please confirm your email before managing membership.',
+  'Membership payments are not enabled yet.',
+  'No secure checkout URL was returned.',
+  'Failed to create a checkout session.',
+  'Membership billing is not enabled yet.',
+  'No secure billing portal URL was returned.',
+  'Unable to open billing management.',
+]) {
+  if (stripeService.includes(displayLeak)) failures.push(`${stripeServiceFile}: English member-display service prose must not bypass localized membership UI (${displayLeak}).`);
+}
+
 for (const required of [
   "planKey: 'membership'",
   "pricingVersion: 'launch_2026'",
@@ -56,6 +79,31 @@ for (const required of [
   "paymentsEnabled = () => import.meta.env.VITE_PAYMENTS_ENABLED === 'true'",
 ]) {
   if (!membershipConfig.includes(required)) failures.push(`${membershipConfigFile}: missing approved membership pricing/gate ${required}.`);
+}
+
+for (const required of [
+  'const paymentsEnabled = isPaymentsEnabled();',
+  'disabled={actionLoading || !paymentsEnabled}',
+  'setMessage(result.error || t.checkoutUnavailable)',
+  'setMessage(result.error || t.billingUnavailable)',
+  '!paymentsEnabled ? t.checkoutStaged',
+]) {
+  if (!subscription.includes(required)) failures.push(`${subscriptionFile}: missing gated/localized membership runtime behavior ${required}.`);
+}
+
+for (const required of [
+  "const hasCheckoutMarker = Boolean(searchParams.get('session_id'));",
+  'const current = await getUserSubscription();',
+  'ACTIVE_MEMBERSHIP_STATUSES.has(current?.status)',
+  "setState('active')",
+  "if (!hasCheckoutMarker)",
+  "setState('unverified')",
+  "setState('processing')",
+]) {
+  if (!paymentSuccess.includes(required)) failures.push(`${paymentSuccessFile}: payment return page must verify server-synchronized membership state (${required}).`);
+}
+if (paymentSuccess.includes("if (hasCheckoutMarker) setState('active')") || paymentSuccess.includes("session_id') && setState('active')")) {
+  failures.push(`${paymentSuccessFile}: checkout URL/session marker must never be treated as proof of active payment.`);
 }
 
 for (const required of [
@@ -143,4 +191,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Relaunch membership billing stays single-SKU, browser/server-gated, server-priced, legacy-drift documented, and production-cutover locked.');
+console.log('✅ Relaunch membership billing stays single-SKU, localized on failure, server-verified on return, browser/server-gated, server-priced, legacy-drift documented, and production-cutover locked.');
