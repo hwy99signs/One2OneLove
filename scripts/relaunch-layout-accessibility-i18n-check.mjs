@@ -5,13 +5,13 @@ const source = fs.readFileSync(file, 'utf8');
 const failures = [];
 
 for (const language of ['en', 'es', 'fr', 'it', 'de']) {
-  const block = source.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`));
-  if (!block) {
+  const row = source.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([^\\n]+)\\},?`));
+  if (!row) {
     failures.push(`${file}: missing ${language} navigation copy.`);
     continue;
   }
   for (const key of ['homeAria', 'languageAria', 'menuAria']) {
-    if (!block[1].includes(`${key}:`)) failures.push(`${file}: ${language} navigation copy missing ${key}.`);
+    if (!row[1].includes(`${key}:`)) failures.push(`${file}: ${language} navigation copy missing ${key}.`);
   }
 }
 
