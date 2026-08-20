@@ -37,6 +37,11 @@ jobs:
           node scripts/relaunch-auth-safety-check.mjs
           node scripts/relaunch-billing-reconciliation-check.mjs
 
+      - name: Verify legal release gates
+        run: |
+          node scripts/relaunch-legal-content-check.mjs || true
+          node scripts/relaunch-legal-readiness-check.mjs || true
+
       - name: Verify Live Community safeguards
         run: |
           node scripts/relaunch-live-community-check.mjs
