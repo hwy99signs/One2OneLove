@@ -6,6 +6,31 @@ const check = (name, pass, detail) => checks.push({ name, pass: Boolean(pass), d
 
 const service = read('src/lib/presenceService.js');
 const component = read('src/components/presence/UserPresenceIndicator.jsx');
+const firstDirectory = read('supabase/migrations/20260817_member_directory_privacy.sql');
+const minimizedDirectory = read('supabase/migrations/20260818_member_directory_minimization.sql');
+const firstPresence = read('supabase/migrations/20260817_presence_security_hardening.sql');
+const reconciliation = read('supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql');
+
+const directoryProjectionIsMinimal = (source) => {
+  const select = source.match(/as\s+select([\s\S]*?)from\s+public\.users/i)?.[1] || '';
+  return select.includes('id')
+    && select.includes('name')
+    && select.includes('avatar_url')
+    && select.includes('bio')
+    && select.includes('created_at')
+    && !select.includes('email')
+    && !select.includes('relationship_status')
+    && !select.includes('location')
+    && !select.includes('partner_')
+    && !select.includes('interests')
+    && !select.includes('user_type');
+};
+
+const presenceMigrationIsNeutral = (source) =>
+  source.includes('security_invoker = true')
+  && !/\bas\s+last_seen_text\b/i.test(source)
+  && source.includes('security invoker')
+  && source.includes("set search_path = ''");
 
 check(
   'presence service accepts only the five active launch languages',
@@ -20,6 +45,12 @@ check(
     && service.includes('if (!validUserId(userId)) return offlinePresence')
     && service.includes('.filter(validUserId)'),
   'Malformed browser IDs must not reach presence queries or realtime filters.'
+);
+check(
+  'invalid requested member filters fail closed instead of subscribing to all presence',
+  service.includes('const requestedIds = Array.isArray(userIds) ? userIds : null')
+    && service.includes('if (requestedIds && !ids.length) return null;'),
+  'A malformed explicitly filtered subscription must become no subscription, never an all-member realtime stream.'
 );
 check(
   'presence subscriptions are independent instead of one global singleton',
@@ -70,7 +101,7 @@ check(
 );
 check(
   'presence UI replaces English hard-coded status text with localized copy',
-  component.includes("const UI_COPY =")
+  component.includes('const UI_COPY =')
     && component.includes('t.online')
     && component.includes('t.offline')
     && component.includes('t.away')
@@ -80,6 +111,31 @@ check(
     && !component.includes('>Online<')
     && !component.includes('>Offline<'),
   'Presence components must not bypass the multilingual runtime with literal English status labels.'
+);
+check(
+  'earliest member-directory migrations never expose broader profile fields',
+  directoryProjectionIsMinimal(firstDirectory)
+    && directoryProjectionIsMinimal(minimizedDirectory)
+    && firstDirectory.includes('security_invoker = true')
+    && minimizedDirectory.includes('security_invoker = true'),
+  'Fresh migration order must never temporarily expose location, relationship status or other profile fields, and views must respect caller privileges.'
+);
+check(
+  'initial presence migration is neutral and caller-safe before reconciliation',
+  presenceMigrationIsNeutral(firstPresence)
+    && firstPresence.includes('o2ol_private.write_user_presence')
+    && firstPresence.includes("'O2OL_PRESENCE_OWN_ONLY'")
+    && firstPresence.includes('security invoker\nset search_path = \'\'')
+    && !firstPresence.includes('set search_path = public'),
+  'A fresh environment must not rely on a later repair migration for caller-bound writes, invoker reads or language-neutral presence data.'
+);
+check(
+  'later presence reconciliation preserves the same neutral security contract',
+  presenceMigrationIsNeutral(reconciliation)
+    && reconciliation.includes('o2ol_private.write_user_presence')
+    && reconciliation.includes("'O2OL_PRESENCE_OWN_ONLY'")
+    && !reconciliation.includes('set search_path = public'),
+  'The approved reconciliation migration must not widen or undo the initial presence protections.'
 );
 
 console.log('\nOne2OneLove shared presence privacy/i18n check\n');
