@@ -17,6 +17,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const mountedRef = useRef(true);
+  const discardOnStopRef = useRef(false);
 
   const stopTimer = () => {
     if (timerRef.current) {
@@ -48,6 +49,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
     }
 
     try {
+      discardOnStopRef.current = false;
       stopRecorder();
       stopTracks();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -66,11 +68,13 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
       };
 
       mediaRecorder.onstop = () => {
+        const shouldDiscard = discardOnStopRef.current;
+        discardOnStopRef.current = false;
         const mime = mediaRecorder.mimeType || chunksRef.current[0]?.type || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type: mime });
         chunksRef.current = [];
         stopTracks();
-        if (!mountedRef.current || blob.size <= 0) return;
+        if (shouldDiscard || !mountedRef.current || blob.size <= 0) return;
         setAudioBlob(blob);
         setAudioUrl((previous) => {
           if (previous) URL.revokeObjectURL(previous);
@@ -84,6 +88,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
       timerRef.current = setInterval(() => setRecordingTime((previous) => previous + 1), 1000);
     } catch (error) {
       console.warn('Microphone capture was not available:', error);
+      discardOnStopRef.current = true;
       stopRecorder();
       stopTracks();
       if (mountedRef.current) toast.error(t.microphoneUnavailable);
@@ -92,6 +97,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
 
   const stopRecording = () => {
     if (!isRecording) return;
+    discardOnStopRef.current = false;
     setIsRecording(false);
     stopRecorder();
   };
@@ -104,9 +110,11 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
   };
 
   const handleCancel = () => {
+    discardOnStopRef.current = true;
     setIsRecording(false);
     stopRecorder();
     stopTracks();
+    chunksRef.current = [];
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioBlob(null);
     setAudioUrl(null);
@@ -118,8 +126,10 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }) {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      discardOnStopRef.current = true;
       stopRecorder();
       stopTracks();
+      chunksRef.current = [];
       if (audioUrl) URL.revokeObjectURL(audioUrl);
     };
   }, [audioUrl]);
