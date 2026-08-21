@@ -97,7 +97,7 @@ export const setUserOnline = async () => {
     if (error) throw error;
     startHeartbeat();
     return { success: true };
-  } catch (error) {
+  } catch {
     console.warn('Unable to set presence online.');
     return { success: false, code: 'O2OL_PRESENCE_UPDATE_FAILED' };
   }
@@ -222,7 +222,10 @@ export const getOnlineUsersCount = async () => {
 };
 
 export const subscribeToPresence = (callback, userIds = null) => {
-  const ids = [...new Set((userIds || []).map((id) => String(id || '').trim()).filter(validUserId))];
+  const requestedIds = Array.isArray(userIds) ? userIds : null;
+  const ids = [...new Set((requestedIds || []).map((id) => String(id || '').trim()).filter(validUserId))];
+  if (requestedIds && !ids.length) return null;
+
   const config = { event: '*', schema: 'public', table: 'user_presence' };
   if (ids.length) config.filter = `user_id=in.(${ids.join(',')})`;
 
