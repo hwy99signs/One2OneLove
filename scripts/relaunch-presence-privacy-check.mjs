@@ -32,6 +32,8 @@ const presenceMigrationIsNeutral = (source) =>
   && source.includes('security invoker')
   && source.includes("set search_path = ''");
 
+const synchronizedSource = reconciliation.match(/create table if not exists public\.user_directory_profiles\s*\(([\s\S]*?)\);/i)?.[1] || '';
+
 check(
   'presence service accepts only the five active launch languages',
   service.includes("const ACTIVE_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de'])")
@@ -119,6 +121,21 @@ check(
     && firstDirectory.includes('security_invoker = true')
     && minimizedDirectory.includes('security_invoker = true'),
   'Fresh migration order must never temporarily expose location, relationship status or other profile fields, and views must respect caller privileges.'
+);
+check(
+  'synchronized directory source starts with exactly the safe discovery fields',
+  synchronizedSource.includes('id uuid')
+    && synchronizedSource.includes('name text')
+    && synchronizedSource.includes('avatar_url text')
+    && synchronizedSource.includes('bio text')
+    && synchronizedSource.includes('created_at timestamptz')
+    && !synchronizedSource.includes('relationship_status')
+    && !synchronizedSource.includes('user_type')
+    && !synchronizedSource.includes('location')
+    && !synchronizedSource.includes('interests')
+    && !synchronizedSource.includes('email')
+    && reconciliation.includes("if coalesce(new.user_type, 'regular') <> 'regular' then"),
+  'Fresh #8C migration must not expose a broader signed-in-readable synchronization table before the later reconciliation step.'
 );
 check(
   'initial presence migration is neutral and caller-safe before reconciliation',
