@@ -12,6 +12,9 @@ const profile = read('src/pages/ProfileRelaunchSafe.jsx');
 const buddyService = read('src/lib/buddyService.js');
 const memberMedia = read('src/lib/memberMedia.js');
 const chatPage = read('src/pages/Chat.jsx');
+const chatList = read('src/components/chat/ChatList.jsx');
+const chatWindow = read('src/components/chat/ChatWindow.jsx');
+const chatCopy = read('src/lib/chatCopy.js');
 const relaunchChatService = read('src/lib/relaunchChatService.js');
 const directoryMigration = read('supabase/migrations/20260818_member_directory_minimization.sql');
 const chatGate = read('supabase/migrations/20260818_chat_connection_gate.sql');
@@ -64,13 +67,50 @@ check(
 check(
   'member avatars are restricted to first-party profile-picture URLs',
   memberMedia.includes('candidate.origin !== expectedOrigin')
-    && memberMedia.includes("candidate.pathname.startsWith(profilePicturePrefix)")
-    && memberMedia.includes("profile-pictures/"),
+    && memberMedia.includes('candidate.pathname.startsWith(profilePicturePrefix)')
+    && memberMedia.includes('profile-pictures/'),
   'Legacy external/generated avatar URLs must fall back locally rather than create third-party browser requests.'
 );
 check('buddy discovery sanitizes member avatar data', buddyService.includes("from './memberMedia'") && buddyService.includes('sanitizeMemberSummary'), 'Member cards and friend requests must receive sanitized avatar URLs.');
-check('Chat reads use the relaunch avatar wrapper', chatPage.includes("from '@/lib/relaunchChatService'") && relaunchChatService.includes('safeMemberAvatarUrl(conversation.avatar)'), 'Legacy Chat-generated avatar URLs must be stripped before rendering.');
+check(
+  'Chat reads sanitize conversation and message avatars',
+  chatPage.includes("from '@/lib/relaunchChatService'")
+    && relaunchChatService.includes('safeMemberAvatarUrl(conversation.avatar)')
+    && relaunchChatService.includes('safeMemberAvatarUrl(message.senderAvatar)'),
+  'Conversation and message-level legacy generated avatar URLs must be stripped before rendering.'
+);
 check('active relaunch Chat no longer imports the raw chat service directly', !chatPage.includes("from '@/lib/chatService'"), 'The large legacy service may remain internally, but public Chat reads must pass through the privacy wrapper.');
+check(
+  'private chat never displays raw attachment backend errors',
+  chatPage.includes('toast.error(t.unableAttachment)') && !chatPage.includes('toast.error(error?.message'),
+  'Attachment failures must use translated UI copy rather than connector/provider prose.'
+);
+check(
+  'chat member fallback is localized in all five active languages',
+  ['en:', 'es:', 'fr:', 'it:', 'de:'].every((key) => chatCopy.includes(key))
+    && (chatCopy.match(/memberFallback:/g) || []).length === 5
+    && !chatCopy.includes('nl:'),
+  'Missing private-chat names must be supplied by the current five-language copy and inactive Dutch must stay absent.'
+);
+check(
+  'chat list uses localized member, date and status copy',
+  chatList.includes('chat.name || chatCopy.memberFallback')
+    && chatList.includes('chatCopy.yesterday')
+    && chatList.includes('chatCopy.mutedLabel')
+    && chatList.includes('chatCopy.chatTitle')
+    && chatList.includes('Intl.DateTimeFormat')
+    && !chatList.includes("return 'Yesterday'")
+    && !chatList.includes('nl:'),
+  'Chat list headings, relative date labels, muted state and member fallbacks must follow the active language.'
+);
+check(
+  'chat window uses localized member fallback and back label',
+  chatWindow.includes('const displayName = chat.name || t.memberFallback')
+    && chatWindow.includes('aria-label={t.back}')
+    && !chatWindow.includes("chat.name || 'One2OneLove member'")
+    && !chatWindow.includes("alt={chat.name || 'Member'}"),
+  'Missing member names and navigation accessibility text must not fall back to hard-coded English.'
+);
 
 check('database conversation RPC requires accepted connection', chatGate.includes('are_accepted_buddies(v_self, v_other)') && chatGate.includes('Private Chat is available only after a connection request is accepted'), 'Guessed deep links/direct RPC calls must not create unsolicited chats.');
 check('database message insert also requires accepted connection', chatGate.includes('enforce_message_connection_gate') && chatGate.includes('Private messages require an accepted connection'), 'A legacy conversation row must not bypass the connection rule.');
