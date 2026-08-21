@@ -142,8 +142,27 @@ check(
   'Voice recording must stop media tracks, discard cancelled clips and use the five-language chat copy rather than browser alerts.'
 );
 
-check('database conversation RPC requires accepted connection', chatGate.includes('are_accepted_buddies(v_self, v_other)') && chatGate.includes('Private Chat is available only after a connection request is accepted'), 'Guessed deep links/direct RPC calls must not create unsolicited chats.');
-check('database message insert also requires accepted connection', chatGate.includes('enforce_message_connection_gate') && chatGate.includes('Private messages require an accepted connection'), 'A legacy conversation row must not bypass the connection rule.');
+check(
+  'accepted-connection lookup is caller-private',
+  chatGate.includes('(auth.uid() = p_user_a or auth.uid() = p_user_b)')
+    && chatGate.includes("set search_path = ''")
+    && chatGate.includes("raise exception 'O2OL_CHAT_ACCEPTED_CONNECTION_REQUIRED'")
+    && chatGate.includes('A querying B<->C returns false'),
+  'An authenticated member must not be able to use the SECURITY DEFINER connection helper to inspect two unrelated members relationship state.'
+);
+check(
+  'database conversation RPC requires accepted connection',
+  chatGate.includes('if not public.are_accepted_buddies(v_self, v_other)')
+    && chatGate.includes("raise exception 'O2OL_CHAT_ACCEPTED_CONNECTION_REQUIRED'"),
+  'Guessed deep links/direct RPC calls must not create unsolicited chats.'
+);
+check(
+  'database message insert also requires accepted connection',
+  chatGate.includes('enforce_message_connection_gate')
+    && chatGate.includes('if not public.are_accepted_buddies(new.sender_id, new.receiver_id)')
+    && chatGate.includes("raise exception 'O2OL_CHAT_ACCEPTED_CONNECTION_REQUIRED'"),
+  'A legacy conversation row must not bypass the accepted-connection rule.'
+);
 check('Chat attachments are default-off behind explicit flag', composer.includes("VITE_CHAT_ATTACHMENTS_ENABLED === 'true'") && composer.includes('Private text chat is active. Attachments and location sharing remain staged'), 'Text Chat should be the safe baseline until private attachment activation.');
 check('Chat location sharing is independently default-off', composer.includes("VITE_CHAT_LOCATION_ENABLED === 'true'") && composer.includes('if (!CHAT_LOCATION_ENABLED'), 'Location is sensitive and should require its own explicit activation.');
 
