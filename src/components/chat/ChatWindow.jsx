@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPresenceBadge } from '@/components/presence/UserPresenceIndicator';
 import ChatMessageRelaunch from './ChatMessageRelaunch';
 import ChatComposerRelaunch from './ChatComposerRelaunch';
-import { markMessagesAsRead } from '@/lib/chatService';
+import { markMessagesAsRead } from '@/lib/relaunchChatService';
 import { getChatCopy } from '@/lib/chatCopy';
 import { useLanguage } from '@/Layout';
 import { useQueryClient } from '@tanstack/react-query';
