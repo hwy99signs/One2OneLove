@@ -15,6 +15,7 @@ const chatPage = read('src/pages/Chat.jsx');
 const chatList = read('src/components/chat/ChatList.jsx');
 const chatWindow = read('src/components/chat/ChatWindow.jsx');
 const chatMessage = read('src/components/chat/ChatMessageRelaunch.jsx');
+const voiceRecorder = read('src/components/chat/VoiceRecorder.jsx');
 const chatCopy = read('src/lib/chatCopy.js');
 const relaunchChatService = read('src/lib/relaunchChatService.js');
 const directoryMigration = read('supabase/migrations/20260818_member_directory_minimization.sql');
@@ -128,6 +129,17 @@ check(
     && chatMessage.includes('formatTime(message.timestamp || message.createdAt || message.sentAt, language)')
     && !chatMessage.includes('Intl.DateTimeFormat(undefined'),
   'Message timestamps must use the selected five-language locale rather than the browser/system locale.'
+);
+check(
+  'staged voice recording is localized and microphone-safe',
+  voiceRecorder.includes('toast.error(t.microphoneUnavailable)')
+    && voiceRecorder.includes('streamRef.current.getTracks().forEach((track) => track.stop())')
+    && voiceRecorder.includes('discardOnStopRef.current = true')
+    && voiceRecorder.includes('aria-label={isRecording ? t.stopVoice : t.recordVoice}')
+    && !voiceRecorder.includes("alert('Could not access microphone")
+    && (chatCopy.match(/microphoneUnavailable:/g) || []).length === 5
+    && (chatCopy.match(/recordingVoice:/g) || []).length === 5,
+  'Voice recording must stop media tracks, discard cancelled clips and use the five-language chat copy rather than browser alerts.'
 );
 
 check('database conversation RPC requires accepted connection', chatGate.includes('are_accepted_buddies(v_self, v_other)') && chatGate.includes('Private Chat is available only after a connection request is accepted'), 'Guessed deep links/direct RPC calls must not create unsolicited chats.');
