@@ -82,22 +82,23 @@ export default function ChatWindow({
   };
 
   const avatarUrl = privacySafeAvatar(chat.avatar);
+  const displayName = chat.name || t.memberFallback;
 
   return (
     <div className="flex h-full flex-1 flex-col bg-gray-50">
       <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {onBack && (
-            <button type="button" onClick={onBack} aria-label={t.cancel} className="flex-shrink-0 rounded-full p-2 transition-colors hover:bg-gray-100 lg:hidden"><ArrowLeft className="h-5 w-5 text-gray-600" /></button>
+            <button type="button" onClick={onBack} aria-label={t.back} className="flex-shrink-0 rounded-full p-2 transition-colors hover:bg-gray-100 lg:hidden"><ArrowLeft className="h-5 w-5 text-gray-600" /></button>
           )}
 
           <Avatar className="h-10 w-10 flex-shrink-0">
-            {avatarUrl ? <AvatarImage src={avatarUrl} alt={chat.name || 'Member'} /> : null}
-            <AvatarFallback>{chat.name?.charAt(0) || 'M'}</AvatarFallback>
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
+            <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
 
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-semibold text-gray-900">{chat.name || 'One2OneLove member'}</h3>
+            <h3 className="truncate text-base font-semibold text-gray-900">{displayName}</h3>
             <UserPresenceBadge userId={chat.otherUserId} showDot showText size="sm" />
           </div>
         </div>
