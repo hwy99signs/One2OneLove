@@ -10,63 +10,21 @@
 import { supabase } from './supabase';
 
 let heartbeatInterval = null;
-let presenceSubscription = null;
 let lifecycleListenersBound = false;
+let presenceSubscriptionCounter = 0;
+const activePresenceSubscriptions = new Set();
 
 const PRESENCE_SELECT = 'user_id,status,last_seen,last_active,updated_at,name,avatar_url,is_online';
 const ALLOWED_STATUSES = new Set(['online', 'offline', 'away', 'busy']);
 const ACTIVE_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de']);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const PRESENCE_COPY = {
-  en: {
-    online: 'Online',
-    longAgo: 'Long time ago',
-    justNow: 'Just now',
-    minutesAgo: (count) => `${count} min${count === 1 ? '' : 's'} ago`,
-    hoursAgo: (count) => `${count} hour${count === 1 ? '' : 's'} ago`,
-    daysAgo: (count) => `${count} day${count === 1 ? '' : 's'} ago`,
-  },
-  es: {
-    online: 'En línea',
-    longAgo: 'Hace tiempo',
-    justNow: 'Ahora mismo',
-    minutesAgo: (count) => `Hace ${count} min`,
-    hoursAgo: (count) => `Hace ${count} h`,
-    daysAgo: (count) => `Hace ${count} d`,
-  },
-  fr: {
-    online: 'En ligne',
-    longAgo: 'Il y a longtemps',
-    justNow: 'À l’instant',
-    minutesAgo: (count) => `Il y a ${count} min`,
-    hoursAgo: (count) => `Il y a ${count} h`,
-    daysAgo: (count) => `Il y a ${count} j`,
-  },
-  it: {
-    online: 'Online',
-    longAgo: 'Molto tempo fa',
-    justNow: 'Adesso',
-    minutesAgo: (count) => `${count} min fa`,
-    hoursAgo: (count) => `${count} h fa`,
-    daysAgo: (count) => `${count} g fa`,
-  },
-  de: {
-    online: 'Online',
-    longAgo: 'Vor längerer Zeit',
-    justNow: 'Gerade eben',
-    minutesAgo: (count) => `vor ${count} Min.`,
-    hoursAgo: (count) => `vor ${count} Std.`,
-    daysAgo: (count) => `vor ${count} T.`,
-  },
-  // Inactive compatibility block only. Dutch is not part of the five-language launch.
-  nl: {
-    online: 'Online',
-    longAgo: 'Lang geleden',
-    justNow: 'Zojuist',
-    minutesAgo: (count) => `${count} min geleden`,
-    hoursAgo: (count) => `${count} uur geleden`,
-    daysAgo: (count) => `${count} d geleden`,
-  },
+  en: { online: 'Online', longAgo: 'Long time ago', justNow: 'Just now', minutesAgo: (count) => `${count} min${count === 1 ? '' : 's'} ago`, hoursAgo: (count) => `${count} hour${count === 1 ? '' : 's'} ago`, daysAgo: (count) => `${count} day${count === 1 ? '' : 's'} ago` },
+  es: { online: 'En línea', longAgo: 'Hace tiempo', justNow: 'Ahora mismo', minutesAgo: (count) => `Hace ${count} min`, hoursAgo: (count) => `Hace ${count} h`, daysAgo: (count) => `Hace ${count} d` },
+  fr: { online: 'En ligne', longAgo: 'Il y a longtemps', justNow: 'À l’instant', minutesAgo: (count) => `Il y a ${count} min`, hoursAgo: (count) => `Il y a ${count} h`, daysAgo: (count) => `Il y a ${count} j` },
+  it: { online: 'Online', longAgo: 'Molto tempo fa', justNow: 'Adesso', minutesAgo: (count) => `${count} min fa`, hoursAgo: (count) => `${count} h fa`, daysAgo: (count) => `${count} g fa` },
+  de: { online: 'Online', longAgo: 'Vor längerer Zeit', justNow: 'Gerade eben', minutesAgo: (count) => `vor ${count} Min.`, hoursAgo: (count) => `vor ${count} Std.`, daysAgo: (count) => `vor ${count} T.` },
 };
 
 const resolvePresenceLanguage = (requestedLanguage = null) => {
@@ -80,6 +38,8 @@ const resolvePresenceLanguage = (requestedLanguage = null) => {
 
   return 'en';
 };
+
+const validUserId = (value) => UUID_PATTERN.test(String(value || '').trim());
 
 export const formatLastSeen = (lastSeen, language = null) => {
   const copy = PRESENCE_COPY[resolvePresenceLanguage(language)];
@@ -112,7 +72,7 @@ export const localizePresence = (presence, language = null) => {
 };
 
 const offlinePresence = (userId, language = null) => localizePresence({
-  user_id: userId,
+  user_id: validUserId(userId) ? String(userId).trim() : null,
   status: 'offline',
   last_seen: null,
   last_active: null,
@@ -128,26 +88,18 @@ const getAuthenticatedUser = async () => {
   return data.user;
 };
 
-// =====================================================
-// PRESENCE MANAGEMENT
-// =====================================================
-
 export const setUserOnline = async () => {
   try {
     const user = await getAuthenticatedUser();
     if (!user) return { success: false };
 
-    const { error } = await supabase.rpc('update_user_presence', {
-      p_user_id: user.id,
-      p_status: 'online',
-    });
-
+    const { error } = await supabase.rpc('update_user_presence', { p_user_id: user.id, p_status: 'online' });
     if (error) throw error;
     startHeartbeat();
     return { success: true };
   } catch (error) {
-    console.warn('Unable to set presence online:', error);
-    return { success: false, error };
+    console.warn('Unable to set presence online.');
+    return { success: false, code: 'O2OL_PRESENCE_UPDATE_FAILED' };
   }
 };
 
@@ -157,43 +109,30 @@ export const setUserOffline = async () => {
     stopHeartbeat();
     if (!user) return { success: true };
 
-    const { error } = await supabase.rpc('update_user_presence', {
-      p_user_id: user.id,
-      p_status: 'offline',
-    });
-
+    const { error } = await supabase.rpc('update_user_presence', { p_user_id: user.id, p_status: 'offline' });
     if (error) throw error;
     return { success: true };
-  } catch (error) {
-    console.warn('Unable to set presence offline:', error);
-    return { success: false, error };
+  } catch {
+    console.warn('Unable to set presence offline.');
+    return { success: false, code: 'O2OL_PRESENCE_UPDATE_FAILED' };
   }
 };
 
 export const updateUserStatus = async (status) => {
-  if (!ALLOWED_STATUSES.has(status)) throw new Error('Invalid presence status');
+  if (!ALLOWED_STATUSES.has(status)) throw new Error('O2OL_PRESENCE_STATUS_INVALID');
 
   const user = await getAuthenticatedUser();
-  if (!user) throw new Error('User not authenticated');
+  if (!user) throw new Error('O2OL_AUTH_REQUIRED');
 
-  const { error } = await supabase.rpc('update_user_presence', {
-    p_user_id: user.id,
-    p_status: status,
-  });
-
-  if (error) throw error;
+  const { error } = await supabase.rpc('update_user_presence', { p_user_id: user.id, p_status: status });
+  if (error) throw new Error('O2OL_PRESENCE_UPDATE_FAILED');
   if (status === 'online') startHeartbeat();
   else stopHeartbeat();
   return { success: true };
 };
 
-// =====================================================
-// HEARTBEAT SYSTEM
-// =====================================================
-
 const startHeartbeat = () => {
   stopHeartbeat();
-
   heartbeatInterval = window.setInterval(async () => {
     try {
       const user = await getAuthenticatedUser();
@@ -201,14 +140,10 @@ const startHeartbeat = () => {
         stopHeartbeat();
         return;
       }
-
-      const { error } = await supabase.rpc('heartbeat_user_presence', {
-        p_user_id: user.id,
-      });
-
-      if (error) console.warn('Presence heartbeat failed:', error);
-    } catch (error) {
-      console.warn('Presence heartbeat failed:', error);
+      const { error } = await supabase.rpc('heartbeat_user_presence', { p_user_id: user.id });
+      if (error) console.warn('Presence heartbeat failed.');
+    } catch {
+      console.warn('Presence heartbeat failed.');
     }
   }, 30_000);
 };
@@ -219,31 +154,27 @@ const stopHeartbeat = () => {
   heartbeatInterval = null;
 };
 
-// =====================================================
-// PRESENCE QUERIES
-// =====================================================
-
 export const getUserPresence = async (userId, language = null) => {
-  if (!userId) return offlinePresence(userId, language);
+  if (!validUserId(userId)) return offlinePresence(null, language);
 
   try {
     const { data, error } = await supabase
       .from('user_presence_view')
       .select(PRESENCE_SELECT)
-      .eq('user_id', userId)
+      .eq('user_id', String(userId).trim())
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data ? localizePresence(data, language) : offlinePresence(userId, language);
-  } catch (error) {
-    console.warn('Unable to fetch user presence:', error);
+  } catch {
+    console.warn('Unable to fetch user presence.');
     return offlinePresence(userId, language);
   }
 };
 
 export const getMultipleUserPresence = async (userIds, language = null) => {
   try {
-    const uniqueIds = [...new Set((userIds || []).filter(Boolean))];
+    const uniqueIds = [...new Set((userIds || []).map((id) => String(id || '').trim()).filter(validUserId))];
     if (!uniqueIds.length) return {};
 
     const { data, error } = await supabase
@@ -254,15 +185,11 @@ export const getMultipleUserPresence = async (userIds, language = null) => {
     if (error) throw error;
 
     const presenceMap = {};
-    (data || []).forEach((presence) => {
-      presenceMap[presence.user_id] = localizePresence(presence, language);
-    });
-    uniqueIds.forEach((userId) => {
-      if (!presenceMap[userId]) presenceMap[userId] = offlinePresence(userId, language);
-    });
+    (data || []).forEach((presence) => { presenceMap[presence.user_id] = localizePresence(presence, language); });
+    uniqueIds.forEach((userId) => { if (!presenceMap[userId]) presenceMap[userId] = offlinePresence(userId, language); });
     return presenceMap;
-  } catch (error) {
-    console.warn('Unable to fetch multiple presence records:', error);
+  } catch {
+    console.warn('Unable to fetch multiple presence records.');
     return {};
   }
 };
@@ -277,8 +204,8 @@ export const getOnlineUsers = async (language = null) => {
 
     if (error) throw error;
     return (data || []).map((presence) => localizePresence(presence, language));
-  } catch (error) {
-    console.warn('Unable to fetch online users:', error);
+  } catch {
+    console.warn('Unable to fetch online users.');
     return [];
   }
 };
@@ -288,46 +215,39 @@ export const getOnlineUsersCount = async () => {
     const { data, error } = await supabase.rpc('get_online_users_count');
     if (error) throw error;
     return Number(data) || 0;
-  } catch (error) {
-    console.warn('Unable to fetch online user count:', error);
+  } catch {
+    console.warn('Unable to fetch online user count.');
     return 0;
   }
 };
 
-// =====================================================
-// REALTIME SUBSCRIPTIONS
-// =====================================================
-
 export const subscribeToPresence = (callback, userIds = null) => {
-  unsubscribeFromPresence();
-
-  const ids = [...new Set((userIds || []).filter(Boolean))];
-  const config = {
-    event: '*',
-    schema: 'public',
-    table: 'user_presence',
-  };
+  const ids = [...new Set((userIds || []).map((id) => String(id || '').trim()).filter(validUserId))];
+  const config = { event: '*', schema: 'public', table: 'user_presence' };
   if (ids.length) config.filter = `user_id=in.(${ids.join(',')})`;
 
-  presenceSubscription = supabase
-    .channel(`user-presence-changes:${ids.length ? ids.join('-') : 'all'}`)
+  presenceSubscriptionCounter += 1;
+  const channel = supabase
+    .channel(`user-presence-changes:${presenceSubscriptionCounter}`)
     .on('postgres_changes', config, (payload) => {
       if (typeof callback === 'function') callback(payload);
     })
     .subscribe();
 
-  return presenceSubscription;
+  activePresenceSubscriptions.add(channel);
+  return channel;
 };
 
-export const unsubscribeFromPresence = () => {
-  if (!presenceSubscription) return;
-  supabase.removeChannel(presenceSubscription);
-  presenceSubscription = null;
-};
+export const unsubscribeFromPresence = (subscription = null) => {
+  if (subscription) {
+    activePresenceSubscriptions.delete(subscription);
+    supabase.removeChannel(subscription);
+    return;
+  }
 
-// =====================================================
-// LIFECYCLE MANAGEMENT
-// =====================================================
+  for (const channel of activePresenceSubscriptions) supabase.removeChannel(channel);
+  activePresenceSubscriptions.clear();
+};
 
 const handleVisibilityChange = async () => {
   if (document.hidden) {
@@ -338,20 +258,11 @@ const handleVisibilityChange = async () => {
 };
 
 const handlePageHide = () => {
-  // Do not attempt to synchronously destructure supabase.auth.getUser(): it is a
-  // Promise and network work is not reliable during unload. Stop the heartbeat;
-  // the server-side presence freshness window will age the session out. Explicit
-  // sign-out still calls setUserOffline before the auth session is cleared.
   stopHeartbeat();
 };
 
-const handleBrowserOnline = async () => {
-  await setUserOnline();
-};
-
-const handleBrowserOffline = () => {
-  stopHeartbeat();
-};
+const handleBrowserOnline = async () => { await setUserOnline(); };
+const handleBrowserOffline = () => { stopHeartbeat(); };
 
 const bindLifecycleListeners = () => {
   if (lifecycleListenersBound) return;
@@ -386,15 +297,8 @@ export const cleanupPresence = async () => {
   }
 };
 
-// =====================================================
-// VISUAL UTILITY FUNCTIONS
-// =====================================================
-
-export const getStatusColor = (isOnline) =>
-  isOnline ? 'bg-green-500' : 'bg-gray-400';
-
-export const getStatusTextColor = (isOnline) =>
-  isOnline ? 'text-green-600' : 'text-gray-500';
+export const getStatusColor = (isOnline) => isOnline ? 'bg-green-500' : 'bg-gray-400';
+export const getStatusTextColor = (isOnline) => isOnline ? 'text-green-600' : 'text-gray-500';
 
 export default {
   setUserOnline,
