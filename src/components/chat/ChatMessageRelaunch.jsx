@@ -6,6 +6,8 @@ import { getChatCopy } from '@/lib/chatCopy';
 import { useLanguage } from '@/Layout';
 import { toast } from 'sonner';
 
+const LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
+
 const formatBytes = (bytes) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return '';
   if (bytes < 1024) return `${bytes} B`;
@@ -13,11 +15,12 @@ const formatBytes = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const formatTime = (value) => {
+const formatTime = (value, language) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+  const locale = LOCALES[language] || LOCALES.en;
+  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(date);
 };
 
 function DeliveryStatus({ message, t }) {
@@ -79,7 +82,8 @@ function AttachmentBody({ message, t }) {
 
 export default function ChatMessageRelaunch({ message, isOwn, onEdit, onDelete }) {
   const { currentLanguage } = useLanguage();
-  const t = getChatCopy(currentLanguage);
+  const language = Object.prototype.hasOwnProperty.call(LOCALES, currentLanguage) ? currentLanguage : 'en';
+  const t = getChatCopy(language);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message?.text || message?.content || '');
   const textareaRef = useRef(null);
@@ -141,7 +145,7 @@ export default function ChatMessageRelaunch({ message, isOwn, onEdit, onDelete }
 
         <div className="mt-1 flex items-center justify-end gap-1 text-[11px] text-gray-500">
           {message.isEdited && <span>{t.edited}</span>}
-          <span>{formatTime(message.timestamp || message.createdAt || message.sentAt)}</span>
+          <span>{formatTime(message.timestamp || message.createdAt || message.sentAt, language)}</span>
           <DeliveryStatus message={{ ...message, isOwn }} t={t} />
         </div>
 
