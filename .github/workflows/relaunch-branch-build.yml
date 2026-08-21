@@ -53,10 +53,11 @@ jobs:
           node scripts/relaunch-live-room-write-identity-check.mjs
           node scripts/relaunch-live-room-i18n-check.mjs
 
-      - name: Verify member connection and safety safeguards
+      - name: Verify member connection, presence and safety safeguards
         run: |
           node scripts/relaunch-connection-chat-check.mjs
           node scripts/relaunch-member-connections-i18n-check.mjs
+          node scripts/relaunch-presence-privacy-check.mjs
           node scripts/relaunch-member-blocking-foundation-check.mjs
           node scripts/relaunch-member-blocking-discovery-check.mjs
           node scripts/relaunch-member-blocking-request-cleanup-check.mjs
