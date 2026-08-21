@@ -120,7 +120,7 @@ export default function Chat() {
   const sendFileMutation = useMutation({
     mutationFn: ({ conversationId, receiverId, file, messageType }) => sendFileMessage(conversationId, receiverId, file, messageType),
     onSuccess: (_, variables) => { void refreshChatData(variables.conversationId); toast.success(t.attachmentSent); },
-    onError: (error) => { console.error('Unable to send attachment:', error); toast.error(error?.message || t.unableAttachment); },
+    onError: (error) => { console.error('Unable to send attachment:', error); toast.error(t.unableAttachment); },
   });
 
   const sendLocationMutation = useMutation({
