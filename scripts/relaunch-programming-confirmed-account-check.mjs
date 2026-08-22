@@ -6,6 +6,7 @@ const files = [
   'supabase/functions/manage-o2ol-programming/index.ts',
   'supabase/functions/report-programming/index.ts',
   'supabase/functions/moderate-programming/index.ts',
+  'supabase/functions/programming-reminder/index.ts',
 ];
 
 for (const file of files) {
@@ -30,4 +31,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Programming confirmed-account preflight passed: creator booking, O2OL staff scheduling, member reporting and moderation all require a confirmed authenticated account before privileged data access.');
+console.log('Programming confirmed-account preflight passed: creator booking, O2OL staff scheduling, member reporting, moderation and member reminder management all require a confirmed authenticated account before privileged data access.');
