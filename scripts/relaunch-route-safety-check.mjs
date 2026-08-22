@@ -15,6 +15,7 @@ const notFoundFile = 'src/pages/NotFoundRelaunch.jsx';
 const aboutFile = 'src/pages/AboutUsRelaunch.jsx';
 const aboutAliasFile = 'src/pages/AboutUs.jsx';
 const privacyAliasFile = 'src/pages/PrivacyRequests.jsx';
+const professionalAdminFile = 'src/pages/ProfessionalApplicationsAdmin.jsx';
 const layoutFile = 'src/pages/LayoutRelaunch.jsx';
 const homeFile = 'src/pages/Home.jsx';
 const communityFile = 'src/pages/LiveCommunity.jsx';
@@ -25,7 +26,7 @@ const unavailableAliasFiles = [
   'src/pages/InfluencersSupport.jsx',
 ];
 
-for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, privacyAliasFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
+for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, privacyAliasFile, professionalAdminFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
   check(`required: ${file}`, exists(file), exists(file) ? 'present' : 'missing');
 }
 
@@ -106,6 +107,7 @@ const staffConsoleRoutes = [
   '/SupportAdmin',
   '/O2OLProgrammingAdmin',
   '/ProgrammingModerationAdmin',
+  '/ProfessionalApplicationsAdmin',
 ];
 
 for (const route of staffConsoleRoutes) {
