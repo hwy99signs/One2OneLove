@@ -10,6 +10,7 @@ const firstDirectory = read('supabase/migrations/20260817_member_directory_priva
 const minimizedDirectory = read('supabase/migrations/20260818_member_directory_minimization.sql');
 const firstPresence = read('supabase/migrations/20260817_presence_security_hardening.sql');
 const reconciliation = read('supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql');
+const activeAccountGuard = read('supabase/migrations/20260822003000_member_directory_active_account_guard.sql');
 
 const directoryProjectionIsMinimal = (source) => {
   const select = source.match(/as\s+select([\s\S]*?)from\s+public\.users/i)?.[1] || '';
@@ -123,6 +124,12 @@ check(
   'Fresh migration order must never temporarily expose location, relationship status or other profile fields, and views must respect caller privileges.'
 );
 check(
+  'earliest member-directory projection excludes inactive accounts',
+  firstDirectory.includes('coalesce(is_active, true) = true')
+    && firstDirectory.includes("coalesce(user_type, 'regular') = 'regular'"),
+  'Ordinary member discovery must never intentionally include a deactivated account.'
+);
+check(
   'synchronized directory source starts with exactly the safe discovery fields',
   synchronizedSource.includes('id uuid')
     && synchronizedSource.includes('name text')
@@ -136,6 +143,15 @@ check(
     && !synchronizedSource.includes('email')
     && reconciliation.includes("if coalesce(new.user_type, 'regular') <> 'regular' then"),
   'Fresh #8C migration must not expose a broader signed-in-readable synchronization table before the later reconciliation step.'
+);
+check(
+  'final #8C guard removes inactive accounts from synchronized discovery',
+  activeAccountGuard.includes("coalesce(new.user_type, 'regular') <> 'regular'")
+    && activeAccountGuard.includes('coalesce(new.is_active, true) <> true')
+    && activeAccountGuard.includes('update of name, avatar_url, bio, user_type, is_active')
+    && activeAccountGuard.includes('and coalesce(u.is_active, true) = true')
+    && activeAccountGuard.includes('and coalesce(u.user_type, \'regular\') = \'regular\''),
+  'Final synchronized discovery must delete deactivated/non-regular accounts and restore them only when eligible again.'
 );
 check(
   'initial presence migration is neutral and caller-safe before reconciliation',
