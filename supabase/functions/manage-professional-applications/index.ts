@@ -119,30 +119,27 @@ serve(async (request) => {
     const now = new Date().toISOString()
     const reviewNotes = clean(body?.review_notes, 4000) || null
     let nextStatus = ''
-    let auditAction = ''
     let allowedStatuses: string[] = []
 
     if (action === 'start') {
       nextStatus = 'under_review'
-      auditAction = 'review_started'
       allowedStatuses = ['submitted']
     } else if (action === 'approve') {
       nextStatus = 'approved'
-      auditAction = 'approved'
       allowedStatuses = ['under_review']
     } else if (action === 'reject') {
       if (!reviewNotes || reviewNotes.length < 3) return json(request, { error: 'REVIEW_NOTES_REQUIRED' }, 400)
       nextStatus = 'rejected'
-      auditAction = 'rejected'
       allowedStatuses = ['submitted','under_review']
     } else if (action === 'reopen') {
       nextStatus = 'under_review'
-      auditAction = 'reopened'
       allowedStatuses = ['approved','rejected']
     } else {
       return json(request, { error: 'INVALID_ACTION' }, 400)
     }
 
+    // The database state trigger validates the transition/verification requirements and
+    // its AFTER trigger writes the audit record atomically in the same transaction.
     const { data: updated, error: updateError } = await serviceClient
       .from('professional_applications')
       .update({
@@ -163,14 +160,6 @@ serve(async (request) => {
       throw updateError
     }
     if (!updated) return json(request, { error: 'APPLICATION_STATE_CONFLICT' }, 409)
-
-    const { error: auditError } = await serviceClient
-      .from('professional_application_audit')
-      .insert({ application_id: updated.id, actor_user_id: caller.id, action: auditAction })
-    if (auditError) {
-      console.error('Professional application audit persistence failed:', auditError.code || 'unknown')
-      return json(request, { error: 'APPLICATION_REVIEW_RECONCILIATION_REQUIRED' }, 503)
-    }
 
     return json(request, { success: true, enabled: true, eligible: true, application: updated })
   } catch (error) {
