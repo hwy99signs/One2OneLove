@@ -34,9 +34,10 @@ requireText(queue, 'Privacy-request backend activation', 'Pending queue must ret
 requireText(queue, 'SMS / external messaging activation', 'Pending queue must retain SMS/external messaging as a future approval.');
 requireText(queue, 'verified number control', 'Pending SMS activation must require verified destination control before active consent.');
 requireText(queue, 'Production branch / Vercel cutover', 'Pending queue must retain production deployment as a future approval.');
+requireText(queue, 'Professional application review', 'Pending queue must retain professional application review as a future approval.');
+requireText(queue, 'O2OL_PROFESSIONAL_APPLICATION_ADMIN_USER_IDS', 'Pending queue must protect production reviewer authority behind an explicit server allowlist.');
 requireText(queue, 'Relaunch membership billing / Stripe cutover', 'Pending queue must retain billing cutover as a future approval.');
 
-// Completed live actions belong in the execution ledger, never back in the pending queue.
 for (const stale of [
   'Apply `supabase/migrations/20260817_love_note_invitations.sql` to the live Supabase project.',
   'Apply `supabase/migrations/20260817_love_note_saves.sql` to activate persistent Saved Love Notes.',
@@ -53,4 +54,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Production approval ledger preflight passed: completed #1–#8B actions are separated from pending work, #8C is the next scoped approval, and production approvals remain one-at-a-time.');
+console.log('Production approval ledger preflight passed: completed #1–#8B actions are separated from pending work, #8C is the next scoped approval, newer staff/provider work remains explicitly held, and production approvals remain one-at-a-time.');
