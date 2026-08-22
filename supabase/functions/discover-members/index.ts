@@ -12,7 +12,7 @@ const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
 
 const configuredOrigins = () => {
-  const values = (Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS') || Deno.env.get('CREATOR_PROGRAMMING_ALLOWED_ORIGINS') || '')
+  const values = (Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS') || '')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean)
@@ -63,6 +63,9 @@ serve(async (request) => {
     const { data: callerData, error: callerError } = await callerClient.auth.getUser()
     const caller = callerData?.user
     if (callerError || !caller?.id) return json(request, { error: 'UNAUTHORIZED' }, 401)
+    if (!caller.email_confirmed_at && !caller.confirmed_at) {
+      return json(request, { error: 'EMAIL_CONFIRMATION_REQUIRED' }, 403)
+    }
 
     const body = await request.json().catch(() => ({}))
     const search = clean(body?.search, 80).replace(/[%_]/g, '')
