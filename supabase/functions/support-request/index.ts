@@ -73,6 +73,9 @@ serve(async (request) => {
     const { data: callerData, error: callerError } = await callerClient.auth.getUser()
     const caller = callerData?.user
     if (callerError || !caller?.id) return json(request, { error: 'UNAUTHORIZED' }, 401)
+    if (!caller.email_confirmed_at && !caller.confirmed_at) {
+      return json(request, { error: 'EMAIL_CONFIRMATION_REQUIRED' }, 403)
+    }
 
     const body = await request.json().catch(() => ({}))
     const action = clean(body?.action, 30) || 'list'
