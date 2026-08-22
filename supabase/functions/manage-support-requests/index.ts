@@ -12,7 +12,7 @@ const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
 
 const configuredOrigins = () => {
-  const values = (Deno.env.get('SUPPORT_REQUEST_ALLOWED_ORIGINS') || Deno.env.get('CREATOR_PROGRAMMING_ALLOWED_ORIGINS') || '')
+  const values = (Deno.env.get('SUPPORT_REQUEST_ALLOWED_ORIGINS') || '')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean)
