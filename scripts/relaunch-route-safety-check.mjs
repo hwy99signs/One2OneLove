@@ -14,6 +14,7 @@ const unavailableFile = 'src/pages/RelaunchUnavailable.jsx';
 const notFoundFile = 'src/pages/NotFoundRelaunch.jsx';
 const aboutFile = 'src/pages/AboutUsRelaunch.jsx';
 const aboutAliasFile = 'src/pages/AboutUs.jsx';
+const privacyAliasFile = 'src/pages/PrivacyRequests.jsx';
 const layoutFile = 'src/pages/LayoutRelaunch.jsx';
 const homeFile = 'src/pages/Home.jsx';
 const communityFile = 'src/pages/LiveCommunity.jsx';
@@ -24,7 +25,7 @@ const unavailableAliasFiles = [
   'src/pages/InfluencersSupport.jsx',
 ];
 
-for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
+for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, privacyAliasFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
   check(`required: ${file}`, exists(file), exists(file) ? 'present' : 'missing');
 }
 
@@ -33,6 +34,7 @@ const help = exists(helpFile) ? read(helpFile) : '';
 const helpShell = exists(helpShellFile) ? read(helpShellFile) : '';
 const about = exists(aboutFile) ? read(aboutFile) : '';
 const aboutAlias = exists(aboutAliasFile) ? read(aboutAliasFile) : '';
+const privacyAlias = exists(privacyAliasFile) ? read(privacyAliasFile) : '';
 const generalNavigationSurface = [layoutFile, homeFile, helpFile, helpShellFile, communityFile]
   .filter(exists)
   .map((file) => read(file))
@@ -83,6 +85,22 @@ for (const [route, component] of requiredPrivateMemberRoutes) {
     `${route} is a reviewed member control and must not silently disappear from the relaunch router.`
   );
 }
+
+check(
+  'obsolete PrivacyRequests page is compatibility-only',
+  privacyAlias.includes("export { default } from './PrivacyCenter';")
+    && !privacyAlias.includes('data_correction')
+    && !privacyAlias.includes('listMyPrivacyRequests')
+    && !privacyAlias.includes('cancelPrivacyRequest'),
+  'The old privacy-request filename must resolve to PrivacyCenter and must never revive the obsolete direct-table/data-correction workflow.'
+);
+check(
+  'obsolete PrivacyRequests route cannot reappear separately',
+  !router.includes('import PrivacyRequests from "./PrivacyRequests"')
+    && !router.includes("import PrivacyRequests from './PrivacyRequests'")
+    && !router.includes('["/PrivacyRequests", PrivacyRequests]'),
+  '/PrivacyCenter is the single reviewed member privacy route; the obsolete PrivacyRequests implementation must stay unrouted.'
+);
 
 const staffConsoleRoutes = [
   '/SupportAdmin',
