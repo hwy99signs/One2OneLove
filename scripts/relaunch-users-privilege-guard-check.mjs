@@ -43,11 +43,19 @@ for (const field of ['user_type', 'email', 'stripe_customer_id', 'subscription_s
 }
 
 for (const required of [
+  "Deno.env.get('CREATOR_PROGRAMMING_ENABLED') !== 'true'",
+  'EMAIL_CONFIRMATION_REQUIRED',
   ".select('id,user_type')",
   "creator?.user_type !== 'influencer'",
   "error: 'CREATOR_NOT_APPROVED'",
 ]) {
-  if (!creatorBooking.includes(required)) failures.push(`Creator booking must retain server-side creator-role enforcement: ${required}`);
+  if (!creatorBooking.includes(required)) failures.push(`Creator booking must retain server-side creator access enforcement: ${required}`);
+}
+
+const creatorGateIndex = creatorBooking.indexOf("Deno.env.get('CREATOR_PROGRAMMING_ENABLED') !== 'true'");
+const creatorRoleIndex = creatorBooking.indexOf("creator?.user_type !== 'influencer'");
+if (creatorGateIndex < 0 || creatorRoleIndex < 0 || creatorGateIndex > creatorRoleIndex) {
+  failures.push('Creator programming feature gate must run before creator-role/data handling.');
 }
 
 if (failures.length) {
@@ -56,4 +64,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Users privilege-ownership preflight passed: browser profile writes cannot assign creator/admin/verification/billing state, and creator booking still verifies the server-owned influencer role.');
+console.log('Users privilege-ownership preflight passed: browser profile writes cannot assign creator/admin/verification/billing state, and creator booking remains feature-gated, confirmed-account-only and tied to the server-owned influencer role.');
