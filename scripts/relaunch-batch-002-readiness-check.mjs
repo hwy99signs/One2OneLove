@@ -29,39 +29,26 @@ const requireToken = (file, token, description = token) => {
 };
 
 const requiredArtifacts = [
-  // Pairwise Chat attachments
   'supabase/migrations/20260818_chat_attachment_privacy.sql',
   'supabase/migrations/20260817_message_insert_hardening.sql',
   'src/lib/chatService.js',
-
-  // Love Note mixed-access membership enforcement
   'supabase/functions/send-love-note-invitation/index.ts',
   'src/lib/loveNoteInvitationService.js',
-
-  // Premium AI
   'supabase/migrations/20260818_premium_ai_tools.sql',
   'supabase/functions/relationship-coach/index.ts',
   'supabase/functions/generate-relationship-content/index.ts',
   'src/lib/relationshipCoachService.js',
   'src/lib/aiContentCreatorService.js',
-
-  // Free Date Ideas persistence
   'supabase/migrations/20260818_date_ideas_hardening.sql',
   'src/lib/dateIdeasService.js',
   'src/pages/DateIdeasRelaunchBrowse.jsx',
-
-  // Paid Relationship Goals persistence
   'supabase/migrations/20260818_relationship_goals_membership_hardening.sql',
   'src/lib/relationshipGoalsService.js',
   'src/pages/RelationshipGoalsRelaunch.jsx',
-
-  // Member-directory privacy minimization / reconciliation
   'supabase/migrations/20260818_member_directory_minimization.sql',
   'supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql',
   'supabase/migrations/20260820151000_member_directory_source_minimization.sql',
   'src/lib/buddyService.js',
-
-  // Privacy/account-data request intake final-state reconciliation
   'supabase/migrations/20260818_privacy_requests.sql',
   'supabase/migrations/20260821211500_privacy_request_workflow_reconciliation.sql',
   'supabase/functions/privacy-request/index.ts',
@@ -69,8 +56,6 @@ const requiredArtifacts = [
   'src/lib/privacyRequestService.js',
   'src/pages/PrivacyCenter.jsx',
   'src/pages/PrivacyRequests.jsx',
-
-  // Approval/governance sources of truth
   'docs/APPROVAL_BATCH_002.md',
   'docs/RELAUNCH_APPROVAL_QUEUE.md',
   'docs/PRODUCTION_APPROVAL_EXECUTION.md',
@@ -78,65 +63,29 @@ const requiredArtifacts = [
 
 requiredArtifacts.forEach(requireFile);
 
-// Rollout gates must remain explicit in source. Live values are production configuration
-// and are intentionally NOT changed or asserted by this development check.
-requireToken(
-  'supabase/functions/send-love-note-invitation/index.ts',
-  'MEMBERSHIP_GATING_ENABLED',
-  'the Love Note membership rollout gate',
-);
-requireToken(
-  'supabase/functions/relationship-coach/index.ts',
-  'PREMIUM_AI_ENABLED',
-  'the premium-AI rollout gate',
-);
-requireToken(
-  'supabase/functions/relationship-coach/index.ts',
-  'MEMBERSHIP_GATING_ENABLED',
-  'the Relationship Coach membership gate',
-);
-requireToken(
-  'supabase/functions/generate-relationship-content/index.ts',
-  'PREMIUM_AI_ENABLED',
-  'the premium-AI rollout gate',
-);
-requireToken(
-  'supabase/functions/generate-relationship-content/index.ts',
-  'MEMBERSHIP_GATING_ENABLED',
-  'the AI Content Creator membership gate',
-);
-requireToken(
-  'supabase/functions/privacy-request/index.ts',
-  'PRIVACY_REQUESTS_ENABLED',
-  'the server privacy-request rollout gate',
-);
-requireToken(
-  'src/lib/privacyRequestService.js',
-  'VITE_PRIVACY_REQUESTS_ENABLED',
-  'the frontend privacy-request rollout gate',
-);
-requireToken(
-  'src/pages/PrivacyRequests.jsx',
-  "export { default } from './PrivacyCenter';",
-  'the canonical Privacy Center compatibility alias',
-);
+for (const [file, token, description] of [
+  ['supabase/functions/send-love-note-invitation/index.ts', 'MEMBERSHIP_GATING_ENABLED', 'the Love Note membership rollout gate'],
+  ['supabase/functions/relationship-coach/index.ts', 'PREMIUM_AI_ENABLED', 'the premium-AI rollout gate'],
+  ['supabase/functions/relationship-coach/index.ts', 'MEMBERSHIP_GATING_ENABLED', 'the Relationship Coach membership gate'],
+  ['supabase/functions/generate-relationship-content/index.ts', 'PREMIUM_AI_ENABLED', 'the premium-AI rollout gate'],
+  ['supabase/functions/generate-relationship-content/index.ts', 'MEMBERSHIP_GATING_ENABLED', 'the AI Content Creator membership gate'],
+  ['supabase/functions/privacy-request/index.ts', 'PRIVACY_REQUESTS_ENABLED', 'the server privacy-request rollout gate'],
+  ['src/lib/privacyRequestService.js', 'VITE_PRIVACY_REQUESTS_ENABLED', 'the frontend privacy-request rollout gate'],
+  ['src/pages/PrivacyRequests.jsx', "export { default } from './PrivacyCenter';", 'the canonical Privacy Center compatibility alias'],
+]) requireToken(file, token, description);
 
-// The old bulk-approval route must remain explicitly retired.
 const batch = read('docs/APPROVAL_BATCH_002.md');
 for (const marker of [
   'SUPERSEDED — DO NOT EXECUTE AS A BULK BATCH',
   'There is no valid bulk “Approval Batch 002” execution instruction anymore.',
 ]) {
-  if (batch && !batch.includes(marker)) {
-    failures.push(`APPROVAL_BATCH_002.md: missing retired-batch boundary “${marker}”.`);
-  }
+  if (batch && !batch.includes(marker)) failures.push(`APPROVAL_BATCH_002.md: missing retired-batch boundary “${marker}”.`);
 }
 
 const approvalQueue = read('docs/RELAUNCH_APPROVAL_QUEUE.md');
 for (const boundary of [
   'Production branch / Vercel cutover',
   'SMS / external messaging activation',
-  '### #8B — Community membership security — PENDING',
   '### #8C — Presence + member-directory privacy — PENDING',
   'Handle production approvals **one at a time**.',
 ]) {
@@ -144,14 +93,20 @@ for (const boundary of [
     failures.push(`RELAUNCH_APPROVAL_QUEUE.md: missing protected production boundary “${boundary}”.`);
   }
 }
-
-const executionLedger = read('docs/PRODUCTION_APPROVAL_EXECUTION.md');
-if (executionLedger && !executionLedger.includes('#7 — Live Room identity hardening — SATISFIED / NO-OP')) {
-  failures.push('PRODUCTION_APPROVAL_EXECUTION.md: completed approval ledger is incomplete through #7.');
+if (approvalQueue.includes('### #8B — Community membership security — PENDING')) {
+  failures.push('RELAUNCH_APPROVAL_QUEUE.md: completed #8B must not regress into the pending queue.');
 }
 
-// The detailed private-feature preflight remains a controlled-test dependency for these
-// workstreams, even though the old batch approval mechanism is retired.
+const executionLedger = read('docs/PRODUCTION_APPROVAL_EXECUTION.md');
+for (const marker of [
+  '#7 — Live Room identity hardening — SATISFIED / NO-OP',
+  '#8B — Community membership security — COMPLETE',
+]) {
+  if (executionLedger && !executionLedger.includes(marker)) {
+    failures.push(`PRODUCTION_APPROVAL_EXECUTION.md: completed approval ledger is missing “${marker}”.`);
+  }
+}
+
 const packageJson = read('package.json');
 if (packageJson && !packageJson.includes('"relaunch:private-feature-check"')) {
   failures.push('package.json: relaunch:private-feature-check must remain available.');
@@ -164,5 +119,5 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Historical Batch 002 workstream artifacts/gates are present and the obsolete bulk-approval path remains retired.');
+console.log('✅ Historical Batch 002 workstream artifacts/gates are present, completed #8B is preserved in the execution ledger, and the obsolete bulk-approval path remains retired.');
 console.log('ℹ️ This is development readiness only. Production actions still require individual explicit approval.');
