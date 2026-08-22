@@ -238,4 +238,4 @@ commit;
 -- 5. member-authored user_id/type/note/created_at cannot change after insert.
 -- 6. invalid status/timestamp combinations are rejected by the trigger.
 -- 7. manage-privacy-requests uses a server-side UUID allowlist and never returns user_id.
--- 8. no function/migration here calls auth.admin, deletes auth users, exports data, sends communications or changes billing.
+-- 8. no function/migration here uses privileged auth-administration APIs, deletes auth users, exports data, sends communications or changes billing.
