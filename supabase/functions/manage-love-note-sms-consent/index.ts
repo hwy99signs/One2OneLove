@@ -1,7 +1,9 @@
-// One2OneLove Love Notes SMS consent capture.
+// One2OneLove Love Notes SMS consent-intent capture.
 // DEVELOPMENT ONLY — do not deploy/enable until a later production approval.
-// This endpoint records recipient-controlled website opt-in without exposing the
-// consent table to browser roles and without persisting the raw/partial phone number.
+// This endpoint records a recipient-controlled website opt-in intent without exposing
+// the consent table to browser roles and without persisting the raw/partial phone number.
+// A website checkbox alone never authorizes SMS sending: captured rows remain
+// pending_verification until a separately reviewed workflow proves number control.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
@@ -53,7 +55,7 @@ serve(async (request) => {
   const origin = request.headers.get('origin') || DEFAULT_ORIGIN
   if (!allowedOrigins().has(origin)) return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)
 
-  // Separate switch from SMS sending. A consent form can be tested without ever
+  // Separate switch from SMS sending. A consent-intent form can be tested without ever
   // activating delivery, but production capture remains fail-closed by default.
   if (Deno.env.get('LOVE_NOTE_SMS_CONSENT_CAPTURE_ENABLED') !== 'true') {
     return json(request, { error: 'SMS_CONSENT_CAPTURE_DISABLED' }, 503)
@@ -85,7 +87,7 @@ serve(async (request) => {
       .from('love_note_sms_consents')
       .upsert({
         phone_hash: phoneHash,
-        status: 'active',
+        status: 'pending_verification',
         consent_method: 'web_form',
         language,
         program_version: PROGRAM_VERSION,
@@ -94,19 +96,23 @@ serve(async (request) => {
         privacy_version: PRIVACY_VERSION,
         evidence_ref: evidenceRef,
         consented_at: now,
+        verified_at: null,
         revoked_at: null,
         updated_at: now,
       }, { onConflict: 'phone_hash' })
 
     if (error) {
-      console.error('Love Note SMS consent persistence failed:', error.code || 'unknown')
+      console.error('Love Note SMS consent-intent persistence failed:', error.code || 'unknown')
       return json(request, { error: 'SMS_CONSENT_SAVE_UNAVAILABLE' }, 503)
     }
 
     // Never echo the phone or hash. The receipt is an opaque event reference only.
+    // pending_verification is deliberately non-authorizing; the SMS send adapter accepts
+    // only active consent produced by a separately approved verification workflow.
     return json(request, {
       success: true,
-      status: 'active',
+      status: 'pending_verification',
+      verification_required: true,
       language,
       consent_receipt: evidenceRef,
       program_version: PROGRAM_VERSION,
