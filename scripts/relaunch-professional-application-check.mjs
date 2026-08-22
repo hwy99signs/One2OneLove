@@ -9,6 +9,8 @@ const requireText = (source, needle, message) => {
 const router = read('src/pages/index.jsx');
 const closed = read('src/pages/ProfessionalApplicationsClosed.jsx');
 const service = read('src/lib/professionalApplicationService.js');
+const reviewService = read('src/lib/professionalApplicationReviewService.js');
+const reviewPage = read('src/pages/ProfessionalApplicationsAdmin.jsx');
 const widget = read('src/components/signup/TurnstileWidget.jsx');
 const fn = read('supabase/functions/submit-professional-application/index.ts');
 const migration = read('supabase/migrations/20260817_professional_applications.sql');
@@ -17,6 +19,8 @@ const reviewFn = read('supabase/functions/manage-professional-applications/index
 
 requireText(router, 'VITE_PROFESSIONAL_APPLICATIONS_ENABLED', 'Professional application routes must default behind an explicit frontend activation flag.');
 requireText(router, 'ProfessionalApplicationsClosed', 'Closed application routes must render the truthful staged state.');
+requireText(router, 'import ProfessionalApplicationsAdmin from "./ProfessionalApplicationsAdmin";', 'Private professional application admin page must be explicitly imported.');
+requireText(router, '["/ProfessionalApplicationsAdmin", ProfessionalApplicationsAdmin]', 'Private professional application admin route must remain wired.');
 requireText(closed, 'No application was submitted from this page.', 'Closed application state must not imply intake occurred.');
 requireText(service, "submit-professional-application", 'Professional application forms must use the private Edge Function service.');
 requireText(widget, "professional_application", 'Turnstile widget must use the reviewed professional_application action.');
@@ -73,6 +77,27 @@ for (const required of [
   'The database state trigger validates the transition/verification requirements',
 ]) requireText(reviewFn, required, `Professional application review endpoint missing safeguard: ${required}`);
 
+for (const required of [
+  'VITE_PROFESSIONAL_APPLICATION_REVIEW_ENABLED',
+  "supabase.functions.invoke('manage-professional-applications'",
+  'getProfessionalApplicationReviewAccess',
+  'listProfessionalApplicationsForReview',
+  'approveProfessionalApplicationReview',
+  'rejectProfessionalApplicationReview',
+]) requireText(reviewService, required, `Professional application review client missing safeguard: ${required}`);
+
+for (const language of ['en','es','fr','it','de']) {
+  requireText(reviewPage, `${language}: {`, `Professional review console missing active language ${language}.`);
+}
+for (const required of [
+  'PROFESSIONAL_APPLICATION_REVIEW_ENABLED',
+  'getProfessionalApplicationReviewAccess()',
+  'listProfessionalApplicationsForReview',
+  'Approval requires verified email and phone first.',
+  'approving this application does not create an Auth user',
+  'disabled={busyId === item.id || !verified}',
+]) requireText(reviewPage, required, `Professional review console missing safeguard: ${required}`);
+
 if (/\.from\('users'\)[\s\S]{0,200}\.(update|insert|upsert)\(/.test(reviewFn)) {
   failures.push('Professional application review endpoint must never assign a users role or mutate a member account.');
 }
@@ -98,4 +123,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Professional application intake/review preflight passed: public submission is anti-abuse gated, review is confirmed-account/allowlist-only, status/audit changes are database-atomic, approval requires prior verification, and no review path grants an account role.');
+console.log('Professional application intake/review preflight passed: public submission is anti-abuse gated, review is confirmed-account/allowlist-only and dark by default, status/audit changes are database-atomic, approval requires prior verification, the staff console is five-language, and no review path grants an account role.');
