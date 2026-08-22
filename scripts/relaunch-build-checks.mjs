@@ -20,6 +20,7 @@ const checks = [
   ['relaunch membership projection security', 'scripts/relaunch-membership-projection-security-check.mjs'],
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
   ['relaunch privacy endpoint dark mode', 'scripts/relaunch-privacy-endpoint-dark-check.mjs'],
+  ['relaunch private origin isolation', 'scripts/relaunch-private-origin-isolation-check.mjs'],
   ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
   ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
   ['Love Notes SMS compliance', 'scripts/relaunch-love-note-sms-check.mjs'],
