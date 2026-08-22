@@ -1,6 +1,6 @@
 // Supabase Edge Function: manage-privacy-requests
 // DEVELOPMENT CODE ONLY. This queue reviews request status only. It does not execute
-// data export, data correction, or account deletion.
+// data export, data correction, billing changes, communications, or account deletion.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
@@ -18,6 +18,8 @@ const configuredOrigins = () => {
   return new Set(values.length ? values : [DEFAULT_ORIGIN])
 }
 
+// Staff access is intentionally independent of member profile roles. Only explicit,
+// server-side UUID allowlisting can open this private review queue.
 const allowedAdminIds = () => new Set(
   (Deno.env.get('O2OL_PRIVACY_ADMIN_USER_IDS') || '')
     .split(',')
@@ -69,6 +71,9 @@ serve(async (request) => {
     const { data: callerData, error: callerError } = await callerClient.auth.getUser()
     const caller = callerData?.user
     if (callerError || !caller?.id) return json(request, { error: 'UNAUTHORIZED' }, 401)
+    if (!caller.email_confirmed_at && !caller.confirmed_at) {
+      return json(request, { error: 'EMAIL_CONFIRMATION_REQUIRED' }, 403)
+    }
 
     const body = await request.json().catch(() => ({}))
     const action = clean(body?.action, 30) || 'access'
@@ -80,17 +85,21 @@ serve(async (request) => {
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
-    const fields = 'id,request_type,description,status,staff_response,reviewed_at,completed_at,cancelled_at,created_at,updated_at'
+
+    // Never return user_id from this review surface. Identity resolution belongs only in
+    // a separately approved fulfillment path that actually performs a privacy operation.
+    const fields = 'id,request_type,member_note,status,staff_response,reviewed_at,completed_at,canceled_at,created_at,updated_at'
 
     if (action === 'list') {
       const statusFilter = clean(body?.status, 20)
       let query = serviceClient.from('privacy_requests').select(fields).order('created_at', { ascending: true }).limit(100)
-      if (['submitted','in_review','completed','cancelled','rejected'].includes(statusFilter)) query = query.eq('status', statusFilter)
-      else query = query.in('status', ['submitted','in_review'])
+      if (['submitted', 'in_review', 'completed', 'canceled', 'declined'].includes(statusFilter)) {
+        query = query.eq('status', statusFilter)
+      } else {
+        query = query.in('status', ['submitted', 'in_review'])
+      }
       const { data, error } = await query
       if (error) throw error
-      // Deliberately omit member user_id from the review queue. A future execution path
-      // may resolve identity internally when actually performing an approved operation.
       return json(request, { success: true, enabled: true, eligible: true, requests: data || [] })
     }
 
@@ -108,50 +117,63 @@ serve(async (request) => {
         .maybeSingle()
       if (error) throw error
       if (data) {
-        const { error: auditError } = await serviceClient.from('privacy_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'staff_started' })
+        const { error: auditError } = await serviceClient.from('privacy_request_audit').insert({
+          request_id: data.id,
+          actor_user_id: caller.id,
+          action: 'staff_started',
+        })
         if (auditError) throw auditError
       }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
     }
 
-    if (action === 'complete' || action === 'reject') {
+    if (action === 'complete' || action === 'decline' || action === 'reject') {
       const response = clean(body?.response, 4000)
       if (response.length < 3) return json(request, { error: 'RESPONSE_TOO_SHORT' }, 400)
       const now = new Date().toISOString()
-      const nextStatus = action === 'complete' ? 'completed' : 'rejected'
+      const completed = action === 'complete'
       const patch = {
-        status: nextStatus,
+        status: completed ? 'completed' : 'declined',
         staff_response: response,
         reviewed_at: now,
-        completed_at: action === 'complete' ? now : null,
-        cancelled_at: null,
+        completed_at: completed ? now : null,
+        canceled_at: null,
       }
       const { data, error } = await serviceClient
         .from('privacy_requests')
         .update(patch)
         .eq('id', requestId)
-        .in('status', ['submitted','in_review'])
+        .in('status', ['submitted', 'in_review'])
         .select(fields)
         .maybeSingle()
       if (error) throw error
       if (data) {
-        const { error: auditError } = await serviceClient.from('privacy_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: action === 'complete' ? 'staff_completed' : 'staff_rejected' })
+        const { error: auditError } = await serviceClient.from('privacy_request_audit').insert({
+          request_id: data.id,
+          actor_user_id: caller.id,
+          action: completed ? 'staff_completed' : 'staff_rejected',
+        })
         if (auditError) throw auditError
       }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
     }
 
     if (action === 'reopen') {
+      const reviewedAt = new Date().toISOString()
       const { data, error } = await serviceClient
         .from('privacy_requests')
-        .update({ status: 'in_review', completed_at: null, cancelled_at: null })
+        .update({ status: 'in_review', reviewed_at: reviewedAt, completed_at: null, canceled_at: null })
         .eq('id', requestId)
-        .in('status', ['completed','rejected'])
+        .in('status', ['completed', 'declined'])
         .select(fields)
         .maybeSingle()
       if (error) throw error
       if (data) {
-        const { error: auditError } = await serviceClient.from('privacy_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'staff_reopened' })
+        const { error: auditError } = await serviceClient.from('privacy_request_audit').insert({
+          request_id: data.id,
+          actor_user_id: caller.id,
+          action: 'staff_reopened',
+        })
         if (auditError) throw auditError
       }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
