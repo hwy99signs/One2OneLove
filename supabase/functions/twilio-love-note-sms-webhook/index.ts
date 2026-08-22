@@ -138,9 +138,10 @@ serve(async (request) => {
       return emptyTwiml(200)
     }
 
-    // START is accepted only as a re-subscription for a number O2OL already knows. This
-    // avoids treating an unrelated inbound START to an unrecognized number as sufficient
-    // consent for a program the person may never have seen.
+    // START is accepted only as a re-subscription for a number O2OL already knows. The
+    // signed provider callback proves control of the originating number for this event,
+    // so START is the one staged path that may promote a known record to verified active
+    // consent. An unrelated START from an unknown number never creates O2OL consent.
     if (!existing?.id) return emptyTwiml(200)
 
     const { error: startError } = await serviceClient
@@ -149,6 +150,7 @@ serve(async (request) => {
         status: 'active',
         consent_method: 'inbound_keyword',
         consented_at: now,
+        verified_at: now,
         revoked_at: null,
         updated_at: now,
       })
