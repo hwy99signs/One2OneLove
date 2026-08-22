@@ -131,6 +131,20 @@ Production activation remains pending for support table/guard/read-state migrati
 
 Keep `VITE_SUPPORT_REQUESTS_ENABLED=false` and `SUPPORT_REQUESTS_ENABLED=false` until approved testing. Staff authority must come only from `O2OL_SUPPORT_ADMIN_USER_IDS`. Support is not an emergency/crisis service and must not be presented as continuously monitored. Outbound email/SMS/push/ticketing remains separately approval-gated.
 
+### Professional application review
+
+The public application intake and the private review workflow remain production-gated separately. Development review work now includes:
+
+- `supabase/migrations/20260822000500_professional_application_review_guard.sql`;
+- `supabase/functions/manage-professional-applications`;
+- `/ProfessionalApplicationsAdmin`;
+- `VITE_PROFESSIONAL_APPLICATION_REVIEW_ENABLED` / `PROFESSIONAL_APPLICATION_REVIEW_ENABLED`;
+- server-side `O2OL_PROFESSIONAL_APPLICATION_ADMIN_USER_IDS` authority.
+
+Do not apply/deploy/enable the review workflow or populate production reviewer authority without a separate explicit approval. Approval of an application is deliberately **not** account activation: the review path does not create Auth users, modify `public.users.user_type`, grant staff/member authority, or send communications. Application `approved` status also requires email and phone verification flags to already be true; the review console does not manufacture those verification flags.
+
+`/ProfessionalApplicationsAdmin` must remain absent from general member navigation.
+
 ### Relaunch membership billing / Stripe cutover
 
 Do not alter the existing live legacy Stripe contract during normal relaunch development.
@@ -147,7 +161,7 @@ Always require explicit approval before rotating/replacing production secrets, d
 
 ## Safe development work that may continue uninterrupted
 
-Without separate production approval, continue frontend UX/accessibility/responsive refinements; multilingual integration through the existing translation framework; development-only migrations and Edge Function preparation; privacy/security hardening; route cleanup and truthfulness checks; private support/member-block/programming/reminder UX while switches remain off; billing source hardening/reconciliation checks while payments remain off; read-only production audits; automated preflight/regression checks; and documentation/rollback/test planning.
+Without separate production approval, continue frontend UX/accessibility/responsive refinements; multilingual integration through the existing translation framework; development-only migrations and Edge Function preparation; privacy/security hardening; route cleanup and truthfulness checks; private support/member-block/programming/reminder/professional-review UX while switches remain off; billing source hardening/reconciliation checks while payments remain off; read-only production audits; automated preflight/regression checks; and documentation/rollback/test planning.
 
 ## Current operating rule
 
