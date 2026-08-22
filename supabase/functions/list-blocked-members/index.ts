@@ -10,7 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 
 const configuredOrigins = () => {
-  const values = (Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS') || Deno.env.get('CREATOR_PROGRAMMING_ALLOWED_ORIGINS') || '')
+  const values = (Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS') || '')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean)
