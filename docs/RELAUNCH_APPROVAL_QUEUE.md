@@ -1,146 +1,218 @@
-# One2OneLove Relaunch — Approval Queue
+# One2OneLove Relaunch — Pending Production Approval Queue
 
-This file tracks only actions that should NOT be performed automatically while development continues.
+This file tracks **only production-affecting work that is still pending explicit approval**.
 
-## Production / live-data approvals to hold
+Completed approvals #1–#7 and the retired legacy-message subcheck are recorded in `docs/PRODUCTION_APPROVAL_EXECUTION.md` and must not be repeated simply because their migration/function source still exists.
 
-1. Apply `supabase/migrations/20260817_love_note_invitations.sql` to the live Supabase project.
-   - Previously approved in conversation, but not applied because of Supabase outage/connector failures.
-   - Reconfirm immediately before live application if service stability is uncertain.
+Normal development may continue on `relaunch-homepage`. A development commit, feature flag, migration, Edge Function source file, or instruction to `continue uninterrupted` is **not** permission to mutate production.
 
-2. Deploy Love Notes Edge Functions to the live Supabase project:
-   - `send-love-note-invitation`
-   - `reveal-love-note`
-   - `dispatch-scheduled-love-notes`
-   - Keep `LOVE_NOTE_DELIVERY_ENABLED` off until controlled testing is ready.
+## Next approval in sequence
 
-3. Resolve the existing `RESEND_API_KEY` secret.
-   - A secret with that exact name already exists in Supabase.
-   - Do not replace it until existing usage is verified.
-   - New Resend key is held by the account owner and must never be pasted into chat or source code.
+### #8B — Community membership security — PENDING
 
-4. Apply `supabase/migrations/20260817_love_note_saves.sql` to activate persistent Saved Love Notes.
-   - Development migration and client service are staged only.
+Current staged migration:
 
-5. Apply `supabase/migrations/20260817_live_room_messaging.sql` to the live database.
-   - Previously approved, but not applied because of connector failures.
+- `supabase/migrations/20260817_community_member_policy_hardening.sql`
 
-6. Apply `supabase/migrations/20260817_live_room_moderation.sql`.
-   - Not yet approved for live database.
+What it is designed to fix:
 
-7. Apply `supabase/migrations/20260817_live_room_identity_hardening.sql`.
-   - Review and approve before live database changes.
+- normal members cannot choose `admin`/`moderator` on join;
+- approval-required communities cannot be joined by forcing `active` status;
+- recursive `community_members` authorization is replaced with bounded helpers;
+- the database creates/protects the community creator's active-admin membership;
+- moderators cannot promote themselves or another member to admin;
+- membership identity/routing fields cannot be rewritten through browser updates;
+- nonmembers cannot enumerate another community's raw membership roster;
+- database exceptions use stable `O2OL_*` codes for multilingual UI handling;
+- privileged authorization helpers live in `o2ol_private`, not as public API RPCs.
 
-8. Security hardening of legacy tables/views.
-   - `supabase/migrations/20260817_message_update_hardening.sql` is staged to stop message recipients from changing message content while still allowing read/delivery receipts.
-   - `supabase/migrations/20260817_community_member_policy_hardening.sql` is staged to remove the recursive `community_members` moderator/admin RLS lookup.
-   - `supabase/migrations/20260817_presence_security_hardening.sql` is staged to prevent caller-supplied presence spoofing and remove email from the presence projection.
-   - `supabase/migrations/20260817_member_directory_privacy.sql` is staged to create a privacy-safe member-discovery projection without email, partner email, subscription/billing, or verification fields.
-   - `supabase/migrations/20260817_users_privacy_lockdown.sql` is staged to make `public.users` an own-row private table and remove any legacy always-true SELECT policy.
-   - Buddy Finder and pairwise chat identity lookups have now been moved to `public.member_directory` in development; chat no longer requests another member's account email.
-   - **Do not apply the users-table lockdown yet.** Remaining public/community/member-card consumers must be audited and the exact live policies must be inspected first.
-   - The historical audit also identified a `waitlist_signups` RLS concern. The current relaunch form uses `public.waitlist`, so the actual live tables/policies must be re-verified before changing either one.
-   - None of these security migrations has been applied to the live database.
-   - No live security-policy changes without an explicit go-ahead at the production checkpoint and a rollback plan.
+Live audit at the time this approval was prepared found no existing community/member rows to rewrite, but **live counts/state must be rechecked immediately before any approved application**.
 
-9. SMS provider activation.
-   - Do not activate paid SMS/Twilio or incur A2P-related cost without separate approval.
+**Do not apply #8B until the user explicitly says `Approve #8B.`**
 
-10. Production branch / production Vercel deployment.
-    - Development remains on `relaunch-homepage`.
-    - Do not merge to `master` or alter One2OneLove.com production without explicit approval.
+## Approval after #8B
 
-11. Programming calendar database activation.
-    - `supabase/migrations/20260819_creator_programming_calendar.sql` is DEVELOPMENT ONLY and has not been applied to live Supabase.
-    - The migration creates the shared 24-hour Global Relationship Room timeline for both independent creator programming (`program_source='creator'`) and One2OneLove-owned programming (`program_source='o2ol'`).
-    - It enforces a maximum of two free booked slots per independent creator/local day, prevents overlapping creator/O2OL room programming, prevents browser access to O2OL-owned rows, and adds the Global Relationship Room to both the `room_messages` table constraint and member INSERT policy.
-    - Apply only after the earlier Live Room messaging, moderation, and identity-hardening migrations have been reviewed in sequence in a development environment.
+### #8C — Presence + member-directory privacy — PENDING
 
-12. Programming Edge Functions.
-    - Do not deploy `book-creator-programming-slot`, `list-creator-programming`, `current-creator-programming`, or `manage-o2ol-programming` to live Supabase until the calendar migration and authentication/RLS behavior are verified together.
-    - Keep `CREATOR_PROGRAMMING_ENABLED=false` during deployment and controlled testing.
-    - The status/list endpoints intentionally expose only public scheduling metadata, including the non-identifying `program_source`; they exclude creator account IDs, replay URLs, payment fields, and policy-acknowledgement records.
+Current staged reconciliation includes:
 
-13. Creator programming frontend activation.
-    - Keep `VITE_CREATOR_PROGRAMMING_ENABLED=false` until the database migration and programming Edge Functions are deployed and tested.
-    - The `/CreatorProgramming` route is staged behind this switch; the Global Relationship Room's Live-now/Up-next strip is also dark while the switch is off.
-    - Creator self-booking eligibility uses the existing trusted `users.user_type='influencer'` creator role rather than introducing another identity system.
+- `supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql`
+- `supabase/migrations/20260820151000_member_directory_source_minimization.sql`
+- related client/privacy checks
 
-14. O2OL-owned programming staff activation.
-    - `/O2OLProgrammingAdmin` is staged behind the same programming feature switch but **does not** trust any `users.user_type` value for staff authority.
-    - `manage-o2ol-programming` requires the authenticated account UUID to appear in the server-side `O2OL_PROGRAMMING_ADMIN_USER_IDS` allowlist.
-    - Do not create/populate `O2OL_PROGRAMMING_ADMIN_USER_IDS`, expose the internal route through general navigation, or grant O2OL scheduling authority to any account until the exact staff accounts are explicitly approved.
-    - O2OL-owned bookings use `program_source='o2ol'`, have no creator owner, use the non-billable `internal` booking tier, and cannot be cancelled through the creator self-service path.
+The live privacy issue identified during read-only audit is that the legacy presence/directory surface still needs correction. The staged relaunch design:
 
-15. Paid creator programming slots.
-    - **Do not activate paid slot sales as part of the initial free-calendar rollout.**
-    - The schema is future-ready for a `paid` tier, but the creator booking endpoint currently rejects all non-free creator bookings and the frontend always requests a free booking.
-    - Paid slots require a separate approval batch covering pricing, checkout/payment provider behavior, creator terms, cancellations/refunds, disputes/chargebacks, tax/accounting treatment, moderation obligations, and any revenue-share policy before implementation is enabled.
+- removes account email from member-facing presence/directory output;
+- avoids SQL-generated English `last seen` prose so the client translation layer owns member-facing language;
+- uses a minimized directory projection rather than bypassing private `public.users` RLS;
+- binds presence writes to the authenticated caller rather than trusting a browser-supplied user identity;
+- keeps sensitive account, partner, billing/subscription, verification, relationship-status, and location data out of the default member-discovery projection.
 
-16. Programming reminder database + member API activation.
-    - `supabase/migrations/20260819_programming_reminders.sql` is DEVELOPMENT ONLY and depends on the programming calendar migration.
-    - Do not apply it or deploy `programming-reminder` until the programming calendar is live and reviewed.
-    - Keep both `VITE_PROGRAMMING_REMINDERS_ENABLED=false` and `PROGRAMMING_REMINDERS_ENABLED=false` during deployment and controlled testing.
-    - Reminder writes are backend-mediated; members can read only their own reminder state. In-app notification records are private and store structured program facts rather than English prose so the current client language controls member-facing copy.
+**#8C is a separate approval. Do not treat approval of #8B as approval of #8C.**
 
-17. Programming reminder dispatcher activation.
-    - `dispatch-programming-reminders` is staged for **in-app notification creation only**. It contains no email, SMS, push, or other external-provider call.
-    - Do not deploy/schedule it or create `PROGRAMMING_REMINDER_DISPATCH_SECRET` until the reminder database/API batch is explicitly approved.
-    - The dispatch secret must be generated/stored as a production secret and must never be pasted into chat, committed to source, or exposed to the browser.
-    - No production scheduler/cron has been configured. Scheduler cadence and secret injection must be reviewed at activation time.
+## Additional production approvals still on hold
 
-18. External programming-reminder delivery channels.
-    - Email, SMS, mobile push, web push, or any paid/third-party delivery channel is **not part of the staged reminder system**.
-    - Do not add a provider, incur messaging cost, request push permission, or reuse unrelated messaging credentials without a separate explicit approval covering provider, cost, consent, unsubscribe/opt-out, deliverability, privacy, and regional requirements.
+### Privacy-request backend activation
 
-19. Member-blocking safety activation.
-    - The member-blocking stack is DEVELOPMENT ONLY. Keep both `VITE_MEMBER_BLOCKING_ENABLED=false` and `MEMBER_BLOCKING_ENABLED=false` until the full safety batch is reviewed.
-    - Do not apply `20260819_member_blocks.sql` or its chat, connection, Live Room, pairwise-visibility, and pending-request cleanup enforcement migrations to live Supabase without explicit approval and an ordered rollback plan.
-    - Do not deploy `member-block` or `list-blocked-members` until those migrations are verified together in development.
-    - Blocking is a private, one-way member safety choice; the browser cannot directly insert/delete block rows and the blocked-member list must never expose email, partner, subscription, billing, or verification fields.
-    - Before activation, verify both directions of visibility/enforcement across member discovery, connection requests, pairwise chat, and Live Rooms; verify blocking clears or suppresses pending connection requests as designed; verify unblock restores only future eligible interaction and does not recreate prior relationships or requests.
-    - The `/BlockedMembers` route and Privacy Center management control are already staged, but the Privacy Center control remains hidden while the client feature switch is off.
+Development work now includes a reconciled, non-destructive account privacy-request queue and review flow, including:
 
-20. Programming moderation activation.
-    - `supabase/migrations/20260819_programming_moderation.sql` and the `report-programming` / `moderate-programming` Edge Functions are DEVELOPMENT ONLY.
-    - Keep both `VITE_PROGRAMMING_MODERATION_ENABLED=false` and `PROGRAMMING_MODERATION_ENABLED=false` until programming itself is active and the moderation workflow has been reviewed end-to-end.
-    - Moderator authority reuses the server-side `O2OL_PROGRAMMING_ADMIN_USER_IDS` allowlist; no public profile/user type may grant moderation authority.
-    - Member reports are private, duplicate-safe records. The moderator payload/UI must continue omitting reporter identity and must not expose a reporter UUID merely for convenience.
-    - Removing reported programming changes the program to cancelled and must continue cancelling active member reminders for that program.
-    - `/ProgrammingModerationAdmin` is staged as a private route; do not expose it through general member navigation. Access must remain denied unless both moderation is enabled and the authenticated account is allowlisted.
+- `supabase/migrations/20260818_privacy_requests.sql`
+- `supabase/migrations/20260819_privacy_requests.sql` (older staged shape retained in history)
+- `supabase/migrations/20260819_privacy_request_state_guard.sql` (older staged guard retained in history)
+- `supabase/migrations/20260821211500_privacy_request_workflow_reconciliation.sql` (final-state reconciliation)
+- `supabase/functions/privacy-request`
+- `supabase/functions/manage-privacy-requests`
 
-21. Private member support activation.
-    - `supabase/migrations/20260819_support_requests.sql`, `20260819_support_request_quota_guard.sql`, `20260819_support_request_state_guard.sql`, and `20260819_support_response_read_state.sql` are DEVELOPMENT ONLY and must be applied/reviewed together in a development environment before live activation.
-    - Do not deploy `support-request` or `manage-support-requests` to live Supabase until the table/RLS, five-open-request quota, immutable member-authored content, lifecycle transitions, and response read-state have been verified end-to-end.
-    - Keep both `VITE_SUPPORT_REQUESTS_ENABLED=false` and `SUPPORT_REQUESTS_ENABLED=false` during deployment and controlled testing.
-    - O2OL staff support authority must come only from the server-side `O2OL_SUPPORT_ADMIN_USER_IDS` allowlist. Do not infer staff authority from `regular`, `professional`, `therapist`, `influencer`, or any other public profile role.
-    - `/SupportAdmin` is a private route and must not be exposed through general member navigation. `/SupportRequests` is the authenticated member path and the header response center remains hidden while support is disabled.
-    - Support responses and notifications are staged as **in-app only**. Do not add email, SMS, push, outbound ticketing, or another external provider without a separate approval covering cost, consent/opt-out, privacy, retention, and operational ownership.
-    - The support channel is not an emergency or crisis-response service and must not be presented as continuously monitored. The member UI must continue showing this boundary, especially for the `safety` category.
+Production remains OFF. Before any live activation, verify migration order/final schema in an isolated environment, then approve the database and Edge Function deployment as a dedicated production batch. Keep both client/server feature switches disabled during controlled deployment/testing.
 
-22. Legacy-to-relaunch membership billing reconciliation and production cutover.
-    - Live Supabase currently has active legacy Stripe functions named `create-checkout-session`, `stripe-webhook`, and `create-billing-portal`; read-only inspection confirmed they implement the old Basic/Premiere/Exclusive production contract and match the current `master` client.
-    - **Do not disable, overwrite, rename, delete, or repoint those live functions/webhooks during normal relaunch development.** They must be treated as potentially production-relevant until Stripe-side usage is reconciled.
-    - Aggregate live database checks found 11 `Basic` / `active` accounts in `public.users` and zero `payment_history` rows. This does not prove that no Stripe customers/subscriptions exist externally; preserve any existing paid customer/subscription state found during reconciliation.
-    - The relaunch uses a deliberately different contract: one server-owned `membership` SKU, `VITE_PAYMENTS_ENABLED` in the browser, `PAYMENTS_ENABLED` on the server, checkout body `{ planKey: 'membership' }`, the hardened `create-billing-portal-session` endpoint, `member_subscriptions`/`my_membership`, and `membership` / `launch_2026` webhook metadata.
-    - Keep `VITE_PAYMENTS_ENABLED=false` and server `PAYMENTS_ENABLED=false` until an explicitly approved billing cutover.
-    - Before activation, inventory legacy endpoint usage; verify Stripe environment/configuration and Price IDs without exposing secret values; inspect Stripe customers/subscriptions/webhooks; reconcile legacy `users` fields to `member_subscriptions`; preserve existing paid accounts; apply the reviewed membership schema; deploy hardened relaunch checkout/portal functions dark/off first; validate the new webhook separately; test checkout/payment failure/cancellation/portal/webhook idempotency and the approved intro-to-standard price transition; maintain a rollback path.
-    - The production reconciliation plan is documented in `docs/MEMBERSHIP_BILLING_RECONCILIATION.md`, and the current live-state snapshot is documented in `docs/LIVE_DRIFT_AUDIT_20260820.md`.
+The queue records/reviews requests only. It does **not** automatically export data or delete accounts. Any future destructive fulfillment path needs a separate approval and separate safety review.
 
-## Safe development work that may continue without separate approval
+### SMS / external messaging activation
 
-- Frontend UX and visual refinements on `relaunch-homepage`.
-- Development-only migrations and Edge Function code preparation.
-- Preview-only flows that do not send messages or modify live data.
-- Bug fixes, validation, accessibility, responsive layout, translations, and route cleanup.
-- Read-only audits of repository code and Supabase configuration when connectors are available.
-- Refactoring member-facing reads away from private tables into purpose-built privacy-safe projections.
-- Expanding automated relaunch safety checks so production blockers are visible before launch.
-- Creator/O2OL programming calendar UX, privacy-safe scheduling/status contracts, staff-allowlist plumbing, programming moderation/reporting UX, programming reminder UX/in-app notification plumbing, and automated checks while all related production switches/secrets/schedulers remain off.
-- Member-blocking safety UX, route integration, privacy-safe blocked-list management, and automated checks while the blocking database/function/client switches remain off.
-- Private member-support UX, in-app response notification/read-state plumbing, allowlisted support-console UX, and automated checks while support database/functions/client switches remain off.
-- Membership billing source hardening, static reconciliation checks, and development-only dark/off billing preparation may continue while both payment switches remain off and live legacy Stripe functions/configuration remain untouched.
+- Do not activate paid SMS/Twilio/A2P delivery without separate approval.
+- Do not add email, SMS, mobile push, web push, or another paid/third-party reminder/support channel without approval covering provider, cost, consent/opt-out, privacy, retention and operational ownership.
+- Existing `RESEND_API_KEY` remains preserved under completed approval #3; do not rotate it casually.
+
+### Real Love Notes delivery activation
+
+The three live Love Notes function names exist under completed approval #2, but they are intentionally DARK/fail-closed.
+
+Do not replace the dark handlers with real delivery code, enable provider delivery, or create a Love Notes scheduler without a new explicit approval and controlled test plan.
+
+### Production branch / Vercel cutover
+
+- Development branch remains `relaunch-homepage`.
+- Do not merge to `master` or alter the One2OneLove production deployment without explicit approval.
+- Preview/build failures must be investigated independently; a failed preview is never a reason to bypass the production gate.
+
+### Creator programming calendar + functions + frontend
+
+Production activation remains pending for the creator/O2OL programming stack, including:
+
+- `supabase/migrations/20260819_creator_programming_calendar.sql`;
+- `book-creator-programming-slot`;
+- `list-creator-programming`;
+- `current-creator-programming`;
+- `manage-o2ol-programming`;
+- `/CreatorProgramming` and live/up-next UI activation.
+
+Keep `CREATOR_PROGRAMMING_ENABLED=false` and `VITE_CREATOR_PROGRAMMING_ENABLED=false` until an approved controlled rollout.
+
+The approved development contract remains: independent creator accounts can use up to two free slots per local day; O2OL-owned programming uses server-authorized staff; live/replay scheduling is supported; paid slot sales stay dormant.
+
+### O2OL programming staff authority
+
+- `/O2OLProgrammingAdmin` must remain absent from general member navigation.
+- Staff authority must come only from the server-side `O2OL_PROGRAMMING_ADMIN_USER_IDS` allowlist.
+- Do not populate/activate production staff authority until exact accounts are explicitly approved.
+
+### Paid creator programming slots
+
+Do not activate paid slot sales in the initial free-calendar rollout.
+
+A paid rollout needs a separate approval covering pricing, checkout/provider behavior, creator terms, cancellation/refund policy, disputes/chargebacks, tax/accounting treatment, moderation obligations and any revenue-share policy.
+
+### Programming reminders + dispatcher
+
+Production activation remains pending for:
+
+- `supabase/migrations/20260819_programming_reminders.sql` and related guards/cancellation migrations;
+- `programming-reminder`;
+- `dispatch-programming-reminders`;
+- any production scheduler/cron;
+- `PROGRAMMING_REMINDER_DISPATCH_SECRET` creation;
+- the client/server reminder switches.
+
+Keep `VITE_PROGRAMMING_REMINDERS_ENABLED=false` and `PROGRAMMING_REMINDERS_ENABLED=false` during any future dark deployment/testing.
+
+The staged dispatcher is in-app only; external delivery channels are a separate approval.
+
+### Member-blocking safety stack
+
+Production activation remains pending for the full member-blocking stack, including `20260819_member_blocks.sql`, chat/connection/Live Room/pairwise visibility enforcement, pending-request cleanup, and the member-block/list functions.
+
+Keep `VITE_MEMBER_BLOCKING_ENABLED=false` and `MEMBER_BLOCKING_ENABLED=false` until the entire batch is verified together. Before approval, verify both directions of interaction/visibility and that unblock does not recreate prior relationships/requests.
+
+### Programming moderation
+
+Production activation remains pending for:
+
+- `supabase/migrations/20260819_programming_moderation.sql`;
+- `report-programming`;
+- `moderate-programming`;
+- moderation feature switches.
+
+Reporter identity must remain private from ordinary moderator payload/UI. Moderator authority must remain server-allowlisted, not profile-role based. `/ProgrammingModerationAdmin` must stay out of general navigation.
+
+### Private member support
+
+Production activation remains pending for:
+
+- `20260819_support_requests.sql`;
+- quota/state/read-state migrations;
+- `support-request`;
+- `manage-support-requests`;
+- support feature switches.
+
+Keep `VITE_SUPPORT_REQUESTS_ENABLED=false` and `SUPPORT_REQUESTS_ENABLED=false` until approved testing. Staff authority must come only from `O2OL_SUPPORT_ADMIN_USER_IDS`.
+
+Support is not an emergency/crisis service and must not be presented as continuously monitored. Outbound email/SMS/push/ticketing remains separately approval-gated.
+
+### Relaunch membership billing / Stripe cutover
+
+Do not alter the existing live legacy Stripe contract during normal relaunch development.
+
+Read-only inspection previously found live legacy functions named:
+
+- `create-checkout-session`
+- `stripe-webhook`
+- `create-billing-portal`
+
+They implement the legacy Basic/Premiere/Exclusive contract and must be treated as production-relevant until Stripe-side usage is fully reconciled.
+
+The relaunch uses a different single-membership contract. Keep `VITE_PAYMENTS_ENABLED=false` and server `PAYMENTS_ENABLED=false` until an explicitly approved cutover.
+
+Before approval, inventory Stripe customers/subscriptions/webhooks and Price IDs without exposing secrets, preserve existing paid state, reconcile legacy fields to the new membership model, validate webhook idempotency and checkout/portal failure paths, and preserve rollback capability.
+
+See `docs/MEMBERSHIP_BILLING_RECONCILIATION.md` and the latest live-drift documentation before any cutover.
+
+### Secrets / destructive live-data changes
+
+Always require explicit approval before:
+
+- rotating/replacing production secrets;
+- deleting/migrating live user content in a destructive way;
+- deleting auth users;
+- enabling a provider that creates cost;
+- changing a live webhook target;
+- creating production cron/scheduler jobs;
+- granting new production staff/admin authority.
+
+## Safe development work that may continue uninterrupted
+
+Without separate production approval, continue:
+
+- frontend UX/accessibility/responsive refinements;
+- multilingual copy integration through the existing translation framework;
+- development-only migrations and Edge Function preparation;
+- privacy/security hardening in source;
+- route cleanup and truthfulness checks;
+- private support/member-block/programming/reminder UX while switches remain off;
+- billing source hardening/reconciliation checks while payments remain off;
+- read-only production audits when needed to prepare a future approval;
+- automated preflight/regression checks;
+- documentation and rollback/test planning.
 
 ## Current operating rule
 
-Build as far as possible in development. Stop only where an action would affect production, live user data, billing/costs, secrets, or irreversible external systems. Collect those actions here for one bulk approval review.
+Handle production approvals **one at a time**.
+
+For each production action:
+
+1. explain exactly what would change, the risk, and what would remain untouched;
+2. wait for explicit approval of that specific action;
+3. re-fetch the freshest branch source and live state;
+4. execute only that approved action;
+5. verify it immediately;
+6. record it in `PRODUCTION_APPROVAL_EXECUTION.md`;
+7. only then explain the next approval.
