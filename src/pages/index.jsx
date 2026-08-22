@@ -5,6 +5,7 @@ import InfluencerSignup from "./InfluencerSignup";
 import ProfessionalSignup from "./ProfessionalSignup";
 import TherapistSignup from "./TherapistSignup";
 import ProfessionalApplicationsClosed from "./ProfessionalApplicationsClosed";
+import ProfessionalApplicationsAdmin from "./ProfessionalApplicationsAdmin";
 import AboutUs from "./AboutUs";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
@@ -72,6 +73,7 @@ const PAGES = {
   InfluencerSignup,
   ProfessionalSignup,
   TherapistSignup,
+  ProfessionalApplicationsAdmin,
   AboutUs,
   SignIn,
   SignUp,
@@ -151,6 +153,7 @@ const ROUTES = [
   ["/InfluencerSignup", InfluencerSignup],
   ["/ProfessionalSignup", ProfessionalSignup],
   ["/TherapistSignup", TherapistSignup],
+  ["/ProfessionalApplicationsAdmin", ProfessionalApplicationsAdmin],
   ["/AboutUs", AboutUs],
   ["/SignIn", SignIn],
   ["/login", SignIn],
