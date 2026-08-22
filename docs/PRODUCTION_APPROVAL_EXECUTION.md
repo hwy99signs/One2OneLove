@@ -78,31 +78,26 @@ Production posture after deployment:
 - Re-audit showed #7 protections were already present live because they had been folded into #5.
 - No redundant production mutation was performed.
 
+### #8B — Community membership security — COMPLETE
+
+- Explicit approval received before the live change.
+- Applied the reviewed community-membership security hardening.
+- Normal member joins cannot self-assign moderator/admin authority or bypass approval-required status.
+- Creator membership is database-established as active admin and protected from ordinary demotion/deletion.
+- Moderator/admin authorization no longer depends on recursive `community_members` RLS evaluation.
+- Privileged helpers are confined to the non-public `o2ol_private` schema; anonymous schema access is blocked.
+- Membership identity/routing fields and creator-admin membership are protected from browser rewriting.
+- Nonmembers cannot enumerate another community's raw membership roster.
+- Database enforcement uses stable `O2OL_*` codes rather than user-facing English prose.
+- Post-apply checks found no new public Security Definer advisor warning and the community/membership tables remained empty at the verification point.
+
+**Do not repeat #8B merely because the migration source remains in the repository.**
+
 ## Retired legacy-security subcheck
 
 The earlier pairwise-message portion of approval #8 was retired without a production mutation after live inspection showed a newer participant-field protection trigger already enforced the intended boundary. Do not blindly layer the older staged message-update migration over that protection.
 
 ## Pending production approvals
-
-### #8B — Community membership security — PENDING
-
-**Not approved and not applied.**
-
-Current staged migration: `supabase/migrations/20260817_community_member_policy_hardening.sql`.
-
-The staged change addresses:
-
-- self-assignment of `admin`/`moderator` through membership INSERT;
-- approval-bypassing join status;
-- recursive `community_members` admin policy behavior;
-- creator membership creation/protection;
-- moderator-to-admin privilege escalation;
-- membership identity-field rewriting;
-- nonmember enumeration of membership rosters.
-
-The current design uses stable `O2OL_*` database error codes for multilingual UI handling and places authorization helpers in the non-public `o2ol_private` schema.
-
-**Do not apply until the user explicitly approves #8B.**
 
 ### #8C — Presence + member-directory privacy — PENDING
 
