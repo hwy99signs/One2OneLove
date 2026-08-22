@@ -51,6 +51,13 @@ serve(async (request) => {
   const origin = request.headers.get('origin') || DEFAULT_ORIGIN
   if (!allowedOrigins().has(origin)) return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)
 
+  // Fail the entire member endpoint closed while production activation is OFF. History
+  // reads are part of the privacy feature too and must not become live merely because the
+  // function was deployed for controlled setup.
+  if (Deno.env.get('PRIVACY_REQUESTS_ENABLED') !== 'true') {
+    return json(request, { error: 'REQUESTS_NOT_ENABLED' }, 503)
+  }
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
   const token = bearerToken(request)
@@ -86,9 +93,6 @@ serve(async (request) => {
     }
 
     if (action !== 'create') return json(request, { error: 'INVALID_ACTION' }, 400)
-    if (Deno.env.get('PRIVACY_REQUESTS_ENABLED') !== 'true') {
-      return json(request, { error: 'REQUESTS_NOT_ENABLED' }, 503)
-    }
 
     const requestType = clean(body?.requestType, 40).toLowerCase()
     const memberNote = clean(body?.memberNote, 500) || null
