@@ -7,37 +7,42 @@ const contracts = [
   {
     file: 'supabase/functions/privacy-request/index.ts',
     required: "Deno.env.get('PRIVACY_REQUEST_ALLOWED_ORIGINS')",
-    forbidden: ['SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS'],
+    forbidden: ['SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
   },
   {
     file: 'supabase/functions/manage-privacy-requests/index.ts',
     required: "Deno.env.get('PRIVACY_REQUEST_ALLOWED_ORIGINS')",
-    forbidden: ['SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS'],
+    forbidden: ['SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
   },
   {
     file: 'supabase/functions/support-request/index.ts',
     required: "Deno.env.get('SUPPORT_REQUEST_ALLOWED_ORIGINS')",
-    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS'],
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
   },
   {
     file: 'supabase/functions/manage-support-requests/index.ts',
     required: "Deno.env.get('SUPPORT_REQUEST_ALLOWED_ORIGINS')",
-    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS'],
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
   },
   {
     file: 'supabase/functions/member-block/index.ts',
     required: "Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS')",
-    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS'],
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
   },
   {
     file: 'supabase/functions/list-blocked-members/index.ts',
     required: "Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS')",
-    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS'],
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
   },
   {
     file: 'supabase/functions/discover-members/index.ts',
     required: "Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS')",
-    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS'],
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS'],
+  },
+  {
+    file: 'supabase/functions/manage-professional-applications/index.ts',
+    required: "Deno.env.get('PROFESSIONAL_APPLICATION_REVIEW_ALLOWED_ORIGINS')",
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS', 'MEMBER_SAFETY_ALLOWED_ORIGINS'],
   },
 ];
 
@@ -65,4 +70,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Private feature origin-isolation preflight passed: Privacy, Support and all Member Safety endpoints use independent origin allowlists with a narrow default.');
+console.log('Private feature origin-isolation preflight passed: Privacy, Support, Member Safety and professional-review endpoints use independent origin allowlists with a narrow default.');
