@@ -49,6 +49,7 @@ const checks = [
   ['relaunch creator programming', 'scripts/relaunch-creator-programming-check.mjs'],
   ['relaunch programming schedule', 'scripts/relaunch-programming-schedule-check.mjs'],
   ['relaunch programming moderation', 'scripts/relaunch-programming-moderation-check.mjs'],
+  ['relaunch programming confirmed accounts', 'scripts/relaunch-programming-confirmed-account-check.mjs'],
   ['relaunch programming reminders', 'scripts/relaunch-programming-reminder-check.mjs'],
   ['relaunch programming reminder cancellation', 'scripts/relaunch-programming-reminder-cancellation-check.mjs'],
   ['relaunch programming reminder slot guard', 'scripts/relaunch-programming-reminder-slot-guard-check.mjs'],
