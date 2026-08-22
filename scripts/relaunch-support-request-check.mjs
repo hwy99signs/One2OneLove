@@ -42,6 +42,7 @@ for (const required of [
   'const UUID_PATTERN =',
   'const requireRequestId =',
   "error: 'REQUEST_ID_INVALID'",
+  'EMAIL_CONFIRMATION_REQUIRED',
   ".eq('user_id', caller.id)",
   "if (action === 'list')",
   "if (action === 'get')",
@@ -53,14 +54,21 @@ for (const required of [
 ]) {
   if (!memberFunction.includes(required)) failures.push(`${memberFunctionFile}: missing member support safeguard ${required}.`);
 }
+const memberGateIndex = memberFunction.indexOf("Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'");
+const memberListIndex = memberFunction.indexOf("if (action === 'list')");
+if (memberGateIndex < 0 || memberListIndex < 0 || memberGateIndex > memberListIndex) {
+  failures.push(`${memberFunctionFile}: support feature gate must fail closed before member queue reads.`);
+}
 if (memberFunction.includes('staff_response: body') || memberFunction.includes('user_id: body')) {
   failures.push(`${memberFunctionFile}: member endpoint must not accept staff-response or arbitrary user ownership from request body.`);
 }
 
 for (const required of [
+  "Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'",
   "Deno.env.get('O2OL_SUPPORT_ADMIN_USER_IDS')",
   'const UUID_PATTERN =',
   '.filter((value) => UUID_PATTERN.test(value))',
+  'EMAIL_CONFIRMATION_REQUIRED',
   'allowedAdminIds().has(caller.id)',
   "if (!eligible) return json(request, { error: 'O2OL_SUPPORT_ADMIN_REQUIRED' }, 403)",
   "if (!UUID_PATTERN.test(requestId)) return json(request, { error: 'REQUEST_ID_INVALID' }, 400)",
@@ -75,6 +83,11 @@ for (const required of [
   "action: 'staff_reopened'",
 ]) {
   if (!adminFunction.includes(required)) failures.push(`${adminFunctionFile}: missing support-admin safeguard ${required}.`);
+}
+const adminGateIndex = adminFunction.indexOf("Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'");
+const adminAccessIndex = adminFunction.indexOf("if (action === 'access')");
+if (adminGateIndex < 0 || adminAccessIndex < 0 || adminGateIndex > adminAccessIndex) {
+  failures.push(`${adminFunctionFile}: support feature gate must fail closed before staff access/queue handling.`);
 }
 for (const forbidden of [
   "user_type === 'regular'",
@@ -184,4 +197,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member support requests remain signed-in, UUID-validated, private, discoverable through reviewed Help, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
+console.log('✅ Member support requests remain feature-gated, confirmed-account-only, UUID-validated, private, discoverable through reviewed Help, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
