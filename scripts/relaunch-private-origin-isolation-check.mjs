@@ -34,6 +34,11 @@ const contracts = [
     required: "Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS')",
     forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS'],
   },
+  {
+    file: 'supabase/functions/discover-members/index.ts',
+    required: "Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS')",
+    forbidden: ['PRIVACY_REQUEST_ALLOWED_ORIGINS', 'SUPPORT_REQUEST_ALLOWED_ORIGINS', 'CREATOR_PROGRAMMING_ALLOWED_ORIGINS'],
+  },
 ];
 
 for (const contract of contracts) {
@@ -60,4 +65,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Private feature origin-isolation preflight passed: Privacy, Support and Member Safety use independent origin allowlists with a narrow default.');
+console.log('Private feature origin-isolation preflight passed: Privacy, Support and all Member Safety endpoints use independent origin allowlists with a narrow default.');
