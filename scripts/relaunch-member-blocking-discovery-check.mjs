@@ -13,6 +13,8 @@ const pairwiseMigration = fs.readFileSync(pairwiseMigrationFile, 'utf8');
 
 for (const required of [
   "Deno.env.get('MEMBER_BLOCKING_ENABLED') !== 'true'",
+  "Deno.env.get('MEMBER_SAFETY_ALLOWED_ORIGINS') || ''",
+  'EMAIL_CONFIRMATION_REQUIRED',
   "serviceClient.from('member_blocks').select('blocked_id').eq('blocker_id', caller.id)",
   "serviceClient.from('member_blocks').select('blocker_id').eq('blocked_id', caller.id)",
   "const excluded = new Set<string>([caller.id])",
@@ -28,6 +30,14 @@ for (const required of [
   'created_at: member.created_at || null',
 ]) {
   if (!endpoint.includes(required)) failures.push(`${endpointFile}: missing block-aware discovery safeguard ${required}.`);
+}
+if (endpoint.includes("Deno.env.get('CREATOR_PROGRAMMING_ALLOWED_ORIGINS')")) {
+  failures.push(`${endpointFile}: member discovery must not inherit the creator-programming origin allowlist.`);
+}
+const confirmationIndex = endpoint.indexOf('EMAIL_CONFIRMATION_REQUIRED');
+const serviceRoleIndex = endpoint.indexOf("createClient(supabaseUrl, serviceRoleKey");
+if (confirmationIndex < 0 || (serviceRoleIndex >= 0 && confirmationIndex > serviceRoleIndex)) {
+  failures.push(`${endpointFile}: confirmed-account enforcement must occur before service-role block reads.`);
 }
 if (/serviceClient\s*\n\s*\.from\('member_directory'\)/.test(endpoint) || /serviceClient\.from\('member_directory'\)/.test(endpoint)) {
   failures.push(`${endpointFile}: final member_directory lookup must run with the authenticated caller so source RLS remains a second privacy barrier.`);
@@ -82,4 +92,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Blocked-member privacy is enforced by manual pair exclusion plus authenticated directory RLS, and at presence/room/connection sources.');
+console.log('✅ Blocked-member discovery requires a confirmed account, uses an isolated safety-origin boundary, excludes blocked pairs before results, preserves authenticated directory RLS, and keeps source-level pair privacy enforcement.');
