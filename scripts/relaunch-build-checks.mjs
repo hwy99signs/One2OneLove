@@ -18,6 +18,7 @@ const checks = [
   ['relaunch billing checkout idempotency', 'scripts/relaunch-billing-checkout-idempotency-check.mjs'],
   ['relaunch billing portal security', 'scripts/relaunch-billing-portal-security-check.mjs'],
   ['relaunch membership projection security', 'scripts/relaunch-membership-projection-security-check.mjs'],
+  ['relaunch user privilege ownership', 'scripts/relaunch-users-privilege-guard-check.mjs'],
   ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
   ['relaunch privacy endpoint dark mode', 'scripts/relaunch-privacy-endpoint-dark-check.mjs'],
   ['relaunch privacy audit integrity', 'scripts/relaunch-privacy-audit-check.mjs'],
