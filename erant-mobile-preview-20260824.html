@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ERANT Mobile Readability Preview</title>
+<style>
+html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#f6f8fa;color:#0d2d58}
+.loading{min-height:100vh;display:grid;place-items:center;padding:30px;text-align:center;font-size:20px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="loading">Loading the ERANT mobile preview…</div>
+<script>
+const mobilePatch = `
+@media (max-width:1000px){
+  html{scroll-padding-top:0!important}
+  body{font-size:22px!important;line-height:1.68!important;-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
+  [id]{scroll-margin-top:118px!important}
+  .container{width:min(calc(100% - 30px),var(--max))!important}
+  .section{padding:74px 0!important}
+  .section-sm{padding:54px 0!important}
+
+  .nav-wrap{min-height:108px!important;gap:16px!important}
+  .brand img{width:220px!important;height:auto!important}
+  .mobile-menu{inset:108px 0 auto 0!important;max-height:calc(100vh - 108px)!important}
+  .mobile-menu a{font-size:1.22rem!important;padding:18px 6px!important}
+
+  .hero-grid{grid-template-columns:1fr!important;min-height:auto!important;gap:34px!important;padding:56px 0!important}
+  .hero-copy{font-size:1.24rem!important;line-height:1.64!important}
+  .hero-tagline{font-size:1.65rem!important}
+  .hero-card{width:76%!important;max-width:340px!important;padding:14px!important;margin-inline:auto!important;overflow:hidden!important}
+  .hero-logo{width:118%!important;max-width:none!important;margin:-9% -9% -7%!important}
+  .hero-principles{grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:10px!important}
+  .hero-principles span{min-height:46px!important;font-size:.92rem!important;padding:8px 6px!important}
+  .hero-principles span:last-child{grid-column:1/-1!important}
+
+  .section-lead{font-size:1.20rem!important;line-height:1.66!important}
+  .eyebrow{font-size:.98rem!important;letter-spacing:.11em!important}
+
+  .why-grid,.problem-callout,.contact-grid{grid-template-columns:1fr!important}
+  .pillars,.network-grid,.dev-grid,.experience-grid,.work-grid,.questions{grid-template-columns:1fr!important}
+  .reason-grid{grid-template-columns:1fr!important}
+  .reason-list{columns:1!important}
+  .build-grid{grid-template-columns:1fr 1fr!important}
+  .footer-grid{grid-template-columns:1fr!important}
+  .form-grid{grid-template-columns:1fr!important}
+  .field.full{grid-column:auto!important}
+  .pillar{min-height:auto!important}
+
+  .problem,.statement,.pillar p,.venture-card p,.venture-card li,.dev-content,.dev-content p,.reason-card p,.reason-list li,.experience-card p,.work-card p,.quote-box p,.contact-panel p,.contact-link{
+    font-size:1.13rem!important;line-height:1.64!important
+  }
+  .pillar h3,.experience-card h3,.work-card h3,.reason-card h3{font-size:1.42rem!important;line-height:1.28!important}
+  .venture-card h3{font-size:1.60rem!important}
+  .venture-card .sub{font-size:1.12rem!important}
+  .network-section-title{font-size:1.62rem!important}
+  details.dev-card summary{font-size:1.18rem!important;line-height:1.42!important;padding:24px 20px!important}
+  .build-step strong,.question{font-size:1.12rem!important}
+
+  .mini-badge,.status-chip{font-size:.92rem!important;line-height:1.25!important;padding:9px 12px!important}
+  .btn{font-size:1.10rem!important;min-height:58px!important}
+  .btn-row{display:grid!important;grid-template-columns:1fr!important}
+  .btn{width:100%!important}
+
+  label{font-size:1.03rem!important}
+  input,select,textarea{font-size:1.08rem!important;min-height:54px!important}
+  .form-note{font-size:1rem!important;line-height:1.55!important}
+
+  footer p,footer a,footer span{font-size:1.06rem!important;line-height:1.55!important}
+  .footer-bottom,.legal{font-size:.98rem!important;line-height:1.55!important}
+}
+@media (max-width:420px){
+  body{font-size:21px!important}
+  .brand img{width:205px!important}
+  .nav-wrap{min-height:102px!important}
+  .mobile-menu{inset:102px 0 auto 0!important;max-height:calc(100vh - 102px)!important}
+  [id]{scroll-margin-top:112px!important}
+  .hero-card{width:80%!important;max-width:310px!important}
+}
+`;
+
+fetch('https://erantpropertyservices.com/?erant_mobile_preview=20260824',{cache:'no-store'})
+  .then(r=>{if(!r.ok) throw new Error('Unable to load ERANT live page'); return r.text();})
+  .then(html=>{
+    const doc = new DOMParser().parseFromString(html,'text/html');
+    const s = doc.createElement('style');
+    s.id='erant-mobile-readability-preview';
+    s.textContent=mobilePatch;
+    doc.head.appendChild(s);
+    document.open();
+    document.write('<!DOCTYPE html>'+doc.documentElement.outerHTML);
+    document.close();
+  })
+  .catch(err=>{
+    document.body.innerHTML='<div class="loading">The preview could not load. The live ERANT website was not changed.</div>';
+    console.error(err);
+  });
+</script>
+</body>
+</html>
