@@ -3,119 +3,60 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Pencil, Trash2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
 import { useLanguage } from "@/Layout";
 
 const translations = {
-  en: {
-    edit: "Edit",
-    delete: "Delete",
-    celebrate: "Get Celebration Ideas",
-    recurringBadge: "Annual Celebration"
-  },
-  es: {
-    edit: "Editar",
-    delete: "Eliminar",
-    celebrate: "Obtener Ideas de Celebración",
-    recurringBadge: "Celebración Anual"
-  },
-  fr: {
-    edit: "Modifier",
-    delete: "Supprimer",
-    celebrate: "Obtenir des Idées de Célébration",
-    recurringBadge: "Célébration Annuelle"
-  },
-  it: {
-    edit: "Modifica",
-    delete: "Elimina",
-    celebrate: "Ottieni Idee per la Celebrazione",
-    recurringBadge: "Celebrazione Annuale"
-  },
-  de: {
-    edit: "Bearbeiten",
-    delete: "Löschen",
-    celebrate: "Feier-Ideen Erhalten",
-    recurringBadge: "Jährliche Feier"
-  }
+  en: { edit: "Edit", delete: "Delete", celebrate: "Get Celebration Ideas", recurringBadge: "Annual Celebration", editLabel: "Edit milestone", deleteLabel: "Delete milestone" },
+  es: { edit: "Editar", delete: "Eliminar", celebrate: "Obtener Ideas de Celebración", recurringBadge: "Celebración Anual", editLabel: "Editar hito", deleteLabel: "Eliminar hito" },
+  fr: { edit: "Modifier", delete: "Supprimer", celebrate: "Obtenir des Idées de Célébration", recurringBadge: "Célébration Annuelle", editLabel: "Modifier le jalon", deleteLabel: "Supprimer le jalon" },
+  it: { edit: "Modifica", delete: "Elimina", celebrate: "Ottieni Idee per la Celebrazione", recurringBadge: "Celebrazione Annuale", editLabel: "Modifica traguardo", deleteLabel: "Elimina traguardo" },
+  de: { edit: "Bearbeiten", delete: "Löschen", celebrate: "Feier-Ideen Erhalten", recurringBadge: "Jährliche Feier", editLabel: "Meilenstein bearbeiten", deleteLabel: "Meilenstein löschen" }
 };
+
+const localeMap = { en: 'en-US', es: 'es', fr: 'fr', it: 'it', de: 'de' };
 
 export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const locale = localeMap[currentLanguage] || localeMap.en;
+  const milestoneDate = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${milestone.date}T12:00:00`));
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-pink-200">
+    <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
+      <Card className="h-full border-2 border-transparent transition-all duration-300 hover:border-pink-200 hover:shadow-xl">
         <CardHeader>
           {milestone.is_recurring && (
-            <div className="inline-flex items-center gap-1 bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-semibold mb-2 w-fit">
-              <Sparkles className="w-3 h-3" />
-              {t.recurringBadge}
+            <div className="mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-pink-100 px-3 py-1 text-xs font-semibold text-pink-700">
+              <Sparkles className="h-3 w-3" aria-hidden="true" />{t.recurringBadge}
             </div>
           )}
-          <CardTitle className="text-xl font-bold text-gray-900">
-            {milestone.title}
-          </CardTitle>
-          <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
-            <Calendar className="w-4 h-4" />
-            {format(new Date(milestone.date), 'PPP')}
+          <CardTitle className="text-xl font-bold text-gray-900">{milestone.title}</CardTitle>
+          <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+            <Calendar className="h-4 w-4" aria-hidden="true" /><time dateTime={milestone.date}>{milestoneDate}</time>
           </div>
           {milestone.location && (
-            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-              <MapPin className="w-4 h-4" />
-              {milestone.location}
-            </div>
+            <div className="mt-1 flex items-center gap-2 text-sm text-gray-600"><MapPin className="h-4 w-4" aria-hidden="true" />{milestone.location}</div>
           )}
         </CardHeader>
         <CardContent>
-          {milestone.description && (
-            <p className="text-gray-700 mb-4 line-clamp-3">
-              {milestone.description}
-            </p>
-          )}
-          {milestone.media_urls && milestone.media_urls.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {milestone.media_urls.slice(0, 3).map((url, idx) => (
-                <img
-                  key={idx}
-                  src={url}
-                  alt=""
-                  className="w-full h-20 object-cover rounded-lg"
-                />
+          {milestone.description && <p className="mb-4 line-clamp-3 text-gray-700">{milestone.description}</p>}
+          {milestone.media_urls?.length > 0 && (
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              {milestone.media_urls.slice(0, 3).map((url, index) => (
+                <img key={url} src={url} alt="" className="h-20 w-full rounded-lg object-cover" loading="lazy" data-index={index} />
               ))}
             </div>
           )}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(milestone)}
-              className="flex-1"
-            >
-              <Pencil className="w-4 h-4 mr-1" />
-              {t.edit}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" type="button" onClick={() => onEdit(milestone)} className="flex-1" aria-label={t.editLabel}>
+              <Pencil className="mr-1 h-4 w-4" aria-hidden="true" />{t.edit}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(milestone.id)}
-              className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              {t.delete}
+            <Button variant="outline" size="sm" type="button" onClick={() => onDelete(milestone.id)} className="flex-1 text-red-600 hover:text-red-700" aria-label={t.deleteLabel}>
+              <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />{t.delete}
             </Button>
           </div>
-          <Button
-            onClick={() => onCelebrate(milestone)}
-            className="w-full mt-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            {t.celebrate}
+          <Button type="button" onClick={() => onCelebrate(milestone)} className="mt-3 w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+            <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />{t.celebrate}
           </Button>
         </CardContent>
       </Card>

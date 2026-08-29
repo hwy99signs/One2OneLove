@@ -1,0 +1,178 @@
+name: O2OL Localization Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-localization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language legacy surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            src/pages/SharedJournals.jsx \
+            src/components/activities/JournalForm.jsx \
+            src/components/activities/JournalEntry.jsx \
+            src/pages/CooperativeGames.jsx \
+            src/pages/CouplesCalendar.jsx \
+            src/components/calendar/CalendarEventForm.jsx \
+            src/components/calendar/CalendarEventCard.jsx \
+            src/components/calendar/CalendarGrid.jsx \
+            src/pages/CouplesProfile.jsx \
+            src/pages/RelationshipGoals.jsx \
+            src/components/goals/GoalForm.jsx \
+            src/components/goals/GoalCard.jsx \
+            src/components/goals/ProgressUpdateModal.jsx \
+            src/pages/RelationshipMilestones.jsx \
+            src/components/milestones/MilestoneCard.jsx \
+            src/components/milestones/CelebrationIdeas.jsx \
+            src/lib/milestoneCelebrationFallbacks.js \
+            src/pages/MemoryLane.jsx \
+            src/components/memories/MemoryForm.jsx \
+            src/components/memories/MemoryCard.jsx \
+            src/components/memories/MemoryTimeline.jsx \
+            src/components/memories/MemoryFilters.jsx; do
+            for lang in en es fr it de; do
+              grep -q "${lang}:" "$file"
+            done
+          done
+          grep -q 't.moods\[mood\]' src/pages/SharedJournals.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/activities/JournalEntry.jsx
+          grep -q 'useLanguage' src/components/activities/JournalForm.jsx
+          grep -q 'useLanguage' src/components/activities/JournalEntry.jsx
+          grep -q '"/ConversationCards"' src/pages/CooperativeGames.jsx
+          grep -q 'comingSoonLabel' src/components/activities/GameCard.jsx
+          grep -q 'Object.entries(t.types)' src/components/calendar/CalendarEventForm.jsx
+          grep -q 'Object.entries(t.patterns)' src/components/calendar/CalendarEventForm.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/calendar/CalendarEventCard.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/calendar/CalendarGrid.jsx
+          grep -q 'getMutualPartnerDirectoryProfile' src/pages/CouplesProfile.jsx
+          grep -q 'Intl.DateTimeFormat' src/pages/CouplesProfile.jsx
+          grep -q 'Object.entries(t.statuses)' src/pages/CouplesProfile.jsx
+          grep -q 'Object.entries(t.loveLanguages)' src/pages/CouplesProfile.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/goals/GoalCard.jsx
+          grep -q 'deleteConfirm' src/pages/RelationshipGoals.jsx
+          grep -q 'createError' src/pages/RelationshipGoals.jsx
+          grep -q 'updateError' src/pages/RelationshipGoals.jsx
+          grep -q 'deleteError' src/pages/RelationshipGoals.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/milestones/MilestoneCard.jsx
+          grep -q 'getMilestoneCelebrationFallback' src/components/milestones/CelebrationIdeas.jsx
+          grep -q 'MEMORY_COLUMNS' src/pages/MemoryLane.jsx
+          grep -q "eq('user_id', user.id)" src/pages/MemoryLane.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/memories/MemoryCard.jsx
+          grep -q 'Intl.DateTimeFormat' src/components/memories/MemoryTimeline.jsx
+
+      - name: Reject misleading, hard-coded, or privacy-leaking controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq '>Edit Entry<|>New Journal Entry<|>Save Entry<|>Cancel<|>Add<' src/components/activities/JournalForm.jsx; then
+            echo 'Shared Journal form controls must remain localized.'
+            exit 1
+          fi
+          if grep -q '>Play Now<' src/components/activities/GameCard.jsx; then
+            echo 'Cooperative Games must not restore a hard-coded or misleading Play Now control.'
+            exit 1
+          fi
+          if grep -Eq 'console\.(log|debug|info)' src/pages/CouplesCalendar.jsx src/components/calendar/CalendarEventForm.jsx; then
+            echo 'Calendar surfaces must not log event or user data to the browser console.'
+            exit 1
+          fi
+          if grep -Eq 'console\.(log|debug|info)' src/pages/CouplesProfile.jsx src/lib/coupleProfileService.js; then
+            echo 'Couple Profile surfaces must not log account or relationship data to the browser console.'
+            exit 1
+          fi
+          if grep -F ".from('users')" src/pages/CouplesProfile.jsx | grep -q '.select'; then
+            echo 'Couple Profile must not restore direct private-account partner reads.'
+            exit 1
+          fi
+          if grep -F '.from("users")' src/pages/CouplesProfile.jsx | grep -q '.select'; then
+            echo 'Couple Profile must not restore direct private-account partner reads.'
+            exit 1
+          fi
+          if grep -Eq '[0-9]+d (left|overdue)' src/components/goals/GoalCard.jsx; then
+            echo 'Relationship Goal deadlines must not fall back to hard-coded English shorthand.'
+            exit 1
+          fi
+          if grep -F 'Failed to create goal:' src/pages/RelationshipGoals.jsx || grep -F 'Failed to update goal:' src/pages/RelationshipGoals.jsx || grep -F 'Failed to delete goal:' src/pages/RelationshipGoals.jsx; then
+            echo 'Relationship Goal mutation errors must remain localized.'
+            exit 1
+          fi
+          if grep -q 't.milestones\[milestone.milestone_type\]' src/components/milestones/CelebrationIdeas.jsx; then
+            echo 'Celebration Ideas must not depend on incomplete per-language milestone dictionaries.'
+            exit 1
+          fi
+          if grep -Eq 'partner_email|formData\.tags|FileUpload|uploadFile' src/components/memories/MemoryForm.jsx || grep -F 'name="tags"' src/components/memories/MemoryForm.jsx || grep -F "name='tags'" src/components/memories/MemoryForm.jsx; then
+            echo 'Memory Lane form must not submit unsupported tags/partner fields or expose an unimplemented upload control.'
+            exit 1
+          fi
+          if grep -Eq 'console\.(log|debug|info|warn|error)' src/pages/MemoryLane.jsx src/components/memories/MemoryForm.jsx; then
+            echo 'Memory Lane must not log private memory data to the browser console.'
+            exit 1
+          fi
+          if grep -F ".from('memories').select('*')" src/pages/MemoryLane.jsx; then
+            echo 'Memory Lane must use an explicit safe memories column list.'
+            exit 1
+          fi
+
+      - name: Lint localized surfaces except Couple Profile
+        run: >-
+          npx eslint
+          src/pages/SharedJournals.jsx
+          src/components/activities/JournalForm.jsx
+          src/components/activities/JournalEntry.jsx
+          src/pages/CooperativeGames.jsx
+          src/components/activities/GameCard.jsx
+          src/pages/CouplesCalendar.jsx
+          src/components/calendar/CalendarEventForm.jsx
+          src/components/calendar/CalendarEventCard.jsx
+          src/components/calendar/CalendarGrid.jsx
+          src/lib/coupleProfileService.js
+          src/pages/RelationshipGoals.jsx
+          src/components/goals/GoalForm.jsx
+          src/components/goals/GoalCard.jsx
+          src/components/goals/ProgressUpdateModal.jsx
+          src/pages/RelationshipMilestones.jsx
+          src/components/milestones/MilestoneCard.jsx
+          src/components/milestones/CelebrationIdeas.jsx
+          src/lib/milestoneCelebrationFallbacks.js
+          src/pages/MemoryLane.jsx
+          src/components/memories/MemoryForm.jsx
+          src/components/memories/MemoryCard.jsx
+          src/components/memories/MemoryTimeline.jsx
+          src/components/memories/MemoryFilters.jsx
+          --rule 'react/prop-types: off'
+
+      - name: Lint Couple Profile with known import-only exception
+        run: >-
+          npx eslint
+          src/pages/CouplesProfile.jsx
+          --rule 'react/prop-types: off'
+          --rule 'no-unused-vars: ["error", {"varsIgnorePattern":"^(React|Calendar)$"}]'
+
+      - name: Production build
+        run: npm run build

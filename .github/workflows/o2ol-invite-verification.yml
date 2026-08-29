@@ -1,0 +1,58 @@
+name: O2OL Invite Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-invite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language privacy-first invitations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/Invite.jsx; done
+          grep -q 'window.location.origin' src/pages/Invite.jsx
+          grep -q 'createPageUrl("SignUp")' src/pages/Invite.jsx
+          grep -q 'navigator.share' src/pages/Invite.jsx
+          grep -q 'mailto:' src/pages/Invite.jsx
+          grep -q 'sms:' src/pages/Invite.jsx
+          grep -q 'does not collect' src/pages/Invite.jsx
+          grep -q 'No referral reward is currently active' src/pages/Invite.jsx
+
+      - name: Reject fake invite delivery or reward behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'lovenotes\.app|Invitation sent|earn rewards|Earn rewards|type="email"|type="tel"|recipient|supabase|fetch\(|console\.' src/pages/Invite.jsx; then
+            echo 'Invite must not collect third-party contact data, claim fake delivery/rewards, or use obsolete links.'
+            exit 1
+          fi
+
+      - name: Lint Invite
+        run: npx eslint src/pages/Invite.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

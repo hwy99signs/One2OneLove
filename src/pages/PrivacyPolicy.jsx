@@ -1,132 +1,54 @@
-import React from "react";
-import { useLanguage } from "@/Layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Shield, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
+import React from 'react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { useLanguage } from '@/Layout';
 
 const translations = {
   en: {
-    title: "Privacy Policy",
-    subtitle: "Your privacy is important to us",
-    back: "Back",
-    lastUpdated: "Last Updated: November 15, 2025",
+    title: 'Privacy Notice — Launch Draft',
+    subtitle: 'This page describes current One2OneLove product behavior. Final legal review is required before public launch.',
+    back: 'Back Home',
+    review: 'Legal review required',
+    reviewCopy: 'This operational notice is intentionally narrower than a final jurisdiction-specific privacy policy. It does not invent legal rights, retention periods, cookie claims, or compliance promises that have not been formally reviewed.',
     sections: [
-      { title: "1. Information We Collect", content: "We collect information you provide directly to us, including your name, email address, and relationship information. We also collect information about how you use our services." },
-      { title: "2. How We Use Your Information", content: "We use your information to provide, maintain, and improve our services, to communicate with you, and to personalize your experience on our platform." },
-      { title: "3. Information Sharing", content: "We do not sell your personal information. We may share your information with service providers who help us operate our platform, or when required by law." },
-      { title: "4. Data Security", content: "We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction." },
-      { title: "5. Your Rights", content: "You have the right to access, update, or delete your personal information. You can also opt out of certain communications and data collection." },
-      { title: "6. Cookies", content: "We use cookies and similar technologies to improve your experience, analyze usage, and personalize content. You can control cookies through your browser settings." },
-      { title: "7. Children's Privacy", content: "Our services are not intended for children under 13. We do not knowingly collect personal information from children under 13." },
-      { title: "8. Changes to This Policy", content: "We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page." }
-    ]
+      ['Account and profile data', 'O2OL stores account and profile information needed to operate signed-in features, such as name, email, selected profile fields, relationship status, anniversary, location, bio, and love-language preference when a member chooses to save it.'],
+      ['Private couple data', 'Love Notes, private memories, goals, milestones, calendar records, journals, and related couple tools are protected by account or reciprocal-partner access rules. Shared Journals are private by default and require explicit per-entry partner sharing.'],
+      ['Community content', 'Approved relationship stories may become public community content. New stories are submitted for moderation first. Buddy discovery uses a limited community directory rather than private account rows, and does not expose account email or billing data.'],
+      ['Chat and attachments', 'Private chat is limited to authorized participants. Chat attachments use private storage and short-lived signed links rather than permanent public file URLs.'],
+      ['Global Relationship Room', 'Creator applications, scheduling, reports, cancellations, and moderation records are used to operate the Global Relationship Room. Moderator privileges are restricted and normal members cannot self-elevate.'],
+      ['Contact messages', 'Messages sent through Contact Us are stored in a private support queue. Browser users can submit messages but cannot browse the queue.'],
+      ['AI previews', 'The current AI Relationship Coach and AI Content Creator pages are previews only. They do not collect, save, or transmit relationship text for AI generation because the live AI services are not active yet.'],
+      ['Paid membership', 'Paid membership checkout is not open at launch. Older plan prices and benefits shown in prior builds are not current launch offers.'],
+      ['Sharing choices', 'O2OL does not treat a partner relationship as permission to expose all account data. Features that share with a partner use specific reciprocal-link or explicit-sharing rules. Public community content requires the relevant publication/moderation path.'],
+      ['Questions', 'Use Contact One2OneLove for privacy questions while the final launch policy is being reviewed.'],
+    ],
+    contact: 'Contact One2OneLove',
   },
   es: {
-    title: "Política de Privacidad",
-    subtitle: "Tu privacidad es importante para nosotros",
-    back: "Volver",
-    lastUpdated: "Última Actualización: 15 de Noviembre de 2025",
-    sections: [
-      { title: "1. Información que Recopilamos", content: "Recopilamos información que nos proporcionas directamente, incluido tu nombre, dirección de correo electrónico e información de relación." },
-      { title: "2. Cómo Usamos tu Información", content: "Usamos tu información para proporcionar, mantener y mejorar nuestros servicios, comunicarnos contigo y personalizar tu experiencia." },
-      { title: "3. Compartir Información", content: "No vendemos tu información personal. Podemos compartir tu información con proveedores de servicios o cuando lo exija la ley." },
-      { title: "4. Seguridad de Datos", content: "Implementamos medidas de seguridad apropiadas para proteger tu información personal." },
-      { title: "5. Tus Derechos", content: "Tienes derecho a acceder, actualizar o eliminar tu información personal." },
-      { title: "6. Cookies", content: "Usamos cookies y tecnologías similares para mejorar tu experiencia." },
-      { title: "7. Privacidad de Niños", content: "Nuestros servicios no están destinados a niños menores de 13 años." },
-      { title: "8. Cambios a Esta Política", content: "Podemos actualizar esta política de privacidad de vez en cuando." }
-    ]
-  },
+    title: 'Aviso de Privacidad — Borrador de Lanzamiento', subtitle: 'Esta página describe el comportamiento actual de One2OneLove. Se requiere revisión legal final antes del lanzamiento público.', back: 'Volver al Inicio', review: 'Revisión legal requerida', reviewCopy: 'Este aviso operativo es deliberadamente más limitado que una política final específica por jurisdicción. No inventa derechos legales, períodos de retención, afirmaciones sobre cookies ni promesas de cumplimiento no revisadas formalmente.',
+    sections: [['Datos de cuenta y perfil','O2OL almacena la información necesaria para las funciones con sesión iniciada, como nombre, correo y campos de perfil seleccionados.'],['Datos privados de pareja','Notas de Amor, recuerdos privados, metas, hitos, calendario, diarios y herramientas relacionadas usan reglas de acceso de cuenta o pareja recíproca. Los Diarios Compartidos son privados por defecto.'],['Contenido de comunidad','Las historias aprobadas pueden convertirse en contenido público. Las nuevas historias pasan primero por moderación. El descubrimiento de amigos usa un directorio limitado y no expone correo privado ni datos de facturación.'],['Chat y archivos','El chat privado está limitado a participantes autorizados. Los archivos usan almacenamiento privado y enlaces firmados temporales.'],['Sala Global de Relaciones','Solicitudes de creador, programación, reportes, cancelaciones y moderación se usan para operar la Sala Global. Los privilegios de moderación están restringidos.'],['Mensajes de contacto','Los mensajes de Contacto se almacenan en una cola privada de soporte que los usuarios del navegador no pueden consultar.'],['Vistas previas de IA','El Coach IA y el Creador de Contenido IA actuales son solo vistas previas y no recopilan ni transmiten texto de relación para generación.'],['Membresía de pago','El checkout de membresía de pago no está abierto en el lanzamiento. Los precios y beneficios de versiones anteriores no son ofertas actuales.'],['Opciones de compartir','Tener pareja no autoriza a exponer todos los datos de la cuenta. Las funciones compartidas usan reglas específicas de vínculo recíproco o consentimiento explícito.'],['Preguntas','Usa Contactar a One2OneLove para preguntas de privacidad mientras se revisa la política final.']], contact: 'Contactar a One2OneLove' },
   fr: {
-    title: "Politique de Confidentialité",
-    subtitle: "Votre vie privée est importante pour nous",
-    back: "Retour",
-    lastUpdated: "Dernière Mise à Jour: 15 Novembre 2025",
-    sections: [
-      { title: "1. Informations que Nous Collectons", content: "Nous collectons les informations que vous nous fournissez directement, y compris votre nom, adresse e-mail et informations de relation." },
-      { title: "2. Comment Nous Utilisons Vos Informations", content: "Nous utilisons vos informations pour fournir, maintenir et améliorer nos services." },
-      { title: "3. Partage d'Informations", content: "Nous ne vendons pas vos informations personnelles." },
-      { title: "4. Sécurité des Données", content: "Nous mettons en œuvre des mesures de sécurité appropriées." },
-      { title: "5. Vos Droits", content: "Vous avez le droit d'accéder, de mettre à jour ou de supprimer vos informations personnelles." },
-      { title: "6. Cookies", content: "Nous utilisons des cookies et des technologies similaires." },
-      { title: "7. Confidentialité des Enfants", content: "Nos services ne sont pas destinés aux enfants de moins de 13 ans." },
-      { title: "8. Modifications de Cette Politique", content: "Nous pouvons mettre à jour cette politique de confidentialité." }
-    ]
-  },
+    title: 'Avis de Confidentialité — Brouillon de Lancement', subtitle: 'Cette page décrit le comportement actuel de One2OneLove. Une révision juridique finale est requise avant le lancement public.', back: 'Retour à l’Accueil', review: 'Révision juridique requise', reviewCopy: 'Cet avis opérationnel est volontairement plus limité qu’une politique finale propre à chaque juridiction. Il n’invente pas de droits, durées de conservation, affirmations sur les cookies ou promesses de conformité non validées.',
+    sections: [['Données de compte et profil','O2OL conserve les informations nécessaires aux fonctions connectées, comme le nom, l’e-mail et certains champs de profil.'],['Données privées du couple','Notes d’Amour, souvenirs privés, objectifs, jalons, calendrier, journaux et outils associés utilisent des règles d’accès liées au compte ou au partenaire réciproque. Les Journaux Partagés sont privés par défaut.'],['Contenu communautaire','Les histoires approuvées peuvent devenir publiques après modération. La découverte des membres utilise un annuaire limité qui n’expose ni e-mail privé ni données de facturation.'],['Chat et pièces jointes','Le chat privé est limité aux participants autorisés. Les pièces jointes utilisent un stockage privé et des liens signés temporaires.'],['Salle Mondiale des Relations','Candidatures créateurs, programmation, signalements, annulations et modération servent au fonctionnement de la Salle Mondiale. Les privilèges sont restreints.'],['Messages de contact','Les messages Contact sont stockés dans une file de support privée non consultable par les utilisateurs du navigateur.'],['Aperçus IA','Le Coach IA et le Créateur de Contenu IA actuels sont des aperçus et ne collectent ni ne transmettent de texte relationnel pour génération.'],['Abonnement payant','Le paiement des abonnements n’est pas ouvert au lancement. Les anciens prix et avantages ne sont pas des offres actuelles.'],['Choix de partage','Un lien de partenaire ne donne pas accès à toutes les données du compte. Le partage repose sur des règles précises de lien réciproque ou de consentement explicite.'],['Questions','Utilisez Contacter One2OneLove pour toute question de confidentialité pendant la révision de la politique finale.']], contact: 'Contacter One2OneLove' },
   it: {
-    title: "Informativa sulla Privacy",
-    subtitle: "La tua privacy è importante per noi",
-    back: "Indietro",
-    lastUpdated: "Ultimo Aggiornamento: 15 Novembre 2025",
-    sections: [
-      { title: "1. Informazioni che Raccogliamo", content: "Raccogliamo le informazioni che ci fornisci direttamente, inclusi nome, email e informazioni sulla relazione." },
-      { title: "2. Come Utilizziamo le Tue Informazioni", content: "Utilizziamo le tue informazioni per fornire, mantenere e migliorare i nostri servizi." },
-      { title: "3. Condivisione delle Informazioni", content: "Non vendiamo le tue informazioni personali." },
-      { title: "4. Sicurezza dei Dati", content: "Implementiamo misure di sicurezza appropriate." },
-      { title: "5. I Tuoi Diritti", content: "Hai il diritto di accedere, aggiornare o eliminare le tue informazioni personali." },
-      { title: "6. Cookie", content: "Utilizziamo cookie e tecnologie simili." },
-      { title: "7. Privacy dei Bambini", content: "I nostri servizi non sono destinati a bambini di età inferiore a 13 anni." },
-      { title: "8. Modifiche a Questa Politica", content: "Potremmo aggiornare questa informativa sulla privacy." }
-    ]
-  },
+    title: 'Informativa Privacy — Bozza di Lancio', subtitle: 'Questa pagina descrive il comportamento attuale di One2OneLove. È richiesta una revisione legale finale prima del lancio pubblico.', back: 'Torna alla Home', review: 'Revisione legale richiesta', reviewCopy: 'Questa informativa operativa è volutamente più limitata di una politica finale specifica per giurisdizione. Non inventa diritti, periodi di conservazione, dichiarazioni sui cookie o promesse di conformità non revisionate.',
+    sections: [['Dati account e profilo','O2OL conserva le informazioni necessarie alle funzioni con accesso, come nome, email e campi di profilo selezionati.'],['Dati privati di coppia','Note d’Amore, ricordi privati, obiettivi, traguardi, calendario, diari e strumenti correlati usano regole di accesso dell’account o del partner reciproco. I Diari Condivisi sono privati per impostazione predefinita.'],['Contenuti community','Le storie approvate possono diventare pubbliche dopo moderazione. La scoperta dei membri usa una directory limitata che non espone email private o dati di fatturazione.'],['Chat e allegati','La chat privata è limitata ai partecipanti autorizzati. Gli allegati usano storage privato e link firmati temporanei.'],['Sala Globale delle Relazioni','Candidature creator, programmazione, segnalazioni, cancellazioni e moderazione servono a gestire la Sala Globale. I privilegi sono limitati.'],['Messaggi di contatto','I messaggi di Contatto sono archiviati in una coda privata di supporto non consultabile dagli utenti del browser.'],['Anteprime IA','Coach IA e Creatore di Contenuti IA sono anteprime e non raccolgono né trasmettono testo relazionale per generazione.'],['Abbonamento a pagamento','Il checkout a pagamento non è aperto al lancio. Prezzi e vantaggi delle versioni precedenti non sono offerte attuali.'],['Scelte di condivisione','Un collegamento di coppia non autorizza l’esposizione di tutti i dati dell’account. La condivisione usa regole specifiche o consenso esplicito.'],['Domande','Usa Contatta One2OneLove per domande sulla privacy durante la revisione della politica finale.']], contact: 'Contatta One2OneLove' },
   de: {
-    title: "Datenschutzrichtlinie",
-    subtitle: "Ihre Privatsphäre ist uns wichtig",
-    back: "Zurück",
-    lastUpdated: "Letzte Aktualisierung: 15. November 2025",
-    sections: [
-      { title: "1. Informationen, die Wir Sammeln", content: "Wir sammeln Informationen, die Sie uns direkt zur Verfügung stellen, einschließlich Name, E-Mail und Beziehungsinformationen." },
-      { title: "2. Wie Wir Ihre Informationen Verwenden", content: "Wir verwenden Ihre Informationen, um unsere Dienste bereitzustellen, zu warten und zu verbessern." },
-      { title: "3. Weitergabe von Informationen", content: "Wir verkaufen Ihre persönlichen Informationen nicht." },
-      { title: "4. Datensicherheit", content: "Wir implementieren angemessene Sicherheitsmaßnahmen." },
-      { title: "5. Ihre Rechte", content: "Sie haben das Recht, auf Ihre persönlichen Informationen zuzugreifen, diese zu aktualisieren oder zu löschen." },
-      { title: "6. Cookies", content: "Wir verwenden Cookies und ähnliche Technologien." },
-      { title: "7. Datenschutz für Kinder", content: "Unsere Dienste richten sich nicht an Kinder unter 13 Jahren." },
-      { title: "8. Änderungen an Dieser Richtlinie", content: "Wir können diese Datenschutzrichtlinie von Zeit zu Zeit aktualisieren." }
-    ]
-  }
+    title: 'Datenschutzhinweis — Startentwurf', subtitle: 'Diese Seite beschreibt das aktuelle Verhalten von One2OneLove. Vor dem öffentlichen Start ist eine abschließende rechtliche Prüfung erforderlich.', back: 'Zurück zur Startseite', review: 'Rechtliche Prüfung erforderlich', reviewCopy: 'Dieser betriebliche Hinweis ist bewusst enger als eine endgültige, länderspezifische Datenschutzrichtlinie. Er erfindet keine ungeprüften Rechte, Aufbewahrungsfristen, Cookie-Aussagen oder Compliance-Versprechen.',
+    sections: [['Konto- und Profildaten','O2OL speichert Informationen, die für angemeldete Funktionen erforderlich sind, etwa Name, E-Mail und ausgewählte Profilfelder.'],['Private Paardaten','Liebesbotschaften, private Erinnerungen, Ziele, Meilensteine, Kalender, Journale und verwandte Werkzeuge verwenden Konto- oder gegenseitige Partnerzugriffsregeln. Gemeinsame Journale sind standardmäßig privat.'],['Community-Inhalte','Genehmigte Geschichten können nach Moderation öffentlich werden. Die Mitgliedersuche nutzt ein begrenztes Verzeichnis ohne private E-Mail- oder Abrechnungsdaten.'],['Chat und Anhänge','Privater Chat ist auf autorisierte Teilnehmer beschränkt. Anhänge nutzen privaten Speicher und temporäre signierte Links.'],['Globaler Beziehungsraum','Creator-Bewerbungen, Planung, Meldungen, Stornierungen und Moderation dienen dem Betrieb des Globalen Beziehungsraums. Moderationsrechte sind eingeschränkt.'],['Kontaktnachrichten','Kontaktnachrichten werden in einer privaten Support-Warteschlange gespeichert, die Browsernutzer nicht durchsuchen können.'],['KI-Vorschauen','KI-Beziehungscoach und KI-Content-Ersteller sind derzeit nur Vorschauen und sammeln oder übertragen keinen Beziehungstext zur Generierung.'],['Bezahlte Mitgliedschaft','Der Checkout für bezahlte Mitgliedschaften ist zum Start nicht geöffnet. Frühere Preise und Vorteile sind keine aktuellen Angebote.'],['Freigabeentscheidungen','Eine Partnerverknüpfung erlaubt keinen Zugriff auf alle Kontodaten. Freigaben beruhen auf spezifischen gegenseitigen Regeln oder ausdrücklicher Zustimmung.'],['Fragen','Nutzt One2OneLove Kontaktieren für Datenschutzfragen während der abschließenden Prüfung.']], contact: 'One2OneLove Kontaktieren' },
 };
 
 export default function PrivacyPolicy() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Shield className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600">{t.subtitle}</p>
-          <p className="text-sm text-gray-500 mt-4">{t.lastUpdated}</p>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="shadow-2xl">
-            <CardContent className="p-8">
-              <div className="prose prose-lg max-w-none">
-                {t.sections.map((section, index) => (
-                  <div key={index} className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.title}</h2>
-                    <p className="text-gray-700 leading-relaxed">{section.content}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-4xl">
+        <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-blue-700"><ArrowLeft className="h-4 w-4" aria-hidden="true" />{t.back}</Link>
+        <header className="mt-8 text-center"><ShieldCheck className="mx-auto h-14 w-14 text-blue-700" aria-hidden="true" /><h1 className="mt-4 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mx-auto mt-3 max-w-3xl text-lg leading-7 text-slate-600">{t.subtitle}</p></header>
+        <Card className="mt-8 border-blue-100 bg-white shadow-sm"><CardContent className="p-6 md:p-8"><div className="rounded-2xl bg-amber-50 p-5"><h2 className="font-bold text-amber-950">{t.review}</h2><p className="mt-2 text-sm leading-6 text-amber-900">{t.reviewCopy}</p></div><div className="mt-8 space-y-7">{t.sections.map(([title, content]) => <section key={title}><h2 className="text-xl font-bold text-slate-900">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-700">{content}</p></section>)}</div><div className="mt-8"><Link to="/ContactUs" className="font-semibold text-blue-700 hover:underline">{t.contact}</Link></div></CardContent></Card>
       </div>
-    </div>
+    </main>
   );
 }

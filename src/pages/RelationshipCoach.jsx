@@ -1,409 +1,187 @@
-
-import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Heart, Send, Sparkles, Plus, MessageCircle, Loader2, Trash2, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useLanguage } from "@/Layout";
-import { toast } from "sonner";
-import MessageBubble from "../components/coach/MessageBubble";
+import React from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft, Brain, MessageCircle, BookOpen, ClipboardCheck, ShieldCheck, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/Layout";
 import { createPageUrl } from "@/utils";
 
 const translations = {
   en: {
+    back: "Back",
+    badge: "Preview",
     title: "AI Relationship Coach",
-    subtitle: "Get personalized advice, daily tips, and guidance to strengthen your relationship",
-    newChat: "New Conversation",
-    yourConversations: "Your Conversations",
-    startNewConversation: "Start New Conversation",
-    typeMessage: "Type your message...",
-    send: "Send",
-    emptyState: "No conversations yet",
-    emptyStateDesc: "Start a new conversation with your AI relationship coach to get personalized advice!",
-    quickPrompts: "Quick Prompts",
-    dailyTip: "Give me a daily relationship tip",
-    dateIdea: "Suggest a creative date idea",
-    communicationHelp: "Help us communicate better",
-    conflictResolution: "How to resolve conflicts peacefully",
-    keepSparkAlive: "Tips to keep the spark alive",
-    deleteConversation: "Delete conversation",
-    conversationDeleted: "Conversation deleted",
-    backToSupport: "Back to Support",
+    subtitle: "A guided O2OL coaching experience is being prepared. The live AI conversation service is not available yet.",
+    privacyTitle: "Your private relationship details are not collected here",
+    privacyBody: "This preview has no chat box and does not save or transmit relationship answers. O2OL will only activate conversational AI after its privacy, safety, and multilingual controls are ready.",
+    boundaryTitle: "What this future tool will — and will not — be",
+    boundaryBody: "It will offer educational relationship reflection and communication support. It will not diagnose, provide therapy, replace licensed professional care, or serve as crisis support.",
+    useNow: "Relationship tools you can use now",
+    practice: "Communication Practice",
+    practiceDesc: "Practice listening, repair, appreciation, and clear requests without storing your responses.",
+    library: "Relationship Library",
+    libraryDesc: "Browse practical O2OL resources by relationship goal and situation.",
+    checkIn: "Weekly Check-In",
+    checkInDesc: "Use a private, in-memory weekly reflection to talk about connection, needs, repair, and next steps.",
+    open: "Open tool",
+    coming: "AI Coach conversations: coming later",
   },
   es: {
-    title: "Coach de Relaciones IA",
-    subtitle: "Obtén consejos personalizados, tips diarios y orientación para fortalecer tu relación",
-    newChat: "Nueva Conversación",
-    yourConversations: "Tus Conversaciones",
-    startNewConversation: "Iniciar Nueva Conversación",
-    typeMessage: "Escribe tu mensaje...",
-    send: "Enviar",
-    emptyState: "Aún no hay conversaciones",
-    emptyStateDesc: "¡Inicia una nueva conversación con tu coach de relaciones IA para obtener consejos personalizados!",
-    quickPrompts: "Prompts Rápidos",
-    dailyTip: "Dame un consejo diario para relaciones",
-    dateIdea: "Sugiere una idea creativa de cita",
-    communicationHelp: "Ayúdanos a comunicarnos mejor",
-    conflictResolution: "Cómo resolver conflictos pacíficamente",
-    keepSparkAlive: "Tips para mantener viva la chispa",
-    deleteConversation: "Eliminar conversación",
-    conversationDeleted: "Conversación eliminada",
-    backToSupport: "Volver al Soporte",
+    back: "Volver",
+    badge: "Vista previa",
+    title: "Coach de Relaciones con IA",
+    subtitle: "Se está preparando una experiencia guiada de coaching de O2OL. El servicio de conversación con IA aún no está disponible.",
+    privacyTitle: "Tus detalles privados de relación no se recopilan aquí",
+    privacyBody: "Esta vista previa no tiene chat y no guarda ni transmite respuestas sobre tu relación. O2OL activará la IA conversacional solo cuando estén listos sus controles de privacidad, seguridad y multilingües.",
+    boundaryTitle: "Lo que esta futura herramienta será — y lo que no será",
+    boundaryBody: "Ofrecerá reflexión educativa sobre relaciones y apoyo para la comunicación. No diagnosticará, no brindará terapia, no reemplazará atención profesional licenciada ni funcionará como apoyo de crisis.",
+    useNow: "Herramientas de relación que puedes usar ahora",
+    practice: "Práctica de Comunicación",
+    practiceDesc: "Practica escucha, reparación, aprecio y peticiones claras sin guardar tus respuestas.",
+    library: "Biblioteca de Relaciones",
+    libraryDesc: "Explora recursos prácticos de O2OL por objetivo y situación de relación.",
+    checkIn: "Revisión Semanal",
+    checkInDesc: "Usa una reflexión semanal privada y temporal para hablar de conexión, necesidades, reparación y próximos pasos.",
+    open: "Abrir herramienta",
+    coming: "Conversaciones con el Coach IA: próximamente",
   },
   fr: {
-    title: "Coach de Relations IA",
-    subtitle: "Obtenez des conseils personnalisés, des astuces quotidiennes et des conseils pour renforcer votre relation",
-    newChat: "Nouvelle Conversation",
-    yourConversations: "Vos Conversations",
-    startNewConversation: "Démarrer Nouvelle Conversation",
-    typeMessage: "Tapez votre message...",
-    send: "Envoyer",
-    emptyState: "Pas encore de conversations",
-    emptyStateDesc: "Démarrez une nouvelle conversation avec votre coach de relations IA pour obtenir des conseils personnalisés!",
-    quickPrompts: "Prompts Rapides",
-    dailyTip: "Donnez-moi un conseil relationnel quotidien",
-    dateIdea: "Suggérez une idée de rendez-vous créative",
-    communicationHelp: "Aidez-nous à mieux communiquer",
-    conflictResolution: "Comment résoudre les conflits pacifiquement",
-    keepSparkAlive: "Conseils pour garder l'étincelle vivante",
-    deleteConversation: "Supprimer la conversation",
-    conversationDeleted: "Conversation supprimée",
-    backToSupport: "Retour au Support",
+    back: "Retour",
+    badge: "Aperçu",
+    title: "Coach Relationnel IA",
+    subtitle: "Une expérience guidée de coaching O2OL est en préparation. Le service de conversation IA en direct n’est pas encore disponible.",
+    privacyTitle: "Vos détails relationnels privés ne sont pas collectés ici",
+    privacyBody: "Cet aperçu ne contient aucune zone de chat et n’enregistre ni ne transmet vos réponses relationnelles. O2OL n’activera l’IA conversationnelle que lorsque les contrôles de confidentialité, de sécurité et multilingues seront prêts.",
+    boundaryTitle: "Ce que cet outil futur sera — et ne sera pas",
+    boundaryBody: "Il proposera une réflexion relationnelle éducative et un soutien à la communication. Il ne posera pas de diagnostic, ne fournira pas de thérapie, ne remplacera pas les soins d’un professionnel agréé et ne servira pas de soutien de crise.",
+    useNow: "Outils relationnels disponibles maintenant",
+    practice: "Pratique de Communication",
+    practiceDesc: "Entraînez l’écoute, la réparation, l’appréciation et les demandes claires sans enregistrer vos réponses.",
+    library: "Bibliothèque Relationnelle",
+    libraryDesc: "Parcourez les ressources pratiques O2OL selon votre objectif ou votre situation relationnelle.",
+    checkIn: "Bilan Hebdomadaire",
+    checkInDesc: "Utilisez une réflexion hebdomadaire privée et temporaire sur la connexion, les besoins, la réparation et les prochaines étapes.",
+    open: "Ouvrir l’outil",
+    coming: "Conversations avec le Coach IA : à venir",
   },
   it: {
-    title: "Coach di Relazioni IA",
-    subtitle: "Ottieni consigli personalizzati, suggerimenti quotidiani e orientamento per rafforzare la tua relazione",
-    newChat: "Nuova Conversazione",
-    yourConversations: "Le Tue Conversazioni",
-    startNewConversation: "Inizia Nuova Conversazione",
-    typeMessage: "Scrivi il tuo messaggio...",
-    send: "Invia",
-    emptyState: "Nessuna conversazione ancora",
-    emptyStateDesc: "Inizia una nuova conversazione con il tuo coach di relazioni IA per ottenere consigli personalizzati!",
-    quickPrompts: "Prompt Rapidi",
-    dailyTip: "Dammi un consiglio quotidiano per relazioni",
-    dateIdea: "Suggerisci un'idea creativa per appuntamento",
-    communicationHelp: "Aiutaci a comunicare meglio",
-    conflictResolution: "Come risolvere i conflitti pacificamente",
-    keepSparkAlive: "Consigli per mantenere viva la scintilla",
-    deleteConversation: "Elimina conversazione",
-    conversationDeleted: "Conversazione eliminata",
-    backToSupport: "Torna al Supporto",
+    back: "Indietro",
+    badge: "Anteprima",
+    title: "Coach Relazionale IA",
+    subtitle: "È in preparazione un’esperienza guidata di coaching O2OL. Il servizio di conversazione IA dal vivo non è ancora disponibile.",
+    privacyTitle: "I dettagli privati della tua relazione non vengono raccolti qui",
+    privacyBody: "Questa anteprima non contiene una chat e non salva né trasmette risposte sulla relazione. O2OL attiverà l’IA conversazionale solo quando i controlli di privacy, sicurezza e multilingua saranno pronti.",
+    boundaryTitle: "Cosa sarà — e cosa non sarà — questo futuro strumento",
+    boundaryBody: "Offrirà riflessione educativa sulle relazioni e supporto alla comunicazione. Non farà diagnosi, non fornirà terapia, non sostituirà professionisti abilitati e non sarà un servizio di supporto in crisi.",
+    useNow: "Strumenti di relazione disponibili ora",
+    practice: "Pratica di Comunicazione",
+    practiceDesc: "Esercita ascolto, riparazione, apprezzamento e richieste chiare senza salvare le tue risposte.",
+    library: "Biblioteca delle Relazioni",
+    libraryDesc: "Esplora risorse pratiche O2OL in base all’obiettivo o alla situazione della relazione.",
+    checkIn: "Check-In Settimanale",
+    checkInDesc: "Usa una riflessione settimanale privata e temporanea su connessione, bisogni, riparazione e prossimi passi.",
+    open: "Apri strumento",
+    coming: "Conversazioni con il Coach IA: prossimamente",
   },
   de: {
+    back: "Zurück",
+    badge: "Vorschau",
     title: "KI-Beziehungscoach",
-    subtitle: "Erhalten Sie personalisierte Ratschläge, tägliche Tipps und Anleitung zur Stärkung Ihrer Beziehung",
-    newChat: "Neues Gespräch",
-    yourConversations: "Ihre Gespräche",
-    startNewConversation: "Neues Gespräch Starten",
-    typeMessage: "Geben Sie Ihre Nachricht ein...",
-    send: "Senden",
-    emptyState: "Noch keine Gespräche",
-    emptyStateDesc: "Starten Sie ein neues Gespräch mit Ihrem KI-Beziehungscoach, um personalisierte Ratschläge zu erhalten!",
-    quickPrompts: "Schnelle Prompts",
-    dailyTip: "Gib mir einen täglichen Beziehungstipp",
-    dateIdea: "Schlage eine kreative Date-Idee vor",
-    communicationHelp: "Hilf uns besser zu kommunizieren",
-    conflictResolution: "Wie man Konflikte friedlich löst",
-    keepSparkAlive: "Tipps um den Funken am Leben zu halten",
-    deleteConversation: "Gespräch löschen",
-    conversationDeleted: "Gespräch gelöscht",
-    backToSupport: "Zurück zum Support",
-  }
+    subtitle: "Eine geführte O2OL-Coaching-Erfahrung wird vorbereitet. Der Live-KI-Konversationsdienst ist noch nicht verfügbar.",
+    privacyTitle: "Private Beziehungsdetails werden hier nicht gesammelt",
+    privacyBody: "Diese Vorschau hat kein Chatfeld und speichert oder überträgt keine Beziehungsantworten. O2OL aktiviert die Konversations-KI erst, wenn Datenschutz-, Sicherheits- und Mehrsprachenkontrollen bereit sind.",
+    boundaryTitle: "Was dieses zukünftige Werkzeug sein wird — und was nicht",
+    boundaryBody: "Es wird pädagogische Beziehungsreflexion und Unterstützung für Kommunikation bieten. Es stellt keine Diagnosen, bietet keine Therapie, ersetzt keine zugelassene professionelle Betreuung und ist keine Krisenhilfe.",
+    useNow: "Beziehungswerkzeuge, die du jetzt nutzen kannst",
+    practice: "Kommunikationspraxis",
+    practiceDesc: "Übe Zuhören, Reparatur, Wertschätzung und klare Bitten, ohne deine Antworten zu speichern.",
+    library: "Beziehungsbibliothek",
+    libraryDesc: "Durchsuche praktische O2OL-Ressourcen nach Beziehungsziel und Situation.",
+    checkIn: "Wöchentlicher Check-In",
+    checkInDesc: "Nutze eine private, nur vorübergehende Wochenreflexion zu Verbindung, Bedürfnissen, Reparatur und nächsten Schritten.",
+    open: "Werkzeug öffnen",
+    coming: "KI-Coach-Gespräche: kommen später",
+  },
 };
+
+const toolCards = [
+  { key: "practice", descriptionKey: "practiceDesc", page: "CommunicationPractice", icon: MessageCircle },
+  { key: "library", descriptionKey: "libraryDesc", page: "RelationshipLibrary", icon: BookOpen },
+  { key: "checkIn", descriptionKey: "checkInDesc", page: "WeeklyCheckIn", icon: ClipboardCheck },
+];
 
 export default function RelationshipCoach() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const queryClient = useQueryClient();
-  const messagesEndRef = useRef(null);
-
-  const [currentConversationId, setCurrentConversationId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
-
-  const { user } = useAuth();
-
-  const { data: conversations = [] } = useQuery({
-    queryKey: ['coach-conversations', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      // TODO: Implement AI coach conversations with Supabase Edge Functions or external AI service
-      // This requires setting up chat functionality with AI (OpenAI, Anthropic, etc.)
-      return [];
-    },
-    enabled: !!user?.id,
-    initialData: [],
-  });
-
-  const createConversationMutation = useMutation({
-    mutationFn: async () => {
-      // TODO: Implement conversation creation with Supabase
-      throw new Error('AI Coach feature requires implementation with Supabase Edge Functions or external AI service');
-    },
-    onSuccess: (newConv) => {
-      queryClient.invalidateQueries({ queryKey: ['coach-conversations'] });
-      setCurrentConversationId(newConv.id);
-      setMessages([]);
-    }
-  });
-
-  const deleteConversationMutation = useMutation({
-    mutationFn: async (convId) => {
-      // TODO: Implement conversation deletion with Supabase
-      throw new Error('AI Coach feature requires implementation');
-    },
-    onSuccess: (_, deletedConvId) => {
-      queryClient.invalidateQueries({ queryKey: ['coach-conversations'] });
-      toast.success(t.conversationDeleted);
-      if (currentConversationId === deletedConvId) {
-        setCurrentConversationId(null);
-        setMessages([]);
-      }
-    }
-  });
-
-  useEffect(() => {
-    if (!currentConversationId) return;
-    // TODO: Implement realtime subscription for conversation messages
-    return () => {};
-  }, [currentConversationId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const loadConversation = async (conversationId) => {
-    // TODO: Implement conversation loading from Supabase
-    setCurrentConversationId(conversationId);
-    setMessages([]);
-  };
-
-  const handleSendMessage = async (messageText = inputMessage) => {
-    if (!messageText.trim()) return;
-    
-    toast.error('AI Coach feature requires implementation with Supabase Edge Functions or external AI service');
-    setIsSending(false);
-    // TODO: Implement message sending with AI integration
-  };
-
-  const handleQuickPrompt = (prompt) => {
-    handleSendMessage(prompt);
-  };
-
-  const quickPrompts = [
-    { id: 1, text: t.dailyTip, icon: Sparkles },
-    { id: 2, text: t.dateIdea, icon: Heart },
-    { id: 3, text: t.communicationHelp, icon: MessageCircle },
-    { id: 4, text: t.conflictResolution, icon: Heart },
-    { id: 5, text: t.keepSparkAlive, icon: Sparkles },
-  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link
-            to={createPageUrl("CoupleSupport")}
-            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            {t.backToSupport}
-          </Link>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 px-4 py-10">
+      <div className="mx-auto max-w-5xl">
+        <Link
+          to={createPageUrl("Home")}
+          className="mb-8 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-white hover:text-purple-700"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Sparkles className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4 font-dancing">
-            {t.title}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            {t.subtitle}
-          </p>
-        </motion.div>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {t.back}
+        </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar - Conversations List */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-4">
-              <Button
-                onClick={() => createConversationMutation.mutate()}
-                className="w-full mb-4 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-                disabled={createConversationMutation.isPending}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {t.newChat}
-              </Button>
-
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                {t.yourConversations}
-              </h3>
-
-              <div className="space-y-2">
-                {conversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
-                      currentConversationId === conv.id
-                        ? 'bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-pink-300'
-                        : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <button
-                      onClick={() => loadConversation(conv.id)}
-                      className="flex-1 text-left"
-                    >
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {conv.metadata?.name || 'Coaching Session'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(conv.created_date).toLocaleDateString()}
-                      </p>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm('Are you sure you want to delete this conversation?')) {
-                          deleteConversationMutation.mutate(conv.id);
-                        }
-                      }}
-                      className="text-gray-400 hover:text-red-600 transition-colors ml-2"
-                      title={t.deleteConversation}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-
-                {conversations.length === 0 && (
-                  <div className="text-center py-6">
-                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">{t.emptyState}</p>
-                  </div>
-                )}
-              </div>
+        <section className="rounded-3xl border border-purple-100 bg-white p-7 shadow-xl md:p-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg">
+              <Brain className="h-8 w-8" aria-hidden="true" />
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-800">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              {t.badge}
+            </span>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-950 md:text-5xl">{t.title}</h1>
+            <p className="mt-4 text-lg leading-8 text-gray-600">{t.subtitle}</p>
+            <div className="mt-6 rounded-2xl border border-purple-200 bg-purple-50 px-5 py-4 text-sm font-semibold text-purple-900">
+              {t.coming}
             </div>
           </div>
+        </section>
 
-          {/* Main Chat Area */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg h-[600px] flex flex-col">
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {!currentConversationId && messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center">
-                    <Sparkles className="w-16 h-16 text-gray-300 mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                      {t.emptyState}
-                    </h3>
-                    <p className="text-gray-500 mb-6 max-w-md">
-                      {t.emptyStateDesc}
-                    </p>
-                    
-                    <div className="w-full max-w-md">
-                      <p className="text-sm font-semibold text-gray-700 mb-3">
-                        {t.quickPrompts}
-                      </p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {quickPrompts.map((prompt) => {
-                          const Icon = prompt.icon;
-                          return (
-                            <button
-                              key={prompt.id}
-                              onClick={() => handleQuickPrompt(prompt.text)}
-                              className="flex items-center gap-3 p-3 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg hover:from-pink-100 hover:to-purple-100 transition-all text-left border border-pink-200"
-                            >
-                              <Icon className="w-5 h-5 text-pink-600" />
-                              <span className="text-sm text-gray-700">{prompt.text}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {messages.map((msg, idx) => (
-                      <MessageBubble key={idx} message={msg} />
-                    ))}
-                    {isSending && (
-                      <div className="flex gap-3 justify-start">
-                        <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center mt-0.5">
-                          <div className="h-1.5 w-1.5 rounded-full bg-pink-500" />
-                        </div>
-                        <div className="bg-white border border-gray-200 rounded-2xl px-4 py-2.5">
-                          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                        </div>
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
-              </div>
-
-              {/* Input Area */}
-              <div className="border-t border-gray-200 p-4 bg-gray-50">
-                <div className="flex gap-3">
-                  <Input
-                    placeholder={t.typeMessage}
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    className="flex-1 h-12"
-                    disabled={isSending}
-                  />
-                  <Button
-                    onClick={() => handleSendMessage()}
-                    disabled={!inputMessage.trim() || isSending}
-                    className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-12 px-6"
-                  >
-                    {isSending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Send className="w-5 h-5 mr-2" />
-                        {t.send}
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Quick Prompts - Only show when conversation is active */}
-                {currentConversationId && messages.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {quickPrompts.slice(0, 3).map((prompt) => (
-                      <button
-                        key={prompt.id}
-                        onClick={() => handleQuickPrompt(prompt.text)}
-                        disabled={isSending}
-                        className="text-xs px-3 py-1.5 bg-white rounded-full border border-pink-200 text-gray-700 hover:bg-pink-50 transition-colors disabled:opacity-50"
-                      >
-                        {prompt.text}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <Card className="border-emerald-200 bg-emerald-50/70">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-emerald-950">
+                <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                {t.privacyTitle}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="leading-7 text-emerald-900">{t.privacyBody}</CardContent>
+          </Card>
+          <Card className="border-amber-200 bg-amber-50/70">
+            <CardHeader>
+              <CardTitle className="text-amber-950">{t.boundaryTitle}</CardTitle>
+            </CardHeader>
+            <CardContent className="leading-7 text-amber-900">{t.boundaryBody}</CardContent>
+          </Card>
         </div>
+
+        <section className="mt-10">
+          <h2 className="text-2xl font-bold text-gray-950">{t.useNow}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+            {toolCards.map(({ key, descriptionKey, page, icon: Icon }) => (
+              <Card key={key} className="flex h-full flex-col border-gray-200 shadow-sm">
+                <CardHeader>
+                  <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <CardTitle>{t[key]}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col">
+                  <p className="flex-1 leading-7 text-gray-600">{t[descriptionKey]}</p>
+                  <Button asChild className="mt-5 w-full">
+                    <Link to={createPageUrl(page)}>{t.open}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

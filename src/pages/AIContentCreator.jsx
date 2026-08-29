@@ -1,472 +1,64 @@
-import React, { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { Sparkles, Heart, MessageCircle, Gift, Calendar, Loader2, Copy, Check, Download, ArrowLeft } from "lucide-react";
+import React from "react";
+import { ArrowLeft, CalendarHeart, Heart, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
-import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const translations = {
   en: {
-    title: "AI Content Creator",
-    subtitle: "Let AI help you create personalized content for your relationship",
-    back: "Back",
-    contentType: "Content Type",
-    contentTypes: {
-      loveNote: "Love Note",
-      apology: "Apology Message",
-      anniversary: "Anniversary Message",
-      dateIdea: "Date Night Idea",
-      conversation: "Conversation Starter",
-      appreciation: "Words of Appreciation"
-    },
-    tone: "Tone",
-    tones: { romantic: "Romantic", playful: "Playful", sincere: "Sincere", passionate: "Passionate", sweet: "Sweet", funny: "Funny" },
-    length: "Length",
-    lengths: { short: "Short", medium: "Medium", long: "Long" },
-    additionalDetails: "Additional Details (Optional)",
-    detailsPlaceholder: "Add any specific details, memories, or context...",
-    partnerName: "Partner's Name (Optional)",
-    partnerNamePlaceholder: "Your partner's name",
-    generate: "Generate with AI",
-    generating: "Creating...",
-    result: "Your Generated Content",
-    copy: "Copy",
-    copied: "Copied!",
-    download: "Download",
-    regenerate: "Generate Again",
-    edit: "Edit & Personalize"
-  },
+    back: "Back", badge: "Preview", title: "AI Content Creator", subtitle: "Personalized AI writing is planned, but the live generation service is not available yet.", privacyTitle: "No relationship details are collected here", privacy: "This preview has no partner-name or personal-context fields and does not save or transmit relationship information. AI generation will only be activated after the backend, privacy controls, safety rules, and five-language behavior are ready.", boundaryTitle: "What the future tool is for", boundary: "The future creator may help draft relationship messages and ideas. Generated text will be a writing aid—not therapy, diagnosis, professional advice, or a substitute for direct communication and judgment.", useNow: "Use these working tools now", loveNotes: "Love Notes", loveNotesDesc: "Choose or send a real note through the secure mutual-partner flow.", dateNight: "Date Night", dateNightDesc: "Build a simple date plan based on time and budget without giving O2OL private context.", cards: "Conversation Cards", cardsDesc: "Use ready-made prompts for meaningful conversation without saving answers.", open: "Open tool", coming: "AI generation: coming later" },
   es: {
-    title: "Creador de Contenido IA",
-    subtitle: "Deja que la IA te ayude a crear contenido personalizado para tu relación",
-    back: "Volver",
-    contentType: "Tipo de Contenido",
-    contentTypes: {
-      loveNote: "Nota de Amor",
-      apology: "Mensaje de Disculpa",
-      anniversary: "Mensaje de Aniversario",
-      dateIdea: "Idea para Cita",
-      conversation: "Iniciador de Conversación",
-      appreciation: "Palabras de Apreciación"
-    },
-    tone: "Tono",
-    tones: { romantic: "Romántico", playful: "Juguetón", sincere: "Sincero", passionate: "Apasionado", sweet: "Dulce", funny: "Divertido" },
-    length: "Longitud",
-    lengths: { short: "Corto", medium: "Medio", long: "Largo" },
-    additionalDetails: "Detalles Adicionales (Opcional)",
-    detailsPlaceholder: "Agrega detalles específicos, recuerdos o contexto...",
-    partnerName: "Nombre de tu Pareja (Opcional)",
-    partnerNamePlaceholder: "Nombre de tu pareja",
-    generate: "Generar con IA",
-    generating: "Creando...",
-    result: "Tu Contenido Generado",
-    copy: "Copiar",
-    copied: "¡Copiado!",
-    download: "Descargar",
-    regenerate: "Generar Nuevamente",
-    edit: "Editar y Personalizar"
-  },
+    back: "Volver", badge: "Vista previa", title: "Creador de Contenido con IA", subtitle: "La escritura personalizada con IA está planificada, pero el servicio de generación aún no está disponible.", privacyTitle: "Aquí no recopilamos detalles de tu relación", privacy: "Esta vista previa no tiene campos para nombre de pareja ni contexto personal y no guarda ni transmite información de la relación. La generación con IA se activará solo cuando estén listos el backend, la privacidad, las reglas de seguridad y el comportamiento en cinco idiomas.", boundaryTitle: "Para qué será la futura herramienta", boundary: "El futuro creador podrá ayudar a redactar mensajes e ideas de relación. El texto generado será una ayuda de escritura, no terapia, diagnóstico, consejo profesional ni sustituto de la comunicación directa y tu criterio.", useNow: "Usa estas herramientas disponibles", loveNotes: "Notas de Amor", loveNotesDesc: "Elige o envía una nota real mediante el flujo seguro de pareja recíproca.", dateNight: "Noche de Cita", dateNightDesc: "Crea un plan sencillo según tiempo y presupuesto sin dar contexto privado a O2OL.", cards: "Tarjetas de Conversación", cardsDesc: "Usa preguntas preparadas para conversar sin guardar respuestas.", open: "Abrir herramienta", coming: "Generación con IA: próximamente" },
   fr: {
-    title: "Créateur de Contenu IA",
-    subtitle: "Laissez l'IA vous aider à créer du contenu personnalisé pour votre relation",
-    back: "Retour",
-    contentType: "Type de Contenu",
-    contentTypes: {
-      loveNote: "Note d'Amour",
-      apology: "Message d'Excuses",
-      anniversary: "Message d'Anniversaire",
-      dateIdea: "Idée de Rendez-vous",
-      conversation: "Démarreur de Conversation",
-      appreciation: "Mots d'Appréciation"
-    },
-    tone: "Ton",
-    tones: { romantic: "Romantique", playful: "Enjoué", sincere: "Sincère", passionate: "Passionné", sweet: "Doux", funny: "Drôle" },
-    length: "Longueur",
-    lengths: { short: "Court", medium: "Moyen", long: "Long" },
-    additionalDetails: "Détails Supplémentaires (Optionnel)",
-    detailsPlaceholder: "Ajoutez des détails spécifiques, des souvenirs ou du contexte...",
-    partnerName: "Nom du Partenaire (Optionnel)",
-    partnerNamePlaceholder: "Nom de votre partenaire",
-    generate: "Générer avec IA",
-    generating: "Création...",
-    result: "Votre Contenu Généré",
-    copy: "Copier",
-    copied: "Copié!",
-    download: "Télécharger",
-    regenerate: "Générer à Nouveau",
-    edit: "Modifier et Personnaliser"
-  },
+    back: "Retour", badge: "Aperçu", title: "Créateur de Contenu IA", subtitle: "L’écriture personnalisée par IA est prévue, mais le service de génération en direct n’est pas encore disponible.", privacyTitle: "Aucun détail relationnel n’est collecté ici", privacy: "Cet aperçu ne contient aucun champ pour le nom du partenaire ou le contexte personnel et n’enregistre ni ne transmet d’informations relationnelles. La génération IA ne sera activée que lorsque le backend, les contrôles de confidentialité, les règles de sécurité et le fonctionnement dans cinq langues seront prêts.", boundaryTitle: "À quoi servira le futur outil", boundary: "Le futur créateur pourra aider à rédiger des messages et des idées relationnelles. Le texte généré sera une aide à l’écriture, pas une thérapie, un diagnostic, un conseil professionnel ni un substitut au dialogue et au jugement personnel.", useNow: "Utilisez ces outils disponibles", loveNotes: "Notes d’Amour", loveNotesDesc: "Choisissez ou envoyez une vraie note via le lien de partenaire réciproque sécurisé.", dateNight: "Soirée en Couple", dateNightDesc: "Construisez un plan simple selon le temps et le budget sans fournir de contexte privé à O2OL.", cards: "Cartes de Conversation", cardsDesc: "Utilisez des questions prêtes à l’emploi sans enregistrer les réponses.", open: "Ouvrir l’outil", coming: "Génération IA : à venir" },
   it: {
-    title: "Creatore di Contenuti IA",
-    subtitle: "Lascia che l'IA ti aiuti a creare contenuti personalizzati per la tua relazione",
-    back: "Indietro",
-    contentType: "Tipo di Contenuto",
-    contentTypes: {
-      loveNote: "Nota d'Amore",
-      apology: "Messaggio di Scuse",
-      anniversary: "Messaggio di Anniversario",
-      dateIdea: "Idea per Appuntamento",
-      conversation: "Avviatore di Conversazione",
-      appreciation: "Parole di Apprezzamento"
-    },
-    tone: "Tono",
-    tones: { romantic: "Romantico", playful: "Giocoso", sincere: "Sincero", passionate: "Appassionato", sweet: "Dolce", funny: "Divertente" },
-    length: "Lunghezza",
-    lengths: { short: "Breve", medium: "Media", long: "Lungo" },
-    additionalDetails: "Dettagli Aggiuntivi (Opzionale)",
-    detailsPlaceholder: "Aggiungi dettagli specifici, ricordi o contesto...",
-    partnerName: "Nome del Partner (Opzionale)",
-    partnerNamePlaceholder: "Nome del tuo partner",
-    generate: "Genera con IA",
-    generating: "Creazione...",
-    result: "Il Tuo Contenuto Generato",
-    copy: "Copia",
-    copied: "Copiato!",
-    download: "Scarica",
-    regenerate: "Genera di Nuovo",
-    edit: "Modifica e Personalizza"
-  },
+    back: "Indietro", badge: "Anteprima", title: "Creatore di Contenuti IA", subtitle: "La scrittura personalizzata con IA è prevista, ma il servizio di generazione live non è ancora disponibile.", privacyTitle: "Qui non vengono raccolti dettagli della relazione", privacy: "Questa anteprima non contiene campi per il nome del partner o il contesto personale e non salva né trasmette informazioni sulla relazione. La generazione IA verrà attivata solo quando backend, privacy, regole di sicurezza e comportamento in cinque lingue saranno pronti.", boundaryTitle: "A cosa servirà lo strumento futuro", boundary: "Il futuro creatore potrà aiutare a scrivere messaggi e idee per la relazione. Il testo generato sarà un aiuto alla scrittura, non terapia, diagnosi, consulenza professionale o sostituto della comunicazione diretta e del giudizio personale.", useNow: "Usa questi strumenti già disponibili", loveNotes: "Note d’Amore", loveNotesDesc: "Scegli o invia una nota reale tramite il collegamento reciproco sicuro con il partner.", dateNight: "Serata di Coppia", dateNightDesc: "Crea un piano semplice in base a tempo e budget senza fornire contesto privato a O2OL.", cards: "Carte di Conversazione", cardsDesc: "Usa domande già pronte senza salvare le risposte.", open: "Apri strumento", coming: "Generazione IA: prossimamente" },
   de: {
-    title: "KI-Content-Ersteller",
-    subtitle: "Lassen Sie KI Ihnen helfen, personalisierten Inhalt für Ihre Beziehung zu erstellen",
-    back: "Zurück",
-    contentType: "Inhaltstyp",
-    contentTypes: {
-      loveNote: "Liebesbotschaft",
-      apology: "Entschuldigungsnachricht",
-      anniversary: "Jubiläumsnachricht",
-      dateIdea: "Date-Idee",
-      conversation: "Gesprächsstarter",
-      appreciation: "Wertschätzungsworte"
-    },
-    tone: "Ton",
-    tones: { romantic: "Romantisch", playful: "Verspielt", sincere: "Aufrichtig", passionate: "Leidenschaftlich", sweet: "Süß", funny: "Lustig" },
-    length: "Länge",
-    lengths: { short: "Kurz", medium: "Mittel", long: "Lang" },
-    additionalDetails: "Zusätzliche Details (Optional)",
-    detailsPlaceholder: "Fügen Sie spezifische Details, Erinnerungen oder Kontext hinzu...",
-    partnerName: "Name des Partners (Optional)",
-    partnerNamePlaceholder: "Name Ihres Partners",
-    generate: "Mit KI Generieren",
-    generating: "Erstellen...",
-    result: "Ihr Generierter Inhalt",
-    copy: "Kopieren",
-    copied: "Kopiert!",
-    download: "Herunterladen",
-    regenerate: "Erneut Generieren",
-    edit: "Bearbeiten & Personalisieren"
-  }
+    back: "Zurück", badge: "Vorschau", title: "KI-Content-Ersteller", subtitle: "Personalisierte KI-Texterstellung ist geplant, aber der Live-Generierungsdienst ist noch nicht verfügbar.", privacyTitle: "Hier werden keine Beziehungsdetails gesammelt", privacy: "Diese Vorschau enthält keine Felder für Partnernamen oder persönlichen Kontext und speichert oder überträgt keine Beziehungsinformationen. KI-Generierung wird erst aktiviert, wenn Backend, Datenschutzkontrollen, Sicherheitsregeln und das Verhalten in fünf Sprachen bereit sind.", boundaryTitle: "Wofür das zukünftige Werkzeug gedacht ist", boundary: "Der zukünftige Ersteller kann beim Formulieren von Beziehungsnachrichten und Ideen helfen. Generierter Text ist eine Schreibhilfe, keine Therapie, Diagnose, professionelle Beratung oder Ersatz für direkte Kommunikation und eigenes Urteilsvermögen.", useNow: "Diese funktionierenden Werkzeuge jetzt nutzen", loveNotes: "Liebesbotschaften", loveNotesDesc: "Wähle oder sende eine echte Nachricht über die sichere gegenseitige Partnerverknüpfung.", dateNight: "Date Night", dateNightDesc: "Erstelle einen einfachen Plan nach Zeit und Budget, ohne O2OL privaten Kontext zu geben.", cards: "Gesprächskarten", cardsDesc: "Nutze fertige Fragen für Gespräche, ohne Antworten zu speichern.", open: "Werkzeug öffnen", coming: "KI-Generierung: kommt später" },
 };
+
+const tools = [
+  ["loveNotes", "loveNotesDesc", "LoveNotes", Heart],
+  ["dateNight", "dateNightDesc", "DateNight", CalendarHeart],
+  ["cards", "cardsDesc", "ConversationCards", MessageCircle],
+];
 
 export default function AIContentCreator() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
-  const [formData, setFormData] = useState({
-    contentType: "",
-    tone: "",
-    length: "medium",
-    details: "",
-    partnerName: ""
-  });
-  const [generatedContent, setGeneratedContent] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const contentTypeIcons = {
-    loveNote: Heart,
-    apology: MessageCircle,
-    anniversary: Calendar,
-    dateIdea: Gift,
-    conversation: MessageCircle,
-    appreciation: Heart
-  };
-
-  const handleGenerate = async () => {
-    if (!formData.contentType || !formData.tone) {
-      toast.error("Please select content type and tone");
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      const lengthGuide = {
-        short: "50-100 words",
-        medium: "150-250 words",
-        long: "300-400 words"
-      };
-
-      const prompt = `Create a ${formData.tone} ${formData.contentType} for someone's romantic partner. 
-      ${formData.partnerName ? `The partner's name is ${formData.partnerName}.` : ''}
-      Length: ${lengthGuide[formData.length]}.
-      ${formData.details ? `Additional context: ${formData.details}` : ''}
-      
-      Make it heartfelt, genuine, and personal. Use beautiful language and emotional depth.`;
-
-      // TODO: Implement AI content generation with Supabase Edge Functions or external AI service (OpenAI, Anthropic, etc.)
-      // This requires setting up an Edge Function that calls an AI API
-      throw new Error('AI Content Creator feature requires implementation with Supabase Edge Functions or external AI service');
-      
-      // Example implementation would be:
-      // const { data, error } = await supabase.functions.invoke('generate-content', {
-      //   body: { prompt, contentType, tone, length, partnerName, details }
-      // });
-      // if (error) throw error;
-      // setGeneratedContent(data.content);
-      
-      toast.error('AI Content Creator feature requires implementation');
-    } catch (error) {
-      toast.error("Failed to generate content. Please try again.");
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
-    setCopied(true);
-    toast.success(t.copied);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownload = () => {
-    const blob = new Blob([generatedContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${formData.contentType}-${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Downloaded!");
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <Link
-            to={createPageUrl("Home")}
-            className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
+    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 px-4 py-10">
+      <div className="mx-auto max-w-5xl">
+        <Link to={createPageUrl("Home")} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-gray-600 hover:bg-white hover:text-purple-700"><ArrowLeft className="h-4 w-4" />{t.back}</Link>
+
+        <section className="mt-6 rounded-3xl border border-purple-100 bg-white p-7 text-center shadow-xl md:p-10">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white"><Sparkles className="h-8 w-8" /></div>
+          <span className="mt-5 inline-flex rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-800">{t.badge}</span>
+          <h1 className="mt-4 text-4xl font-bold text-gray-950 md:text-5xl">{t.title}</h1>
+          <p className="mx-auto mt-4 max-w-3xl text-lg leading-8 text-gray-600">{t.subtitle}</p>
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-purple-200 bg-purple-50 px-5 py-4 text-sm font-semibold text-purple-900">{t.coming}</div>
+        </section>
+
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <Card className="border-emerald-200 bg-emerald-50/70"><CardHeader><CardTitle className="flex items-center gap-2 text-emerald-950"><ShieldCheck className="h-5 w-5" />{t.privacyTitle}</CardTitle></CardHeader><CardContent className="leading-7 text-emerald-900">{t.privacy}</CardContent></Card>
+          <Card className="border-amber-200 bg-amber-50/70"><CardHeader><CardTitle className="text-amber-950">{t.boundaryTitle}</CardTitle></CardHeader><CardContent className="leading-7 text-amber-900">{t.boundary}</CardContent></Card>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mb-6 shadow-xl">
-            <Sparkles className="w-10 h-10 text-white" />
+        <section className="mt-10">
+          <h2 className="text-2xl font-bold text-gray-950">{t.useNow}</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+            {tools.map(([titleKey, descKey, page, Icon]) => (
+              <Card key={page} className="border-purple-100 shadow-sm">
+                <CardHeader><div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100 text-purple-700"><Icon className="h-5 w-5" /></div><CardTitle>{t[titleKey]}</CardTitle></CardHeader>
+                <CardContent><p className="leading-7 text-gray-600">{t[descKey]}</p><Button asChild variant="outline" className="mt-5 w-full"><Link to={createPageUrl(page)}>{t.open}</Link></Button></CardContent>
+              </Card>
+            ))}
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            {t.title}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            {t.subtitle}
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                Generate Content
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.contentType} *
-                </label>
-                <Select value={formData.contentType} onValueChange={(value) => setFormData({...formData, contentType: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t.contentType} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(t.contentTypes).map(([key, label]) => {
-                      const Icon = contentTypeIcons[key];
-                      return (
-                        <SelectItem key={key} value={key}>
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4" />
-                            {label}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.tone} *
-                </label>
-                <Select value={formData.tone} onValueChange={(value) => setFormData({...formData, tone: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t.tone} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(t.tones).map(([key, label]) => (
-                      <SelectItem key={key} value={label.toLowerCase()}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.length}
-                </label>
-                <Select value={formData.length} onValueChange={(value) => setFormData({...formData, length: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(t.lengths).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.partnerName}
-                </label>
-                <Input
-                  value={formData.partnerName}
-                  onChange={(e) => setFormData({...formData, partnerName: e.target.value})}
-                  placeholder={t.partnerNamePlaceholder}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t.additionalDetails}
-                </label>
-                <Textarea
-                  value={formData.details}
-                  onChange={(e) => setFormData({...formData, details: e.target.value})}
-                  placeholder={t.detailsPlaceholder}
-                  className="min-h-32"
-                />
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold text-lg py-6"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {t.generating}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    {t.generate}
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t.result}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AnimatePresence mode="wait">
-                {generatedContent ? (
-                  <motion.div
-                    key="content"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-4"
-                  >
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
-                      <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                        {generatedContent}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <Button
-                        onClick={handleCopy}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="w-4 h-4 mr-2 text-green-600" />
-                            {t.copied}
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4 mr-2" />
-                            {t.copy}
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={handleDownload}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        {t.download}
-                      </Button>
-                    </div>
-
-                    <Button
-                      onClick={handleGenerate}
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      {t.regenerate}
-                    </Button>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-20"
-                  >
-                    <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">
-                      Fill in the form and click generate to create AI-powered content
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

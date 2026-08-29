@@ -1,141 +1,122 @@
-// Supabase Edge Function: create-checkout-session
-// This function creates a Stripe checkout session for subscriptions
+import { withSupabase } from 'npm:@supabase/server@^1';
+import Stripe from 'npm:stripe@22.1.1';
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+const allowedPlans = new Set(['Premiere', 'Exclusive']);
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getPriceId(planName: string) {
+  if (planName === 'Premiere') return Deno.env.get('STRIPE_PRICE_PREMIERE') || '';
+  if (planName === 'Exclusive') return Deno.env.get('STRIPE_PRICE_EXCLUSIVE') || '';
+  return '';
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+function getSiteOrigin(req: Request) {
+  const configured = Deno.env.get('SITE_URL')?.trim();
+  const candidate = configured || req.headers.get('origin') || '';
   try {
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    })
+    const url = new URL(candidate);
+    if (url.protocol !== 'https:' && url.hostname !== 'localhost') return '';
+    return url.origin;
+  } catch {
+    return '';
+  }
+}
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
-
-    // Get user from JWT
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
-
-    if (!user) {
-      throw new Error('User not authenticated')
+export default {
+  fetch: withSupabase({ auth: 'user' }, async (req, ctx) => {
+    if (req.method !== 'POST') {
+      return Response.json({ error: 'method_not_allowed' }, { status: 405 });
     }
 
-    // Parse request body
-    const { priceId, planName, amount, userEmail } = await req.json()
+    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')?.trim();
+    if (!stripeSecret) {
+      return Response.json({ error: 'billing_not_configured' }, { status: 503 });
+    }
 
-    console.log('Creating checkout session:', { priceId, planName, amount, userEmail })
+    let payload: { planName?: string };
+    try {
+      payload = await req.json();
+    } catch {
+      return Response.json({ error: 'invalid_request' }, { status: 400 });
+    }
 
-    // Get or create Stripe customer
-    let customerId: string
+    const planName = payload.planName?.trim() || '';
+    if (!allowedPlans.has(planName)) {
+      return Response.json({ error: 'invalid_plan' }, { status: 400 });
+    }
 
-    // Check if user already has a Stripe customer ID
-    const { data: userData } = await supabaseClient
+    const priceId = getPriceId(planName);
+    if (!priceId) {
+      return Response.json({ error: 'billing_not_configured' }, { status: 503 });
+    }
+
+    const userId = String(ctx.userClaims?.id || ctx.jwtClaims?.sub || '');
+    const userEmail = String(ctx.userClaims?.email || '');
+    if (!userId) {
+      return Response.json({ error: 'authentication_required' }, { status: 401 });
+    }
+
+    const siteOrigin = getSiteOrigin(req);
+    if (!siteOrigin) {
+      return Response.json({ error: 'invalid_site_origin' }, { status: 400 });
+    }
+
+    const stripe = new Stripe(stripeSecret);
+
+    const { data: account, error: accountError } = await ctx.supabaseAdmin
       .from('users')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single()
+      .select('stripe_customer_id, subscription_plan, subscription_status')
+      .eq('id', userId)
+      .single();
 
-    if (userData?.stripe_customer_id) {
-      customerId = userData.stripe_customer_id
-    } else {
-      // Create new Stripe customer
+    if (accountError || !account) {
+      return Response.json({ error: 'account_not_found' }, { status: 404 });
+    }
+
+    if (account.subscription_plan === planName && account.subscription_status === 'active') {
+      return Response.json({ error: 'already_subscribed' }, { status: 409 });
+    }
+
+    let customerId = account.stripe_customer_id as string | null;
+    if (!customerId) {
       const customer = await stripe.customers.create({
-        email: userEmail || user.email,
-        metadata: {
-          supabase_user_id: user.id,
-        },
-      })
-      customerId = customer.id
+        email: userEmail || undefined,
+        metadata: { supabase_user_id: userId },
+      });
+      customerId = customer.id;
 
-      // Save customer ID to database
-      await supabaseClient
+      const { error: customerSaveError } = await ctx.supabaseAdmin
         .from('users')
-        .update({ stripe_customer_id: customerId })
-        .eq('id', user.id)
+        .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (customerSaveError) {
+        return Response.json({ error: 'customer_setup_failed' }, { status: 500 });
+      }
     }
 
-    // Stripe Price IDs (you need to create these in Stripe Dashboard)
-    const stripePriceIds: Record<string, string> = {
-      Basis: '', // Free plan, no price ID needed
-      Premiere: Deno.env.get('STRIPE_PRICE_PREMIERE') || '',
-      Exclusive: Deno.env.get('STRIPE_PRICE_EXCLUSIVE') || '',
-    }
-
-    const actualPriceId = stripePriceIds[planName] || priceId
-
-    if (!actualPriceId) {
-      throw new Error(`No price ID configured for plan: ${planName}`)
-    }
-
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: actualPriceId,
-          quantity: 1,
-        },
-      ],
       mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/subscription?canceled=true`,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${siteOrigin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteOrigin}/Subscription?canceled=true`,
+      client_reference_id: userId,
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         plan_name: planName,
       },
       subscription_data: {
         metadata: {
-          user_id: user.id,
+          user_id: userId,
           plan_name: planName,
         },
       },
-    })
+    });
 
-    console.log('Checkout session created:', session.id)
+    if (!session.url) {
+      return Response.json({ error: 'checkout_session_failed' }, { status: 502 });
+    }
 
-    return new Response(
-      JSON.stringify({
-        sessionId: session.id,
-        url: session.url,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-  } catch (error) {
-    console.error('Error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    )
-  }
-})
-
+    return Response.json({ url: session.url });
+  }),
+};

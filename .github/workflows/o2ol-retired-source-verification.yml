@@ -1,0 +1,33 @@
+name: O2OL Retired Source Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-retired-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify retired homepage components stay removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e src/components/home/StatsSection.jsx
+          test ! -e src/components/home/LanguageSection.jsx
+          test ! -e src/components/home/LoveNoteDemo.jsx
+          if grep -RInE 'Launching Worldwide in December 2025|Available in 6 Languages|Nederlands|magically appears on their phone|Schedule notes for special occasions' src --exclude-dir=node_modules; then
+            echo 'Retired launch claims or six-language UI returned to production source.'
+            exit 1
+          fi

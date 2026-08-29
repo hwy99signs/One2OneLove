@@ -1,0 +1,72 @@
+name: O2OL Auth Callback Routing
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - src/pages/AuthCallback.jsx
+      - scripts/add-auth-callback-route.mjs
+      - .github/workflows/o2ol-auth-callback-routing.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wire-auth-callback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wire auth callback route
+        run: node scripts/add-auth-callback-route.mjs
+
+      - name: Verify callback route and five languages
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'path="/auth/callback"' src/pages/index.jsx
+          grep -q 'exchangeCodeForSession' src/pages/AuthCallback.jsx
+          grep -q 'refreshUserProfile' src/pages/AuthCallback.jsx
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/AuthCallback.jsx; done
+
+      - name: Verify account security
+        run: node scripts/verify-o2ol-security.mjs
+
+      - name: Lint callback and router
+        run: >-
+          npx eslint
+          src/pages/AuthCallback.jsx
+          src/pages/index.jsx
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit only after verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/pages/index.jsx; then
+            echo 'Auth callback route already wired.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/index.jsx
+          git commit -m 'Route Supabase account confirmation callback'
+          git push origin HEAD:o2ol-build-branch-2026-08-18

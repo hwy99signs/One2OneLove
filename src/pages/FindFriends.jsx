@@ -1,312 +1,167 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Heart, Loader2, MapPin, Search, UserPlus, Users, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, ArrowLeft, Users, MapPin, Heart, MessageCircle, X, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { createPageUrl } from '@/utils';
-import { useLanguage } from '@/Layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllUsers, sendBuddyRequest, getSentBuddyRequests, cancelBuddyRequest } from '@/lib/buddyService';
+import { cancelBuddyRequest, getAllUsers, getMyBuddies, getSentBuddyRequests, sendBuddyRequest } from '@/lib/buddyService';
+import { useLanguage } from '@/Layout';
+import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
+
+const localeByLanguage = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
 
 const translations = {
   en: {
-    title: 'Find Buddies',
-    subtitle: 'Search for buddies and send buddy requests',
-    searchPlaceholder: 'Search by name, email, or location...',
-    noResults: 'No users found',
-    sendRequest: 'Send Request',
-    requestSent: 'Request Sent',
-    cancelRequest: 'Cancel Request',
-    requestSentSuccess: 'Buddy request sent successfully!',
-    requestCancelled: 'Buddy request cancelled',
-    location: 'Location',
-    relationshipStatus: 'Relationship Status',
-    sharedInterests: 'Shared Interests',
-    viewProfile: 'View Profile',
-    back: 'Back',
-  },
+    title: 'Find Buddies', subtitle: 'Discover people in the One2OneLove community and send a buddy request when you would like to connect.', searchPlaceholder: 'Search by name, location, bio, or relationship status…', loading: 'Loading community profiles…', noResults: 'No matching community profiles found.', send: 'Send Request', cancel: 'Cancel Request', sent: 'Buddy request sent.', cancelled: 'Buddy request cancelled.', loadError: 'Community profiles could not be loaded right now.', requestError: 'The buddy request could not be sent right now.', cancelError: 'The buddy request could not be cancelled right now.', signIn: 'Please sign in to use buddy connections.', signInButton: 'Sign In', location: 'Location', relationship: 'Relationship status', memberSince: 'Member since', back: 'Back to Community', unknownUser: 'One2OneLove Member', privacy: 'Only profile information members choose to share for community discovery is shown here. Account email and billing information are not part of the buddy directory. New private chats require an accepted buddy connection or reciprocal partner link.' },
+  es: {
+    title: 'Encontrar Amigos', subtitle: 'Descubre personas de la comunidad One2OneLove y envía una solicitud cuando quieras conectar.', searchPlaceholder: 'Buscar por nombre, ubicación, biografía o estado de relación…', loading: 'Cargando perfiles de la comunidad…', noResults: 'No se encontraron perfiles que coincidan.', send: 'Enviar Solicitud', cancel: 'Cancelar Solicitud', sent: 'Solicitud enviada.', cancelled: 'Solicitud cancelada.', loadError: 'No se pudieron cargar los perfiles de la comunidad en este momento.', requestError: 'No se pudo enviar la solicitud en este momento.', cancelError: 'No se pudo cancelar la solicitud en este momento.', signIn: 'Inicia sesión para usar las conexiones de amistad.', signInButton: 'Iniciar Sesión', location: 'Ubicación', relationship: 'Estado de relación', memberSince: 'Miembro desde', back: 'Volver a Comunidad', unknownUser: 'Miembro de One2OneLove', privacy: 'Aquí solo se muestra la información de perfil que los miembros comparten para descubrir la comunidad. El correo de la cuenta y la información de facturación no forman parte del directorio. Los nuevos chats privados requieren una conexión aceptada o un vínculo recíproco de pareja.' },
+  fr: {
+    title: 'Trouver des Amis', subtitle: 'Découvrez des personnes de la communauté One2OneLove et envoyez une demande lorsque vous souhaitez vous connecter.', searchPlaceholder: 'Rechercher par nom, lieu, bio ou statut relationnel…', loading: 'Chargement des profils de la communauté…', noResults: 'Aucun profil correspondant trouvé.', send: 'Envoyer une Demande', cancel: 'Annuler la Demande', sent: 'Demande envoyée.', cancelled: 'Demande annulée.', loadError: 'Les profils de la communauté ne peuvent pas être chargés actuellement.', requestError: 'La demande ne peut pas être envoyée actuellement.', cancelError: 'La demande ne peut pas être annulée actuellement.', signIn: 'Connectez-vous pour utiliser les connexions entre membres.', signInButton: 'Se Connecter', location: 'Lieu', relationship: 'Statut relationnel', memberSince: 'Membre depuis', back: 'Retour à la Communauté', unknownUser: 'Membre One2OneLove', privacy: 'Seules les informations de profil que les membres choisissent de partager pour la découverte communautaire sont affichées ici. L’e-mail du compte et les informations de facturation ne font pas partie du répertoire. Les nouvelles conversations privées exigent une connexion acceptée ou un lien de partenaire réciproque.' },
+  it: {
+    title: 'Trova Amici', subtitle: 'Scopri persone nella comunità One2OneLove e invia una richiesta quando vuoi entrare in contatto.', searchPlaceholder: 'Cerca per nome, località, bio o stato della relazione…', loading: 'Caricamento profili della comunità…', noResults: 'Nessun profilo corrispondente trovato.', send: 'Invia Richiesta', cancel: 'Annulla Richiesta', sent: 'Richiesta inviata.', cancelled: 'Richiesta annullata.', loadError: 'I profili della comunità non possono essere caricati in questo momento.', requestError: 'La richiesta non può essere inviata in questo momento.', cancelError: 'La richiesta non può essere annullata in questo momento.', signIn: 'Accedi per usare le connessioni tra membri.', signInButton: 'Accedi', location: 'Località', relationship: 'Stato della relazione', memberSince: 'Membro dal', back: 'Torna alla Comunità', unknownUser: 'Membro One2OneLove', privacy: 'Qui vengono mostrate solo le informazioni di profilo che i membri scelgono di condividere per la scoperta della comunità. Email dell’account e dati di fatturazione non fanno parte della directory. Le nuove chat private richiedono una connessione accettata o un collegamento reciproco tra partner.' },
+  de: {
+    title: 'Freunde Finden', subtitle: 'Entdecke Menschen in der One2OneLove-Community und sende eine Anfrage, wenn du dich verbinden möchtest.', searchPlaceholder: 'Nach Name, Ort, Bio oder Beziehungsstatus suchen…', loading: 'Community-Profile werden geladen…', noResults: 'Keine passenden Community-Profile gefunden.', send: 'Anfrage Senden', cancel: 'Anfrage Abbrechen', sent: 'Freundschaftsanfrage gesendet.', cancelled: 'Freundschaftsanfrage abgebrochen.', loadError: 'Community-Profile können derzeit nicht geladen werden.', requestError: 'Die Anfrage kann derzeit nicht gesendet werden.', cancelError: 'Die Anfrage kann derzeit nicht abgebrochen werden.', signIn: 'Bitte melde dich an, um Freundschaftsverbindungen zu nutzen.', signInButton: 'Anmelden', location: 'Ort', relationship: 'Beziehungsstatus', memberSince: 'Mitglied seit', back: 'Zurück zur Community', unknownUser: 'One2OneLove-Mitglied', privacy: 'Hier werden nur Profilinformationen angezeigt, die Mitglieder für die Community-Suche freigeben. Konto-E-Mail und Abrechnungsdaten gehören nicht zum Verzeichnis. Neue private Chats erfordern eine angenommene Buddy-Verbindung oder eine gegenseitige Partnerverknüpfung.' },
 };
-
-// No more mock data - using real users from Supabase!
 
 export default function FindFriends() {
   const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const { user } = useAuth();
   const t = translations[currentLanguage] || translations.en;
+  const locale = localeByLanguage[currentLanguage] || localeByLanguage.en;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [sentRequests, setSentRequests] = useState(new Map()); // Map of userId -> requestId
+  const [sentRequests, setSentRequests] = useState(new Map());
+  const [acceptedBuddyIds, setAcceptedBuddyIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
 
-  // Fetch users and sent requests on mount
   useEffect(() => {
+    let active = true;
+
     const fetchData = async () => {
-      console.log('🚀 FindFriends useEffect triggered');
-      console.log('👤 Current user:', user);
-      console.log('🆔 User ID:', user?.id);
-      
       if (!user?.id) {
-        console.log('⚠️ No user ID found - user not signed in?');
         setLoading(false);
-        toast.error('Please sign in to see users');
         return;
       }
-      
+
       setLoading(true);
       try {
-        console.log('🔍 Fetching users for user:', user.id);
-        // Fetch all users (increased limit to 100)
-        const usersData = await getAllUsers(user.id, { limit: 100 });
-        console.log('✅ Fetched users:', usersData.length);
-        console.log('👥 Users data:', usersData);
-        
-        // Fetch sent requests to know which users we've already sent requests to
-        const sentRequestsData = await getSentBuddyRequests(user.id);
-        console.log('📤 Sent requests:', sentRequestsData.length);
-        const requestsMap = new Map(
-          sentRequestsData.map(req => [req.to_user_id, req.id])
-        );
-        
+        const [usersData, sentRequestsData, buddiesData] = await Promise.all([
+          getAllUsers(user.id, { limit: 100, sortBy: 'created_at', sortOrder: 'desc' }),
+          getSentBuddyRequests(user.id),
+          getMyBuddies(user.id),
+        ]);
+        if (!active) return;
         setUsers(usersData);
-        setFilteredUsers(usersData);
-        setSentRequests(requestsMap);
-        
-        if (usersData.length === 0) {
-          console.log('⚠️ Query returned 0 users - RLS policy issue?');
-        }
-      } catch (error) {
-        console.error('❌ Error fetching users:', error);
-        console.error('❌ Error details:', error.message, error.code, error);
-        toast.error(error.message || 'Failed to load users');
+        setSentRequests(new Map(sentRequestsData.map((request) => [request.to_user_id, request.id])));
+        setAcceptedBuddyIds(new Set(buddiesData.map((buddy) => buddy.id).filter(Boolean)));
+      } catch {
+        if (active) toast.error(t.loadError);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchData();
-  }, [user?.id]);
+    return () => { active = false; };
+  }, [user?.id, t.loadError]);
 
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredUsers(users);
-      console.log(`Showing all ${users.length} users`);
-      return;
-    }
-
-    const lowerQuery = query.toLowerCase();
-    const filtered = users.filter((u) => {
-      // Search in name (required field)
-      if (u.name?.toLowerCase().includes(lowerQuery)) return true;
-      
-      // Search in email (required field)
-      if (u.email?.toLowerCase().includes(lowerQuery)) return true;
-      
-      // Search in location (optional field - only if exists)
-      if (u.location && u.location.toLowerCase().includes(lowerQuery)) return true;
-      
-      // Search in bio (optional field - only if exists)
-      if (u.bio && u.bio.toLowerCase().includes(lowerQuery)) return true;
-      
-      // Search in relationship status (optional field)
-      if (u.relationship_status && u.relationship_status.toLowerCase().includes(lowerQuery)) return true;
-      
-      return false;
-    });
-    
-    setFilteredUsers(filtered);
-    console.log(`Search for "${query}" returned ${filtered.length} results out of ${users.length} total users`);
-  };
+  const filteredUsers = useMemo(() => {
+    const availableUsers = users.filter((profile) => !acceptedBuddyIds.has(profile.id));
+    const needle = searchQuery.trim().toLocaleLowerCase(locale);
+    if (!needle) return availableUsers;
+    return availableUsers.filter((profile) => [profile.name, profile.location, profile.bio, profile.relationship_status]
+      .filter(Boolean)
+      .some((value) => String(value).toLocaleLowerCase(locale).includes(needle)));
+  }, [acceptedBuddyIds, locale, searchQuery, users]);
 
   const handleSendRequest = async (toUserId) => {
     if (!user?.id) {
-      toast.error('Please sign in to send buddy requests');
+      toast.error(t.signIn);
       return;
     }
-
     try {
       const request = await sendBuddyRequest(user.id, toUserId);
-      setSentRequests((prev) => new Map([...prev, [toUserId, request.id]]));
-      toast.success(t.requestSentSuccess);
-    } catch (error) {
-      console.error('Error sending request:', error);
-      toast.error(error.message || 'Failed to send buddy request');
+      setSentRequests((previous) => new Map([...previous, [toUserId, request.id]]));
+      toast.success(t.sent);
+    } catch {
+      toast.error(t.requestError);
     }
   };
 
   const handleCancelRequest = async (toUserId) => {
     const requestId = sentRequests.get(toUserId);
     if (!requestId || !user?.id) return;
-
     try {
       await cancelBuddyRequest(requestId, user.id);
-      setSentRequests((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(toUserId);
-        return newMap;
+      setSentRequests((previous) => {
+        const next = new Map(previous);
+        next.delete(toUserId);
+        return next;
       });
-      toast.success(t.requestCancelled);
-    } catch (error) {
-      console.error('Error cancelling request:', error);
-      toast.error(error.message || 'Failed to cancel request');
+      toast.success(t.cancelled);
+    } catch {
+      toast.error(t.cancelError);
     }
   };
 
+  const formatMemberDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short' }).format(date);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(createPageUrl('Community'))}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t.back}
-          </Button>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900">{t.title}</h1>
-          </div>
-          <p className="text-gray-600 mt-2">{t.subtitle}</p>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-8">
+      <div className="mx-auto max-w-6xl">
+        <Button variant="ghost" onClick={() => navigate(createPageUrl('Community'))} className="mb-4"><ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />{t.back}</Button>
 
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              type="text"
-              placeholder={t.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-12 py-6 text-lg rounded-xl border-2 border-gray-200 focus:border-purple-500"
-            />
-          </div>
-        </div>
+        <header className="mb-8">
+          <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg"><Users className="h-6 w-6 text-white" aria-hidden="true" /></div><h1 className="text-4xl font-bold text-gray-900">{t.title}</h1></div>
+          <p className="mt-2 max-w-3xl text-gray-600">{t.subtitle}</p>
+          <p className="mt-3 max-w-4xl text-xs leading-5 text-gray-500">{t.privacy}</p>
+        </header>
 
-        {/* Results */}
-        {loading ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Loader2 className="w-16 h-16 text-purple-500 mx-auto mb-4 animate-spin" />
-              <p className="text-gray-600 text-lg">Loading users...</p>
-            </CardContent>
-          </Card>
-        ) : filteredUsers.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg">{t.noResults}</p>
-            </CardContent>
-          </Card>
+        {!user?.id ? (
+          <Card className="py-10 text-center"><CardContent><Users className="mx-auto mb-4 h-12 w-12 text-gray-300" aria-hidden="true" /><p className="text-gray-600">{t.signIn}</p><Button className="mt-5" onClick={() => navigate(createPageUrl('SignIn'))}>{t.signInButton}</Button></CardContent></Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredUsers.map((userData) => {
-              const hasSentRequest = sentRequests.has(userData.id);
-              // Generate avatar if user doesn't have one
-              const avatarUrl = userData.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`;
-              const initials = userData.name?.charAt(0).toUpperCase() || '?';
+          <>
+            <div className="relative mb-8"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" aria-hidden="true" /><Input type="search" aria-label={t.searchPlaceholder} placeholder={t.searchPlaceholder} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="rounded-xl border-2 border-gray-200 py-6 pl-12 text-lg focus:border-purple-500" /></div>
 
-              return (
-                <Card key={userData.id} className="hover:shadow-xl transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <Avatar className="w-16 h-16">
-                            <AvatarImage src={avatarUrl} alt={userData.name} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                              {initials}
-                            </AvatarFallback>
-                          </Avatar>
+            {loading ? (
+              <Card className="py-12 text-center"><CardContent><Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-purple-500" aria-hidden="true" /><p className="text-gray-600" role="status">{t.loading}</p></CardContent></Card>
+            ) : filteredUsers.length === 0 ? (
+              <Card className="py-12 text-center"><CardContent><Users className="mx-auto mb-4 h-16 w-16 text-gray-300" aria-hidden="true" /><p className="text-lg text-gray-600">{t.noResults}</p></CardContent></Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredUsers.map((profile) => {
+                  const hasSentRequest = sentRequests.has(profile.id);
+                  const initials = profile.name?.trim()?.charAt(0)?.toUpperCase() || '?';
+                  return (
+                    <Card key={profile.id} className="transition-shadow hover:shadow-xl">
+                      <CardHeader><div className="flex items-center gap-3"><Avatar className="h-16 w-16"><AvatarImage src={profile.avatar_url || undefined} alt="" /><AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">{initials}</AvatarFallback></Avatar><CardTitle className="text-lg">{profile.name || t.unknownUser}</CardTitle></div></CardHeader>
+                      <CardContent>
+                        {profile.bio && <p className="mb-4 line-clamp-3 text-sm leading-6 text-gray-600">{profile.bio}</p>}
+                        <div className="mb-4 space-y-2">
+                          {profile.location && <div className="flex items-center gap-2 text-sm text-gray-600"><MapPin className="h-4 w-4" aria-hidden="true" /><span><span className="sr-only">{t.location}: </span>{profile.location}</span></div>}
+                          {profile.relationship_status && <div className="flex items-center gap-2 text-sm text-gray-600"><Heart className="h-4 w-4" aria-hidden="true" /><span><span className="sr-only">{t.relationship}: </span>{profile.relationship_status}</span></div>}
+                          {profile.created_at && <div className="flex items-center gap-2 text-sm text-gray-500"><Users className="h-4 w-4" aria-hidden="true" /><span>{t.memberSince} {formatMemberDate(profile.created_at)}</span></div>}
                         </div>
-                        <div>
-                          <CardTitle className="text-lg">{userData.name}</CardTitle>
-                          <p className="text-sm text-gray-500">{userData.email}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {userData.bio && (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {userData.bio}
-                      </p>
-                    )}
-
-                    <div className="space-y-2 mb-4">
-                      {/* Location is optional - only show if exists */}
-                      {userData.location && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          <span>{userData.location}</span>
-                        </div>
-                      )}
-                      {/* Relationship status is optional - only show if exists */}
-                      {userData.relationship_status && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Heart className="w-4 h-4" />
-                          <span className="capitalize">{userData.relationship_status}</span>
-                        </div>
-                      )}
-                      {/* Always show member since */}
-                      {userData.created_at && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Users className="w-4 h-4" />
-                          <span>Member since {new Date(userData.created_at).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2 mt-4">
-                      {hasSentRequest ? (
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => handleCancelRequest(userData.id)}
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          {t.cancelRequest}
-                        </Button>
-                      ) : (
-                        <Button
-                          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                          onClick={() => handleSendRequest(userData.id)}
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          {t.sendRequest}
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          // Navigate to chat page with this user
-                          navigate(`${createPageUrl('Chat')}?user=${userData.id}&name=${encodeURIComponent(userData.name)}`);
-                        }}
-                        title="Send Message"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                        {hasSentRequest ? <Button variant="outline" className="w-full" onClick={() => handleCancelRequest(profile.id)}><X className="mr-2 h-4 w-4" aria-hidden="true" />{t.cancel}</Button> : <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" onClick={() => handleSendRequest(profile.id)}><UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />{t.send}</Button>}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
-

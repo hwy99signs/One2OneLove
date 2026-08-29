@@ -1,0 +1,109 @@
+name: O2OL Legacy Trust Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-legacy-trust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language compatibility pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/pages/ProfessionalSignup.jsx
+            src/pages/TherapistSignup.jsx
+            src/pages/InfluencerSignup.jsx
+            src/pages/LGBTQSupport.jsx
+            src/pages/ArticlesSupport.jsx
+            src/pages/InfluencersSupport.jsx
+            src/pages/Blog.jsx
+            src/pages/Reviews.jsx
+            src/pages/Suggestions.jsx
+            src/pages/Leaderboard.jsx
+            src/pages/Achievements.jsx
+            src/pages/PremiumFeatures.jsx
+            src/pages/Subscription.jsx
+          )
+          for file in "${files[@]}"; do
+            test -f "$file"
+            for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
+          done
+
+      - name: Reject fabricated or inactive launch claims
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq '123456|mockLeaderboard|lovenotes\.app|Dr\. Sarah|Dr\. Emily|Emma & James|2\.5M|1\.8M|950K|4\.9' \
+            src/pages/ProfessionalSignup.jsx \
+            src/pages/TherapistSignup.jsx \
+            src/pages/InfluencerSignup.jsx \
+            src/pages/LGBTQSupport.jsx \
+            src/pages/ArticlesSupport.jsx \
+            src/pages/InfluencersSupport.jsx \
+            src/pages/Blog.jsx \
+            src/pages/Reviews.jsx \
+            src/pages/Suggestions.jsx \
+            src/pages/Leaderboard.jsx \
+            src/pages/Achievements.jsx \
+            src/pages/PremiumFeatures.jsx \
+            src/pages/Subscription.jsx; then
+            echo 'Legacy compatibility surfaces restored fabricated or inactive claims.'
+            exit 1
+          fi
+          grep -q 'Post Launch' src/pages/ProfessionalSignup.jsx
+          grep -q 'Post Launch' src/pages/TherapistSignup.jsx
+          grep -q 'planned for post launch' src/pages/LGBTQSupport.jsx
+          grep -q 'fabricated expert article catalog' src/pages/ArticlesSupport.jsx
+          grep -q 'unverified influencer or expert directory' src/pages/InfluencersSupport.jsx
+          grep -q 'invented authors' src/pages/Blog.jsx
+          grep -q 'fabricated ratings or testimonials' src/pages/Reviews.jsx
+          grep -q 'success message without actually saving' src/pages/Suggestions.jsx
+          grep -q 'fabricated people' src/pages/Leaderboard.jsx
+          grep -q 'pretend badges' src/pages/Achievements.jsx
+          grep -q 'pretend unlocks' src/pages/PremiumFeatures.jsx
+          grep -q 'not opening paid membership checkout yet' src/pages/Subscription.jsx
+
+      - name: Lint trust surfaces
+        run: >-
+          npx eslint
+          src/pages/ProfessionalSignup.jsx
+          src/pages/TherapistSignup.jsx
+          src/pages/InfluencerSignup.jsx
+          src/pages/LGBTQSupport.jsx
+          src/pages/ArticlesSupport.jsx
+          src/pages/InfluencersSupport.jsx
+          src/pages/Blog.jsx
+          src/pages/Reviews.jsx
+          src/pages/Suggestions.jsx
+          src/pages/Leaderboard.jsx
+          src/pages/Achievements.jsx
+          src/pages/PremiumFeatures.jsx
+          src/pages/Subscription.jsx
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

@@ -1,0 +1,60 @@
+name: O2OL Auth Privacy
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-auth-privacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify AuthContext privacy and session invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f src/contexts/AuthContext.jsx
+          if grep -Eq 'console\.(log|warn|error|debug|info|trace)' src/contexts/AuthContext.jsx; then
+            echo 'AuthContext must not emit account/session diagnostics to the browser console.'
+            exit 1
+          fi
+          grep -q 'onAuthStateChange' src/contexts/AuthContext.jsx
+          grep -q 'getSession' src/contexts/AuthContext.jsx
+          grep -q 'signInWithPassword' src/contexts/AuthContext.jsx
+          grep -q 'signOut' src/contexts/AuthContext.jsx
+          grep -q 'signUp' src/contexts/AuthContext.jsx
+          grep -q 'refreshUserProfile' src/contexts/AuthContext.jsx
+          grep -q "eq('id', authUser.id)" src/contexts/AuthContext.jsx
+          grep -q "upsert(profilePayload" src/contexts/AuthContext.jsx
+
+      - name: Verify O2OL account security
+        run: node scripts/verify-o2ol-security.mjs
+
+      - name: Verify launch source
+        run: node scripts/verify-o2ol-launch.mjs
+
+      - name: Lint AuthContext
+        run: npx eslint src/contexts/AuthContext.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

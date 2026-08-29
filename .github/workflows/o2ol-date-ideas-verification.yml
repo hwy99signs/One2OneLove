@@ -1,0 +1,66 @@
+name: O2OL Date Ideas Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-date-ideas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language Date Ideas surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/pages/DateIdeas.jsx src/components/dateideas/CustomDateForm.jsx; do
+            for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
+          done
+          grep -q 'createPageUrl("DateNight")' src/pages/DateIdeas.jsx
+          grep -q 'custom_date_ideas' src/pages/DateIdeas.jsx
+          grep -q '.eq("user_id", user.id)' src/pages/DateIdeas.jsx
+          grep -q 'writableFields' src/pages/DateIdeas.jsx
+          grep -q 'Saved date ideas are private' src/components/dateideas/CustomDateForm.jsx
+
+      - name: Reject unsupported or misleading Date Ideas behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'is_public|duration_hours|difficulty|shareWithPartner|Share with partner|Share with community|dateShared|console\.' src/pages/DateIdeas.jsx src/components/dateideas/CustomDateForm.jsx; then
+            echo 'Date Ideas must remain aligned to the live private custom_date_ideas schema.'
+            exit 1
+          fi
+          if grep -Eq 'partner_email|partner_id|community_id' src/pages/DateIdeas.jsx src/components/dateideas/CustomDateForm.jsx; then
+            echo 'Date Ideas must not imply partner/community sharing that the live table does not support.'
+            exit 1
+          fi
+          if grep -Eq '\.select\("\*"\)|\.select\('\''\*' src/pages/DateIdeas.jsx; then
+            echo 'Date Ideas must use an explicit column list.'
+            exit 1
+          fi
+
+      - name: Lint Date Ideas surfaces
+        run: npx eslint src/pages/DateIdeas.jsx src/components/dateideas/CustomDateForm.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

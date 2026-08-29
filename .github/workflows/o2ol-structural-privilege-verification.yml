@@ -1,0 +1,43 @@
+name: O2OL Structural Privilege Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-structural-privileges:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify structural privilege lockdown source
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=supabase-authenticated-structural-privilege-lockdown.sql
+          test -f "$file"
+          grep -q 'revoke truncate, trigger, references on table' "$file"
+          grep -q 'public.users' "$file"
+          grep -q 'public.shared_journals' "$file"
+          grep -q 'public.memories' "$file"
+          grep -q 'public.calendar_events' "$file"
+          grep -q 'revoke all privileges on table public.goals_with_steps from authenticated' "$file"
+          grep -q 'revoke all privileges on table public.milestones_with_next_date from authenticated' "$file"
+          grep -q 'revoke all privileges on table public.user_presence_view from authenticated' "$file"
+          grep -q 'grant select on table public.goals_with_steps to authenticated' "$file"
+          grep -q 'grant select on table public.milestones_with_next_date to authenticated' "$file"
+          grep -q 'grant select on table public.user_presence_view to authenticated' "$file"
+          if grep -Eiq 'grant[[:space:]]+(truncate|trigger|references)' supabase-*.sql; then
+            echo 'Production migration source must not regrant structural browser privileges.'
+            exit 1
+          fi

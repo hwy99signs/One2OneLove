@@ -1,0 +1,89 @@
+name: O2OL Engagement Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-engagement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify engagement files and routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f src/pages/ConversationCards.jsx
+          test -f src/pages/WeeklyCheckIn.jsx
+          test -f src/pages/RelationshipRituals.jsx
+          test -f src/pages/RelationshipLibrary.jsx
+          test -f src/components/home/FeaturesGrid.jsx
+          grep -q 'path="/ConversationCards"' src/pages/index.jsx
+          grep -q 'path="/WeeklyCheckIn"' src/pages/index.jsx
+          grep -q 'path="/RelationshipRituals"' src/pages/index.jsx
+          grep -q '/ConversationCards' src/pages/RelationshipLibrary.jsx
+          grep -q '/WeeklyCheckIn' src/pages/RelationshipLibrary.jsx
+          grep -q '/RelationshipRituals' src/pages/RelationshipLibrary.jsx
+          grep -q '/ConversationCards' src/components/home/FeaturesGrid.jsx
+          grep -q '/WeeklyCheckIn' src/components/home/FeaturesGrid.jsx
+          grep -q '/RelationshipRituals' src/components/home/FeaturesGrid.jsx
+
+      - name: Verify five active languages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            src/pages/ConversationCards.jsx \
+            src/pages/WeeklyCheckIn.jsx \
+            src/pages/RelationshipRituals.jsx \
+            src/pages/RelationshipLibrary.jsx \
+            src/components/home/FeaturesGrid.jsx; do
+            for lang in en es fr it de; do
+              grep -q "${lang}:" "$file"
+            done
+          done
+
+      - name: Verify privacy-first engagement behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq "supabase|localStorage|sessionStorage|fetch\(" src/pages/ConversationCards.jsx src/pages/WeeklyCheckIn.jsx src/pages/RelationshipRituals.jsx; then
+            echo 'Privacy-first engagement tools must not persist or transmit user answers or selections.'
+            exit 1
+          fi
+          grep -q 'not saved' src/pages/ConversationCards.jsx
+          grep -q 'not saved' src/pages/WeeklyCheckIn.jsx
+          grep -q 'does not save or transmit' src/pages/RelationshipRituals.jsx
+
+      - name: Lint engagement surfaces
+        run: >-
+          npx eslint
+          src/pages/ConversationCards.jsx
+          src/pages/WeeklyCheckIn.jsx
+          src/pages/RelationshipRituals.jsx
+          src/pages/RelationshipLibrary.jsx
+          src/components/home/FeaturesGrid.jsx
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

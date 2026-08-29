@@ -1,0 +1,67 @@
+name: O2OL Payment Confirmation Hardening
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - scripts/templates/PaymentSuccess.secure.jsx
+      - .github/workflows/o2ol-payment-confirmation-hardening.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stage webhook-confirmed payment page
+        run: cp scripts/templates/PaymentSuccess.secure.jsx src/pages/PaymentSuccess.jsx
+
+      - name: Verify no client-side billing activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'getUserSubscription' src/pages/PaymentSuccess.jsx
+          grep -q "state === 'confirmed'" src/pages/PaymentSuccess.jsx
+          if grep -Eq "subscription_plan[[:space:]]*:|\.update\(" src/pages/PaymentSuccess.jsx; then
+            echo 'Payment result page must not mutate subscription state.'
+            exit 1
+          fi
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/PaymentSuccess.jsx; done
+
+      - name: Lint payment result page
+        run: npx eslint src/pages/PaymentSuccess.jsx --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit only after verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/pages/PaymentSuccess.jsx; then
+            echo 'Payment confirmation page already hardened.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/PaymentSuccess.jsx
+          git commit -m 'Confirm paid access from verified subscription state'
+          git push origin HEAD:o2ol-build-branch-2026-08-18

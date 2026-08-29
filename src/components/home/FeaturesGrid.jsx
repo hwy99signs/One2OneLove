@@ -1,166 +1,196 @@
 import React from "react";
-import { 
-  Heart, 
-  MessageSquare, 
-  Gamepad2, 
-  BookOpen, 
-  Award, 
-  Lock,
-  Ship,
-  Crown,
-  Mail,
+import {
+  BookOpen,
+  CalendarHeart,
+  Gamepad2,
+  Heart,
+  HeartHandshake,
+  MessageCircle,
+  MessageSquare,
+  Radio,
+  Sparkles,
+  Target,
+  Tv2,
   Users,
-  Star,
-  Shield
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useLanguage } from "@/Layout";
+
+const translations = {
+  en: {
+    heading: "Explore One2OneLove",
+    subheading: "Practical relationship tools, conversations, activities, and support in one place.",
+    items: [
+      ["Love Notes", "Send thoughtful messages that keep appreciation visible.", "/LoveNotes", "heart"],
+      ["Daily Relationship Question", "Use one meaningful question each day to start a better conversation.", "/DailyQuestion", "message"],
+      ["Conversation Cards", "Choose a conversation deck and take turns answering prompts designed to deepen connection.", "/ConversationCards", "message"],
+      ["Weekly Relationship Check-In", "Use a short private weekly conversation to notice what is working and what needs attention.", "/WeeklyCheckIn", "support"],
+      ["Relationship Rituals", "Choose small repeatable habits that make attention and connection more dependable.", "/RelationshipRituals", "sparkles"],
+      ["Marriage Matters", "A dedicated space for married couples to reconnect and keep growing.", "/MarriageMatters", "marriage"],
+      ["The O2OL Show", "Join O2OL and AMORA for thoughtful conversations about love, marriage, dating, and connection.", "/O2OLShow", "show"],
+      ["Relationship Library", "Start with what your relationship needs and find the most useful O2OL tools by goal.", "/RelationshipLibrary", "book"],
+      ["Couples Challenges", "Build connection through seven small relationship actions each week.", "/CouplesChallenges", "game"],
+      ["Date Night", "Choose your time and budget and get a simple, intentional date-night plan.", "/DateNight", "calendar"],
+      ["Global Relationship Room", "Watch relationship programming, creator conversations, and replays.", "/GlobalRelationshipRoom", "radio"],
+      ["Date Ideas", "Find simple ways to make intentional time together more enjoyable.", "/DateIdeas", "calendar"],
+      ["Relationship Quizzes", "Use guided questions to learn more about yourself and your relationship.", "/RelationshipQuizzes", "quiz"],
+      ["Communication Practice", "Practice healthier ways to listen, express needs, and work through tension.", "/CommunicationPractice", "sparkles"],
+      ["Couple Activities", "Choose activities designed to build fun, teamwork, and connection.", "/CoupleActivities", "game"],
+      ["Shared Journals", "Create a shared place for reflections, memories, and relationship growth.", "/SharedJournals", "book"],
+      ["Relationship Goals", "Turn good intentions into shared goals you can work on together.", "/RelationshipGoals", "target"],
+      ["Community", "Connect with other people around relationship conversations and experiences.", "/Community", "users"],
+      ["Relationship Support", "Find One2OneLove tools and support pathways when your relationship needs extra care.", "/CoupleSupport", "support"],
+    ],
+  },
+  es: {
+    heading: "Explora One2OneLove",
+    subheading: "Herramientas prácticas, conversaciones, actividades y apoyo para relaciones en un solo lugar.",
+    items: [
+      ["Notas de Amor", "Envía mensajes considerados que mantengan visible el aprecio.", "/LoveNotes", "heart"],
+      ["Pregunta Diaria para la Relación", "Usa una pregunta significativa cada día para iniciar una mejor conversación.", "/DailyQuestion", "message"],
+      ["Tarjetas de Conversación", "Elige un grupo de preguntas y túrnense para responder ideas diseñadas para profundizar la conexión.", "/ConversationCards", "message"],
+      ["Revisión Semanal de la Relación", "Usa una conversación privada y breve cada semana para reconocer lo que funciona y lo que necesita atención.", "/WeeklyCheckIn", "support"],
+      ["Rituales de Relación", "Elige pequeños hábitos repetibles que hagan más constante la atención y la conexión.", "/RelationshipRituals", "sparkles"],
+      ["El Matrimonio Importa", "Un espacio dedicado a matrimonios que quieren reconectarse y seguir creciendo.", "/MarriageMatters", "marriage"],
+      ["El Programa O2OL", "Acompaña a O2OL y AMORA en conversaciones reflexivas sobre amor, matrimonio, citas y conexión.", "/O2OLShow", "show"],
+      ["Biblioteca de Relaciones", "Comienza con lo que tu relación necesita y encuentra las herramientas O2OL más útiles según tu objetivo.", "/RelationshipLibrary", "book"],
+      ["Retos para Parejas", "Fortalezcan la conexión con siete pequeñas acciones para la relación cada semana.", "/CouplesChallenges", "game"],
+      ["Noche de Cita", "Elige el tiempo y el presupuesto y recibe un plan sencillo e intencional para una cita.", "/DateNight", "calendar"],
+      ["Sala Global de Relaciones", "Mira programación sobre relaciones, conversaciones de creadores y repeticiones.", "/GlobalRelationshipRoom", "radio"],
+      ["Ideas para Citas", "Encuentra formas sencillas de hacer más agradable el tiempo intencional juntos.", "/DateIdeas", "calendar"],
+      ["Cuestionarios de Relaciones", "Usa preguntas guiadas para conocerte mejor y comprender mejor tu relación.", "/RelationshipQuizzes", "quiz"],
+      ["Práctica de Comunicación", "Practica maneras más saludables de escuchar, expresar necesidades y manejar tensiones.", "/CommunicationPractice", "sparkles"],
+      ["Actividades para Parejas", "Elige actividades diseñadas para fortalecer diversión, trabajo en equipo y conexión.", "/CoupleActivities", "game"],
+      ["Diarios Compartidos", "Crea un espacio compartido para reflexiones, recuerdos y crecimiento de la relación.", "/SharedJournals", "book"],
+      ["Metas de Relación", "Convierte buenas intenciones en metas compartidas que puedan trabajar juntos.", "/RelationshipGoals", "target"],
+      ["Comunidad", "Conecta con otras personas alrededor de conversaciones y experiencias sobre relaciones.", "/Community", "users"],
+      ["Apoyo para Relaciones", "Encuentra herramientas de One2OneLove y caminos de apoyo cuando tu relación necesite más cuidado.", "/CoupleSupport", "support"],
+    ],
+  },
+  fr: {
+    heading: "Explorez One2OneLove",
+    subheading: "Des outils pratiques, des conversations, des activités et du soutien relationnel réunis au même endroit.",
+    items: [
+      ["Notes d’Amour", "Envoyez des messages attentionnés qui rendent l’appréciation visible.", "/LoveNotes", "heart"],
+      ["Question Relationnelle du Jour", "Utilisez chaque jour une question significative pour ouvrir une meilleure conversation.", "/DailyQuestion", "message"],
+      ["Cartes de Conversation", "Choisissez un jeu de questions et répondez à tour de rôle à des invitations conçues pour approfondir la connexion.", "/ConversationCards", "message"],
+      ["Bilan Relationnel Hebdomadaire", "Utilisez une courte conversation privée chaque semaine pour voir ce qui fonctionne et ce qui demande de l’attention.", "/WeeklyCheckIn", "support"],
+      ["Rituels de Relation", "Choisissez de petites habitudes répétées qui rendent l’attention et la connexion plus régulières.", "/RelationshipRituals", "sparkles"],
+      ["Le Mariage Compte", "Un espace dédié aux couples mariés qui souhaitent se reconnecter et continuer à grandir.", "/MarriageMatters", "marriage"],
+      ["L’Émission O2OL", "Retrouvez O2OL et AMORA pour des conversations réfléchies sur l’amour, le mariage, les rencontres et la connexion.", "/O2OLShow", "show"],
+      ["Bibliothèque Relationnelle", "Commencez par ce dont votre relation a besoin et trouvez les outils O2OL les plus utiles selon votre objectif.", "/RelationshipLibrary", "book"],
+      ["Défis de Couple", "Renforcez votre connexion grâce à sept petites actions relationnelles chaque semaine.", "/CouplesChallenges", "game"],
+      ["Soirée en Couple", "Choisissez votre temps et votre budget et obtenez un plan de soirée simple et intentionnel.", "/DateNight", "calendar"],
+      ["Salle Mondiale des Relations", "Regardez des programmes relationnels, des conversations de créateurs et des rediffusions.", "/GlobalRelationshipRoom", "radio"],
+      ["Idées de Rendez-vous", "Trouvez des façons simples de rendre votre temps intentionnel ensemble plus agréable.", "/DateIdeas", "calendar"],
+      ["Quiz Relationnels", "Utilisez des questions guidées pour mieux vous connaître et mieux comprendre votre relation.", "/RelationshipQuizzes", "quiz"],
+      ["Pratique de Communication", "Entraînez-vous à mieux écouter, exprimer vos besoins et traverser les tensions.", "/CommunicationPractice", "sparkles"],
+      ["Activités de Couple", "Choisissez des activités conçues pour renforcer le plaisir, l’équipe et la connexion.", "/CoupleActivities", "game"],
+      ["Journaux Partagés", "Créez un espace partagé pour vos réflexions, souvenirs et votre croissance relationnelle.", "/SharedJournals", "book"],
+      ["Objectifs de Relation", "Transformez de bonnes intentions en objectifs communs à poursuivre ensemble.", "/RelationshipGoals", "target"],
+      ["Communauté", "Échangez avec d’autres personnes autour de conversations et d’expériences relationnelles.", "/Community", "users"],
+      ["Soutien aux Relations", "Trouvez les outils One2OneLove et les voies de soutien lorsque votre relation a besoin de plus d’attention.", "/CoupleSupport", "support"],
+    ],
+  },
+  it: {
+    heading: "Esplora One2OneLove",
+    subheading: "Strumenti pratici, conversazioni, attività e supporto per le relazioni in un unico posto.",
+    items: [
+      ["Note d’Amore", "Invia messaggi premurosi che mantengono visibile l’apprezzamento.", "/LoveNotes", "heart"],
+      ["Domanda Quotidiana sulla Relazione", "Usa ogni giorno una domanda significativa per iniziare una conversazione migliore.", "/DailyQuestion", "message"],
+      ["Carte di Conversazione", "Scegli un mazzo di domande e rispondete a turno a spunti pensati per approfondire la connessione.", "/ConversationCards", "message"],
+      ["Check-In Settimanale di Coppia", "Usate una breve conversazione privata ogni settimana per riconoscere ciò che funziona e ciò che richiede attenzione.", "/WeeklyCheckIn", "support"],
+      ["Rituali di Coppia", "Scegliete piccole abitudini ripetibili che rendano attenzione e connessione più affidabili.", "/RelationshipRituals", "sparkles"],
+      ["Il Matrimonio Conta", "Uno spazio dedicato alle coppie sposate che vogliono riconnettersi e continuare a crescere.", "/MarriageMatters", "marriage"],
+      ["Lo Show O2OL", "Segui O2OL e AMORA in conversazioni riflessive su amore, matrimonio, appuntamenti e connessione.", "/O2OLShow", "show"],
+      ["Biblioteca delle Relazioni", "Parti da ciò di cui la relazione ha bisogno e trova gli strumenti O2OL più utili in base all’obiettivo.", "/RelationshipLibrary", "book"],
+      ["Sfide di Coppia", "Rafforzate la connessione con sette piccole azioni relazionali ogni settimana.", "/CouplesChallenges", "game"],
+      ["Serata di Coppia", "Scegli tempo e budget e ricevi un piano semplice e intenzionale per la serata.", "/DateNight", "calendar"],
+      ["Sala Globale delle Relazioni", "Guarda programmi sulle relazioni, conversazioni dei creator e repliche.", "/GlobalRelationshipRoom", "radio"],
+      ["Idee per Appuntamenti", "Trova modi semplici per rendere più piacevole il tempo intenzionale insieme.", "/DateIdeas", "calendar"],
+      ["Quiz sulle Relazioni", "Usa domande guidate per conoscere meglio te stesso e la tua relazione.", "/RelationshipQuizzes", "quiz"],
+      ["Pratica di Comunicazione", "Esercitati ad ascoltare meglio, esprimere bisogni e affrontare le tensioni.", "/CommunicationPractice", "sparkles"],
+      ["Attività di Coppia", "Scegli attività pensate per rafforzare divertimento, collaborazione e connessione.", "/CoupleActivities", "game"],
+      ["Diari Condivisi", "Crea uno spazio condiviso per riflessioni, ricordi e crescita della relazione.", "/SharedJournals", "book"],
+      ["Obiettivi di Relazione", "Trasforma le buone intenzioni in obiettivi condivisi su cui lavorare insieme.", "/RelationshipGoals", "target"],
+      ["Comunità", "Connettiti con altre persone attraverso conversazioni ed esperienze sulle relazioni.", "/Community", "users"],
+      ["Supporto per Relazioni", "Trova strumenti One2OneLove e percorsi di supporto quando la relazione ha bisogno di più cura.", "/CoupleSupport", "support"],
+    ],
+  },
+  de: {
+    heading: "One2OneLove entdecken",
+    subheading: "Praktische Beziehungstools, Gespräche, Aktivitäten und Unterstützung an einem Ort.",
+    items: [
+      ["Liebesbotschaften", "Sende aufmerksame Nachrichten, die Wertschätzung sichtbar machen.", "/LoveNotes", "heart"],
+      ["Tägliche Beziehungsfrage", "Nutze jeden Tag eine bedeutungsvolle Frage für ein besseres Gespräch.", "/DailyQuestion", "message"],
+      ["Gesprächskarten", "Wählt ein Fragenset und beantwortet abwechselnd Impulse, die eure Verbindung vertiefen sollen.", "/ConversationCards", "message"],
+      ["Wöchentlicher Beziehungs-Check-In", "Nutzt jede Woche ein kurzes privates Gespräch, um wahrzunehmen, was gut läuft und was Aufmerksamkeit braucht.", "/WeeklyCheckIn", "support"],
+      ["Beziehungsrituale", "Wählt kleine wiederholbare Gewohnheiten, die Aufmerksamkeit und Verbindung verlässlicher machen.", "/RelationshipRituals", "sparkles"],
+      ["Ehe Zählt", "Ein eigener Bereich für Ehepaare, die sich wieder näherkommen und gemeinsam wachsen möchten.", "/MarriageMatters", "marriage"],
+      ["Die O2OL Show", "Begleite O2OL und AMORA bei nachdenklichen Gesprächen über Liebe, Ehe, Dating und Verbindung.", "/O2OLShow", "show"],
+      ["Beziehungsbibliothek", "Beginnt mit dem, was eure Beziehung braucht, und findet passende O2OL-Werkzeuge nach Ziel.", "/RelationshipLibrary", "book"],
+      ["Paar-Challenges", "Stärkt eure Verbindung jede Woche mit sieben kleinen Beziehungsaktionen.", "/CouplesChallenges", "game"],
+      ["Date Night", "Wählt Zeit und Budget und erhaltet einen einfachen, bewussten Plan für eure gemeinsame Zeit.", "/DateNight", "calendar"],
+      ["Globaler Beziehungsraum", "Sieh Beziehungsprogramme, Creator-Gespräche und Wiederholungen.", "/GlobalRelationshipRoom", "radio"],
+      ["Date-Ideen", "Finde einfache Möglichkeiten, bewusste gemeinsame Zeit schöner zu gestalten.", "/DateIdeas", "calendar"],
+      ["Beziehungsquiz", "Nutze geführte Fragen, um dich selbst und eure Beziehung besser kennenzulernen.", "/RelationshipQuizzes", "quiz"],
+      ["Kommunikationspraxis", "Übt gesünderes Zuhören, das Ausdrücken von Bedürfnissen und den Umgang mit Spannungen.", "/CommunicationPractice", "sparkles"],
+      ["Paar-Aktivitäten", "Wählt Aktivitäten, die Spaß, Teamarbeit und Verbindung stärken.", "/CoupleActivities", "game"],
+      ["Gemeinsame Journale", "Schafft einen gemeinsamen Ort für Gedanken, Erinnerungen und Beziehungswachstum.", "/SharedJournals", "book"],
+      ["Beziehungsziele", "Macht aus guten Absichten gemeinsame Ziele, an denen ihr zusammen arbeiten könnt.", "/RelationshipGoals", "target"],
+      ["Community", "Tauscht euch mit anderen Menschen über Beziehungsthemen und Erfahrungen aus.", "/Community", "users"],
+      ["Beziehungsunterstützung", "Findet One2OneLove-Werkzeuge und Unterstützungswege, wenn eure Beziehung zusätzliche Aufmerksamkeit braucht.", "/CoupleSupport", "support"],
+    ],
+  },
+};
+
+const iconMap = {
+  heart: Heart,
+  message: MessageCircle,
+  marriage: HeartHandshake,
+  show: Tv2,
+  radio: Radio,
+  calendar: CalendarHeart,
+  quiz: MessageSquare,
+  sparkles: Sparkles,
+  game: Gamepad2,
+  book: BookOpen,
+  target: Target,
+  users: Users,
+  support: HeartHandshake,
+};
 
 export default function FeaturesGrid() {
-  const leftFeatures = [
-    {
-      icon: Heart,
-      color: "text-pink-500",
-      title: "Beautiful Love Notes",
-      description: "Create and send beautifully-crafted, customizable notes & templates"
-    },
-    {
-      icon: MessageSquare,
-      color: "text-purple-500",
-      title: "Love Language Quiz",
-      description: "Understand your love language & connect with your partner"
-    },
-    {
-      icon: Gamepad2,
-      color: "text-green-500",
-      title: "Fun Games",
-      description: "Enjoy games, Date Ideas, puzzles & hidden messages"
-    },
-    {
-      icon: BookOpen,
-      color: "text-blue-500",
-      title: "Relationship Articles",
-      description: "New articles and tips for stronger relationships"
-    },
-    {
-      icon: Award,
-      color: "text-orange-500",
-      title: "Expert Articles",
-      description: "Comprehensive guides & tips for stronger relationships"
-    },
-    {
-      icon: Lock,
-      color: "text-gray-500",
-      title: "Hidden Messages",
-      description: "Conceal fun & private notes for easy love-lift & occasions"
-    }
-  ];
-
-  const rightFeatures = [
-    {
-      icon: Ship,
-      color: "text-yellow-500",
-      title: "Win a Romantic Cruise",
-      description: "Monthly contests with amazing prizes worth up to $"
-    },
-    {
-      icon: Crown,
-      color: "text-purple-500",
-      title: "Lifetime Member Benefits",
-      description: "Exclusive perks to build and expand your relationship journey"
-    },
-    {
-      icon: Mail,
-      color: "text-pink-500",
-      title: "Romantic Love Notes",
-      description: "Send love in multiple languages for every occasion"
-    },
-    {
-      icon: Users,
-      color: "text-blue-500",
-      title: "Partner Connection",
-      description: "Stay connected and feel appreciated every day"
-    },
-    {
-      icon: Star,
-      color: "text-orange-500",
-      title: "Weekly Featured Experts",
-      description: "Get advice from relationship experts to enhance every week"
-    },
-    {
-      icon: Shield,
-      color: "text-green-500",
-      title: "Private Couple Content",
-      description: "Amazing members-that makes both of you very special"
-    }
-  ];
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
 
   return (
-    <div className="py-16 bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-start gap-4 mb-12">
-          <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Heart className="w-6 h-6 text-white fill-white" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Platform Features & Resources
-            </h2>
-          </div>
+    <section className="bg-gradient-to-b from-white to-slate-50 px-4 py-14 md:py-18" aria-labelledby="o2ol-features-heading">
+      <div className="mx-auto max-w-6xl">
+        <div className="max-w-3xl">
+          <h2 id="o2ol-features-heading" className="text-3xl font-bold text-slate-900 md:text-4xl">{t.heading}</h2>
+          <p className="mt-3 text-base leading-7 text-slate-600 md:text-lg">{t.subheading}</p>
         </div>
 
-        {/* Two Column Grid */}
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Left Column */}
-          <div className="space-y-4">
-            {leftFeatures.map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <div 
-                  key={index}
-                  className="flex items-start gap-4 p-4 bg-white rounded-xl hover:shadow-md transition-all"
-                >
-                  <div className={`flex-shrink-0 ${feature.color}`}>
-                    <IconComponent size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {t.items.map(([title, description, href, iconKey]) => {
+            const Icon = iconMap[iconKey] || Heart;
+            return (
+              <Link
+                key={href}
+                to={href}
+                className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-pink-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-pink-700 transition group-hover:bg-pink-100">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-4">
-            {rightFeatures.map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <div 
-                  key={index}
-                  className="flex items-start gap-4 p-4 bg-white rounded-xl hover:shadow-md transition-all"
-                >
-                  <div className={`flex-shrink-0 ${feature.color}`}>
-                    <IconComponent size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                <h3 className="mt-4 font-semibold text-slate-900">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+              </Link>
+            );
+          })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,868 +1,214 @@
-
-import React, { useState, createContext, useContext, useRef, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
+import { ChevronDown, Home, LogIn, LogOut, Menu, MessageCircle, Sparkles, User, UserPlus, Users, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Heart, Home, ChevronDown, User, LogIn, LogOut, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 import { getMyConversations } from "@/lib/chatService";
-import { supabase } from "@/lib/supabase";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { createPageUrl } from "@/utils";
+
+const LOGO_URL = "https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png";
 
 const translations = {
   en: {
-    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out" },
-    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" }
+    nav: { home: "Home", globalRoom: "Global Relationship Room", community: "Community", action: "Relationship Tools", profile: "Profile", chat: "Chat", signIn: "Sign In", signUp: "Sign Up", signOut: "Sign Out", menu: "Open navigation menu", closeMenu: "Close navigation menu", language: "Language" },
+    tools: { library: "Relationship Library", dashboard: "Couples Dashboard", loveNotes: "Love Notes", support: "Relationship Support", quizzes: "Relationship Quizzes", milestones: "Milestones & Anniversaries", goals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane" },
   },
   es: {
-    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión" },
-    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" }
+    nav: { home: "Inicio", globalRoom: "Sala Global de Relaciones", community: "Comunidad", action: "Herramientas de Relación", profile: "Perfil", chat: "Chat", signIn: "Iniciar Sesión", signUp: "Registrarse", signOut: "Cerrar Sesión", menu: "Abrir menú de navegación", closeMenu: "Cerrar menú de navegación", language: "Idioma" },
+    tools: { library: "Biblioteca de Relaciones", dashboard: "Panel de Pareja", loveNotes: "Notas de Amor", support: "Apoyo para Relaciones", quizzes: "Cuestionarios de Relaciones", milestones: "Hitos y Aniversarios", goals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Camino de Recuerdos" },
   },
   fr: {
-    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter" },
-    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" }
+    nav: { home: "Accueil", globalRoom: "Salle Mondiale des Relations", community: "Communauté", action: "Outils Relationnels", profile: "Profil", chat: "Chat", signIn: "Se Connecter", signUp: "S’inscrire", signOut: "Se Déconnecter", menu: "Ouvrir le menu de navigation", closeMenu: "Fermer le menu de navigation", language: "Langue" },
+    tools: { library: "Bibliothèque Relationnelle", dashboard: "Tableau de Bord du Couple", loveNotes: "Notes d’Amour", support: "Soutien aux Relations", quizzes: "Quiz sur les Relations", milestones: "Jalons et Anniversaires", goals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs" },
   },
   it: {
-    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci" },
-    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" }
+    nav: { home: "Home", globalRoom: "Sala Globale delle Relazioni", community: "Community", action: "Strumenti di Relazione", profile: "Profilo", chat: "Chat", signIn: "Accedi", signUp: "Iscriviti", signOut: "Esci", menu: "Apri menu di navigazione", closeMenu: "Chiudi menu di navigazione", language: "Lingua" },
+    tools: { library: "Biblioteca delle Relazioni", dashboard: "Dashboard di Coppia", loveNotes: "Note d’Amore", support: "Supporto per Relazioni", quizzes: "Quiz sulle Relazioni", milestones: "Traguardi e Anniversari", goals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi" },
   },
   de: {
-    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden" },
-    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" }
+    nav: { home: "Startseite", globalRoom: "Globaler Beziehungsraum", community: "Community", action: "Beziehungswerkzeuge", profile: "Profil", chat: "Chat", signIn: "Anmelden", signUp: "Registrieren", signOut: "Abmelden", menu: "Navigationsmenü öffnen", closeMenu: "Navigationsmenü schließen", language: "Sprache" },
+    tools: { library: "Beziehungsbibliothek", dashboard: "Paar-Dashboard", loveNotes: "Liebesbotschaften", support: "Beziehungsunterstützung", quizzes: "Beziehungsquiz", milestones: "Meilensteine & Jahrestage", goals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse" },
   },
-  nl: {
-    nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
-    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", aiCreator: "AI Content Maker", winCruise: "Win Prijzen!" }
-  },
-  pt: {
-    nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", aiCreator: "Criador de Conteúdo IA", lgbtq: "Apoio LGBTQ+", developer: "Dev", requests: "Solicitações", chat: "Chat", signOut: "Sair" },
-    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", aiCreator: "Criador de Conteúdo IA", winCruise: "Ganhe Prêmios!" }
-  }
 };
 
-const LanguageContext = createContext();
+const activeLanguages = [
+  ["en", "English"],
+  ["es", "Español"],
+  ["fr", "Français"],
+  ["it", "Italiano"],
+  ["de", "Deutsch"],
+];
+const activeCodes = new Set(activeLanguages.map(([code]) => code));
+
+const LanguageContext = createContext(null);
 
 function LanguageProvider({ children }) {
   const [currentLanguage, setCurrentLanguage] = useState(() => {
-    const stored = localStorage.getItem('preferredLanguage') || 'en';
-    // Prevent loading disabled languages
-    if (stored === 'nl' || stored === 'pt') {
-      return 'en';
-    }
-    return stored;
+    const stored = localStorage.getItem("preferredLanguage") || "en";
+    return activeCodes.has(stored) ? stored : "en";
   });
 
   const changeLanguage = (languageCode) => {
-    // Prevent selecting disabled languages
-    if (languageCode === 'nl' || languageCode === 'pt') {
-      return;
-    }
+    if (!activeCodes.has(languageCode)) return;
     setCurrentLanguage(languageCode);
-    localStorage.setItem('preferredLanguage', languageCode);
+    localStorage.setItem("preferredLanguage", languageCode);
   };
 
-  return (
-    <LanguageContext.Provider value={{ currentLanguage, changeLanguage }}>
-      {children}
-    </LanguageContext.Provider>
-  );
+  return <LanguageContext.Provider value={{ currentLanguage, changeLanguage }}>{children}</LanguageContext.Provider>;
 }
 
 function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
+  const value = useContext(LanguageContext);
+  if (!value) throw new Error("useLanguage must be used within a LanguageProvider");
+  return value;
 }
 
-const languages = [
-  { code: "en", name: "English", flags: [{ country: "us", alt: "USA" }, { country: "gb", alt: "UK" }, { country: "ca", alt: "Canada" }], active: true },
-  { code: "es", name: "Spanish", flags: [{ country: "es", alt: "Spain" }, { country: "mx", alt: "Mexico" }], active: true },
-  { code: "fr", name: "French", flags: [{ country: "fr", alt: "France" }, { country: "ca", alt: "Canada" }], active: true },
-  { code: "it", name: "Italian", flags: [{ country: "it", alt: "Italy" }], active: true },
-  { code: "de", name: "German", flags: [{ country: "de", alt: "Germany" }], active: true },
-  { code: "nl", name: "Dutch", flags: [{ country: "nl", alt: "Netherlands" }], active: false },
-  { code: "pt", name: "Portuguese", flags: [{ country: "pt", alt: "Portugal" }], active: false }
+const toolLinks = [
+  ["library", "RelationshipLibrary"],
+  ["dashboard", "CouplesDashboard"],
+  ["loveNotes", "LoveNotes"],
+  ["support", "CoupleSupport"],
+  ["quizzes", "RelationshipQuizzes"],
+  ["milestones", "RelationshipMilestones"],
+  ["goals", "RelationshipGoals"],
+  ["dateIdeas", "DateIdeas"],
+  ["memoryLane", "MemoryLane"],
 ];
 
-function LanguageContent({ children, currentPageName }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [actionOpen, setActionOpen] = useState(false);
-  const [mobileActionOpen, setMobileActionOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+function NavigationLink({ to, icon: Icon, children, onClick, active }) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${active ? "bg-white/20 text-white" : "text-white/85 hover:bg-white/10 hover:text-white"}`}
+    >
+      <Icon className="h-4 w-4" aria-hidden="true" />
+      {children}
+    </Link>
+  );
+}
+
+function LanguageContent({ children }) {
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const closeTimeoutRef = useRef(null);
+  const { user, isAuthenticated, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
 
-  const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
-
-  // Get authentication state
-  const { isAuthenticated, logout, user } = useAuth();
-
-  // Fetch conversations to get unread message count
-  const { data: conversations = [], refetch: refetchConversations } = useQuery({
-    queryKey: ['conversations'],
+  const { data: conversations = [] } = useQuery({
+    queryKey: ["layout-conversations", user?.id],
     queryFn: getMyConversations,
-    enabled: !!user && isAuthenticated,
-    refetchInterval: 3000, // Refetch every 3 seconds for faster badge updates
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnMount: true, // Refetch when component mounts
-    staleTime: 0, // Always consider data stale to force fresh fetches
-    cacheTime: 0, // Don't cache to ensure fresh data
+    enabled: Boolean(user?.id && isAuthenticated),
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+    staleTime: 5000,
+    initialData: [],
   });
 
-  // Subscribe to real-time conversation updates to update badge immediately
-  useEffect(() => {
-    if (!user || !isAuthenticated) return;
+  const unreadCount = conversations.reduce((total, conversation) => total + Number(conversation.unreadCount || 0), 0);
+  const isActive = (page) => location.pathname === createPageUrl(page);
 
-    console.log('🔔 Setting up real-time subscription for conversation updates (badge)');
-    
-    // Subscribe to conversation updates where user is either user1 or user2
-    const subscription = supabase
-      .channel(`conversations-badge-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'conversations',
-          // This will trigger for any conversation where user is involved
-          // We can't filter by OR in Supabase realtime, so we subscribe to all and filter in callback
-        },
-        (payload) => {
-          const conv = payload.new;
-          // Only process if this conversation involves the current user
-          if (conv.user1_id === user.id || conv.user2_id === user.id) {
-            console.log('📬 Conversation updated (badge refresh):', conv.id);
-            // Immediately refetch conversations to update badge
-            refetchConversations();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('🔕 Unsubscribing from conversation badge updates');
-      supabase.removeChannel(subscription);
-    };
-  }, [user, isAuthenticated, refetchConversations]);
-
-  // Calculate total unread messages count
-  const totalUnreadCount = conversations.reduce((total, conv) => {
-    const count = conv.unreadCount || 0;
-    return total + count;
-  }, 0);
-
-  const handleMouseEnter = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-    }
-    setActionOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setActionOpen(false);
-    }, 300);
-  };
-
-  const handleSignIn = () => {
-    navigate(createPageUrl("SignIn"));
-  };
-
-  const handleSignUp = () => {
-    navigate(createPageUrl("SignUp"));
-  };
-
-  const handleSignOut = async (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    
+  const handleSignOut = async () => {
     try {
-      console.log('🔴 Sign out button clicked');
-      
-      // Call logout function
       await logout();
-      
-      // Clear any local storage items
-      try {
-        localStorage.removeItem('preferredLanguage');
-        // Don't remove other items as they might be needed
-      } catch (storageError) {
-        console.warn('⚠️ Error clearing localStorage:', storageError);
-      }
-      
-      // Force a full page reload to clear all state and ensure clean logout
-      // Use window.location.replace to prevent back button issues
-      // Redirect to sign in page after logout
-      window.location.replace(createPageUrl("SignIn"));
-    } catch (error) {
-      console.error('❌ Error during sign out:', error);
-      // Still redirect even if there's an error
-      // Clear user state manually
-      try {
-    await logout();
-      } catch (logoutError) {
-        console.error('❌ Error in fallback logout:', logoutError);
-      }
-      // Force redirect to sign in page
-      window.location.replace(createPageUrl("SignIn"));
+    } finally {
+      setMobileOpen(false);
+      navigate(createPageUrl("SignIn"), { replace: true });
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
-    };
-  }, []);
+  const ToolMenu = ({ mobile = false }) => (
+    <div className={mobile ? "mt-2 overflow-hidden rounded-xl bg-white/10" : "absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-2xl border bg-white py-2 text-gray-800 shadow-2xl"}>
+      {toolLinks.map(([key, page]) => (
+        <Link
+          key={page}
+          to={createPageUrl(page)}
+          onClick={() => { setToolsOpen(false); setMobileToolsOpen(false); setMobileOpen(false); }}
+          className={mobile ? "block px-4 py-3 text-sm text-white hover:bg-white/15" : "block px-4 py-3 text-sm font-medium hover:bg-purple-50 hover:text-purple-700"}
+        >
+          {t.tools[key]}
+        </Link>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Kalam:wght@300;400;700&family=Comic+Neue:wght@300;400;700&display=swap');
-        
-        :root {
-          --font-dancing: 'Dancing Script', cursive;
-          --font-kalam: 'Kalam', cursive;
-          --font-comic: 'Comic Neue', cursive;
-        }
-        
-        .font-dancing {
-          font-family: var(--font-dancing);
-        }
-        
-        .font-kalam {
-          font-family: var(--font-kalam);
-        }
-        
-        .font-comic {
-          font-family: var(--font-comic);
-        }
-      `}</style>
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-purple-800 via-purple-700 to-pink-700 shadow-lg">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2">
+          <Link to={createPageUrl("Home")} className="flex min-w-0 items-center text-white" aria-label="One2OneLove home">
+            <img src={LOGO_URL} alt="One2OneLove" className="h-12 w-auto rounded-md bg-white/95 p-0.5 sm:h-14" />
+          </Link>
 
-      {/* Header */}
-      <header className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
-              <img 
-                src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
-                alt="One2One Love Logo" 
-                className="h-10 w-auto"
-                onError={(e) => {
-                  // Fallback to a placeholder or text if image fails to load
-                  e.target.style.display = 'none';
-                }}
-              />
-              <div className="hidden sm:block">
-                <div className="text-lg font-bold text-white leading-tight">One 2 One Love</div>
-              </div>
-            </Link>
+          <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+            <NavigationLink to={createPageUrl("Home")} icon={Home} active={isActive("Home")}>{t.nav.home}</NavigationLink>
+            <NavigationLink to={createPageUrl("GlobalRelationshipRoom")} icon={MessageCircle} active={isActive("GlobalRelationshipRoom")}>{t.nav.globalRoom}</NavigationLink>
+            <NavigationLink to={createPageUrl("Community")} icon={Users} active={isActive("Community")}>{t.nav.community}</NavigationLink>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center mx-4">
-              <Link
-                to={createPageUrl("Home")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Home className="w-4 h-4" />
-                {t.nav.home}
-              </Link>
-
-              <div 
-                className="relative"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
-                <button
-                  className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-                >
-                  <Heart className="w-4 h-4" />
-                  {t.nav.action}
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                {actionOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-xl shadow-2xl overflow-hidden z-50">
-                    <Link
-                      to={createPageUrl("LoveNotes")}
-                      className="w-full px-6 py-4 text-left bg-gradient-to-r from-pink-400 to-pink-600 text-white hover:from-pink-500 hover:to-pink-700 transition-all font-semibold flex items-center gap-3"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 fill-current" />
-                      {t.actionMenu.sendLoveNote}
-                    </Link>
-
-                    <Link
-                      to={createPageUrl("LGBTQSupport")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Rainbow className="w-5 h-5 text-purple-600" />
-                      <span>{t.actionMenu.lgbtqSupport}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipCoach")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Sparkles className="w-5 h-5 text-purple-600" />
-                      <span>AI Relationship Coach</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("CoupleSupport")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Users className="w-5 h-5 text-purple-600" />
-                      <span>{t.actionMenu.coupleSupport}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipQuizzes")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.relationshipQuizzes}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipMilestones")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.relationshipMilestones}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipGoals")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Target className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.relationshipGoals}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("DateIdeas")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.dateIdeas}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("MemoryLane")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.memoryLane}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("AIContentCreator")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Sparkles className="w-5 h-5 text-blue-600" />
-                      <span>{t.actionMenu.aiCreator}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("WinACruise")}
-                      className="w-full px-6 py-4 text-left bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600 transition-all font-semibold flex items-center gap-3"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Gift className="w-5 h-5" />
-                      {t.actionMenu.winCruise}
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <Link
-                to={createPageUrl("Community")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Users className="w-4 h-4" />
-                {t.nav.community}
-              </Link>
-
-              <Link
-                to={createPageUrl("LGBTQSupport")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Rainbow className="w-4 h-4" />
-                {t.nav.lgbtq}
-              </Link>
-              
-              {isAuthenticated && (
-                <Link
-                  to={createPageUrl("Profile")}
-                  className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-                >
-                  <User className="w-4 h-4" />
-                  {t.nav.profile}
-                </Link>
-              )}
-
-              <Link
-                to={createPageUrl("Developer")}
-                className="flex items-center gap-1 text-yellow-300 hover:text-yellow-100 hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Code className="w-4 h-4" />
-                {t.nav.developer}
-              </Link>
-            </nav>
-
-            {/* Right side buttons */}
-            <div className="flex items-center gap-2">
-              {/* Friend Requests Icon - Only show when authenticated */}
-              {isAuthenticated && (
-                <Link to={createPageUrl("FriendRequests")} className="hidden md:block">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
-                    title={t.nav.requests}
-                  >
-                    <Bell className="w-5 h-5" />
-                    <span className="hidden xl:inline ml-2">{t.nav.requests}</span>
-                  </Button>
-                </Link>
-              )}
-
-              {/* Chat Icon - Only show when authenticated */}
-              {isAuthenticated && (
-                <Link to={createPageUrl("Chat")} className="hidden md:block">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
-                    title={t.nav.chat}
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="hidden xl:inline ml-2">{t.nav.chat}</span>
-                    {totalUnreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                        {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
-              )}
-
-              {/* Show Invite, Sign In/Sign Up only when NOT authenticated */}
-              {!isAuthenticated && (
-                <>
-                  <Link to={createPageUrl("Invite")} className="hidden md:block">
-                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap" title={t.nav.invite}>
-                      <UserCheck className="w-4 h-4 mr-1" />
-                      <span className="hidden xl:inline">{t.nav.invite}</span>
-                    </Button>
-                  </Link>
-                  <Button 
-                    size="sm" 
-                    className="hidden md:flex bg-white/20 hover:bg-white/30 text-white border border-white/30 whitespace-nowrap"
-                    onClick={handleSignUp}
-                    title={t.nav.signUp}
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    <span className="hidden xl:inline">{t.nav.signUp}</span>
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
-                    onClick={handleSignIn}
-                    title={t.nav.signIn}
-                  >
-                    <LogIn className="w-4 h-4 mr-2" />
-                    <span className="hidden xl:inline">{t.nav.signIn}</span>
-                  </Button>
-                </>
-              )}
-              
-              <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className="w-[120px] h-9 bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm">
-                  <SelectValue>
-                    <div className="flex items-center gap-1">
-                      <div className="flex items-center gap-1">
-                        {selectedLanguage?.flags.slice(0, 1).map((flag, index) => (
-                          <img 
-                            key={index}
-                            src={`https://flagcdn.com/w20/${flag.country}.png`}
-                            srcSet={`https://flagcdn.com/w40/${flag.country}.png 2x`}
-                            width="16"
-                            alt={flag.alt}
-                            className="shadow-sm"
-                          />
-                        ))}
-                      </div>
-                      <span className="font-medium text-xs">{selectedLanguage?.code.toUpperCase()}</span>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 rounded-lg shadow-xl">
-                  {languages.map((lang) => (
-                    <SelectItem 
-                      key={lang.code} 
-                      value={lang.code}
-                      disabled={!lang.active}
-                      className={`cursor-pointer hover:bg-gray-50 py-3 px-4 focus:bg-gray-100 ${!lang.active ? 'opacity-50' : ''}`}
-                    >
-                      <div className="flex items-center gap-3 relative">
-                        <div className="flex items-center gap-1 min-w-[60px]">
-                          {lang.flags.map((flag, index) => (
-                            <img 
-                              key={index}
-                              src={`https://flagcdn.com/w20/${flag.country}.png`}
-                              srcSet={`https://flagcdn.com/w40/${flag.country}.png 2x`}
-                              width="20"
-                              alt={flag.alt}
-                              className="shadow-sm"
-                            />
-                          ))}
-                        </div>
-                        <span className="text-gray-800 font-medium">{lang.name}</span>
-                        {!lang.active && (
-                          <span className="ml-auto text-xs font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
-                            Coming Soon
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Sign Out Button - Only show when authenticated, after language dropdown */}
-              {isAuthenticated && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
-                  onClick={handleSignOut}
-                  title={t.nav.signOut}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span className="hidden xl:inline">{t.nav.signOut}</span>
-                </Button>
-              )}
-
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <div className="relative">
+              <button type="button" onClick={() => setToolsOpen((open) => !open)} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white/85 transition hover:bg-white/10 hover:text-white" aria-expanded={toolsOpen}>
+                <Sparkles className="h-4 w-4" aria-hidden="true" />{t.nav.action}<ChevronDown className={`h-4 w-4 transition ${toolsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
+              {toolsOpen && <ToolMenu />}
             </div>
-          </div>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-white/20 max-h-[calc(100vh-4rem)] overflow-y-auto">
-              <nav className="flex flex-col gap-2">
-                <Link
-                  to={createPageUrl("Home")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Home className="w-5 h-5" />
-                  {t.nav.home}
-                </Link>
+            {isAuthenticated && <NavigationLink to={createPageUrl("Chat")} icon={MessageCircle} active={isActive("Chat")}>{t.nav.chat}{unreadCount > 0 && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>}</NavigationLink>}
+            {isAuthenticated && <NavigationLink to={createPageUrl("Profile")} icon={User} active={isActive("Profile")}>{t.nav.profile}</NavigationLink>}
 
-                {/* Action Dropdown for Mobile */}
-                <div className="relative">
-                  <button
-                    onClick={() => setMobileActionOpen(!mobileActionOpen)}
-                    className="flex items-center justify-between w-full text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Heart className="w-5 h-5" />
-                      {t.nav.action}
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileActionOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  {mobileActionOpen && (
-                    <div className="mt-1 bg-white/10 rounded-lg overflow-hidden">
-                      <Link
-                        to={createPageUrl("LoveNotes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {t.actionMenu.sendLoveNote}
-                      </Link>
-                      <Link
-                        to={createPageUrl("LGBTQSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Rainbow className="w-5 h-5" />
-                        {t.actionMenu.lgbtqSupport}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipCoach")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        AI Relationship Coach
-                      </Link>
-                      <Link
-                        to={createPageUrl("CoupleSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Users className="w-5 h-5" />
-                        {t.actionMenu.coupleSupport}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipQuizzes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {t.actionMenu.relationshipQuizzes}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipMilestones")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {t.actionMenu.relationshipMilestones}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipGoals")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Target className="w-5 h-5" />
-                        {t.actionMenu.relationshipGoals}
-                      </Link>
-                      <Link
-                        to={createPageUrl("DateIdeas")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {t.actionMenu.dateIdeas}
-                      </Link>
-                      <Link
-                        to={createPageUrl("MemoryLane")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-5 h-5" />
-                        {t.actionMenu.memoryLane}
-                      </Link>
-                      <Link
-                        to={createPageUrl("AIContentCreator")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        {t.actionMenu.aiCreator}
-                      </Link>
-                      <Link
-                        to={createPageUrl("WinACruise")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Gift className="w-5 h-5" />
-                        {t.actionMenu.winCruise}
-                      </Link>
-                    </div>
-                  )}
-                </div>
+            <Select value={currentLanguage} onValueChange={changeLanguage}>
+              <SelectTrigger className="ml-1 w-32 border-white/30 bg-white/10 text-white" aria-label={t.nav.language}><SelectValue /></SelectTrigger>
+              <SelectContent>{activeLanguages.map(([code, name]) => <SelectItem key={code} value={code}>{name}</SelectItem>)}</SelectContent>
+            </Select>
 
-                <Link
-                  to={createPageUrl("Community")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Users className="w-5 h-5" />
-                  {t.nav.community}
-                </Link>
-                <Link
-                  to={createPageUrl("LGBTQSupport")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Rainbow className="w-5 h-5" />
-                  {t.nav.lgbtq}
-                </Link>
-                {isAuthenticated && (
-                  <Link
-                    to={createPageUrl("Profile")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <User className="w-5 h-5" />
-                    {t.nav.profile}
-                  </Link>
-                )}
-                <Link
-                  to={createPageUrl("Developer")}
-                  className="flex items-center gap-2 text-yellow-300 hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Code className="w-5 h-5" />
-                  {t.nav.developer}
-                </Link>
-                <div className="border-t border-white/20 my-2"></div>
-                
-                {/* Friend Requests - Only show when authenticated */}
-                {isAuthenticated && (
-                  <Link
-                    to={createPageUrl("FriendRequests")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Bell className="w-5 h-5" />
-                    {t.nav.requests}
-                  </Link>
-                )}
+            {isAuthenticated ? (
+              <Button type="button" variant="ghost" className="text-white hover:bg-white/10 hover:text-white" onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" />{t.nav.signOut}</Button>
+            ) : (
+              <>
+                <Button type="button" variant="ghost" className="text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(createPageUrl("SignIn"))}><LogIn className="mr-2 h-4 w-4" />{t.nav.signIn}</Button>
+                <Button type="button" variant="secondary" onClick={() => navigate(createPageUrl("SignUp"))}><UserPlus className="mr-2 h-4 w-4" />{t.nav.signUp}</Button>
+              </>
+            )}
+          </nav>
 
-                {/* Chat - Only show when authenticated */}
-                {isAuthenticated && (
-                  <Link
-                    to={createPageUrl("Chat")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all relative"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    {t.nav.chat}
-                    {totalUnreadCount > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
-                        {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
-
-                {/* Sign Out - Only show when authenticated */}
-                {isAuthenticated && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setMobileMenuOpen(false);
-                      handleSignOut(e);
-                    }}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all w-full text-left"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    {t.nav.signOut}
-                  </button>
-                )}
-                
-                {/* Show Invite, Sign In/Sign Up only when NOT authenticated */}
-                {!isAuthenticated && (
-                  <>
-                    <Link
-                      to={createPageUrl("Invite")}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <UserCheck className="w-5 h-5" />
-                      {t.nav.invite}
-                    </Link>
-                    <button
-                      onClick={() => {
-                        handleSignUp();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg transition-all font-semibold"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      {t.nav.signUp}
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleSignIn();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                    >
-                      <LogIn className="w-5 h-5" />
-                      {t.nav.signIn}
-                    </button>
-                  </>
-                )}
-              </nav>
-            </div>
-          )}
+          <button type="button" className="ml-auto rounded-lg p-2 text-white hover:bg-white/10 lg:hidden" onClick={() => setMobileOpen((open) => !open)} aria-label={mobileOpen ? t.nav.closeMenu : t.nav.menu} aria-expanded={mobileOpen}>
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main>{children}</main>
+        {mobileOpen && (
+          <nav className="border-t border-white/10 px-4 pb-4 lg:hidden" aria-label="Mobile navigation">
+            <div className="mx-auto max-w-7xl space-y-1 pt-3">
+              <div className="block"><NavigationLink to={createPageUrl("Home")} icon={Home} onClick={() => setMobileOpen(false)} active={isActive("Home")}>{t.nav.home}</NavigationLink></div>
+              <div className="block"><NavigationLink to={createPageUrl("GlobalRelationshipRoom")} icon={MessageCircle} onClick={() => setMobileOpen(false)} active={isActive("GlobalRelationshipRoom")}>{t.nav.globalRoom}</NavigationLink></div>
+              <div className="block"><NavigationLink to={createPageUrl("Community")} icon={Users} onClick={() => setMobileOpen(false)} active={isActive("Community")}>{t.nav.community}</NavigationLink></div>
+
+              <button type="button" onClick={() => setMobileToolsOpen((open) => !open)} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-white/10" aria-expanded={mobileToolsOpen}>
+                <span className="inline-flex items-center gap-2"><Sparkles className="h-4 w-4" aria-hidden="true" />{t.nav.action}</span><ChevronDown className={`h-4 w-4 transition ${mobileToolsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+              </button>
+              {mobileToolsOpen && <ToolMenu mobile />}
+
+              {isAuthenticated && <div className="block"><NavigationLink to={createPageUrl("Chat")} icon={MessageCircle} onClick={() => setMobileOpen(false)} active={isActive("Chat")}>{t.nav.chat}{unreadCount > 0 && <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>}</NavigationLink></div>}
+              {isAuthenticated && <div className="block"><NavigationLink to={createPageUrl("Profile")} icon={User} onClick={() => setMobileOpen(false)} active={isActive("Profile")}>{t.nav.profile}</NavigationLink></div>}
+
+              <div className="px-3 py-2"><Select value={currentLanguage} onValueChange={changeLanguage}><SelectTrigger className="w-full border-white/30 bg-white/10 text-white" aria-label={t.nav.language}><SelectValue /></SelectTrigger><SelectContent>{activeLanguages.map(([code, name]) => <SelectItem key={code} value={code}>{name}</SelectItem>)}</SelectContent></Select></div>
+
+              {isAuthenticated ? <Button type="button" variant="ghost" className="w-full justify-start text-white hover:bg-white/10 hover:text-white" onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" />{t.nav.signOut}</Button> : <div className="grid gap-2 pt-2 sm:grid-cols-2"><Button type="button" variant="ghost" className="justify-start text-white hover:bg-white/10 hover:text-white" onClick={() => { setMobileOpen(false); navigate(createPageUrl("SignIn")); }}><LogIn className="mr-2 h-4 w-4" />{t.nav.signIn}</Button><Button type="button" variant="secondary" onClick={() => { setMobileOpen(false); navigate(createPageUrl("SignUp")); }}><UserPlus className="mr-2 h-4 w-4" />{t.nav.signUp}</Button></div>}
+            </div>
+          </nav>
+        )}
+      </header>
+      <main id="main-content">{children}</main>
     </div>
   );
 }
 
-export default function Layout({ children, currentPageName }) {
-  return (
-    <LanguageProvider>
-      <LanguageContent children={children} currentPageName={currentPageName} />
-    </LanguageProvider>
-  );
+export default function Layout({ children }) {
+  return <LanguageProvider><LanguageContent>{children}</LanguageContent></LanguageProvider>;
 }
 
 export { useLanguage };

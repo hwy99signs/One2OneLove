@@ -1,0 +1,39 @@
+name: O2OL Route Performance
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-route-performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify lazy-route source invariants
+        run: node scripts/verify-o2ol-route-splitting.mjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify emitted route chunks
+        run: node scripts/verify-o2ol-route-splitting.mjs

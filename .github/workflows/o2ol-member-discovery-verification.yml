@@ -1,0 +1,73 @@
+name: O2OL Member Discovery Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-member-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify five-language member discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/pages/FindFriends.jsx src/pages/FriendRequests.jsx; do
+            for lang in en es fr it de; do grep -q "${lang}:" "$file"; done
+          done
+          grep -q 'user_directory_profiles' src/lib/buddyService.js
+          grep -q 'getAllUsers' src/pages/FindFriends.jsx
+          grep -q 'sendBuddyRequest' src/pages/FindFriends.jsx
+          grep -q 'getReceivedBuddyRequests' src/pages/FriendRequests.jsx
+          grep -q 'acceptBuddyRequest' src/pages/FriendRequests.jsx
+          grep -q 'Account email and billing information are not part' src/pages/FindFriends.jsx
+          grep -q 'Account email and billing information are not shown' src/pages/FriendRequests.jsx
+
+      - name: Reject private account reads and diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'console\.|mock|Base44' src/pages/FindFriends.jsx src/pages/FriendRequests.jsx; then
+            echo 'Member discovery must not contain diagnostics, mocks, or Base44 fallbacks.'
+            exit 1
+          fi
+          if grep -F ".from('users')" src/lib/buddyService.js | grep -q '.select'; then
+            echo 'Member discovery must not read private users rows directly.'
+            exit 1
+          fi
+          if grep -F '.from("users")' src/lib/buddyService.js | grep -q '.select'; then
+            echo 'Member discovery must not read private users rows directly.'
+            exit 1
+          fi
+
+      - name: Lint discovery surfaces
+        run: >-
+          npx eslint
+          src/pages/FindFriends.jsx
+          src/pages/FriendRequests.jsx
+          src/lib/buddyService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

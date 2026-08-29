@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Bell, Repeat, Pencil, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { useLanguage } from "@/Layout";
 
 const eventTypeColors = {
   date: "from-pink-500 to-rose-500",
@@ -25,70 +25,72 @@ const eventTypeIcons = {
   other: "📌"
 };
 
+const translations = {
+  en: {
+    edit: "Edit event", delete: "Delete event", daysBefore: "days before",
+    types: { date: "Date", anniversary: "Anniversary", milestone: "Milestone", reminder: "Reminder", appointment: "Appointment", activity: "Activity", other: "Other" },
+    patterns: { daily: "Daily", weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" }
+  },
+  es: {
+    edit: "Editar evento", delete: "Eliminar evento", daysBefore: "días antes",
+    types: { date: "Cita", anniversary: "Aniversario", milestone: "Hito", reminder: "Recordatorio", appointment: "Compromiso", activity: "Actividad", other: "Otro" },
+    patterns: { daily: "Diario", weekly: "Semanal", monthly: "Mensual", yearly: "Anual" }
+  },
+  fr: {
+    edit: "Modifier l’événement", delete: "Supprimer l’événement", daysBefore: "jours avant",
+    types: { date: "Rendez-vous", anniversary: "Anniversaire", milestone: "Jalon", reminder: "Rappel", appointment: "Rendez-vous Planifié", activity: "Activité", other: "Autre" },
+    patterns: { daily: "Quotidien", weekly: "Hebdomadaire", monthly: "Mensuel", yearly: "Annuel" }
+  },
+  it: {
+    edit: "Modifica evento", delete: "Elimina evento", daysBefore: "giorni prima",
+    types: { date: "Appuntamento", anniversary: "Anniversario", milestone: "Traguardo", reminder: "Promemoria", appointment: "Impegno", activity: "Attività", other: "Altro" },
+    patterns: { daily: "Giornaliero", weekly: "Settimanale", monthly: "Mensile", yearly: "Annuale" }
+  },
+  de: {
+    edit: "Ereignis bearbeiten", delete: "Ereignis löschen", daysBefore: "Tage vorher",
+    types: { date: "Date", anniversary: "Jahrestag", milestone: "Meilenstein", reminder: "Erinnerung", appointment: "Termin", activity: "Aktivität", other: "Sonstiges" },
+    patterns: { daily: "Täglich", weekly: "Wöchentlich", monthly: "Monatlich", yearly: "Jährlich" }
+  }
+};
+
+const localeMap = { en: 'en-US', es: 'es', fr: 'fr', it: 'it', de: 'de' };
+
 export default function CalendarEventCard({ event, onEdit, onDelete, index }) {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+  const locale = localeMap[currentLanguage] || localeMap.en;
   const colorClass = eventTypeColors[event.event_type] || eventTypeColors.other;
   const icon = eventTypeIcons[event.event_type] || eventTypeIcons.other;
+  const eventDate = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(`${event.event_date}T12:00:00`));
+  const typeLabel = t.types[event.event_type] || t.types.other;
+  const recurrenceLabel = t.patterns[event.recurrence_pattern] || event.recurrence_pattern;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ delay: index * 0.05 }}
-    >
-      <Card className="bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-pink-200">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: index * 0.05 }}>
+      <Card className="border-2 border-transparent bg-white/80 backdrop-blur-sm transition-all hover:border-pink-200 hover:shadow-xl">
         <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <div className="flex items-start gap-4">
-                <div className={`w-14 h-14 bg-gradient-to-br ${colorClass} rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0`}>
-                  {icon}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {event.title}
-                  </h3>
-                  
-                  <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {format(new Date(event.event_date), 'MMMM d, yyyy')}
-                    </div>
-                    {event.event_time && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {event.event_time}
-                      </div>
-                    )}
-                    {event.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {event.location}
-                      </div>
-                    )}
+                <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${colorClass} text-2xl shadow-lg`} aria-hidden="true">{icon}</div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="mb-2 text-xl font-bold text-gray-900">{event.title}</h3>
+                  <div className="mb-3 flex flex-wrap gap-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-1"><Calendar className="h-4 w-4" aria-hidden="true" /><time dateTime={event.event_date}>{eventDate}</time></div>
+                    {event.event_time && <div className="flex items-center gap-1"><Clock className="h-4 w-4" aria-hidden="true" />{event.event_time}</div>}
+                    {event.location && <div className="flex items-center gap-1"><MapPin className="h-4 w-4" aria-hidden="true" />{event.location}</div>}
                   </div>
-
-                  {event.description && (
-                    <p className="text-gray-700 mb-3">
-                      {event.description}
-                    </p>
-                  )}
-
+                  {event.description && <p className="mb-3 text-gray-700">{event.description}</p>}
                   <div className="flex flex-wrap gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${colorClass} text-white`}>
-                      {event.event_type}
-                    </span>
+                    <span className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-semibold text-white ${colorClass}`}>{typeLabel}</span>
                     {event.reminder_enabled && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 flex items-center gap-1">
-                        <Bell className="w-3 h-3" />
-                        {event.reminder_days_before}d before
+                      <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                        <Bell className="h-3 w-3" aria-hidden="true" />{event.reminder_days_before} {t.daysBefore}
                       </span>
                     )}
                     {event.is_recurring && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 flex items-center gap-1">
-                        <Repeat className="w-3 h-3" />
-                        {event.recurrence_pattern}
+                      <span className="flex items-center gap-1 rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                        <Repeat className="h-3 w-3" aria-hidden="true" />{recurrenceLabel}
                       </span>
                     )}
                   </div>
@@ -96,22 +98,12 @@ export default function CalendarEventCard({ event, onEdit, onDelete, index }) {
               </div>
             </div>
 
-            <div className="flex gap-2 ml-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(event)}
-                className="text-gray-400 hover:text-pink-600"
-              >
-                <Pencil className="w-4 h-4" />
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" type="button" onClick={() => onEdit(event)} aria-label={t.edit} className="text-gray-400 hover:text-pink-600">
+                <Pencil className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(event.id)}
-                className="text-gray-400 hover:text-red-600"
-              >
-                <Trash2 className="w-4 h-4" />
+              <Button variant="ghost" size="icon" type="button" onClick={() => onDelete(event.id)} aria-label={t.delete} className="text-gray-400 hover:text-red-600">
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>

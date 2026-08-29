@@ -1,0 +1,64 @@
+name: O2OL Partner Photo Hardening
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - src/lib/partnerPhotoService.js
+      - scripts/harden-partner-photo-flow.mjs
+      - .github/workflows/o2ol-partner-photo-hardening.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout active build branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stage authenticated partner photo flow
+        run: node scripts/harden-partner-photo-flow.mjs
+
+      - name: Verify partner integrity
+        run: node scripts/verify-o2ol-partner-integrity.mjs
+
+      - name: Lint partner onboarding
+        run: >-
+          npx eslint
+          src/pages/InfluencerSignup.jsx
+          src/pages/ProfessionalSignup.jsx
+          src/lib/partnerPhotoService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit only after verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/pages/InfluencerSignup.jsx src/pages/ProfessionalSignup.jsx; then
+            echo 'Partner signup photo flow already hardened.'
+            exit 0
+          fi
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/pages/InfluencerSignup.jsx src/pages/ProfessionalSignup.jsx
+          git commit -m 'Upload partner profile photos after account creation'
+          git push origin HEAD:o2ol-build-branch-2026-08-18

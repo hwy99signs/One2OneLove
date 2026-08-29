@@ -1,0 +1,55 @@
+name: O2OL Chat Security
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-chat-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify chat security invariants
+        run: node scripts/verify-o2ol-chat-security.mjs
+
+      - name: Verify social privacy invariants
+        run: node scripts/verify-o2ol-social-privacy.mjs
+
+      - name: Lint hardened chat and social services
+        run: >-
+          npx eslint
+          src/lib/chatService.js
+          src/lib/buddyService.js
+          src/pages/FindFriends.jsx
+          src/pages/FriendRequests.jsx
+          --rule 'react/prop-types: off'
+
+      - name: Lint legacy chat UI without blocking on unused handler debt
+        run: >-
+          npx eslint
+          src/pages/Chat.jsx
+          --rule 'react/prop-types: off'
+          --rule 'no-unused-vars: off'
+
+      - name: Production build
+        run: npm run build

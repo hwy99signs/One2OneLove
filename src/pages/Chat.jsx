@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import ChatList from '@/components/chat/ChatList';
 import ChatWindow from '@/components/chat/ChatWindow';
 import CallWindow from '@/components/chat/CallWindow';
-import { useLanguage } from '@/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import {
@@ -29,7 +28,6 @@ import { supabase } from '@/lib/supabase';
 import { pinMessage, unpinMessage } from '@/lib/chatFeaturesService';
 
 export default function Chat() {
-  const { currentLanguage } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -47,7 +45,7 @@ export default function Chat() {
   const conversationSubscriptionRef = useRef(null);
 
   // Fetch all conversations
-  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
+  const { data: conversations = [] } = useQuery({
     queryKey: ['conversations'],
     queryFn: getMyConversations,
     enabled: !!user,
@@ -415,6 +413,7 @@ export default function Chat() {
   };
 
   const handleSendFile = async (file, type, duration) => {
+    void duration;
     if (!selectedChatId || !selectedChat) return;
 
     await sendFileMutation.mutateAsync({
@@ -472,6 +471,7 @@ export default function Chat() {
   };
 
   const handleMarkAsUnread = (chatId) => {
+    void chatId;
     // This would require a backend update to set unread count
     toast.success('Marked as unread');
   };
@@ -605,11 +605,13 @@ export default function Chat() {
   };
 
   const handleDeleteMessage = async (messageId, deleteType) => {
+    void deleteType;
     // For now, we only support delete for everyone
     await deleteMessageMutation.mutateAsync({ messageId });
   };
 
   const handleClearChat = async (chatId) => {
+    void chatId;
     // This would require deleting all messages in the conversation
     toast.info('Clear chat feature coming soon');
   };

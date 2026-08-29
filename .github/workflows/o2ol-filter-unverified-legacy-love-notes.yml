@@ -1,0 +1,58 @@
+name: O2OL Filter Unverified Legacy Love Notes
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+    paths:
+      - .github/workflows/o2ol-filter-unverified-legacy-love-notes.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-build-branch-2026-08-18
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Hide legacy rows without verified recipient identity
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('src/lib/loveNotesService.js')
+          s = p.read_text()
+          old = "      .eq('is_sent', true)\n      .order('sent_at', { ascending: false, nullsFirst: false });"
+          new = "      .eq('is_sent', true)\n      .not('recipient_user_id', 'is', null)\n      .order('sent_at', { ascending: false, nullsFirst: false });"
+          if new not in s:
+              if old not in s:
+                  raise SystemExit('Expected Love Notes query anchor not found')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+      - name: Verify Love Notes security
+        run: |
+          grep -q ".not('recipient_user_id', 'is', null)" src/lib/loveNotesService.js
+          node scripts/verify-o2ol-love-notes.mjs
+      - name: Lint
+        run: npx eslint src/lib/loveNotesService.js src/pages/LoveNotes.jsx src/components/love-notes/LoveNoteCard.jsx --rule 'react/prop-types: off'
+      - name: Production build
+        run: npm run build
+      - name: Commit verified repair and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/o2ol-filter-unverified-legacy-love-notes.yml
+          git config user.name 'O2OL Build Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src/lib/loveNotesService.js .github/workflows/o2ol-filter-unverified-legacy-love-notes.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Hide unverified legacy Love Notes from delivered views'
+          git push origin HEAD:o2ol-build-branch-2026-08-18

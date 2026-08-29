@@ -1,0 +1,106 @@
+name: O2OL Community Verification
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-community:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify launch community boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in src/pages/Community.jsx src/components/community/PostStoryForm.jsx src/components/community/StoryCard.jsx src/components/community/BuddyCard.jsx src/lib/successStoriesService.js src/lib/buddyService.js supabase-community-story-privileges.sql; do test -f "$file"; done
+          for lang in en es fr it de; do
+            grep -q "${lang}:" src/pages/Community.jsx
+            grep -q "${lang}:" src/components/community/PostStoryForm.jsx
+            grep -q "${lang}:" src/components/community/StoryCard.jsx
+            grep -q "${lang}:" src/components/community/BuddyCard.jsx
+          done
+          grep -q "moderation_status', 'approved" src/lib/successStoriesService.js
+          grep -q 'submit_community_story' src/lib/successStoriesService.js
+          grep -q 'user_directory_profiles' src/lib/buddyService.js
+          grep -q 'Discussion Forums — Post Launch' src/pages/Community.jsx
+          grep -q 'Every new story is submitted for review first' src/components/community/PostStoryForm.jsx
+
+      - name: Verify story privilege contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'revoke all privileges on table public.success_stories from anon, authenticated' supabase-community-story-privileges.sql
+          grep -q 'grant select on table public.success_stories to anon' supabase-community-story-privileges.sql
+          grep -q 'grant select, delete on table public.success_stories to authenticated' supabase-community-story-privileges.sql
+          grep -q 'revoke all on function public.submit_community_story' supabase-community-story-privileges.sql
+          grep -q 'grant execute on function public.submit_community_story' supabase-community-story-privileges.sql
+          if grep -Eq 'grant .*\b(insert|update|truncate|trigger|references)\b.*success_stories.*authenticated' supabase-community-story-privileges.sql; then
+            echo 'Normal members must not regain direct story insert/update/truncate/trigger/reference privileges.'
+            exit 1
+          fi
+
+      - name: Verify reaction privacy contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          for table in story_likes story_helpful; do
+            grep -q "revoke all privileges on table public.${table} from anon, authenticated" supabase-community-story-privileges.sql
+            grep -q "grant select, insert, delete on table public.${table} to authenticated" supabase-community-story-privileges.sql
+          done
+          grep -q 'using (auth.uid() = user_id)' supabase-community-story-privileges.sql
+          if grep -Eq 'grant .*\b(update|truncate|trigger|references)\b.*story_(likes|helpful).*authenticated|grant .*story_(likes|helpful).*anon' supabase-community-story-privileges.sql; then
+            echo 'Reaction rows must not expose member identities publicly or restore unnecessary browser privileges.'
+            exit 1
+          fi
+
+      - name: Reject retired forum and private-account behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'ForumCard|ForumPostCard|createForumPost|forumPosts|mock|Base44|console\.' src/pages/Community.jsx; then
+            echo 'Community must not restore the retired forum shell, mock data, or browser diagnostics.'
+            exit 1
+          fi
+          if grep -F ".from('users')" src/lib/buddyService.js | grep -q '.select'; then
+            echo 'Buddy discovery must use the safe directory surface, not private account rows.'
+            exit 1
+          fi
+          if grep -F '.from("users")' src/lib/buddyService.js | grep -q '.select'; then
+            echo 'Buddy discovery must use the safe directory surface, not private account rows.'
+            exit 1
+          fi
+
+      - name: Lint community surfaces
+        run: >-
+          npx eslint
+          src/pages/Community.jsx
+          src/components/community/PostStoryForm.jsx
+          src/components/community/StoryCard.jsx
+          src/components/community/BuddyCard.jsx
+          src/lib/successStoriesService.js
+          src/lib/buddyService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

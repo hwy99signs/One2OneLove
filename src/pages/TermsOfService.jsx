@@ -1,142 +1,40 @@
-import React from "react";
-import { useLanguage } from "@/Layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileText, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
+import React from 'react';
+import { ArrowLeft, FileText, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { useLanguage } from '@/Layout';
 
 const translations = {
   en: {
-    title: "Terms of Service",
-    subtitle: "Please read these terms carefully",
-    back: "Back",
-    lastUpdated: "Last Updated: November 15, 2025",
+    title: 'Terms Overview — Launch Draft', subtitle: 'This operational summary is not the final legal Terms of Service. Final legal review is required before public launch.', back: 'Back Home', review: 'Legal review required', reviewCopy: 'The previous page was a generic 2025 template. This draft reflects the product that actually exists today while avoiding unreviewed liability, jurisdiction, or contract language.',
     sections: [
-      { title: "1. Acceptance of Terms", content: "By accessing and using One 2 One Love, you accept and agree to be bound by these Terms of Service. If you do not agree, please do not use our services." },
-      { title: "2. Use of Service", content: "You agree to use our service only for lawful purposes and in accordance with these Terms. You must not use our service in any way that violates applicable laws or regulations." },
-      { title: "3. User Accounts", content: "You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. You must notify us immediately of any unauthorized use." },
-      { title: "4. Content", content: "You retain ownership of any content you submit to our service. By submitting content, you grant us a license to use, modify, and display that content in connection with our services." },
-      { title: "5. Prohibited Activities", content: "You may not use our service to harass, abuse, or harm others; transmit malware or viruses; or engage in any illegal activities." },
-      { title: "6. Termination", content: "We reserve the right to suspend or terminate your account at any time for violations of these Terms or for any other reason at our sole discretion." },
-      { title: "7. Disclaimers", content: "Our service is provided 'as is' without warranties of any kind. We do not guarantee that the service will be uninterrupted, secure, or error-free." },
-      { title: "8. Limitation of Liability", content: "We shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of our service." },
-      { title: "9. Changes to Terms", content: "We may modify these Terms at any time. Continued use of our service after changes constitutes acceptance of the modified Terms." },
-      { title: "10. Contact", content: "If you have questions about these Terms, please contact us at legal@one2onelove.com." }
-    ]
-  },
-  es: {
-    title: "Términos de Servicio",
-    subtitle: "Por favor lee estos términos cuidadosamente",
-    back: "Volver",
-    lastUpdated: "Última Actualización: 15 de Noviembre de 2025",
-    sections: [
-      { title: "1. Aceptación de Términos", content: "Al acceder y usar One 2 One Love, aceptas estar sujeto a estos Términos de Servicio." },
-      { title: "2. Uso del Servicio", content: "Aceptas usar nuestro servicio solo para fines legales y de acuerdo con estos Términos." },
-      { title: "3. Cuentas de Usuario", content: "Eres responsable de mantener la confidencialidad de tus credenciales de cuenta." },
-      { title: "4. Contenido", content: "Conservas la propiedad de cualquier contenido que envíes a nuestro servicio." },
-      { title: "5. Actividades Prohibidas", content: "No puedes usar nuestro servicio para acosar, abusar o dañar a otros." },
-      { title: "6. Terminación", content: "Nos reservamos el derecho de suspender o terminar tu cuenta en cualquier momento." },
-      { title: "7. Descargos de Responsabilidad", content: "Nuestro servicio se proporciona 'tal cual' sin garantías de ningún tipo." },
-      { title: "8. Limitación de Responsabilidad", content: "No seremos responsables por daños indirectos, incidentales o consecuentes." },
-      { title: "9. Cambios a los Términos", content: "Podemos modificar estos Términos en cualquier momento." },
-      { title: "10. Contacto", content: "Si tienes preguntas sobre estos Términos, contáctanos en legal@one2onelove.com." }
-    ]
-  },
-  fr: {
-    title: "Conditions d'Utilisation",
-    subtitle: "Veuillez lire attentivement ces conditions",
-    back: "Retour",
-    lastUpdated: "Dernière Mise à Jour: 15 Novembre 2025",
-    sections: [
-      { title: "1. Acceptation des Conditions", content: "En accédant et en utilisant One 2 One Love, vous acceptez d'être lié par ces Conditions d'Utilisation." },
-      { title: "2. Utilisation du Service", content: "Vous acceptez d'utiliser notre service uniquement à des fins légales." },
-      { title: "3. Comptes Utilisateurs", content: "Vous êtes responsable de la confidentialité de vos identifiants de compte." },
-      { title: "4. Contenu", content: "Vous conservez la propriété de tout contenu que vous soumettez." },
-      { title: "5. Activités Interdites", content: "Vous ne pouvez pas utiliser notre service pour harceler ou nuire à autrui." },
-      { title: "6. Résiliation", content: "Nous nous réservons le droit de suspendre ou de résilier votre compte." },
-      { title: "7. Avertissements", content: "Notre service est fourni 'tel quel' sans garanties." },
-      { title: "8. Limitation de Responsabilité", content: "Nous ne serons pas responsables des dommages indirects." },
-      { title: "9. Modifications des Conditions", content: "Nous pouvons modifier ces Conditions à tout moment." },
-      { title: "10. Contact", content: "Pour des questions, contactez-nous à legal@one2onelove.com." }
-    ]
-  },
-  it: {
-    title: "Termini di Servizio",
-    subtitle: "Si prega di leggere attentamente questi termini",
-    back: "Indietro",
-    lastUpdated: "Ultimo Aggiornamento: 15 Novembre 2025",
-    sections: [
-      { title: "1. Accettazione dei Termini", content: "Accedendo e utilizzando One 2 One Love, accetti di essere vincolato da questi Termini di Servizio." },
-      { title: "2. Uso del Servizio", content: "Accetti di utilizzare il nostro servizio solo per scopi legali." },
-      { title: "3. Account Utente", content: "Sei responsabile del mantenimento della riservatezza delle tue credenziali." },
-      { title: "4. Contenuto", content: "Mantieni la proprietà di qualsiasi contenuto che invii." },
-      { title: "5. Attività Proibite", content: "Non puoi utilizzare il nostro servizio per molestare o danneggiare altri." },
-      { title: "6. Risoluzione", content: "Ci riserviamo il diritto di sospendere o terminare il tuo account." },
-      { title: "7. Esclusioni di Responsabilità", content: "Il nostro servizio è fornito 'così com'è' senza garanzie." },
-      { title: "8. Limitazione di Responsabilità", content: "Non saremo responsabili per danni indiretti." },
-      { title: "9. Modifiche ai Termini", content: "Potremmo modificare questi Termini in qualsiasi momento." },
-      { title: "10. Contatto", content: "Per domande, contattaci a legal@one2onelove.com." }
-    ]
-  },
-  de: {
-    title: "Nutzungsbedingungen",
-    subtitle: "Bitte lesen Sie diese Bedingungen sorgfältig",
-    back: "Zurück",
-    lastUpdated: "Letzte Aktualisierung: 15. November 2025",
-    sections: [
-      { title: "1. Annahme der Bedingungen", content: "Durch den Zugriff auf und die Nutzung von One 2 One Love akzeptieren Sie diese Nutzungsbedingungen." },
-      { title: "2. Nutzung des Dienstes", content: "Sie verpflichten sich, unseren Dienst nur für rechtmäßige Zwecke zu nutzen." },
-      { title: "3. Benutzerkonten", content: "Sie sind für die Vertraulichkeit Ihrer Kontodaten verantwortlich." },
-      { title: "4. Inhalt", content: "Sie behalten das Eigentum an allen Inhalten, die Sie einreichen." },
-      { title: "5. Verbotene Aktivitäten", content: "Sie dürfen unseren Dienst nicht nutzen, um andere zu belästigen oder zu schädigen." },
-      { title: "6. Kündigung", content: "Wir behalten uns das Recht vor, Ihr Konto zu suspendieren oder zu kündigen." },
-      { title: "7. Haftungsausschlüsse", content: "Unser Dienst wird 'wie besehen' ohne Garantien bereitgestellt." },
-      { title: "8. Haftungsbeschränkung", content: "Wir haften nicht für indirekte Schäden." },
-      { title: "9. Änderungen der Bedingungen", content: "Wir können diese Bedingungen jederzeit ändern." },
-      { title: "10. Kontakt", content: "Bei Fragen kontaktieren Sie uns unter legal@one2onelove.com." }
-    ]
-  }
+      ['Use One2OneLove responsibly', 'Members must use O2OL lawfully and must not harass, threaten, exploit, impersonate, or intentionally harm other members, creators, moderators, or the platform.'],
+      ['Accounts and access', 'Members are responsible for their own account access. Features that require sign-in, reciprocal partner links, accepted buddy connections, creator approval, or moderator status must not be bypassed.'],
+      ['Educational relationship tools', 'O2OL relationship tools are educational and supportive. They are not therapy, diagnosis, legal advice, crisis care, or a substitute for a licensed professional.'],
+      ['Community content', 'Members may submit relationship stories and other permitted content. Community stories are moderated before public display. O2OL may remove content that violates platform rules or creates safety, abuse, privacy, or integrity concerns.'],
+      ['Private couple features', 'Love Notes, journals, memories, goals, calendars, partner information, and chat use feature-specific access rules. A relationship or buddy connection does not authorize unrestricted access to another member’s account.'],
+      ['Global Relationship Room', 'Third-party creators may express views that are not those of O2OL or ERANT. Creator participation is subject to approval, scheduling, reporting, moderation, cancellation, and other published Room rules.'],
+      ['AI previews', 'The AI Relationship Coach and AI Content Creator are not live services at launch. Preview pages must not be treated as active AI advice or generation.'],
+      ['Paid services and promotions', 'Paid membership checkout, paid creator slots, sponsorship inventory, and prize promotions are not active launch offers unless O2OL later publishes the applicable price, eligibility, rules, and terms.'],
+      ['Platform changes and moderation', 'O2OL may change, pause, limit, or remove features when needed for security, privacy, moderation, reliability, legal review, or product development.'],
+      ['Questions', 'Use Contact One2OneLove for questions while final launch Terms are being reviewed.'],
+    ], contact: 'Contact One2OneLove' },
+  es: { title: 'Resumen de Términos — Borrador de Lanzamiento', subtitle: 'Este resumen operativo no son los Términos de Servicio legales finales. Se requiere revisión legal antes del lanzamiento público.', back: 'Volver al Inicio', review: 'Revisión legal requerida', reviewCopy: 'La página anterior era una plantilla genérica de 2025. Este borrador refleja el producto actual sin inventar lenguaje contractual, jurisdiccional o de responsabilidad no revisado.', sections: [['Uso responsable','Los miembros deben usar O2OL legalmente y no acosar, amenazar, explotar, suplantar ni dañar intencionalmente a otros miembros, creadores, moderadores o la plataforma.'],['Cuentas y acceso','Los miembros son responsables de su acceso. No se deben eludir requisitos de inicio de sesión, vínculo recíproco, amistad aceptada, aprobación de creador o estado de moderador.'],['Herramientas educativas','Las herramientas de O2OL son educativas y de apoyo; no son terapia, diagnóstico, asesoramiento legal ni atención de crisis.'],['Contenido comunitario','Las historias se moderan antes de mostrarse públicamente. O2OL puede retirar contenido por seguridad, abuso, privacidad o integridad.'],['Funciones privadas de pareja','Notas de Amor, diarios, recuerdos, metas, calendarios, información de pareja y chat usan reglas específicas de acceso.'],['Sala Global','Los creadores externos pueden expresar opiniones que no representan a O2OL o ERANT y están sujetos a reglas de aprobación, programación y moderación.'],['Vistas previas de IA','El Coach IA y el Creador de Contenido IA no son servicios activos en el lanzamiento.'],['Servicios de pago y promociones','Membresías pagadas, slots pagados, patrocinios y promociones no son ofertas activas salvo publicación posterior de precios y reglas.'],['Cambios y moderación','O2OL puede cambiar, pausar o retirar funciones por seguridad, privacidad, moderación, fiabilidad, revisión legal o desarrollo.'],['Preguntas','Usa Contactar a One2OneLove mientras se revisan los Términos finales.']], contact: 'Contactar a One2OneLove' },
+  fr: { title: 'Aperçu des Conditions — Brouillon de Lancement', subtitle: 'Ce résumé opérationnel ne constitue pas les Conditions juridiques finales. Une révision juridique est requise avant le lancement public.', back: 'Retour à l’Accueil', review: 'Révision juridique requise', reviewCopy: 'L’ancienne page était un modèle générique de 2025. Ce brouillon reflète le produit actuel sans inventer de clauses de responsabilité, juridiction ou contrat non validées.', sections: [['Utilisation responsable','Les membres doivent utiliser O2OL légalement et ne pas harceler, menacer, exploiter, usurper l’identité ou nuire intentionnellement à autrui.'],['Comptes et accès','Les exigences de connexion, lien de partenaire réciproque, relation buddy acceptée, approbation créateur ou statut modérateur ne doivent pas être contournées.'],['Outils éducatifs','Les outils O2OL sont éducatifs et de soutien; ils ne constituent ni thérapie, diagnostic, conseil juridique ni aide de crise.'],['Contenu communautaire','Les histoires sont modérées avant affichage public. O2OL peut retirer du contenu pour des raisons de sécurité, abus, confidentialité ou intégrité.'],['Fonctions privées du couple','Notes d’Amour, journaux, souvenirs, objectifs, calendriers, informations partenaire et chat utilisent des règles d’accès spécifiques.'],['Salle Mondiale','Les créateurs tiers peuvent exprimer des opinions qui ne représentent pas O2OL ou ERANT et sont soumis aux règles de la Salle.'],['Aperçus IA','Le Coach IA et le Créateur de Contenu IA ne sont pas des services actifs au lancement.'],['Services payants et promotions','Abonnements payants, créneaux payants, sponsoring et promotions ne sont pas des offres actives sans publication ultérieure des prix et règles.'],['Évolution et modération','O2OL peut modifier, suspendre ou retirer des fonctions pour sécurité, confidentialité, modération, fiabilité, révision juridique ou développement.'],['Questions','Utilisez Contacter One2OneLove pendant la révision des Conditions finales.']], contact: 'Contacter One2OneLove' },
+  it: { title: 'Panoramica dei Termini — Bozza di Lancio', subtitle: 'Questo riepilogo operativo non costituisce i Termini legali finali. È richiesta una revisione legale prima del lancio pubblico.', back: 'Torna alla Home', review: 'Revisione legale richiesta', reviewCopy: 'La pagina precedente era un modello generico del 2025. Questa bozza riflette il prodotto attuale senza inventare clausole di responsabilità, giurisdizione o contratto non revisionate.', sections: [['Uso responsabile','I membri devono usare O2OL legalmente e non molestare, minacciare, sfruttare, impersonare o danneggiare intenzionalmente altri.'],['Account e accesso','Non vanno aggirati requisiti di accesso, collegamento reciproco del partner, buddy accettato, approvazione creator o stato moderatore.'],['Strumenti educativi','Gli strumenti O2OL sono educativi e di supporto; non sono terapia, diagnosi, consulenza legale o assistenza di crisi.'],['Contenuti community','Le storie vengono moderate prima della pubblicazione. O2OL può rimuovere contenuti per sicurezza, abuso, privacy o integrità.'],['Funzioni private di coppia','Note d’Amore, diari, ricordi, obiettivi, calendari, dati partner e chat usano regole specifiche di accesso.'],['Sala Globale','I creator terzi possono esprimere opinioni che non rappresentano O2OL o ERANT e sono soggetti alle regole della Sala.'],['Anteprime IA','Coach IA e Creatore di Contenuti IA non sono servizi attivi al lancio.'],['Servizi a pagamento e promozioni','Abbonamenti, slot creator pagati, sponsorizzazioni e promozioni non sono offerte attive senza successiva pubblicazione di prezzi e regole.'],['Modifiche e moderazione','O2OL può cambiare, sospendere o rimuovere funzioni per sicurezza, privacy, moderazione, affidabilità, revisione legale o sviluppo.'],['Domande','Usa Contatta One2OneLove durante la revisione dei Termini finali.']], contact: 'Contatta One2OneLove' },
+  de: { title: 'Nutzungsübersicht — Startentwurf', subtitle: 'Diese betriebliche Übersicht ist nicht die endgültige rechtliche Nutzungsvereinbarung. Vor dem öffentlichen Start ist eine rechtliche Prüfung erforderlich.', back: 'Zurück zur Startseite', review: 'Rechtliche Prüfung erforderlich', reviewCopy: 'Die vorherige Seite war eine generische Vorlage von 2025. Dieser Entwurf beschreibt das aktuelle Produkt, ohne ungeprüfte Haftungs-, Gerichtsstands- oder Vertragsklauseln zu erfinden.', sections: [['Verantwortungsvolle Nutzung','Mitglieder müssen O2OL rechtmäßig nutzen und dürfen andere nicht belästigen, bedrohen, ausnutzen, imitieren oder absichtlich schädigen.'],['Konten und Zugriff','Anmeldung, gegenseitige Partnerverknüpfung, angenommene Buddy-Verbindung, Creator-Genehmigung und Moderatorenstatus dürfen nicht umgangen werden.'],['Pädagogische Werkzeuge','O2OL-Werkzeuge sind pädagogisch und unterstützend; sie sind keine Therapie, Diagnose, Rechtsberatung oder Krisenversorgung.'],['Community-Inhalte','Geschichten werden vor öffentlicher Anzeige moderiert. O2OL kann Inhalte aus Sicherheits-, Missbrauchs-, Datenschutz- oder Integritätsgründen entfernen.'],['Private Paarfunktionen','Liebesbotschaften, Journale, Erinnerungen, Ziele, Kalender, Partnerdaten und Chat verwenden funktionsspezifische Zugriffsregeln.'],['Globaler Beziehungsraum','Drittanbieter-Creator können Ansichten äußern, die nicht O2OL oder ERANT vertreten, und unterliegen den Room-Regeln.'],['KI-Vorschauen','KI-Beziehungscoach und KI-Content-Ersteller sind zum Start keine aktiven Dienste.'],['Bezahlte Dienste und Aktionen','Bezahlte Mitgliedschaften, Creator-Slots, Sponsoring und Aktionen sind ohne spätere Veröffentlichung von Preisen und Regeln keine aktiven Angebote.'],['Änderungen und Moderation','O2OL kann Funktionen aus Sicherheits-, Datenschutz-, Moderations-, Zuverlässigkeits-, Rechtsprüfungs- oder Entwicklungsgründen ändern, pausieren oder entfernen.'],['Fragen','Nutzt One2OneLove Kontaktieren während der Prüfung der endgültigen Bedingungen.']], contact: 'One2OneLove Kontaktieren' },
 };
 
 export default function TermsOfService() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <FileText className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600">{t.subtitle}</p>
-          <p className="text-sm text-gray-500 mt-4">{t.lastUpdated}</p>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="shadow-2xl">
-            <CardContent className="p-8">
-              <div className="prose prose-lg max-w-none">
-                {t.sections.map((section, index) => (
-                  <div key={index} className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.title}</h2>
-                    <p className="text-gray-700 leading-relaxed">{section.content}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-4xl">
+        <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-purple-700"><ArrowLeft className="h-4 w-4" aria-hidden="true" />{t.back}</Link>
+        <header className="mt-8 text-center"><FileText className="mx-auto h-14 w-14 text-purple-700" aria-hidden="true" /><h1 className="mt-4 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mx-auto mt-3 max-w-3xl text-lg leading-7 text-slate-600">{t.subtitle}</p></header>
+        <Card className="mt-8 border-purple-100 bg-white shadow-sm"><CardContent className="p-6 md:p-8"><div className="flex gap-3 rounded-2xl bg-amber-50 p-5"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-800" aria-hidden="true" /><div><h2 className="font-bold text-amber-950">{t.review}</h2><p className="mt-2 text-sm leading-6 text-amber-900">{t.reviewCopy}</p></div></div><div className="mt-8 space-y-7">{t.sections.map(([title, content]) => <section key={title}><h2 className="text-xl font-bold text-slate-900">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-700">{content}</p></section>)}</div><div className="mt-8"><Link to="/ContactUs" className="font-semibold text-purple-700 hover:underline">{t.contact}</Link></div></CardContent></Card>
       </div>
-    </div>
+    </main>
   );
 }

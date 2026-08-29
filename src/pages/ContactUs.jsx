@@ -1,200 +1,76 @@
 import React, { useState } from "react";
-import { useLanguage } from "@/Layout";
+import { ArrowLeft, Mail, Send, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Mail, MessageCircle, MapPin, Phone, ArrowLeft, Send } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { useLanguage } from "@/Layout";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const translations = {
-  en: {
-    title: "Contact Us",
-    subtitle: "We'd love to hear from you. Send us a message!",
-    back: "Back",
-    name: "Your Name",
-    email: "Your Email",
-    subject: "Subject",
-    message: "Message",
-    sendMessage: "Send Message",
-    getInTouch: "Get in Touch",
-    emailUs: "Email Us",
-    callUs: "Call Us",
-    visitUs: "Visit Us",
-    successMessage: "Message sent! We'll get back to you soon. 💌"
-  },
-  es: {
-    title: "Contáctanos",
-    subtitle: "Nos encantaría saber de ti. ¡Envíanos un mensaje!",
-    back: "Volver",
-    name: "Tu Nombre",
-    email: "Tu Email",
-    subject: "Asunto",
-    message: "Mensaje",
-    sendMessage: "Enviar Mensaje",
-    getInTouch: "Ponte en Contacto",
-    emailUs: "Envíanos un Email",
-    callUs: "Llámanos",
-    visitUs: "Visítanos",
-    successMessage: "¡Mensaje enviado! Te responderemos pronto. 💌"
-  },
-  fr: {
-    title: "Nous Contacter",
-    subtitle: "Nous aimerions vous entendre. Envoyez-nous un message!",
-    back: "Retour",
-    name: "Votre Nom",
-    email: "Votre Email",
-    subject: "Sujet",
-    message: "Message",
-    sendMessage: "Envoyer le Message",
-    getInTouch: "Contactez-Nous",
-    emailUs: "Envoyez-nous un Email",
-    callUs: "Appelez-Nous",
-    visitUs: "Visitez-Nous",
-    successMessage: "Message envoyé! Nous vous répondrons bientôt. 💌"
-  },
-  it: {
-    title: "Contattaci",
-    subtitle: "Ci piacerebbe sentirti. Inviaci un messaggio!",
-    back: "Indietro",
-    name: "Il Tuo Nome",
-    email: "La Tua Email",
-    subject: "Oggetto",
-    message: "Messaggio",
-    sendMessage: "Invia Messaggio",
-    getInTouch: "Mettiti in Contatto",
-    emailUs: "Inviaci un'Email",
-    callUs: "Chiamaci",
-    visitUs: "Visitaci",
-    successMessage: "Messaggio inviato! Ti risponderemo presto. 💌"
-  },
-  de: {
-    title: "Kontaktieren Sie Uns",
-    subtitle: "Wir würden gerne von Ihnen hören. Senden Sie uns eine Nachricht!",
-    back: "Zurück",
-    name: "Ihr Name",
-    email: "Ihre E-Mail",
-    subject: "Betreff",
-    message: "Nachricht",
-    sendMessage: "Nachricht Senden",
-    getInTouch: "Kontaktieren Sie Uns",
-    emailUs: "Senden Sie uns eine E-Mail",
-    callUs: "Rufen Sie uns an",
-    visitUs: "Besuchen Sie uns",
-    successMessage: "Nachricht gesendet! Wir melden uns bald. 💌"
-  }
+  en: { title: "Contact One2OneLove", subtitle: "Send a message to the One2OneLove team.", back: "Back", name: "Your Name", email: "Your Email", subject: "Subject", message: "Message", send: "Send Message", sending: "Sending…", success: "Your message was received.", error: "We could not send your message. Please try again.", privacy: "Contact messages are stored privately for support follow-up. Other members cannot browse this queue.", required: "Please complete every field. Messages must contain at least 10 characters." },
+  es: { title: "Contactar a One2OneLove", subtitle: "Envía un mensaje al equipo de One2OneLove.", back: "Volver", name: "Tu Nombre", email: "Tu Correo", subject: "Asunto", message: "Mensaje", send: "Enviar Mensaje", sending: "Enviando…", success: "Hemos recibido tu mensaje.", error: "No pudimos enviar tu mensaje. Inténtalo de nuevo.", privacy: "Los mensajes de contacto se almacenan de forma privada para seguimiento. Otros miembros no pueden consultar esta cola.", required: "Completa todos los campos. El mensaje debe contener al menos 10 caracteres." },
+  fr: { title: "Contacter One2OneLove", subtitle: "Envoyez un message à l’équipe One2OneLove.", back: "Retour", name: "Votre Nom", email: "Votre E-mail", subject: "Sujet", message: "Message", send: "Envoyer le Message", sending: "Envoi…", success: "Votre message a été reçu.", error: "Nous n’avons pas pu envoyer votre message. Réessayez.", privacy: "Les messages sont stockés de façon privée pour le suivi du support. Les autres membres ne peuvent pas consulter cette file.", required: "Complétez tous les champs. Le message doit contenir au moins 10 caractères." },
+  it: { title: "Contatta One2OneLove", subtitle: "Invia un messaggio al team One2OneLove.", back: "Indietro", name: "Il Tuo Nome", email: "La Tua Email", subject: "Oggetto", message: "Messaggio", send: "Invia Messaggio", sending: "Invio…", success: "Il tuo messaggio è stato ricevuto.", error: "Non è stato possibile inviare il messaggio. Riprova.", privacy: "I messaggi di contatto vengono archiviati privatamente per il follow-up del supporto. Gli altri membri non possono consultare questa coda.", required: "Completa tutti i campi. Il messaggio deve contenere almeno 10 caratteri." },
+  de: { title: "One2OneLove Kontaktieren", subtitle: "Sende eine Nachricht an das One2OneLove-Team.", back: "Zurück", name: "Dein Name", email: "Deine E-Mail", subject: "Betreff", message: "Nachricht", send: "Nachricht Senden", sending: "Wird gesendet…", success: "Deine Nachricht wurde empfangen.", error: "Die Nachricht konnte nicht gesendet werden. Bitte versuche es erneut.", privacy: "Kontaktnachrichten werden für die Support-Nachverfolgung privat gespeichert. Andere Mitglieder können diese Warteschlange nicht einsehen.", required: "Fülle alle Felder aus. Die Nachricht muss mindestens 10 Zeichen enthalten." },
 };
 
 export default function ContactUs() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
+  const { user } = useAuth();
+  const [formData, setFormData] = useState({ name: user?.name || '', email: user?.email || '', subject: '', message: '' });
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    toast.success(t.successMessage);
-    setFormData({ name: "", email: "", subject: "", message: "" });
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      subject: formData.subject.trim(),
+      message: formData.message.trim(),
+      language: ['en', 'es', 'fr', 'it', 'de'].includes(currentLanguage) ? currentLanguage : 'en',
+      user_id: user?.id || null,
+    };
+    if (!payload.name || !payload.email || !payload.subject || payload.message.length < 10) {
+      toast.error(t.required);
+      return;
+    }
+
+    setIsSending(true);
+    const { error } = await supabase.from('contact_messages').insert(payload);
+    setIsSending(false);
+    if (error) {
+      toast.error(t.error);
+      return;
+    }
+
+    toast.success(t.success);
+    setFormData((current) => ({ ...current, subject: '', message: '' }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Mail className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
-        </motion.div>
-
-        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2">
-            <Card className="shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-2xl">{t.getInTouch}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.name}</label>
-                    <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="h-12" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.email}</label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="h-12" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.subject}</label>
-                    <Input value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} required className="h-12" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.message}</label>
-                    <Textarea value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required className="h-32" />
-                  </div>
-                  <Button type="submit" className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg">
-                    <Send className="w-5 h-5 mr-2" />
-                    {t.sendMessage}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="space-y-6">
-            <Card className="shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{t.emailUs}</h3>
-                    <p className="text-gray-600 text-sm">support@one2onelove.com</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{t.callUs}</h3>
-                    <p className="text-gray-600 text-sm">+1 (555) 123-4567</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{t.visitUs}</h3>
-                    <p className="text-gray-600 text-sm">123 Love Street<br />Heart City, HC 12345</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-4xl">
+        <Link to="/" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-purple-700"><ArrowLeft className="h-4 w-4" aria-hidden="true" />{t.back}</Link>
+        <header className="mt-8 text-center"><Mail className="mx-auto h-14 w-14 text-purple-700" aria-hidden="true" /><h1 className="mt-4 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-3 text-lg text-slate-600">{t.subtitle}</p></header>
+        <Card className="mx-auto mt-8 max-w-3xl shadow-sm">
+          <CardHeader><CardTitle>{t.title}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="mb-6 flex gap-3 rounded-2xl bg-purple-50 p-4 text-sm leading-6 text-purple-950"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" /><p>{t.privacy}</p></div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <label className="block text-sm font-semibold text-slate-700">{t.name}<Input className="mt-2" value={formData.name} onChange={(event) => setFormData({ ...formData, name: event.target.value })} maxLength={120} required /></label>
+              <label className="block text-sm font-semibold text-slate-700">{t.email}<Input className="mt-2" type="email" value={formData.email} onChange={(event) => setFormData({ ...formData, email: event.target.value })} maxLength={320} required /></label>
+              <label className="block text-sm font-semibold text-slate-700">{t.subject}<Input className="mt-2" value={formData.subject} onChange={(event) => setFormData({ ...formData, subject: event.target.value })} maxLength={200} required /></label>
+              <label className="block text-sm font-semibold text-slate-700">{t.message}<Textarea className="mt-2 min-h-36" value={formData.message} onChange={(event) => setFormData({ ...formData, message: event.target.value })} minLength={10} maxLength={5000} required /></label>
+              <Button type="submit" disabled={isSending} className="w-full">{isSending ? t.sending : <><Send className="mr-2 h-4 w-4" aria-hidden="true" />{t.send}</>}</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </main>
   );
 }

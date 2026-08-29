@@ -1,118 +1,20 @@
 import React from "react";
-import { useLanguage } from "@/Layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Star, Heart, ArrowLeft, Quote } from "lucide-react";
+import { Heart, MessageCircle, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLanguage } from "@/Layout";
 
 const translations = {
-  en: {
-    title: "Love Stories & Reviews",
-    subtitle: "See what couples are saying about One 2 One Love",
-    back: "Back",
-    averageRating: "Average Rating",
-    totalReviews: "Total Reviews"
-  },
-  es: {
-    title: "Historias de Amor y Reseñas",
-    subtitle: "Mira lo que las parejas dicen sobre One 2 One Love",
-    back: "Volver",
-    averageRating: "Calificación Promedio",
-    totalReviews: "Total de Reseñas"
-  },
-  fr: {
-    title: "Histoires d'Amour et Avis",
-    subtitle: "Découvrez ce que les couples disent de One 2 One Love",
-    back: "Retour",
-    averageRating: "Note Moyenne",
-    totalReviews: "Total des Avis"
-  },
-  it: {
-    title: "Storie d'Amore e Recensioni",
-    subtitle: "Scopri cosa dicono le coppie su One 2 One Love",
-    back: "Indietro",
-    averageRating: "Valutazione Media",
-    totalReviews: "Totale Recensioni"
-  },
-  de: {
-    title: "Liebesgeschichten & Bewertungen",
-    subtitle: "Sehen Sie, was Paare über One 2 One Love sagen",
-    back: "Zurück",
-    averageRating: "Durchschnittliche Bewertung",
-    totalReviews: "Gesamtbewertungen"
-  }
+  en: { title: "One2OneLove Stories & Reviews", subtitle: "We are not publishing fabricated ratings or testimonials at launch.", notice: "Public reviews and testimonials will only be displayed when they come from real users and we have permission to publish them. Until then, use the Community for real member-submitted relationship stories and platform participation.", community: "Visit Community", invite: "Invite Someone", home: "Back Home" },
+  es: { title: "Historias y Reseñas de One2OneLove", subtitle: "No publicamos calificaciones ni testimonios inventados en el lanzamiento.", notice: "Las reseñas y testimonios públicos solo se mostrarán cuando provengan de usuarios reales y tengamos permiso para publicarlos. Hasta entonces, usa la Comunidad para historias de relaciones enviadas por miembros reales y participación en la plataforma.", community: "Visitar Comunidad", invite: "Invitar a Alguien", home: "Volver al Inicio" },
+  fr: { title: "Histoires et Avis One2OneLove", subtitle: "Nous ne publions pas de notes ou témoignages inventés au lancement.", notice: "Les avis et témoignages publics ne seront affichés que lorsqu’ils proviendront de vrais utilisateurs et que nous aurons l’autorisation de les publier. En attendant, utilisez la Communauté pour consulter des histoires relationnelles soumises par de vrais membres.", community: "Visiter la Communauté", invite: "Inviter Quelqu’un", home: "Retour à l’Accueil" },
+  it: { title: "Storie e Recensioni One2OneLove", subtitle: "Al lancio non pubblichiamo valutazioni o testimonianze inventate.", notice: "Recensioni e testimonianze pubbliche saranno mostrate solo quando provengono da utenti reali e abbiamo il permesso di pubblicarle. Nel frattempo, usa la Comunità per storie di relazione inviate da membri reali e partecipazione alla piattaforma.", community: "Visita la Comunità", invite: "Invita Qualcuno", home: "Torna alla Home" },
+  de: { title: "One2OneLove Geschichten & Bewertungen", subtitle: "Zum Start veröffentlichen wir keine erfundenen Bewertungen oder Erfahrungsberichte.", notice: "Öffentliche Bewertungen und Testimonials werden nur angezeigt, wenn sie von echten Nutzern stammen und eine Veröffentlichungserlaubnis vorliegt. Bis dahin bietet die Community echte von Mitgliedern eingereichte Beziehungsgeschichten und Plattformbeteiligung.", community: "Community Besuchen", invite: "Jemanden Einladen", home: "Zurück zur Startseite" },
 };
 
 export default function Reviews() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-
-  const reviews = [
-    { name: "Sarah & James", rating: 5, text: "This app has completely transformed how we communicate! The love notes feature is our favorite - we send each other messages every day now.", date: "Nov 12, 2025", location: "New York, USA" },
-    { name: "Maria & Carlos", rating: 5, text: "Absolutely love the relationship milestones tracker. We never forget important dates anymore and it's helped us celebrate our journey together.", date: "Nov 10, 2025", location: "Madrid, Spain" },
-    { name: "Emma & Lisa", rating: 5, text: "As an LGBTQ+ couple, we really appreciate the inclusive content and support. The AI coach has given us amazing relationship advice!", date: "Nov 8, 2025", location: "London, UK" },
-    { name: "Sophie & Pierre", rating: 5, text: "The date ideas section is brilliant! We've tried so many new activities together and it's brought us closer than ever.", date: "Nov 5, 2025", location: "Paris, France" },
-    { name: "Anna & Michael", rating: 5, text: "The memory lane feature is beautiful. We love looking back at our photos and reliving our favorite moments together.", date: "Nov 3, 2025", location: "Berlin, Germany" },
-    { name: "Priya & Raj", rating: 5, text: "This app is perfect for busy couples! The scheduled love notes mean we can stay connected even when work gets hectic.", date: "Nov 1, 2025", location: "Mumbai, India" }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />
-            {t.back}
-          </Link>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Heart className="w-10 h-10 text-white fill-white" />
-          </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="max-w-4xl mx-auto mb-12">
-          <Card className="shadow-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white">
-            <CardContent className="p-8 text-center">
-              <div className="flex justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-8 h-8 fill-yellow-300 text-yellow-300" />
-                ))}
-              </div>
-              <div className="text-6xl font-bold mb-2">4.9</div>
-              <div className="text-xl opacity-90 mb-1">{t.averageRating}</div>
-              <div className="opacity-75">{reviews.length}+ {t.totalReviews}</div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {reviews.map((review, index) => (
-            <motion.div key={index} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + index * 0.1 }}>
-              <Card className="h-full hover:shadow-2xl transition-all border-2 border-transparent hover:border-pink-200">
-                <CardContent className="p-6">
-                  <Quote className="w-8 h-8 text-pink-300 mb-4" />
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 mb-4 leading-relaxed">{review.text}</p>
-                  <div className="border-t pt-4">
-                    <div className="font-semibold text-gray-900">{review.name}</div>
-                    <div className="text-sm text-gray-500">{review.location}</div>
-                    <div className="text-xs text-gray-400 mt-1">{review.date}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-purple-50 px-4 py-12 md:py-20"><div className="mx-auto max-w-4xl text-center"><Heart className="mx-auto h-14 w-14 text-rose-600" aria-hidden="true"/><h1 className="mt-5 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-4 text-lg text-slate-600">{t.subtitle}</p><Card className="mx-auto mt-8 max-w-3xl border-rose-100 text-left"><CardContent className="p-6 md:p-8"><div className="flex gap-3 rounded-2xl bg-rose-50 p-5 text-sm leading-6 text-rose-950"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true"/><p>{t.notice}</p></div><div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center"><Button asChild><Link to="/Community"><MessageCircle className="mr-2 h-4 w-4" aria-hidden="true"/>{t.community}</Link></Button><Button asChild variant="outline"><Link to="/Invite">{t.invite}</Link></Button><Button asChild variant="ghost"><Link to="/">{t.home}</Link></Button></div></CardContent></Card></div></main>;
 }

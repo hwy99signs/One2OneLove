@@ -1,0 +1,77 @@
+name: O2OL Integrated Hardening
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify current launch-critical multilingual source
+        run: node scripts/verify-o2ol-launch-current.mjs
+
+      - name: Verify current account and platform security
+        run: node scripts/verify-o2ol-security-current.mjs
+
+      - name: Verify social privacy boundary
+        run: node scripts/verify-o2ol-social-privacy.mjs
+
+      - name: Verify partner application integrity
+        run: node scripts/verify-o2ol-partner-integrity.mjs
+
+      - name: Verify chat participant security
+        run: node scripts/verify-o2ol-chat-security.mjs
+
+      - name: Audit remaining private account dependencies
+        run: node scripts/audit-private-user-relations.mjs
+
+      - name: Verify Vercel SPA fallback source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f vercel.json
+          node -e "const v=require('./vercel.json'); if(!v.rewrites?.some(r=>r.source==='/(.*)' && (r.destination==='/index.html'||r.destination==='/'))) process.exit(1)"
+
+      - name: Lint current hardened surfaces
+        run: >-
+          npx eslint
+          src/pages/InfluencerSignup.jsx
+          src/pages/ProfessionalSignup.jsx
+          src/pages/TherapistSignup.jsx
+          src/pages/Subscription.jsx
+          src/pages/PaymentSuccess.jsx
+          src/pages/ContactUs.jsx
+          src/pages/Community.jsx
+          src/pages/FindFriends.jsx
+          src/pages/FriendRequests.jsx
+          src/pages/AboutUs.jsx
+          src/pages/HelpCenter.jsx
+          src/lib/buddyService.js
+          src/lib/chatService.js
+          src/lib/successStoriesService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

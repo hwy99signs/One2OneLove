@@ -1,0 +1,48 @@
+name: O2OL Partner Integrity
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-partner-applications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify partner persistence and moderation invariants
+        run: node scripts/verify-o2ol-partner-integrity.mjs
+
+      - name: Lint partner application surfaces
+        run: >-
+          npx eslint
+          src/pages/InfluencerSignup.jsx
+          src/pages/ProfessionalSignup.jsx
+          src/components/signup/InfluencerSignupForm.jsx
+          src/components/signup/OtherUserSignupForm.jsx
+          src/components/signup/ProfilePhotoUpload.jsx
+          src/lib/influencerService.js
+          src/lib/professionalService.js
+          --rule 'react/prop-types: off'
+
+      - name: Production build
+        run: npm run build

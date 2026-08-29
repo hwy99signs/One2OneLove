@@ -1,266 +1,44 @@
 import React from 'react';
+import { Heart, Radio, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { ArrowLeft, Heart, Users, Target, Award, Sparkles, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useLanguage } from '@/Layout';
+
+const translations = {
+  en: {
+    title: 'About One2OneLove', subtitle: 'A relationship platform built to help people connect intentionally, communicate thoughtfully, and keep investing in the relationships that matter to them.', mission: 'Our purpose', missionCopy: 'One2OneLove brings practical relationship tools, couple activities, private shared spaces, educational support, community connection, and relationship-focused programming into one place.', approach: 'How O2OL is being built', privacy: 'Privacy first', privacyCopy: 'Personal relationship information is treated as private by default. Sharing is explicit where supported, and public discovery uses limited directory information rather than private account records.', real: 'Real before impressive', realCopy: 'O2OL does not need invented experts, testimonials, user counts, ratings, prizes, or features. If something is not active yet, the platform should say so clearly.', multilingual: 'Multilingual by design', multilingualCopy: 'The production experience supports English, Spanish, French, Italian, and German, and new user-facing work is expected to fit that same framework.', programming: 'Relationship programming', programmingCopy: 'The O2OL Global Relationship Room combines official O2OL programming, approved creators, replays, partner programming, and specials with scheduling and moderation controls.', hosts: 'O2OL & AMORA', hostsCopy: 'O2OL and AMORA are the platform’s relationship-programming hosts and guide users toward thoughtful reflection, connection, and practical tools.', explore: 'Explore Relationship Tools', room: 'Global Relationship Room', contact: 'Contact One2OneLove' },
+  es: {
+    title: 'Acerca de One2OneLove', subtitle: 'Una plataforma de relaciones creada para ayudar a las personas a conectar con intención, comunicarse con atención y seguir invirtiendo en las relaciones que importan.', mission: 'Nuestro propósito', missionCopy: 'One2OneLove reúne herramientas prácticas, actividades para parejas, espacios privados compartidos, apoyo educativo, conexión comunitaria y programación centrada en relaciones.', approach: 'Cómo se está construyendo O2OL', privacy: 'Privacidad primero', privacyCopy: 'La información personal de la relación se trata como privada por defecto. Compartir es explícito cuando se admite, y el descubrimiento público usa información limitada del directorio en lugar de registros privados de cuenta.', real: 'Real antes que impresionante', realCopy: 'O2OL no necesita expertos, testimonios, cifras de usuarios, calificaciones, premios o funciones inventadas. Si algo aún no está activo, la plataforma debe decirlo claramente.', multilingual: 'Multilingüe por diseño', multilingualCopy: 'La experiencia de producción admite inglés, español, francés, italiano y alemán, y todo nuevo contenido debe integrarse en ese mismo sistema.', programming: 'Programación de relaciones', programmingCopy: 'La Sala Global de Relaciones combina programación oficial de O2OL, creadores aprobados, repeticiones, programación de socios y especiales con controles de agenda y moderación.', hosts: 'O2OL y AMORA', hostsCopy: 'O2OL y AMORA son los anfitriones de programación de la plataforma y orientan a los usuarios hacia reflexión, conexión y herramientas prácticas.', explore: 'Explorar Herramientas', room: 'Sala Global de Relaciones', contact: 'Contactar a One2OneLove' },
+  fr: {
+    title: 'À propos de One2OneLove', subtitle: 'Une plateforme relationnelle conçue pour aider les personnes à se connecter avec intention, communiquer avec attention et continuer à investir dans les relations qui comptent.', mission: 'Notre objectif', missionCopy: 'One2OneLove rassemble des outils relationnels pratiques, des activités de couple, des espaces privés partagés, du soutien éducatif, des liens communautaires et une programmation centrée sur les relations.', approach: 'Comment O2OL est construit', privacy: 'La confidentialité d’abord', privacyCopy: 'Les informations relationnelles personnelles sont privées par défaut. Le partage est explicite lorsqu’il est pris en charge, et la découverte publique utilise des informations limitées du répertoire plutôt que les données privées du compte.', real: 'Le réel avant l’impressionnant', realCopy: 'O2OL n’a pas besoin d’experts, témoignages, nombres d’utilisateurs, notes, prix ou fonctions inventés. Si quelque chose n’est pas encore actif, la plateforme doit le dire clairement.', multilingual: 'Multilingue dès la conception', multilingualCopy: 'L’expérience de production prend en charge l’anglais, l’espagnol, le français, l’italien et l’allemand, et tout nouveau contenu doit rejoindre ce même système.', programming: 'Programmation relationnelle', programmingCopy: 'La Salle Mondiale des Relations réunit programmes officiels O2OL, créateurs approuvés, rediffusions, programmes partenaires et spéciaux avec des contrôles de planification et modération.', hosts: 'O2OL & AMORA', hostsCopy: 'O2OL et AMORA sont les animateurs de programmation de la plateforme et orientent les utilisateurs vers la réflexion, la connexion et des outils pratiques.', explore: 'Explorer les Outils', room: 'Salle Mondiale des Relations', contact: 'Contacter One2OneLove' },
+  it: {
+    title: 'Informazioni su One2OneLove', subtitle: 'Una piattaforma relazionale creata per aiutare le persone a connettersi intenzionalmente, comunicare con attenzione e continuare a investire nelle relazioni importanti.', mission: 'Il nostro scopo', missionCopy: 'One2OneLove riunisce strumenti pratici per le relazioni, attività di coppia, spazi privati condivisi, supporto educativo, connessione con la community e programmazione dedicata alle relazioni.', approach: 'Come viene costruito O2OL', privacy: 'Privacy prima di tutto', privacyCopy: 'Le informazioni personali sulla relazione sono private per impostazione predefinita. La condivisione è esplicita quando supportata e la scoperta pubblica usa informazioni limitate della directory, non i dati privati dell’account.', real: 'Reale prima che impressionante', realCopy: 'O2OL non ha bisogno di esperti, testimonianze, numeri di utenti, valutazioni, premi o funzioni inventate. Se qualcosa non è ancora attivo, la piattaforma deve dirlo chiaramente.', multilingual: 'Multilingue per design', multilingualCopy: 'L’esperienza di produzione supporta inglese, spagnolo, francese, italiano e tedesco e ogni nuovo contenuto deve inserirsi nello stesso sistema.', programming: 'Programmazione relazionale', programmingCopy: 'La Sala Globale delle Relazioni combina programmazione ufficiale O2OL, creator approvati, replay, programmi partner e speciali con controlli di pianificazione e moderazione.', hosts: 'O2OL & AMORA', hostsCopy: 'O2OL e AMORA sono i conduttori della programmazione della piattaforma e guidano gli utenti verso riflessione, connessione e strumenti pratici.', explore: 'Esplora gli Strumenti', room: 'Sala Globale delle Relazioni', contact: 'Contatta One2OneLove' },
+  de: {
+    title: 'Über One2OneLove', subtitle: 'Eine Beziehungsplattform, die Menschen dabei unterstützt, bewusst Verbindung aufzubauen, aufmerksam zu kommunizieren und weiter in wichtige Beziehungen zu investieren.', mission: 'Unser Zweck', missionCopy: 'One2OneLove vereint praktische Beziehungswerkzeuge, Paaraktivitäten, private gemeinsame Bereiche, pädagogische Unterstützung, Community-Verbindungen und beziehungsorientierte Programme.', approach: 'Wie O2OL gebaut wird', privacy: 'Datenschutz zuerst', privacyCopy: 'Persönliche Beziehungsinformationen sind standardmäßig privat. Teilen erfolgt ausdrücklich, wenn es unterstützt wird, und öffentliche Entdeckung verwendet begrenzte Verzeichnisinformationen statt privater Kontodaten.', real: 'Echt vor beeindruckend', realCopy: 'O2OL braucht keine erfundenen Experten, Testimonials, Nutzerzahlen, Bewertungen, Preise oder Funktionen. Wenn etwas noch nicht aktiv ist, soll die Plattform das klar sagen.', multilingual: 'Mehrsprachig von Anfang an', multilingualCopy: 'Die Produktion unterstützt Englisch, Spanisch, Französisch, Italienisch und Deutsch. Neue nutzerseitige Inhalte müssen in dasselbe System integriert werden.', programming: 'Beziehungsprogramme', programmingCopy: 'Der Globale Beziehungsraum verbindet offizielle O2OL-Programme, genehmigte Creator, Wiederholungen, Partnerprogramme und Specials mit Zeitplan- und Moderationskontrollen.', hosts: 'O2OL & AMORA', hostsCopy: 'O2OL und AMORA sind die Programm-Hosts der Plattform und führen Nutzer zu Reflexion, Verbindung und praktischen Werkzeugen.', explore: 'Beziehungswerkzeuge Entdecken', room: 'Globaler Beziehungsraum', contact: 'One2OneLove Kontaktieren' },
+};
 
 export default function AboutUs() {
-  const teamMembers = [
-    {
-      name: 'Sarah Johnson',
-      role: 'CEO & Co-Founder',
-      image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400',
-      bio: 'Passionate about helping couples strengthen their relationships through technology.'
-    },
-    {
-      name: 'Michael Chen',
-      role: 'CTO & Co-Founder',
-      image: 'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400',
-      bio: 'Tech enthusiast dedicated to creating beautiful, user-friendly experiences.'
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Head of Design',
-      image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400',
-      bio: 'Creative designer focused on making love beautiful through thoughtful design.'
-    },
-    {
-      name: 'David Kim',
-      role: 'Head of Marketing',
-      image: 'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400',
-      bio: 'Storyteller helping couples discover the magic of One 2 One Love.'
-    }
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+  const principles = [
+    [ShieldCheck, t.privacy, t.privacyCopy],
+    [Heart, t.real, t.realCopy],
+    [Sparkles, t.multilingual, t.multilingualCopy],
   ];
-
-  const values = [
-    {
-      icon: Heart,
-      title: 'Love First',
-      description: 'Every feature we build is designed to strengthen the bonds between couples and celebrate love in all its forms.'
-    },
-    {
-      icon: Users,
-      title: 'Community',
-      description: 'We believe in building a supportive community where couples can share, learn, and grow together.'
-    },
-    {
-      icon: Target,
-      title: 'Purpose-Driven',
-      description: 'Our mission is to make relationships stronger, more connected, and filled with joy and romance.'
-    },
-    {
-      icon: Award,
-      title: 'Excellence',
-      description: 'We strive for excellence in everything we do, from user experience to customer support.'
-    }
-  ];
-
-  const milestones = [
-    {
-      year: '2022',
-      title: 'One 2 One Love Founded',
-      description: 'Started with a simple idea: help couples celebrate their unique love story.'
-    },
-    {
-      year: '2023',
-      title: '10,000 Couples',
-      description: 'Reached our first major milestone of 10,000 active couples on the platform.'
-    },
-    {
-      year: '2023',
-      title: 'Love Quiz Launch',
-      description: 'Introduced interactive love language quizzes and relationship games.'
-    },
-    {
-      year: '2024',
-      title: 'Global Expansion',
-      description: 'Expanded to serve couples in over 50 countries with multi-language support.'
-    },
-    {
-      year: '2024',
-      title: 'Professional Network',
-      description: 'Built a network of therapists, coaches, and influencers to support couples.'
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-pink-100 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center">
-            <Link
-              to={createPageUrl("Home")}
-              className="flex items-center px-4 py-2 text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all mr-4"
-            >
-              <ArrowLeft size={20} className="mr-2" />
-              Back
-            </Link>
-            <div className="flex items-center">
-              <Heart className="text-pink-500 fill-pink-500 mr-3" size={32} />
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent font-dancing">
-                  About One 2 One Love
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Our story, mission, and the team behind the magic
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-12 md:py-20">
+      <div className="mx-auto max-w-6xl">
+        <header className="mx-auto max-w-4xl text-center"><Heart className="mx-auto h-14 w-14 fill-pink-100 text-pink-600" aria-hidden="true" /><h1 className="mt-5 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-4 text-lg leading-7 text-slate-600">{t.subtitle}</p></header>
+
+        <section className="mx-auto mt-10 max-w-4xl rounded-3xl border border-pink-100 bg-white p-6 shadow-sm md:p-8"><h2 className="text-2xl font-bold text-slate-900">{t.mission}</h2><p className="mt-3 leading-7 text-slate-600">{t.missionCopy}</p></section>
+
+        <section className="mt-12" aria-labelledby="about-principles"><h2 id="about-principles" className="text-center text-2xl font-bold text-slate-900">{t.approach}</h2><div className="mt-6 grid gap-5 md:grid-cols-3">{principles.map(([Icon, title, copy]) => <Card key={title} className="border-slate-200"><CardContent className="p-6"><Icon className="h-7 w-7 text-purple-700" aria-hidden="true" /><h3 className="mt-4 text-lg font-bold text-slate-900">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{copy}</p></CardContent></Card>)}</div></section>
+
+        <section className="mt-12 grid gap-5 md:grid-cols-2"><Card><CardContent className="p-6"><Radio className="h-7 w-7 text-fuchsia-700" aria-hidden="true" /><h2 className="mt-4 text-xl font-bold text-slate-900">{t.programming}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{t.programmingCopy}</p></CardContent></Card><Card><CardContent className="p-6"><Users className="h-7 w-7 text-blue-700" aria-hidden="true" /><h2 className="mt-4 text-xl font-bold text-slate-900">{t.hosts}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{t.hostsCopy}</p></CardContent></Card></section>
+
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center"><Button asChild><Link to="/RelationshipLibrary">{t.explore}</Link></Button><Button asChild variant="outline"><Link to="/GlobalRelationshipRoom">{t.room}</Link></Button><Button asChild variant="outline"><Link to="/ContactUs">{t.contact}</Link></Button></div>
       </div>
-
-      {/* Hero Section */}
-      <div className="relative py-20">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-5xl font-bold text-gray-800 mb-6 font-dancing">
-            Making Love <span className="bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Beautiful</span>
-          </h2>
-          <p className="text-xl text-gray-600 leading-relaxed mb-8">
-            One 2 One Love was born from a simple belief: every couple deserves tools to express their love in beautiful, 
-            meaningful ways. We're here to help you celebrate your relationship, strengthen your bond, and create 
-            lasting memories together.
-          </p>
-          <div className="grid md:grid-cols-3 gap-8 mt-12">
-            <div className="text-center bg-white rounded-2xl p-6 shadow-lg">
-              <div className="text-4xl font-bold text-pink-600 mb-2">50,000+</div>
-              <div className="text-gray-600">Happy Couples</div>
-            </div>
-            <div className="text-center bg-white rounded-2xl p-6 shadow-lg">
-              <div className="text-4xl font-bold text-purple-600 mb-2">1M+</div>
-              <div className="text-gray-600">Love Notes Created</div>
-            </div>
-            <div className="text-center bg-white rounded-2xl p-6 shadow-lg">
-              <div className="text-4xl font-bold text-indigo-600 mb-2">50+</div>
-              <div className="text-gray-600">Countries Served</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mission Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4 font-dancing">Our Mission</h3>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              To strengthen relationships worldwide by providing couples with beautiful, innovative tools 
-              to express love, connect deeply, and celebrate their unique journey together.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => {
-              const IconComponent = value.icon;
-              return (
-                <div key={index} className="text-center">
-                  <div className="bg-gradient-to-r from-pink-500 to-purple-500 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <IconComponent className="text-white" size={24} />
-                  </div>
-                  <h4 className="text-lg font-bold text-gray-800 mb-2">{value.title}</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">{value.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Team Section */}
-      <div className="py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4 font-dancing">Meet Our Team</h3>
-            <p className="text-xl text-gray-600">
-              The passionate people behind One 2 One Love, dedicated to celebrating love every day.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {teamMembers.map((member, index) => (
-              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg text-center hover:shadow-xl transition-all">
-                <img 
-                  src={member.image} 
-                  alt={member.name}
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-pink-200"
-                />
-                <h4 className="text-lg font-bold text-gray-800 mb-1">{member.name}</h4>
-                <p className="text-pink-600 font-medium mb-3 text-sm">{member.role}</p>
-                <p className="text-gray-600 text-sm leading-relaxed">{member.bio}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Timeline Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4 font-dancing">Our Journey</h3>
-            <p className="text-xl text-gray-600">
-              From a simple idea to helping couples worldwide express their love.
-            </p>
-          </div>
-
-          <div className="space-y-8">
-            {milestones.map((milestone, index) => (
-              <div key={index} className="flex items-start">
-                <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full w-16 h-16 flex items-center justify-center font-bold text-sm mr-6 flex-shrink-0 shadow-lg">
-                  {milestone.year}
-                </div>
-                <div className="bg-white rounded-xl p-6 shadow-md flex-1 hover:shadow-lg transition-all">
-                  <h4 className="text-xl font-bold text-gray-800 mb-2">{milestone.title}</h4>
-                  <p className="text-gray-600 leading-relaxed">{milestone.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Contact Section */}
-      <div className="py-16 bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold mb-4 font-dancing">Get In Touch</h3>
-          <p className="text-xl text-pink-100 mb-8">
-            We'd love to hear from you! Whether you have questions, feedback, or just want to say hello.
-          </p>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-              <Globe className="text-pink-200 mx-auto mb-4" size={32} />
-              <h4 className="font-bold mb-2">Visit Us</h4>
-              <p className="text-pink-100 text-sm">One2onelove.com<br />Available Worldwide</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-              <Heart className="text-pink-200 fill-pink-200 mx-auto mb-4" size={32} />
-              <h4 className="font-bold mb-2">Email Us</h4>
-              <p className="text-pink-100 text-sm">hello@one2onelove.com<br />support@one2onelove.com</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-              <Sparkles className="text-pink-200 mx-auto mb-4" size={32} />
-              <h4 className="font-bold mb-2">Follow Us</h4>
-              <p className="text-pink-100 text-sm">@One2OneLove<br />on all social platforms</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold text-gray-800 mb-4 font-dancing">Ready to Celebrate Your Love?</h3>
-          <p className="text-xl text-gray-600 mb-8">
-            Join thousands of couples who are strengthening their relationships with One 2 One Love.
-          </p>
-          <Link to={createPageUrl("Signup")}>
-            <button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-lg font-bold px-8 py-4 rounded-full shadow-xl transform hover:scale-105 transition-all">
-              <Heart className="inline-block mr-2 fill-current" size={20} />
-              Get Started Today
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
+    </main>
   );
 }

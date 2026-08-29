@@ -1,0 +1,45 @@
+name: O2OL Contact Privacy
+
+on:
+  push:
+    branches:
+      - o2ol-build-branch-2026-08-18
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-contact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify private message queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          for lang in en es fr it de; do grep -q "${lang}:" src/pages/ContactUs.jsx; done
+          grep -q "from('contact_messages').insert" src/pages/ContactUs.jsx
+          grep -q 'alter table public.contact_messages enable row level security' supabase-private-contact-messages.sql
+          grep -q 'grant insert on table public.contact_messages to anon' supabase-private-contact-messages.sql
+          grep -q 'grant insert on table public.contact_messages to authenticated' supabase-private-contact-messages.sql
+          if grep -Eq 'grant (select|update|delete)|support@one2onelove\.com|\+1 \(555\)|123 Love Street|toast\.success\(t\.success\).*setFormData' supabase-private-contact-messages.sql src/pages/ContactUs.jsx; then
+            echo 'Contact queue must remain private and must not restore fake contact details.'
+            exit 1
+          fi
+      - name: Lint Contact Us
+        run: npx eslint src/pages/ContactUs.jsx --rule 'react/prop-types: off'
+      - name: Production build
+        run: npm run build

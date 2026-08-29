@@ -1,173 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { CheckCircle, Loader2, Heart, ArrowRight, Sparkles } from 'lucide-react';
+import React from 'react';
+import { CreditCard, ShieldAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useLanguage } from '@/Layout';
+
+const translations = {
+  en: { title: 'Membership Checkout Is Not Active', subtitle: 'This page does not confirm that a payment was completed.', notice: 'One2OneLove paid membership checkout is not open for launch. If you reached this page from an old or test payment link, do not treat it as a receipt or subscription confirmation. If you believe you were charged, contact One2OneLove support so the transaction can be reviewed.', contact: 'Contact Support', membership: 'Membership Status', home: 'Back Home' },
+  es: { title: 'El Pago de Membresía No Está Activo', subtitle: 'Esta página no confirma que se haya completado un pago.', notice: 'El checkout de membresía de pago de One2OneLove no está abierto para el lanzamiento. Si llegaste aquí desde un enlace antiguo o de prueba, no lo consideres un recibo ni confirmación de suscripción. Si crees que se realizó un cargo, contacta al soporte de One2OneLove para revisar la transacción.', contact: 'Contactar Soporte', membership: 'Estado de Membresía', home: 'Volver al Inicio' },
+  fr: { title: 'Le Paiement d’Abonnement N’Est Pas Actif', subtitle: 'Cette page ne confirme pas qu’un paiement a été effectué.', notice: 'Le paiement des abonnements One2OneLove n’est pas ouvert au lancement. Si vous avez atteint cette page depuis un ancien lien ou un lien de test, ne la considérez pas comme un reçu ou une confirmation d’abonnement. Si vous pensez avoir été débité, contactez le support One2OneLove pour faire vérifier la transaction.', contact: 'Contacter le Support', membership: 'État de l’Abonnement', home: 'Retour à l’Accueil' },
+  it: { title: 'Il Checkout Abbonamenti Non È Attivo', subtitle: 'Questa pagina non conferma che un pagamento sia stato completato.', notice: 'Il checkout degli abbonamenti One2OneLove non è aperto al lancio. Se sei arrivato qui da un vecchio link o da un link di test, non considerarlo una ricevuta o conferma di abbonamento. Se ritieni di aver ricevuto un addebito, contatta il supporto One2OneLove per verificare la transazione.', contact: 'Contatta Supporto', membership: 'Stato Abbonamento', home: 'Torna alla Home' },
+  de: { title: 'Mitgliedschafts-Checkout Ist Nicht Aktiv', subtitle: 'Diese Seite bestätigt keinen abgeschlossenen Zahlungsvorgang.', notice: 'Der Checkout für bezahlte One2OneLove-Mitgliedschaften ist zum Start nicht geöffnet. Wenn du diese Seite über einen alten oder Test-Zahlungslink erreicht hast, gilt sie nicht als Beleg oder Abonnementbestätigung. Falls du glaubst, dass eine Belastung erfolgt ist, kontaktiere den One2OneLove-Support zur Prüfung.', contact: 'Support Kontaktieren', membership: 'Mitgliedschaftsstatus', home: 'Zurück zur Startseite' },
+};
 
 export default function PaymentSuccess() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { user, refreshUserProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [subscriptionInfo, setSubscriptionInfo] = useState(null);
-
-  const sessionId = searchParams.get('session_id');
-
-  useEffect(() => {
-    const handlePaymentSuccess = async () => {
-      if (!sessionId) {
-        toast.error('No payment session found');
-        navigate(createPageUrl('Subscription'));
-        return;
-      }
-
-      try {
-        // Wait a bit for webhook to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Refresh user data to get updated subscription
-        const updatedUser = await refreshUserProfile();
-        
-        if (updatedUser) {
-          setSubscriptionInfo({
-            plan: updatedUser.subscription_plan,
-            status: updatedUser.subscription_status,
-          });
-        }
-
-        setIsLoading(false);
-        toast.success('Payment successful! Your subscription is now active.');
-      } catch (error) {
-        console.error('Error processing payment success:', error);
-        setIsLoading(false);
-        toast.error('Payment successful, but there was an error updating your account. Please refresh the page.');
-      }
-    };
-
-    handlePaymentSuccess();
-  }, [sessionId, navigate, refreshUserProfile]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <Loader2 className="w-16 h-16 text-purple-600 animate-spin mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing Payment</h2>
-              <p className="text-gray-600">Please wait while we confirm your subscription...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-2xl w-full"
-      >
-        <Card className="shadow-2xl border-2 border-purple-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-8 text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            >
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full mb-4 shadow-xl">
-                <CheckCircle className="w-16 h-16 text-green-500" />
-              </div>
-            </motion.div>
-            <h1 className="text-4xl font-bold text-white mb-2">Payment Successful!</h1>
-            <p className="text-white/90 text-lg">Welcome to {subscriptionInfo?.plan || 'Premium'}! 🎉</p>
-          </div>
-
-          <CardContent className="p-8">
-            <div className="space-y-6">
-              {/* Subscription Details */}
-              <div className="bg-purple-50 rounded-lg p-6 border border-purple-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <Sparkles className="w-6 h-6 text-purple-600" />
-                  <h3 className="text-xl font-bold text-gray-900">Your Subscription</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Plan</p>
-                    <p className="text-lg font-bold text-gray-900">{subscriptionInfo?.plan || 'Premium'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <p className="text-lg font-bold text-green-600 capitalize">{subscriptionInfo?.status || 'Active'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* What's Next */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-pink-500" />
-                  What's Next?
-                </h3>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Your premium features are now unlocked!</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Check your email for a confirmation receipt</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Explore all the amazing features available to you</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button
-                  onClick={() => navigate(createPageUrl('Profile'))}
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-lg py-6"
-                >
-                  View My Profile
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                <Button
-                  onClick={() => navigate(createPageUrl('Home'))}
-                  variant="outline"
-                  className="flex-1 text-lg py-6"
-                >
-                  Go to Dashboard
-                </Button>
-              </div>
-
-              {/* Help Text */}
-              <p className="text-center text-sm text-gray-500 pt-4">
-                Need help? Contact us at{' '}
-                <a href="mailto:support@one2onelove.com" className="text-purple-600 hover:text-purple-700 font-semibold">
-                  support@one2onelove.com
-                </a>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Confetti effect (optional) */}
-        <div className="text-center mt-8">
-          <p className="text-gray-600 text-sm">
-            🎊 Thank you for subscribing! We're excited to help strengthen your relationship! 💕
-          </p>
-        </div>
-      </motion.div>
-    </div>
-  );
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+  return <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 py-12 md:py-20"><div className="mx-auto max-w-4xl text-center"><CreditCard className="mx-auto h-14 w-14 text-slate-700" aria-hidden="true"/><h1 className="mt-5 text-4xl font-bold text-slate-900 md:text-5xl">{t.title}</h1><p className="mt-4 text-lg text-slate-600">{t.subtitle}</p><Card className="mx-auto mt-8 max-w-3xl text-left"><CardContent className="p-6 md:p-8"><div className="flex gap-3 rounded-2xl bg-amber-50 p-5 text-sm leading-6 text-amber-950"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true"/><p>{t.notice}</p></div><div className="mt-8 grid gap-3 sm:grid-cols-3"><Button asChild><Link to="/ContactUs">{t.contact}</Link></Button><Button asChild variant="outline"><Link to="/Subscription">{t.membership}</Link></Button><Button asChild variant="ghost"><Link to="/">{t.home}</Link></Button></div></CardContent></Card></div></main>;
 }
