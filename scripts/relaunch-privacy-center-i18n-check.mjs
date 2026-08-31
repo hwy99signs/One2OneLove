@@ -9,11 +9,11 @@ const failures = [];
 
 const activeLocales = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
 for (const [language, locale] of Object.entries(activeLocales)) {
-  const pattern = new RegExp(`${language}: \\{ locale: '${locale}'[^\\n]*requestTypes:[^\\n]*statuses:`);
-  if (!pattern.test(source)) failures.push(`${file}: missing ${language} request-history translations/locale.`);
+  const pattern = new RegExp(`${language}: \\{ locale: '${locale}'[^\\n]*requestTypes:[^\\n]*statuses:[^\\n]*awaiting_fulfillment:`);
+  if (!pattern.test(source)) failures.push(`${file}: missing ${language} awaiting-fulfillment request-history translation/locale.`);
 }
 
-const required = [
+for (const required of [
   't.loadError',
   't.submitError',
   '{t.loading}',
@@ -21,21 +21,30 @@ const required = [
   'requestStatusLabel(item.status, t)',
   'toLocaleString(t.locale)',
   "baseCopy.privateText.replace('Love Notes', extras.loveNotesName)",
-];
-for (const binding of required) {
-  if (!runtime.includes(binding) && !source.includes(binding)) failures.push(`${file}: missing localized runtime binding ${binding}.`);
+  "['submitted', 'in_review', 'awaiting_fulfillment'].includes(item.status)",
+]) {
+  if (!runtime.includes(required) && !source.includes(required)) failures.push(`${file}: missing localized/runtime privacy binding ${required}.`);
 }
 
-const forbidden = [
+for (const forbidden of [
   "'Unable to load privacy requests.'",
   "'Unable to submit privacy request.'",
   '>Loading…</div>',
   "type === 'account_deletion' ? 'Account deletion' : 'Data export'",
   'new Date(item.created_at).toLocaleString()',
   '>{item.status}</span>',
-];
-for (const literal of forbidden) {
-  if (runtime.includes(literal)) failures.push(`${file}: English/browser-default privacy runtime remains (${literal}).`);
+]) {
+  if (runtime.includes(forbidden)) failures.push(`${file}: English/browser-default privacy runtime remains (${forbidden}).`);
+}
+
+for (const language of Object.keys(activeLocales)) {
+  const line = source.split('\n').find((candidate) => candidate.trimStart().startsWith(`${language}: { locale:`)) || '';
+  if (line.includes("completed: '")) {
+    failures.push(`${file}: active ${language} history still labels a review-only state as completed.`);
+  }
+  if (!line.includes("awaiting_fulfillment: '")) {
+    failures.push(`${file}: active ${language} history must explicitly label awaiting_fulfillment.`);
+  }
 }
 
 for (const requiredServiceBinding of [
@@ -66,4 +75,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Privacy Center request history, statuses, errors and timestamps follow EN/ES/FR/IT/DE; privacy service errors remain language-neutral.');
+console.log('✅ Privacy Center request history, awaiting-fulfillment state, errors and timestamps follow EN/ES/FR/IT/DE; review never presents itself as fulfillment.');
