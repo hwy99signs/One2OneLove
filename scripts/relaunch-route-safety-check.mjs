@@ -15,6 +15,7 @@ const notFoundFile = 'src/pages/NotFoundRelaunch.jsx';
 const aboutFile = 'src/pages/AboutUsRelaunch.jsx';
 const aboutAliasFile = 'src/pages/AboutUs.jsx';
 const privacyAliasFile = 'src/pages/PrivacyRequests.jsx';
+const privacyAdminFile = 'src/pages/PrivacyAdmin.jsx';
 const professionalAdminFile = 'src/pages/ProfessionalApplicationsAdmin.jsx';
 const layoutFile = 'src/pages/LayoutRelaunch.jsx';
 const homeFile = 'src/pages/Home.jsx';
@@ -26,7 +27,7 @@ const unavailableAliasFiles = [
   'src/pages/InfluencersSupport.jsx',
 ];
 
-for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, privacyAliasFile, professionalAdminFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
+for (const file of [routerFile, helpFile, helpShellFile, unavailableFile, notFoundFile, aboutFile, aboutAliasFile, privacyAliasFile, privacyAdminFile, professionalAdminFile, layoutFile, homeFile, communityFile, ...unavailableAliasFiles]) {
   check(`required: ${file}`, exists(file), exists(file) ? 'present' : 'missing');
 }
 
@@ -36,6 +37,7 @@ const helpShell = exists(helpShellFile) ? read(helpShellFile) : '';
 const about = exists(aboutFile) ? read(aboutFile) : '';
 const aboutAlias = exists(aboutAliasFile) ? read(aboutAliasFile) : '';
 const privacyAlias = exists(privacyAliasFile) ? read(privacyAliasFile) : '';
+const privacyAdmin = exists(privacyAdminFile) ? read(privacyAdminFile) : '';
 const generalNavigationSurface = [layoutFile, homeFile, helpFile, helpShellFile, communityFile]
   .filter(exists)
   .map((file) => read(file))
@@ -105,6 +107,7 @@ check(
 
 const staffConsoleRoutes = [
   '/SupportAdmin',
+  '/PrivacyAdmin',
   '/O2OLProgrammingAdmin',
   '/ProgrammingModerationAdmin',
   '/ProfessionalApplicationsAdmin',
@@ -122,6 +125,14 @@ for (const route of staffConsoleRoutes) {
     `${route} must not be exposed from the main header, Home, Help Center or Community navigation surfaces.`
   );
 }
+
+check(
+  'privacy staff console states review is not fulfillment',
+  privacyAdmin.includes('Accepting a request moves it to Awaiting fulfillment')
+    && privacyAdmin.includes('It does not export data, delete an account, change billing, or send a message.')
+    && !privacyAdmin.includes('Complete request'),
+  'The private privacy-review UI must never imply that staff review itself performs export/deletion fulfillment.'
+);
 
 check(
   'unknown routes have a safe catch-all',
