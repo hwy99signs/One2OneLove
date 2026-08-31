@@ -1,12 +1,14 @@
 // Supabase Edge Function: manage-support-requests
 // DEVELOPMENT CODE ONLY. Staff authority is controlled only by the server-side
 // O2OL_SUPPORT_ADMIN_USER_IDS allowlist; no public profile user_type grants access.
+// Support lifecycle auditing is database-atomic; this function never writes audit rows separately.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const REVIEW_FIELDS = 'id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at'
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -89,7 +91,7 @@ serve(async (request) => {
       const statusFilter = clean(body?.status, 20)
       let query = serviceClient
         .from('support_requests')
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(REVIEW_FIELDS)
         .order('created_at', { ascending: true })
         .limit(100)
       if (['open','in_progress','resolved','closed'].includes(statusFilter)) query = query.eq('status', statusFilter)
@@ -97,9 +99,8 @@ serve(async (request) => {
       const { data, error } = await query
       if (error) throw error
 
-      // Deliberately omit member user_id. The support queue should center on the issue;
-      // account identity can be resolved through a separate reviewed admin path only if
-      // a specific account-level support action truly requires it.
+      // Deliberately omit member user_id and last_actor_* metadata. The support queue
+      // centers on the issue; identity resolution remains a separate reviewed admin path.
       return json(request, { success: true, enabled: true, eligible: true, requests: data || [] })
     }
 
@@ -110,16 +111,16 @@ serve(async (request) => {
     if (action === 'start') {
       const { data, error } = await serviceClient
         .from('support_requests')
-        .update({ status: 'in_progress' })
+        .update({
+          status: 'in_progress',
+          last_actor_user_id: caller.id,
+          last_actor_kind: 'staff',
+        })
         .eq('id', requestId)
         .eq('status', 'open')
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(REVIEW_FIELDS)
         .maybeSingle()
       if (error) throw error
-      if (data) {
-        const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'staff_started' })
-        if (auditError) throw auditError
-      }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
     }
 
@@ -129,16 +130,19 @@ serve(async (request) => {
       const respondedAt = new Date().toISOString()
       const { data, error } = await serviceClient
         .from('support_requests')
-        .update({ status: 'resolved', staff_response: response, responded_at: respondedAt, closed_at: null })
+        .update({
+          status: 'resolved',
+          staff_response: response,
+          responded_at: respondedAt,
+          closed_at: null,
+          last_actor_user_id: caller.id,
+          last_actor_kind: 'staff',
+        })
         .eq('id', requestId)
         .in('status', ['open','in_progress','resolved'])
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(REVIEW_FIELDS)
         .maybeSingle()
       if (error) throw error
-      if (data) {
-        const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'staff_resolved' })
-        if (auditError) throw auditError
-      }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
     }
 
@@ -146,32 +150,34 @@ serve(async (request) => {
       const closedAt = new Date().toISOString()
       const { data, error } = await serviceClient
         .from('support_requests')
-        .update({ status: 'closed', closed_at: closedAt })
+        .update({
+          status: 'closed',
+          closed_at: closedAt,
+          last_actor_user_id: caller.id,
+          last_actor_kind: 'staff',
+        })
         .eq('id', requestId)
         .in('status', ['open','in_progress','resolved'])
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(REVIEW_FIELDS)
         .maybeSingle()
       if (error) throw error
-      if (data) {
-        const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'staff_closed' })
-        if (auditError) throw auditError
-      }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
     }
 
     if (action === 'reopen') {
       const { data, error } = await serviceClient
         .from('support_requests')
-        .update({ status: 'in_progress', closed_at: null })
+        .update({
+          status: 'in_progress',
+          closed_at: null,
+          last_actor_user_id: caller.id,
+          last_actor_kind: 'staff',
+        })
         .eq('id', requestId)
         .in('status', ['resolved','closed'])
-        .select('id,category,subject,message,status,staff_response,responded_at,closed_at,created_at,updated_at')
+        .select(REVIEW_FIELDS)
         .maybeSingle()
       if (error) throw error
-      if (data) {
-        const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'staff_reopened' })
-        if (auditError) throw auditError
-      }
       return json(request, { success: true, enabled: true, eligible: true, request: data || null })
     }
 
