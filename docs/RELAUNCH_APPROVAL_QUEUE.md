@@ -20,18 +20,26 @@ There is currently no numbered production action that may be inferred from devel
 
 ## Pending production holds
 
-### Privacy-request backend activation
+### Privacy-request backend + review activation
 
-Development includes a reconciled, non-destructive account privacy-request queue and review flow:
+Development includes a reconciled, non-destructive account privacy-request queue and private review flow:
 
 - `supabase/migrations/20260818_privacy_requests.sql`
 - `supabase/migrations/20260819_privacy_requests.sql` (historical staged shape)
 - `supabase/migrations/20260819_privacy_request_state_guard.sql` (historical staged guard)
 - `supabase/migrations/20260821211500_privacy_request_workflow_reconciliation.sql`
+- `supabase/migrations/20260821224500_privacy_request_submission_audit.sql` (final audit-path cleanup/assertion)
 - `supabase/functions/privacy-request`
 - `supabase/functions/manage-privacy-requests`
+- `/PrivacyCenter`
+- `/PrivacyAdmin` (private/unlinked staff review console)
+- server-side `O2OL_PRIVACY_ADMIN_USER_IDS` reviewer authority.
 
-Production remains OFF. The queue records/reviews requests only; it does **not** automatically export data or delete accounts. Any destructive fulfillment path requires separate review and approval.
+Production remains OFF. The queue records/reviews requests only; it does **not** export member data, delete accounts, change billing, send messages, or claim fulfillment occurred. Staff acceptance moves a reviewed request only to `awaiting_fulfillment`.
+
+Do not deploy/enable the privacy review workflow or populate production reviewer authority without a separate explicit approval. `/PrivacyAdmin` must remain absent from general member navigation.
+
+Any actual export, account deletion, data correction, identity-resolution fulfillment process, or destructive action is a **separate future workstream and separate production approval**. The review endpoint must continue rejecting `complete`/`fulfill` semantics until a real audited fulfillment implementation exists.
 
 ### SMS / external messaging activation
 
@@ -148,7 +156,7 @@ Always require explicit approval before rotating/replacing production secrets, d
 
 ## Safe development work that may continue uninterrupted
 
-Without separate production approval, continue frontend UX/accessibility/responsive refinements; multilingual integration through the existing translation framework; development-only migrations and Edge Function preparation; privacy/security hardening; route cleanup and truthfulness checks; private support/member-block/programming/reminder/professional-review UX while switches remain off; billing source hardening/reconciliation checks while payments remain off; read-only production audits when access permits; automated preflight/regression checks; and documentation/rollback/test planning.
+Without separate production approval, continue frontend UX/accessibility/responsive refinements; multilingual integration through the existing translation framework; development-only migrations and Edge Function preparation; privacy/security hardening; route cleanup and truthfulness checks; private support/member-block/programming/reminder/professional-review/privacy-review UX while switches remain off; billing source hardening/reconciliation checks while payments remain off; read-only production audits when access permits; automated preflight/regression checks; and documentation/rollback/test planning.
 
 ## Current operating rule
 
