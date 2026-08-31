@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 const failures = [];
 const migrationFile = 'supabase/migrations/20260819_support_requests.sql';
+const auditMigrationFile = 'supabase/migrations/20260831012000_support_request_audit_integrity.sql';
 const memberFunctionFile = 'supabase/functions/support-request/index.ts';
 const adminFunctionFile = 'supabase/functions/manage-support-requests/index.ts';
 const serviceFile = 'src/lib/supportRequestService.js';
@@ -12,6 +13,7 @@ const helpShellFile = 'src/pages/HelpCenterRelaunchWithSupport.jsx';
 const routesFile = 'src/pages/index.jsx';
 
 const migration = fs.readFileSync(migrationFile, 'utf8');
+const auditMigration = fs.readFileSync(auditMigrationFile, 'utf8');
 const memberFunction = fs.readFileSync(memberFunctionFile, 'utf8');
 const adminFunction = fs.readFileSync(adminFunctionFile, 'utf8');
 const service = fs.readFileSync(serviceFile, 'utf8');
@@ -27,13 +29,28 @@ for (const required of [
   "status text not null default 'open' check (status in ('open','in_progress','resolved','closed'))",
   'alter table public.support_requests enable row level security;',
   'alter table public.support_request_audit enable row level security;',
-  'grant select on table public.support_requests to authenticated;',
   'using ((select auth.uid()) = user_id);',
 ]) {
   if (!migration.includes(required)) failures.push(`${migrationFile}: missing support privacy safeguard ${required}.`);
 }
 for (const forbidden of ['email text', 'phone text', 'grant select on table public.support_request_audit to authenticated']) {
   if (migration.includes(forbidden)) failures.push(`${migrationFile}: support tables must not duplicate contact data or expose audit records (${forbidden}).`);
+}
+
+for (const required of [
+  'revoke select on table public.support_requests from authenticated;',
+  'grant select (',
+  'member_response_read_at',
+  'last_actor_user_id',
+  'last_actor_kind',
+  'references auth.users(id) on delete set null',
+  'create trigger support_requests_audit_lifecycle',
+]) {
+  if (!auditMigration.includes(required)) failures.push(`${auditMigrationFile}: missing final support audit/privacy safeguard ${required}.`);
+}
+const grantBlock = auditMigration.match(/grant select \(([\s\S]*?)\) on table public\.support_requests to authenticated;/i)?.[1] || '';
+for (const privateField of ['last_actor_user_id', 'last_actor_kind']) {
+  if (grantBlock.includes(privateField)) failures.push(`${auditMigrationFile}: authenticated column grant must not expose ${privateField}.`);
 }
 
 for (const required of [
@@ -49,8 +66,8 @@ for (const required of [
   "if (action === 'mark_response_read')",
   "if (action === 'close')",
   "if (action !== 'create')",
-  "action: 'created'",
-  "action: 'member_closed'",
+  'last_actor_user_id: caller.id',
+  "last_actor_kind: 'member'",
 ]) {
   if (!memberFunction.includes(required)) failures.push(`${memberFunctionFile}: missing member support safeguard ${required}.`);
 }
@@ -59,8 +76,8 @@ const memberListIndex = memberFunction.indexOf("if (action === 'list')");
 if (memberGateIndex < 0 || memberListIndex < 0 || memberGateIndex > memberListIndex) {
   failures.push(`${memberFunctionFile}: support feature gate must fail closed before member queue reads.`);
 }
-if (memberFunction.includes('staff_response: body') || memberFunction.includes('user_id: body')) {
-  failures.push(`${memberFunctionFile}: member endpoint must not accept staff-response or arbitrary user ownership from request body.`);
+for (const forbidden of ["staff_response: body", "user_id: body", ".from('support_request_audit')"]) {
+  if (memberFunction.includes(forbidden)) failures.push(`${memberFunctionFile}: member endpoint violates atomic/ownership boundary (${forbidden}).`);
 }
 
 for (const required of [
@@ -77,10 +94,8 @@ for (const required of [
   "if (action === 'respond')",
   "if (action === 'close')",
   "if (action === 'reopen')",
-  "action: 'staff_started'",
-  "action: 'staff_resolved'",
-  "action: 'staff_closed'",
-  "action: 'staff_reopened'",
+  'last_actor_user_id: caller.id',
+  "last_actor_kind: 'staff'",
 ]) {
   if (!adminFunction.includes(required)) failures.push(`${adminFunctionFile}: missing support-admin safeguard ${required}.`);
 }
@@ -95,8 +110,11 @@ for (const forbidden of [
   "user_type === 'therapist'",
   "user_type === 'influencer'",
   "select('id,user_id,category",
+  ".from('support_request_audit')",
+  'last_actor_user_id,',
+  'last_actor_kind,',
 ]) {
-  if (adminFunction.includes(forbidden)) failures.push(`${adminFunctionFile}: support admin authority/payload must not depend on profile role or expose member UUID (${forbidden}).`);
+  if (adminFunction.includes(forbidden)) failures.push(`${adminFunctionFile}: support admin authority/payload must not expose member/actor identity or duplicate audit writes (${forbidden}).`);
 }
 
 for (const required of [
@@ -197,4 +215,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Member support requests remain feature-gated, confirmed-account-only, UUID-validated, private, discoverable through reviewed Help, allowlist-administered, audited, multilingual, non-emergency and external-provider-free.');
+console.log('✅ Member support remains feature-gated, confirmed-account-only, private, allowlist-administered, database-atomically audited, multilingual, non-emergency and external-provider-free.');
