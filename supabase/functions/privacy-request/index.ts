@@ -10,6 +10,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const DEFAULT_ORIGIN = 'https://one2onelove.com'
 const ALLOWED_TYPES = new Set(['data_export', 'account_deletion'])
+const ACTIVE_STATUSES = ['submitted', 'in_review', 'awaiting_fulfillment']
+const MEMBER_FIELDS = 'id,request_type,status,created_at,updated_at,reviewed_at,decision_at,canceled_at'
 
 const clean = (value: unknown, max = 500) =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -80,13 +82,13 @@ serve(async (request) => {
     if (action === 'list') {
       const { data, error } = await serviceClient
         .from('privacy_requests')
-        .select('id, request_type, status, created_at, updated_at, completed_at')
+        .select(MEMBER_FIELDS)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20)
 
       if (error) {
-        console.error('Privacy request list failed:', error)
+        console.error('Privacy request list failed:', error.code || 'unknown')
         return json(request, { error: 'REQUEST_LIST_FAILED' }, 500)
       }
       return json(request, { success: true, requests: data || [] })
@@ -100,14 +102,14 @@ serve(async (request) => {
 
     const { data: existing, error: existingError } = await serviceClient
       .from('privacy_requests')
-      .select('id, request_type, status, created_at, updated_at, completed_at')
+      .select(MEMBER_FIELDS)
       .eq('user_id', user.id)
       .eq('request_type', requestType)
-      .in('status', ['submitted', 'in_review'])
+      .in('status', ACTIVE_STATUSES)
       .maybeSingle()
 
     if (existingError) {
-      console.error('Privacy duplicate check failed:', existingError)
+      console.error('Privacy duplicate check failed:', existingError.code || 'unknown')
       return json(request, { error: 'REQUEST_CHECK_FAILED' }, 500)
     }
     if (existing) return json(request, { success: true, request: existing, duplicate: true })
@@ -115,21 +117,21 @@ serve(async (request) => {
     const { data, error } = await serviceClient
       .from('privacy_requests')
       .insert({ user_id: user.id, request_type: requestType, status: 'submitted', member_note: memberNote })
-      .select('id, request_type, status, created_at, updated_at, completed_at')
+      .select(MEMBER_FIELDS)
       .single()
 
     if (error) {
       if (error.code === '23505') {
         const { data: duplicate } = await serviceClient
           .from('privacy_requests')
-          .select('id, request_type, status, created_at, updated_at, completed_at')
+          .select(MEMBER_FIELDS)
           .eq('user_id', user.id)
           .eq('request_type', requestType)
-          .in('status', ['submitted', 'in_review'])
+          .in('status', ACTIVE_STATUSES)
           .maybeSingle()
         return json(request, { success: true, request: duplicate, duplicate: true })
       }
-      console.error('Privacy request insert failed:', error)
+      console.error('Privacy request insert failed:', error.code || 'unknown')
       return json(request, { error: 'REQUEST_SAVE_FAILED' }, 500)
     }
 
