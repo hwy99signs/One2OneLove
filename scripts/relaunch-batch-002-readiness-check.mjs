@@ -5,7 +5,7 @@ import fs from 'node:fs';
  *
  * Batch 002 is superseded as a bulk production-approval mechanism. This check now proves
  * that the historical workstreams still have their development artifacts/gates while the
- * repository preserves the current one-at-a-time approval rule.
+ * repository preserves completed live approvals and the current one-at-a-time rule.
  */
 
 const failures = [];
@@ -48,6 +48,7 @@ const requiredArtifacts = [
   'supabase/migrations/20260818_member_directory_minimization.sql',
   'supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql',
   'supabase/migrations/20260820151000_member_directory_source_minimization.sql',
+  'supabase/migrations/20260822004500_presence_directory_privacy_final.sql',
   'src/lib/buddyService.js',
   'supabase/migrations/20260818_privacy_requests.sql',
   'supabase/migrations/20260821211500_privacy_request_workflow_reconciliation.sql',
@@ -57,6 +58,7 @@ const requiredArtifacts = [
   'src/pages/PrivacyCenter.jsx',
   'src/pages/PrivacyRequests.jsx',
   'docs/APPROVAL_BATCH_002.md',
+  'docs/APPROVAL_EXECUTION_20260820.md',
   'docs/RELAUNCH_APPROVAL_QUEUE.md',
   'docs/PRODUCTION_APPROVAL_EXECUTION.md',
 ];
@@ -86,24 +88,39 @@ const approvalQueue = read('docs/RELAUNCH_APPROVAL_QUEUE.md');
 for (const boundary of [
   'Production branch / Vercel cutover',
   'SMS / external messaging activation',
-  '### #8C — Presence + member-directory privacy — PENDING',
+  'No production action is automatically next',
   'Handle production approvals **one at a time**.',
 ]) {
   if (approvalQueue && !approvalQueue.includes(boundary)) {
     failures.push(`RELAUNCH_APPROVAL_QUEUE.md: missing protected production boundary “${boundary}”.`);
   }
 }
-if (approvalQueue.includes('### #8B — Community membership security — PENDING')) {
-  failures.push('RELAUNCH_APPROVAL_QUEUE.md: completed #8B must not regress into the pending queue.');
+for (const stale of [
+  '### #8B — Community membership security — PENDING',
+  '### #8C — Presence + member-directory privacy — PENDING',
+]) {
+  if (approvalQueue.includes(stale)) failures.push(`RELAUNCH_APPROVAL_QUEUE.md: completed approval regressed into pending queue: ${stale}`);
 }
 
 const executionLedger = read('docs/PRODUCTION_APPROVAL_EXECUTION.md');
 for (const marker of [
   '#7 — Live Room identity hardening — SATISFIED / NO-OP',
   '#8B — Community membership security — COMPLETE',
+  '#8C — Presence + member-directory privacy — COMPLETE',
+  '#8C-A — Member-directory source minimization — COMPLETE',
 ]) {
   if (executionLedger && !executionLedger.includes(marker)) {
     failures.push(`PRODUCTION_APPROVAL_EXECUTION.md: completed approval ledger is missing “${marker}”.`);
+  }
+}
+
+const retainedExecution = read('docs/APPROVAL_EXECUTION_20260820.md');
+for (const marker of [
+  '### Approval #8C — Presence and member-directory privacy reconciliation',
+  '### Approval #8C-A — Member-directory source minimization',
+]) {
+  if (retainedExecution && !retainedExecution.includes(marker)) {
+    failures.push(`APPROVAL_EXECUTION_20260820.md: retained execution evidence is missing “${marker}”.`);
   }
 }
 
@@ -119,5 +136,5 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Historical Batch 002 workstream artifacts/gates are present, completed #8B is preserved in the execution ledger, and the obsolete bulk-approval path remains retired.');
+console.log('✅ Historical Batch 002 artifacts/gates are present, completed live work through #8C-A is preserved, and the obsolete bulk-approval path remains retired.');
 console.log('ℹ️ This is development readiness only. Production actions still require individual explicit approval.');
