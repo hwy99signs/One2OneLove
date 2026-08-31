@@ -3,14 +3,17 @@
 --
 -- Goals:
 --   * support state change + audit event commit atomically in one database transaction;
---   * audit history survives later deletion of the actor Auth account;
+--   * audit history survives later deletion of a staff actor Auth account;
 --   * browser members never receive server-only actor metadata;
 --   * the existing support lifecycle, quota, response-read and in-app-only design remains.
 
 begin;
 
 create schema if not exists o2ol_private;
-revoke all on schema o2ol_private from public, anon, authenticated;
+-- Do not revoke authenticated schema USAGE here: other reviewed private helpers (for
+-- example caller-bound presence/blocking wrappers) may legitimately require it. Support
+-- helpers themselves remain non-executable to browser roles through function grants.
+revoke all on schema o2ol_private from public, anon;
 
 -- Server-only metadata used by the atomic audit trigger. It is intentionally omitted from
 -- authenticated column grants and from every member/staff response projection.
@@ -28,7 +31,8 @@ alter table public.support_requests
   add constraint support_requests_last_actor_kind_check
   check (last_actor_kind is null or last_actor_kind in ('member','staff'));
 
--- Preserve audit history even if a member/staff Auth account is later deleted.
+-- Preserve audit history if a staff actor Auth account is later deleted. Deletion/retention
+-- of the member's support request itself remains governed separately by the request owner FK.
 alter table public.support_request_audit drop constraint if exists support_request_audit_actor_user_id_fkey;
 alter table public.support_request_audit alter column actor_user_id drop not null;
 alter table public.support_request_audit
@@ -194,6 +198,7 @@ commit;
 -- 5. Staff start/respond/close/reopen each produce exactly one matching audit event.
 -- 6. Updating a resolved staff response produces one new `staff_resolved` event.
 -- 7. Failed audit insertion rolls back the request mutation.
--- 8. Deleting an actor Auth account sets audit actor_user_id null but preserves audit rows.
+-- 8. Deleting a staff actor Auth account sets audit actor_user_id null but preserves the request/audit rows.
 -- 9. Quota and response-read triggers continue to work unchanged.
--- 10. No email/SMS/push/provider delivery is introduced.
+-- 10. Existing authenticated USAGE on o2ol_private, if granted by another feature, is preserved.
+-- 11. No email/SMS/push/provider delivery is introduced.
