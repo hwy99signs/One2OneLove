@@ -1,47 +1,49 @@
--- One2OneLove relaunch: make privacy-request submission auditing database-owned.
+-- One2OneLove relaunch: finalize privacy-request audit ownership.
 -- DEVELOPMENT MIGRATION ONLY. Do not apply to production without explicit approval.
 --
--- This records the creation of a privacy request. It does not export data, delete users,
--- modify billing, send communications, or perform any privacy-request fulfillment action.
+-- The final workflow reconciliation owns ALL lifecycle audit events through the single
+-- `privacy_requests_audit_state` trigger. This later migration removes the historical
+-- submission-only trigger/function so fresh migration order cannot create duplicate
+-- `submitted` audit rows. It performs no fulfillment action.
 
 begin;
 
-create or replace function public.audit_privacy_request_submission()
-returns trigger
-language plpgsql
-security invoker
-set search_path = ''
-as $$
-begin
-  insert into public.privacy_request_audit (
-    request_id,
-    actor_user_id,
-    action
-  ) values (
-    new.id,
-    new.user_id,
-    'submitted'
-  );
+-- Retire the older standalone submission audit path if it exists in a staged environment.
+drop trigger if exists privacy_requests_audit_submission on public.privacy_requests;
+drop function if exists public.audit_privacy_request_submission();
 
-  return new;
+-- Fail closed if the final atomic lifecycle audit trigger from the reconciliation
+-- migration is missing. Do not silently recreate a partial audit model here.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_trigger t
+    join pg_class c on c.oid=t.tgrelid
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public'
+      and c.relname='privacy_requests'
+      and t.tgname='privacy_requests_audit_state'
+      and not t.tgisinternal
+  ) then
+    raise exception 'O2OL_PRIVACY_ATOMIC_AUDIT_TRIGGER_MISSING';
+  end if;
+
+  if to_regprocedure('o2ol_private.audit_privacy_request_state()') is null then
+    raise exception 'O2OL_PRIVACY_ATOMIC_AUDIT_FUNCTION_MISSING';
+  end if;
 end;
 $$;
 
-revoke all on function public.audit_privacy_request_submission() from public, anon, authenticated;
-
-drop trigger if exists privacy_requests_audit_submission on public.privacy_requests;
-create trigger privacy_requests_audit_submission
-after insert on public.privacy_requests
-for each row execute function public.audit_privacy_request_submission();
-
-comment on function public.audit_privacy_request_submission() is
-  'Writes the service-only submitted audit event for each newly recorded privacy request.';
+comment on trigger privacy_requests_audit_state on public.privacy_requests is
+  'Single database-atomic audit trigger for privacy request submission and staff/member state transitions.';
 
 commit;
 
 -- CONTROLLED-TEST CHECKLIST BEFORE ANY PRODUCTION APPROVAL
--- 1. Insert one controlled request through the member Edge Function.
--- 2. Verify exactly one matching audit row exists with action=submitted.
--- 3. Verify anon/authenticated still cannot read privacy_request_audit directly.
--- 4. Verify duplicate active request handling does not manufacture a second submitted audit event.
--- 5. Verify no destructive fulfillment action occurs.
+-- 1. Exactly one non-internal privacy audit trigger exists: privacy_requests_audit_state.
+-- 2. Inserting one controlled request produces exactly one action=submitted audit row.
+-- 3. Staff start/accept/decline/reopen each produce exactly one audit row atomically.
+-- 4. anon/authenticated cannot read privacy_request_audit directly.
+-- 5. No public audit trigger helper remains callable.
+-- 6. No destructive fulfillment action occurs.
