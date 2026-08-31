@@ -10,7 +10,11 @@ const firstDirectory = read('supabase/migrations/20260817_member_directory_priva
 const minimizedDirectory = read('supabase/migrations/20260818_member_directory_minimization.sql');
 const firstPresence = read('supabase/migrations/20260817_presence_security_hardening.sql');
 const reconciliation = read('supabase/migrations/20260820100500_presence_directory_privacy_reconciliation.sql');
+const sourceMinimization = read('supabase/migrations/20260820151000_member_directory_source_minimization.sql');
 const activeAccountGuard = read('supabase/migrations/20260822003000_member_directory_active_account_guard.sql');
+const canonicalFinal = read('supabase/migrations/20260822004500_presence_directory_privacy_final.sql');
+const executionLedger = read('docs/PRODUCTION_APPROVAL_EXECUTION.md');
+const approvalQueue = read('docs/RELAUNCH_APPROVAL_QUEUE.md');
 
 const directoryProjectionIsMinimal = (source) => {
   const select = source.match(/as\s+select([\s\S]*?)from\s+public\.users/i)?.[1] || '';
@@ -140,17 +144,22 @@ check(
     && !synchronizedSource.includes('user_type')
     && !synchronizedSource.includes('location')
     && !synchronizedSource.includes('interests')
-    && !synchronizedSource.includes('email')
-    && reconciliation.includes("if coalesce(new.user_type, 'regular') <> 'regular' then"),
-  'Fresh #8C migration must not expose a broader signed-in-readable synchronization table before the later reconciliation step.'
+    && !synchronizedSource.includes('email'),
+  'Fresh #8C migration must not expose a broader signed-in-readable synchronization table before later reconciliation.'
 );
 check(
-  'final #8C guard removes inactive accounts from synchronized discovery',
+  'historical source minimization removes non-discovery fields',
+  ['relationship_status', 'user_type', 'location', 'interests'].every((field) => sourceMinimization.includes(`drop column if exists ${field}`))
+    && sourceMinimization.includes('security_invoker = true'),
+  'The already-executed #8C-A migration must retain its five-field source contract in source history.'
+);
+check(
+  'final active-account guard removes inactive/non-regular accounts from discovery',
   activeAccountGuard.includes("coalesce(new.user_type, 'regular') <> 'regular'")
     && activeAccountGuard.includes('coalesce(new.is_active, true) <> true')
     && activeAccountGuard.includes('update of name, avatar_url, bio, user_type, is_active')
     && activeAccountGuard.includes('and coalesce(u.is_active, true) = true')
-    && activeAccountGuard.includes('and coalesce(u.user_type, \'regular\') = \'regular\''),
+    && activeAccountGuard.includes("and coalesce(u.user_type, 'regular') = 'regular'"),
   'Final synchronized discovery must delete deactivated/non-regular accounts and restore them only when eligible again.'
 );
 check(
@@ -158,17 +167,38 @@ check(
   presenceMigrationIsNeutral(firstPresence)
     && firstPresence.includes('o2ol_private.write_user_presence')
     && firstPresence.includes("'O2OL_PRESENCE_OWN_ONLY'")
-    && firstPresence.includes('security invoker\nset search_path = \'\'')
     && !firstPresence.includes('set search_path = public'),
   'A fresh environment must not rely on a later repair migration for caller-bound writes, invoker reads or language-neutral presence data.'
 );
 check(
-  'later presence reconciliation preserves the same neutral security contract',
+  'historical #8C reconciliation preserves neutral caller-bound presence',
   presenceMigrationIsNeutral(reconciliation)
     && reconciliation.includes('o2ol_private.write_user_presence')
     && reconciliation.includes("'O2OL_PRESENCE_OWN_ONLY'")
     && !reconciliation.includes('set search_path = public'),
-  'The approved reconciliation migration must not widen or undo the initial presence protections.'
+  'The already-executed #8C migration source must continue documenting its reviewed security contract.'
+);
+check(
+  'canonical final-state migration converges to the strict privacy contract',
+  canonicalFinal.includes('only active regular accounts are discoverable')
+    && canonicalFinal.includes('drop column if exists relationship_status')
+    && canonicalFinal.includes('drop column if exists email')
+    && canonicalFinal.includes('coalesce(new.is_active, true) <> true')
+    && canonicalFinal.includes('Authenticated members can view discoverable presence')
+    && canonicalFinal.includes("'O2OL_PRESENCE_OWN_ONLY'")
+    && canonicalFinal.includes('join public.member_directory md on md.id = up.user_id')
+    && canonicalFinal.includes('security_invoker = true')
+    && !/\bas\s+last_seen_text\b/i.test(canonicalFinal),
+  'Any fresh/drift recovery reference must converge to active-member-only discovery and neutral caller-safe presence.'
+);
+check(
+  'completed production #8C and #8C-A are governance-locked against replay',
+  executionLedger.includes('#8C — Presence + member-directory privacy — COMPLETE')
+    && executionLedger.includes('#8C-A — Member-directory source minimization — COMPLETE')
+    && executionLedger.includes('Do not reapply it.')
+    && approvalQueue.includes('must **not** be applied to the existing production project merely because it is newer')
+    && !approvalQueue.includes('### #8C — Presence + member-directory privacy — PENDING'),
+  'A newer reconciliation file must never cause already-completed production approvals to be repeated.'
 );
 
 console.log('\nOne2OneLove shared presence privacy/i18n check\n');
