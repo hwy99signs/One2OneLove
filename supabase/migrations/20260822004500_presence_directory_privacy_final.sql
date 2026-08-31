@@ -1,9 +1,13 @@
--- One2OneLove Approval #8C — canonical final presence + member-directory privacy state.
--- DEVELOPMENT MIGRATION ONLY. DO NOT APPLY TO PRODUCTION without explicit Approval #8C.
+-- One2OneLove canonical final presence + member-directory privacy state.
+-- DEVELOPMENT / RECOVERY MIGRATION ONLY.
 --
--- This file supersedes the historical multi-step #8C development reconciliation as the
--- preferred production apply candidate. It is intentionally idempotent against the
--- audited legacy objects while converging directly to the final privacy contract:
+-- EXISTING PRODUCTION WARNING: approvals #8C and #8C-A are already recorded COMPLETE
+-- for the audited One2OneLove production project. DO NOT apply this file there merely
+-- because it is newer. Production use requires a fresh read-only audit proving that the
+-- completed live state is missing/materially drifted plus a NEW explicit corrective approval.
+--
+-- This file is intended for fresh environments or a separately approved drift-recovery
+-- scenario. It converges directly to the final privacy contract:
 --   * only active regular accounts are discoverable;
 --   * directory source/view expose exactly id/name/avatar_url/bio/created_at;
 --   * presence never exposes email or SQL-generated localized prose;
@@ -335,7 +339,9 @@ comment on view public.user_presence_view is
 
 commit;
 
--- CONTROLLED TESTS BEFORE PRODUCTION APPROVAL #8C
+-- CONTROLLED TESTS FOR A FRESH/DRIFT-RECOVERY ENVIRONMENT ONLY
+-- This checklist is NOT a current production-apply instruction for the already-completed
+-- One2OneLove #8C/#8C-A production state.
 -- 1. Snapshot user_presence row count before/after; existing rows are preserved.
 -- 2. Active regular users count equals user_directory_profiles count after reconciliation.
 -- 3. Inactive and non-regular accounts are absent from source/member_directory.
