@@ -24,6 +24,7 @@ import LoveLanguageQuiz from "./LoveLanguageQuizRelaunch";
 import DateIdeas from "./DateIdeas";
 import Profile from "./ProfileRelaunch";
 import PrivacyCenter from "./PrivacyCenter";
+import PrivacyAdmin from "./PrivacyAdmin";
 import BlockedMembers from "./BlockedMembers";
 import SupportRequests from "./SupportRequests";
 import SupportAdmin from "./SupportAdmin";
@@ -92,6 +93,7 @@ const PAGES = {
   DateIdeas,
   Profile,
   PrivacyCenter,
+  PrivacyAdmin,
   BlockedMembers,
   SupportRequests,
   SupportAdmin,
@@ -176,6 +178,7 @@ const ROUTES = [
   ["/DateIdeas", DateIdeas],
   ["/Profile", Profile],
   ["/PrivacyCenter", PrivacyCenter],
+  ["/PrivacyAdmin", PrivacyAdmin],
   ["/BlockedMembers", BlockedMembers],
   ["/SupportRequests", SupportRequests],
   ["/SupportAdmin", SupportAdmin],
