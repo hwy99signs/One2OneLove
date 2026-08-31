@@ -65,12 +65,18 @@ for (const required of [
   "'member_closed' else 'staff_closed'",
   'create trigger support_requests_audit_lifecycle',
   'after insert or update of status, staff_response, responded_at, closed_at',
+  'revoke all on schema o2ol_private from public, anon;',
 ]) {
   if (!audit.includes(required)) failures.push(`${auditFile}: missing atomic support audit safeguard ${required}.`);
 }
 
-for (const forbidden of ['grant select (\n  last_actor_user_id', 'grant select (\n  last_actor_kind']) {
-  if (audit.includes(forbidden)) failures.push(`${auditFile}: server-only support actor metadata must not be browser-readable.`);
+if (audit.includes('revoke all on schema o2ol_private from public, anon, authenticated')) {
+  failures.push(`${auditFile}: support migration must not revoke authenticated USAGE needed by other reviewed o2ol_private wrappers.`);
+}
+
+const grantBlock = audit.match(/grant select \(([\s\S]*?)\) on table public\.support_requests to authenticated;/i)?.[1] || '';
+for (const privateField of ['last_actor_user_id', 'last_actor_kind']) {
+  if (grantBlock.includes(privateField)) failures.push(`${auditFile}: authenticated column grant must not expose ${privateField}.`);
 }
 
 for (const [file, source] of [[quotaFile, quota], [stateFile, state], [auditFile, audit]]) {
@@ -96,4 +102,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Support requests have a serialized five-open ceiling, immutable member-authored content, database-enforced lifecycle integrity, hidden actor metadata and database-atomic lifecycle auditing.');
+console.log('✅ Support requests have a serialized five-open ceiling, immutable member-authored content, database-enforced lifecycle integrity, hidden actor metadata, shared-schema compatibility and database-atomic lifecycle auditing.');
