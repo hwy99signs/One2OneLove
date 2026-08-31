@@ -1,6 +1,7 @@
 // Supabase Edge Function: support-request
 // DEVELOPMENT CODE ONLY. Provides a private in-app support channel for authenticated
 // One2OneLove members without requiring an external email/SMS provider.
+// Support lifecycle auditing is database-atomic; this function never writes audit rows separately.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
@@ -129,17 +130,18 @@ serve(async (request) => {
       const closedAt = new Date().toISOString()
       const { data, error } = await serviceClient
         .from('support_requests')
-        .update({ status: 'closed', closed_at: closedAt })
+        .update({
+          status: 'closed',
+          closed_at: closedAt,
+          last_actor_user_id: caller.id,
+          last_actor_kind: 'member',
+        })
         .eq('id', requestId)
         .eq('user_id', caller.id)
         .in('status', ['open','in_progress','resolved'])
         .select(MEMBER_FIELDS)
         .maybeSingle()
       if (error) throw error
-      if (data) {
-        const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: data.id, actor_user_id: caller.id, action: 'member_closed' })
-        if (auditError) throw auditError
-      }
       return json(request, { success: true, enabled: true, request: data || null })
     }
 
@@ -162,7 +164,15 @@ serve(async (request) => {
 
     const { data: created, error: insertError } = await serviceClient
       .from('support_requests')
-      .insert({ user_id: caller.id, category, subject, message, status: 'open' })
+      .insert({
+        user_id: caller.id,
+        category,
+        subject,
+        message,
+        status: 'open',
+        last_actor_user_id: caller.id,
+        last_actor_kind: 'member',
+      })
       .select(MEMBER_FIELDS)
       .single()
     if (insertError) {
@@ -174,9 +184,6 @@ serve(async (request) => {
       }
       throw insertError
     }
-
-    const { error: auditError } = await serviceClient.from('support_request_audit').insert({ request_id: created.id, actor_user_id: caller.id, action: 'created' })
-    if (auditError) throw auditError
 
     return json(request, { success: true, enabled: true, request: created })
   } catch (error) {
