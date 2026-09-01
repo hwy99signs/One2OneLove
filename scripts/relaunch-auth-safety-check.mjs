@@ -31,10 +31,12 @@ requireText(authFlow, "'refresh_token'", 'Auth URL scrubber must remove refresh 
 requireText(authFlow, "'code'", 'Auth URL scrubber must remove one-time authorization codes.');
 requireText(authFlow, "url.hash = ''", 'Auth URL scrubber must clear implicit-flow fragments.');
 requireText(authFlow, 'history.replaceState', 'Auth URL scrubber must replace browser history without navigation.');
+requireText(authFlow, 'o2ol-return-after-auth', 'Auth return helper must own a dedicated durable return key.');
 
 requireText(signIn, "supabase.auth.resend({", 'Sign In must provide a real confirmation resend path.');
 requireText(signIn, "type: 'signup'", 'Confirmation resend must use the signup confirmation type.');
-requireText(signIn, 'o2ol-return-after-auth', 'Confirmation resend must preserve the safe return destination.');
+requireText(signIn, 'storeAuthReturnTo(returnTo, { durable: true })', 'Confirmation resend must preserve the validated return destination through the reviewed auth helper.');
+requireText(signIn, 'safeAuthReturnTo(searchParams.get(\'returnTo\'))', 'Sign In must sanitize the requested return path before storing it.');
 
 requireText(callback, 'Confirmation link processed. Please sign in to continue.', 'Callback must not claim confirmation without proof.');
 requireText(callback, 'scrubAuthMaterialFromUrl', 'Confirmation callback must scrub one-time auth material from the visible URL.');
