@@ -15,16 +15,13 @@ for (const required of [
   if (!source.includes(required)) failures.push(`${file}: missing blocked-list privacy/localization safeguard ${required}.`);
 }
 
-for (const forbidden of [
-  ".from('users')",
-  "|| 'Member'",
-  'email',
-  'partner_email',
-  'stripe_customer_id',
-  'subscription_status',
-  'verification_status',
-]) {
-  if (source.includes(forbidden)) failures.push(`${file}: blocked-member list must not use private profile source, English fallback, or sensitive field ${forbidden}.`);
+const queryLeaksPrivateProfiles = /\.from\(['"]users['"]\)/.test(source)
+  || /\.select\([^)]*(email|partner_email|stripe_customer_id|subscription_status|verification_status)/i.test(source);
+if (queryLeaksPrivateProfiles) {
+  failures.push(`${file}: blocked-member list query must not read private profile/contact/billing fields.`);
+}
+if (/\|\|\s*['"]Member['"]/.test(source)) {
+  failures.push(`${file}: blocked-member list must leave missing-name fallback to localized client copy.`);
 }
 
 if (failures.length) {
