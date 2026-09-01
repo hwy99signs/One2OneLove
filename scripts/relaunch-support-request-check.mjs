@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 
 const failures = [];
+const read = (file) => fs.readFileSync(file, 'utf8');
+const requireText = (source, needle, label) => { if (!source.includes(needle)) failures.push(label); };
+const forbidText = (source, needle, label) => { if (source.includes(needle)) failures.push(label); };
+
 const migrationFile = 'supabase/migrations/20260819_support_requests.sql';
 const auditMigrationFile = 'supabase/migrations/20260831012000_support_request_audit_integrity.sql';
 const memberFunctionFile = 'supabase/functions/support-request/index.ts';
@@ -12,16 +16,16 @@ const helpControlFile = 'src/components/support/HelpCenterSupportControl.jsx';
 const helpShellFile = 'src/pages/HelpCenterRelaunchWithSupport.jsx';
 const routesFile = 'src/pages/index.jsx';
 
-const migration = fs.readFileSync(migrationFile, 'utf8');
-const auditMigration = fs.readFileSync(auditMigrationFile, 'utf8');
-const memberFunction = fs.readFileSync(memberFunctionFile, 'utf8');
-const adminFunction = fs.readFileSync(adminFunctionFile, 'utf8');
-const service = fs.readFileSync(serviceFile, 'utf8');
-const memberPage = fs.readFileSync(memberPageFile, 'utf8');
-const adminPage = fs.readFileSync(adminPageFile, 'utf8');
-const helpControl = fs.readFileSync(helpControlFile, 'utf8');
-const helpShell = fs.readFileSync(helpShellFile, 'utf8');
-const routes = fs.readFileSync(routesFile, 'utf8');
+const migration = read(migrationFile);
+const auditMigration = read(auditMigrationFile);
+const memberFunction = read(memberFunctionFile);
+const adminFunction = read(adminFunctionFile);
+const service = read(serviceFile);
+const memberPage = read(memberPageFile);
+const adminPage = read(adminPageFile);
+const helpControl = read(helpControlFile);
+const helpShell = read(helpShellFile);
+const routes = read(routesFile);
 
 for (const required of [
   'user_id uuid not null references auth.users(id) on delete cascade',
@@ -30,11 +34,9 @@ for (const required of [
   'alter table public.support_requests enable row level security;',
   'alter table public.support_request_audit enable row level security;',
   'using ((select auth.uid()) = user_id);',
-]) {
-  if (!migration.includes(required)) failures.push(`${migrationFile}: missing support privacy safeguard ${required}.`);
-}
+]) requireText(migration, required, `${migrationFile}: missing support privacy safeguard ${required}.`);
 for (const forbidden of ['email text', 'phone text', 'grant select on table public.support_request_audit to authenticated']) {
-  if (migration.includes(forbidden)) failures.push(`${migrationFile}: support tables must not duplicate contact data or expose audit records (${forbidden}).`);
+  forbidText(migration, forbidden, `${migrationFile}: support tables must not duplicate contact data or expose audit records (${forbidden}).`);
 }
 
 for (const required of [
@@ -45,9 +47,7 @@ for (const required of [
   'last_actor_kind',
   'references auth.users(id) on delete set null',
   'create trigger support_requests_audit_lifecycle',
-]) {
-  if (!auditMigration.includes(required)) failures.push(`${auditMigrationFile}: missing final support audit/privacy safeguard ${required}.`);
-}
+]) requireText(auditMigration, required, `${auditMigrationFile}: missing final support audit/privacy safeguard ${required}.`);
 const grantBlock = auditMigration.match(/grant select \(([\s\S]*?)\) on table public\.support_requests to authenticated;/i)?.[1] || '';
 for (const privateField of ['last_actor_user_id', 'last_actor_kind']) {
   if (grantBlock.includes(privateField)) failures.push(`${auditMigrationFile}: authenticated column grant must not expose ${privateField}.`);
@@ -68,17 +68,11 @@ for (const required of [
   "if (action !== 'create')",
   'last_actor_user_id: caller.id',
   "last_actor_kind: 'member'",
-]) {
-  if (!memberFunction.includes(required)) failures.push(`${memberFunctionFile}: missing member support safeguard ${required}.`);
-}
+]) requireText(memberFunction, required, `${memberFunctionFile}: missing member support safeguard ${required}.`);
 const memberGateIndex = memberFunction.indexOf("Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'");
 const memberListIndex = memberFunction.indexOf("if (action === 'list')");
-if (memberGateIndex < 0 || memberListIndex < 0 || memberGateIndex > memberListIndex) {
-  failures.push(`${memberFunctionFile}: support feature gate must fail closed before member queue reads.`);
-}
-for (const forbidden of ["staff_response: body", "user_id: body", ".from('support_request_audit')"]) {
-  if (memberFunction.includes(forbidden)) failures.push(`${memberFunctionFile}: member endpoint violates atomic/ownership boundary (${forbidden}).`);
-}
+if (memberGateIndex < 0 || memberListIndex < 0 || memberGateIndex > memberListIndex) failures.push(`${memberFunctionFile}: support feature gate must fail closed before member queue reads.`);
+for (const forbidden of ["staff_response: body", "user_id: body", ".from('support_request_audit')"]) forbidText(memberFunction, forbidden, `${memberFunctionFile}: member endpoint violates atomic/ownership boundary (${forbidden}).`);
 
 for (const required of [
   "Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'",
@@ -96,25 +90,12 @@ for (const required of [
   "if (action === 'reopen')",
   'last_actor_user_id: caller.id',
   "last_actor_kind: 'staff'",
-]) {
-  if (!adminFunction.includes(required)) failures.push(`${adminFunctionFile}: missing support-admin safeguard ${required}.`);
-}
+]) requireText(adminFunction, required, `${adminFunctionFile}: missing support-admin safeguard ${required}.`);
 const adminGateIndex = adminFunction.indexOf("Deno.env.get('SUPPORT_REQUESTS_ENABLED') !== 'true'");
 const adminAccessIndex = adminFunction.indexOf("if (action === 'access')");
-if (adminGateIndex < 0 || adminAccessIndex < 0 || adminGateIndex > adminAccessIndex) {
-  failures.push(`${adminFunctionFile}: support feature gate must fail closed before staff access/queue handling.`);
-}
-for (const forbidden of [
-  "user_type === 'regular'",
-  "user_type === 'professional'",
-  "user_type === 'therapist'",
-  "user_type === 'influencer'",
-  "select('id,user_id,category",
-  ".from('support_request_audit')",
-  'last_actor_user_id,',
-  'last_actor_kind,',
-]) {
-  if (adminFunction.includes(forbidden)) failures.push(`${adminFunctionFile}: support admin authority/payload must not expose member/actor identity or duplicate audit writes (${forbidden}).`);
+if (adminGateIndex < 0 || adminAccessIndex < 0 || adminGateIndex > adminAccessIndex) failures.push(`${adminFunctionFile}: support feature gate must fail closed before staff access/queue handling.`);
+for (const forbidden of ["user_type === 'regular'", "user_type === 'professional'", "user_type === 'therapist'", "user_type === 'influencer'", "select('id,user_id,category", ".from('support_request_audit')", 'last_actor_user_id,', 'last_actor_kind,']) {
+  forbidText(adminFunction, forbidden, `${adminFunctionFile}: support admin authority/payload must not expose member/actor identity or duplicate audit writes (${forbidden}).`);
 }
 
 for (const required of [
@@ -124,90 +105,45 @@ for (const required of [
   'markSupportResponseRead',
   'getSupportAdminAccess',
   'listSupportQueue',
-]) {
-  if (!service.includes(required)) failures.push(`${serviceFile}: missing support client behavior ${required}.`);
-}
+]) requireText(service, required, `${serviceFile}: missing support client behavior ${required}.`);
 
-for (const language of ['en','es','fr','it','de']) {
-  const memberBlock = memberPage.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`))?.[1] || '';
-  const adminBlock = adminPage.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([\\s\\S]*?)\\n\\s{2}\\},`))?.[1] || '';
-  const helpBlock = helpControl.match(new RegExp(`\\n\\s{2}${language}:\\s*\\{([^\\n]+)`))?.[1] || '';
+// Translation objects may be compact one-line entries or expanded blocks. Validate language
+// presence and the required nested maps semantically rather than by whitespace formatting.
+const languageSlice = (source, language, nextLanguage) => {
+  const start = source.indexOf(`  ${language}: {`);
+  if (start < 0) return '';
+  const end = nextLanguage ? source.indexOf(`  ${nextLanguage}: {`, start + 1) : source.indexOf('\n};', start + 1);
+  return source.slice(start, end > start ? end : undefined);
+};
+const activeLanguages = ['en','es','fr','it','de'];
+for (let index = 0; index < activeLanguages.length; index += 1) {
+  const language = activeLanguages[index];
+  const next = index + 1 < activeLanguages.length ? activeLanguages[index + 1] : 'nl';
+  const memberBlock = languageSlice(memberPage, language, next);
+  const adminBlock = languageSlice(adminPage, language, next);
+  const helpBlock = languageSlice(helpControl, language, next);
   if (!memberBlock) failures.push(`${memberPageFile}: missing ${language} member-support copy.`);
   if (!adminBlock) failures.push(`${adminPageFile}: missing ${language} support-admin copy.`);
   if (!helpBlock) failures.push(`${helpControlFile}: missing ${language} Help Center support copy.`);
-  for (const key of ['signInButton', 'back', 'boundary', 'safetyNotice']) {
-    if (memberBlock && !new RegExp(`\\b${key}:\\s*`).test(memberBlock)) failures.push(`${memberPageFile}: ${language} missing ${key}.`);
-  }
-  for (const key of ['categories', 'statuses']) {
-    if (adminBlock && !new RegExp(`\\b${key}:\\s*`).test(adminBlock)) failures.push(`${adminPageFile}: ${language} missing ${key}.`);
-  }
-  for (const key of ['title', 'text', 'boundary', 'open', 'signIn']) {
-    if (helpBlock && !new RegExp(`\\b${key}:\\s*`).test(helpBlock)) failures.push(`${helpControlFile}: ${language} missing ${key}.`);
-  }
+  for (const key of ['signInButton', 'back', 'boundary', 'safetyNotice']) if (memberBlock && !new RegExp(`\\b${key}:\\s*`).test(memberBlock)) failures.push(`${memberPageFile}: ${language} missing ${key}.`);
+  for (const key of ['categories', 'statuses']) if (adminBlock && !new RegExp(`\\b${key}:\\s*`).test(adminBlock)) failures.push(`${adminPageFile}: ${language} missing ${key}.`);
+  for (const key of ['title', 'text', 'boundary', 'open', 'signIn']) if (helpBlock && !new RegExp(`\\b${key}:\\s*`).test(helpBlock)) failures.push(`${helpControlFile}: ${language} missing ${key}.`);
 }
 
 for (const required of [
-  'createSupportRequest({ category, subject, message })',
-  'listMySupportRequests()',
-  'markSupportResponseRead(item.id)',
-  'closeSupportRequest(requestId)',
-  'item.staff_response',
-  "navigate('/SignIn?returnTo=%2FSupportRequests')",
-  "navigate('/HelpCenter')",
-  "category === 'safety'",
-  '{t.safetyNotice}',
-  '{t.boundary}',
-]) {
-  if (!memberPage.includes(required)) failures.push(`${memberPageFile}: missing member support behavior ${required}.`);
-}
+  'createSupportRequest({ category, subject, message })', 'listMySupportRequests()', 'markSupportResponseRead(item.id)', 'closeSupportRequest(requestId)', 'item.staff_response', "navigate('/SignIn?returnTo=%2FSupportRequests')", "navigate('/HelpCenter')", "category === 'safety'", '{t.safetyNotice}', '{t.boundary}',
+]) requireText(memberPage, required, `${memberPageFile}: missing member support behavior ${required}.`);
 
 for (const required of [
-  'getSupportAdminAccess()',
-  'listSupportQueue(filter)',
-  "act(item.id, 'respond')",
-  "act(item.id, 'start')",
-  "act(item.id, 'close')",
-  "act(item.id, 'reopen')",
-  't.categories[item.category] || item.category',
-  't.statuses[item.status] || item.status',
-]) {
-  if (!adminPage.includes(required)) failures.push(`${adminPageFile}: missing support-admin behavior ${required}.`);
-}
-if (adminPage.includes('>{item.category}</span>') || adminPage.includes('>{item.status}</span>')) {
-  failures.push(`${adminPageFile}: staff queue must not render raw category/status enums as the primary label.`);
-}
+  'getSupportAdminAccess()', 'listSupportQueue(filter)', "act(item.id, 'respond')", "act(item.id, 'start')", "act(item.id, 'close')", "act(item.id, 'reopen')", 't.categories[item.category] || item.category', 't.statuses[item.status] || item.status',
+]) requireText(adminPage, required, `${adminPageFile}: missing support-admin behavior ${required}.`);
+if (adminPage.includes('>{item.category}</span>') || adminPage.includes('>{item.status}</span>')) failures.push(`${adminPageFile}: staff queue must not render raw category/status enums as the primary label.`);
 
-for (const required of [
-  'if (!SUPPORT_REQUESTS_ENABLED) return null;',
-  "? '/SupportRequests'",
-  ": '/SignIn?returnTo=%2FSupportRequests'",
-  '{t.boundary}',
-]) {
-  if (!helpControl.includes(required)) failures.push(`${helpControlFile}: missing feature-gated Help Center support behavior ${required}.`);
-}
-for (const forbidden of ['mailto:', 'sms:', 'tel:', '/ContactUs']) {
-  if (helpControl.includes(forbidden)) failures.push(`${helpControlFile}: Help Center support must not revive an unverified external/contact delivery path (${forbidden}).`);
-}
+for (const required of ['if (!SUPPORT_REQUESTS_ENABLED) return null;', "? '/SupportRequests'", ": '/SignIn?returnTo=%2FSupportRequests'", '{t.boundary}']) requireText(helpControl, required, `${helpControlFile}: missing feature-gated Help Center support behavior ${required}.`);
+for (const forbidden of ['mailto:', 'sms:', 'tel:', '/ContactUs']) forbidText(helpControl, forbidden, `${helpControlFile}: Help Center support must not revive an unverified external/contact delivery path (${forbidden}).`);
 
-for (const required of [
-  "import HelpCenterRelaunch from './HelpCenterRelaunch'",
-  "import HelpCenterSupportControl from '@/components/support/HelpCenterSupportControl'",
-  '<HelpCenterRelaunch />',
-  '<HelpCenterSupportControl languageCode={currentLanguage} />',
-]) {
-  if (!helpShell.includes(required)) failures.push(`${helpShellFile}: missing reviewed Help + member-support composition ${required}.`);
-}
-
-for (const required of [
-  'import SupportRequests from "./SupportRequests";',
-  'import SupportAdmin from "./SupportAdmin";',
-  'import HelpCenter from "./HelpCenterRelaunchWithSupport";',
-  '["/SupportRequests", SupportRequests]',
-  '["/SupportAdmin", SupportAdmin]',
-  '["/HelpCenter", HelpCenter]',
-]) {
-  if (!routes.includes(required)) failures.push(`${routesFile}: missing private support/help route ${required}.`);
-}
+for (const required of ["import HelpCenterRelaunch from './HelpCenterRelaunch'", "import HelpCenterSupportControl from '@/components/support/HelpCenterSupportControl'", '<HelpCenterRelaunch />', '<HelpCenterSupportControl languageCode={currentLanguage} />']) requireText(helpShell, required, `${helpShellFile}: missing reviewed Help + member-support composition ${required}.`);
+for (const required of ['import SupportRequests from "./SupportRequests";', 'import SupportAdmin from "./SupportAdmin";', 'import HelpCenter from "./HelpCenterRelaunchWithSupport";', '["/SupportRequests", SupportRequests]', '["/SupportAdmin", SupportAdmin]', '["/HelpCenter", HelpCenter]']) requireText(routes, required, `${routesFile}: missing private support/help route ${required}.`);
 
 if (failures.length) {
   console.error('\n⛔ One2OneLove support request check failed:');
