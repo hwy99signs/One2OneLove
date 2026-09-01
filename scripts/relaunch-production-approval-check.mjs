@@ -45,8 +45,13 @@ if (isProduction && gitRef && gitRef !== 'master') {
   failures.push(`Production deployment from branch “${gitRef}” is blocked; relaunch work must be deliberately promoted to master first.`);
 }
 
-if (!queue.includes('Production branch / production Vercel deployment')) {
-  failures.push('RELAUNCH_APPROVAL_QUEUE.md no longer contains the protected production-deployment checkpoint.');
+// Queue headings may evolve; validate the actual production-cutover contract instead of a
+// brittle exact heading. Both a Vercel/production cutover section and the explicit no-merge
+// hold must remain present.
+const hasCutoverSection = /###\s+Production branch\s*\/\s*(?:production\s+)?Vercel (?:deployment|cutover)/i.test(queue);
+const hasExplicitHold = queue.includes('Do not merge to `master` or alter the One2OneLove production deployment without explicit approval.');
+if (!hasCutoverSection || !hasExplicitHold) {
+  failures.push('RELAUNCH_APPROVAL_QUEUE.md no longer contains the protected production/Vercel cutover checkpoint and explicit approval hold.');
 }
 
 if (failures.length) {
