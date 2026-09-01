@@ -10,6 +10,8 @@ const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 const VIDEO_ACCEPT = 'video/mp4,video/webm,video/quicktime';
 const DOCUMENT_ACCEPT = '.pdf,.txt,.doc,.docx,.xls,.xlsx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+// Private text chat is active. Attachments and location sharing remain staged.
+// Member-visible wording for this invariant comes from the five-language chat copy.
 const CHAT_ATTACHMENTS_ENABLED = import.meta.env.VITE_CHAT_ATTACHMENTS_ENABLED === 'true';
 const CHAT_LOCATION_ENABLED = import.meta.env.VITE_CHAT_LOCATION_ENABLED === 'true';
 
