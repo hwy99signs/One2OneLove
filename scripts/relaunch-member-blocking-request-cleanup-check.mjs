@@ -8,7 +8,6 @@ for (const required of [
   "('buddy_requests',      'from_user_id', 'to_user_id')",
   "('friend_requests',     'sender_id',    'receiver_id')",
   "('connection_requests', 'requester_id', 'recipient_id')",
-  "in ('pending','requested','open')",
   'after insert on public.member_blocks',
   'new.blocker_id, new.blocked_id',
   'create or replace function o2ol_private.cleanup_pending_member_requests_on_block()',
@@ -19,6 +18,10 @@ for (const required of [
 ]) {
   if (!source.includes(required)) failures.push(`${file}: missing pending-request cleanup safeguard ${required}.`);
 }
+
+const pendingStatusesProtected = /lower\s*\(\s*coalesce\s*\(\s*status::text[\s\S]{0,80}?in\s*\(\s*''pending''\s*,\s*''requested''\s*,\s*''open''\s*\)/i.test(source)
+  || /status[\s\S]{0,80}?in\s*\(\s*'pending'\s*,\s*'requested'\s*,\s*'open'\s*\)/i.test(source);
+if (!pendingStatusesProtected) failures.push(`${file}: missing pending/requested/open-only cleanup safeguard.`);
 
 for (const forbidden of [
   "delete from public.connections",
