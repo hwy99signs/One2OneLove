@@ -1,3 +1,3 @@
 // Compatibility shim: the relaunch collection is the only Love Notes collection UI.
-// The legacy page used browser-local sms:/mailto: handoffs that exposed the note body.
+// Legacy browser-local delivery handoffs are intentionally retired for privacy.
 export { default } from "./LoveNotesCollectionRelaunch";
