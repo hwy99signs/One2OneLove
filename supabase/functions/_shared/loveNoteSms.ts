@@ -87,7 +87,7 @@ export const requireVerifiedSmsConsent = async (serviceClient: any, e164: string
 
   const { data, error } = await serviceClient
     .from('love_note_sms_consents')
-    .select('status, consented_at, revoked_at')
+    .select('status, consented_at, revoked_at, verified_at')
     .eq('phone_hash', phoneHash)
     .maybeSingle()
 
@@ -95,7 +95,7 @@ export const requireVerifiedSmsConsent = async (serviceClient: any, e164: string
   if (data?.status === 'revoked' || data?.revoked_at) {
     throw new Error('O2OL_SMS_RECIPIENT_OPTED_OUT')
   }
-  if (!data || data.status !== 'active' || !data.consented_at) {
+  if (!data || data.status !== 'active' || !data.consented_at || !data.verified_at) {
     throw new Error('O2OL_SMS_RECIPIENT_CONSENT_REQUIRED')
   }
 
