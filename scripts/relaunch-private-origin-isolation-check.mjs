@@ -56,10 +56,14 @@ for (const contract of contracts) {
       failures.push(`${contract.file}: must not inherit unrelated origin configuration ${token}.`);
     }
   }
-  if (!source.includes("if (!configuredOrigins().has(origin)) return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)")) {
+
+  const rejectsOrigin = /if\s*\(\s*!\s*(?:configuredOrigins|allowedOrigins)\(\)\.has\(origin\)\s*\)\s*return\s+json\(request,\s*\{\s*error:\s*'ORIGIN_NOT_ALLOWED'\s*\},\s*403\)/.test(source);
+  if (!rejectsOrigin) {
     failures.push(`${contract.file}: missing explicit origin rejection before private feature handling.`);
   }
-  if (!source.includes("return new Set(values.length ? values : [DEFAULT_ORIGIN])")) {
+
+  const narrowDefault = /return\s+new\s+Set\((?:values|configured)\.length\s*\?\s*(?:values|configured)\s*:\s*\[DEFAULT_ORIGIN\]\)/.test(source);
+  if (!narrowDefault) {
     failures.push(`${contract.file}: missing narrow production-origin default when dedicated allowlist is unset.`);
   }
 }
