@@ -40,8 +40,10 @@ for (const required of [
   if (!webhook.includes(required)) failures.push(`Signed Twilio consent synchronization missing: ${required}`);
 }
 
-if (!helper.includes(".eq('status', 'active')")) {
-  failures.push('SMS send helper must continue to accept only active consent records.');
+const helperRequiresActive = helper.includes("data.status !== 'active'") || helper.includes(".eq('status', 'active')");
+const helperRequiresVerified = helper.includes('!data.verified_at') || helper.includes(".not('verified_at', 'is', null)");
+if (!helperRequiresActive || !helperRequiresVerified) {
+  failures.push('SMS send helper must accept only active, verified consent records.');
 }
 if (!page.includes('This does not activate SMS delivery by itself.')) {
   failures.push('SMS consent UI must state that web capture alone does not activate delivery.');
@@ -53,4 +55,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('SMS verified-consent boundary passed: web opt-in remains pending, active consent requires verified number control, signed Twilio START can verify a known number, and sending still requires active consent.');
+console.log('SMS verified-consent boundary passed: web opt-in remains pending, active consent requires verified number control, signed Twilio START can verify a known number, and sending still requires active verified consent.');
