@@ -33,6 +33,9 @@ jobs:
       - name: Regenerate package lock without lifecycle scripts
         run: npm install --package-lock-only --ignore-scripts
 
+      - name: Apply non-breaking npm audit lock remediation
+        run: npm audit fix --package-lock-only --ignore-scripts || true
+
       - name: Verify controlled dependency versions
         run: |
           node --input-type=module <<'EOF'
@@ -42,8 +45,8 @@ jobs:
             'node_modules/vite': '6.4.3',
             'node_modules/postcss': '8.5.23',
             'node_modules/rollup': '4.59.0',
-            'node_modules/react-router': '7.18.0',
-            'node_modules/react-router-dom': '7.18.0'
+            'node_modules/react-router': '7.18.3',
+            'node_modules/react-router-dom': '7.18.3'
           };
           for (const [key, version] of Object.entries(expected)) {
             const actual = lock.packages?.[key]?.version;
