@@ -1,14 +1,330 @@
-name: Relaunch Exact Source Lint Fixes (retired)
+name: Relaunch Strict Gate Repairs
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - relaunch-homepage
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: relaunch-homepage-strict-gate-repairs
+  cancel-in-progress: false
 
 jobs:
-  retired:
+  patch:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: One-time repair completed
-        run: echo "The one-time relaunch source lint repair has already been applied."
+      - uses: actions/checkout@v4
+        with:
+          ref: relaunch-homepage
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Apply exact privacy and strict-gate repairs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path, old, new, expected=1):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f'{path}: expected {expected} match(es), found {count}: {old[:120]!r}')
+              p.write_text(text.replace(old, new))
+
+          # Live chat must never read another member through private public.users or expose email.
+          replace_exact(
+              'src/lib/chatFeaturesService.js',
+              ".from('users')\n      .select('name, email, avatar_url')",
+              ".from('member_directory')\n      .select('name, avatar_url')",
+              2,
+          )
+          replace_exact(
+              'src/lib/chatFeaturesService.js',
+              "sender_name: senderData?.name || senderData?.email || 'Unknown'",
+              "sender_name: senderData?.name || 'Member'",
+          )
+          replace_exact(
+              'src/lib/chatFeaturesService.js',
+              "receiver_name: receiverData?.name || receiverData?.email || 'Unknown'",
+              "receiver_name: receiverData?.name || 'Member'",
+          )
+          replace_exact(
+              'src/lib/chatFeaturesService.js',
+              ".from('users')\n          .select('name, email')",
+              ".from('member_directory')\n          .select('name')",
+          )
+          replace_exact(
+              'src/lib/chatFeaturesService.js',
+              "sender_name: replySender?.name || replySender?.email || 'Unknown'",
+              "sender_name: replySender?.name || 'Member'",
+          )
+
+          # Public author labels must not derive from the authenticated account email.
+          replace_exact(
+              'src/lib/communityService.js',
+              "userProfile?.name || user.email?.split('@')[0] || 'User'",
+              "userProfile?.name || 'Member'",
+              2,
+          )
+          replace_exact(
+              'src/lib/successStoriesService.js',
+              "userProfile?.name || user.email?.split('@')[0] || 'User'",
+              "userProfile?.name || 'Member'",
+              2,
+          )
+
+          # Canonical production execution ledger; completed approvals must never be replayed.
+          replace_exact(
+              'scripts/relaunch-approval-ledger-check.mjs',
+              "const ledger = read('docs/PRODUCTION_APPROVAL_EXECUTION_20260831.md');",
+              "const ledger = read('docs/PRODUCTION_APPROVAL_EXECUTION.md');",
+          )
+          replace_exact(
+              'scripts/relaunch-approval-ledger-check.mjs',
+              "if (!ledger.includes(`**${completed}`)) failures.push(`Production ledger is missing completed approval ${completed}.`);",
+              "if (!ledger.includes(`### ${completed} —`)) failures.push(`Production ledger is missing completed approval ${completed}.`);",
+          )
+
+          # UI copy check should be case-insensitive; the product copy is already truthful.
+          replace_exact(
+              'scripts/relaunch-core-feature-check.mjs',
+              "browse.includes('Private Date Idea tools are staged') && browse.includes('saving, creating, favoriting and completion tracking')",
+              "browse.includes('Private Date Idea tools are staged') && /saving, creating, favoriting and completion tracking/i.test(browse)",
+          )
+
+          # Profile/navigation regression checks now match the privacy-minimized #8C-A contract.
+          replace_exact(
+              'scripts/relaunch-profile-navigation-check.mjs',
+              """check(
+  'Profile truthfully distinguishes discoverable and private fields',
+  profile.includes('What other members can discover')
+    && profile.includes('name, profile image, short bio, general location, relationship status')
+    && profile.includes('Account-private details'),
+  'Members must not be told the entire profile is private when selected directory fields are intentionally discoverable.'
+);""",
+              """check(
+  'Profile truthfully distinguishes discoverable and private fields',
+  profile.includes('What other members can discover')
+    && profile.includes('display name, optional profile image, short bio and member-since date')
+    && profile.includes('Account-private details')
+    && profile.includes('location, relationship status, anniversary, partner information and Love Language remain account-private'),
+  'Discoverable profile copy must match the five-field privacy-minimized member directory.'
+);""",
+          )
+          replace_exact(
+              'scripts/relaunch-profile-navigation-check.mjs',
+              """check(
+  'profile service allowlist excludes account/role/billing and partner-email writes',
+  profileService.includes('SAFE_PROFILE_UPDATE_FIELDS')
+    && profileService.includes('sanitizeProfileUpdates')
+    && profileService.includes('getAuthenticatedOwnUser')
+    && !profileService.includes("'partner_email'")
+    && !profileService.includes("'email'")
+    && !profileService.includes("'user_type'")
+    && !profileService.includes("'subscription_status'"),
+  'The relaunch profile update function must stay narrow and own-user-only.'
+);""",
+              """const profileSafeUpdateBlock = profileService.match(/const SAFE_PROFILE_UPDATE_FIELDS = new Set\\(\\[([\\s\\S]*?)\\]\\);/)?.[1] || '';
+check(
+  'profile service allowlist excludes account/role/billing and partner-email writes',
+  profileService.includes('SAFE_PROFILE_UPDATE_FIELDS')
+    && profileService.includes('sanitizeProfileUpdates')
+    && profileService.includes('getAuthenticatedOwnUser')
+    && ['partner_email', 'email', 'user_type', 'subscription_status', 'stripe_customer_id', 'is_verified', 'is_active']
+      .every((field) => !profileSafeUpdateBlock.includes(`'${field}'`) && !profileSafeUpdateBlock.includes(`"${field}"`)),
+  'The browser-editable allowlist must stay narrow while authenticated own-row role checks remain permitted.'
+);""",
+          )
+          replace_exact(
+              'scripts/relaunch-profile-navigation-check.mjs',
+              """check(
+  'navigation language rollout preserves disabled Dutch and Portuguese state',
+  layout.includes("{ code: 'nl', name: 'Dutch', flag: 'nl', active: false }")
+    && layout.includes("{ code: 'pt', name: 'Portuguese', flag: 'pt', active: false }"),
+  'Do not silently change the language rollout while cleaning navigation.'
+);""",
+              """check(
+  'navigation language rollout preserves disabled Dutch and Portuguese state',
+  /\\{ code: 'nl', name: '[^']+', flag: 'nl', active: false \\}/.test(layout)
+    && /\\{ code: 'pt', name: '[^']+', flag: 'pt', active: false \\}/.test(layout),
+  'Localized language labels may vary, but Dutch and Portuguese must remain disabled.'
+);""",
+          )
+
+          # Security umbrella: align assertions with the newer hardened semantics already
+          # enforced by the dedicated checks instead of legacy literal formatting.
+          replace_exact(
+              'scripts/relaunch-security-check.mjs',
+              "check('community moderator role escalation is blocked', communityMembership.includes('Moderators cannot change member roles') && communityMembership.includes('Community membership identity fields are immutable'), 'Moderator/admin boundaries and row identity must be protected.');",
+              "check('community moderator role escalation is blocked', communityMembership.includes('O2OL_COMMUNITY_ROLE_CHANGE_DENIED') && communityMembership.includes('O2OL_COMMUNITY_MEMBERSHIP_IDENTITY_IMMUTABLE'), 'Moderator/admin boundaries and row identity must be protected by stable database errors.');",
+          )
+          replace_exact(
+              'scripts/relaunch-security-check.mjs',
+              "check('membership state is browser-private', membershipMigration.includes('revoke all on table public.member_subscriptions from anon, authenticated'), 'Stripe identifiers and state must be server-managed.');",
+              "check('membership state is browser-private', membershipMigration.includes('revoke all on table public.member_subscriptions from public, anon, authenticated') && membershipMigration.includes('grant select ('), 'Stripe identifiers remain server-managed while only safe status columns are granted.');",
+          )
+          replace_exact(
+              'scripts/relaunch-security-check.mjs',
+              "check('membership has safe own projection', membershipMigration.includes('public.my_membership') && membershipMigration.includes('where user_id = auth.uid()'), 'Browser reads only own sanitized membership state.');",
+              "check('membership has safe own projection', membershipMigration.includes('public.my_membership') && membershipMigration.includes('security_invoker = true') && membershipMigration.includes('where user_id = (select auth.uid())'), 'Browser reads only its own sanitized security-invoker membership state.');",
+          )
+          replace_exact(
+              'scripts/relaunch-security-check.mjs',
+              "check('payment return URL is not treated as proof', paymentSuccess.includes('getUserSubscription') && paymentSuccess.includes('webhook') && !/setTimeout\\([^)]*navigate/.test(paymentSuccess), 'Payment success must be server-state confirmed.');",
+              "check('payment return URL is not treated as proof', paymentSuccess.includes('getUserSubscription') && paymentSuccess.includes('ACTIVE_MEMBERSHIP_STATUSES.has(current?.status)') && paymentSuccess.includes(\"searchParams.get('session_id')\") && !/session_id[\\s\\S]{0,220}setState\\('active'\\)/.test(paymentSuccess), 'Checkout URL markers may trigger polling but only server-confirmed membership state may activate access.');",
+          )
+
+          # Safety umbrella: reference canonical optimized/final migrations and review each
+          # remaining direct users-table consumer by actual scope rather than proximity regexes.
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "  'supabase/migrations/20260817_presence_security_hardening.sql',",
+              "  'supabase/migrations/20260817_presence_security_hardening.sql',\n  'supabase/migrations/20260822004500_presence_directory_privacy_final.sql',",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "  'supabase/migrations/20260817_live_room_identity_hardening.sql',",
+              "  'supabase/migrations/20260817_live_room_identity_hardening.sql',\n  'supabase/migrations/20260820_live_room_write_identity_hardening.sql',",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('Saved Love Notes require a claimed revealed invitation', savesMigration.includes(\"invitation.status = 'revealed'\") && savesMigration.includes('invitation.recipient_user_id = auth.uid()'), 'A member may save only their own revealed note.');",
+              "check('Saved Love Notes require a claimed revealed invitation', savesMigration.includes(\"invitation.status = 'revealed'\") && savesMigration.includes('invitation.recipient_user_id = (select auth.uid())'), 'A member may save only their own revealed note.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "const presenceMigration = exists('supabase/migrations/20260817_presence_security_hardening.sql') ? read('supabase/migrations/20260817_presence_security_hardening.sql') : '';",
+              "const presenceMigration = exists('supabase/migrations/20260822004500_presence_directory_privacy_final.sql') ? read('supabase/migrations/20260822004500_presence_directory_privacy_final.sql') : '';",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('presence RPC blocks caller-supplied identity spoofing', presenceMigration.includes('auth.uid() <> p_user_id'), 'Presence SECURITY DEFINER functions must restrict writes to the authenticated caller.');",
+              "check('presence RPC blocks caller-supplied identity spoofing', presenceMigration.includes('(select auth.uid()) <> p_user_id'), 'Presence helpers must restrict writes to the authenticated caller using the optimized Auth predicate.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('presence browser writes are revoked', presenceMigration.includes('revoke all on table public.user_presence from anon, authenticated'), 'Presence writes should be mediated by caller-bound RPCs.');",
+              "check('presence browser writes are revoked', presenceMigration.includes('revoke all on table public.user_presence from public, anon, authenticated'), 'Presence writes should be mediated by caller-bound RPCs.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('users table own-row privacy policy staged', usersPrivacyMigration.includes('using (auth.uid() = id)'), 'The private users table should have an own-row SELECT policy.');",
+              "check('users table own-row privacy policy staged', usersPrivacyMigration.includes('using ((select auth.uid()) = id)'), 'The private users table should have an optimized own-row SELECT policy.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "const broadCommunityUsersRead = /\\.from\\(['\\\"]users['\\\"]\\)[\\s\\S]{0,250}\\.in\\(['\\\"]id['\\\"]|\\.neq\\(['\\\"]id['\\\"]|\\.or\\(/.test(communityService);",
+              "const broadCommunityUsersRead = /\\.from\\(['\\\"]users['\\\"]\\)(?:(?!;)[\\s\\S]){0,250}\\.(?:in|neq|or)\\(/.test(communityService);",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              """const allowedDirectUsersReaders = new Set([
+  'src/contexts/AuthContext.jsx',
+  'src/lib/profileService.js',
+  'src/lib/communityService.js',
+]);
+const unexpectedUsersAccess = walkSourceFiles('src').filter((file) => {
+  const source = read(file);
+  return /\\.from\\(['\\\"]users['\\\"]\\)/.test(source) && !allowedDirectUsersReaders.has(file);
+});""",
+              """const allowedDirectUsersReaders = new Set([
+  'src/contexts/AuthContext.jsx',
+  'src/lib/profileService.js',
+  'src/lib/communityService.js',
+  'src/lib/creatorProgrammingService.js',
+  'src/lib/successStoriesService.js',
+]);
+const couplesProfileFenced = index.includes('[\"/CouplesProfile\", RelaunchUnavailable]');
+const legacyFencedUsersReaders = new Set(['src/pages/CouplesProfile.jsx']);
+const unexpectedUsersAccess = walkSourceFiles('src').filter((file) => {
+  const source = read(file);
+  if (!/\\.from\\(['\\\"]users['\\\"]\\)/.test(source)) return false;
+  if (allowedDirectUsersReaders.has(file)) return false;
+  if (legacyFencedUsersReaders.has(file) && couplesProfileFenced) return false;
+  return true;
+});
+check('legacy Couples Profile users-table flow remains hard-fenced', couplesProfileFenced, 'Legacy partner-email/user lookup code must remain unreachable from the relaunch router.');
+const creatorProgrammingService = exists('src/lib/creatorProgrammingService.js') ? read('src/lib/creatorProgrammingService.js') : '';
+check('Creator programming users lookup is authenticated own-row only', creatorProgrammingService.includes('supabase.auth.getUser()') && creatorProgrammingService.includes(".eq('id', authData.user.id)"), 'Creator-role checks may read only the signed-in account row.');
+const successStoriesService = exists('src/lib/successStoriesService.js') ? read('src/lib/successStoriesService.js') : '';
+check('Success Stories users lookup is authenticated own-row only', successStoriesService.includes('supabase.auth.getUser()') && successStoriesService.includes(".eq('id', user.id)") && !/user\\.email\\?\\.split\\(['\"]@['\"]\\)/.test(successStoriesService), 'Story author labels must use only the signed-in own-row display name with a neutral fallback.');""",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "const liveIdentity = exists('supabase/migrations/20260817_live_room_identity_hardening.sql') ? read('supabase/migrations/20260817_live_room_identity_hardening.sql') : '';",
+              "const liveIdentity = exists('supabase/migrations/20260820_live_room_write_identity_hardening.sql') ? read('supabase/migrations/20260820_live_room_write_identity_hardening.sql') : '';",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('Live Room member identity is server-derived', liveIdentity.includes('new.user_id := auth.uid()') && liveIdentity.includes('new.sender_name :='), 'Browser-supplied public identity must not be trusted.');",
+              "check('Live Room member identity is server-derived', liveIdentity.includes('new.user_id := caller_id;') && liveIdentity.includes('new.sender_name := left('), 'Browser-supplied public identity must not be trusted.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('Live Room reports are private from browser reads', liveModeration.includes('revoke all on table public.room_message_reports from anon, authenticated') && liveModeration.includes('grant insert on table public.room_message_reports to authenticated'), 'Members should submit reports without browsing moderation data.');",
+              "check('Live Room reports are private from browser reads', liveModeration.includes('revoke all on table public.room_message_reports from public, anon, authenticated') && liveIdentity.includes('grant insert (message_id, reason, details) on table public.room_message_reports to authenticated;'), 'Members may submit only report intent while the moderation queue remains unreadable.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('members cannot report their own room message', liveModeration.includes('m.user_id <> auth.uid()'), 'Report policy must require another member author.');",
+              "check('members cannot report their own room message', liveModeration.includes('m.user_id <> (select auth.uid())'), 'Report policy must require another member author.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('AI Host client passes supported member language', hostClient.includes('preferredLanguage') && hostClient.includes(\"['en', 'es', 'fr', 'it', 'de', 'nl']\"), 'Host prompt should follow enabled/prepared language preference.');",
+              "check('AI Host client passes supported member language', hostClient.includes('preferredLanguage') && hostClient.includes(\"new Set(['en', 'es', 'fr', 'it', 'de'])\"), 'Host prompt should follow the five currently enabled AI-host languages; inactive Dutch must not trigger spend.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('AI Host cache is server-only', hostMigration.includes('revoke all on table public.live_room_host_prompt_cache from anon, authenticated'), 'Browser must not modify generation/cost guard state.');",
+              "check('AI Host cache is server-only', hostMigration.includes('revoke all on table public.live_room_host_prompt_cache from public, anon, authenticated'), 'Browser must not modify generation/cost guard state.');",
+          )
+          replace_exact(
+              'scripts/relaunch-safety-check.mjs',
+              "check('AI Host cache is scoped to conversation context', hostMigration.includes('context_hash') && hostMigration.includes('unique (room_slug, language, context_hash, bucket_start)'), 'Concurrent identical contexts should share one generation slot without reusing unrelated prompts.');",
+              "check('AI Host cache is generation-bucket cost guarded', hostMigration.includes('live_room_host_prompt_cache_bucket_uidx') && hostMigration.includes('(room_slug, language, reason, bucket_start)') && hostFunction.includes('lookup intentionally ignores context_hash'), 'One generation slot per room/language/reason/time bucket prevents context-churn spend amplification.');",
+          )
+          PY
+
+      - name: Install and verify repaired development gates
+        run: |
+          npm ci
+          npm run relaunch:dependency-check
+          npm audit
+          npm run lint
+          node scripts/relaunch-approval-ledger-check.mjs
+          node scripts/relaunch-safety-check.mjs
+          node scripts/relaunch-security-check.mjs
+          node scripts/relaunch-core-feature-check.mjs
+          node scripts/relaunch-profile-navigation-check.mjs
+          node scripts/relaunch-live-room-write-identity-check.mjs
+          node scripts/relaunch-live-room-host-security-check.mjs
+          node scripts/relaunch-users-privilege-guard-check.mjs
+          npm run build
+
+      - name: Commit exact development-safe repairs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/lib/chatFeaturesService.js \
+            src/lib/communityService.js \
+            src/lib/successStoriesService.js \
+            scripts/relaunch-approval-ledger-check.mjs \
+            scripts/relaunch-core-feature-check.mjs \
+            scripts/relaunch-profile-navigation-check.mjs \
+            scripts/relaunch-security-check.mjs \
+            scripts/relaunch-safety-check.mjs
+          git commit -m "fix(relaunch): reconcile strict launch gates"
+          git fetch origin relaunch-homepage
+          git rebase origin/relaunch-homepage
+          git push origin HEAD:relaunch-homepage
