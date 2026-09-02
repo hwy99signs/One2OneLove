@@ -11,6 +11,7 @@ const checks = [
   ['historical Batch 002 governance', 'scripts/relaunch-batch-002-readiness-check.mjs'],
   ['relaunch safety', 'scripts/relaunch-safety-check.mjs'],
   ['relaunch security', 'scripts/relaunch-security-check.mjs'],
+  ['relaunch public API privacy', 'scripts/relaunch-public-api-privacy-check.mjs'],
   ['relaunch authentication flow', 'scripts/relaunch-auth-flow-check.mjs'],
   ['relaunch authentication safety', 'scripts/relaunch-auth-safety-check.mjs'],
   ['relaunch billing reconciliation', 'scripts/relaunch-billing-reconciliation-check.mjs'],
