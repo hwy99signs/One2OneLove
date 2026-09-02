@@ -109,9 +109,10 @@ check(
 check(
   'Profile truthfully distinguishes discoverable and private fields',
   profile.includes('What other members can discover')
-    && profile.includes('name, profile image, short bio, general location, relationship status')
-    && profile.includes('Account-private details'),
-  'Members must not be told the entire profile is private when selected directory fields are intentionally discoverable.'
+    && profile.includes('display name, optional profile image, short bio and member-since date')
+    && profile.includes('Account-private details')
+    && profile.includes('location, relationship status, anniversary, partner information and Love Language remain account-private'),
+  'Discoverable profile copy must match the five-field privacy-minimized member directory.'
 );
 check(
   'relaunch Profile does not collect partner email before partner linking exists',
@@ -126,22 +127,21 @@ check(
     && !profile.includes("supabase.from('users')"),
   'Profile writes should remain centralized through the allowlisted service.'
 );
+const profileSafeUpdateBlock = profileService.match(/const SAFE_PROFILE_UPDATE_FIELDS = new Set\(\[([\s\S]*?)\]\);/)?.[1] || '';
 check(
   'profile service allowlist excludes account/role/billing and partner-email writes',
   profileService.includes('SAFE_PROFILE_UPDATE_FIELDS')
     && profileService.includes('sanitizeProfileUpdates')
     && profileService.includes('getAuthenticatedOwnUser')
-    && !profileService.includes("'partner_email'")
-    && !profileService.includes("'email'")
-    && !profileService.includes("'user_type'")
-    && !profileService.includes("'subscription_status'"),
-  'The relaunch profile update function must stay narrow and own-user-only.'
+    && ['partner_email', 'email', 'user_type', 'subscription_status', 'stripe_customer_id', 'is_verified', 'is_active']
+      .every((field) => !profileSafeUpdateBlock.includes(`'${field}'`) && !profileSafeUpdateBlock.includes(`"${field}"`)),
+  'The browser-editable allowlist must stay narrow while authenticated own-row role checks remain permitted.'
 );
 check(
   'navigation language rollout preserves disabled Dutch and Portuguese state',
-  layout.includes("{ code: 'nl', name: 'Dutch', flag: 'nl', active: false }")
-    && layout.includes("{ code: 'pt', name: 'Portuguese', flag: 'pt', active: false }"),
-  'Do not silently change the language rollout while cleaning navigation.'
+  /\{ code: 'nl', name: '[^']+', flag: 'nl', active: false \}/.test(layout)
+    && /\{ code: 'pt', name: '[^']+', flag: 'pt', active: false \}/.test(layout),
+  'Localized language labels may vary, but Dutch and Portuguese must remain disabled.'
 );
 
 console.log('\nOne2OneLove relaunch profile/navigation check\n');

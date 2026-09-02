@@ -26,7 +26,7 @@ for (const file of required) check(`required: ${file}`, exists(file), exists(fil
 const communityMembership = exists(required[0]) ? read(required[0]) : '';
 check('community join cannot self-assign admin', communityMembership.includes("role = 'member'") && communityMembership.includes('ensure_community_creator_membership'), 'Creator admin must be server-created; normal self-join is member-only.');
 check('community approval cannot be bypassed on join', communityMembership.includes("status = case when c.requires_approval then 'pending' else 'active' end"), 'Join status must follow community approval setting.');
-check('community moderator role escalation is blocked', communityMembership.includes('Moderators cannot change member roles') && communityMembership.includes('Community membership identity fields are immutable'), 'Moderator/admin boundaries and row identity must be protected.');
+check('community moderator role escalation is blocked', communityMembership.includes('O2OL_COMMUNITY_ROLE_CHANGE_DENIED') && communityMembership.includes('O2OL_COMMUNITY_MEMBERSHIP_IDENTITY_IMMUTABLE'), 'Moderator/admin boundaries and row identity must be protected by stable database errors.');
 
 const communityContent = exists(required[1]) ? read(required[1]) : '';
 check('community post identity is server-derived', communityContent.includes('new.author_id := auth.uid()'), 'Post/comment author identity must not trust browser input.');
@@ -41,8 +41,8 @@ check('buddy client derives actor from Auth', buddyService.includes('requireAuth
 check('buddy client uses safe member directory', buddyService.includes(".from('member_directory')") && !buddyService.includes(".from('users')"), 'Buddy discovery must not read private users rows.');
 
 const membershipMigration = exists(required[3]) ? read(required[3]) : '';
-check('membership state is browser-private', membershipMigration.includes('revoke all on table public.member_subscriptions from anon, authenticated'), 'Stripe identifiers and state must be server-managed.');
-check('membership has safe own projection', membershipMigration.includes('public.my_membership') && membershipMigration.includes('where user_id = auth.uid()'), 'Browser reads only own sanitized membership state.');
+check('membership state is browser-private', membershipMigration.includes('revoke all on table public.member_subscriptions from public, anon, authenticated') && membershipMigration.includes('grant select ('), 'Stripe identifiers remain server-managed while only safe status columns are granted.');
+check('membership has safe own projection', membershipMigration.includes('public.my_membership') && membershipMigration.includes('security_invoker = true') && membershipMigration.includes('where user_id = (select auth.uid())'), 'Browser reads only its own sanitized security-invoker membership state.');
 check('membership tracks schedule reconciliation', membershipMigration.includes("'reconciliation_required'"), 'Intro-to-standard pricing failures must not be silently ignored.');
 
 const billingHistory = exists(required[4]) ? read(required[4]) : '';
@@ -105,7 +105,7 @@ check('approved premium routes are wired to FeatureGate', routeIndex.includes('F
 check('free acquisition routes are not wrapped as premium', routeIndex.includes('["/LoveNotes", LoveNotes]') && routeIndex.includes('["/Community", Community]') && routeIndex.includes('["/LoveLanguageQuiz", LoveLanguageQuiz]') && routeIndex.includes('["/DateIdeas", DateIdeas]'), 'Acquisition loop routes must stay free.');
 
 const paymentSuccess = exists('src/pages/PaymentSuccess.jsx') ? read('src/pages/PaymentSuccess.jsx') : '';
-check('payment return URL is not treated as proof', paymentSuccess.includes('getUserSubscription') && paymentSuccess.includes('webhook') && !/setTimeout\([^)]*navigate/.test(paymentSuccess), 'Payment success must be server-state confirmed.');
+check('payment return URL is not treated as proof', paymentSuccess.includes('getUserSubscription') && paymentSuccess.includes('ACTIVE_MEMBERSHIP_STATUSES.has(current?.status)') && paymentSuccess.includes("searchParams.get('session_id')") && !/session_id[\s\S]{0,220}setState\('active'\)/.test(paymentSuccess), 'Checkout URL markers may trigger polling but only server-confirmed membership state may activate access.');
 
 console.log('\nOne2OneLove relaunch community/billing security check\n');
 for (const item of checks) {

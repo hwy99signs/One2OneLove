@@ -39,10 +39,12 @@ const requiredFiles = [
   'supabase/migrations/20260817_message_update_hardening.sql',
   'supabase/migrations/20260817_community_member_policy_hardening.sql',
   'supabase/migrations/20260817_presence_security_hardening.sql',
+  'supabase/migrations/20260822004500_presence_directory_privacy_final.sql',
   'supabase/migrations/20260817_waitlist_privacy_hardening.sql',
   'supabase/migrations/20260817_professional_applications.sql',
   'supabase/migrations/20260817_live_room_messaging.sql',
   'supabase/migrations/20260817_live_room_identity_hardening.sql',
+  'supabase/migrations/20260820_live_room_write_identity_hardening.sql',
   'supabase/migrations/20260817_live_room_moderation.sql',
   'supabase/migrations/20260817_live_room_host_cache.sql',
   'supabase/functions/send-love-note-invitation/index.ts',
@@ -96,7 +98,7 @@ check('Love Note delivery table is private from browser roles', invitationMigrat
 check('Love Note history uses safe projection', invitationMigration.includes('public.love_note_invitation_history') && invitationMigration.includes('grant select on public.love_note_invitation_history to authenticated'), 'Participant history should use the safe projection.');
 
 const savesMigration = exists('supabase/migrations/20260817_love_note_saves.sql') ? read('supabase/migrations/20260817_love_note_saves.sql') : '';
-check('Saved Love Notes require a claimed revealed invitation', savesMigration.includes("invitation.status = 'revealed'") && savesMigration.includes('invitation.recipient_user_id = auth.uid()'), 'A member may save only their own revealed note.');
+check('Saved Love Notes require a claimed revealed invitation', savesMigration.includes("invitation.status = 'revealed'") && savesMigration.includes('invitation.recipient_user_id = (select auth.uid())'), 'A member may save only their own revealed note.');
 check('Saved Love Notes expose a safe projection', savesMigration.includes('public.saved_love_notes') && savesMigration.includes('grant select on public.saved_love_notes to authenticated'), 'Saved-note content must be participant-only without private delivery internals.');
 const saveService = exists('src/lib/loveNoteSaveService.js') ? read('src/lib/loveNoteSaveService.js') : '';
 check('Saved Love Notes client reads safe projection', saveService.includes(".from('saved_love_notes')"), 'Browser must not join the private invitation delivery table.');
@@ -164,17 +166,18 @@ const tracksRawPresenceIdentity = /channel\.track\(\{[\s\S]{0,200}(user_id|name:
 check('Live Room presence does not broadcast account identity', !tracksRawPresenceIdentity, 'Presence should carry only aggregate-count metadata, not member IDs or names.');
 check('Live Room presence key is pseudonymous', roomPresence.includes('SHA-256') && roomPresence.includes('one2onelove-room-presence:'), 'Use a deterministic one-way key instead of broadcasting the account UUID.');
 
-const presenceMigration = exists('supabase/migrations/20260817_presence_security_hardening.sql') ? read('supabase/migrations/20260817_presence_security_hardening.sql') : '';
-check('presence RPC blocks caller-supplied identity spoofing', presenceMigration.includes('auth.uid() <> p_user_id'), 'Presence SECURITY DEFINER functions must restrict writes to the authenticated caller.');
-check('presence browser writes are revoked', presenceMigration.includes('revoke all on table public.user_presence from anon, authenticated'), 'Presence writes should be mediated by caller-bound RPCs.');
-check('presence projection excludes email', !/\bemail\b\s*,/i.test(presenceMigration.replace(/--.*$/gm, '')), 'Presence projection should not expose member email.');
+const presenceMigration = exists('supabase/migrations/20260822004500_presence_directory_privacy_final.sql') ? read('supabase/migrations/20260822004500_presence_directory_privacy_final.sql') : '';
+check('presence RPC blocks caller-supplied identity spoofing', presenceMigration.includes('(select auth.uid()) <> p_user_id'), 'Presence helpers must restrict writes to the authenticated caller using the optimized Auth predicate.');
+check('presence browser writes are revoked', presenceMigration.includes('revoke all on table public.user_presence from public, anon, authenticated'), 'Presence writes should be mediated by caller-bound RPCs.');
+const presenceViewProjection = presenceMigration.match(/create view public\.user_presence_view[\s\S]*?from public\.user_presence up[\s\S]*?;/i)?.[0] || '';
+check('presence projection excludes email', Boolean(presenceViewProjection) && !/\bemail\b/i.test(presenceViewProjection), 'Presence projection should exist and must not expose member email.');
 
 const memberDirectoryMigration = exists('supabase/migrations/20260817_member_directory_privacy.sql') ? read('supabase/migrations/20260817_member_directory_privacy.sql') : '';
 check('privacy-safe member directory exists', memberDirectoryMigration.includes('public.member_directory'), 'Member-facing profile discovery needs a purpose-built projection.');
 check('member directory excludes email fields', !/\bemail\b\s*,|partner_email/i.test(memberDirectoryMigration.replace(/--.*$/gm, '')), 'Member directory must not project email or partner_email.');
 
 const usersPrivacyMigration = exists('supabase/migrations/20260817_users_privacy_lockdown.sql') ? read('supabase/migrations/20260817_users_privacy_lockdown.sql') : '';
-check('users table own-row privacy policy staged', usersPrivacyMigration.includes('using (auth.uid() = id)'), 'The private users table should have an own-row SELECT policy.');
+check('users table own-row privacy policy staged', usersPrivacyMigration.includes('using ((select auth.uid()) = id)'), 'The private users table should have an optimized own-row SELECT policy.');
 check('users table anonymous SELECT revoked', usersPrivacyMigration.includes('revoke select on table public.users from anon'), 'Anonymous clients must not read full users rows.');
 
 const buddyService = exists('src/lib/buddyService.js') ? read('src/lib/buddyService.js') : '';
@@ -193,7 +196,7 @@ check('Pairwise chat uses privacy-safe member directory', !chatReadsPrivateUsers
 check('Pairwise chat does not retrieve member email', !chatRequestsMemberEmail, chatRequestsMemberEmail ? 'BLOCKER BEFORE USERS LOCKDOWN: chatService still requests member email.' : 'No member-email projection found in chatService.');
 
 const communityService = exists('src/lib/communityService.js') ? read('src/lib/communityService.js') : '';
-const broadCommunityUsersRead = /\.from\(['\"]users['\"]\)[\s\S]{0,250}\.in\(['\"]id['\"]|\.neq\(['\"]id['\"]|\.or\(/.test(communityService);
+const broadCommunityUsersRead = /\.from\(['\"]users['\"]\)(?:(?!;)[\s\S]){0,250}\.(?:in|neq|or)\(/.test(communityService);
 check('Community service has no broad users-directory read', !broadCommunityUsersRead, 'Community public/member lookups must use a safe directory; own-profile name reads are acceptable.');
 
 // Inventory every direct users-table browser dependency. Only narrowly reviewed own-row
@@ -202,11 +205,23 @@ const allowedDirectUsersReaders = new Set([
   'src/contexts/AuthContext.jsx',
   'src/lib/profileService.js',
   'src/lib/communityService.js',
+  'src/lib/creatorProgrammingService.js',
+  'src/lib/successStoriesService.js',
 ]);
+const couplesProfileFenced = index.includes('["/CouplesProfile", RelaunchUnavailable]');
+const legacyFencedUsersReaders = new Set(['src/pages/CouplesProfile.jsx']);
 const unexpectedUsersAccess = walkSourceFiles('src').filter((file) => {
   const source = read(file);
-  return /\.from\(['\"]users['\"]\)/.test(source) && !allowedDirectUsersReaders.has(file);
+  if (!/\.from\(['\"]users['\"]\)/.test(source)) return false;
+  if (allowedDirectUsersReaders.has(file)) return false;
+  if (legacyFencedUsersReaders.has(file) && couplesProfileFenced) return false;
+  return true;
 });
+check('legacy Couples Profile users-table flow remains hard-fenced', couplesProfileFenced, 'Legacy partner-email/user lookup code must remain unreachable from the relaunch router.');
+const creatorProgrammingService = exists('src/lib/creatorProgrammingService.js') ? read('src/lib/creatorProgrammingService.js') : '';
+check('Creator programming users lookup is authenticated own-row only', creatorProgrammingService.includes('supabase.auth.getUser()') && creatorProgrammingService.includes(".eq('id', authData.user.id)"), 'Creator-role checks may read only the signed-in account row.');
+const successStoriesService = exists('src/lib/successStoriesService.js') ? read('src/lib/successStoriesService.js') : '';
+check('Success Stories users lookup is authenticated own-row only', successStoriesService.includes('supabase.auth.getUser()') && successStoriesService.includes(".eq('id', user.id)") && !/user\.email\?\.split\(['"]@['"]\)/.test(successStoriesService), 'Story author labels must use only the signed-in own-row display name with a neutral fallback.');
 check(
   'all direct public.users frontend consumers are explicitly reviewed',
   unexpectedUsersAccess.length === 0,
@@ -218,21 +233,21 @@ check('pairwise message routing is immutable', messageHardening.includes('Messag
 check('message recipient updates are receipt-only', messageHardening.includes('Recipients may update only message delivery/read status'), 'Recipients must not edit sender content.');
 check('message sender cannot manufacture receipts', messageHardening.includes('Senders may update only message content/edit/delete state'), 'Senders should not set their own delivered/read receipts.');
 
-const liveIdentity = exists('supabase/migrations/20260817_live_room_identity_hardening.sql') ? read('supabase/migrations/20260817_live_room_identity_hardening.sql') : '';
-check('Live Room member identity is server-derived', liveIdentity.includes('new.user_id := auth.uid()') && liveIdentity.includes('new.sender_name :='), 'Browser-supplied public identity must not be trusted.');
+const liveIdentity = exists('supabase/migrations/20260820_live_room_write_identity_hardening.sql') ? read('supabase/migrations/20260820_live_room_write_identity_hardening.sql') : '';
+check('Live Room member identity is server-derived', liveIdentity.includes('new.user_id := caller_id;') && liveIdentity.includes('new.sender_name := left('), 'Browser-supplied public identity must not be trusted.');
 check('Live Room identity does not derive public name from email', !/split_part\([^\n]*email|email[^\n]*sender_name/i.test(liveIdentity.replace(/--.*$/gm, '')), 'Room public display name must not expose private email identity.');
 
 const liveModeration = exists('supabase/migrations/20260817_live_room_moderation.sql') ? read('supabase/migrations/20260817_live_room_moderation.sql') : '';
-check('Live Room reports are private from browser reads', liveModeration.includes('revoke all on table public.room_message_reports from anon, authenticated') && liveModeration.includes('grant insert on table public.room_message_reports to authenticated'), 'Members should submit reports without browsing moderation data.');
-check('members cannot report their own room message', liveModeration.includes('m.user_id <> auth.uid()'), 'Report policy must require another member author.');
+check('Live Room reports are private from browser reads', liveModeration.includes('revoke all on table public.room_message_reports from public, anon, authenticated') && liveIdentity.includes('grant insert (message_id, reason, details) on table public.room_message_reports to authenticated;'), 'Members may submit only report intent while the moderation queue remains unreadable.');
+check('members cannot report their own room message', liveModeration.includes('m.user_id <> (select auth.uid())'), 'Report policy must require another member author.');
 
 const hostClient = exists('src/lib/liveRoomHostService.js') ? read('src/lib/liveRoomHostService.js') : '';
 check('AI Host context strips member identity', hostClient.includes("content: String(message.content || '')") && !/sender_name|user_id/.test(hostClient), 'AI Host should receive minimal public text context only.');
-check('AI Host client passes supported member language', hostClient.includes('preferredLanguage') && hostClient.includes("['en', 'es', 'fr', 'it', 'de', 'nl']"), 'Host prompt should follow enabled/prepared language preference.');
+check('AI Host client passes supported member language', hostClient.includes('preferredLanguage') && hostClient.includes("new Set(['en', 'es', 'fr', 'it', 'de'])"), 'Host prompt should follow the five currently enabled AI-host languages; inactive Dutch must not trigger spend.');
 
 const hostMigration = exists('supabase/migrations/20260817_live_room_host_cache.sql') ? read('supabase/migrations/20260817_live_room_host_cache.sql') : '';
-check('AI Host cache is server-only', hostMigration.includes('revoke all on table public.live_room_host_prompt_cache from anon, authenticated'), 'Browser must not modify generation/cost guard state.');
-check('AI Host cache is scoped to conversation context', hostMigration.includes('context_hash') && hostMigration.includes('unique (room_slug, language, context_hash, bucket_start)'), 'Concurrent identical contexts should share one generation slot without reusing unrelated prompts.');
+check('AI Host cache is server-only', hostMigration.includes('revoke all on table public.live_room_host_prompt_cache from public, anon, authenticated'), 'Browser must not modify generation/cost guard state.');
+check('AI Host cache is generation-bucket cost guarded', hostMigration.includes('live_room_host_prompt_cache_bucket_uidx') && hostMigration.includes('(room_slug, language, reason, bucket_start)'), 'One generation slot per room/language/reason/time bucket prevents context-churn spend amplification.');
 
 const hostFunction = exists('supabase/functions/live-room-host/index.ts') ? read('supabase/functions/live-room-host/index.ts') : '';
 check('AI Host has explicit spend kill switch', hostFunction.includes("LIVE_ROOM_AI_ENABLED') !== 'true'"), 'Deploying the function must not automatically start OpenAI spend.');

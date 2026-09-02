@@ -700,15 +700,15 @@ export const getMessageInfo = async (messageId) => {
 
     // Get sender info
     const { data: senderData } = await supabase
-      .from('users')
-      .select('name, email, avatar_url')
+      .from('member_directory')
+      .select('name, avatar_url')
       .eq('id', message.sender_id)
       .single();
 
     // Get receiver info
     const { data: receiverData } = await supabase
-      .from('users')
-      .select('name, email, avatar_url')
+      .from('member_directory')
+      .select('name, avatar_url')
       .eq('id', message.receiver_id)
       .single();
 
@@ -742,8 +742,8 @@ export const getMessageInfo = async (messageId) => {
       
       if (replyMsg) {
         const { data: replySender } = await supabase
-          .from('users')
-          .select('name, email')
+          .from('member_directory')
+          .select('name')
           .eq('id', replyMsg.sender_id)
           .single();
         
@@ -751,7 +751,7 @@ export const getMessageInfo = async (messageId) => {
           id: replyMsg.id,
           content: replyMsg.content,
           message_type: replyMsg.message_type,
-          sender_name: replySender?.name || replySender?.email || 'Unknown',
+          sender_name: replySender?.name || 'Member',
           created_at: replyMsg.created_at,
         };
       }
@@ -768,9 +768,9 @@ export const getMessageInfo = async (messageId) => {
 
     const info = {
       ...message,
-      sender_name: senderData?.name || senderData?.email || 'Unknown',
+      sender_name: senderData?.name || 'Member',
       sender_avatar: senderData?.avatar_url,
-      receiver_name: receiverData?.name || receiverData?.email || 'Unknown',
+      receiver_name: receiverData?.name || 'Member',
       receiver_avatar: receiverData?.avatar_url,
       reactions_count: reactions?.length || 0,
       reactions: reactions || [],
