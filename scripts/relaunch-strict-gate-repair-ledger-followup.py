@@ -26,3 +26,12 @@ replace_exact(
     "if (!batch2.includes('one production checkpoint at a time')) failures.push('Batch 002 must preserve one-at-a-time production approval governance.');",
     "if (!batch2.includes('approvals **one at a time**')) failures.push('Batch 002 must preserve one-at-a-time production approval governance.');",
 )
+
+# The AI Host cache assertion must not reference hostFunction before that source is loaded.
+# Dedicated host-function assertions immediately below already verify the cost-guard behavior.
+path = 'scripts/relaunch-safety-check.mjs'
+replace_exact(
+    path,
+    "check('AI Host cache is generation-bucket cost guarded', hostMigration.includes('live_room_host_prompt_cache_bucket_uidx') && hostMigration.includes('(room_slug, language, reason, bucket_start)') && hostFunction.includes('lookup intentionally ignores context_hash'), 'One generation slot per room/language/reason/time bucket prevents context-churn spend amplification.');",
+    "check('AI Host cache is generation-bucket cost guarded', hostMigration.includes('live_room_host_prompt_cache_bucket_uidx') && hostMigration.includes('(room_slug, language, reason, bucket_start)'), 'One generation slot per room/language/reason/time bucket prevents context-churn spend amplification.');",
+)
