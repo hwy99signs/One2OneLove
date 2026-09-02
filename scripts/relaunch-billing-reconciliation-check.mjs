@@ -24,20 +24,26 @@ const portal = exists(portalFile) ? read(portalFile) : '';
 const webhook = exists(webhookFile) ? read(webhookFile) : '';
 
 for (const required of [
-  '### Stripe membership billing reconciliation and production cutover',
-  'The live production billing surface must remain unchanged until approved.',
-  'membership payment, cancellation, and webhook delivery are all tested end to end',
-  'Latest live-drift documentation',
+  '### Relaunch membership billing / Stripe cutover',
+  'Do not alter the existing live legacy Stripe contract during normal relaunch development.',
+  'Keep `VITE_PAYMENTS_ENABLED=false` and server `PAYMENTS_ENABLED=false` until an explicitly approved cutover.',
+  'latest live-drift documentation',
   '`docs/MEMBERSHIP_BILLING_RECONCILIATION.md`',
 ]) {
   if (!queue.includes(required)) failures.push(`${queueFile}: missing current production billing boundary ${required}.`);
 }
 
-if (!exists(liveDriftFile) && !queue.includes('Latest live-drift documentation')) {
+if (!exists(liveDriftFile) && !queue.toLowerCase().includes('latest live-drift documentation')) {
   failures.push('Billing cutover must retain an explicit live-drift review requirement before production changes.');
 }
 if (!/legacy|existing|current/i.test(reconciliation) || !/webhook|stripe/i.test(reconciliation)) {
   failures.push(`${reconciliationFile}: must document the existing/live billing surface before cutover.`);
+}
+for (const required of [
+  'Test checkout, successful payment, failed payment, cancellation, portal access, webhook replay/idempotency',
+  'Preserve a rollback path',
+]) {
+  if (!reconciliation.includes(required)) failures.push(`${reconciliationFile}: missing controlled cutover requirement ${required}.`);
 }
 
 for (const required of [
@@ -51,24 +57,35 @@ for (const required of [
 }
 
 for (const required of [
-  "Deno.env.get('MEMBERSHIP_PAYMENTS_ENABLED')",
-  "Deno.env.get('MEMBERSHIP_BILLING_ALLOWED_ORIGINS')",
+  "Deno.env.get('PAYMENTS_ENABLED')",
+  "Deno.env.get('PAYMENT_ALLOWED_ORIGINS')",
   'email_confirmed_at',
+  "return json(request, { error: 'ORIGIN_NOT_ALLOWED' }, 403)",
 ]) {
   if (!checkout.includes(required)) failures.push(`${checkoutFile}: missing fail-closed checkout safeguard ${required}.`);
 }
+
 for (const required of [
-  "Deno.env.get('MEMBERSHIP_PAYMENTS_ENABLED')",
+  "Deno.env.get('PAYMENTS_ENABLED')",
   'stripe_customer_id',
-  "url.protocol !== 'https:'",
+  'requireHttpsSiteUrl',
+  'validHttpsUrl',
+  'CUSTOMER_ID_PATTERN',
 ]) {
   if (!portal.includes(required)) failures.push(`${portalFile}: missing caller-bound portal safeguard ${required}.`);
 }
-for (const required of ['stripe-signature', 'constructEvent', 'member_subscriptions']) {
+
+for (const required of [
+  'stripe-signature',
+  'verifyStripeSignature',
+  'timingSafeEqual',
+  'stripe_webhook_events',
+  'member_subscriptions',
+]) {
   if (!webhook.includes(required)) failures.push(`${webhookFile}: missing webhook reconciliation safeguard ${required}.`);
 }
 
-if (/VITE_PAYMENTS_ENABLED\s*=\s*['"]true['"]/.test(queue) || /MEMBERSHIP_PAYMENTS_ENABLED\s*=\s*['"]true['"]/.test(queue)) {
+if (/VITE_PAYMENTS_ENABLED\s*=\s*['"]true['"]/.test(queue) || /(?:MEMBERSHIP_)?PAYMENTS_ENABLED\s*=\s*['"]true['"]/.test(queue)) {
   failures.push(`${queueFile}: production approval documentation must not encode a live billing activation.`);
 }
 
@@ -78,4 +95,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('✅ Billing reconciliation remains production-held: current Stripe state is protected, staging is fail-closed, drift review is mandatory, and cutover requires end-to-end payment/cancel/webhook verification.');
+console.log('✅ Billing reconciliation remains production-held: current Stripe state is protected, staging is fail-closed, origin/auth/HTTPS/signature safeguards are enforced, drift review is mandatory, and cutover requires end-to-end payment/cancel/webhook verification.');
