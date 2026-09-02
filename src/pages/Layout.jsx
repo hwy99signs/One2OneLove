@@ -860,7 +860,7 @@ function LanguageContent({ children, currentPageName }) {
 export default function Layout({ children, currentPageName }) {
   return (
     <LanguageProvider>
-      <LanguageContent children={children} currentPageName={currentPageName} />
+      <LanguageContent currentPageName={currentPageName}>{children}</LanguageContent>
     </LanguageProvider>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Flag, Heart, Loader2, MessageCircle, Radio, Send, Shield, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Flag, Heart, Loader2, MessageCircle, Radio, Send, Shield, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
