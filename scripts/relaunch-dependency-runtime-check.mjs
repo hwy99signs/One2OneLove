@@ -14,7 +14,7 @@ if (packageJson.engines?.node !== '24.x') {
 }
 
 const manifestVersions = {
-  'react-router-dom': ['dependencies', '7.18.0'],
+  'react-router-dom': ['dependencies', '7.18.3'],
   postcss: ['devDependencies', '8.5.23'],
   rollup: ['devDependencies', '4.59.0'],
   vite: ['devDependencies', '6.4.3'],
@@ -31,8 +31,8 @@ const lockVersions = {
   'node_modules/vite': '6.4.3',
   'node_modules/postcss': '8.5.23',
   'node_modules/rollup': '4.59.0',
-  'node_modules/react-router': '7.18.0',
-  'node_modules/react-router-dom': '7.18.0',
+  'node_modules/react-router': '7.18.3',
+  'node_modules/react-router-dom': '7.18.3',
 };
 
 for (const [key, expected] of Object.entries(lockVersions)) {
