@@ -30,6 +30,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify dependency and runtime security gate
+        run: |
+          npm run relaunch:dependency-check
+          npm audit
+
+      - name: Lint relaunch application
+        run: npm run lint
+
       - name: Verify release, authentication and billing locks
         run: |
           node scripts/relaunch-production-approval-check.mjs
