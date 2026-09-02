@@ -35,3 +35,11 @@ replace_exact(
     "check('AI Host cache is generation-bucket cost guarded', hostMigration.includes('live_room_host_prompt_cache_bucket_uidx') && hostMigration.includes('(room_slug, language, reason, bucket_start)') && hostFunction.includes('lookup intentionally ignores context_hash'), 'One generation slot per room/language/reason/time bucket prevents context-churn spend amplification.');",
     "check('AI Host cache is generation-bucket cost guarded', hostMigration.includes('live_room_host_prompt_cache_bucket_uidx') && hostMigration.includes('(room_slug, language, reason, bucket_start)'), 'One generation slot per room/language/reason/time bucket prevents context-churn spend amplification.');",
 )
+
+# The canonical final migration intentionally mentions historical email columns while
+# dropping them. Validate only the actual presence view projection, not the entire file.
+replace_exact(
+    path,
+    "check('presence projection excludes email', !/\\bemail\\b\\s*,/i.test(presenceMigration.replace(/--.*$/gm, '')), 'Presence projection should not expose member email.');",
+    "const presenceViewProjection = presenceMigration.match(/create view public\\.user_presence_view[\\s\\S]*?from public\\.user_presence up[\\s\\S]*?;/i)?.[0] || '';\ncheck('presence projection excludes email', Boolean(presenceViewProjection) && !/\\bemail\\b/i.test(presenceViewProjection), 'Presence projection should exist and must not expose member email.');",
+)
