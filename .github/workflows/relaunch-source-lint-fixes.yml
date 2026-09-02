@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - relaunch-homepage
-    paths:
-      - .github/workflows/relaunch-source-lint-fixes.yml
 
 permissions:
   contents: write
@@ -16,6 +14,7 @@ concurrency:
 
 jobs:
   patch:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
