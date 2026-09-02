@@ -209,7 +209,7 @@ export async function createStory(storyData) {
         .eq('id', user.id)
         .single();
       
-      authorName = userProfile?.name || user.email?.split('@')[0] || 'User';
+      authorName = userProfile?.name || 'Member';
     }
 
     // Prepare story data
@@ -270,7 +270,7 @@ export async function updateStory(storyId, updates) {
         .eq('id', user.id)
         .single();
       
-      allowedUpdates.author_name = userProfile?.name || user.email?.split('@')[0] || 'User';
+      allowedUpdates.author_name = userProfile?.name || 'Member';
     }
 
     const { data: story, error } = await supabase

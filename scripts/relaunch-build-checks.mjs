@@ -1,0 +1,125 @@
+import { spawnSync } from 'node:child_process';
+
+const strictRequested = process.argv.includes('--strict');
+const vercelEnvironment = String(process.env.VERCEL_ENV || '').toLowerCase();
+const strictFromEnvironment = String(process.env.RELAUNCH_STRICT_CHECKS || '').toLowerCase() === 'true';
+const strict = strictRequested || strictFromEnvironment || vercelEnvironment === 'production';
+
+const checks = [
+  ['production approval lock', 'scripts/relaunch-production-approval-check.mjs'],
+  ['production approval ledger', 'scripts/relaunch-approval-ledger-check.mjs'],
+  ['historical Batch 002 governance', 'scripts/relaunch-batch-002-readiness-check.mjs'],
+  ['relaunch safety', 'scripts/relaunch-safety-check.mjs'],
+  ['relaunch security', 'scripts/relaunch-security-check.mjs'],
+  ['relaunch public API privacy', 'scripts/relaunch-public-api-privacy-check.mjs'],
+  ['relaunch RLS performance', 'scripts/relaunch-rls-performance-check.mjs'],
+  ['relaunch authentication flow', 'scripts/relaunch-auth-flow-check.mjs'],
+  ['relaunch authentication safety', 'scripts/relaunch-auth-safety-check.mjs'],
+  ['relaunch billing reconciliation', 'scripts/relaunch-billing-reconciliation-check.mjs'],
+  ['relaunch billing webhook idempotency', 'scripts/relaunch-billing-webhook-idempotency-check.mjs'],
+  ['relaunch billing checkout idempotency', 'scripts/relaunch-billing-checkout-idempotency-check.mjs'],
+  ['relaunch billing portal security', 'scripts/relaunch-billing-portal-security-check.mjs'],
+  ['relaunch membership projection security', 'scripts/relaunch-membership-projection-security-check.mjs'],
+  ['relaunch user privilege ownership', 'scripts/relaunch-users-privilege-guard-check.mjs'],
+  ['relaunch privacy controls', 'scripts/relaunch-privacy-controls-check.mjs'],
+  ['relaunch privacy endpoint dark mode', 'scripts/relaunch-privacy-endpoint-dark-check.mjs'],
+  ['relaunch privacy audit integrity', 'scripts/relaunch-privacy-audit-check.mjs'],
+  ['relaunch private origin isolation', 'scripts/relaunch-private-origin-isolation-check.mjs'],
+  ['relaunch profile-picture storage', 'scripts/relaunch-profile-picture-storage-check.mjs'],
+  ['relaunch private features', 'scripts/relaunch-private-feature-check.mjs'],
+  ['Love Notes SMS compliance', 'scripts/relaunch-love-note-sms-check.mjs'],
+  ['Love Notes SMS verified-consent boundary', 'scripts/relaunch-sms-verification-boundary-check.mjs'],
+  ['relaunch premium AI', 'scripts/relaunch-ai-feature-check.mjs'],
+  ['relaunch AI Content Creator multilingual runtime', 'scripts/relaunch-ai-content-i18n-check.mjs'],
+  ['relaunch free core', 'scripts/relaunch-core-feature-check.mjs'],
+  ['relaunch premium data', 'scripts/relaunch-premium-data-check.mjs'],
+  ['relaunch premium routes', 'scripts/relaunch-premium-route-check.mjs'],
+  ['relaunch staged premium tools', 'scripts/relaunch-staged-premium-tools-check.mjs'],
+  ['relaunch fallback shells multilingual runtime', 'scripts/relaunch-fallback-shell-i18n-check.mjs'],
+  ['relaunch layout accessibility multilingual runtime', 'scripts/relaunch-layout-accessibility-i18n-check.mjs'],
+  ['relaunch service multilingual boundary', 'scripts/relaunch-service-i18n-boundary-check.mjs'],
+  ['relaunch member connections/chat', 'scripts/relaunch-connection-chat-check.mjs'],
+  ['relaunch shared presence privacy/i18n', 'scripts/relaunch-presence-privacy-check.mjs'],
+  ['relaunch member-connections multilingual runtime', 'scripts/relaunch-member-connections-i18n-check.mjs'],
+  ['relaunch member blocking foundation', 'scripts/relaunch-member-blocking-foundation-check.mjs'],
+  ['relaunch member blocking discovery', 'scripts/relaunch-member-blocking-discovery-check.mjs'],
+  ['relaunch member blocking request cleanup', 'scripts/relaunch-member-blocking-request-cleanup-check.mjs'],
+  ['relaunch blocked-member list privacy', 'scripts/relaunch-member-blocking-list-privacy-check.mjs'],
+  ['relaunch live community', 'scripts/relaunch-live-community-check.mjs'],
+  ['relaunch Live Room AI host security', 'scripts/relaunch-live-room-host-security-check.mjs'],
+  ['relaunch Live Room write identity', 'scripts/relaunch-live-room-write-identity-check.mjs'],
+  ['relaunch live-room multilingual runtime', 'scripts/relaunch-live-room-i18n-check.mjs'],
+  ['relaunch creator programming', 'scripts/relaunch-creator-programming-check.mjs'],
+  ['relaunch programming schedule', 'scripts/relaunch-programming-schedule-check.mjs'],
+  ['relaunch programming moderation', 'scripts/relaunch-programming-moderation-check.mjs'],
+  ['relaunch programming confirmed accounts', 'scripts/relaunch-programming-confirmed-account-check.mjs'],
+  ['relaunch programming reminders', 'scripts/relaunch-programming-reminder-check.mjs'],
+  ['relaunch programming reminder cancellation', 'scripts/relaunch-programming-reminder-cancellation-check.mjs'],
+  ['relaunch programming reminder slot guard', 'scripts/relaunch-programming-reminder-slot-guard-check.mjs'],
+  ['relaunch private support requests', 'scripts/relaunch-support-request-check.mjs'],
+  ['relaunch support response notifications', 'scripts/relaunch-support-notification-check.mjs'],
+  ['relaunch support request quota', 'scripts/relaunch-support-quota-check.mjs'],
+  ['relaunch support request state integrity', 'scripts/relaunch-support-state-check.mjs'],
+  ['relaunch professional applications', 'scripts/relaunch-professional-application-check.mjs'],
+  ['relaunch profile/navigation', 'scripts/relaunch-profile-navigation-check.mjs'],
+  ['relaunch profile multilingual runtime', 'scripts/relaunch-profile-i18n-check.mjs'],
+  ['relaunch Relationship Coach multilingual runtime', 'scripts/relaunch-relationship-coach-i18n-check.mjs'],
+  ['relaunch relationship-support multilingual runtime', 'scripts/relaunch-relationship-support-i18n-check.mjs'],
+  ['relaunch Privacy Center multilingual runtime', 'scripts/relaunch-privacy-center-i18n-check.mjs'],
+  ['relaunch Help Center multilingual runtime', 'scripts/relaunch-help-center-i18n-check.mjs'],
+  ['relaunch membership multilingual runtime', 'scripts/relaunch-membership-i18n-check.mjs'],
+  ['relaunch acquisition', 'scripts/relaunch-acquisition-check.mjs'],
+  ['relaunch route safety', 'scripts/relaunch-route-safety-check.mjs'],
+  ['relaunch homepage truthfulness', 'scripts/relaunch-home-truthfulness-check.mjs'],
+  ['relaunch multilingual coverage', 'scripts/relaunch-multilingual-check.mjs'],
+  ['relaunch relationship support', 'scripts/relaunch-support-safety-check.mjs'],
+  ['relaunch legal content', 'scripts/relaunch-legal-content-check.mjs'],
+  ['relaunch legal readiness', 'scripts/relaunch-legal-readiness-check.mjs'],
+];
+
+console.log(`\nOne2OneLove relaunch build checks — ${strict ? 'STRICT' : 'PREVIEW/ADVISORY'} mode`);
+if (!strict) {
+  console.log('Policy/preflight blockers are reported but do not hide actual Vite compile results in development previews.');
+  console.log('Production builds and `npm run relaunch:preflight` remain strict.\n');
+}
+
+const failures = [];
+
+for (const [label, file] of checks) {
+  const result = spawnSync(process.execPath, [file], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: 'utf8',
+    stdio: ['inherit', 'pipe', 'pipe'],
+  });
+
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+
+  if (result.error) {
+    failures.push({ label, detail: result.error.message || 'Unable to run check' });
+    console.error(`❌ ${label} could not run.`);
+    continue;
+  }
+
+  if (result.status !== 0) {
+    failures.push({ label, detail: `exit ${result.status ?? 'unknown'}` });
+    console.error(`❌ ${label} reported blockers.`);
+  } else {
+    console.log(`✅ ${label} passed.`);
+  }
+}
+
+if (failures.length === 0) {
+  console.log('\n✅ Relaunch policy checks passed. Continuing to application build.\n');
+  process.exit(0);
+}
+
+if (strict) {
+  console.error(`\n⛔ ${failures.length} relaunch check group(s) failed in STRICT mode. Application build is blocked.\n`);
+  process.exit(1);
+}
+
+console.warn(`\n⚠️ ${failures.length} relaunch check group(s) still contain preflight blockers.`);
+console.warn('Preview build will continue so compile/runtime UI work can be tested; these blockers remain mandatory before production.\n');
+process.exit(0);

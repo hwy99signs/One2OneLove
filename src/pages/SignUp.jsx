@@ -1,138 +1,107 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Heart, User, Users, Briefcase, Stethoscope, Mic, X, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import RegularUserForm from "@/components/signup/RegularUserForm";
+import React from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Heart, ShieldCheck, Sparkles } from 'lucide-react';
+import RegularUserRelaunchForm from '@/components/signup/RegularUserRelaunchForm';
+
+const COPY = {
+  en: {
+    eyebrow: 'FREE ONE2ONELOVE ACCOUNT',
+    title: 'Come in. The relationship can grow from here.',
+    body: 'Create a free account to reveal private Love Notes, join the community, and continue the experiences that brought you here.',
+    existing: 'Already have an account?', signIn: 'Sign in',
+    professional: 'Joining in a professional role?',
+    therapist: 'Therapist application', influencer: 'Influencer application', partner: 'Professional application',
+  },
+  es: {
+    eyebrow: 'CUENTA GRATIS DE ONE2ONELOVE', title: 'Entra. La relación puede crecer desde aquí.',
+    body: 'Crea una cuenta gratis para revelar Love Notes privadas, unirte a la comunidad y continuar las experiencias que te trajeron aquí.',
+    existing: '¿Ya tienes una cuenta?', signIn: 'Iniciar sesión', professional: '¿Te unes en un rol profesional?',
+    therapist: 'Solicitud de terapeuta', influencer: 'Solicitud de influencer', partner: 'Solicitud profesional',
+  },
+  fr: {
+    eyebrow: 'COMPTE ONE2ONELOVE GRATUIT', title: 'Entrez. La relation peut grandir à partir d’ici.',
+    body: 'Créez un compte gratuit pour révéler des Love Notes privées, rejoindre la communauté et poursuivre les expériences qui vous ont amené ici.',
+    existing: 'Vous avez déjà un compte ?', signIn: 'Se connecter', professional: 'Vous nous rejoignez à titre professionnel ?',
+    therapist: 'Candidature thérapeute', influencer: 'Candidature influenceur', partner: 'Candidature professionnelle',
+  },
+  it: {
+    eyebrow: 'ACCOUNT ONE2ONELOVE GRATUITO', title: 'Entra. La relazione può crescere da qui.',
+    body: 'Crea un account gratuito per rivelare Love Notes private, partecipare alla community e continuare le esperienze che ti hanno portato qui.',
+    existing: 'Hai già un account?', signIn: 'Accedi', professional: 'Ti unisci con un ruolo professionale?',
+    therapist: 'Candidatura terapeuta', influencer: 'Candidatura influencer', partner: 'Candidatura professionale',
+  },
+  de: {
+    eyebrow: 'KOSTENLOSES ONE2ONELOVE-KONTO', title: 'Komm rein. Von hier aus kann die Beziehung wachsen.',
+    body: 'Erstelle ein kostenloses Konto, um private Love Notes zu öffnen, der Community beizutreten und das fortzusetzen, was dich hierhergebracht hat.',
+    existing: 'Du hast schon ein Konto?', signIn: 'Anmelden', professional: 'Du möchtest in einer professionellen Rolle teilnehmen?',
+    therapist: 'Therapeuten-Bewerbung', influencer: 'Influencer-Bewerbung', partner: 'Professionelle Bewerbung',
+  },
+  nl: {
+    eyebrow: 'GRATIS ONE2ONELOVE-ACCOUNT', title: 'Kom binnen. Vanaf hier kan de relatie groeien.',
+    body: 'Maak een gratis account om privé Love Notes te onthullen, deel te nemen aan de community en verder te gaan met wat je hier bracht.',
+    existing: 'Heb je al een account?', signIn: 'Inloggen', professional: 'Doe je mee in een professionele rol?',
+    therapist: 'Therapeut-aanvraag', influencer: 'Influencer-aanvraag', partner: 'Professionele aanvraag',
+  },
+};
+
+const language = () => {
+  if (typeof window === 'undefined') return 'en';
+  const value = window.localStorage?.getItem('preferredLanguage') || 'en';
+  return COPY[value] ? value : 'en';
+};
+
+const safeReturnTo = (value) => {
+  if (!value || typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return '/';
+  return value;
+};
 
 export default function SignUp() {
-  const [selectedType, setSelectedType] = useState(null);
-  const navigate = useNavigate();
-
-  const signupTypes = [
-    {
-      id: "regular",
-      title: "Regular User",
-      description: "Join as a couple or individual to strengthen your relationship",
-      icon: Heart,
-      color: "from-pink-500 to-rose-500",
-      route: null // Will show form inline
-    },
-    {
-      id: "therapist",
-      title: "Therapist",
-      description: "Licensed therapists and counselors",
-      icon: Stethoscope,
-      color: "from-green-500 to-teal-500",
-      route: "/TherapistSignup"
-    },
-    {
-      id: "influencer",
-      title: "Influencer",
-      description: "Content creators and social media influencers",
-      icon: Mic,
-      color: "from-pink-500 to-red-500",
-      route: "/InfluencerSignup"
-    },
-    {
-      id: "professional",
-      title: "Professional",
-      description: "Relationship coaches and other professionals",
-      icon: Briefcase,
-      color: "from-indigo-500 to-blue-500",
-      route: "/ProfessionalSignup"
-    }
-  ];
-
-  const handleSelectType = (type) => {
-    if (type.route) {
-      navigate(type.route);
-    } else if (type.id === 'regular') {
-      // For regular users, show registration form directly (no subscription selection)
-      setSelectedType(type);
-    } else {
-      setSelectedType(type);
-    }
-  };
-
-  const handleBackFromForm = () => {
-    setSelectedType(null);
-  };
-
-  // Show registration form for regular users
-  if (selectedType && selectedType.id === "regular") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
-        <RegularUserForm 
-          onBack={handleBackFromForm}
-        />
-      </div>
-    );
-  }
+  const [searchParams] = useSearchParams();
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
+  const t = COPY[language()] || COPY.en;
+  const signInHref = `/SignIn?returnTo=${encodeURIComponent(returnTo)}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4 relative">
-      <div className="w-full max-w-4xl">
-        <Link to={createPageUrl("Home")}>
-          <button className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors z-10">
-            <X size={24} />
-          </button>
-        </Link>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 px-4 py-10 sm:py-14">
+      <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+        <section className="pt-4 lg:sticky lg:top-10">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-pink-700">
+            <Heart className="h-5 w-5 fill-current" />
+            One2OneLove
+          </Link>
 
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full mb-4 shadow-xl">
-            <Heart className="w-8 h-8 text-white fill-white" />
+          <p className="mt-8 text-sm font-black tracking-[0.18em] text-pink-700">{t.eyebrow}</p>
+          <h1 className="mt-3 text-4xl font-black leading-tight text-gray-900 sm:text-5xl">{t.title}</h1>
+          <p className="mt-5 text-lg leading-8 text-gray-600">{t.body}</p>
+
+          <div className="mt-7 space-y-3">
+            <div className="flex items-start gap-3 rounded-2xl border border-white bg-white/70 p-4 shadow-sm backdrop-blur">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-purple-700" />
+              <p className="text-sm text-gray-700">Email confirmation protects private Love Note reveals and member-only experiences.</p>
+            </div>
+            <div className="flex items-start gap-3 rounded-2xl border border-white bg-white/70 p-4 shadow-sm backdrop-blur">
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-pink-700" />
+              <p className="text-sm text-gray-700">Creating this account does not enroll you in a paid membership or ask for payment information.</p>
+            </div>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-            Join One 2 One Love
-          </h1>
-          <p className="text-xl text-gray-600">
-            Choose how you'd like to join our community
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {signupTypes.map((type) => {
-            const Icon = type.icon;
-            return (
-              <Card
-                key={type.id}
-                className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-pink-300 flex flex-col h-full"
-                onClick={() => handleSelectType(type)}
-              >
-                <CardHeader className="flex-1">
-                  <div className={`w-12 h-12 bg-gradient-to-br ${type.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl">{type.title}</CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    {type.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="mt-auto">
-                  <Button
-                    className={`w-full bg-gradient-to-r ${type.color} hover:opacity-90 text-white`}
-                  >
-                    Continue
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
-            Already have an account?{" "}
-            <Link to={createPageUrl("SignIn")} className="text-pink-600 hover:text-pink-700 font-semibold">
-              Sign In
-            </Link>
+          <p className="mt-7 text-sm text-gray-600">
+            {t.existing}{' '}
+            <Link to={signInHref} className="font-bold text-purple-700 underline">{t.signIn}</Link>
           </p>
-        </div>
+
+          <div className="mt-8 border-t border-pink-200 pt-6">
+            <p className="text-sm font-bold text-gray-800">{t.professional}</p>
+            <div className="mt-3 flex flex-wrap gap-3 text-sm">
+              <Link to="/TherapistSignup" className="font-semibold text-teal-700 underline">{t.therapist}</Link>
+              <Link to="/InfluencerSignup" className="font-semibold text-pink-700 underline">{t.influencer}</Link>
+              <Link to="/ProfessionalSignup" className="font-semibold text-blue-700 underline">{t.partner}</Link>
+            </div>
+          </div>
+        </section>
+
+        <RegularUserRelaunchForm returnTo={returnTo} />
       </div>
     </div>
   );
 }
-

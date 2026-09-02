@@ -1,516 +1,322 @@
 /**
  * User Presence Service
- * Handles online/offline status tracking and real-time updates
+ * Handles online/offline status tracking and real-time updates.
+ *
+ * Privacy rule: the database returns neutral presence timestamps/status only. It never
+ * returns account email or English display prose. Relative “last seen” copy is derived
+ * here from One2OneLove's selected language (`preferredLanguage`).
  */
 
 import { supabase } from './supabase';
 
 let heartbeatInterval = null;
-let presenceSubscription = null;
+let lifecycleListenersBound = false;
+let presenceSubscriptionCounter = 0;
+const activePresenceSubscriptions = new Set();
 
-// =====================================================
-// PRESENCE MANAGEMENT
-// =====================================================
+const PRESENCE_SELECT = 'user_id,status,last_seen,last_active,updated_at,name,avatar_url,is_online';
+const ALLOWED_STATUSES = new Set(['online', 'offline', 'away', 'busy']);
+const ACTIVE_LANGUAGES = new Set(['en', 'es', 'fr', 'it', 'de']);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/**
- * Set user as online
- * Call this when user logs in or app becomes active
- */
+const PRESENCE_COPY = {
+  en: { online: 'Online', longAgo: 'Long time ago', justNow: 'Just now', minutesAgo: (count) => `${count} min${count === 1 ? '' : 's'} ago`, hoursAgo: (count) => `${count} hour${count === 1 ? '' : 's'} ago`, daysAgo: (count) => `${count} day${count === 1 ? '' : 's'} ago` },
+  es: { online: 'En línea', longAgo: 'Hace tiempo', justNow: 'Ahora mismo', minutesAgo: (count) => `Hace ${count} min`, hoursAgo: (count) => `Hace ${count} h`, daysAgo: (count) => `Hace ${count} d` },
+  fr: { online: 'En ligne', longAgo: 'Il y a longtemps', justNow: 'À l’instant', minutesAgo: (count) => `Il y a ${count} min`, hoursAgo: (count) => `Il y a ${count} h`, daysAgo: (count) => `Il y a ${count} j` },
+  it: { online: 'Online', longAgo: 'Molto tempo fa', justNow: 'Adesso', minutesAgo: (count) => `${count} min fa`, hoursAgo: (count) => `${count} h fa`, daysAgo: (count) => `${count} g fa` },
+  de: { online: 'Online', longAgo: 'Vor längerer Zeit', justNow: 'Gerade eben', minutesAgo: (count) => `vor ${count} Min.`, hoursAgo: (count) => `vor ${count} Std.`, daysAgo: (count) => `vor ${count} T.` },
+};
+
+const resolvePresenceLanguage = (requestedLanguage = null) => {
+  const requested = String(requestedLanguage || '').trim().toLowerCase();
+  if (ACTIVE_LANGUAGES.has(requested)) return requested;
+
+  if (typeof window !== 'undefined') {
+    const preferred = String(window.localStorage?.getItem('preferredLanguage') || '').trim().toLowerCase();
+    if (ACTIVE_LANGUAGES.has(preferred)) return preferred;
+  }
+
+  return 'en';
+};
+
+const validUserId = (value) => UUID_PATTERN.test(String(value || '').trim());
+
+export const formatLastSeen = (lastSeen, language = null) => {
+  const copy = PRESENCE_COPY[resolvePresenceLanguage(language)];
+  if (!lastSeen) return copy.longAgo;
+
+  const lastSeenDate = new Date(lastSeen);
+  if (Number.isNaN(lastSeenDate.getTime())) return copy.longAgo;
+
+  const diffMs = Math.max(0, Date.now() - lastSeenDate.getTime());
+  const diffMins = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
+
+  if (diffMins < 1) return copy.justNow;
+  if (diffMins < 60) return copy.minutesAgo(diffMins);
+  if (diffHours < 24) return copy.hoursAgo(diffHours);
+  if (diffDays < 7) return copy.daysAgo(diffDays);
+  return copy.longAgo;
+};
+
+export const localizePresence = (presence, language = null) => {
+  const resolvedLanguage = resolvePresenceLanguage(language);
+  const copy = PRESENCE_COPY[resolvedLanguage];
+  if (!presence) return null;
+
+  return {
+    ...presence,
+    last_seen_text: presence.is_online ? copy.online : formatLastSeen(presence.last_seen, resolvedLanguage),
+  };
+};
+
+const offlinePresence = (userId, language = null) => localizePresence({
+  user_id: validUserId(userId) ? String(userId).trim() : null,
+  status: 'offline',
+  last_seen: null,
+  last_active: null,
+  updated_at: null,
+  name: null,
+  avatar_url: null,
+  is_online: false,
+}, language);
+
+const getAuthenticatedUser = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) return null;
+  return data.user;
+};
+
 export const setUserOnline = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.log('⚠️ No user found, cannot set online');
-      return;
-    }
+    const user = await getAuthenticatedUser();
+    if (!user) return { success: false };
 
-    console.log('🟢 Setting user online:', user.id);
-
-    const { error } = await supabase.rpc('update_user_presence', {
-      p_user_id: user.id,
-      p_status: 'online'
-    });
-
+    const { error } = await supabase.rpc('update_user_presence', { p_user_id: user.id, p_status: 'online' });
     if (error) throw error;
-
-    // Start heartbeat to keep user online
     startHeartbeat();
-
-    console.log('✅ User set to online');
     return { success: true };
-  } catch (error) {
-    console.error('❌ Error setting user online:', error);
-    throw error;
+  } catch {
+    console.warn('Unable to set presence online.');
+    return { success: false, code: 'O2OL_PRESENCE_UPDATE_FAILED' };
   }
 };
 
-/**
- * Set user as offline
- * Call this when user logs out or app closes
- */
 export const setUserOffline = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    console.log('🔴 Setting user offline:', user.id);
-
-    const { error } = await supabase.rpc('update_user_presence', {
-      p_user_id: user.id,
-      p_status: 'offline'
-    });
-
-    if (error) throw error;
-
-    // Stop heartbeat
+    const user = await getAuthenticatedUser();
     stopHeartbeat();
+    if (!user) return { success: true };
 
-    console.log('✅ User set to offline');
-    return { success: true };
-  } catch (error) {
-    console.error('❌ Error setting user offline:', error);
-    throw error;
-  }
-};
-
-/**
- * Update user status (online, offline, away, busy)
- * @param {string} status - User status
- */
-export const updateUserStatus = async (status) => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    console.log(`🔄 Updating user status to: ${status}`);
-
-    const { error } = await supabase.rpc('update_user_presence', {
-      p_user_id: user.id,
-      p_status: status
-    });
-
+    const { error } = await supabase.rpc('update_user_presence', { p_user_id: user.id, p_status: 'offline' });
     if (error) throw error;
-
-    if (status === 'online') {
-      startHeartbeat();
-    } else {
-      stopHeartbeat();
-    }
-
-    console.log('✅ User status updated');
     return { success: true };
-  } catch (error) {
-    console.error('❌ Error updating user status:', error);
-    throw error;
+  } catch {
+    console.warn('Unable to set presence offline.');
+    return { success: false, code: 'O2OL_PRESENCE_UPDATE_FAILED' };
   }
 };
 
-// =====================================================
-// HEARTBEAT SYSTEM
-// =====================================================
+export const updateUserStatus = async (status) => {
+  if (!ALLOWED_STATUSES.has(status)) throw new Error('O2OL_PRESENCE_STATUS_INVALID');
 
-/**
- * Start heartbeat to keep user online
- * Sends a heartbeat every 30 seconds
- */
+  const user = await getAuthenticatedUser();
+  if (!user) throw new Error('O2OL_AUTH_REQUIRED');
+
+  const { error } = await supabase.rpc('update_user_presence', { p_user_id: user.id, p_status: status });
+  if (error) throw new Error('O2OL_PRESENCE_UPDATE_FAILED');
+  if (status === 'online') startHeartbeat();
+  else stopHeartbeat();
+  return { success: true };
+};
+
 const startHeartbeat = () => {
-  // Clear any existing interval
   stopHeartbeat();
-
-  console.log('💓 Starting presence heartbeat');
-
-  // Send heartbeat every 30 seconds
-  heartbeatInterval = setInterval(async () => {
+  heartbeatInterval = window.setInterval(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthenticatedUser();
       if (!user) {
-        console.log('⚠️ No user found, stopping heartbeat');
         stopHeartbeat();
         return;
       }
-
-      console.log('💓 Sending heartbeat');
-
-      const { error } = await supabase.rpc('heartbeat_user_presence', {
-        p_user_id: user.id
-      });
-
-      if (error) {
-        console.error('❌ Heartbeat error:', error);
-      }
-    } catch (error) {
-      console.error('❌ Heartbeat failed:', error);
+      const { error } = await supabase.rpc('heartbeat_user_presence', { p_user_id: user.id });
+      if (error) console.warn('Presence heartbeat failed.');
+    } catch {
+      console.warn('Presence heartbeat failed.');
     }
-  }, 30000); // 30 seconds
+  }, 30_000);
 };
 
-/**
- * Stop heartbeat
- */
 const stopHeartbeat = () => {
-  if (heartbeatInterval) {
-    console.log('💔 Stopping presence heartbeat');
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
+  if (!heartbeatInterval) return;
+  window.clearInterval(heartbeatInterval);
+  heartbeatInterval = null;
 };
 
-// =====================================================
-// PRESENCE QUERIES
-// =====================================================
+export const getUserPresence = async (userId, language = null) => {
+  if (!validUserId(userId)) return offlinePresence(null, language);
 
-/**
- * Get presence status for a specific user
- * @param {string} userId - User ID
- */
-export const getUserPresence = async (userId) => {
   try {
-    console.log('👤 Fetching presence for user:', userId);
-
     const { data, error } = await supabase
       .from('user_presence_view')
-      .select('*')
-      .eq('user_id', userId)
+      .select(PRESENCE_SELECT)
+      .eq('user_id', String(userId).trim())
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
-
-    // If no presence record, return offline
-    if (!data) {
-      return {
-        user_id: userId,
-        status: 'offline',
-        is_online: false,
-        last_seen_text: 'Long time ago',
-      };
-    }
-
-    console.log('✅ User presence:', data);
-    return data;
-  } catch (error) {
-    console.error('❌ Error fetching user presence:', error);
-    // Return offline as default
-    return {
-      user_id: userId,
-      status: 'offline',
-      is_online: false,
-      last_seen_text: 'Long time ago',
-    };
+    if (error && error.code !== 'PGRST116') throw error;
+    return data ? localizePresence(data, language) : offlinePresence(userId, language);
+  } catch {
+    console.warn('Unable to fetch user presence.');
+    return offlinePresence(userId, language);
   }
 };
 
-/**
- * Get presence status for multiple users
- * @param {string[]} userIds - Array of user IDs
- */
-export const getMultipleUserPresence = async (userIds) => {
+export const getMultipleUserPresence = async (userIds, language = null) => {
   try {
-    if (!userIds || userIds.length === 0) {
-      return {};
-    }
-
-    console.log('👥 Fetching presence for multiple users:', userIds.length);
+    const uniqueIds = [...new Set((userIds || []).map((id) => String(id || '').trim()).filter(validUserId))];
+    if (!uniqueIds.length) return {};
 
     const { data, error } = await supabase
       .from('user_presence_view')
-      .select('*')
-      .in('user_id', userIds);
+      .select(PRESENCE_SELECT)
+      .in('user_id', uniqueIds);
 
     if (error) throw error;
 
-    // Convert to map for easy lookup
     const presenceMap = {};
-    data?.forEach(presence => {
-      presenceMap[presence.user_id] = presence;
-    });
-
-    // Add offline status for users without presence records
-    userIds.forEach(userId => {
-      if (!presenceMap[userId]) {
-        presenceMap[userId] = {
-          user_id: userId,
-          status: 'offline',
-          is_online: false,
-          last_seen_text: 'Long time ago',
-        };
-      }
-    });
-
-    console.log(`✅ Fetched presence for ${Object.keys(presenceMap).length} users`);
+    (data || []).forEach((presence) => { presenceMap[presence.user_id] = localizePresence(presence, language); });
+    uniqueIds.forEach((userId) => { if (!presenceMap[userId]) presenceMap[userId] = offlinePresence(userId, language); });
     return presenceMap;
-  } catch (error) {
-    console.error('❌ Error fetching multiple user presence:', error);
+  } catch {
+    console.warn('Unable to fetch multiple presence records.');
     return {};
   }
 };
 
-/**
- * Get all online users
- */
-export const getOnlineUsers = async () => {
+export const getOnlineUsers = async (language = null) => {
   try {
-    console.log('🟢 Fetching all online users');
-
     const { data, error } = await supabase
       .from('user_presence_view')
-      .select('*')
+      .select(PRESENCE_SELECT)
       .eq('is_online', true)
       .order('last_active', { ascending: false });
 
     if (error) throw error;
-
-    console.log(`✅ Found ${data?.length || 0} online users`);
-    return data || [];
-  } catch (error) {
-    console.error('❌ Error fetching online users:', error);
+    return (data || []).map((presence) => localizePresence(presence, language));
+  } catch {
+    console.warn('Unable to fetch online users.');
     return [];
   }
 };
 
-/**
- * Get online users count
- */
 export const getOnlineUsersCount = async () => {
   try {
     const { data, error } = await supabase.rpc('get_online_users_count');
-
     if (error) throw error;
-
-    console.log(`✅ Online users count: ${data}`);
-    return data || 0;
-  } catch (error) {
-    console.error('❌ Error fetching online users count:', error);
+    return Number(data) || 0;
+  } catch {
+    console.warn('Unable to fetch online user count.');
     return 0;
   }
 };
 
-// =====================================================
-// REALTIME SUBSCRIPTIONS
-// =====================================================
-
-/**
- * Subscribe to presence changes for real-time updates
- * @param {Function} callback - Callback function to handle presence changes
- * @param {string[]} userIds - Optional: specific user IDs to watch
- */
 export const subscribeToPresence = (callback, userIds = null) => {
-  try {
-    console.log('🔔 Subscribing to presence changes');
+  const requestedIds = Array.isArray(userIds) ? userIds : null;
+  const ids = [...new Set((requestedIds || []).map((id) => String(id || '').trim()).filter(validUserId))];
+  if (requestedIds && !ids.length) return null;
 
-    // Unsubscribe from any existing subscription
-    unsubscribeFromPresence();
+  const config = { event: '*', schema: 'public', table: 'user_presence' };
+  if (ids.length) config.filter = `user_id=in.(${ids.join(',')})`;
 
-    // Subscribe to all presence changes
-    presenceSubscription = supabase
-      .channel('user-presence-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_presence',
-          filter: userIds ? `user_id=in.(${userIds.join(',')})` : undefined,
-        },
-        (payload) => {
-          console.log('🔔 Presence change detected:', payload);
-          
-          if (callback && typeof callback === 'function') {
-            callback(payload);
-          }
-        }
-      )
-      .subscribe();
+  presenceSubscriptionCounter += 1;
+  const channel = supabase
+    .channel(`user-presence-changes:${presenceSubscriptionCounter}`)
+    .on('postgres_changes', config, (payload) => {
+      if (typeof callback === 'function') callback(payload);
+    })
+    .subscribe();
 
-    console.log('✅ Subscribed to presence changes');
-    return presenceSubscription;
-  } catch (error) {
-    console.error('❌ Error subscribing to presence:', error);
-    throw error;
-  }
+  activePresenceSubscriptions.add(channel);
+  return channel;
 };
 
-/**
- * Unsubscribe from presence changes
- */
-export const unsubscribeFromPresence = () => {
-  if (presenceSubscription) {
-    console.log('🔕 Unsubscribing from presence changes');
-    supabase.removeChannel(presenceSubscription);
-    presenceSubscription = null;
+export const unsubscribeFromPresence = (subscription = null) => {
+  if (subscription) {
+    activePresenceSubscriptions.delete(subscription);
+    supabase.removeChannel(subscription);
+    return;
   }
+
+  for (const channel of activePresenceSubscriptions) supabase.removeChannel(channel);
+  activePresenceSubscriptions.clear();
 };
 
-// =====================================================
-// LIFECYCLE MANAGEMENT
-// =====================================================
-
-/**
- * Initialize presence tracking
- * Call this when user logs in or app starts
- */
-export const initializePresence = async () => {
-  try {
-    console.log('🚀 Initializing presence tracking');
-
-    // Set user as online
-    await setUserOnline();
-
-    // Handle page visibility changes
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Handle before unload (user closing tab/window)
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // Handle online/offline browser events
-    window.addEventListener('online', handleBrowserOnline);
-    window.addEventListener('offline', handleBrowserOffline);
-
-    console.log('✅ Presence tracking initialized');
-  } catch (error) {
-    console.error('❌ Error initializing presence:', error);
-  }
-};
-
-/**
- * Cleanup presence tracking
- * Call this when user logs out or app unmounts
- */
-export const cleanupPresence = async () => {
-  try {
-    console.log('🧹 Cleaning up presence tracking');
-
-    // Set user as offline
-    await setUserOffline();
-
-    // Stop heartbeat
-    stopHeartbeat();
-
-    // Unsubscribe from presence changes
-    unsubscribeFromPresence();
-
-    // Remove event listeners
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-    window.removeEventListener('online', handleBrowserOnline);
-    window.removeEventListener('offline', handleBrowserOffline);
-
-    console.log('✅ Presence tracking cleaned up');
-  } catch (error) {
-    console.error('❌ Error cleaning up presence:', error);
-  }
-};
-
-// =====================================================
-// EVENT HANDLERS
-// =====================================================
-
-/**
- * Handle page visibility changes
- */
 const handleVisibilityChange = async () => {
   if (document.hidden) {
-    console.log('👋 Page hidden, pausing heartbeat');
     stopHeartbeat();
-  } else {
-    console.log('👀 Page visible, resuming presence');
-    await setUserOnline();
+    return;
   }
-};
-
-/**
- * Handle before unload (user closing tab)
- */
-const handleBeforeUnload = () => {
-  console.log('👋 User leaving, setting offline');
-  // Use navigator.sendBeacon for more reliable delivery
-  const { data: { user } } = supabase.auth.getUser();
-  if (user) {
-    setUserOffline();
-  }
-};
-
-/**
- * Handle browser going online
- */
-const handleBrowserOnline = async () => {
-  console.log('🌐 Browser back online');
   await setUserOnline();
 };
 
-/**
- * Handle browser going offline
- */
-const handleBrowserOffline = async () => {
-  console.log('📡 Browser offline');
-  await setUserOffline();
+const handlePageHide = () => {
+  stopHeartbeat();
 };
 
-// =====================================================
-// UTILITY FUNCTIONS
-// =====================================================
+const handleBrowserOnline = async () => { await setUserOnline(); };
+const handleBrowserOffline = () => { stopHeartbeat(); };
 
-/**
- * Format last seen timestamp to readable text
- * @param {Date|string} lastSeen - Last seen timestamp
- */
-export const formatLastSeen = (lastSeen) => {
-  if (!lastSeen) return 'Long time ago';
-
-  const now = new Date();
-  const lastSeenDate = new Date(lastSeen);
-  const diffMs = now - lastSeenDate;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  return 'Long time ago';
+const bindLifecycleListeners = () => {
+  if (lifecycleListenersBound) return;
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', handlePageHide);
+  window.addEventListener('online', handleBrowserOnline);
+  window.addEventListener('offline', handleBrowserOffline);
+  lifecycleListenersBound = true;
 };
 
-/**
- * Get status color for UI
- * @param {boolean} isOnline - Online status
- */
-export const getStatusColor = (isOnline) => {
-  return isOnline ? 'bg-green-500' : 'bg-gray-400';
+const unbindLifecycleListeners = () => {
+  if (!lifecycleListenersBound) return;
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('pagehide', handlePageHide);
+  window.removeEventListener('online', handleBrowserOnline);
+  window.removeEventListener('offline', handleBrowserOffline);
+  lifecycleListenersBound = false;
 };
 
-/**
- * Get status text color for UI
- * @param {boolean} isOnline - Online status
- */
-export const getStatusTextColor = (isOnline) => {
-  return isOnline ? 'text-green-600' : 'text-gray-500';
+export const initializePresence = async () => {
+  bindLifecycleListeners();
+  return setUserOnline();
 };
+
+export const cleanupPresence = async () => {
+  try {
+    await setUserOffline();
+  } finally {
+    stopHeartbeat();
+    unsubscribeFromPresence();
+    unbindLifecycleListeners();
+  }
+};
+
+export const getStatusColor = (isOnline) => isOnline ? 'bg-green-500' : 'bg-gray-400';
+export const getStatusTextColor = (isOnline) => isOnline ? 'text-green-600' : 'text-gray-500';
 
 export default {
-  // Main functions
   setUserOnline,
   setUserOffline,
   updateUserStatus,
-  
-  // Queries
   getUserPresence,
   getMultipleUserPresence,
   getOnlineUsers,
   getOnlineUsersCount,
-  
-  // Realtime
   subscribeToPresence,
   unsubscribeFromPresence,
-  
-  // Lifecycle
   initializePresence,
   cleanupPresence,
-  
-  // Utils
   formatLastSeen,
+  localizePresence,
   getStatusColor,
   getStatusTextColor,
 };
-

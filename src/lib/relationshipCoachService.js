@@ -1,0 +1,95 @@
+import { supabase } from './supabase';
+
+const clean = (value, max = 4000) =>
+  typeof value === 'string' ? value.trim().slice(0, max) : '';
+
+const DEFAULT_TITLES = {
+  en: 'Coaching Session',
+  es: 'Sesión de coaching',
+  fr: 'Session de coaching',
+  it: 'Sessione di coaching',
+  de: 'Coaching-Sitzung',
+  nl: 'Coachingsessie',
+};
+
+const createRequestId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = character === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+};
+
+const readFunctionErrorPayload = async (error, data) => {
+  if (data && typeof data === 'object') return data;
+
+  const response = error?.context;
+  if (!response || typeof response.json !== 'function') return null;
+
+  try {
+    const readable = typeof response.clone === 'function' ? response.clone() : response;
+    const payload = await readable.json();
+    return payload && typeof payload === 'object' ? payload : null;
+  } catch {
+    return null;
+  }
+};
+
+const invoke = async (body) => {
+  const { data, error } = await supabase.functions.invoke('relationship-coach', { body });
+  if (error || data?.error) {
+    const payload = await readFunctionErrorPayload(error, data);
+    const code = payload?.error || data?.error || null;
+    const message = code || error?.message || 'Relationship Coach is unavailable right now.';
+    const enriched = new Error(message);
+    enriched.code = code;
+    enriched.feature = payload?.feature || data?.feature || null;
+    enriched.status = error?.context?.status || null;
+    throw enriched;
+  }
+  return data;
+};
+
+export const listCoachConversations = async (language = 'en') => {
+  const data = await invoke({ action: 'list_conversations', language });
+  return data?.conversations || [];
+};
+
+export const createCoachConversation = async ({ title = '', language = 'en' } = {}) => {
+  const languageKey = DEFAULT_TITLES[language] ? language : 'en';
+  const localizedTitle = clean(title, 120) || DEFAULT_TITLES[languageKey];
+  const data = await invoke({ action: 'create_conversation', title: localizedTitle, language: languageKey });
+  return data?.conversation || null;
+};
+
+export const getCoachConversation = async (conversationId, language = 'en') => {
+  return invoke({ action: 'get_conversation', conversation_id: conversationId, language });
+};
+
+export const deleteCoachConversation = async (conversationId, language = 'en') => {
+  return invoke({ action: 'delete_conversation', conversation_id: conversationId, language });
+};
+
+/**
+ * One request ID belongs to one deliberate member submission. A caller may pass the same
+ * request ID again after a network ambiguity so the server can replay the stored result
+ * rather than spending on a duplicate model generation.
+ */
+export const sendCoachMessage = async ({ conversationId, message, language = 'en', requestId = null }) => {
+  const text = clean(message, 4000);
+  if (!text) {
+    const empty = new Error('MESSAGE_REQUIRED');
+    empty.code = 'MESSAGE_REQUIRED';
+    throw empty;
+  }
+  return invoke({
+    action: 'send_message',
+    conversation_id: conversationId,
+    message: text,
+    language,
+    request_id: requestId || createRequestId(),
+  });
+};
+
+export const newCoachRequestId = createRequestId;

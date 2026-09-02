@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,23 +16,26 @@ const countries = [
   "Other"
 ];
 
+const normalizeEmail = (value) => value.trim().toLowerCase();
+
 export default function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("");
-  const queryClient = useQueryClient();
 
   const signupMutation = useMutation({
-    mutationFn: async (data) => {
-      const { data: result, error } = await supabase
+    mutationFn: async ({ email: rawEmail, country: selectedCountry }) => {
+      // The waitlist is intentionally write-only from the browser. Do not append
+      // `.select()` here: anonymous clients should never be able to read waitlist rows.
+      const { error } = await supabase
         .from('waitlist')
-        .insert(data)
-        .select()
-        .single();
+        .insert({
+          email: normalizeEmail(rawEmail),
+          country: selectedCountry,
+        });
+
       if (error) throw error;
-      return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['waitlist-signups'] });
       toast.success("🎉 You're on the waitlist!", {
         description: "We'll notify you when we launch in your country!"
       });
@@ -40,6 +43,14 @@ export default function WaitlistForm() {
       setCountry("");
     },
     onError: (error) => {
+      if (error?.code === '23505') {
+        toast.info("You're already on the waitlist.", {
+          description: "No need to sign up twice — we have your email."
+        });
+        return;
+      }
+
+      console.error('Waitlist signup failed:', error);
       toast.error("Oops!", {
         description: "Something went wrong. Please try again."
       });
@@ -48,7 +59,7 @@ export default function WaitlistForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!email || !country) {
+    if (!email.trim() || !country) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -79,6 +90,7 @@ export default function WaitlistForm() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

@@ -1,250 +1,233 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Crown, Sparkles, TrendingUp, CheckCircle, ArrowRight, CreditCard, Calendar } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, Crown, Heart, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import TierCard from '@/components/subscriptions/TierCard';
-import { getUserSubscription, getPaymentHistory } from '@/lib/stripeService';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/Layout';
+import {
+  getUserSubscription,
+  handleSubscriptionCheckout,
+  openBillingPortal,
+  isPaymentsEnabled,
+} from '@/lib/stripeService';
+import {
+  ACTIVE_MEMBERSHIP_STATUSES,
+  MEMBERSHIP_PRICING,
+  formatMembershipPrice,
+} from '@/lib/membershipConfig';
+import { getMembershipCopy } from '@/lib/membershipCopy';
 
-const tiers = [
-  {
-    name: 'Basic',
-    tagline: 'Start Your Journey',
-    price: 0,
-    period: null,
-    description: 'Perfect for couples just starting out',
-    icon: '💝',
-    gradient: 'from-blue-400 to-blue-600',
-    features: [
-      'Access to 50+ Love Notes Library',
-      'Basic Relationship Quizzes',
-      'Monthly Date Ideas (5 ideas)',
-      'Anniversary Reminders',
-      'Memory Timeline',
-      'Mobile App Access',
-      'Email Support',
-    ],
-    popular: false,
-    isFree: true,
-  },
-  {
-    name: 'Premiere',
-    tagline: 'Most Popular',
-    price: 19.99,
-    period: 'month',
-    description: 'For couples ready to grow together',
-    icon: '💖',
-    gradient: 'from-purple-400 to-pink-500',
-    features: [
-      'Everything in Basic, plus:',
-      'Access to 1000+ Love Notes Library',
-      'AI Relationship Coach (50 questions/month)',
-      'Unlimited Date Ideas',
-      'Relationship Goals Tracker',
-      'Advanced Quizzes & Insights',
-      'Surprise Message Scheduling',
-      'Ad-Free Experience',
-      'Priority Support',
-      'Early Access to New Features',
-    ],
-    popular: true,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_premiere', // Set in .env or Stripe Dashboard
-  },
-  {
-    name: 'Exclusive',
-    tagline: 'Ultimate Experience',
-    price: 34.99,
-    period: 'month',
-    description: 'The complete relationship toolkit',
-    icon: '👑',
-    gradient: 'from-yellow-400 to-orange-500',
-    features: [
-      'Everything in Premiere, plus:',
-      'Unlimited Love Notes Library',
-      'Unlimited AI Relationship Coach',
-      'AI-Powered Content Creator',
-      'Personalized Relationship Reports',
-      'Exclusive Community Access',
-      '1-on-1 Expert Consultation',
-      'Premium Support (24/7)',
-      'VIP Badge & Perks',
-      'Lifetime Access to Premium Content',
-    ],
-    popular: false,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_exclusive', // Set in .env or Stripe Dashboard
-  },
-];
+const LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
+
+const FEATURE_TERMS = {
+  en: [],
+  es: [['Love Notes', 'Notas de Amor'], ['Love Note', 'Nota de Amor'], ['Live Community', 'Comunidad en Vivo']],
+  fr: [['Love Notes', 'Mots d’Amour'], ['Love Note', 'Mot d’Amour'], ['Live Community', 'Communauté en Direct']],
+  it: [['Love Notes', 'Note d’Amore'], ['Love Note', 'Nota d’Amore'], ['Live Community', 'Community dal Vivo']],
+  de: [['Love Notes', 'Liebesnotizen'], ['Love Note', 'Liebesnotiz'], ['Live Community', 'Live-Community']],
+};
+
+const localizeFeatureTerms = (value, replacements) => {
+  if (typeof value === 'string') return replacements.reduce((text, [from, to]) => text.split(from).join(to), value);
+  if (Array.isArray(value)) return value.map((item) => localizeFeatureTerms(item, replacements));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, localizeFeatureTerms(item, replacements)]));
+  return value;
+};
+
+function BenefitList({ items, tone = 'free' }) {
+  return (
+    <div className="space-y-2.5">
+      {items.map((item) => (
+        <div key={item} className="flex items-start gap-2.5 text-sm leading-6 text-gray-700">
+          <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${tone === 'paid' ? 'text-purple-600' : 'text-green-600'}`} />
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Subscription() {
-  const { user } = useAuth();
-  const [currentSubscription, setCurrentSubscription] = useState(null);
-  const [paymentHistory, setPaymentHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const { currentLanguage } = useLanguage();
+  const language = LOCALES[currentLanguage] ? currentLanguage : 'en';
+  const t = useMemo(() => localizeFeatureTerms(getMembershipCopy(language).subscription, FEATURE_TERMS[language] || []), [language]);
+  const locale = LOCALES[language] || LOCALES.en;
+  const introPrice = formatMembershipPrice(MEMBERSHIP_PRICING.introMonthly, locale);
+  const standardPrice = formatMembershipPrice(MEMBERSHIP_PRICING.standardMonthly, locale);
+  const localizedThenPrice = t.thenPrice.replace('$5.99', standardPrice);
+  const [membership, setMembership] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const paymentsEnabled = isPaymentsEnabled();
+  const membershipActive = ACTIVE_MEMBERSHIP_STATUSES.has(membership?.status);
 
   useEffect(() => {
-    const loadSubscriptionData = async () => {
-      try {
-        const [subscription, payments] = await Promise.all([
-          getUserSubscription(),
-          getPaymentHistory(),
-        ]);
+    let cancelled = false;
+    setLoading(true);
 
-        setCurrentSubscription(subscription);
-        setPaymentHistory(payments);
-      } catch (error) {
-        console.error('Error loading subscription data:', error);
-        toast.error('Failed to load subscription information');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user) {
-      loadSubscriptionData();
+    if (!isAuthenticated) {
+      setMembership(null);
+      setLoading(false);
+      return undefined;
     }
-  }, [user]);
 
-  const currentPlan = user?.subscription_plan || 'Basic';
+    getUserSubscription()
+      .then((data) => {
+        if (!cancelled) setMembership(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const startCheckout = async () => {
+    setMessage('');
+    if (!isAuthenticated) {
+      navigate('/SignIn?returnTo=%2FSubscription');
+      return;
+    }
+
+    setActionLoading(true);
+    const result = await handleSubscriptionCheckout();
+    if (!result.success) {
+      setMessage(result.error || t.checkoutUnavailable);
+      setActionLoading(false);
+    }
+  };
+
+  const manageBilling = async () => {
+    setMessage('');
+    setActionLoading(true);
+    const result = await openBillingPortal();
+    if (!result.success) {
+      setMessage(result.error || t.billingUnavailable);
+      setActionLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Crown className="w-8 h-8 text-purple-600" />
-            <h1 className="text-4xl font-bold text-gray-900">Choose Your Plan</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 px-4 py-10">
+      <div className="mx-auto max-w-5xl">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t.back}
+        </button>
+
+        <div className="text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg">
+            <Crown className="h-8 w-8 text-white" />
           </div>
-          <p className="text-xl text-gray-600 mb-2">
-            Unlock premium features to strengthen your relationship
-          </p>
-          <p className="text-sm text-gray-500">
-            Currently on: <span className="font-bold text-purple-600">{currentPlan}</span> plan
-          </p>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-purple-700">{t.eyebrow}</p>
+          <h1 className="mt-2 text-4xl font-black text-gray-900 sm:text-5xl">{t.title}</h1>
+          <p className="mx-auto mt-4 max-w-3xl text-lg leading-8 text-gray-600">{t.subtitle}</p>
         </div>
 
-        {/* Current Subscription Info */}
-        {currentSubscription && currentSubscription.subscription_status === 'active' && currentPlan !== 'Basic' && (
-          <Card className="mb-8 border-2 border-purple-200 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                Your Current Subscription
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Plan</p>
-                  <p className="text-lg font-bold text-gray-900">{currentSubscription.subscription_plan}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <p className="text-lg font-bold text-green-600 capitalize">{currentSubscription.subscription_status}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Renews On</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {currentSubscription.subscription_current_period_end
-                      ? format(new Date(currentSubscription.subscription_current_period_end), 'MMM dd, yyyy')
-                      : 'N/A'}
-                  </p>
-                </div>
+        <div className="mt-10 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <section className="rounded-3xl border border-green-200 bg-white p-7 shadow-lg">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100">
+                <Heart className="h-5 w-5 fill-current text-green-700" />
               </div>
-              {currentSubscription.cancel_at_period_end && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    ⚠️ Your subscription will be canceled at the end of the current billing period.
-                  </p>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-green-700">{t.alwaysFree}</p>
+                <h2 className="text-2xl font-black text-gray-900">{t.freeAccount}</h2>
+              </div>
+            </div>
+            <BenefitList items={t.freeFeatures} />
+            {!isAuthenticated && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/SignUp?returnTo=%2FSubscription')}
+                className="mt-6 w-full border-green-300 text-green-800 hover:bg-green-50"
+              >
+                {t.createFree}
+              </Button>
+            )}
+          </section>
+
+          <section className="overflow-hidden rounded-3xl border border-purple-200 bg-white shadow-xl">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-7 py-6 text-white">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-purple-100">{t.launchMembership}</p>
+              </div>
+              <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1">
+                <span className="text-5xl font-black">{introPrice}</span>
+                <span className="pb-1 text-lg">{t.monthly}</span>
+              </div>
+              <p className="mt-2 font-semibold">{t.firstMonths}</p>
+              <p className="mt-1 text-sm text-purple-100">{localizedThenPrice}</p>
+            </div>
+
+            <div className="space-y-6 p-7">
+              <BenefitList items={t.paidFeatures} tone="paid" />
+
+              <div className="flex gap-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-purple-700" />
+                <p>{t.secureCheckout}</p>
+              </div>
+
+              <div className="flex gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+                <p>{t.rollout}</p>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-4 text-gray-500">
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {t.checking}
                 </div>
+              ) : membershipActive ? (
+                <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
+                  <p className="font-bold text-green-900">{t.active}</p>
+                  {membership?.current_period_end && (
+                    <p className="mt-1 text-sm text-green-800">
+                      {t.periodEnds} {new Date(membership.current_period_end).toLocaleDateString(locale)}.
+                    </p>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={manageBilling}
+                    disabled={actionLoading || !paymentsEnabled}
+                    className="mt-4 bg-gray-900 text-white hover:bg-gray-800"
+                  >
+                    {actionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {t.manage}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={startCheckout}
+                  disabled={actionLoading || !paymentsEnabled}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-6 text-lg font-bold text-white"
+                >
+                  {actionLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Crown className="mr-2 h-5 w-5" />}
+                  {!paymentsEnabled ? t.checkoutStaged : isAuthenticated ? t.start : t.signIn}
+                </Button>
               )}
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Subscription Tiers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          {tiers.map((tier, index) => (
-            <TierCard
-              key={tier.name}
-              tier={tier}
-              index={index}
-              isSelected={currentPlan === tier.name}
-              showPayment={true}
-            />
-          ))}
-        </div>
+              {message && (
+                <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">{message}</p>
+              )}
 
-        {/* Payment History */}
-        {paymentHistory && paymentHistory.length > 0 && (
-          <Card className="border-2 border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-gray-600" />
-                Payment History
-              </CardTitle>
-              <CardDescription>Your recent transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Plan</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paymentHistory.map((payment) => (
-                      <tr key={payment.id} className="border-b last:border-0">
-                        <td className="py-3 px-4 text-sm text-gray-900">
-                          {format(new Date(payment.created_at), 'MMM dd, yyyy')}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-900">
-                          {payment.subscription_plan}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-900">
-                          ${payment.amount.toFixed(2)} {payment.currency.toUpperCase()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                              payment.status === 'succeeded'
-                                ? 'bg-green-100 text-green-800'
-                                : payment.status === 'failed'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}
-                          >
-                            {payment.status === 'succeeded' && <CheckCircle className="w-3 h-3" />}
-                            {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* FAQ or Additional Info */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            Have questions about our plans?
-          </p>
-          <Button variant="outline" size="lg">
-            Contact Support
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+              <p className="text-center text-xs text-gray-500">{t.development}</p>
+            </div>
+          </section>
         </div>
       </div>
     </div>
   );
 }
-

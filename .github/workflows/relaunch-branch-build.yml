@@ -1,0 +1,102 @@
+name: Relaunch Branch Build
+
+on:
+  push:
+    branches:
+      - relaunch-homepage
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relaunch-homepage-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout relaunch branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify dependency and runtime security gate
+        run: |
+          npm run relaunch:dependency-check
+          npm audit
+
+      - name: Lint relaunch application
+        run: npm run lint
+
+      - name: Verify release, authentication and billing locks
+        run: |
+          node scripts/relaunch-production-approval-check.mjs
+          node scripts/relaunch-auth-flow-check.mjs
+          node scripts/relaunch-auth-safety-check.mjs
+          node scripts/relaunch-billing-reconciliation-check.mjs
+          node scripts/relaunch-billing-webhook-idempotency-check.mjs
+          node scripts/relaunch-billing-checkout-idempotency-check.mjs
+          node scripts/relaunch-billing-portal-security-check.mjs
+          node scripts/relaunch-membership-projection-security-check.mjs
+
+      - name: Verify legal release gates
+        run: |
+          node scripts/relaunch-legal-content-check.mjs || true
+          node scripts/relaunch-legal-readiness-check.mjs || true
+
+      - name: Verify Live Community safeguards
+        run: |
+          node scripts/relaunch-live-community-check.mjs
+          node scripts/relaunch-live-room-host-security-check.mjs
+          node scripts/relaunch-live-room-write-identity-check.mjs
+          node scripts/relaunch-live-room-i18n-check.mjs
+
+      - name: Verify member connection, presence and safety safeguards
+        run: |
+          node scripts/relaunch-connection-chat-check.mjs
+          node scripts/relaunch-member-connections-i18n-check.mjs
+          node scripts/relaunch-presence-privacy-check.mjs
+          node scripts/relaunch-member-blocking-foundation-check.mjs
+          node scripts/relaunch-member-blocking-discovery-check.mjs
+          node scripts/relaunch-member-blocking-request-cleanup-check.mjs
+          node scripts/relaunch-member-blocking-list-privacy-check.mjs
+
+      - name: Verify programming safeguards
+        run: |
+          node scripts/relaunch-creator-programming-check.mjs
+          node scripts/relaunch-programming-schedule-check.mjs
+          node scripts/relaunch-programming-moderation-check.mjs
+          node scripts/relaunch-programming-reminder-check.mjs
+          node scripts/relaunch-programming-reminder-cancellation-check.mjs
+          node scripts/relaunch-programming-reminder-slot-guard-check.mjs
+
+      - name: Verify private support and professional intake safeguards
+        run: |
+          node scripts/relaunch-support-request-check.mjs
+          node scripts/relaunch-support-notification-check.mjs
+          node scripts/relaunch-support-quota-check.mjs
+          node scripts/relaunch-support-state-check.mjs
+          node scripts/relaunch-professional-application-check.mjs
+
+      - name: Verify reviewed relationship-tool and navigation safeguards
+        run: |
+          node scripts/relaunch-service-i18n-boundary-check.mjs
+          node scripts/relaunch-ai-content-i18n-check.mjs
+          node scripts/relaunch-relationship-coach-i18n-check.mjs
+          node scripts/relaunch-relationship-support-i18n-check.mjs
+          node scripts/relaunch-staged-premium-tools-check.mjs
+          node scripts/relaunch-fallback-shell-i18n-check.mjs
+          node scripts/relaunch-layout-accessibility-i18n-check.mjs
+
+      - name: Compile relaunch application
+        run: npm run build

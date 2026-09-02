@@ -234,11 +234,7 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
         //   .getPublicUrl(data.path);
         // const file_url = publicUrl;
         throw new Error('File upload requires Supabase Storage implementation');
-        newUrls.push(file_url);
-        
-        setUploadProgress(prev => 
-          prev.map(p => p.name === file.name ? { ...p, status: 'completed' } : p)
-        );
+
       }
 
       setFormData(prev => ({

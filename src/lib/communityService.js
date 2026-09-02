@@ -440,7 +440,7 @@ export async function createPost(communityId, postData) {
         .eq('id', user.id)
         .single();
       
-      authorName = userProfile?.name || user.email?.split('@')[0] || 'User';
+      authorName = userProfile?.name || 'Member';
     }
 
     const newPost = {
@@ -748,7 +748,7 @@ export async function createComment(postId, commentData, parentCommentId = null)
         .eq('id', user.id)
         .single();
       
-      authorName = userProfile?.name || user.email?.split('@')[0] || 'User';
+      authorName = userProfile?.name || 'Member';
     }
 
     const newComment = {

@@ -1,0 +1,54 @@
+name: Relaunch Member Safety Integrity
+
+on:
+  push:
+    branches:
+      - relaunch-homepage
+    paths:
+      - 'src/components/safety/**'
+      - 'src/components/privacy/BlockedMembersControl.jsx'
+      - 'src/pages/BlockedMembers.jsx'
+      - 'src/pages/PrivacyCenter.jsx'
+      - 'src/pages/index.jsx'
+      - 'src/lib/memberBlockService.js'
+      - 'supabase/functions/member-block/**'
+      - 'supabase/functions/list-blocked-members/**'
+      - 'supabase/migrations/20260819_member_block*.sql'
+      - 'scripts/relaunch-member-blocking-*.mjs'
+      - 'docs/MEMBER_BLOCKING_APPROVAL.md'
+      - '.github/workflows/relaunch-member-safety-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relaunch-member-safety-integrity
+  cancel-in-progress: true
+
+jobs:
+  safeguards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout relaunch branch
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify member blocking safeguards
+        run: |
+          node scripts/relaunch-member-blocking-foundation-check.mjs
+          node scripts/relaunch-member-blocking-discovery-check.mjs
+          node scripts/relaunch-member-blocking-request-cleanup-check.mjs
+          node scripts/relaunch-member-blocking-list-privacy-check.mjs
+
+      - name: Compile relaunch application
+        run: npm run build

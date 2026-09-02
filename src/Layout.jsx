@@ -1,3 +1,2 @@
-// Re-export Layout and useLanguage from pages/Layout for @/Layout imports
-export { default, useLanguage } from "./pages/Layout.jsx";
-
+// Re-export relaunch Layout and useLanguage for @/Layout imports.
+export { default, useLanguage } from "./pages/LayoutRelaunch.jsx";
