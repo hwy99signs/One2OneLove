@@ -28,7 +28,9 @@ jobs:
           cache: npm
 
       - name: Apply exact privacy and strict-gate repairs
-        run: python scripts/relaunch-strict-gate-repair-once.py
+        run: |
+          python scripts/relaunch-strict-gate-repair-once.py
+          python scripts/relaunch-strict-gate-repair-ledger-followup.py
 
       - name: Install and verify repaired development gates
         run: |
