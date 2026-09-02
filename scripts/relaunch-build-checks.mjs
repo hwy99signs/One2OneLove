@@ -12,6 +12,7 @@ const checks = [
   ['relaunch safety', 'scripts/relaunch-safety-check.mjs'],
   ['relaunch security', 'scripts/relaunch-security-check.mjs'],
   ['relaunch public API privacy', 'scripts/relaunch-public-api-privacy-check.mjs'],
+  ['relaunch RLS performance', 'scripts/relaunch-rls-performance-check.mjs'],
   ['relaunch authentication flow', 'scripts/relaunch-auth-flow-check.mjs'],
   ['relaunch authentication safety', 'scripts/relaunch-auth-safety-check.mjs'],
   ['relaunch billing reconciliation', 'scripts/relaunch-billing-reconciliation-check.mjs'],
