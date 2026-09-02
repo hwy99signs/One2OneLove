@@ -1,0 +1,92 @@
+name: Relaunch Exact Source Lint Fixes
+
+on:
+  push:
+    branches:
+      - relaunch-homepage
+    paths:
+      - .github/workflows/relaunch-source-lint-fixes.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: relaunch-homepage-source-lint-fixes
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: relaunch-homepage
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Apply exact fail-closed source repairs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+            'src/pages/Community.jsx': [
+              (
+                'import { useLanguage } from "@/Layout";\n// Base44 removed - using Supabase instead',
+                'import { useLanguage } from "@/Layout";\nimport { supabase } from "@/lib/supabase";\n// Base44 removed - using Supabase instead'
+              ),
+            ],
+            'src/pages/LiveRoom.jsx': [
+              (
+                "import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Flag, Heart, Loader2, MessageCircle, Radio, Send, Shield, Users } from 'lucide-react';",
+                "import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Flag, Heart, Loader2, MessageCircle, Radio, Send, Shield, ShieldCheck, Users } from 'lucide-react';"
+              ),
+            ],
+            'src/pages/Layout.jsx': [
+              (
+                '<LanguageContent children={children} currentPageName={currentPageName} />',
+                '<LanguageContent currentPageName={currentPageName}>{children}</LanguageContent>'
+              ),
+            ],
+            'src/components/memories/MemoryForm.jsx': [
+              (
+                "        throw new Error('File upload requires Supabase Storage implementation');\n        newUrls.push(file_url);",
+                "        throw new Error('File upload requires Supabase Storage implementation');"
+              ),
+            ],
+          }
+
+          for filename, changes in replacements.items():
+            path = Path(filename)
+            text = path.read_text()
+            for old, new in changes:
+              count = text.count(old)
+              if count != 1:
+                raise SystemExit(f'{filename}: expected exactly one match, found {count}: {old[:80]}')
+              text = text.replace(old, new, 1)
+            path.write_text(text)
+          PY
+
+      - name: Verify staged Memory Lane remains staged
+        run: grep -Fxq "export { default } from './PremiumFeatureStaged';" src/pages/MemoryLane.jsx
+
+      - name: Install and lint
+        run: |
+          npm ci
+          npm run relaunch:dependency-check
+          npm audit
+          npm run lint
+
+      - name: Commit exact repairs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/Community.jsx src/pages/LiveRoom.jsx src/pages/Layout.jsx src/components/memories/MemoryForm.jsx
+          git commit -m "fix(relaunch): resolve semantic lint blockers"
+          git fetch origin relaunch-homepage
+          git rebase origin/relaunch-homepage
+          git push origin HEAD:relaunch-homepage
