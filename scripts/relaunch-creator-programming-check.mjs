@@ -55,7 +55,7 @@ for (const required of [
   '{t.conflictWarning}',
   'selectedSlotConflict || freeSlotsUsed >= 2',
   '!title.trim() || !startTime || !policyAcknowledged || selectedSlotConflict || freeSlotsUsed >= 2 || !selectedWindow',
-  'policyAcknowledged });',
+  'replayUrl,\n        policyAcknowledged,',
   'checked={policyAcknowledged}',
   'setPolicyAcknowledged(event.target.checked)',
   '<span>{t.policyLabel}</span>',
