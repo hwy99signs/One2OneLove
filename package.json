@@ -11,6 +11,7 @@
     "build": "node scripts/relaunch-build-checks.mjs && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "relaunch:dependency-check": "node scripts/relaunch-dependency-runtime-check.mjs",
     "relaunch:check": "node scripts/relaunch-safety-check.mjs",
     "relaunch:security-check": "node scripts/relaunch-security-check.mjs",
     "relaunch:private-feature-check": "node scripts/relaunch-private-feature-check.mjs",
