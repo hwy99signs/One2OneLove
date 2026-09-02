@@ -56,6 +56,10 @@ jobs:
                 "        throw new Error('File upload requires Supabase Storage implementation');\n        newUrls.push(file_url);",
                 "        throw new Error('File upload requires Supabase Storage implementation');"
               ),
+              (
+                "        \n        setUploadProgress(prev => \n          prev.map(p => p.name === file.name ? { ...p, status: 'completed' } : p)\n        );",
+                ""
+              ),
             ],
           }
 
