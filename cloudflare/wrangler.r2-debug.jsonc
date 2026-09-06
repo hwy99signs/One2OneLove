@@ -1,0 +1,12 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "one2onelove-r2-debug",
+  "main": "../worker/r2-debug.ts",
+  "compatibility_date": "2026-09-05",
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "one2onelove-media"
+    }
+  ]
+}
