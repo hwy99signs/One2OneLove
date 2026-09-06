@@ -1,26 +1,57 @@
 One2OneLove Neon/Cloudflare migration checkpoint — 2026-09-05
 
+INFRASTRUCTURE
 Neon project created: red-feather-80645172
 Neon database: one2onelove
 Neon Auth: enabled (Better Auth)
-Core profile schema: migrated
-Love Notes sent/scheduled schema: migrated
 Cloudflare GitHub deployment access: VERIFIED
 Cloudflare smoke Worker deployment: VERIFIED
 Cloudflare R2 enabled and bucket created: one2onelove-media
 Cloudflare Hyperdrive created: one2onelove-neon
 Hyperdrive binding ID: ef44564dbfca4e1bb13176ee568aaddf
 Cloudflare -> Hyperdrive -> Neon live query: VERIFIED
-Verified Neon tables through Hyperdrive: public.users, public.scheduled_love_notes
+
+DATABASE MIGRATION
+Core profile schema: migrated
+Love Notes sent/scheduled schema: migrated
+Relationship/social core: migrated
+Chat/message core: migrated
+Communities/forums core: migrated
+Extended user profile + billing schema: migrated
+Fun/engagement schema: migrated
+Legacy identity mapping: migrated
+Reusable GitHub Actions Neon migration workflow: VERIFIED
+
+LEGACY ONE2ONELOVE SOURCE
+Source identified inside the shared legacy Supabase project ref: hphhmjcutesqsdnubnnw
+Trend2Content remains on Supabase and its Trend2Content-specific users/tables were excluded from the One2OneLove migration.
+30 confidently identified legacy One2OneLove auth users were created in dedicated Neon Auth.
+30 public One2OneLove user profiles exist in Neon.
+30 legacy Supabase user IDs are mapped to their new Neon Auth IDs.
+Legacy relationship/subscription metadata was preserved where available and legacy "Basic" was normalized to canonical "Basis".
+Legacy passwords were NOT copied. Current managed Neon Auth credential accounts require a safe activation/password-reset path before production cutover.
+
+STORAGE
+Official One2OneLove logo copied from the legacy Supabase Storage object into R2 at:
+brand/one2onelove-logo.png
+Exact source and R2 bytes were SHA-256 compared: VERIFIED IDENTICAL.
+The approved logo was not recreated, recolored, or altered.
+Remaining profile/chat/media storage objects still require inventory/copy before URL replacement.
+
+PRODUCTION SAFETY
 Current production master branch: unchanged
 Production cutover: NOT performed
+Legacy Supabase resources: not deleted or disabled
+Production DNS/domain routing: not changed
 
-Remaining critical dependencies:
-- locate actual One2OneLove source Supabase project to migrate existing users/data/storage
-- migrate remaining Supabase-coupled application services to Worker/Neon/R2
-- replace Supabase Auth usage with Neon Auth
-- migrate/copy existing storage assets and preserve the exact approved One2OneLove logo artwork
+REMAINING CRITICAL WORK
+- build the real Cloudflare Worker API/security boundary on the migration branch
+- proxy/integrate Neon Auth and replace Supabase Auth usage in the React app
+- add safe legacy-user password activation/reset flow
+- replace direct browser Supabase database calls service-by-service with Worker APIs
+- migrate remaining storage assets to R2 and replace URLs only after verification
 - move Stripe/Supabase Edge Function logic to Cloudflare Worker APIs
-- design and migrate realtime chat/presence behavior
+- implement scheduled Love Notes delivery processing (provider credentials still required for actual SMS/email delivery)
+- design/migrate realtime chat and presence behavior to Cloudflare-compatible realtime infrastructure
 - finish all five-language/mobile/end-to-end QA
-- add production domain routing/DNS only after parity and cutover approval
+- identify production domain and add trusted-origin/domain routing only after parity and cutover approval
