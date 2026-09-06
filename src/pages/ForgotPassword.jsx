@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
+import { authApi } from "@/lib/one2oneApi";
 
 const translations = {
   en: {
@@ -135,10 +136,10 @@ export default function ForgotPassword() {
     setIsLoading(true);
     
     try {
-      // In a real implementation, you would call your password reset API
-      // For now, we simulate the API call
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authApi.requestPasswordReset(
+        email,
+        window.location.origin + createPageUrl("SignIn"),
+      );
       
       setEmailSent(true);
       toast.success(t.emailSent);
@@ -155,7 +156,10 @@ export default function ForgotPassword() {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authApi.requestPasswordReset(
+        email,
+        window.location.origin + createPageUrl("SignIn"),
+      );
       toast.success(t.linkResent);
     } catch (err) {
       toast.error(t.errorSending);
