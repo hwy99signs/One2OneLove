@@ -6,7 +6,9 @@ on:
       - migration/neon-cloudflare-one2onelove-20260905
     paths:
       - "worker/smoke.ts"
+      - "worker/hyperdrive-smoke.ts"
       - "cloudflare/wrangler.smoke.jsonc"
+      - "cloudflare/wrangler.hyperdrive-smoke.jsonc"
       - ".github/workflows/cloudflare-migration-smoke.yml"
   workflow_dispatch:
 
@@ -59,3 +61,26 @@ jobs:
       - name: Show final Hyperdrive inventory
         shell: bash
         run: npx --yes wrangler@latest hyperdrive list
+
+      - name: Install PostgreSQL driver for Hyperdrive smoke Worker
+        run: npm install --no-save pg@8.16.3
+
+      - name: Deploy Hyperdrive database smoke Worker
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.hyperdrive-smoke.jsonc
+
+      - name: Verify Cloudflare to Hyperdrive to Neon query
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl --fail --silent --show-error https://one2onelove-hyperdrive-smoke.hwy99signs.workers.dev > /tmp/hyperdrive-response.json; then
+              cat /tmp/hyperdrive-response.json
+              grep -Fq '"ok":true' /tmp/hyperdrive-response.json
+              grep -Fq '"database_name":"one2onelove"' /tmp/hyperdrive-response.json
+              grep -Fq '"users_table_present":true' /tmp/hyperdrive-response.json
+              grep -Fq '"scheduled_love_notes_present":true' /tmp/hyperdrive-response.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Hyperdrive smoke endpoint did not pass validation"
+          exit 1
