@@ -5,11 +5,22 @@ Neon database: one2onelove
 Neon Auth: enabled (Better Auth)
 Core profile schema: migrated
 Love Notes sent/scheduled schema: migrated
-Cloudflare architecture/templates: prepared
+Cloudflare GitHub deployment access: VERIFIED
+Cloudflare smoke Worker deployment: VERIFIED
+Cloudflare R2 enabled and bucket created: one2onelove-media
+Cloudflare Hyperdrive created: one2onelove-neon
+Hyperdrive binding ID: ef44564dbfca4e1bb13176ee568aaddf
+Cloudflare -> Hyperdrive -> Neon live query: VERIFIED
+Verified Neon tables through Hyperdrive: public.users, public.scheduled_love_notes
 Current production master branch: unchanged
 Production cutover: NOT performed
 
 Remaining critical dependencies:
 - locate actual One2OneLove source Supabase project to migrate existing users/data/storage
-- connect/provide access to the One2OneLove Cloudflare account to create Worker/Hyperdrive/R2/DNS resources
-- migrate remaining Supabase-coupled application services and perform end-to-end QA
+- migrate remaining Supabase-coupled application services to Worker/Neon/R2
+- replace Supabase Auth usage with Neon Auth
+- migrate/copy existing storage assets and preserve the exact approved One2OneLove logo artwork
+- move Stripe/Supabase Edge Function logic to Cloudflare Worker APIs
+- design and migrate realtime chat/presence behavior
+- finish all five-language/mobile/end-to-end QA
+- add production domain routing/DNS only after parity and cutover approval
