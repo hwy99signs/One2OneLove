@@ -3,10 +3,16 @@ import baseWorker from './index';
 import { handleSpecialProfileRequest } from './onboarding';
 import { handleMemberOnboarding } from './member-onboarding';
 import { handleProfileMediaRequest } from './profile-media';
+import { handleGoalsRequest } from './goals';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/goals')) {
+      const response = await handleGoalsRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname === '/api/profile/photo' || url.pathname.startsWith('/api/media/profile/')) {
       const response = await handleProfileMediaRequest(request, env, url);
