@@ -56,15 +56,22 @@ jobs:
           cat /tmp/profile.json
           test "$STATUS" = "401"
 
-      - name: Verify new relationship APIs reject anonymous access
+      - name: Verify protected relationship and chat APIs reject anonymous access
         shell: bash
         run: |
           set -euo pipefail
-          for PATHNAME in /api/goals /api/calendar-events /api/journals; do
+          for PATHNAME in /api/goals /api/calendar-events /api/journals /api/chat/conversations /api/chat/starred; do
             STATUS="$(curl --silent --output /tmp/protected.json --write-out '%{http_code}' "$API_URL$PATHNAME")"
             cat /tmp/protected.json
             test "$STATUS" = "401"
           done
+
+      - name: Verify protected chat write rejects anonymous access
+        shell: bash
+        run: |
+          STATUS="$(curl --silent --output /tmp/chat-write.json --write-out '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' "$API_URL/api/chat/conversations")"
+          cat /tmp/chat-write.json
+          test "$STATUS" = "401"
 
       - name: Verify protected specialist onboarding rejects anonymous access
         shell: bash
