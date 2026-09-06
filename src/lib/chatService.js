@@ -23,6 +23,19 @@ function messageFingerprint(messages) {
 function conversationFingerprint(conversations) {
   return JSON.stringify((conversations || []).map(c => [c.id, c.updatedAt, c.lastMessageTime, c.unreadCount, c.isPinned, c.isMuted, c.isArchived]));
 }
+function legacyEventShape(message) {
+  if (!message) return null;
+  return {
+    ...message,
+    conversation_id: message.conversationId,
+    sender_id: message.senderId,
+    receiver_id: message.receiverId,
+    delivered_at: message.deliveredAt,
+    read_at: message.readAt,
+    created_at: message.createdAt,
+    updated_at: message.updatedAt,
+  };
+}
 
 export const getMyConversations = async () => {
   const data = await apiRequest('/api/chat/conversations');
@@ -142,7 +155,7 @@ export const subscribeToMessages = (conversationId, callback) => {
       const next = messageFingerprint(messages);
       if (!initial && fingerprint !== null && next !== fingerprint && typeof callback === 'function') {
         const newest = messages[messages.length - 1] || null;
-        callback(newest || { conversation_id: conversationId, type: 'refresh' });
+        callback(legacyEventShape(newest) || { conversation_id: conversationId, type: 'refresh' });
       }
       fingerprint = next;
     } catch (error) {
