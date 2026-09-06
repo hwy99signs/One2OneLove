@@ -92,14 +92,14 @@ function patchForgotPassword() {
   text = replaceOrFail(
     text,
     /      \/\/ In a real implementation, you would call your password reset API\n      \/\/ For now, we simulate the API call\n      \n      await new Promise\(resolve => setTimeout\(resolve, 1500\)\);/,
-    `      await authApi.requestPasswordReset(\n        email,\n        \\`${window.location.origin}${createPageUrl("SignIn")}\\`,\n      );`,
+    `      await authApi.requestPasswordReset(\n        email,\n        window.location.origin + createPageUrl("SignIn"),\n      );`,
     'ForgotPassword submit',
   );
 
   text = replaceOrFail(
     text,
     '      await new Promise(resolve => setTimeout(resolve, 1500));\n      toast.success(t.linkResent);',
-    `      await authApi.requestPasswordReset(\n        email,\n        \\`${window.location.origin}${createPageUrl("SignIn")}\\`,\n      );\n      toast.success(t.linkResent);`,
+    `      await authApi.requestPasswordReset(\n        email,\n        window.location.origin + createPageUrl("SignIn"),\n      );\n      toast.success(t.linkResent);`,
     'ForgotPassword resend',
   );
 
