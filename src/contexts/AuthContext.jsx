@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { authApi, onboardingApi, profileApi, specialistProfileApi } from '@/lib/one2oneApi';
+import { cleanupPresence, initializePresence } from '@/lib/presenceService';
 
 const AuthContext = createContext(null);
 
@@ -84,6 +85,14 @@ export function AuthProvider({ children }) {
     };
   }, [refreshUserProfile]);
 
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    void initializePresence();
+    return () => {
+      void cleanupPresence();
+    };
+  }, [user?.id]);
+
   const login = async (email, password) => {
     setIsLoading(true);
     try {
@@ -105,6 +114,8 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
+      // Presence must be marked offline before the auth cookie is invalidated.
+      try { await cleanupPresence(); } catch { /* best effort */ }
       await authApi.signOut();
     } catch (error) {
       console.warn('Remote sign out failed; clearing local user state.', error);
