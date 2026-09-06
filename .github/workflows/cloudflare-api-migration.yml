@@ -1,0 +1,73 @@
+name: One2OneLove Cloudflare API Migration
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - "worker/index.ts"
+      - "worker/package.json"
+      - "cloudflare/wrangler.api-migration.jsonc"
+      - ".github/workflows/cloudflare-api-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      API_URL: https://one2onelove-api-migration.hwy99signs.workers.dev
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+
+      - name: Verify Cloudflare secrets
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is missing" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is missing" && exit 1)
+
+      - name: Install Worker dependencies
+        shell: bash
+        run: npm --prefix worker install --no-audit --no-fund
+
+      - name: Deploy migration API Worker
+        shell: bash
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.api-migration.jsonc
+
+      - name: Verify database health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            BODY="$(curl --fail --silent --show-error "$API_URL/api/health")" && break
+            sleep 2
+          done
+          echo "$BODY"
+          node -e 'const d=JSON.parse(process.argv[1]); if(!d.ok || d.database!=="one2onelove" || !d.users_ready || !d.love_notes_ready) process.exit(1)' "$BODY"
+
+      - name: Verify protected profile endpoint rejects anonymous access
+        shell: bash
+        run: |
+          STATUS="$(curl --silent --output /tmp/profile.json --write-out '%{http_code}' "$API_URL/api/profile")"
+          cat /tmp/profile.json
+          test "$STATUS" = "401"
+
+      - name: Verify exact R2 logo is served
+        shell: bash
+        run: |
+          curl --fail --silent --show-error "$API_URL/api/assets/brand/logo" --output /tmp/logo.png
+          test -s /tmp/logo.png
+          file /tmp/logo.png
+
+      - name: Verify Neon Auth proxy responds
+        shell: bash
+        run: |
+          STATUS="$(curl --silent --output /tmp/session.json --write-out '%{http_code}' "$API_URL/api/auth/get-session")"
+          cat /tmp/session.json
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
