@@ -5,7 +5,9 @@
   "compatibility_date": "2026-09-05",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "NEON_AUTH_BASE_URL": "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth"
+    "NEON_AUTH_BASE_URL": "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth",
+    "STRIPE_PRICE_PREMIERE": "price_1UCYBNCoKDheG1ASmUs8STHT",
+    "STRIPE_PRICE_EXCLUSIVE": "price_1UCYBUCoKDheG1ASN0Y58Ye5"
   },
   "hyperdrive": [
     {
