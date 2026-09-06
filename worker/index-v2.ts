@@ -8,10 +8,16 @@ import { handleCalendarRequest } from './calendar';
 import { handleJournalsRequest } from './journals';
 import { handleBuddiesRequest } from './buddies';
 import { handleMilestonesRequest } from './milestones';
+import { handlePresenceRequest } from './presence';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/presence')) {
+      const response = await handlePresenceRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/milestones') || url.pathname.startsWith('/api/media/milestones/')) {
       const response = await handleMilestonesRequest(request, env, url);
