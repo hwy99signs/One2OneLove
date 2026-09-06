@@ -1,0 +1,81 @@
+name: One2OneLove Cloudflare Full-Stack Preview
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "cloudflare/wrangler.preview-migration.jsonc"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/cloudflare-preview-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-preview-migration.hwy99signs.workers.dev
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+
+      - name: Deploy full-stack preview
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.preview-migration.jsonc
+
+      - name: Verify SPA shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            STATUS="$(curl --silent --output /tmp/home.html --write-out '%{http_code}' "$PREVIEW_URL/")" && [ "$STATUS" = "200" ] && break
+            sleep 2
+          done
+          test "$STATUS" = "200"
+          test -s /tmp/home.html
+          grep -qi '<html' /tmp/home.html
+
+      - name: Verify SPA fallback route
+        shell: bash
+        run: |
+          STATUS="$(curl --silent --output /tmp/fallback.html --write-out '%{http_code}' "$PREVIEW_URL/relationship-goals")"
+          test "$STATUS" = "200"
+          grep -qi '<html' /tmp/fallback.html
+
+      - name: Verify API health
+        shell: bash
+        run: |
+          BODY="$(curl --fail --silent --show-error "$PREVIEW_URL/api/health")"
+          echo "$BODY"
+          node -e 'const d=JSON.parse(process.argv[1]); if(!d.ok || d.database!=="one2onelove") process.exit(1)' "$BODY"
+
+      - name: Verify Neon Auth proxy
+        shell: bash
+        run: |
+          STATUS="$(curl --silent --output /tmp/session.json --write-out '%{http_code}' "$PREVIEW_URL/api/auth/get-session")"
+          cat /tmp/session.json
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
+
+      - name: Verify official logo from R2
+        shell: bash
+        run: |
+          curl --fail --silent --show-error "$PREVIEW_URL/api/assets/brand/logo" --output /tmp/logo.png
+          test -s /tmp/logo.png
+          file /tmp/logo.png
