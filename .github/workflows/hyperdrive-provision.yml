@@ -1,0 +1,52 @@
+name: One2OneLove Hyperdrive Provision
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - ".github/workflows/hyperdrive-provision.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provision-hyperdrive:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets are present
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is missing" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is missing" && exit 1)
+          test -n "$NEON_DATABASE_URL" || (echo "NEON_DATABASE_URL is missing" && exit 1)
+
+      - name: Check for existing Hyperdrive
+        id: check
+        shell: bash
+        run: |
+          npx --yes wrangler@latest hyperdrive list > /tmp/hyperdrives.txt
+          cat /tmp/hyperdrives.txt
+          if grep -Fq "one2onelove-neon" /tmp/hyperdrives.txt; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create One2OneLove Hyperdrive
+        if: steps.check.outputs.exists != 'true'
+        shell: bash
+        run: |
+          npx --yes wrangler@latest hyperdrive create one2onelove-neon --connection-string="$NEON_DATABASE_URL" --caching-disabled
+
+      - name: Show Hyperdrive inventory
+        shell: bash
+        run: npx --yes wrangler@latest hyperdrive list
