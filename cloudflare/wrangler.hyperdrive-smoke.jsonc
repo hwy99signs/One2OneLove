@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "one2onelove-hyperdrive-smoke",
+  "compatibility_date": "2026-09-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "../worker/hyperdrive-smoke.ts",
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "ef44564dbfca4e1bb13176ee568aaddf"
+    }
+  ]
+}
