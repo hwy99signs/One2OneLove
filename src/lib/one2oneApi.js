@@ -1,8 +1,6 @@
-const DEFAULT_API_BASE = 'https://one2onelove-api-migration.hwy99signs.workers.dev';
+const CONFIGURED_API_BASE = import.meta.env.VITE_O2OL_API_URL || '';
 
-export const ONE2ONE_API_BASE = (
-  import.meta.env.VITE_O2OL_API_URL || DEFAULT_API_BASE
-).replace(/\/$/, '');
+export const ONE2ONE_API_BASE = CONFIGURED_API_BASE.replace(/\/$/, '');
 
 async function parseResponse(response) {
   const type = response.headers.get('content-type') || '';
