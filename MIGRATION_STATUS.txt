@@ -40,10 +40,18 @@ Authenticated therapist/influencer/professional onboarding and profile APIs: DEP
 Regular profile GET/PATCH: DEPLOYED
 R2 profile-avatar upload/delete/public-serving API: DEPLOYED
 Love Notes sent/scheduled/cancel APIs: DEPLOYED
-Relationship Goals CRUD/action-step/progress/statistics API: DEPLOYED ON MIGRATION BRANCH
-Calendar event CRUD/filter API: DEPLOYED ON MIGRATION BRANCH
-Shared journal CRUD/filter/statistics API: DEPLOYED ON MIGRATION BRANCH
-Anonymous access checks for protected APIs are enforced through the Worker.
+Relationship Goals CRUD/action-step/progress/statistics API: DEPLOYED
+Calendar event CRUD/filter API: DEPLOYED
+Shared journal CRUD/filter/statistics API: DEPLOYED
+Buddy/friend API: DEPLOYED
+Relationship milestone API and R2 milestone-photo handling: DEPLOYED
+Presence API: DEPLOYED
+Success Stories API: DEPLOYED
+Communities/posts/comments/likes/shares API: DEPLOYED
+Chat conversations/messages/read receipts/settings API: DEPLOYED AND VERIFIED
+Chat reactions/stars/pins/forwarding/message-info API: DEPLOYED AND VERIFIED
+Authenticated chat file upload/private serving through R2: DEPLOYED AND VERIFIED
+Anonymous access checks for protected chat and relationship APIs are enforced through the Worker and VERIFIED by GitHub Actions.
 
 FRONTEND CONVERSION COMPLETED
 AuthContext converted from Supabase Auth to Neon Auth through the Worker.
@@ -56,6 +64,10 @@ Forgot Password now calls the Neon Auth reset endpoint rather than a simulated d
 Relationship goals service moved away from direct browser Supabase calls.
 Calendar service moved away from direct browser Supabase calls.
 Shared journal service moved away from direct browser Supabase calls.
+Buddy/friend, milestones, presence, success stories and communities moved away from direct browser Supabase calls.
+Core chat and chat feature services moved away from direct browser Supabase calls.
+Chat currently uses Worker-backed compatibility polling (messages ~3 seconds, conversations ~5 seconds). This is NOT the final true-realtime architecture.
+Legacy Supabase realtime is disabled safely when Supabase is intentionally not configured in the migration preview.
 Frontend builds and full-stack preview deployment are continuously checked by GitHub Actions.
 
 STORAGE
@@ -64,6 +76,8 @@ brand/one2onelove-logo.png
 Exact source and R2 bytes were SHA-256 compared: VERIFIED IDENTICAL.
 The approved logo was not recreated, recolored, or altered.
 New profile-avatar writes now target R2.
+New milestone photos now target R2.
+New chat file/media writes now target private R2 objects served only through authenticated Worker endpoints.
 Remaining legacy profile/chat/milestone/media objects still require inventory/copy before old URLs can be retired.
 
 QA / PREVIEW
@@ -73,6 +87,10 @@ Worker API health through Hyperdrive: VERIFIED
 Neon Auth proxy availability: VERIFIED
 Exact official R2 logo serving: VERIFIED
 Protected unauthenticated profile/onboarding endpoints: VERIFIED
+Protected unauthenticated chat read/write endpoints: VERIFIED
+Chat service migration preview build/deploy: VERIFIED
+Chat feature migration preview build/deploy: VERIFIED
+Supabase-disabled migration preview build/deploy: VERIFIED
 A command-line authenticated signup smoke test initially failed because Better Auth correctly required an Origin header; browser same-origin requests supply Origin automatically. The failed test created no temporary user. Full signed-in browser QA is still required before cutover.
 
 PRODUCTION SAFETY
@@ -82,11 +100,11 @@ Legacy Supabase resources: not deleted or disabled
 Production DNS/domain routing: not changed
 
 REMAINING CRITICAL WORK
-- continue replacing direct browser Supabase calls for milestones, buddies/friends, success stories, communities and other remaining features
+- migrate Stripe/subscription logic from direct Supabase/Edge Functions to Cloudflare Worker APIs and normalize legacy Basic to canonical Basis
 - migrate remaining legacy storage/media assets to R2
-- move Stripe/Supabase Edge Function logic to Cloudflare Worker APIs
 - implement scheduled Love Notes delivery processing only after an approved SMS/email provider is configured
-- design/migrate realtime chat and presence behavior to Cloudflare-compatible realtime infrastructure
+- replace temporary chat/presence polling with a true Cloudflare-compatible realtime transport
+- remove remaining legacy Supabase compatibility code after feature parity is proven
 - complete legacy-user password activation/reset approach before production cutover
 - finish signed-in, mobile, five-language and end-to-end QA
 - obtain owner approval before production domain/DNS cutover
