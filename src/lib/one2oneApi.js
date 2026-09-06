@@ -82,6 +82,26 @@ export const profileApi = {
   },
 };
 
+export const profileMediaApi = {
+  async upload(file) {
+    const response = await fetch(`${ONE2ONE_API_BASE}/api/profile/photo`, {
+      method: 'PUT',
+      headers: { 'content-type': file.type },
+      body: file,
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    const data = await parseResponse(response);
+    return data?.avatar_url || null;
+  },
+  async remove() {
+    return apiRequest('/api/profile/photo', { method: 'DELETE' });
+  },
+  publicUrl(userId) {
+    return `${ONE2ONE_API_BASE}/api/media/profile/${userId}`;
+  },
+};
+
 export const onboardingApi = {
   async saveMember(payload) {
     const data = await apiRequest('/api/onboarding/member', { method: 'POST', body: payload });
