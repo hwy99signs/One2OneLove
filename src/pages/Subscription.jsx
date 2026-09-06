@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Crown, Sparkles, TrendingUp, CheckCircle, ArrowRight, CreditCard, Calendar } from 'lucide-react';
+import { Crown, Sparkles, CheckCircle, ArrowRight, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import TierCard from '@/components/subscriptions/TierCard';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 const tiers = [
   {
-    name: 'Basic',
+    name: 'Basis',
     tagline: 'Start Your Journey',
     price: 0,
     period: null,
@@ -38,7 +38,7 @@ const tiers = [
     icon: '💖',
     gradient: 'from-purple-400 to-pink-500',
     features: [
-      'Everything in Basic, plus:',
+      'Everything in Basis, plus:',
       'Access to 1000+ Love Notes Library',
       'AI Relationship Coach (50 questions/month)',
       'Unlimited Date Ideas',
@@ -50,7 +50,7 @@ const tiers = [
       'Early Access to New Features',
     ],
     popular: true,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_premiere', // Set in .env or Stripe Dashboard
+    priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_premiere',
   },
   {
     name: 'Exclusive',
@@ -73,7 +73,7 @@ const tiers = [
       'Lifetime Access to Premium Content',
     ],
     popular: false,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_exclusive', // Set in .env or Stripe Dashboard
+    priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_exclusive',
   },
 ];
 
@@ -103,15 +103,16 @@ export default function Subscription() {
 
     if (user) {
       loadSubscriptionData();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
 
-  const currentPlan = user?.subscription_plan || 'Basic';
+  const currentPlan = currentSubscription?.subscription_plan || user?.subscription_plan || 'Basis';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Crown className="w-8 h-8 text-purple-600" />
@@ -125,8 +126,7 @@ export default function Subscription() {
           </p>
         </div>
 
-        {/* Current Subscription Info */}
-        {currentSubscription && currentSubscription.subscription_status === 'active' && currentPlan !== 'Basic' && (
+        {currentSubscription && currentSubscription.subscription_status === 'active' && currentPlan !== 'Basis' && (
           <Card className="mb-8 border-2 border-purple-200 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -164,7 +164,6 @@ export default function Subscription() {
           </Card>
         )}
 
-        {/* Subscription Tiers */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {tiers.map((tier, index) => (
             <TierCard
@@ -177,7 +176,6 @@ export default function Subscription() {
           ))}
         </div>
 
-        {/* Payment History */}
         {paymentHistory && paymentHistory.length > 0 && (
           <Card className="border-2 border-gray-200">
             <CardHeader>
@@ -208,7 +206,7 @@ export default function Subscription() {
                           {payment.subscription_plan}
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-900">
-                          ${payment.amount.toFixed(2)} {payment.currency.toUpperCase()}
+                          ${Number(payment.amount || 0).toFixed(2)} {String(payment.currency || 'usd').toUpperCase()}
                         </td>
                         <td className="py-3 px-4">
                           <span
@@ -233,11 +231,8 @@ export default function Subscription() {
           </Card>
         )}
 
-        {/* FAQ or Additional Info */}
         <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            Have questions about our plans?
-          </p>
+          <p className="text-gray-600 mb-4">Have questions about our plans?</p>
           <Button variant="outline" size="lg">
             Contact Support
             <ArrowRight className="w-4 h-4 ml-2" />
@@ -247,4 +242,3 @@ export default function Subscription() {
     </div>
   );
 }
-
