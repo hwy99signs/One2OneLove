@@ -82,6 +82,13 @@ export const profileApi = {
   },
 };
 
+export const onboardingApi = {
+  async saveMember(payload) {
+    const data = await apiRequest('/api/onboarding/member', { method: 'POST', body: payload });
+    return data?.profile || null;
+  },
+};
+
 export const specialistProfileApi = {
   async get(type) {
     const data = await apiRequest(`/api/profiles/${type}`);
