@@ -6,10 +6,16 @@ import { handleProfileMediaRequest } from './profile-media';
 import { handleGoalsRequest } from './goals';
 import { handleCalendarRequest } from './calendar';
 import { handleJournalsRequest } from './journals';
+import { handleBuddiesRequest } from './buddies';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/buddies')) {
+      const response = await handleBuddiesRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/journals')) {
       const response = await handleJournalsRequest(request, env, url);
