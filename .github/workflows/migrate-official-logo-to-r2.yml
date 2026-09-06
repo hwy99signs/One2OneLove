@@ -1,0 +1,54 @@
+name: One2OneLove Official Logo R2 Migration
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - ".github/workflows/migrate-official-logo-to-r2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-logo:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+
+      - name: Download exact existing One2OneLove logo bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            "https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" \
+            --output /tmp/one2onelove-logo.png
+          test -s /tmp/one2onelove-logo.png
+          sha256sum /tmp/one2onelove-logo.png | tee /tmp/source.sha256
+
+      - name: Upload exact logo to dedicated One2OneLove R2 bucket
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest r2 object put \
+            one2onelove-media/brand/one2onelove-logo.png \
+            --file=/tmp/one2onelove-logo.png \
+            --content-type=image/png \
+            --remote
+
+      - name: Verify byte-for-byte copy from R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest r2 object get \
+            one2onelove-media/brand/one2onelove-logo.png \
+            --file=/tmp/one2onelove-logo-r2.png \
+            --remote
+          sha256sum /tmp/one2onelove-logo-r2.png | tee /tmp/r2.sha256
+          test "$(cut -d' ' -f1 /tmp/source.sha256)" = "$(cut -d' ' -f1 /tmp/r2.sha256)"
+          echo "Official One2OneLove logo copied byte-for-byte to R2."
