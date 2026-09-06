@@ -1,0 +1,39 @@
+name: One2OneLove Neon Migrations
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - "database/migrations/**"
+      - ".github/workflows/neon-migrations.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+
+      - name: Verify Neon database secret
+        shell: bash
+        run: test -n "$NEON_DATABASE_URL" || (echo "NEON_DATABASE_URL is missing" && exit 1)
+
+      - name: Apply Neon migrations in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          for migration in database/migrations/*.sql; do
+            echo "Applying ${migration}"
+            psql "$NEON_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
+          done
+
+      - name: Verify migration ledger
+        shell: bash
+        run: psql "$NEON_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT migration_key, applied_at FROM public.app_migrations ORDER BY applied_at, migration_key;"
