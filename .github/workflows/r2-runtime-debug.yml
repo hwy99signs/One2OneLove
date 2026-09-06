@@ -34,3 +34,6 @@ jobs:
           done
           echo "$BODY"
           node -e 'const d=JSON.parse(process.argv[1]); if(!d.keys.includes("brand/one2onelove-logo.png")) process.exit(1)' "$BODY"
+      - name: Delete temporary R2 debug Worker
+        if: always()
+        run: npx --yes wrangler@latest delete one2onelove-r2-debug --force
