@@ -1,0 +1,44 @@
+name: One2OneLove Frontend Neon Migration
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - "scripts/migrate-love-notes-to-worker.mjs"
+      - ".github/workflows/frontend-neon-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/neon-cloudflare-one2onelove-20260905
+
+      - name: Apply focused frontend migration
+        run: node scripts/migrate-love-notes-to-worker.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build migrated frontend
+        run: npm run build
+
+      - name: Commit migrated frontend files
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No frontend changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/LoveNotes.jsx src/components/lovenotes/ScheduledNotesManager.jsx src/pages/ForgotPassword.jsx
+          git commit -m "migration: route Love Notes and password reset through Worker API"
+          git push origin HEAD:migration/neon-cloudflare-one2onelove-20260905
