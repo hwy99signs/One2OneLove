@@ -5,11 +5,7 @@ on:
     branches:
       - migration/neon-cloudflare-one2onelove-20260905
     paths:
-      - "worker/index.ts"
-      - "worker/index-v2.ts"
-      - "worker/onboarding.ts"
-      - "worker/member-onboarding.ts"
-      - "worker/package.json"
+      - "worker/**"
       - "cloudflare/wrangler.api-migration.jsonc"
       - ".github/workflows/cloudflare-api-migration.yml"
   workflow_dispatch:
@@ -59,6 +55,16 @@ jobs:
           STATUS="$(curl --silent --output /tmp/profile.json --write-out '%{http_code}' "$API_URL/api/profile")"
           cat /tmp/profile.json
           test "$STATUS" = "401"
+
+      - name: Verify new relationship APIs reject anonymous access
+        shell: bash
+        run: |
+          set -euo pipefail
+          for PATHNAME in /api/goals /api/calendar-events /api/journals; do
+            STATUS="$(curl --silent --output /tmp/protected.json --write-out '%{http_code}' "$API_URL$PATHNAME")"
+            cat /tmp/protected.json
+            test "$STATUS" = "401"
+          done
 
       - name: Verify protected specialist onboarding rejects anonymous access
         shell: bash
