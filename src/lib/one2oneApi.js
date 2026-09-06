@@ -49,25 +49,16 @@ export const authApi = {
     return apiRequest('/api/auth/get-session', { method: 'GET' });
   },
   async signIn(email, password) {
-    return apiRequest('/api/auth/sign-in/email', {
-      method: 'POST',
-      body: { email, password },
-    });
+    return apiRequest('/api/auth/sign-in/email', { method: 'POST', body: { email, password } });
   },
   async signUp(email, password, name) {
-    return apiRequest('/api/auth/sign-up/email', {
-      method: 'POST',
-      body: { email, password, name },
-    });
+    return apiRequest('/api/auth/sign-up/email', { method: 'POST', body: { email, password, name } });
   },
   async signOut() {
     return apiRequest('/api/auth/sign-out', { method: 'POST', body: {} });
   },
   async requestPasswordReset(email, redirectTo) {
-    return apiRequest('/api/auth/request-password-reset', {
-      method: 'POST',
-      body: { email, redirectTo },
-    });
+    return apiRequest('/api/auth/request-password-reset', { method: 'POST', body: { email, redirectTo } });
   },
 };
 
@@ -144,6 +135,55 @@ export const loveNotesApi = {
   async cancelScheduled(id) {
     const data = await apiRequest(`/api/love-notes/scheduled/${id}/cancel`, { method: 'PATCH', body: {} });
     return data?.note || null;
+  },
+};
+
+export const goalsApi = {
+  async list(orderBy = '-created_at') {
+    const data = await apiRequest(`/api/goals?order=${encodeURIComponent(orderBy)}`);
+    return data?.goals || [];
+  },
+  async get(goalId) {
+    const data = await apiRequest(`/api/goals/${goalId}`);
+    return data?.goal || null;
+  },
+  async create(payload) {
+    const data = await apiRequest('/api/goals', { method: 'POST', body: payload });
+    return data?.goal || null;
+  },
+  async update(goalId, payload) {
+    const data = await apiRequest(`/api/goals/${goalId}`, { method: 'PATCH', body: payload });
+    return data?.goal || null;
+  },
+  async remove(goalId) {
+    return apiRequest(`/api/goals/${goalId}`, { method: 'DELETE' });
+  },
+  async setProgress(goalId, progress) {
+    const data = await apiRequest(`/api/goals/${goalId}/progress`, { method: 'PATCH', body: { progress } });
+    return data?.goal || null;
+  },
+  async complete(goalId) {
+    const data = await apiRequest(`/api/goals/${goalId}/complete`, { method: 'POST', body: {} });
+    return data?.goal || null;
+  },
+  async listSteps(goalId) {
+    const data = await apiRequest(`/api/goals/${goalId}/steps`);
+    return data?.steps || [];
+  },
+  async addStep(goalId, stepText) {
+    const data = await apiRequest(`/api/goals/${goalId}/steps`, { method: 'POST', body: { step_text: stepText } });
+    return data?.step || null;
+  },
+  async toggleStep(stepId, isCompleted) {
+    const data = await apiRequest(`/api/goals/steps/${stepId}`, { method: 'PATCH', body: { is_completed: isCompleted } });
+    return data?.step || null;
+  },
+  async removeStep(stepId) {
+    return apiRequest(`/api/goals/steps/${stepId}`, { method: 'DELETE' });
+  },
+  async stats() {
+    const data = await apiRequest('/api/goals/stats');
+    return data?.stats || { total: 0, completed: 0, in_progress: 0, cancelled: 0, avgProgress: 0 };
   },
 };
 
