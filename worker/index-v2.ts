@@ -4,10 +4,16 @@ import { handleSpecialProfileRequest } from './onboarding';
 import { handleMemberOnboarding } from './member-onboarding';
 import { handleProfileMediaRequest } from './profile-media';
 import { handleGoalsRequest } from './goals';
+import { handleCalendarRequest } from './calendar';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/calendar-events')) {
+      const response = await handleCalendarRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/goals')) {
       const response = await handleGoalsRequest(request, env, url);
