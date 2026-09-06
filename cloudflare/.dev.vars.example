@@ -5,8 +5,12 @@ NEON_AUTH_BASE_URL=https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.ne
 NEON_AUTH_JWKS_URL=https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth/.well-known/jwks.json
 
 # Add real provider credentials only with `wrangler secret put` or Cloudflare secret management.
+# Stripe server-only billing configuration. Never expose these as VITE_* variables.
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_PREMIERE=
+STRIPE_PRICE_EXCLUSIVE=
+
 SMS_PROVIDER_ACCOUNT_ID=
 SMS_PROVIDER_AUTH_TOKEN=
 SMS_PROVIDER_FROM_NUMBER=
