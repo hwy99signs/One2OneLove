@@ -31,3 +31,14 @@ jobs:
 
       - name: Deploy isolated smoke Worker
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.smoke.jsonc
+
+      - name: Ensure One2OneLove R2 media bucket exists
+        shell: bash
+        run: |
+          npx --yes wrangler@latest r2 bucket list > /tmp/r2-buckets.txt
+          cat /tmp/r2-buckets.txt
+          if grep -Fq "one2onelove-media" /tmp/r2-buckets.txt; then
+            echo "one2onelove-media already exists"
+          else
+            npx --yes wrangler@latest r2 bucket create one2onelove-media
+          fi
