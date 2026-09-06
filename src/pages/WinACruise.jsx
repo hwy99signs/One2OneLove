@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { getContestLeaderboard, getContestWinner, getMyContestEntry, joinContest } from "@/lib/engagementService";
 import { useQuery } from "@tanstack/react-query";
 
 const translations = {
@@ -178,17 +178,7 @@ export default function WinACruise() {
   const { data: monthlyLeaderboard = [] } = useQuery({
     queryKey: ['monthlyLeaderboard', currentPeriod],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contest_participants')
-        .select('*')
-        .eq('contest_type', 'monthly_love_notes')
-        .eq('period', currentPeriod);
-      if (error) {
-        console.error('Error fetching participants:', error);
-        return [];
-      }
-      const participants = data || [];
-      return participants.sort((a, b) => b.score - a.score).slice(0, 5);
+      return await getContestLeaderboard('monthly_love_notes', currentPeriod, 5);
     },
     initialData: [],
   });
@@ -197,17 +187,7 @@ export default function WinACruise() {
   const { data: yearlyLeaderboard = [] } = useQuery({
     queryKey: ['yearlyLeaderboard', currentYear],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contest_participants')
-        .select('*')
-        .eq('contest_type', 'yearly_engagement')
-        .eq('period', currentYear);
-      if (error) {
-        console.error('Error fetching participants:', error);
-        return [];
-      }
-      const participants = data || [];
-      return participants.sort((a, b) => b.score - a.score).slice(0, 5);
+      return await getContestLeaderboard('yearly_engagement', currentYear, 5);
     },
     initialData: [],
   });
@@ -216,17 +196,7 @@ export default function WinACruise() {
   const { data: lastMonthWinner } = useQuery({
     queryKey: ['lastMonthWinner', lastMonthPeriod],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contest_winners')
-        .select('*')
-        .eq('contest_type', 'monthly_love_notes')
-        .eq('period', lastMonthPeriod);
-      if (error) {
-        console.error('Error fetching winners:', error);
-        return null;
-      }
-      const winners = data || [];
-      return winners[0] || null;
+      return await getContestWinner('monthly_love_notes', lastMonthPeriod);
     },
   });
 
@@ -234,28 +204,28 @@ export default function WinACruise() {
   const { data: userMonthlyRank } = useQuery({
     queryKey: ['userMonthlyRank', currentUser?.email, currentPeriod],
     queryFn: async () => {
-      if (!currentUser) return null;
       if (!currentUser?.email) return null;
-      const { data, error } = await supabase
-        .from('contest_participants')
-        .select('*')
-        .eq('contest_type', 'monthly_love_notes')
-        .eq('period', currentPeriod)
-        .eq('user_email', currentUser.email);
-      if (error) {
-        console.error('Error fetching user rank:', error);
-        return null;
-      }
-      const participants = data || [];
-      return participants[0] || null;
+      return await getMyContestEntry('monthly_love_notes', currentPeriod);
     },
     enabled: !!currentUser,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.success("You're now competing for prizes! 🎉");
-    setEmail("");
+    if (!currentUser) {
+      toast.error("Please sign in to join the competition.");
+      return;
+    }
+    try {
+      await Promise.all([
+        joinContest('monthly_love_notes', currentPeriod),
+        joinContest('yearly_engagement', currentYear),
+      ]);
+      toast.success("You're now competing for prizes! 🎉");
+      setEmail("");
+    } catch (error) {
+      toast.error(error?.message || "Unable to join the competition right now.");
+    }
   };
 
   const monthlyLeader = monthlyLeaderboard[0];

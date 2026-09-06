@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { getMemories, createMemory, updateMemory, deleteMemory } from "@/lib/engagementService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, MapPin, Filter, Grid, List, ArrowLeft } from "lucide-react";
@@ -126,16 +126,7 @@ export default function MemoryLane() {
     queryKey: ['memories', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('memory_date', { ascending: false });
-      if (error) {
-        console.error('Error fetching memories:', error);
-        return [];
-      }
-      return data || [];
+      return await getMemories();
     },
     enabled: !!user?.id,
     initialData: [],
@@ -144,13 +135,7 @@ export default function MemoryLane() {
   const createMemoryMutation = useMutation({
     mutationFn: async (memoryData) => {
       if (!user?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('memories')
-        .insert({ ...memoryData, user_id: user.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await createMemory(memoryData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
@@ -161,14 +146,7 @@ export default function MemoryLane() {
 
   const updateMemoryMutation = useMutation({
     mutationFn: async ({ id, memoryData }) => {
-      const { data: result, error } = await supabase
-        .from('memories')
-        .update(memoryData)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await updateMemory(id, memoryData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
@@ -179,11 +157,7 @@ export default function MemoryLane() {
 
   const deleteMemoryMutation = useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('memories')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      await deleteMemory(id);
       return id;
     },
     onSuccess: () => {

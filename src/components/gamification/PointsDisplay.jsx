@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { getPoints } from "@/lib/engagementService";
 import { Zap, Trophy, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -14,15 +14,7 @@ export default function PointsDisplay() {
     queryKey: ['userPoints', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('gamification_points')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
-        console.error('Error fetching points:', error);
-        return [];
-      }
-      return data || [];
+      return await getPoints();
     },
     enabled: !!currentUser?.id,
     initialData: [],

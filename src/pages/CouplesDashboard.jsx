@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { getMemories } from "@/lib/engagementService";
 import * as journalService from "@/lib/journalService";
 import * as goalsService from "@/lib/goalsService";
 import * as milestonesService from "@/lib/milestonesService";
@@ -143,16 +143,7 @@ export default function CouplesDashboard() {
     queryKey: ['memories'],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('memory_date', { ascending: false });
-      if (error) {
-        console.error('Error fetching memories:', error);
-        return [];
-      }
-      return data || [];
+      return await getMemories();
     },
     enabled: !!user?.id,
     initialData: []

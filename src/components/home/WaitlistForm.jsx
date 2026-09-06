@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { joinWaitlist } from "@/lib/engagementService";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,7 @@ export default function WaitlistForm() {
 
   const signupMutation = useMutation({
     mutationFn: async (data) => {
-      const { data: result, error } = await supabase
-        .from('waitlist')
-        .insert(data)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await joinWaitlist(data.email, data.country);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['waitlist-signups'] });
