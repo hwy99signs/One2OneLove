@@ -23,8 +23,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Legacy Supabase imports/usages under src/ ==="
-          grep -RInE "(@supabase/supabase-js|[/']supabase['\"]|\bsupabase\.(auth|from|rpc|storage|channel|functions|removeChannel))" src \
+          echo "=== All Supabase references under src/ except the compatibility client ==="
+          grep -RIn "supabase" src \
             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' \
             --exclude='supabase.js' || true
 
