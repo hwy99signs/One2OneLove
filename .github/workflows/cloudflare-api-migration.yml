@@ -8,6 +8,7 @@ on:
       - "worker/index.ts"
       - "worker/index-v2.ts"
       - "worker/onboarding.ts"
+      - "worker/member-onboarding.ts"
       - "worker/package.json"
       - "cloudflare/wrangler.api-migration.jsonc"
       - ".github/workflows/cloudflare-api-migration.yml"
@@ -59,11 +60,18 @@ jobs:
           cat /tmp/profile.json
           test "$STATUS" = "401"
 
-      - name: Verify protected onboarding endpoint rejects anonymous access
+      - name: Verify protected specialist onboarding rejects anonymous access
         shell: bash
         run: |
-          STATUS="$(curl --silent --output /tmp/onboarding.json --write-out '%{http_code}' "$API_URL/api/onboarding/therapist")"
-          cat /tmp/onboarding.json
+          STATUS="$(curl --silent --output /tmp/onboarding-specialist.json --write-out '%{http_code}' "$API_URL/api/onboarding/therapist")"
+          cat /tmp/onboarding-specialist.json
+          test "$STATUS" = "401"
+
+      - name: Verify protected member onboarding rejects anonymous access
+        shell: bash
+        run: |
+          STATUS="$(curl --silent --output /tmp/onboarding-member.json --write-out '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' "$API_URL/api/onboarding/member")"
+          cat /tmp/onboarding-member.json
           test "$STATUS" = "401"
 
       - name: Verify exact R2 logo is served
