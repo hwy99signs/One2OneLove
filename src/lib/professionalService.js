@@ -1,115 +1,31 @@
-import { supabase, handleSupabaseError } from './supabase';
+import { specialistProfileApi } from './one2oneApi';
 
-/**
- * Create a professional profile
- * This should be called after creating the user account in AuthContext
- */
-export const createProfessionalProfile = async (userId, professionalData) => {
+export const createProfessionalProfile = async (_userId, professionalData) => {
   try {
-    const {
-      firstName,
-      lastName,
-      phone,
-      organizationName,
-      practiceType,
-      serviceDescription,
-      websiteUrl,
-      professionalBio,
-      profilePhotoUrl,
-      emailVerified,
-      phoneVerified,
-    } = professionalData;
-
-    // Validate bio length
-    if (!professionalBio || professionalBio.length < 100) {
-      return { success: false, error: 'Professional bio must be at least 100 characters' };
-    }
-
-    if (professionalBio.length > 1000) {
-      return { success: false, error: 'Professional bio must be 1000 characters or less' };
-    }
-
-    // Validate service description length
-    if (serviceDescription && serviceDescription.length > 500) {
-      return { success: false, error: 'Service description must be 500 characters or less' };
-    }
-
-    const { data, error } = await supabase
-      .from('professional_profiles')
-      .insert({
-        user_id: userId,
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone || null,
-        profile_photo_url: profilePhotoUrl || null,
-        organization_name: organizationName,
-        practice_type: practiceType,
-        service_description: serviceDescription || null,
-        website_url: websiteUrl || null,
-        professional_bio: professionalBio,
-        email_verified: emailVerified || false,
-        phone_verified: phoneVerified || false,
-        status: 'pending', // All new professional applications start as pending
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return { success: true, profile: data };
+    const profile = await specialistProfileApi.save('professional', professionalData);
+    return { success: true, profile };
   } catch (error) {
     console.error('Error creating professional profile:', error);
-    return { success: false, error: handleSupabaseError(error) };
+    return { success: false, error: error.message || 'Unable to create professional profile' };
   }
 };
 
-/**
- * Get professional profile by user ID
- */
-export const getProfessionalProfile = async (userId) => {
+export const getProfessionalProfile = async (_userId) => {
   try {
-    const { data, error } = await supabase
-      .from('professional_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return { success: true, profile: data };
+    const profile = await specialistProfileApi.get('professional');
+    return { success: true, profile };
   } catch (error) {
     console.error('Error fetching professional profile:', error);
-    return { success: false, error: handleSupabaseError(error) };
+    return { success: false, error: error.message || 'Unable to fetch professional profile' };
   }
 };
 
-/**
- * Update professional profile
- */
-export const updateProfessionalProfile = async (userId, updates) => {
+export const updateProfessionalProfile = async (_userId, updates) => {
   try {
-    const { data, error } = await supabase
-      .from('professional_profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return { success: true, profile: data };
+    const profile = await specialistProfileApi.update('professional', updates);
+    return { success: true, profile };
   } catch (error) {
     console.error('Error updating professional profile:', error);
-    return { success: false, error: handleSupabaseError(error) };
+    return { success: false, error: error.message || 'Unable to update professional profile' };
   }
 };
-
