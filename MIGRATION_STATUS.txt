@@ -1,0 +1,15 @@
+One2OneLove Neon/Cloudflare migration checkpoint — 2026-09-05
+
+Neon project created: red-feather-80645172
+Neon database: one2onelove
+Neon Auth: enabled (Better Auth)
+Core profile schema: migrated
+Love Notes sent/scheduled schema: migrated
+Cloudflare architecture/templates: prepared
+Current production master branch: unchanged
+Production cutover: NOT performed
+
+Remaining critical dependencies:
+- locate actual One2OneLove source Supabase project to migrate existing users/data/storage
+- connect/provide access to the One2OneLove Cloudflare account to create Worker/Hyperdrive/R2/DNS resources
+- migrate remaining Supabase-coupled application services and perform end-to-end QA
