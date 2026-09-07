@@ -131,33 +131,47 @@ export default function RelationshipQuizzes() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-6">
           {quizzes.map((quiz, index) => {
             const Icon = quiz.icon;
             const Wrapper = quiz.active ? Link : "div";
             const wrapperProps = quiz.active ? { to: createPageUrl(quiz.link) } : {};
 
             return (
-              <motion.div key={quiz.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="relative">
-                <Wrapper {...wrapperProps}>
-                  <Card className={`h-full border-2 ${quiz.active ? "border-transparent hover:border-purple-200 hover:shadow-xl cursor-pointer" : "border-gray-200"} transition-all`}>
+              <motion.div
+                key={quiz.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="relative h-full"
+              >
+                <Wrapper {...wrapperProps} className="block h-full">
+                  <Card
+                    className={`h-full min-h-[330px] border-2 flex flex-col ${
+                      quiz.active
+                        ? "border-transparent hover:border-purple-200 hover:shadow-xl cursor-pointer"
+                        : "border-gray-200"
+                    } transition-all`}
+                  >
                     {!quiz.active && (
                       <div className="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
                         {t.comingSoon}
                       </div>
                     )}
-                    <CardHeader>
+                    <CardHeader className="min-h-[155px]">
                       <div className={`w-14 h-14 bg-gradient-to-br ${quiz.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
                         <Icon className="w-7 h-7 text-white" />
                       </div>
-                      <CardTitle className="text-xl pr-20">{quiz.title}</CardTitle>
+                      <CardTitle className="text-xl pr-20 leading-snug">{quiz.title}</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 leading-relaxed mb-4">{quiz.description}</p>
-                      {quiz.active && (
+                    <CardContent className="flex flex-col flex-1">
+                      <p className="text-gray-600 leading-relaxed mb-4 flex-1">{quiz.description}</p>
+                      {quiz.active ? (
                         <Button className={`w-full bg-gradient-to-r ${quiz.color} text-white hover:opacity-90`}>
                           {t.start}
                         </Button>
+                      ) : (
+                        <div className="h-10" aria-hidden="true" />
                       )}
                     </CardContent>
                   </Card>
