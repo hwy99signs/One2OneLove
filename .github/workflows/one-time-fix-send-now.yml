@@ -20,56 +20,20 @@ jobs:
           ref: migration/neon-cloudflare-one2onelove-20260905
 
       - name: Repair immediate Send Now action
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
+          import base64
 
           path = Path('src/pages/LoveNotes.jsx')
           text = path.read_text(encoding='utf-8')
-
           marker = "  const handleSendVia = async (note, method) => {"
           if marker not in text:
               raise SystemExit('handleSendVia marker not found')
 
-          send_now = r'''  const handleSendNow = (note) => {
-    if (!note) return;
-
-    const targetPhone = recipientPhone.trim();
-    if (!targetPhone) {
-      toast.error(t.pleaseEnterPhone);
-      return;
-    }
-
-    const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');
-    if (limitCheckResult === null) return;
-
-    const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
-    const smsUrl = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
-
-    // Keep the SMS launch inside the user's click/tap event. Awaiting backend work
-    // before opening sms: can cause browsers to block the action as a popup.
-    if (currentUser && limitCheckResult.type !== 'guest') {
-      sendNoteMutation.mutate({
-        note_title: note.title,
-        note_content: note.content,
-        recipient_type: limitCheckResult.type,
-        recipient_identifier: limitCheckResult.identifier,
-        social_platform: limitCheckResult.social_platform,
-        sent_date: new Date().toISOString(),
-        created_by: currentUser.id,
-      }, {
-        onError: (error) => console.error('Unable to record sent love note:', error),
-      });
-    }
-
-    window.location.href = smsUrl;
-    toast.success(t.openingText);
-    setSendModalNote(null);
-    setRecipientPhone('');
-    setIsScheduling(false);
-  };
-
-'''
+          encoded = "ICBjb25zdCBoYW5kbGVTZW5kTm93ID0gKG5vdGUpID0+IHsKICAgIGlmICghbm90ZSkgcmV0dXJuOwoKICAgIGNvbnN0IHRhcmdldFBob25lID0gcmVjaXBpZW50UGhvbmUudHJpbSgpOwogICAgaWYgKCF0YXJnZXRQaG9uZSkgewogICAgICB0b2FzdC5lcnJvcih0LnBsZWFzZUVudGVyUGhvbmUpOwogICAgICByZXR1cm47CiAgICB9CgogICAgY29uc3QgbGltaXRDaGVja1Jlc3VsdCA9IGNoZWNrTGltaXRCZWZvcmVTZW5kKCd0ZXh0JywgdGFyZ2V0UGhvbmUsICd0ZXh0Jyk7CiAgICBpZiAobGltaXRDaGVja1Jlc3VsdCA9PT0gbnVsbCkgcmV0dXJuOwoKICAgIGNvbnN0IG1lc3NhZ2VUZXh0ID0gYCR7bm90ZS50aXRsZX1cblxuJHtub3RlLmNvbnRlbnR9XG5cbuKdpO+4jyBGcm9tIE9uZTJPbmUgTG92ZWA7CiAgICBjb25zdCBzbXNVcmwgPSBgc21zOiR7dGFyZ2V0UGhvbmV9P2JvZHk9JHtlbmNvZGVVUklDb21wb25lbnQobWVzc2FnZVRleHQpfWA7CgogICAgLy8gS2VlcCB0aGUgU01TIGxhdW5jaCBpbnNpZGUgdGhlIHVzZXIncyBjbGljay90YXAgZXZlbnQuIEF3YWl0aW5nIGJhY2tlbmQgd29yawogICAgLy8gYmVmb3JlIG9wZW5pbmcgc21zOiBjYW4gY2F1c2UgYnJvd3NlcnMgdG8gYmxvY2sgdGhlIGFjdGlvbiBhcyBhIHBvcHVwLgogICAgaWYgKGN1cnJlbnRVc2VyICYmIGxpbWl0Q2hlY2tSZXN1bHQudHlwZSAhPT0gJ2d1ZXN0JykgewogICAgICBzZW5kTm90ZU11dGF0aW9uLm11dGF0ZSh7CiAgICAgICAgbm90ZV90aXRsZTogbm90ZS50aXRsZSwKICAgICAgICBub3RlX2NvbnRlbnQ6IG5vdGUuY29udGVudCwKICAgICAgICByZWNpcGllbnRfdHlwZTogbGltaXRDaGVja1Jlc3VsdC50eXBlLAogICAgICAgIHJlY2lwaWVudF9pZGVudGlmaWVyOiBsaW1pdENoZWNrUmVzdWx0LmlkZW50aWZpZXIsCiAgICAgICAgc29jaWFsX3BsYXRmb3JtOiBsaW1pdENoZWNrUmVzdWx0LnNvY2lhbF9wbGF0Zm9ybSwKICAgICAgICBzZW50X2RhdGU6IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKSwKICAgICAgICBjcmVhdGVkX2J5OiBjdXJyZW50VXNlci5pZCwKICAgICAgfSwgewogICAgICAgIG9uRXJyb3I6IChlcnJvcikgPT4gY29uc29sZS5lcnJvcignVW5hYmxlIHRvIHJlY29yZCBzZW50IGxvdmUgbm90ZTonLCBlcnJvciksCiAgICAgIH0pOwogICAgfQoKICAgIHdpbmRvdy5sb2NhdGlvbi5ocmVmID0gc21zVXJsOwogICAgdG9hc3Quc3VjY2Vzcyh0Lm9wZW5pbmdUZXh0KTsKICAgIHNldFNlbmRNb2RhbE5vdGUobnVsbCk7CiAgICBzZXRSZWNpcGllbnRQaG9uZSgnJyk7CiAgICBzZXRJc1NjaGVkdWxpbmcoZmFsc2UpOwogIH07Cgo="
+          send_now = base64.b64decode(encoded).decode('utf-8')
 
           if 'const handleSendNow = (note) =>' not in text:
               text = text.replace(marker, send_now + marker, 1)
@@ -89,6 +53,7 @@ jobs:
           text = text.replace(old_footer, new_footer, 1)
 
           path.write_text(text, encoding='utf-8')
+          PY
 
       - name: Commit repaired Send Now behavior
         shell: bash
