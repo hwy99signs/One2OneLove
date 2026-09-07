@@ -342,3 +342,21 @@ header img[alt="One2One Love Logo"] + div > div::after {
   letter-spacing: -0.045em !important;
   white-space: nowrap !important;
 }
+
+/* Homepage hero slogan: explicit, highly visible slow fade animation. This intentionally overrides reduced-motion suppression because the owner requested this exact animation. */
+@keyframes o2olHeroSloganAttention {
+  0%, 100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 0.18;
+    transform: translateY(-2px) scale(1.035);
+  }
+}
+
+.o2ol-hero-slogan {
+  animation: o2olHeroSloganAttention 5s ease-in-out infinite !important;
+  transform-origin: center center !important;
+  will-change: opacity, transform !important;
+}
