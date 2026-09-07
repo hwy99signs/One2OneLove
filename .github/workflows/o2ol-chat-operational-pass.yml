@@ -43,67 +43,32 @@ jobs:
           service = Path('src/lib/chatService.js')
           text = service.read_text()
 
-          old_edit = """export const editMessage = async (messageId, newContent) => {
-  try {
-    console.log('✏️ Editing message:', messageId);
+          edit_start = text.index('export const editMessage = async')
+          delete_start = text.index('export const deleteMessage = async')
+          edit_segment = text[edit_start:delete_start]
+          auth_anchor = "    console.log('✏️ Editing message:', messageId);\n"
+          if auth_anchor not in edit_segment:
+              raise SystemExit('Expected edit auth anchor not found')
+          edit_segment = edit_segment.replace(auth_anchor, auth_anchor + "\n    const { data: { user } } = await supabase.auth.getUser();\n    if (!user) throw new Error('User not authenticated');\n", 1)
+          edit_filter = "      .eq('id', messageId)\n      .select()"
+          if edit_filter not in edit_segment:
+              raise SystemExit('Expected edit sender filter anchor not found')
+          edit_segment = edit_segment.replace(edit_filter, "      .eq('id', messageId)\n      .eq('sender_id', user.id)\n      .select()", 1)
+          text = text[:edit_start] + edit_segment + text[delete_start:]
 
-    const { data: message, error } = await supabase
-      .from('messages')
-      .update({
-        content: newContent,
-        is_edited: true,
-      })
-      .eq('id', messageId)
-      .select()
-      .single();
-"""
-          new_edit = """export const editMessage = async (messageId, newContent) => {
-  try {
-    console.log('✏️ Editing message:', messageId);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data: message, error } = await supabase
-      .from('messages')
-      .update({
-        content: newContent,
-        is_edited: true,
-      })
-      .eq('id', messageId)
-      .eq('sender_id', user.id)
-      .select()
-      .single();
-"""
-          if old_edit not in text:
-              raise SystemExit('Expected editMessage block not found')
-          text = text.replace(old_edit, new_edit, 1)
-
-          old_delete = """export const deleteMessage = async (messageId) => {
-  try {
-    console.log('🗑️ Deleting message:', messageId);
-
-    const { error } = await supabase
-      .from('messages')
-      .update({ is_deleted: true })
-      .eq('id', messageId);
-"""
-          new_delete = """export const deleteMessage = async (messageId) => {
-  try {
-    console.log('🗑️ Deleting message:', messageId);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { error } = await supabase
-      .from('messages')
-      .update({ is_deleted: true })
-      .eq('id', messageId)
-      .eq('sender_id', user.id);
-"""
-          if old_delete not in text:
-              raise SystemExit('Expected deleteMessage block not found')
-          service.write_text(text.replace(old_delete, new_delete, 1))
+          delete_start = text.index('export const deleteMessage = async')
+          settings_start = text.index('export const updateConversationSettings = async')
+          delete_segment = text[delete_start:settings_start]
+          delete_anchor = "    console.log('🗑️ Deleting message:', messageId);\n"
+          if delete_anchor not in delete_segment:
+              raise SystemExit('Expected delete auth anchor not found')
+          delete_segment = delete_segment.replace(delete_anchor, delete_anchor + "\n    const { data: { user } } = await supabase.auth.getUser();\n    if (!user) throw new Error('User not authenticated');\n", 1)
+          delete_filter = "      .eq('id', messageId);"
+          if delete_filter not in delete_segment:
+              raise SystemExit('Expected delete sender filter anchor not found')
+          delete_segment = delete_segment.replace(delete_filter, "      .eq('id', messageId)\n      .eq('sender_id', user.id);", 1)
+          text = text[:delete_start] + delete_segment + text[settings_start:]
+          service.write_text(text)
           PY
 
       - name: Set up Node.js
