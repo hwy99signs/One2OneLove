@@ -1,0 +1,83 @@
+name: One-time Send Now Repair
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - .github/workflows/one-time-rewire-send-now.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair-send-now:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/neon-cloudflare-one2onelove-20260905
+          fetch-depth: 0
+
+      - name: Restore proven Love Notes send path and rewire Send Now
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+
+          source_commit = '283faa2c8da36a40979735b515a9e4dd5f2ff763'
+          restored = subprocess.check_output(
+              ['git', 'show', f'{source_commit}:src/pages/LoveNotes.jsx'],
+              text=True,
+          )
+
+          old_import = 'import React, { useState, useMemo } from "react";'
+          new_import = 'import React, { useState, useMemo, useRef } from "react";'
+          if old_import not in restored:
+              raise SystemExit('React import marker not found')
+          restored = restored.replace(old_import, new_import, 1)
+
+          query_marker = '  const queryClient = useQueryClient();\n'
+          if query_marker not in restored:
+              raise SystemExit('Query client marker not found')
+          restored = restored.replace(
+              query_marker,
+              query_marker + '  const primarySendButtonRef = useRef(null);\n',
+              1,
+          )
+
+          old_top = '''                      onClick={() => {
+                        setIsScheduling(false);
+                        handleSendNow(sendModalNote);
+                      }}'''
+          new_top = '''                      onClick={() => {
+                        setIsScheduling(false);
+                        window.requestAnimationFrame(() => {
+                          primarySendButtonRef.current?.click();
+                        });
+                      }}'''
+          if old_top not in restored:
+              raise SystemExit('Send Now button handler marker not found')
+          restored = restored.replace(old_top, new_top, 1)
+
+          old_bottom = '''                <Button
+                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}'''
+          new_bottom = '''                <Button
+                  ref={primarySendButtonRef}
+                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}'''
+          if old_bottom not in restored:
+              raise SystemExit('Primary Send Love Note button marker not found')
+          restored = restored.replace(old_bottom, new_bottom, 1)
+
+          Path('src/pages/LoveNotes.jsx').write_text(restored, encoding='utf-8')
+
+      - name: Commit Send Now repair
+        shell: bash
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/LoveNotes.jsx
+          git diff --cached --check
+          git commit -m "fix: make Send Now use proven Send Love Note action"
+          git push origin HEAD:migration/neon-cloudflare-one2onelove-20260905
