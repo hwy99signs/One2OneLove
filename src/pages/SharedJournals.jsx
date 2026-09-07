@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLanguage } from "@/Layout";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,14 @@ import { createPageUrl } from "@/utils";
 import JournalForm from "../components/activities/JournalForm";
 import JournalEntry from "../components/activities/JournalEntry";
 import * as journalService from "@/lib/journalService";
+
+const sharingTranslations = {
+  en: { shareWithPartner: 'Share with partner', sharedByPartner: 'Shared by partner' },
+  es: { shareWithPartner: 'Compartir con mi pareja', sharedByPartner: 'Compartido por tu pareja' },
+  fr: { shareWithPartner: 'Partager avec mon partenaire', sharedByPartner: 'Partagé par votre partenaire' },
+  it: { shareWithPartner: 'Condividi con il partner', sharedByPartner: 'Condiviso dal tuo partner' },
+  de: { shareWithPartner: 'Mit Partner teilen', sharedByPartner: 'Von deinem Partner geteilt' }
+};
 
 const translations = {
   en: {
@@ -38,7 +47,9 @@ const translations = {
 
 export default function SharedJournals() {
   const { currentLanguage } = useLanguage();
+  const { user } = useAuth();
   const t = translations[currentLanguage] || translations.en;
+  const sharingT = sharingTranslations[currentLanguage] || sharingTranslations.en;
   const queryClient = useQueryClient();
   
   const [showForm, setShowForm] = useState(false);
@@ -151,6 +162,7 @@ export default function SharedJournals() {
           {showForm && (
             <JournalForm
               entry={editingEntry}
+              shareWithPartnerLabel={sharingT.shareWithPartner}
               onSubmit={(data) => {
                 if (editingEntry) {
                   updateMutation.mutate({ id: editingEntry.id, data });
@@ -172,6 +184,9 @@ export default function SharedJournals() {
               <JournalEntry
                 key={entry.id}
                 entry={entry}
+                canEdit={entry.user_id === user?.id}
+                isPartnerEntry={entry.user_id !== user?.id}
+                sharedByPartnerLabel={sharingT.sharedByPartner}
                 onEdit={(entry) => {
                   setEditingEntry(entry);
                   setShowForm(true);

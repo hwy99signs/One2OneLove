@@ -15,7 +15,7 @@ const moodEmojis = {
   loving: '❤️'
 };
 
-export default function JournalEntry({ entry, onEdit, onDelete }) {
+export default function JournalEntry({ entry, onEdit, onDelete, canEdit = true, isPartnerEntry = false, sharedByPartnerLabel = 'Shared by partner' }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,16 +34,23 @@ export default function JournalEntry({ entry, onEdit, onDelete }) {
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Calendar className="w-4 h-4" />
                 {format(new Date(entry.entry_date), 'MMMM d, yyyy')}
+                {isPartnerEntry && (
+                  <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs">
+                    {sharedByPartnerLabel}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => onEdit(entry)}>
-                <Edit className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => onDelete(entry.id)}>
-                <Trash2 className="w-4 h-4 text-red-500" />
-              </Button>
-            </div>
+            {canEdit && (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => onEdit(entry)}>
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => onDelete(entry.id)}>
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>

@@ -31,7 +31,6 @@ export async function getJournalEntries(orderBy = '-entry_date') {
     const { data: entries, error } = await supabase
       .from('shared_journals')
       .select('*')
-      .eq('user_id', user.id)
       .order(field, { ascending });
 
     if (error) throw error;

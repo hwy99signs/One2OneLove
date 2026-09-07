@@ -7,14 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function JournalForm({ entry, onSubmit, onCancel }) {
+export default function JournalForm({ entry, onSubmit, onCancel, shareWithPartnerLabel = 'Share with partner' }) {
   const [formData, setFormData] = useState(entry || {
     title: '',
     content: '',
     entry_date: new Date().toISOString().split('T')[0],
     mood: 'happy',
     tags: [],
-    is_favorite: false
+    is_favorite: false,
+    shared_with_partner: false
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -142,6 +143,16 @@ export default function JournalForm({ entry, onSubmit, onCancel }) {
                 ))}
               </div>
             </div>
+
+            <label className="flex items-center gap-3 p-3 rounded-lg border border-blue-100 bg-blue-50/50">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.shared_with_partner)}
+                onChange={(e) => setFormData({ ...formData, shared_with_partner: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <span className="text-sm font-medium text-gray-700">{shareWithPartnerLabel}</span>
+            </label>
 
             <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={onCancel}>
