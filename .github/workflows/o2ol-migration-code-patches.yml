@@ -1,0 +1,59 @@
+name: O2OL Migration Code Patches
+
+on:
+  push:
+    branches:
+      - o2ol/launch-hardening-20260906
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol/launch-hardening-20260906
+
+      - name: Apply compatibility patches
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          supabase = Path('src/lib/supabase.js')
+          text = supabase.read_text()
+          import_line = "import { createClient, SupabaseAuthAdapter } from '@neondatabase/neon-js';\n"
+          functions_import = "import { createCloudflareFunctions } from './cloudflareFunctions';\n"
+          if functions_import not in text:
+              text = text.replace(import_line, import_line + functions_import)
+
+          anchor = "/**\n * Cloudflare R2 storage compatibility bridge."
+          bridge = "const cloudflareFunctions = createCloudflareFunctions(getAccessToken);\n\n"
+          if bridge not in text:
+              text = text.replace(anchor, bridge + anchor)
+
+          property_anchor = "    if (property === 'storage') return storage;\n"
+          functions_property = "    if (property === 'functions') return cloudflareFunctions;\n"
+          if functions_property not in text:
+              text = text.replace(property_anchor, property_anchor + functions_property)
+          supabase.write_text(text)
+
+          chat = Path('src/lib/chatService.js')
+          chat_text = chat.read_text()
+          chat_text = chat_text.replace(".from('users')", ".from('user_public_profiles')")
+          chat.write_text(chat_text)
+          PY
+
+      - name: Commit patches
+        run: |
+          if git diff --quiet; then
+            echo "Compatibility patches already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/supabase.js src/lib/chatService.js
+          git commit -m "Complete Neon compatibility routing"
+          git push origin HEAD:o2ol/launch-hardening-20260906
