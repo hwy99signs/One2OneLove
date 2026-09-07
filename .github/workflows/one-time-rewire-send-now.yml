@@ -20,57 +20,54 @@ jobs:
           ref: migration/neon-cloudflare-one2onelove-20260905
           fetch-depth: 0
 
-      - name: Restore proven Love Notes send path and rewire Send Now
+      - name: Restore proven Love Notes send path
+        shell: bash
+        run: |
+          git show 283faa2c8da36a40979735b515a9e4dd5f2ff763:src/pages/LoveNotes.jsx > src/pages/LoveNotes.jsx
+
+      - name: Rewire Send Now to the proven bottom Send Love Note action
         shell: python
         run: |
           from pathlib import Path
-          import subprocess
+          import re
 
-          source_commit = '283faa2c8da36a40979735b515a9e4dd5f2ff763'
-          restored = subprocess.check_output(
-              ['git', 'show', f'{source_commit}:src/pages/LoveNotes.jsx'],
-              text=True,
-          )
+          path = Path('src/pages/LoveNotes.jsx')
+          text = path.read_text(encoding='utf-8')
 
-          old_import = 'import React, { useState, useMemo } from "react";'
-          new_import = 'import React, { useState, useMemo, useRef } from "react";'
-          if old_import not in restored:
-              raise SystemExit('React import marker not found')
-          restored = restored.replace(old_import, new_import, 1)
-
-          query_marker = '  const queryClient = useQueryClient();\n'
-          if query_marker not in restored:
-              raise SystemExit('Query client marker not found')
-          restored = restored.replace(
-              query_marker,
-              query_marker + '  const primarySendButtonRef = useRef(null);\n',
+          text = text.replace(
+              'import React, { useState, useMemo } from "react";',
+              'import React, { useState, useMemo, useRef } from "react";',
               1,
           )
 
-          old_top = '''                      onClick={() => {
-                        setIsScheduling(false);
-                        handleSendNow(sendModalNote);
-                      }}'''
-          new_top = '''                      onClick={() => {
+          marker = '  const queryClient = useQueryClient();\n'
+          if marker not in text:
+              raise SystemExit('Query client marker not found')
+          text = text.replace(marker, marker + '  const primarySendButtonRef = useRef(null);\n', 1)
+
+          pattern = re.compile(
+              r'onClick=\{\(\) => \{\s*setIsScheduling\(false\);\s*handleSendNow\(sendModalNote\);\s*\}\}'
+          )
+          replacement = '''onClick={() => {
                         setIsScheduling(false);
                         window.requestAnimationFrame(() => {
                           primarySendButtonRef.current?.click();
                         });
                       }}'''
-          if old_top not in restored:
-              raise SystemExit('Send Now button handler marker not found')
-          restored = restored.replace(old_top, new_top, 1)
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected one Send Now handler, found {count}')
 
-          old_bottom = '''                <Button
-                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}'''
-          new_bottom = '''                <Button
-                  ref={primarySendButtonRef}
-                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}'''
-          if old_bottom not in restored:
-              raise SystemExit('Primary Send Love Note button marker not found')
-          restored = restored.replace(old_bottom, new_bottom, 1)
+          bottom = '                <Button\n                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}\n'
+          if bottom not in text:
+              raise SystemExit('Bottom Send Love Note button marker not found')
+          text = text.replace(
+              bottom,
+              '                <Button\n                  ref={primarySendButtonRef}\n                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}\n',
+              1,
+          )
 
-          Path('src/pages/LoveNotes.jsx').write_text(restored, encoding='utf-8')
+          path.write_text(text, encoding='utf-8')
 
       - name: Commit Send Now repair
         shell: bash
