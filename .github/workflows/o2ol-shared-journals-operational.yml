@@ -1,0 +1,53 @@
+name: O2OL Shared Journals Operational
+
+on:
+  push:
+    branches:
+      - o2ol/launch-hardening-20260906
+    paths:
+      - .github/workflows/o2ol-shared-journals-operational.yml
+
+permissions:
+  contents: write
+
+jobs:
+  journals-pass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol/launch-hardening-20260906
+
+      - name: Apply Shared Journals operational patch
+        run: python scripts/o2ol_shared_journals_operational.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build operational preview
+        env:
+          VITE_NEON_AUTH_URL: https://ep-snowy-field-arynp1lg.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
+          VITE_NEON_DATA_API_URL: https://ep-snowy-field-arynp1lg.apirest.c-4.us-west-2.aws.neon.tech/one2onelove/rest/v1
+        run: npm run build
+
+      - name: Deploy operational preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangler.preview.jsonc
+
+      - name: Commit Shared Journals operational fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/journalService.js src/pages/SharedJournals.jsx src/components/activities/JournalForm.jsx src/components/activities/JournalEntry.jsx
+          git commit -m "Make Shared Journals truly partner-shared"
+          git push origin HEAD:o2ol/launch-hardening-20260906
