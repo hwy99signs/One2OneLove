@@ -122,20 +122,18 @@ export default function FeaturesGrid() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const features = featureConfig.map((feature) => ({ ...feature, ...t.features[feature.key] }));
-  const leftFeatures = features.slice(0, 6);
-  const rightFeatures = features.slice(6);
 
   const renderFeature = (feature) => {
     const IconComponent = feature.icon;
     return (
       <div
         key={feature.key}
-        className="flex items-start gap-4 p-4 bg-white rounded-xl hover:shadow-md transition-all"
+        className="h-full flex items-start gap-4 p-4 bg-white rounded-xl hover:shadow-md transition-all"
       >
         <div className={`flex-shrink-0 ${feature.color}`}>
           <IconComponent size={20} />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-semibold text-gray-900 mb-1">{feature.title}</h3>
           <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
         </div>
@@ -155,9 +153,8 @@ export default function FeaturesGrid() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-4">{leftFeatures.map(renderFeature)}</div>
-          <div className="space-y-4">{rightFeatures.map(renderFeature)}</div>
+        <div className="grid md:grid-cols-2 auto-rows-fr gap-4">
+          {features.map(renderFeature)}
         </div>
       </div>
     </div>
