@@ -158,24 +158,30 @@ button:focus-visible {
 }
 
 @layer components {
-  /* Keep cards in the same grid visually uniform without forcing unrelated layouts to a fixed height. */
+  /* Uniform card rows across shared One2OneLove card grids. Scoped to cards at the grid-item level so unrelated nested layouts are not stretched. */
   @supports selector(:has(*)) {
-    .grid:has([data-o2ol-card]) {
+    .grid:has(> [data-o2ol-card]),
+    .grid:has(> * > [data-o2ol-card]),
+    .grid:has(> * > a > [data-o2ol-card]) {
       grid-auto-rows: 1fr;
     }
 
-    .grid > *:has([data-o2ol-card]) {
+    .grid > [data-o2ol-card],
+    .grid > *:has(> [data-o2ol-card]),
+    .grid > *:has(> a > [data-o2ol-card]) {
       height: 100%;
       min-height: 0;
     }
 
-    .grid > *:has([data-o2ol-card]) a:has([data-o2ol-card]),
-    .grid > a:has([data-o2ol-card]) {
+    .grid > a:has(> [data-o2ol-card]),
+    .grid > * > a:has(> [data-o2ol-card]) {
       display: block;
       height: 100%;
     }
 
-    .grid [data-o2ol-card] {
+    .grid > [data-o2ol-card],
+    .grid > * > [data-o2ol-card],
+    .grid > * > a > [data-o2ol-card] {
       height: 100%;
     }
   }
