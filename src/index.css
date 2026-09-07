@@ -316,3 +316,29 @@ button:focus-visible {
     }
   }
 }
+
+/* Final header brand overrides: visible in the deployed app bundle. */
+header > div[class*="max-w-7xl"] > div[class*="h-16"] {
+  height: 5.5rem !important;
+  min-height: 5.5rem !important;
+}
+
+header img[alt="One2One Love Logo"] + div {
+  margin-left: -0.6rem !important;
+}
+
+header img[alt="One2One Love Logo"] + div > div {
+  font-size: 0 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+header img[alt="One2One Love Logo"] + div > div::after {
+  content: "One2OneLove";
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+  white-space: nowrap !important;
+}
