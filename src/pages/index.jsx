@@ -24,6 +24,8 @@ import LoveLanguageQuiz from "./LoveLanguageQuiz";
 
 import DateIdeas from "./DateIdeas";
 
+import MyMatchIQ from "./MyMatchIQ";
+
 import Profile from "./Profile";
 
 import WinACruise from "./WinACruise";
@@ -133,6 +135,8 @@ const PAGES = {
     LoveLanguageQuiz: LoveLanguageQuiz,
     
     DateIdeas: DateIdeas,
+    
+    MyMatchIQ: MyMatchIQ,
     
     Profile: Profile,
     
@@ -270,6 +274,8 @@ function PagesContent() {
                 <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
                 
                 <Route path="/DateIdeas" element={<DateIdeas />} />
+                
+                <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
                 
                 <Route path="/Profile" element={<Profile />} />
                 
