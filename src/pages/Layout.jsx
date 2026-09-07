@@ -314,15 +314,6 @@ function LanguageContent({ children, currentPageName }) {
                     </Link>
                     
                     <Link
-                      to={createPageUrl("RelationshipCoach")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Sparkles className="w-5 h-5 text-purple-600" />
-                      <span>AI Relationship Coach</span>
-                    </Link>
-                    
-                    <Link
                       to={createPageUrl("CoupleSupport")}
                       className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
                       onClick={() => setActionOpen(false)}
@@ -627,17 +618,6 @@ function LanguageContent({ children, currentPageName }) {
                       >
                         <Rainbow className="w-5 h-5" />
                         {t.actionMenu.lgbtqSupport}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipCoach")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        AI Relationship Coach
                       </Link>
                       <Link
                         to={createPageUrl("CoupleSupport")}
