@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { loveNotesApi, one2OneLogoUrl } from "@/lib/one2oneApi";
+import { sendLoveNoteSms } from "@/lib/loveNotesSmsApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -64,6 +65,9 @@ const translations = {
     howItWorksItem4: "• Perfect for surprising your partner!",
     shareViaSocial: "📱 Or Share Via Social Media",
     pleaseEnterPhone: "Please enter recipient phone number",
+    sendSuccess: "Love note sent successfully! 💕",
+    smsNotConfigured: "Live text-message delivery is not active yet.",
+    sendFailed: "The love note could not be sent. Please try again.",
     pleaseSelectDateTime: "Please select date and time for scheduling",
     openingText: "Opening text message...",
     openingWhatsApp: "Opening WhatsApp...",
@@ -136,6 +140,9 @@ const translations = {
     recipientPhone: "Número de Teléfono del Destinatario",
     recipientPhonePlaceholder: "(555) 123-4567",
     pleaseEnterPhone: "Por favor ingresa el número de teléfono del destinatario",
+    sendSuccess: "¡Nota de amor enviada con éxito! 💕",
+    smsNotConfigured: "El envío de mensajes de texto en vivo aún no está activo.",
+    sendFailed: "No se pudo enviar la nota de amor. Inténtalo de nuevo.",
     save: "Guardar",
     personalizeNotes: "Personaliza Tus Notas",
     personalizeDesc: "Agrega toques personales para hacer tus notas de amor extra especiales",
@@ -228,6 +235,9 @@ const translations = {
     recipientPhone: "Numéro de Téléphone du Destinataire",
     recipientPhonePlaceholder: "(555) 123-4567",
     pleaseEnterPhone: "Veuillez entrer le numéro de téléphone du destinataire",
+    sendSuccess: "Note d’amour envoyée avec succès ! 💕",
+    smsNotConfigured: "L’envoi de SMS en direct n’est pas encore activé.",
+    sendFailed: "La note d’amour n’a pas pu être envoyée. Veuillez réessayer.",
     save: "Enregistrer",
     personalizeNotes: "Personnalisez Vos Notes",
     personalizeDesc: "Ajoutez des touches personnelles pour rendre vos notes extra spéciales",
@@ -320,6 +330,9 @@ const translations = {
     recipientPhone: "Numero di Telefono del Destinatario",
     recipientPhonePlaceholder: "(555) 123-4567",
     pleaseEnterPhone: "Inserisci il numero di telefono del destinatario",
+    sendSuccess: "Nota d’amore inviata con successo! 💕",
+    smsNotConfigured: "L’invio di SMS dal vivo non è ancora attivo.",
+    sendFailed: "Non è stato possibile inviare la nota d’amore. Riprova.",
     save: "Salva",
     personalizeNotes: "Personalizza le Tue Note",
     personalizeDesc: "Aggiungi tocchi personali per rendere le tue note extra speciali",
@@ -412,6 +425,9 @@ const translations = {
     recipientPhone: "Telefonnummer des Empfängers",
     recipientPhonePlaceholder: "(555) 123-4567",
     pleaseEnterPhone: "Bitte gib die Telefonnummer des Empfängers ein",
+    sendSuccess: "Liebesbotschaft erfolgreich gesendet! 💕",
+    smsNotConfigured: "Der direkte SMS-Versand ist noch nicht aktiviert.",
+    sendFailed: "Die Liebesbotschaft konnte nicht gesendet werden. Bitte versuche es erneut.",
     save: "Speichern",
     personalizeNotes: "Personalisiere Deine Botschaften",
     personalizeDesc: "Füge persönliche Details hinzu für extra spezielle Liebesbotschaften",
@@ -541,6 +557,7 @@ export default function LoveNotes() {
   const [sendModalNote, setSendModalNote] = useState(null);
   const [recipientPhone, setRecipientPhone] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isSendingNow, setIsSendingNow] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
   const [showScheduledNotes, setShowScheduledNotes] = useState(false);
@@ -758,8 +775,8 @@ export default function LoveNotes() {
     return { type: recipientType, identifier: recipientIdentifier, social_platform: socialPlatform };
   };
 
-  const handleSendNow = (note) => {
-    if (!note) return;
+  const handleSendNow = async (note) => {
+    if (!note || isSendingNow) return;
 
     const targetPhone = recipientPhone.trim();
     if (!targetPhone) {
@@ -770,30 +787,53 @@ export default function LoveNotes() {
     const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');
     if (limitCheckResult === null) return;
 
-    const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
-    const smsUrl = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
-
-    // Keep the SMS launch inside the user's click/tap event. Awaiting backend work
-    // before opening sms: can cause browsers to block the action as a popup.
-    if (currentUser && limitCheckResult.type !== 'guest') {
-      sendNoteMutation.mutate({
-        note_title: note.title,
-        note_content: note.content,
-        recipient_type: limitCheckResult.type,
-        recipient_identifier: limitCheckResult.identifier,
-        social_platform: limitCheckResult.social_platform,
-        sent_date: new Date().toISOString(),
-        created_by: currentUser.id,
-      }, {
-        onError: (error) => console.error('Unable to record sent love note:', error),
-      });
+    if (!currentUser?.id) {
+      const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
+      window.location.href = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
+      toast.success(t.openingText);
+      setSendModalNote(null);
+      setRecipientPhone('');
+      setIsScheduling(false);
+      return;
     }
 
-    window.location.href = smsUrl;
-    toast.success(t.openingText);
-    setSendModalNote(null);
-    setRecipientPhone('');
-    setIsScheduling(false);
+    setIsSendingNow(true);
+    try {
+      await sendLoveNoteSms({
+        recipient_phone: targetPhone,
+        note_title: note.title,
+        note_content: note.content,
+        note_language: currentLanguage,
+      });
+
+      try {
+        await sendNoteMutation.mutateAsync({
+          note_title: note.title,
+          note_content: note.content,
+          recipient_type: limitCheckResult.type,
+          recipient_identifier: limitCheckResult.identifier,
+          social_platform: limitCheckResult.social_platform,
+          sent_date: new Date().toISOString(),
+          created_by: currentUser.id,
+        });
+      } catch (recordError) {
+        console.error('Love note was sent but could not be recorded:', recordError);
+      }
+
+      toast.success(t.sendSuccess);
+      setSendModalNote(null);
+      setRecipientPhone('');
+      setIsScheduling(false);
+    } catch (error) {
+      console.error('Unable to send Love Note SMS:', error);
+      if (error?.code === 'sms_not_configured') {
+        toast.error(t.smsNotConfigured);
+      } else {
+        toast.error(t.sendFailed);
+      }
+    } finally {
+      setIsSendingNow(false);
+    }
   };
 
   const handleSendVia = async (note, method) => {
@@ -1486,15 +1526,15 @@ export default function LoveNotes() {
                 </Button>
                 <Button
                   onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}
-                  disabled={scheduleMutation.isPending}
+                  disabled={scheduleMutation.isPending || isSendingNow}
                   className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                 >
-                  {scheduleMutation.isPending ? (
+                  {(scheduleMutation.isPending || isSendingNow) ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
                     <>
                       {isScheduling ? <Calendar className="w-4 h-4 mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                      {isScheduling ? t.scheduleNote : t.sendLoveNote}
+                      {isScheduling ? t.scheduleNote : t.sendNow}
                     </>
                   )}
                 </Button>
