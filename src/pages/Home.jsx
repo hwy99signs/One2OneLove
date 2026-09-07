@@ -6,7 +6,6 @@ import HeroSection from "../components/home/HeroSection";
 import DiversitySection from "../components/home/DiversitySection";
 import FeaturedPodcast from "../components/home/FeaturedPodcast";
 import FeaturesGrid from "../components/home/FeaturesGrid";
-import Testimonials from "../components/home/Testimonials";
 import Footer from "../components/home/Footer";
 
 export default function Home() {
@@ -70,7 +69,6 @@ export default function Home() {
       <DiversitySection />
       <FeaturedPodcast />
       <FeaturesGrid />
-      <Testimonials />
       <Footer />
     </div>
   );
