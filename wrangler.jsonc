@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "one2onelove-preview-migration",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-06",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "NEON_AUTH_URL": "https://ep-snowy-field-arynp1lg.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth",
+    "NEON_DATA_API_URL": "https://ep-snowy-field-arynp1lg.apirest.c-4.us-west-2.aws.neon.tech/one2onelove/rest/v1"
+  },
+  "r2_buckets": [
+    {
+      "binding": "O2OL_MEDIA",
+      "bucket_name": "one2onelove-media"
+    }
+  ]
+}
