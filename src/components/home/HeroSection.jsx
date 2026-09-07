@@ -110,15 +110,16 @@ export default function HeroSection({ stats }) {
                 {t.hero.dateIdeas}
               </Button>
             </Link>
-            <a href="https://www.mymatchiq.com/" target="_blank" rel="noopener noreferrer">
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-600 hover:via-blue-700 hover:to-purple-700 text-white font-bold text-lg px-8 py-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all"
-              >
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-600 hover:via-blue-700 hover:to-purple-700 text-white font-bold text-lg px-8 py-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all"
+            >
+              <a href="https://www.mymatchiq.com/" target="_blank" rel="noopener noreferrer">
                 <BrainCircuit className="mr-3" size={24} />
                 {t.hero.myMatchIQ}
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </div>
 
