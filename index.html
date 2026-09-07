@@ -13,11 +13,22 @@
       (() => {
         const menuSelector = 'header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"]';
         const toggleSelector = 'header button[class*="lg:hidden"]';
+        const logoSelector = 'header img[alt="One2One Love Logo"]';
         let inactivityTimer = null;
         let observedMenu = null;
 
         const getMenu = () => document.querySelector(menuSelector);
         const getToggle = () => document.querySelector(toggleSelector);
+
+        const applyHeaderLogoSize = () => {
+          const logo = document.querySelector(logoSelector);
+          if (!logo) return;
+          logo.style.setProperty('height', '2.5rem', 'important');
+          logo.style.setProperty('width', 'auto', 'important');
+          logo.style.setProperty('max-height', 'none', 'important');
+          logo.style.setProperty('max-width', 'none', 'important');
+          logo.style.setProperty('zoom', '1.75', 'important');
+        };
 
         const clearTimer = () => {
           if (inactivityTimer) {
@@ -41,6 +52,7 @@
         };
 
         const syncMenuState = () => {
+          applyHeaderLogoSize();
           const menu = getMenu();
           if (menu && menu !== observedMenu) {
             observedMenu = menu;
@@ -85,6 +97,7 @@
         window.addEventListener('DOMContentLoaded', () => {
           const observer = new MutationObserver(syncMenuState);
           observer.observe(document.body, { childList: true, subtree: true });
+          applyHeaderLogoSize();
           syncMenuState();
         });
       })();
