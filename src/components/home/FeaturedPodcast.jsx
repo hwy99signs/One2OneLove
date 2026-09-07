@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, Mic2, Sparkles } from "lucide-react";
+import { Heart, Mic2 } from "lucide-react";
 import { useLanguage } from "@/Layout";
 
 const translations = {
@@ -66,40 +66,35 @@ export default function FeaturedPodcast() {
         </p>
 
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-6">
+          <div className="text-center mb-5">
             <h3 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
               ✨ {t.featured} ✨
             </h3>
           </div>
 
-          <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl p-8 border-2 border-pink-200 shadow-xl">
-            <div className="flex flex-col md:flex-row gap-8 items-center">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
-                <Heart className="w-16 h-16 text-white fill-white" />
+          <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl p-6 border-2 border-pink-200 shadow-xl">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
+                <Heart className="w-12 h-12 text-white fill-white" />
               </div>
 
               <div className="flex-1 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-1.5">
                   <Mic2 className="w-5 h-5 text-pink-500" />
                   <span className="text-sm font-semibold text-pink-600 uppercase">{t.showLabel}</span>
                 </div>
 
-                <h4 className="text-3xl font-bold text-gray-900 mb-3">
+                <h4 className="text-2xl font-bold text-gray-900 mb-2">
                   {t.showName}
                 </h4>
 
-                <p className="text-lg font-medium text-gray-800 mb-3">
+                <p className="text-base font-medium text-gray-800 mb-2">
                   {t.description}
                 </p>
 
                 <p className="text-gray-600 leading-relaxed">
                   {t.subtext}
                 </p>
-
-                <div className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-full bg-white border border-pink-200 text-pink-600 font-semibold shadow-sm">
-                  <Sparkles className="w-4 h-4" />
-                  {t.featured}
-                </div>
               </div>
             </div>
           </div>
