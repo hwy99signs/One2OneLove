@@ -4,7 +4,7 @@ import { Headphones, Gift } from "lucide-react";
 
 export default function FeaturedPodcast() {
   return (
-    <div className="bg-white py-20">
+    <div className="bg-white pt-20 pb-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl sm:text-5xl font-bold text-center text-gray-900 mb-16">
           Everything You Need for a <br />Perfect Relationship
@@ -15,7 +15,7 @@ export default function FeaturedPodcast() {
           and create lasting memories together.
         </p>
 
-        <div className="max-w-4xl mx-auto mb-16">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6">
             <h3 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
               ✨ Featured This Week ✨
@@ -60,12 +60,6 @@ export default function FeaturedPodcast() {
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="text-center">
-          <h3 className="text-3xl font-bold text-gray-900 mb-2">
-            Platform Features & Resources
-          </h3>
         </div>
       </div>
     </div>
