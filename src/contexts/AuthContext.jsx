@@ -597,7 +597,6 @@ export function AuthProvider({ children }) {
             relationship_status: relationshipStatus,
             anniversary_date: anniversaryDate,
             partner_email: partnerEmail,
-            subscription_plan: subscriptionPlan || 'Basic',
             subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0,
           },
         },
@@ -634,9 +633,6 @@ export function AuthProvider({ children }) {
             anniversary_date: anniversaryDate || null,
             partner_email: partnerEmail || null,
             subscription_plan: subscriptionPlan || 'Basic',
-            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0, // Basic is now free
-            subscription_status: 'active',
-            email_verified: isEmailConfirmed, // Track email verification status
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })

@@ -223,12 +223,9 @@ export default function RegularUserForm({ onBack }) {
       console.log('Register result:', result);
 
       if (result.success) {
-        // Store the email and show dialog
-        setRegisteredEmail(formData.email);
-        setShowEmailDialog(true);
-        
-        // Also show a toast for good measure
-        toast.success("Account created successfully! Please check your email.");
+        // Neon Auth allows immediate access on the migration branch.
+        toast.success("Account created successfully!");
+        navigate(createPageUrl("Profile"));
       } else {
         console.error('Registration failed:', result.error);
         toast.error(result.error || "Something went wrong. Please try again.");
