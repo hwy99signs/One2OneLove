@@ -61,18 +61,16 @@ export default function FeaturedPodcast() {
           {t.heading}
         </h2>
 
-        <p className="text-xl text-center text-gray-600 mb-12 max-w-3xl mx-auto">
+        <p className="text-xl text-center text-gray-600 mb-6 max-w-3xl mx-auto">
           {t.intro}
         </p>
 
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-5">
-            <h3 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+          <div className="relative bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl p-6 pt-10 border-2 border-pink-200 shadow-xl">
+            <div className="absolute top-4 right-5 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 px-4 py-1.5 text-sm font-bold text-white shadow-md">
               ✨ {t.featured} ✨
-            </h3>
-          </div>
+            </div>
 
-          <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl p-6 border-2 border-pink-200 shadow-xl">
             <div className="flex flex-col md:flex-row gap-6 items-center">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
                 <Heart className="w-12 h-12 text-white fill-white" />
