@@ -1,0 +1,36 @@
+name: O2OL Feature Smoke
+
+on:
+  push:
+    branches:
+      - o2ol/launch-hardening-20260906
+    paths:
+      - .github/workflows/o2ol-feature-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol/launch-hardening-20260906
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run O2OL feature smoke test
+        env:
+          VITE_NEON_AUTH_URL: https://ep-snowy-field-arynp1lg.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
+          VITE_NEON_DATA_API_URL: https://ep-snowy-field-arynp1lg.apirest.c-4.us-west-2.aws.neon.tech/one2onelove/rest/v1
+        run: node scripts/o2ol_feature_smoke.mjs
