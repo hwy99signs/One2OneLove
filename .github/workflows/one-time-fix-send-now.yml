@@ -1,0 +1,101 @@
+name: One-time Send Now Repair
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - .github/workflows/one-time-fix-send-now.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair-send-now:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/neon-cloudflare-one2onelove-20260905
+
+      - name: Repair immediate Send Now action
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/LoveNotes.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          marker = "  const handleSendVia = async (note, method) => {"
+          if marker not in text:
+              raise SystemExit('handleSendVia marker not found')
+
+          send_now = r'''  const handleSendNow = (note) => {
+    if (!note) return;
+
+    const targetPhone = recipientPhone.trim();
+    if (!targetPhone) {
+      toast.error(t.pleaseEnterPhone);
+      return;
+    }
+
+    const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');
+    if (limitCheckResult === null) return;
+
+    const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
+    const smsUrl = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
+
+    // Keep the SMS launch inside the user's click/tap event. Awaiting backend work
+    // before opening sms: can cause browsers to block the action as a popup.
+    if (currentUser && limitCheckResult.type !== 'guest') {
+      sendNoteMutation.mutate({
+        note_title: note.title,
+        note_content: note.content,
+        recipient_type: limitCheckResult.type,
+        recipient_identifier: limitCheckResult.identifier,
+        social_platform: limitCheckResult.social_platform,
+        sent_date: new Date().toISOString(),
+        created_by: currentUser.id,
+      }, {
+        onError: (error) => console.error('Unable to record sent love note:', error),
+      });
+    }
+
+    window.location.href = smsUrl;
+    toast.success(t.openingText);
+    setSendModalNote(null);
+    setRecipientPhone('');
+    setIsScheduling(false);
+  };
+
+'''
+
+          if 'const handleSendNow = (note) =>' not in text:
+              text = text.replace(marker, send_now + marker, 1)
+
+          text = text.replace('❤️ From One 2 One Love', '❤️ From One2One Love')
+
+          old_tab = 'onClick={() => setIsScheduling(false)}'
+          new_tab = "onClick={() => {\n                        setIsScheduling(false);\n                        handleSendNow(sendModalNote);\n                      }}"
+          if old_tab not in text:
+              raise SystemExit('Send Now tab handler not found')
+          text = text.replace(old_tab, new_tab, 1)
+
+          old_footer = "onClick={() => isScheduling ? handleScheduleNote() : handleSendVia(sendModalNote, 'text')}"
+          new_footer = "onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}"
+          if old_footer not in text:
+              raise SystemExit('Footer send handler not found')
+          text = text.replace(old_footer, new_footer, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit repaired Send Now behavior
+        shell: bash
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/LoveNotes.jsx
+          git diff --cached --check
+          git commit -m "fix: make Love Notes Send Now work immediately"
+          git push origin HEAD:migration/neon-cloudflare-one2onelove-20260905
