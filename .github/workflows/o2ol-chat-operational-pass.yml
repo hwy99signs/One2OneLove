@@ -1,0 +1,137 @@
+name: O2OL Chat Operational Pass
+
+on:
+  push:
+    branches:
+      - o2ol/launch-hardening-20260906
+    paths:
+      - .github/workflows/o2ol-chat-operational-pass.yml
+
+permissions:
+  contents: write
+
+jobs:
+  chat-pass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol/launch-hardening-20260906
+
+      - name: Repair buddy-to-chat handoff and message ownership
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          chat_page = Path('src/pages/Chat.jsx')
+          text = chat_page.read_text()
+          old = "    const userId = searchParams.get('userId');"
+          new = "    const userId = searchParams.get('userId') || searchParams.get('user');"
+          if old not in text:
+              raise SystemExit('Expected Chat URL parameter line not found')
+          chat_page.write_text(text.replace(old, new, 1))
+
+          friends = Path('src/pages/FindFriends.jsx')
+          text = friends.read_text()
+          old = "navigate(`${createPageUrl('Chat')}?user=${userData.id}&name=${encodeURIComponent(userData.name)}`);"
+          new = "navigate(`${createPageUrl('Chat')}?userId=${userData.id}&name=${encodeURIComponent(userData.name)}`);"
+          if old not in text:
+              raise SystemExit('Expected FindFriends chat link not found')
+          friends.write_text(text.replace(old, new, 1))
+
+          service = Path('src/lib/chatService.js')
+          text = service.read_text()
+
+          old_edit = """export const editMessage = async (messageId, newContent) => {
+  try {
+    console.log('✏️ Editing message:', messageId);
+
+    const { data: message, error } = await supabase
+      .from('messages')
+      .update({
+        content: newContent,
+        is_edited: true,
+      })
+      .eq('id', messageId)
+      .select()
+      .single();
+"""
+          new_edit = """export const editMessage = async (messageId, newContent) => {
+  try {
+    console.log('✏️ Editing message:', messageId);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data: message, error } = await supabase
+      .from('messages')
+      .update({
+        content: newContent,
+        is_edited: true,
+      })
+      .eq('id', messageId)
+      .eq('sender_id', user.id)
+      .select()
+      .single();
+"""
+          if old_edit not in text:
+              raise SystemExit('Expected editMessage block not found')
+          text = text.replace(old_edit, new_edit, 1)
+
+          old_delete = """export const deleteMessage = async (messageId) => {
+  try {
+    console.log('🗑️ Deleting message:', messageId);
+
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_deleted: true })
+      .eq('id', messageId);
+"""
+          new_delete = """export const deleteMessage = async (messageId) => {
+  try {
+    console.log('🗑️ Deleting message:', messageId);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_deleted: true })
+      .eq('id', messageId)
+      .eq('sender_id', user.id);
+"""
+          if old_delete not in text:
+              raise SystemExit('Expected deleteMessage block not found')
+          service.write_text(text.replace(old_delete, new_delete, 1))
+          PY
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build operational preview
+        env:
+          VITE_NEON_AUTH_URL: https://ep-snowy-field-arynp1lg.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
+          VITE_NEON_DATA_API_URL: https://ep-snowy-field-arynp1lg.apirest.c-4.us-west-2.aws.neon.tech/one2onelove/rest/v1
+        run: npm run build
+
+      - name: Deploy operational preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangler.preview.jsonc
+
+      - name: Commit chat operational fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/Chat.jsx src/pages/FindFriends.jsx src/lib/chatService.js
+          git commit -m "Make buddy-to-chat flow operational on Neon"
+          git push origin HEAD:o2ol/launch-hardening-20260906
