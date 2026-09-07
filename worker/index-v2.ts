@@ -14,16 +14,10 @@ import { handleCommunitiesRequest } from './communities';
 import { handleChatRequest } from './chat';
 import { handleBillingRequest } from './billing';
 import { handleEngagementRequest } from './engagement';
-import { handleLoveNotesSmsRequest } from './love-notes-sms';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-
-    if (url.pathname === '/api/love-notes/send-sms') {
-      const response = await handleLoveNotesSmsRequest(request, env, url);
-      if (response) return response;
-    }
 
     if (url.pathname.startsWith('/api/engagement')) {
       const response = await handleEngagementRequest(request, env, url);
