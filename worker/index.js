@@ -41,8 +41,17 @@ const decodePathSegments = (pathname) =>
     .filter(Boolean)
     .map((part) => decodeURIComponent(part));
 
-function ownedPath(userId, path) {
-  return Boolean(userId && path && (path === userId || path.startsWith(`${userId}/`)));
+/**
+ * Most legacy buckets stored files as <userId>/file. Chat media historically
+ * used chat-files/<userId>/file inside the chat-files bucket. Permit both exact
+ * preserved shapes while still preventing one user from writing another
+ * user's prefix.
+ */
+function ownedPath(userId, path, bucket = '') {
+  if (!userId || !path) return false;
+  if (path === userId || path.startsWith(`${userId}/`)) return true;
+  const legacyPrefix = bucket ? `${bucket}/${userId}` : '';
+  return Boolean(legacyPrefix && (path === legacyPrefix || path.startsWith(`${legacyPrefix}/`)));
 }
 
 async function handleStorageList(request, env) {
@@ -56,7 +65,7 @@ async function handleStorageList(request, env) {
   const prefix = url.searchParams.get('prefix') || '';
   const search = (url.searchParams.get('search') || '').toLowerCase();
 
-  if (!bucket || !ownedPath(userId, prefix || userId)) {
+  if (!bucket || !ownedPath(userId, prefix || userId, bucket)) {
     return json({ error: 'Invalid storage path' }, 403);
   }
 
@@ -89,7 +98,7 @@ async function handleStorageUpload(request, env, bucket, path) {
 
   const userId = await authenticatedUserId(request, env);
   if (!userId) return json({ error: 'Unauthorized' }, 401);
-  if (!bucket || !ownedPath(userId, path)) return json({ error: 'Invalid storage path' }, 403);
+  if (!bucket || !ownedPath(userId, path, bucket)) return json({ error: 'Invalid storage path' }, 403);
 
   const key = `${bucket}/${path}`;
   const upsert = request.headers.get('X-Upsert') === 'true';
@@ -120,7 +129,7 @@ async function handleStorageDelete(request, env) {
   const bucket = body?.bucket || '';
   const paths = Array.isArray(body?.paths) ? body.paths : [];
 
-  if (!bucket || !paths.length || paths.some((path) => !ownedPath(userId, path))) {
+  if (!bucket || !paths.length || paths.some((path) => !ownedPath(userId, path, bucket))) {
     return json({ error: 'Invalid storage paths' }, 403);
   }
 
