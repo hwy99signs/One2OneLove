@@ -194,11 +194,11 @@ export default function AboutUs() {
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">{t.focusTitle}</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-6">
             {cards(t).map((card, index) => {
               const Icon = card.icon;
               return (
-                <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-pink-100">
+                <div key={index} className="h-full bg-white rounded-2xl p-6 shadow-sm border border-pink-100">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center mb-4">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
@@ -212,13 +212,13 @@ export default function AboutUs() {
       </section>
 
       <section className="py-16 bg-white">
-        <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-2 gap-8">
-          <div className="rounded-2xl border border-pink-100 bg-pink-50 p-7">
+        <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-2 auto-rows-fr gap-8">
+          <div className="h-full rounded-2xl border border-pink-100 bg-pink-50 p-7">
             <MessageSquare className="w-8 h-8 text-pink-500 mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.approachTitle}</h2>
             <p className="text-gray-700 leading-relaxed">{t.approachBody}</p>
           </div>
-          <div className="rounded-2xl border border-purple-100 bg-purple-50 p-7">
+          <div className="h-full rounded-2xl border border-purple-100 bg-purple-50 p-7">
             <Sparkles className="w-8 h-8 text-purple-500 mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.evolveTitle}</h2>
             <p className="text-gray-700 leading-relaxed">{t.evolveBody}</p>
