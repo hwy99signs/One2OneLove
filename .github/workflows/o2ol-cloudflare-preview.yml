@@ -1,0 +1,52 @@
+name: O2OL Cloudflare Preview
+
+on:
+  push:
+    branches:
+      - o2ol/launch-hardening-20260906
+    paths:
+      - 'src/**'
+      - 'worker/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
+      - 'wrangler.preview.jsonc'
+      - '.github/workflows/o2ol-cloudflare-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol/launch-hardening-20260906
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build O2OL preview
+        env:
+          VITE_NEON_AUTH_URL: https://ep-snowy-field-arynp1lg.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
+          VITE_NEON_DATA_API_URL: https://ep-snowy-field-arynp1lg.apirest.c-4.us-west-2.aws.neon.tech/one2onelove/rest/v1
+        run: npm run build
+
+      - name: Deploy Cloudflare preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangler.preview.jsonc
+
+      - name: Print preview URL
+        run: echo "Preview: https://one2onelove-preview-migration.hwy99signs.workers.dev"
