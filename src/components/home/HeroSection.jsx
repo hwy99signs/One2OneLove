@@ -44,7 +44,7 @@ export default function HeroSection({ stats }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 pb-10 sm:pb-12 text-center">
         <div className="flex justify-center mb-6">
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" 
@@ -114,7 +114,7 @@ export default function HeroSection({ stats }) {
         </div>
 
         {/* Stats */}
-        <div className="flex flex-wrap items-stretch justify-center gap-2 mb-6">
+        <div className="flex flex-wrap items-stretch justify-center gap-2">
           <div className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-xl flex flex-col justify-center">
             <div className="text-xl leading-none font-bold text-pink-600 mb-1">{stats?.notesCreated || 0}</div>
             <div className="text-[11px] leading-tight text-gray-600 font-medium">{t.hero.loveNotesCreated}</div>
