@@ -80,16 +80,16 @@ export default function MyMatchIQ() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4 mt-10">
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-5 text-center">
+          <div className="grid sm:grid-cols-3 auto-rows-fr gap-4 mt-10">
+            <div className="h-full rounded-2xl bg-white/10 border border-white/10 p-5 text-center">
               <ShieldCheck className="w-7 h-7 mx-auto mb-2 text-emerald-300" />
               <div className="font-semibold">{t.private}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-5 text-center">
+            <div className="h-full rounded-2xl bg-white/10 border border-white/10 p-5 text-center">
               <BrainCircuit className="w-7 h-7 mx-auto mb-2 text-cyan-300" />
               <div className="font-semibold">{t.compatibility}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-5 text-center">
+            <div className="h-full rounded-2xl bg-white/10 border border-white/10 p-5 text-center">
               <Heart className="w-7 h-7 mx-auto mb-2 text-pink-300" />
               <div className="font-semibold">{t.connection}</div>
             </div>
