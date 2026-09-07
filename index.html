@@ -7,8 +7,8 @@
     <title>One2OneLove</title>
     <style>
       header > div[class*="max-w-7xl"] > div[class*="h-16"] {
-        height: 5.5rem !important;
-        min-height: 5.5rem !important;
+        height: 6rem !important;
+        min-height: 6rem !important;
       }
       header img[alt="One2One Love Logo"] {
         height: 2.5rem !important;
@@ -18,13 +18,25 @@
         zoom: 1.75 !important;
       }
       header img[alt="One2One Love Logo"] + div {
-        margin-left: -0.35rem !important;
+        margin-left: -0.85rem !important;
       }
       header img[alt="One2One Love Logo"] + div > div {
-        font-size: 2rem !important;
+        font-size: 0 !important;
         line-height: 1 !important;
-        letter-spacing: -0.045em !important;
+        letter-spacing: 0 !important;
         white-space: nowrap !important;
+      }
+      header img[alt="One2One Love Logo"] + div > div::after {
+        content: "One2OneLove";
+        font-size: 2.35rem !important;
+        font-weight: 800 !important;
+        line-height: 1 !important;
+        letter-spacing: -0.055em !important;
+        white-space: nowrap !important;
+        color: white !important;
+      }
+      header a:has(> img[alt="One2One Love Logo"]) {
+        gap: 0 !important;
       }
     </style>
   </head>
@@ -54,8 +66,8 @@
 
           const headerRow = logo.closest('header')?.querySelector('div[class*="h-16"]');
           if (headerRow) {
-            headerRow.style.setProperty('height', '5.5rem', 'important');
-            headerRow.style.setProperty('min-height', '5.5rem', 'important');
+            headerRow.style.setProperty('height', '6rem', 'important');
+            headerRow.style.setProperty('min-height', '6rem', 'important');
           }
 
           const brandLink = logo.closest('a');
@@ -65,17 +77,12 @@
 
           const brandWrapper = logo.nextElementSibling;
           if (brandWrapper) {
-            brandWrapper.style.setProperty('margin-left', '-0.35rem', 'important');
+            brandWrapper.style.setProperty('margin-left', '-0.85rem', 'important');
           }
 
           const brandName = brandWrapper?.querySelector('div');
-          if (brandName) {
+          if (brandName && brandName.textContent !== 'One2OneLove') {
             brandName.textContent = 'One2OneLove';
-            brandName.style.setProperty('font-size', '2rem', 'important');
-            brandName.style.setProperty('font-weight', '700', 'important');
-            brandName.style.setProperty('line-height', '1', 'important');
-            brandName.style.setProperty('letter-spacing', '-0.045em', 'important');
-            brandName.style.setProperty('white-space', 'nowrap', 'important');
           }
         };
 
@@ -145,7 +152,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
           const observer = new MutationObserver(syncMenuState);
-          observer.observe(document.body, { childList: true, subtree: true });
+          observer.observe(document.body, { childList: true, characterData: true, subtree: true });
           applyHeaderBranding();
           syncMenuState();
         });
