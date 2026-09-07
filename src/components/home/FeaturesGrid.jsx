@@ -6,7 +6,6 @@ import {
   BookOpen, 
   Award, 
   Lock,
-  Ship,
   Crown,
   Mail,
   Users,
@@ -55,12 +54,6 @@ export default function FeaturesGrid() {
   ];
 
   const rightFeatures = [
-    {
-      icon: Ship,
-      color: "text-yellow-500",
-      title: "Win a Romantic Cruise",
-      description: "Monthly contests with amazing prizes worth up to $"
-    },
     {
       icon: Crown,
       color: "text-purple-500",
