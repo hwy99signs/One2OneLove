@@ -106,7 +106,7 @@ export default function Chat() {
 
   // Handle URL parameters to open a specific chat
   useEffect(() => {
-    const userId = searchParams.get('userId');
+    const userId = searchParams.get('userId') || searchParams.get('user');
     
     if (userId && user) {
       console.log('📱 Opening chat with userId:', userId);

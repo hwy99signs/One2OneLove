@@ -292,7 +292,7 @@ export default function FindFriends() {
                         variant="outline"
                         onClick={() => {
                           // Navigate to chat page with this user
-                          navigate(`${createPageUrl('Chat')}?user=${userData.id}&name=${encodeURIComponent(userData.name)}`);
+                          navigate(`${createPageUrl('Chat')}?userId=${userData.id}&name=${encodeURIComponent(userData.name)}`);
                         }}
                         title="Send Message"
                       >

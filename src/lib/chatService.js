@@ -747,6 +747,9 @@ export const editMessage = async (messageId, newContent) => {
   try {
     console.log('✏️ Editing message:', messageId);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data: message, error } = await supabase
       .from('messages')
       .update({
@@ -754,6 +757,7 @@ export const editMessage = async (messageId, newContent) => {
         is_edited: true,
       })
       .eq('id', messageId)
+      .eq('sender_id', user.id)
       .select()
       .single();
 
@@ -777,10 +781,14 @@ export const deleteMessage = async (messageId) => {
   try {
     console.log('🗑️ Deleting message:', messageId);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { error } = await supabase
       .from('messages')
       .update({ is_deleted: true })
-      .eq('id', messageId);
+      .eq('id', messageId)
+      .eq('sender_id', user.id);
 
     if (error) {
       console.error('Error deleting message:', error);
