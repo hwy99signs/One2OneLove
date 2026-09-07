@@ -186,6 +186,12 @@ button:focus-visible {
     }
   }
 
+  /* Header logo only: 75% larger than the original h-10 (2.5rem) size. */
+  header img[alt="One2One Love Logo"] {
+    height: 4.375rem !important;
+    width: auto !important;
+  }
+
   /* Header controls: make the visible tabs fit their content instead of leaving large empty space. */
   header button[role="combobox"] {
     width: 4.65rem !important;
