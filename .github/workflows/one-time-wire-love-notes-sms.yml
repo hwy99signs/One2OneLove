@@ -23,7 +23,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-
           path = Path('src/pages/LoveNotes.jsx')
           text = path.read_text(encoding='utf-8')
 
@@ -59,87 +58,75 @@ jobs:
           if start == -1 or end == -1 or end <= start:
               raise SystemExit('Send Now handler markers not found')
 
-          replacement = '''  const handleSendNow = async (note) => {
-    if (!note || isSendingNow) return;
-
-    const targetPhone = recipientPhone.trim();
-    if (!targetPhone) {
-      toast.error(t.pleaseEnterPhone);
-      return;
-    }
-
-    const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');
-    if (limitCheckResult === null) return;
-
-    // Guests can still hand the message to their device's native SMS app.
-    // Logged-in members use One2OneLove's server-side SMS delivery route.
-    if (!currentUser?.id) {
-      const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
-      window.location.href = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
-      toast.success(t.openingText);
-      setSendModalNote(null);
-      setRecipientPhone('');
-      setIsScheduling(false);
-      return;
-    }
-
-    setIsSendingNow(true);
-    try {
-      await sendLoveNoteSms({
-        recipient_phone: targetPhone,
-        note_title: note.title,
-        note_content: note.content,
-        note_language: currentLanguage,
-      });
-
-      try {
-        await sendNoteMutation.mutateAsync({
-          note_title: note.title,
-          note_content: note.content,
-          recipient_type: limitCheckResult.type,
-          recipient_identifier: limitCheckResult.identifier,
-          social_platform: limitCheckResult.social_platform,
-          sent_date: new Date().toISOString(),
-          created_by: currentUser.id,
-        });
-      } catch (recordError) {
-        console.error('Love note was sent but could not be recorded:', recordError);
-      }
-
-      toast.success(t.sendSuccess);
-      setSendModalNote(null);
-      setRecipientPhone('');
-      setIsScheduling(false);
-    } catch (error) {
-      console.error('Unable to send Love Note SMS:', error);
-      if (error?.code === 'sms_not_configured') {
-        toast.error(t.smsNotConfigured);
-      } else {
-        toast.error(t.sendFailed);
-      }
-    } finally {
-      setIsSendingNow(false);
-    }
-  };
-
-'''
+          lines = [
+              '  const handleSendNow = async (note) => {',
+              '    if (!note || isSendingNow) return;',
+              '',
+              '    const targetPhone = recipientPhone.trim();',
+              '    if (!targetPhone) {',
+              '      toast.error(t.pleaseEnterPhone);',
+              '      return;',
+              '    }',
+              '',
+              "    const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');",
+              '    if (limitCheckResult === null) return;',
+              '',
+              "    if (!currentUser?.id) {",
+              '      const messageText = `${note.title}\\n\\n${note.content}\\n\\n❤️ From One2One Love`;',
+              '      window.location.href = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;',
+              '      toast.success(t.openingText);',
+              '      setSendModalNote(null);',
+              "      setRecipientPhone('');",
+              '      setIsScheduling(false);',
+              '      return;',
+              '    }',
+              '',
+              '    setIsSendingNow(true);',
+              '    try {',
+              '      await sendLoveNoteSms({',
+              '        recipient_phone: targetPhone,',
+              '        note_title: note.title,',
+              '        note_content: note.content,',
+              '        note_language: currentLanguage,',
+              '      });',
+              '',
+              '      try {',
+              '        await sendNoteMutation.mutateAsync({',
+              '          note_title: note.title,',
+              '          note_content: note.content,',
+              '          recipient_type: limitCheckResult.type,',
+              '          recipient_identifier: limitCheckResult.identifier,',
+              '          social_platform: limitCheckResult.social_platform,',
+              '          sent_date: new Date().toISOString(),',
+              '          created_by: currentUser.id,',
+              '        });',
+              '      } catch (recordError) {',
+              "        console.error('Love note was sent but could not be recorded:', recordError);",
+              '      }',
+              '',
+              '      toast.success(t.sendSuccess);',
+              '      setSendModalNote(null);',
+              "      setRecipientPhone('');",
+              '      setIsScheduling(false);',
+              '    } catch (error) {',
+              "      console.error('Unable to send Love Note SMS:', error);",
+              "      if (error?.code === 'sms_not_configured') {",
+              '        toast.error(t.smsNotConfigured);',
+              '      } else {',
+              '        toast.error(t.sendFailed);',
+              '      }',
+              '    } finally {',
+              '      setIsSendingNow(false);',
+              '    }',
+              '  };',
+              '',
+          ]
+          replacement = '\n'.join(lines) + '\n'
           text = text[:start] + replacement + text[end:]
 
-          text = text.replace(
-              '                  disabled={scheduleMutation.isPending}\n',
-              '                  disabled={scheduleMutation.isPending || isSendingNow}\n',
-              1,
-          )
-          text = text.replace(
-              '                  {scheduleMutation.isPending ? (\n',
-              '                  {(scheduleMutation.isPending || isSendingNow) ? (\n',
-              1,
-          )
-          text = text.replace(
-              '                      {isScheduling ? t.scheduleNote : t.sendLoveNote}\n',
-              '                      {isScheduling ? t.scheduleNote : t.sendNow}\n',
-              1,
-          )
+          text = text.replace('                  disabled={scheduleMutation.isPending}\n', '                  disabled={scheduleMutation.isPending || isSendingNow}\n', 1)
+          text = text.replace('                  {scheduleMutation.isPending ? (\n', '                  {(scheduleMutation.isPending || isSendingNow) ? (\n', 1)
+          text = text.replace('                      {isScheduling ? t.scheduleNote : t.sendLoveNote}\n', '                      {isScheduling ? t.scheduleNote : t.sendNow}\n', 1)
 
           path.write_text(text, encoding='utf-8')
 
