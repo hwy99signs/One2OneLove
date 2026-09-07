@@ -1,0 +1,43 @@
+name: One-time Header Name Repair
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - .github/workflows/one-time-fix-header-name.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair-header-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/neon-cloudflare-one2onelove-20260905
+
+      - name: Correct header brand name
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('src/pages/Layout.jsx')
+          text = path.read_text(encoding='utf-8')
+          old = '>One2OneLove</div>'
+          new = '>One2One Love</div>'
+          if old not in text:
+              raise SystemExit('Header brand text not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit header correction
+        shell: bash
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/Layout.jsx
+          git diff --cached --check
+          git commit -m "fix: correct One2One Love header name"
+          git push origin HEAD:migration/neon-cloudflare-one2onelove-20260905
