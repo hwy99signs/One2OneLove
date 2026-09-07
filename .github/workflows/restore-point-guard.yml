@@ -1,0 +1,28 @@
+name: One2OneLove Restore Point Guard
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+  pull_request:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+
+jobs:
+  protect-approved-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require approved restore point in branch history
+        shell: bash
+        run: |
+          BASELINE="8692038a2524c131103eafa3b2cfd2908447d781"
+          if ! git merge-base --is-ancestor "$BASELINE" HEAD; then
+            echo "::error::One2OneLove has moved behind the admin-approved restore point $BASELINE. Explicit admin approval is required before any rollback past this point."
+            exit 1
+          fi
+          echo "Approved One2OneLove restore point is preserved in branch history."
