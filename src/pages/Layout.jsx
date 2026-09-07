@@ -254,9 +254,9 @@ function LanguageContent({ children, currentPageName }) {
       {/* Header */}
       <header className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-24">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
+            <Link to={createPageUrl("Home")} className="flex items-center gap-0 hover:opacity-90 transition-opacity flex-shrink-0">
               <img 
                 src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
                 alt="One2One Love Logo" 
@@ -266,8 +266,8 @@ function LanguageContent({ children, currentPageName }) {
                   e.target.style.display = 'none';
                 }}
               />
-              <div className="hidden sm:block">
-                <div className="text-lg font-bold text-white leading-tight">One 2 One Love</div>
+              <div className="hidden sm:block -ml-3">
+                <div className="text-[2.35rem] font-extrabold text-white leading-none tracking-[-0.055em] whitespace-nowrap">One2OneLove</div>
               </div>
             </Link>
 
