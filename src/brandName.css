@@ -1,0 +1,4 @@
+/* Canonical One2One Love brand display override. Keep the exact brand name as: One2One Love. */
+header img[alt="One2One Love Logo"] + div > div::after {
+  content: "One2One Love" !important;
+}
