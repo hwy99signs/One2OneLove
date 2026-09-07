@@ -1,7 +1,5 @@
-
-import React, { useState } from "react";
-import { Mic, ArrowLeft, Heart, Users, MessageCircle, TrendingUp, PlayCircle, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { Mic, ArrowLeft, Heart, Users, MessageCircle, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -10,328 +8,153 @@ import { useLanguage } from "@/Layout";
 
 const translations = {
   en: {
-    title: "Relationship Podcasts",
-    subtitle: "Listen to relationship podcasts and expert advice for couples",
+    title: "Featured Podcasters",
+    subtitle: "A curated home for approved relationship-focused podcasters and selected episodes",
     back: "Back to Support",
-    category: "Category",
-    categories: { all: "All Podcasts", communication: "Communication", intimacy: "Intimacy & Connection", conflict: "Conflict Resolution", dating: "Dating & Singles", marriage: "Marriage", growth: "Personal Growth" },
-    featuredPodcasts: "Featured Podcasts",
-    episodes: "episodes",
-    avgDuration: "Avg",
-    listenNow: "Listen Now",
-    ctaTitle: "Start Your Relationship Journey Today",
-    ctaSubtitle: "Subscribe to these podcasts and get expert relationship advice delivered to your ears weekly",
-    exploreAll: "Explore All Podcasts"
+    comingSoon: "Featured podcasters are coming soon",
+    body: "We are removing placeholder listings and building this section with real podcasters only. Podcasters will appear here after they are reviewed and approved for One2OneLove.",
+    whatToExpect: "What You’ll Find Here",
+    communication: "Communication",
+    communicationDesc: "Conversations about listening, expressing needs, conflict, and connection.",
+    dating: "Dating & Relationships",
+    datingDesc: "Thoughtful discussions about dating, compatibility, boundaries, and intentional relationships.",
+    marriage: "Marriage",
+    marriageDesc: "Content focused specifically on married couples, commitment, partnership, and long-term growth.",
+    growth: "Personal & Relationship Growth",
+    growthDesc: "Episodes that encourage reflection, emotional awareness, responsibility, and healthy relationship habits.",
+    note: "Only approved podcasters and real episode information will be displayed here."
   },
   es: {
-    title: "Podcasts de Relaciones",
-    subtitle: "Escucha podcasts de relaciones y consejos de expertos para parejas",
+    title: "Podcasters Destacados",
+    subtitle: "Un espacio seleccionado para podcasters aprobados enfocados en relaciones y episodios elegidos",
     back: "Volver al Apoyo",
-    category: "Categoría",
-    categories: { all: "Todos los Podcasts", communication: "Comunicación", intimacy: "Intimidad y Conexión", conflict: "Resolución de Conflictos", dating: "Citas y Solteros", marriage: "Matrimonio", growth: "Crecimiento Personal" },
-    featuredPodcasts: "Podcasts Destacados",
-    episodes: "episodios",
-    avgDuration: "Promedio",
-    listenNow: "Escuchar Ahora",
-    ctaTitle: "Comienza Tu Viaje de Relación Hoy",
-    ctaSubtitle: "Suscríbete a estos podcasts y recibe consejos expertos de relaciones directamente en tus oídos semanalmente",
-    exploreAll: "Explorar Todos los Podcasts"
+    comingSoon: "Los podcasters destacados llegarán pronto",
+    body: "Estamos eliminando listados de ejemplo y construyendo esta sección solo con podcasters reales. Aparecerán aquí después de ser revisados y aprobados para One2OneLove.",
+    whatToExpect: "Qué Encontrarás Aquí",
+    communication: "Comunicación",
+    communicationDesc: "Conversaciones sobre escuchar, expresar necesidades, conflicto y conexión.",
+    dating: "Citas y Relaciones",
+    datingDesc: "Debates reflexivos sobre citas, compatibilidad, límites y relaciones intencionales.",
+    marriage: "Matrimonio",
+    marriageDesc: "Contenido enfocado en parejas casadas, compromiso, compañerismo y crecimiento a largo plazo.",
+    growth: "Crecimiento Personal y de Pareja",
+    growthDesc: "Episodios que fomentan reflexión, conciencia emocional, responsabilidad y hábitos saludables.",
+    note: "Aquí solo se mostrarán podcasters aprobados e información real de episodios."
   },
   fr: {
-    title: "Podcasts sur les Relations",
-    subtitle: "Écoutez des podcasts sur les relations et des conseils d'experts pour les couples",
+    title: "Podcasteurs en Vedette",
+    subtitle: "Un espace sélectionné pour des podcasteurs relationnels approuvés et des épisodes choisis",
     back: "Retour au Soutien",
-    category: "Catégorie",
-    categories: { all: "Tous les Podcasts", communication: "Communication", intimacy: "Intimité et Connexion", conflict: "Résolution de Conflits", dating: "Rencontres et Célibataires", marriage: "Mariage", growth: "Croissance Personnelle" },
-    featuredPodcasts: "Podcasts en Vedette",
-    episodes: "épisodes",
-    avgDuration: "Moy",
-    listenNow: "Écouter Maintenant",
-    ctaTitle: "Commencez Votre Parcours Relationnel Aujourd'hui",
-    ctaSubtitle: "Abonnez-vous à ces podcasts et recevez des conseils d'experts en relations directement dans vos oreilles chaque semaine",
-    exploreAll: "Explorer Tous les Podcasts"
+    comingSoon: "Les podcasteurs en vedette arrivent bientôt",
+    body: "Nous supprimons les listes fictives et construisons cette section uniquement avec de vrais podcasteurs. Ils apparaîtront ici après examen et approbation pour One2OneLove.",
+    whatToExpect: "Ce Que Vous Trouverez Ici",
+    communication: "Communication",
+    communicationDesc: "Des conversations sur l'écoute, l'expression des besoins, les conflits et la connexion.",
+    dating: "Rencontres et Relations",
+    datingDesc: "Des échanges réfléchis sur les rencontres, la compatibilité, les limites et les relations intentionnelles.",
+    marriage: "Mariage",
+    marriageDesc: "Du contenu destiné aux couples mariés, à l'engagement, au partenariat et à la croissance à long terme.",
+    growth: "Croissance Personnelle et Relationnelle",
+    growthDesc: "Des épisodes favorisant la réflexion, la conscience émotionnelle, la responsabilité et des habitudes relationnelles saines.",
+    note: "Seuls des podcasteurs approuvés et des informations réelles sur les épisodes seront affichés ici."
   },
   it: {
-    title: "Podcast sulle Relazioni",
-    subtitle: "Ascolta podcast sulle relazioni e consigli di esperti per coppie",
+    title: "Podcaster in Evidenza",
+    subtitle: "Uno spazio curato per podcaster approvati dedicati alle relazioni e episodi selezionati",
     back: "Torna al Supporto",
-    category: "Categoria",
-    categories: { all: "Tutti i Podcast", communication: "Comunicazione", intimacy: "Intimità e Connessione", conflict: "Risoluzione dei Conflitti", dating: "Appuntamenti e Single", marriage: "Matrimonio", growth: "Crescita Personale" },
-    featuredPodcasts: "Podcast in Evidenza",
-    episodes: "episodi",
-    avgDuration: "Media",
-    listenNow: "Ascolta Ora",
-    ctaTitle: "Inizia Il Tuo Viaggio Relazionale Oggi",
-    ctaSubtitle: "Iscriviti a questi podcast e ricevi consigli esperti sulle relazioni direttamente nelle tue orecchie ogni settimana",
-    exploreAll: "Esplora Tutti i Podcast"
+    comingSoon: "I podcaster in evidenza arriveranno presto",
+    body: "Stiamo eliminando gli elenchi di esempio e costruendo questa sezione solo con podcaster reali. Appariranno qui dopo essere stati esaminati e approvati per One2OneLove.",
+    whatToExpect: "Cosa Troverai Qui",
+    communication: "Comunicazione",
+    communicationDesc: "Conversazioni su ascolto, bisogni, conflitti e connessione.",
+    dating: "Appuntamenti e Relazioni",
+    datingDesc: "Discussioni su appuntamenti, compatibilità, confini e relazioni intenzionali.",
+    marriage: "Matrimonio",
+    marriageDesc: "Contenuti dedicati alle coppie sposate, all'impegno, alla collaborazione e alla crescita a lungo termine.",
+    growth: "Crescita Personale e Relazionale",
+    growthDesc: "Episodi che incoraggiano riflessione, consapevolezza emotiva, responsabilità e abitudini relazionali sane.",
+    note: "Qui verranno mostrati solo podcaster approvati e informazioni reali sugli episodi."
   },
   de: {
-    title: "Beziehungspodcasts",
-    subtitle: "Hören Sie Beziehungspodcasts und Expertenrat für Paare",
+    title: "Ausgewählte Podcaster",
+    subtitle: "Ein kuratierter Bereich für geprüfte beziehungsorientierte Podcaster und ausgewählte Episoden",
     back: "Zurück zur Unterstützung",
-    category: "Kategorie",
-    categories: { all: "Alle Podcasts", communication: "Kommunikation", intimacy: "Intimität & Verbindung", conflict: "Konfliktlösung", dating: "Dating & Singles", marriage: "Ehe", growth: "Persönliches Wachstum" },
-    featuredPodcasts: "Hervorgehobene Podcasts",
-    episodes: "Episoden",
-    avgDuration: "Durchschn.",
-    listenNow: "Jetzt Anhören",
-    ctaTitle: "Beginnen Sie Ihre Beziehungsreise Heute",
-    ctaSubtitle: "Abonnieren Sie diese Podcasts und erhalten Sie wöchentlich Expertenrat für Beziehungen in Ihre Ohren geliefert",
-    exploreAll: "Alle Podcasts Erkunden"
-  },
-  nl: {
-    title: "Relatie Podcasts",
-    subtitle: "Luister naar relatiepodcasts en expert advies voor koppels",
-    back: "Terug naar Ondersteuning",
-    category: "Categorie",
-    categories: { all: "Alle Podcasts", communication: "Communicatie", intimacy: "Intimiteit & Verbinding", conflict: "Conflictoplossing", dating: "Daten & Singles", marriage: "Huwelijk", growth: "Persoonlijke Groei" },
-    featuredPodcasts: "Uitgelichte Podcasts",
-    episodes: "afleveringen",
-    avgDuration: "Gem",
-    listenNow: "Nu Beluisteren",
-    ctaTitle: "Begin Je Relatiereis Vandaag",
-    ctaSubtitle: "Abonneer je op deze podcasts en ontvang wekelijks expert relatieadvies in je oren",
-    exploreAll: "Alle Podcasts Verkennen"
-  },
-  pt: {
-    title: "Podcasts de Relacionamento",
-    subtitle: "Ouça podcasts sobre relacionamentos e conselhos de especialistas para casais",
-    back: "Voltar ao Suporte",
-    category: "Categoria",
-    categories: { all: "Todos os Podcasts", communication: "Comunicação", intimacy: "Intimidade e Conexão", conflict: "Resolução de Conflitos", dating: "Namoro e Solteiros", marriage: "Casamento", growth: "Crescimento Pessoal" },
-    featuredPodcasts: "Podcasts em Destaque",
-    episodes: "episódios",
-    avgDuration: "Média",
-    listenNow: "Ouvir Agora",
-    ctaTitle: "Comece Sua Jornada de Relacionamento Hoje",
-    ctaSubtitle: "Inscreva-se nesses podcasts e receba conselhos especializados em relacionamentos semanalmente em seus ouvidos",
-    exploreAll: "Explorar Todos os Podcasts"
+    comingSoon: "Ausgewählte Podcaster kommen bald",
+    body: "Wir entfernen Platzhalter-Listen und bauen diesen Bereich ausschließlich mit echten Podcastern auf. Sie erscheinen hier nach Prüfung und Freigabe für One2OneLove.",
+    whatToExpect: "Was Sie Hier Finden Werden",
+    communication: "Kommunikation",
+    communicationDesc: "Gespräche über Zuhören, Bedürfnisse, Konflikte und Verbindung.",
+    dating: "Dating und Beziehungen",
+    datingDesc: "Durchdachte Gespräche über Dating, Kompatibilität, Grenzen und bewusste Beziehungen.",
+    marriage: "Ehe",
+    marriageDesc: "Inhalte speziell für Ehepaare, Engagement, Partnerschaft und langfristiges Wachstum.",
+    growth: "Persönliches und Beziehungsmäßiges Wachstum",
+    growthDesc: "Episoden zu Reflexion, emotionalem Bewusstsein, Verantwortung und gesunden Beziehungsgewohnheiten.",
+    note: "Hier werden ausschließlich geprüfte Podcaster und echte Episodeninformationen angezeigt."
   }
 };
 
 export default function PodcastsSupport() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
-    { id: 'all', name: t.categories.all, icon: Mic, color: 'from-pink-500 to-rose-600' },
-    { id: 'communication', name: t.categories.communication, icon: MessageCircle, color: 'from-blue-500 to-cyan-600' },
-    { id: 'intimacy', name: t.categories.intimacy, icon: Heart, color: 'from-red-500 to-pink-600' },
-    { id: 'conflict', name: t.categories.conflict, icon: Users, color: 'from-purple-500 to-pink-600' },
-    { id: 'dating', name: t.categories.dating, icon: Heart, color: 'from-orange-500 to-red-600' },
-    { id: 'marriage', name: t.categories.marriage, icon: Heart, color: 'from-green-500 to-emerald-600' },
-    { id: 'growth', name: t.categories.growth, icon: TrendingUp, color: 'from-yellow-500 to-orange-600' }
+    { title: t.communication, description: t.communicationDesc, icon: MessageCircle, color: "from-blue-500 to-cyan-600" },
+    { title: t.dating, description: t.datingDesc, icon: Heart, color: "from-pink-500 to-rose-600" },
+    { title: t.marriage, description: t.marriageDesc, icon: Users, color: "from-purple-500 to-pink-600" },
+    { title: t.growth, description: t.growthDesc, icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
   ];
-
-  const podcasts = [
-    {
-      id: 1,
-      title: "The Relationship School Podcast",
-      host: "Dr. Jayson and Ellen Gaddis",
-      category: 'communication',
-      episodes: 250,
-      duration: "45 min",
-      color: "from-blue-500 to-cyan-600",
-      description: "Deep conversations about conscious relationships, communication skills, and personal growth for couples.",
-      rating: 4.9
-    },
-    {
-      id: 2,
-      title: "Where Should We Begin?",
-      host: "Esther Perel",
-      category: 'intimacy',
-      episodes: 180,
-      duration: "50 min",
-      color: "from-red-500 to-pink-600",
-      description: "Real couples therapy sessions exploring intimacy, desire, and the complexities of modern relationships.",
-      rating: 4.8
-    },
-    {
-      id: 3,
-      title: "The Love, Happiness & Success Podcast",
-      host: "Dr. Lisa Marie Bobby",
-      category: 'growth',
-      episodes: 320,
-      duration: "35 min",
-      color: "from-yellow-500 to-orange-600",
-      description: "Practical advice on creating healthy relationships while maintaining personal growth and happiness.",
-      rating: 4.7
-    },
-    {
-      id: 4,
-      title: "Marriage Therapy Radio",
-      host: "Zach Brittle",
-      category: 'marriage',
-      episodes: 200,
-      duration: "30 min",
-      color: "from-green-500 to-emerald-600",
-      description: "Evidence-based strategies for building strong marriages based on the Gottman Method.",
-      rating: 4.8
-    },
-    {
-      id: 5,
-      title: "The Art of Charm",
-      host: "Jordan Harbinger",
-      category: 'dating',
-      episodes: 500,
-      duration: "60 min",
-      color: "from-orange-500 to-red-600",
-      description: "Social dynamics, dating advice, and communication skills for singles and couples alike.",
-      rating: 4.6
-    },
-    {
-      id: 6,
-      title: "Foreplay Radio",
-      host: "George & Laurie Sapp",
-      category: 'intimacy',
-      episodes: 400,
-      duration: "40 min",
-      color: "from-pink-500 to-rose-600",
-      description: "Honest conversations about sex, intimacy, and keeping the passion alive in long-term relationships.",
-      rating: 4.7
-    }
-  ];
-
-  const filteredPodcasts = selectedCategory === 'all'
-    ? podcasts
-    : podcasts.filter(podcast => podcast.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-purple-100 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Link
-              to={createPageUrl("CoupleSupport")}
-              className="flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
-            >
-              <ArrowLeft size={20} className="mr-2" />
-              {t.back}
-            </Link>
-            <div className="flex items-center">
-              <Mic className="text-purple-500 mr-3" size={32} />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {t.title}
-                </h1>
-                <p className="text-sm text-gray-600">
-                  {t.subtitle}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <Link
+          to={createPageUrl("CoupleSupport")}
+          className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all mb-6"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          {t.back}
+        </Link>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Categories */}
-        <div className="mb-12">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">{t.category}</h3>
-          <div className="flex flex-wrap gap-3">
-            {categories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${
-                    selectedCategory === category.id
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {category.name}
-                </button>
-              );
-            })}
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full mb-6 shadow-xl">
+            <Mic className="w-10 h-10 text-white" />
           </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+        </motion.div>
+
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 text-white text-center shadow-xl mb-10">
+          <div className="inline-block bg-white/20 px-4 py-2 rounded-full text-sm font-bold mb-4">COMING SOON</div>
+          <h2 className="text-3xl font-bold mb-3">{t.comingSoon}</h2>
+          <p className="text-lg text-white/90 max-w-3xl mx-auto leading-relaxed">{t.body}</p>
         </div>
 
-        {/* Podcasts Grid */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">
-            {t.featuredPodcasts}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredPodcasts.map((podcast, index) => (
-              <motion.div
-                key={podcast.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="h-full hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-purple-200">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">{t.whatToExpect}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {categories.map((category, index) => {
+            const Icon = category.icon;
+            return (
+              <motion.div key={category.title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}>
+                <Card className="h-full border-0 shadow-md">
                   <CardHeader>
-                    <div className={`w-20 h-20 bg-gradient-to-br ${podcast.color} rounded-full flex items-center justify-center mb-4 shadow-lg mx-auto`}>
-                      <Mic className="w-10 h-10 text-white" />
+                    <div className={`w-14 h-14 bg-gradient-to-br ${category.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
+                      <Icon className="w-7 h-7 text-white" />
                     </div>
-                    <CardTitle className="text-xl font-bold text-gray-900 text-center line-clamp-2">
-                      {podcast.title}
-                    </CardTitle>
-                    <p className="text-sm text-gray-600 text-center">By {podcast.host}</p>
+                    <CardTitle className="text-xl">{category.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-center gap-4 mb-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <PlayCircle className="w-4 h-4" />
-                        <span>{podcast.episodes} {t.episodes}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{t.avgDuration} {podcast.duration}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-700 leading-relaxed mb-4 text-center">
-                      {podcast.description}
-                    </p>
-
-                    <div className="flex items-center justify-center gap-1 mb-4">
-                      {[...Array(5)].map((_, idx) => (
-                        <Heart
-                          key={idx}
-                          className={`w-4 h-4 ${
-                            idx < Math.floor(podcast.rating)
-                              ? 'text-pink-500 fill-pink-500'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                      <span className="text-sm text-gray-600 ml-2">({podcast.rating})</span>
-                    </div>
-
-                    <Button className={`w-full bg-gradient-to-r ${podcast.color} hover:opacity-90`}>
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                      {t.listenNow}
-                    </Button>
+                    <p className="text-gray-600 leading-relaxed">{category.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white shadow-2xl"
-        >
-          <Mic className="w-16 h-16 mx-auto mb-6" />
-          <h2 className="text-4xl font-bold mb-4">
-            {t.ctaTitle}
-          </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            {t.ctaSubtitle}
-          </p>
-          <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-6">
-            {t.exploreAll}
-          </Button>
-        </motion.div>
+        <div className="bg-white rounded-2xl border border-purple-100 px-6 py-5 text-center text-gray-600 shadow-sm">
+          {t.note}
+        </div>
       </div>
     </div>
   );
