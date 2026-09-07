@@ -35,6 +35,33 @@ export default function HeroSection({ stats }) {
 
   return (
     <div className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes o2olHeroSloganPulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+            filter: brightness(1);
+          }
+          50% {
+            opacity: 0.55;
+            transform: scale(1.025);
+            filter: brightness(1.2);
+          }
+        }
+
+        .o2ol-hero-slogan {
+          animation: o2olHeroSloganPulse 6s ease-in-out infinite;
+          transform-origin: center;
+          will-change: opacity, transform, filter;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .o2ol-hero-slogan {
+            animation: none;
+          }
+        }
+      `}</style>
+
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
@@ -56,7 +83,7 @@ export default function HeroSection({ stats }) {
           {t.hero.title} ✨
         </h1>
         
-        <p className="text-2xl sm:text-3xl md:text-4xl bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent mb-6 font-bold drop-shadow-lg italic">
+        <p className="o2ol-hero-slogan inline-block text-2xl sm:text-3xl md:text-4xl bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent mb-6 font-bold drop-shadow-lg italic">
           {t.hero.slogan}
         </p>
         
