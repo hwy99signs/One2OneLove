@@ -49,4 +49,5 @@ jobs:
           command: deploy --config wrangler.preview.jsonc
 
       - name: Print preview URL
-        run: echo "Preview: https://one2onelove-preview-migration.hwy99signs.workers.dev"
+        run: |
+          echo "Preview: https://one2onelove-preview-migration.hwy99signs.workers.dev"
