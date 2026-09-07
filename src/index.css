@@ -224,7 +224,7 @@ button:focus-visible {
 
   /* Desktop Action dropdown needs enough room for the full feature labels. */
   header nav[class*="lg:flex"] > div[class*="relative"] > div[class*="w-72"] {
-    width: 21rem !important;
+    width: 23rem !important;
   }
 
   /* Mobile navigation is a compact panel anchored under the hamburger. */
@@ -278,28 +278,31 @@ button:focus-visible {
       margin-bottom: 0.2rem !important;
     }
 
-    /* Keep the main hamburger narrow, but let the Action submenu open as a wider flyout so labels do not wrap. */
+    /* Keep the main hamburger narrow, but make Action a full-width flyout aligned to the same right edge. */
     header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav > div[class*="relative"] > div[class*="mt-1"] {
       position: absolute !important;
-      top: -0.15rem !important;
-      right: calc(100% + 0.35rem) !important;
-      width: min(13.25rem, calc(100vw - 7.75rem)) !important;
-      max-height: 70vh !important;
+      top: calc(100% + 0.2rem) !important;
+      right: 0 !important;
+      left: auto !important;
+      width: min(18rem, calc(100vw - 1rem)) !important;
+      min-width: min(18rem, calc(100vw - 1rem)) !important;
+      max-width: calc(100vw - 1rem) !important;
+      max-height: 72vh !important;
       overflow-y: auto !important;
       overflow-x: hidden !important;
-      padding: 0.25rem !important;
+      padding: 0.3rem !important;
       border: 1px solid rgba(255, 255, 255, 0.25) !important;
       border-radius: 0.8rem !important;
       background: linear-gradient(135deg, rgba(34, 211, 238, 0.99), rgba(59, 130, 246, 0.99)) !important;
       box-shadow: 0 16px 34px rgba(15, 23, 42, 0.3) !important;
-      z-index: 90 !important;
+      z-index: 100 !important;
     }
 
     header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav > div[class*="relative"] > div[class*="mt-1"] a {
-      padding: 0.5rem 0.65rem !important;
-      font-size: 0.82rem !important;
-      line-height: 1.1rem !important;
-      gap: 0.45rem !important;
+      padding: 0.6rem 0.8rem !important;
+      font-size: 0.86rem !important;
+      line-height: 1.15rem !important;
+      gap: 0.5rem !important;
       white-space: nowrap !important;
     }
   }
