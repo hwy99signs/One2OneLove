@@ -1,0 +1,71 @@
+name: O2OL Core Signup Repair
+
+on:
+  push:
+    branches:
+      - o2ol/launch-hardening-20260906
+    paths:
+      - '.github/workflows/o2ol-core-signup-repair.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: o2ol/launch-hardening-20260906
+
+      - name: Repair regular signup flow for Neon
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          auth_path = Path('src/contexts/AuthContext.jsx')
+          auth = auth_path.read_text()
+          old = """            subscription_plan: subscriptionPlan || 'Basic',
+            subscription_price: subscriptionPrice !== undefined ? subscriptionPrice : 0, // Basic is now free
+            subscription_status: 'active',
+            email_verified: isEmailConfirmed, // Track email verification status
+"""
+          if old not in auth:
+              raise SystemExit('Expected regular-user subscription/email verification insert block not found')
+          auth = auth.replace(old, '', 1)
+          auth_path.write_text(auth)
+
+          form_path = Path('src/components/signup/RegularUserForm.jsx')
+          form = form_path.read_text()
+          old_success = """      if (result.success) {
+        // Store the email and show dialog
+        setRegisteredEmail(formData.email);
+        setShowEmailDialog(true);
+        
+        // Also show a toast for good measure
+        toast.success(\"Account created successfully! Please check your email.\");
+      } else {
+"""
+          new_success = """      if (result.success) {
+        // Neon Auth is configured for immediate email/password access on this
+        // migration branch, so continue directly into the signed-in profile.
+        toast.success(\"Account created successfully!\");
+        navigate(createPageUrl(\"Profile\"));
+      } else {
+"""
+          if old_success not in form:
+              raise SystemExit('Expected regular-user signup success block not found')
+          form = form.replace(old_success, new_success, 1)
+          form_path.write_text(form)
+          PY
+
+      - name: Commit core signup repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/contexts/AuthContext.jsx src/components/signup/RegularUserForm.jsx
+          git commit -m "Make regular signup operational on Neon"
+          git push origin HEAD:o2ol/launch-hardening-20260906
