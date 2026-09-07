@@ -1,61 +1,104 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Headphones, Gift } from "lucide-react";
+import { Heart, Mic2, Sparkles } from "lucide-react";
+import { useLanguage } from "@/Layout";
+
+const translations = {
+  en: {
+    heading: "Everything You Need for a Perfect Relationship",
+    intro: "Discover all the amazing ways One2OneLove helps couples connect, communicate, and create lasting memories together.",
+    featured: "Coming Soon",
+    showName: "O2OL + Amora",
+    showLabel: "One2OneLove Talk Show",
+    description: "Real conversations about love, dating, marriage, communication and relationships.",
+    subtext: "Thoughtful perspectives, honest questions and a little fun — all centered on helping relationships grow."
+  },
+  es: {
+    heading: "Todo Lo Que Necesitas para una Relación Plena",
+    intro: "Descubre todas las formas en que One2OneLove ayuda a las parejas a conectarse, comunicarse y crear recuerdos duraderos juntos.",
+    featured: "Próximamente",
+    showName: "O2OL + Amora",
+    showLabel: "Programa de One2OneLove",
+    description: "Conversaciones reales sobre amor, citas, matrimonio, comunicación y relaciones.",
+    subtext: "Perspectivas reflexivas, preguntas sinceras y un poco de diversión, todo centrado en ayudar a que las relaciones crezcan."
+  },
+  fr: {
+    heading: "Tout Ce Dont Vous Avez Besoin pour une Relation Épanouie",
+    intro: "Découvrez toutes les façons dont One2OneLove aide les couples à se rapprocher, communiquer et créer ensemble des souvenirs durables.",
+    featured: "Bientôt disponible",
+    showName: "O2OL + Amora",
+    showLabel: "Émission One2OneLove",
+    description: "De vraies conversations sur l'amour, les rencontres, le mariage, la communication et les relations.",
+    subtext: "Des points de vue réfléchis, des questions sincères et un peu de légèreté — le tout pour aider les relations à grandir."
+  },
+  it: {
+    heading: "Tutto Ciò di Cui Hai Bisogno per una Relazione Appagante",
+    intro: "Scopri tutti i modi in cui One2OneLove aiuta le coppie a connettersi, comunicare e creare insieme ricordi duraturi.",
+    featured: "Prossimamente",
+    showName: "O2OL + Amora",
+    showLabel: "Talk Show One2OneLove",
+    description: "Conversazioni vere su amore, appuntamenti, matrimonio, comunicazione e relazioni.",
+    subtext: "Prospettive attente, domande sincere e un po' di divertimento — tutto pensato per aiutare le relazioni a crescere."
+  },
+  de: {
+    heading: "Alles, Was Ihr für eine Erfüllte Beziehung Braucht",
+    intro: "Entdeckt all die Möglichkeiten, wie One2OneLove Paaren hilft, sich zu verbinden, zu kommunizieren und gemeinsam bleibende Erinnerungen zu schaffen.",
+    featured: "Demnächst",
+    showName: "O2OL + Amora",
+    showLabel: "One2OneLove Talkshow",
+    description: "Echte Gespräche über Liebe, Dating, Ehe, Kommunikation und Beziehungen.",
+    subtext: "Nachdenkliche Perspektiven, ehrliche Fragen und ein wenig Spaß — alles mit dem Ziel, Beziehungen wachsen zu lassen."
+  }
+};
 
 export default function FeaturedPodcast() {
+  const { currentLanguage } = useLanguage();
+  const t = translations[currentLanguage] || translations.en;
+
   return (
     <div className="bg-white pt-20 pb-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl sm:text-5xl font-bold text-center text-gray-900 mb-16">
-          Everything You Need for a <br />Perfect Relationship
+          {t.heading}
         </h2>
-        
+
         <p className="text-xl text-center text-gray-600 mb-12 max-w-3xl mx-auto">
-          Discover all the amazing ways One 2 One Love helps couples connect, communicate, 
-          and create lasting memories together.
+          {t.intro}
         </p>
 
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6">
             <h3 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
-              ✨ Featured This Week ✨
+              ✨ {t.featured} ✨
             </h3>
           </div>
 
           <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-3xl p-8 border-2 border-pink-200 shadow-xl">
             <div className="flex flex-col md:flex-row gap-8 items-center">
-              <img
-                src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400"
-                alt="Dr. Sarah Chen"
-                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-              />
-              
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
+                <Heart className="w-16 h-16 text-white fill-white" />
+              </div>
+
               <div className="flex-1 text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                  <Headphones className="w-5 h-5 text-pink-500" />
-                  <span className="text-sm font-semibold text-pink-600 uppercase">Podcast</span>
+                  <Mic2 className="w-5 h-5 text-pink-500" />
+                  <span className="text-sm font-semibold text-pink-600 uppercase">{t.showLabel}</span>
                 </div>
-                
-                <h4 className="text-2xl font-bold text-gray-900 mb-2">
-                  The Love Lab with Dr. Sarah Chen
+
+                <h4 className="text-3xl font-bold text-gray-900 mb-3">
+                  {t.showName}
                 </h4>
-                
-                <p className="text-gray-600 mb-1">Relationship Therapist</p>
-                
-                <p className="text-gray-700 mb-4">
-                  🎉 Must-listen! Dr. Chen dishes out science-backed love advice with humor. 
-                  This week: "Why Your Partner Really Didn't Text Back" 😂
+
+                <p className="text-lg font-medium text-gray-800 mb-3">
+                  {t.description}
                 </p>
-                
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                  <Button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
-                    <Headphones className="w-4 h-4 mr-2" />
-                    Listen Now
-                  </Button>
-                  <Button variant="outline" className="border-pink-300 hover:bg-pink-50">
-                    <Gift className="w-4 h-4 mr-2" />
-                    🎁 Pro Tip: Share with your partner! 💕
-                  </Button>
+
+                <p className="text-gray-600 leading-relaxed">
+                  {t.subtext}
+                </p>
+
+                <div className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-full bg-white border border-pink-200 text-pink-600 font-semibold shadow-sm">
+                  <Sparkles className="w-4 h-4" />
+                  {t.featured}
                 </div>
               </div>
             </div>
