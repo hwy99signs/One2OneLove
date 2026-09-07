@@ -94,10 +94,10 @@ export default function FeaturesGrid() {
   ];
 
   return (
-    <div className="py-16 bg-gradient-to-b from-white to-gray-50">
+    <div className="pt-4 pb-16 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-start gap-4 mb-12">
+        <div className="flex items-start gap-4 mb-10">
           <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
             <Heart className="w-6 h-6 text-white fill-white" />
           </div>
