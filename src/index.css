@@ -197,11 +197,11 @@ button:focus-visible {
       top: calc(100% + 0.35rem) !important;
       right: 0.5rem !important;
       left: auto !important;
-      width: 17rem !important;
+      width: 8.5rem !important;
       max-width: calc(100vw - 1rem) !important;
       min-width: 0 !important;
       max-height: 70vh !important;
-      padding: 0.65rem !important;
+      padding: 0.5rem !important;
       border: 1px solid rgba(255, 255, 255, 0.28) !important;
       border-radius: 0.9rem !important;
       background: linear-gradient(135deg, rgba(34, 211, 238, 0.99), rgba(59, 130, 246, 0.99)) !important;
@@ -213,6 +213,14 @@ button:focus-visible {
 
     header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav {
       width: 100%;
+    }
+
+    header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav a,
+    header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav button {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+      font-size: 0.75rem !important;
+      line-height: 1rem !important;
     }
   }
 }
