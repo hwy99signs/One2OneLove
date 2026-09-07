@@ -4,6 +4,17 @@ const authUrl = process.env.VITE_NEON_AUTH_URL;
 const dataApiUrl = process.env.VITE_NEON_DATA_API_URL;
 if (!authUrl || !dataApiUrl) throw new Error('Missing Neon migration URLs');
 
+// Neon Auth expects the same Origin header a real browser sends. GitHub Actions
+// is headless, so add the trusted O2OL Cloudflare preview origin only for Auth.
+const nativeFetch = globalThis.fetch;
+globalThis.fetch = (input, init = {}) => {
+  const url = typeof input === 'string' ? input : input?.url || String(input);
+  if (!url.startsWith(authUrl)) return nativeFetch(input, init);
+  const headers = new Headers(init.headers || (typeof input !== 'string' ? input?.headers : undefined) || {});
+  if (!headers.has('Origin')) headers.set('Origin', 'https://one2onelove-preview-migration.hwy99signs.workers.dev');
+  return nativeFetch(input, { ...init, headers });
+};
+
 const makeClient = () => createClient({
   auth: { adapter: SupabaseAuthAdapter(), url: authUrl, allowAnonymous: true },
   dataApi: { url: dataApiUrl },
