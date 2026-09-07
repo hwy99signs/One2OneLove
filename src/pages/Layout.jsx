@@ -267,7 +267,7 @@ function LanguageContent({ children, currentPageName }) {
                 }}
               />
               <div className="hidden sm:block -ml-3">
-                <div className="text-[2.35rem] font-extrabold text-white leading-none tracking-[-0.055em] whitespace-nowrap">One2OneLove</div>
+                <div className="text-[2.35rem] font-extrabold text-white leading-none tracking-[-0.055em] whitespace-nowrap">One2One Love</div>
               </div>
             </Link>
 
