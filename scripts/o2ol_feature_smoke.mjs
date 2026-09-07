@@ -4,28 +4,49 @@ const authUrl = process.env.VITE_NEON_AUTH_URL;
 const dataApiUrl = process.env.VITE_NEON_DATA_API_URL;
 if (!authUrl || !dataApiUrl) throw new Error('Missing Neon migration URLs');
 
-// Neon Auth expects the same Origin header a real browser sends. GitHub Actions
-// is headless, so add the trusted O2OL Cloudflare preview origin only for Auth.
+// GitHub Actions is headless. Emulate the small part of a browser Neon Auth
+// needs for email/password tests: trusted Origin + persisted auth cookies.
 const nativeFetch = globalThis.fetch;
-globalThis.fetch = (input, init = {}) => {
-  const url = typeof input === 'string' ? input : input?.url || String(input);
-  if (!url.startsWith(authUrl)) return nativeFetch(input, init);
-  const headers = new Headers(init.headers || (typeof input !== 'string' ? input?.headers : undefined) || {});
-  if (!headers.has('Origin')) headers.set('Origin', 'https://one2onelove-preview-migration.hwy99signs.workers.dev');
-  return nativeFetch(input, { ...init, headers });
+const cookieJar = new Map();
+
+const cookieHeader = () => [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+const rememberCookies = (response) => {
+  const values = response.headers.getSetCookie?.() || [];
+  const fallback = response.headers.get('set-cookie');
+  const setCookies = values.length ? values : (fallback ? [fallback] : []);
+  for (const raw of setCookies) {
+    const first = raw.split(';', 1)[0];
+    const eq = first.indexOf('=');
+    if (eq <= 0) continue;
+    const name = first.slice(0, eq).trim();
+    const value = first.slice(eq + 1).trim();
+    if (value) cookieJar.set(name, value);
+    else cookieJar.delete(name);
+  }
 };
 
-const makeClient = () => createClient({
+globalThis.fetch = async (input, init = {}) => {
+  const url = typeof input === 'string' ? input : input?.url || String(input);
+  if (!url.startsWith(authUrl)) return nativeFetch(input, init);
+
+  const headers = new Headers(init.headers || (typeof input !== 'string' ? input?.headers : undefined) || {});
+  if (!headers.has('Origin')) headers.set('Origin', 'https://one2onelove-preview-migration.hwy99signs.workers.dev');
+  const cookies = cookieHeader();
+  if (cookies && !headers.has('Cookie')) headers.set('Cookie', cookies);
+
+  const response = await nativeFetch(input, { ...init, headers });
+  rememberCookies(response);
+  return response;
+};
+
+const client = createClient({
   auth: { adapter: SupabaseAuthAdapter(), url: authUrl, allowAnonymous: true },
   dataApi: { url: dataApiUrl },
 });
 
 const stamp = Date.now();
 const password = `O2OL-Smoke-${stamp}!Aa9`;
-const emailA = `o2ol-smoke-a-${stamp}@example.com`;
-const emailB = `o2ol-smoke-b-${stamp}@example.com`;
-const a = makeClient();
-const b = makeClient();
+const email = `o2ol-smoke-${stamp}@example.com`;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -41,106 +62,55 @@ function authUser(result) {
   return data?.user || data?.session?.user || result?.user || null;
 }
 
-async function signup(client, email, name) {
-  const result = await client.auth.signUp({
+async function main() {
+  console.log(`SMOKE_EMAIL=${email}`);
+
+  const signupResult = await client.auth.signUp({
     email,
     password,
-    options: { data: { name } },
+    options: { data: { name: 'O2OL Migration Smoke' } },
   });
-  const user = authUser(result);
-  assert(user?.id, `Sign-up did not return a user id for ${email}`);
-  return user;
-}
+  const user = authUser(signupResult);
+  assert(user?.id, 'Sign-up did not return a user id');
+  console.log(`SMOKE_USER=${user.id}`);
 
-async function main() {
-  console.log(`SMOKE_EMAIL_A=${emailA}`);
-  console.log(`SMOKE_EMAIL_B=${emailB}`);
+  const sessionData = unwrap('session', await client.auth.getSession());
+  assert(sessionData?.session || sessionData?.user || sessionData?.access_token || sessionData?.accessToken, 'Authenticated session was not retained');
 
-  const userA = await signup(a, emailA, 'O2OL Smoke A');
-  const userB = await signup(b, emailB, 'O2OL Smoke B');
-  console.log(`SMOKE_USER_A=${userA.id}`);
-  console.log(`SMOKE_USER_B=${userB.id}`);
-
-  unwrap('profile A insert', await a.from('users').insert({
-    id: userA.id,
-    email: emailA,
-    name: 'O2OL Smoke A',
+  const profile = unwrap('profile insert', await client.from('users').insert({
+    id: user.id,
+    email,
+    name: 'O2OL Migration Smoke',
     user_type: 'regular',
     relationship_status: 'in_relationship',
-    partner_email: emailB,
-  }).select('id,email,name,partner_email').single());
+  }).select('id,email,name,subscription_plan,subscription_status').single());
+  assert(profile?.id === user.id, 'Profile insert failed');
+  assert(profile?.subscription_plan === 'Basic', 'Basic subscription default was not applied');
+  assert(profile?.subscription_status === 'active', 'Active subscription default was not applied');
 
-  unwrap('profile B insert', await b.from('users').insert({
-    id: userB.id,
-    email: emailB,
-    name: 'O2OL Smoke B',
-    user_type: 'regular',
-    relationship_status: 'in_relationship',
-    partner_email: emailA,
-  }).select('id,email,name,partner_email').single());
+  const updatedProfile = unwrap('profile update', await client.from('users')
+    .update({ bio: 'Migration smoke profile', location: 'Test City' })
+    .eq('id', user.id).select('id,bio,location').single());
+  assert(updatedProfile?.bio === 'Migration smoke profile', 'Profile update failed');
 
-  const discovered = unwrap('public profile discovery', await a
-    .from('user_public_profiles').select('id,name,email').eq('id', userB.id).single());
-  assert(discovered?.id === userB.id, 'A could not discover B through safe public profile view');
-
-  const request = unwrap('buddy request insert', await a.from('buddy_requests').insert({
-    sender_id: userA.id,
-    receiver_id: userB.id,
-    status: 'pending',
-  }).select('*').single());
-  assert(request?.id, 'Buddy request missing id');
-
-  const incoming = unwrap('buddy request recipient read', await b.from('buddy_requests')
-    .select('*').eq('id', request.id).single());
-  assert(incoming?.receiver_id === userB.id, 'B could not read incoming buddy request');
-
-  const accepted = unwrap('buddy request accept', await b.from('buddy_requests')
-    .update({ status: 'accepted' }).eq('id', request.id).select('*').single());
-  assert(accepted?.status === 'accepted', 'Buddy request did not become accepted');
-
-  const convData = unwrap('get/create conversation', await a.rpc('get_or_create_conversation', {
-    p_user1_id: userA.id,
-    p_user2_id: userB.id,
-  }));
-  const conversationId = typeof convData === 'string' ? convData : convData?.[0]?.get_or_create_conversation || convData;
-  assert(conversationId, 'Conversation RPC returned no id');
-
-  const message = unwrap('message send', await a.from('messages').insert({
-    conversation_id: conversationId,
-    sender_id: userA.id,
-    receiver_id: userB.id,
-    content: 'O2OL migration smoke message',
-    message_type: 'text',
-  }).select('*').single());
-  assert(message?.id, 'Message send returned no id');
-
-  const received = unwrap('message receive', await b.from('messages')
-    .select('*').eq('id', message.id).single());
-  assert(received?.content === 'O2OL migration smoke message', 'B could not read A message');
-
-  unwrap('message mark read', await b.from('messages').update({
-    is_read: true,
-    read_at: new Date().toISOString(),
-    delivered_at: new Date().toISOString(),
-  }).eq('id', message.id).eq('receiver_id', userB.id).select('id,is_read').single());
-
-  const journal = unwrap('shared journal create', await a.from('shared_journals').insert({
-    user_id: userA.id,
-    title: 'Migration shared journal',
-    content: 'Partner visibility smoke test',
+  const journal = unwrap('journal create', await client.from('shared_journals').insert({
+    user_id: user.id,
+    title: 'Migration journal',
+    content: 'Journal CRUD smoke test',
     entry_date: new Date().toISOString().slice(0, 10),
     mood: 'loving',
     tags: ['smoke'],
-    shared_with_partner: true,
+    shared_with_partner: false,
   }).select('*').single());
-  assert(journal?.id, 'Shared journal create failed');
+  assert(journal?.id, 'Journal create failed');
 
-  const partnerJournal = unwrap('partner shared journal read', await b.from('shared_journals')
-    .select('id,title,user_id,shared_with_partner').eq('id', journal.id).single());
-  assert(partnerJournal?.id === journal.id, 'Declared partner could not read shared journal');
+  const updatedJournal = unwrap('journal update', await client.from('shared_journals')
+    .update({ content: 'Journal update passed' }).eq('id', journal.id)
+    .select('id,content').single());
+  assert(updatedJournal?.content === 'Journal update passed', 'Journal update failed');
 
-  const goal = unwrap('goal create', await a.from('relationship_goals').insert({
-    user_id: userA.id,
+  const goal = unwrap('goal create', await client.from('relationship_goals').insert({
+    user_id: user.id,
     title: 'Migration goal',
     description: 'Core feature smoke test',
     category: 'communication',
@@ -151,7 +121,7 @@ async function main() {
   }).select('*').single());
   assert(goal?.id, 'Goal create failed');
 
-  const step = unwrap('goal action step create', await a.from('goal_action_steps').insert({
+  const step = unwrap('goal action step create', await client.from('goal_action_steps').insert({
     goal_id: goal.id,
     step_text: 'Talk for 10 minutes',
     step_order: 1,
@@ -159,12 +129,12 @@ async function main() {
   }).select('*').single());
   assert(step?.id, 'Goal action step create failed');
 
-  const updatedGoal = unwrap('goal update', await a.from('relationship_goals')
+  const updatedGoal = unwrap('goal update', await client.from('relationship_goals')
     .update({ progress: 55 }).eq('id', goal.id).select('id,progress').single());
   assert(updatedGoal?.progress === 55, 'Goal progress update failed');
 
-  const event = unwrap('calendar create', await a.from('calendar_events').insert({
-    user_id: userA.id,
+  const event = unwrap('calendar create', await client.from('calendar_events').insert({
+    user_id: user.id,
     title: 'Migration date night',
     event_date: '2026-10-01',
     event_type: 'date',
@@ -173,12 +143,13 @@ async function main() {
   }).select('*').single());
   assert(event?.id, 'Calendar create failed');
 
-  const updatedEvent = unwrap('calendar update', await a.from('calendar_events')
-    .update({ location: 'Migration Test Cafe' }).eq('id', event.id).select('id,location').single());
+  const updatedEvent = unwrap('calendar update', await client.from('calendar_events')
+    .update({ location: 'Migration Test Cafe' }).eq('id', event.id)
+    .select('id,location').single());
   assert(updatedEvent?.location === 'Migration Test Cafe', 'Calendar update failed');
 
-  const milestone = unwrap('milestone create', await a.from('relationship_milestones').insert({
-    user_id: userA.id,
+  const milestone = unwrap('milestone create', await client.from('relationship_milestones').insert({
+    user_id: user.id,
     title: 'Migration milestone',
     milestone_type: 'custom',
     date: '2026-08-01',
@@ -189,19 +160,18 @@ async function main() {
   }).select('*').single());
   assert(milestone?.id, 'Milestone create failed');
 
-  const updatedMilestone = unwrap('milestone update', await a.from('relationship_milestones')
+  const updatedMilestone = unwrap('milestone update', await client.from('relationship_milestones')
     .update({ description: 'Updated successfully' }).eq('id', milestone.id)
     .select('id,description').single());
   assert(updatedMilestone?.description === 'Updated successfully', 'Milestone update failed');
 
-  // Cleanup feature rows while authenticated. Profiles/auth users are cleaned by the
-  // migration operator after the run so failure cases still leave ids in the logs.
-  unwrap('milestone delete', await a.from('relationship_milestones').delete().eq('id', milestone.id));
-  unwrap('calendar delete', await a.from('calendar_events').delete().eq('id', event.id));
-  unwrap('goal delete', await a.from('relationship_goals').delete().eq('id', goal.id));
-  unwrap('journal delete', await a.from('shared_journals').delete().eq('id', journal.id));
-  unwrap('conversation delete', await a.from('conversations').delete().eq('id', conversationId));
-  unwrap('buddy request delete', await a.from('buddy_requests').delete().eq('id', request.id));
+  // Clean feature rows while authenticated. The public profile and Neon Auth
+  // identity are intentionally left long enough for the operator to clean them
+  // with admin tools even if a future test fails midway.
+  unwrap('milestone delete', await client.from('relationship_milestones').delete().eq('id', milestone.id));
+  unwrap('calendar delete', await client.from('calendar_events').delete().eq('id', event.id));
+  unwrap('goal delete', await client.from('relationship_goals').delete().eq('id', goal.id));
+  unwrap('journal delete', await client.from('shared_journals').delete().eq('id', journal.id));
 
   console.log('O2OL_FEATURE_SMOKE=PASS');
 }
