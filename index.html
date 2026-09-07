@@ -23,11 +23,27 @@
         const applyHeaderLogoSize = () => {
           const logo = document.querySelector(logoSelector);
           if (!logo) return;
+
           logo.style.setProperty('height', '2.5rem', 'important');
           logo.style.setProperty('width', 'auto', 'important');
           logo.style.setProperty('max-height', 'none', 'important');
           logo.style.setProperty('max-width', 'none', 'important');
           logo.style.setProperty('zoom', '1.75', 'important');
+
+          const headerRow = logo.closest('header')?.querySelector('div[class*="h-16"]');
+          if (headerRow) {
+            headerRow.style.setProperty('height', '5.25rem', 'important');
+            headerRow.style.setProperty('min-height', '5.25rem', 'important');
+          }
+
+          const brandName = logo.nextElementSibling?.querySelector('div');
+          if (brandName) {
+            brandName.textContent = 'One2OneLove';
+            brandName.style.setProperty('font-size', '1.75rem', 'important');
+            brandName.style.setProperty('line-height', '1', 'important');
+            brandName.style.setProperty('letter-spacing', '-0.035em', 'important');
+            brandName.style.setProperty('white-space', 'nowrap', 'important');
+          }
         };
 
         const clearTimer = () => {
