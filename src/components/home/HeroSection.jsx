@@ -120,7 +120,7 @@ export default function HeroSection({ stats }) {
               </Button>
             </Link>
             <a
-              href="https://www.facebook.com/profile.php?id=61583726951948"
+              href="https://m.me/61583726951948"
               target="_blank"
               rel="noopener noreferrer"
             >
