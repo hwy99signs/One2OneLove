@@ -335,7 +335,7 @@ header img[alt="One2One Love Logo"] + div > div {
 }
 
 header img[alt="One2One Love Logo"] + div > div::after {
-  content: "One2One Love";
+  content: "One2OneLove";
   font-size: 2rem !important;
   font-weight: 700 !important;
   line-height: 1 !important;
