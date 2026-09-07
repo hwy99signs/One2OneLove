@@ -873,7 +873,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['relationship-goals'] });
       refreshUserProfile();
     }
-  }, [user?.id, queryClient, refreshUserProfile]);
+  }, [user?.id, queryClient]);
 
   // Mock memories data for now (can be replaced with actual query later)
   const memories = [];
