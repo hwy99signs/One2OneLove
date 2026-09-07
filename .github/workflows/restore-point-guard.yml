@@ -20,8 +20,8 @@ jobs:
       - name: Require approved restore point in branch history
         shell: bash
         run: |
-          BASELINE="991458afb58fd4a0a97b28aec12e05576b352967"
-          RESTORE_BRANCH="restore/one2onelove-approved-before-support-cleanup-20260907"
+          BASELINE="9e26ecd0683536bd6e0c4f68b1e8d894dd1dc0f4"
+          RESTORE_BRANCH="restore/one2onelove-secure-20260907-hero-animation"
           if ! git merge-base --is-ancestor "$BASELINE" HEAD; then
             echo "::error::One2OneLove has moved behind the admin-approved restore point $BASELINE ($RESTORE_BRANCH). Explicit admin approval is required before any rollback past this point."
             exit 1
