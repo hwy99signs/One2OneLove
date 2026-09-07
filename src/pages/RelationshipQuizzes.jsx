@@ -1,5 +1,5 @@
 import React from "react";
-import { Heart, MessageCircle, AlertCircle, Users, Sparkles, ArrowLeft } from "lucide-react";
+import { Heart, MessageCircle, AlertCircle, Users, Sparkles, ArrowLeft, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -12,6 +12,7 @@ const translations = {
     title: "Relationship Quizzes",
     subtitle: "Self-reflection tools to help you notice patterns, preferences, and areas for growth",
     disclaimer: "For education and self-reflection only. These tools are not a diagnosis, therapy, or a substitute for professional care.",
+    sourceNote: "Reference source for relationship-education topics: Therapist Aid therapy worksheets. One2OneLove presents these as educational self-reflection tools and does not replace professional therapy or counseling.",
     back: "Back to Support",
     start: "Start Quiz",
     comingSoon: "Coming Soon",
@@ -26,6 +27,7 @@ const translations = {
     title: "Cuestionarios de Relaciones",
     subtitle: "Herramientas de autorreflexión para identificar patrones, preferencias y áreas de crecimiento",
     disclaimer: "Solo para educación y autorreflexión. Estas herramientas no son diagnóstico, terapia ni sustituyen la atención profesional.",
+    sourceNote: "Fuente de referencia para temas de educación sobre relaciones: hojas de trabajo de Therapist Aid. One2OneLove presenta estos temas como herramientas educativas de autorreflexión y no sustituye la terapia o consejería profesional.",
     back: "Volver al Apoyo",
     start: "Comenzar Cuestionario",
     comingSoon: "Próximamente",
@@ -40,6 +42,7 @@ const translations = {
     title: "Quiz sur les Relations",
     subtitle: "Des outils d'autoréflexion pour observer vos schémas, préférences et pistes de croissance",
     disclaimer: "À des fins éducatives et d'autoréflexion uniquement. Ces outils ne constituent ni un diagnostic ni une thérapie et ne remplacent pas un professionnel.",
+    sourceNote: "Source de référence pour les thèmes d'éducation relationnelle : fiches de travail de Therapist Aid. One2OneLove les présente comme des outils éducatifs d'autoréflexion et ne remplace pas une thérapie ou un accompagnement professionnel.",
     back: "Retour au Soutien",
     start: "Commencer le Quiz",
     comingSoon: "Bientôt Disponible",
@@ -54,6 +57,7 @@ const translations = {
     title: "Quiz sulle Relazioni",
     subtitle: "Strumenti di autoriflessione per riconoscere schemi, preferenze e aree di crescita",
     disclaimer: "Solo per educazione e autoriflessione. Questi strumenti non sono diagnosi o terapia e non sostituiscono l'assistenza professionale.",
+    sourceNote: "Fonte di riferimento per i temi educativi sulle relazioni: schede di Therapist Aid. One2OneLove presenta questi temi come strumenti educativi di autoriflessione e non sostituisce terapia o consulenza professionale.",
     back: "Torna al Supporto",
     start: "Inizia Quiz",
     comingSoon: "Prossimamente",
@@ -68,6 +72,7 @@ const translations = {
     title: "Beziehungsquiz",
     subtitle: "Selbstreflexions-Werkzeuge, um Muster, Vorlieben und Wachstumsbereiche zu erkennen",
     disclaimer: "Nur für Bildung und Selbstreflexion. Diese Werkzeuge sind keine Diagnose oder Therapie und ersetzen keine professionelle Unterstützung.",
+    sourceNote: "Referenzquelle für Themen der Beziehungsbildung: Arbeitsblätter von Therapist Aid. One2OneLove stellt diese Themen als pädagogische Selbstreflexionswerkzeuge bereit und ersetzt keine professionelle Therapie oder Beratung.",
     back: "Zurück zur Unterstützung",
     start: "Quiz Starten",
     comingSoon: "Demnächst",
@@ -112,6 +117,17 @@ export default function RelationshipQuizzes() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-5">{t.subtitle}</p>
           <div className="max-w-3xl mx-auto bg-white border border-purple-100 rounded-2xl px-5 py-4 text-sm text-gray-600 shadow-sm">
             {t.disclaimer}
+          </div>
+          <div className="max-w-3xl mx-auto mt-3 text-xs text-gray-500 leading-relaxed">
+            {t.sourceNote}{" "}
+            <a
+              href="https://www.therapistaid.com/therapy-worksheets"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-600 hover:text-purple-700 underline underline-offset-2"
+            >
+              Therapist Aid
+            </a>
           </div>
         </motion.div>
 
