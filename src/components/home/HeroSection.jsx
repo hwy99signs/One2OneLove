@@ -56,7 +56,7 @@ export default function HeroSection({ stats }) {
           {t.hero.title} ✨
         </h1>
         
-        <p className="text-2xl sm:text-3xl md:text-4xl text-yellow-300 mb-6 font-bold drop-shadow-lg italic">
+        <p className="text-2xl sm:text-3xl md:text-4xl bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent mb-6 font-bold drop-shadow-lg italic">
           {t.hero.slogan}
         </p>
         
