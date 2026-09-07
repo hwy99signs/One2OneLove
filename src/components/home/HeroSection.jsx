@@ -114,43 +114,43 @@ export default function HeroSection({ stats }) {
         </div>
 
         {/* Stats */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-xl">
-            <div className="text-2xl font-bold text-pink-600 mb-0.5">{stats?.notesCreated || 0}</div>
-            <div className="text-xs text-gray-600 font-medium">{t.hero.loveNotesCreated}</div>
+        <div className="flex flex-wrap items-stretch justify-center gap-2 mb-6">
+          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-xl flex flex-col justify-center">
+            <div className="text-xl leading-none font-bold text-pink-600 mb-1">{stats?.notesCreated || 0}</div>
+            <div className="text-[11px] leading-tight text-gray-600 font-medium">{t.hero.loveNotesCreated}</div>
           </div>
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-xl">
-            <div className="text-2xl font-bold text-purple-600 mb-0.5">{stats?.happyCouples || 0}</div>
-            <div className="text-xs text-gray-600 font-medium">{t.hero.happyCouples}</div>
+          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-xl flex flex-col justify-center">
+            <div className="text-xl leading-none font-bold text-purple-600 mb-1">{stats?.happyCouples || 0}</div>
+            <div className="text-[11px] leading-tight text-gray-600 font-medium">{t.hero.happyCouples}</div>
           </div>
-          <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white backdrop-blur-sm rounded-xl px-4 py-2 shadow-xl">
-            <div className="flex items-center gap-1 mb-0.5">
-              <Trophy className="w-4 h-4" />
-              <div className="text-2xl font-bold">{stats?.mostNotesWeek?.count || 0}</div>
+          <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-xl flex flex-col justify-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Trophy className="w-3.5 h-3.5" />
+              <div className="text-xl leading-none font-bold">{stats?.mostNotesWeek?.count || 0}</div>
             </div>
-            <div className="text-xs font-medium mb-0.5">{t.hero.mostNotesWeek}</div>
+            <div className="text-[11px] leading-tight font-medium">{t.hero.mostNotesWeek}</div>
             {stats?.mostNotesWeek?.membershipId && (
-              <div className="text-xs font-bold opacity-90">ID: {stats.mostNotesWeek.membershipId}</div>
+              <div className="text-[10px] leading-tight font-bold opacity-90">ID: {stats.mostNotesWeek.membershipId}</div>
             )}
           </div>
-          <div className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white backdrop-blur-sm rounded-xl px-4 py-2 shadow-xl">
-            <div className="flex items-center gap-1 mb-0.5">
-              <Trophy className="w-4 h-4" />
-              <div className="text-2xl font-bold">{stats?.mostNotesMonth?.count || 0}</div>
+          <div className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-xl flex flex-col justify-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Trophy className="w-3.5 h-3.5" />
+              <div className="text-xl leading-none font-bold">{stats?.mostNotesMonth?.count || 0}</div>
             </div>
-            <div className="text-xs font-medium mb-0.5">{t.hero.mostNotesMonth}</div>
+            <div className="text-[11px] leading-tight font-medium">{t.hero.mostNotesMonth}</div>
             {stats?.mostNotesMonth?.membershipId && (
-              <div className="text-xs font-bold opacity-90">ID: {stats.mostNotesMonth.membershipId}</div>
+              <div className="text-[10px] leading-tight font-bold opacity-90">ID: {stats.mostNotesMonth.membershipId}</div>
             )}
           </div>
-          <div className="bg-gradient-to-br from-green-500 to-emerald-500 text-white backdrop-blur-sm rounded-xl px-4 py-2 shadow-xl">
-            <div className="flex items-center gap-1 mb-0.5">
-              <Trophy className="w-4 h-4" />
-              <div className="text-2xl font-bold">{stats?.mostNotesYear?.count || 0}</div>
+          <div className="bg-gradient-to-br from-green-500 to-emerald-500 text-white backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-xl flex flex-col justify-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Trophy className="w-3.5 h-3.5" />
+              <div className="text-xl leading-none font-bold">{stats?.mostNotesYear?.count || 0}</div>
             </div>
-            <div className="text-xs font-medium mb-0.5">{t.hero.mostNotesYear}</div>
+            <div className="text-[11px] leading-tight font-medium">{t.hero.mostNotesYear}</div>
             {stats?.mostNotesYear?.membershipId && (
-              <div className="text-xs font-bold opacity-90">ID: {stats.mostNotesYear.membershipId}</div>
+              <div className="text-[10px] leading-tight font-bold opacity-90">ID: {stats.mostNotesYear.membershipId}</div>
             )}
           </div>
         </div>
