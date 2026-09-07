@@ -25,8 +25,8 @@ a {
 }
 a:hover {
   color: #535bf2;
+  text-decoration: inherit;
 }
-
 body {
   margin: 0;
   display: flex;
@@ -52,7 +52,7 @@ button {
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: #535bf2;
 }
 button:focus,
 button:focus-visible {
@@ -186,14 +186,14 @@ button:focus-visible {
     }
   }
 
-  /* Compact header controls: keep icon tabs and language selector proportional to their content. */
+  /* Header controls: make the visible tabs fit their content instead of leaving large empty space. */
   header button[role="combobox"] {
-    width: 5.25rem !important;
-    height: 2rem !important;
-    min-height: 2rem !important;
-    padding-left: 0.45rem !important;
-    padding-right: 0.4rem !important;
-    gap: 0.2rem !important;
+    width: 4.65rem !important;
+    height: 1.9rem !important;
+    min-height: 1.9rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.3rem !important;
+    gap: 0.1rem !important;
   }
 
   header button[role="combobox"] > span {
@@ -211,15 +211,20 @@ button:focus-visible {
 
   header a[class*="hidden"][class*="md:block"] > button,
   header button[class*="hidden"][class*="md:flex"] {
-    height: 2rem !important;
-    min-height: 2rem !important;
-    min-width: 2rem !important;
-    padding-left: 0.45rem !important;
-    padding-right: 0.45rem !important;
+    height: 1.9rem !important;
+    min-height: 1.9rem !important;
+    min-width: 1.9rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
   }
 
   header > div[class*="max-w-7xl"] > div[class*="h-16"] > div[class*="items-center"][class*="gap-2"] {
-    gap: 0.25rem !important;
+    gap: 0.15rem !important;
+  }
+
+  /* Desktop Action dropdown needs enough room for the full feature labels. */
+  header nav[class*="lg:flex"] > div[class*="relative"] > div[class*="w-72"] {
+    width: 21rem !important;
   }
 
   /* Mobile navigation is a compact panel anchored under the hamburger. */
@@ -236,7 +241,8 @@ button:focus-visible {
       width: 6.8rem !important;
       max-width: calc(100vw - 1rem) !important;
       min-width: 0 !important;
-      max-height: 70vh !important;
+      max-height: none !important;
+      overflow: visible !important;
       padding: 0.35rem !important;
       border: 1px solid rgba(255, 255, 255, 0.28) !important;
       border-radius: 0.9rem !important;
@@ -272,9 +278,29 @@ button:focus-visible {
       margin-bottom: 0.2rem !important;
     }
 
-    header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav div[class*="mt-1"] a {
-      padding-top: 0.28rem !important;
-      padding-bottom: 0.28rem !important;
+    /* Keep the main hamburger narrow, but let the Action submenu open as a wider flyout so labels do not wrap. */
+    header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav > div[class*="relative"] > div[class*="mt-1"] {
+      position: absolute !important;
+      top: -0.15rem !important;
+      right: calc(100% + 0.35rem) !important;
+      width: min(13.25rem, calc(100vw - 7.75rem)) !important;
+      max-height: 70vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 0.25rem !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      border-radius: 0.8rem !important;
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.99), rgba(59, 130, 246, 0.99)) !important;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.3) !important;
+      z-index: 90 !important;
+    }
+
+    header > div[class*="max-w-7xl"] > div[class*="lg:hidden"][class*="overflow-y-auto"] nav > div[class*="relative"] > div[class*="mt-1"] a {
+      padding: 0.5rem 0.65rem !important;
+      font-size: 0.82rem !important;
+      line-height: 1.1rem !important;
+      gap: 0.45rem !important;
+      white-space: nowrap !important;
     }
   }
 }
