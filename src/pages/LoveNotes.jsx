@@ -758,8 +758,46 @@ export default function LoveNotes() {
     return { type: recipientType, identifier: recipientIdentifier, social_platform: socialPlatform };
   };
 
+  const handleSendNow = (note) => {
+    if (!note) return;
+
+    const targetPhone = recipientPhone.trim();
+    if (!targetPhone) {
+      toast.error(t.pleaseEnterPhone);
+      return;
+    }
+
+    const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');
+    if (limitCheckResult === null) return;
+
+    const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
+    const smsUrl = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
+
+    // Keep the SMS launch inside the user's click/tap event. Awaiting backend work
+    // before opening sms: can cause browsers to block the action as a popup.
+    if (currentUser && limitCheckResult.type !== 'guest') {
+      sendNoteMutation.mutate({
+        note_title: note.title,
+        note_content: note.content,
+        recipient_type: limitCheckResult.type,
+        recipient_identifier: limitCheckResult.identifier,
+        social_platform: limitCheckResult.social_platform,
+        sent_date: new Date().toISOString(),
+        created_by: currentUser.id,
+      }, {
+        onError: (error) => console.error('Unable to record sent love note:', error),
+      });
+    }
+
+    window.location.href = smsUrl;
+    toast.success(t.openingText);
+    setSendModalNote(null);
+    setRecipientPhone('');
+    setIsScheduling(false);
+  };
+
   const handleSendVia = async (note, method) => {
-    const text = `${note.title}\n\n${note.content}\n\n❤️ From One 2 One Love`;
+    const text = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
     let currentRecipientPhoneInput = ''; // Used for text/whatsapp
     let targetPlatformIdentifier = method; // Used for social media methods
 
@@ -1306,7 +1344,10 @@ export default function LoveNotes() {
                       type="button"
                       variant={!isScheduling ? "default" : "outline"}
                       className={!isScheduling ? "flex-1 bg-gradient-to-r from-pink-500 to-purple-600" : "flex-1"}
-                      onClick={() => setIsScheduling(false)}
+                      onClick={() => {
+                        setIsScheduling(false);
+                        handleSendNow(sendModalNote);
+                      }}
                     >
                       {t.sendNow}
                     </Button>
@@ -1444,7 +1485,7 @@ export default function LoveNotes() {
                   {t.cancel}
                 </Button>
                 <Button
-                  onClick={() => isScheduling ? handleScheduleNote() : handleSendVia(sendModalNote, 'text')}
+                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}
                   disabled={scheduleMutation.isPending}
                   className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                 >
