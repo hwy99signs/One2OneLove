@@ -1,4 +1,5 @@
 import { createClient, SupabaseAuthAdapter } from '@neondatabase/neon-js';
+import { createCloudflareFunctions } from './cloudflareFunctions';
 
 /**
  * One2OneLove backend compatibility client.
@@ -53,6 +54,8 @@ const getAccessToken = async () => {
     return null;
   }
 };
+
+const cloudflareFunctions = createCloudflareFunctions(getAccessToken);
 
 /**
  * Cloudflare R2 storage compatibility bridge.
@@ -226,6 +229,7 @@ const createPollingChannel = (name) => {
 export const supabase = new Proxy(neonClient, {
   get(target, property, receiver) {
     if (property === 'storage') return storage;
+    if (property === 'functions') return cloudflareFunctions;
     if (property === 'channel') return createPollingChannel;
     if (property === 'removeChannel') {
       return async (channel) => channel?.unsubscribe?.();

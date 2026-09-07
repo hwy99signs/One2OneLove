@@ -42,7 +42,7 @@ export const getMyConversations = async () => {
 
     // Fetch all users in one query from public.users table
     const { data: users, error: usersError } = await supabase
-      .from('users')
+      .from('user_public_profiles')
       .select('id, name, email, avatar_url')
       .in('id', Array.from(userIds));
 
@@ -203,7 +203,7 @@ export const getMessages = async (conversationId) => {
     let usersMap = {};
     if (userIds.size > 0) {
       const { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('user_public_profiles')
         .select('id, name, email, avatar_url')
         .in('id', Array.from(userIds));
 
