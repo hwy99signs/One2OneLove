@@ -32,6 +32,7 @@ const translations = {
 export default function HeroSection({ stats }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const showHeroTitle = false; // Disabled, not deleted. Set true to restore the title + sparkle display.
 
   return (
     <div className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
@@ -52,9 +53,11 @@ export default function HeroSection({ stats }) {
             className="h-32 sm:h-40 md:h-48 w-auto drop-shadow-2xl"
           />
         </div>
-        <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold text-white mb-3 tracking-tight drop-shadow-2xl">
-          {t.hero.title} ✨
-        </h1>
+        {showHeroTitle && (
+          <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold text-white mb-3 tracking-tight drop-shadow-2xl">
+            {t.hero.title} ✨
+          </h1>
+        )}
         
         <p className="text-2xl sm:text-3xl md:text-4xl text-yellow-300 mb-6 font-bold drop-shadow-lg italic">
           {t.hero.slogan}
