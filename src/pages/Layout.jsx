@@ -260,10 +260,17 @@ function LanguageContent({ children, currentPageName }) {
     to="/"
     className="flex items-center gap-0 hover:opacity-90 transition-opacity flex-shrink-0"
     aria-label="Go to One2One Love home page"
-    onClick={() => {
+    onClick={(event) => {
+      event.preventDefault();
       setMobileMenuOpen(false);
       setMobileActionOpen(false);
       setActionOpen(false);
+      navigate('/');
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        });
+      });
     }}
   >
               <img 
