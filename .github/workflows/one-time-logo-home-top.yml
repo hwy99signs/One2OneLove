@@ -24,26 +24,10 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-
           path = Path('src/pages/Layout.jsx')
           text = path.read_text(encoding='utf-8')
-          old = '''    onClick={() => {
-      setMobileMenuOpen(false);
-      setMobileActionOpen(false);
-      setActionOpen(false);
-    }}'''
-          new = '''    onClick={(event) => {
-      event.preventDefault();
-      setMobileMenuOpen(false);
-      setMobileActionOpen(false);
-      setActionOpen(false);
-      navigate('/');
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        });
-      });
-    }}'''
+          old = "    onClick={() => {\n      setMobileMenuOpen(false);\n      setMobileActionOpen(false);\n      setActionOpen(false);\n    }}"
+          new = "    onClick={(event) => {\n      event.preventDefault();\n      setMobileMenuOpen(false);\n      setMobileActionOpen(false);\n      setActionOpen(false);\n      navigate('/');\n      window.requestAnimationFrame(() => {\n        window.requestAnimationFrame(() => {\n          window.scrollTo({ top: 0, left: 0, behavior: 'auto' });\n        });\n      });\n    }}"
           if old not in text:
               raise SystemExit('Header logo click handler marker not found')
           text = text.replace(old, new, 1)
