@@ -256,7 +256,16 @@ function LanguageContent({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-24">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-0 hover:opacity-90 transition-opacity flex-shrink-0">
+            <Link
+    to="/"
+    className="flex items-center gap-0 hover:opacity-90 transition-opacity flex-shrink-0"
+    aria-label="Go to One2One Love home page"
+    onClick={() => {
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+      setActionOpen(false);
+    }}
+  >
               <img 
                 src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
                 alt="One2One Love Logo" 
