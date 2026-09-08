@@ -79,7 +79,7 @@ export default function HeroSection({ stats }) {
             className="h-32 sm:h-40 md:h-48 w-auto drop-shadow-2xl"
           />
         </div>
-        <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold text-white mb-3 tracking-tight drop-shadow-2xl">
+        <h1 className="hidden text-6xl sm:text-7xl md:text-8xl font-bold text-white mb-3 tracking-tight drop-shadow-2xl" aria-hidden="true">
           {t.hero.title} ✨
         </h1>
         
