@@ -1,0 +1,60 @@
+name: One-time Header Logo Home Top
+
+on:
+  push:
+    branches:
+      - migration/neon-cloudflare-one2onelove-20260905
+    paths:
+      - .github/workflows/one-time-logo-home-top.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix-logo-home-top:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/neon-cloudflare-one2onelove-20260905
+          fetch-depth: 0
+
+      - name: Make header logo return to top of home page
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/Layout.jsx')
+          text = path.read_text(encoding='utf-8')
+          old = '''    onClick={() => {
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+      setActionOpen(false);
+    }}'''
+          new = '''    onClick={(event) => {
+      event.preventDefault();
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+      setActionOpen(false);
+      navigate('/');
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        });
+      });
+    }}'''
+          if old not in text:
+              raise SystemExit('Header logo click handler marker not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit header logo home-top fix
+        shell: bash
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/Layout.jsx
+          git diff --cached --check
+          git commit -m "fix: make header logo return to top of home page"
+          git push origin HEAD:migration/neon-cloudflare-one2onelove-20260905
