@@ -32,7 +32,7 @@ const translations = {
 export default function HeroSection({ stats }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const showHeroTitle = false; // Disabled, not deleted. Set true to restore the title + sparkle display.
+  const showHeroTitle = true; // Restored. Set false to disable the title + sparkle display.
 
   return (
     <div className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
