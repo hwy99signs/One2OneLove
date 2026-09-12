@@ -67,11 +67,11 @@ jobs:
           set -e
 
           if [ "$WRANGLER_EXIT" -ne 0 ]; then
-            # Wrangler can upload/deploy the Worker successfully and then fail only while
-            # attaching custom domains before the newly-added Cloudflare zone is active.
+            # Wrangler may successfully upload/deploy the Worker and then fail only on
+            # custom-domain attachment while DNS is being moved from the previous host.
             if grep -q "Deployed one2onelove-launch triggers" /tmp/wrangler-production.log && \
-               grep -Eq 'code: 10083|does not exist on your account|code: 10082|Can.t infer zone' /tmp/wrangler-production.log; then
-              echo "Worker deployed successfully; custom-domain attachment is pending Cloudflare zone activation."
+               grep -Eq 'code: 10083|does not exist on your account|code: 10082|Can.t infer zone|code: 100117|already has externally managed DNS records' /tmp/wrangler-production.log; then
+              echo "Worker deployed successfully; custom-domain attachment is waiting on the DNS cutover."
               exit 0
             fi
             exit "$WRANGLER_EXIT"
