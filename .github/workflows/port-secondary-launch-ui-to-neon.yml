@@ -1,0 +1,85 @@
+name: One2OneLove Port Secondary Launch UI to Neon
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/port-secondary-launch-ui-to-neon.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  port-secondary-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+          fetch-depth: 0
+
+      - name: Fetch verified Neon migration branch
+        run: git fetch origin migration/neon-cloudflare-one2onelove-20260905
+
+      - name: Port secondary launch-visible pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout origin/migration/neon-cloudflare-one2onelove-20260905 -- \
+            src/pages/Chat.jsx \
+            src/pages/Leaderboard.jsx \
+            src/pages/CoupleActivities.jsx \
+            src/pages/CouplesDashboard.jsx \
+            src/pages/CouplesProfile.jsx \
+            src/pages/PremiumFeatures.jsx \
+            src/pages/Achievements.jsx \
+            src/components/gamification/PointsDisplay.jsx
+
+      - name: Verify selected pages are off Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/pages/Chat.jsx
+            src/pages/Leaderboard.jsx
+            src/pages/CoupleActivities.jsx
+            src/pages/CouplesDashboard.jsx
+            src/pages/CouplesProfile.jsx
+            src/pages/PremiumFeatures.jsx
+            src/pages/Achievements.jsx
+            src/components/gamification/PointsDisplay.jsx
+          )
+          if grep -nE "@/lib/supabase|supabase\.auth|supabase\.from|supabase\.storage|supabase\.channel|supabase\.removeChannel" "${files[@]}"; then
+            echo "A selected launch-visible file still depends on Supabase; no changes will be committed."
+            exit 1
+          fi
+
+      - name: Build full One2OneLove frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit secondary UI runtime migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pages/Chat.jsx \
+            src/pages/Leaderboard.jsx \
+            src/pages/CoupleActivities.jsx \
+            src/pages/CouplesDashboard.jsx \
+            src/pages/CouplesProfile.jsx \
+            src/pages/PremiumFeatures.jsx \
+            src/pages/Achievements.jsx \
+            src/components/gamification/PointsDisplay.jsx
+          if git diff --cached --quiet; then
+            echo "Secondary launch UI is already on the Neon/Cloudflare runtime."
+            exit 0
+          fi
+          git commit -m "Move secondary launch UI to Cloudflare and Neon"
+          git push origin HEAD:migration/cloudflare-launch-20260911
