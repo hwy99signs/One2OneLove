@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "one2onelove",
+  "main": "../worker/index-v2.ts",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "../dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "8bd364a17cdf44319d698cccf576c911"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "one2onelove-media-migration"
+    }
+  ],
+  "vars": {
+    "NEON_AUTH_BASE_URL": "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth"
+  }
+}
