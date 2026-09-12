@@ -21,8 +21,35 @@ function isPlatformBackControl(control) {
     )
 }
 
+function scrollPageToTop() {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+            document.documentElement.scrollTop = 0
+            document.body.scrollTop = 0
+        })
+    })
+}
+
 if ('scrollRestoration' in window.history) {
     window.history.scrollRestoration = 'manual'
+}
+
+const originalPushState = window.history.pushState
+const originalReplaceState = window.history.replaceState
+
+window.history.pushState = function (...args) {
+    const previousUrl = window.location.href
+    const result = originalPushState.apply(window.history, args)
+    if (window.location.href !== previousUrl) scrollPageToTop()
+    return result
+}
+
+window.history.replaceState = function (...args) {
+    const previousUrl = window.location.href
+    const result = originalReplaceState.apply(window.history, args)
+    if (window.location.href !== previousUrl) scrollPageToTop()
+    return result
 }
 
 document.addEventListener('click', (event) => {
@@ -36,13 +63,7 @@ document.addEventListener('click', (event) => {
     window.history.back()
 }, true)
 
-window.addEventListener('popstate', () => {
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-        })
-    })
-})
+window.addEventListener('popstate', scrollPageToTop)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
