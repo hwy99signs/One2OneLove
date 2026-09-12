@@ -1,0 +1,109 @@
+name: One2OneLove Port Launch UI to Neon
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/port-launch-ui-to-neon.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  port-launch-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+          fetch-depth: 0
+
+      - name: Fetch verified Neon migration branch
+        run: git fetch origin migration/neon-cloudflare-one2onelove-20260905
+
+      - name: Port launch-critical pages and components
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout origin/migration/neon-cloudflare-one2onelove-20260905 -- \
+            src/pages/LoveNotes.jsx \
+            src/pages/DateIdeas.jsx \
+            src/pages/MemoryLane.jsx \
+            src/components/lovenotes/ScheduledNotesManager.jsx \
+            src/components/memories/MemoryForm.jsx \
+            src/pages/AIContentCreator.jsx
+
+      - name: Remove Supabase realtime dependency from global layout only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/pages/Layout.jsx')
+          text = path.read_text(encoding='utf-8')
+          text = re.sub(r'^import \{ supabase \} from ["\']@/lib/supabase["\'];\s*\n', '', text, flags=re.M)
+
+          start = text.find('  // Subscribe to real-time conversation updates to update badge immediately')
+          end = text.find('  // Calculate total unread messages count', start)
+          if start != -1 and end != -1:
+              replacement = (
+                  '  // Unread conversation counts are refreshed by React Query polling.\n'
+                  '  // This keeps the launch runtime independent of Supabase Realtime.\n\n'
+              )
+              text = text[:start] + replacement + text[end:]
+          elif 'supabase.channel' in text or 'supabase.removeChannel' in text:
+              raise SystemExit('Could not safely isolate the legacy Supabase Realtime block in Layout.jsx')
+
+          if 'supabase.channel' in text or 'supabase.removeChannel' in text or '@/lib/supabase' in text:
+              raise SystemExit('Layout.jsx still contains a Supabase runtime dependency')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Verify launch-critical files are off Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/pages/LoveNotes.jsx
+            src/pages/DateIdeas.jsx
+            src/pages/MemoryLane.jsx
+            src/pages/AIContentCreator.jsx
+            src/pages/Layout.jsx
+            src/components/lovenotes/ScheduledNotesManager.jsx
+            src/components/memories/MemoryForm.jsx
+          )
+          if grep -nE "@/lib/supabase|supabase\.auth|supabase\.from|supabase\.storage|supabase\.channel|supabase\.removeChannel" "${files[@]}"; then
+            echo "A launch-critical file still depends on Supabase."
+            exit 1
+          fi
+
+      - name: Build full One2OneLove frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit launch UI runtime migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pages/LoveNotes.jsx \
+            src/pages/DateIdeas.jsx \
+            src/pages/MemoryLane.jsx \
+            src/pages/AIContentCreator.jsx \
+            src/pages/Layout.jsx \
+            src/components/lovenotes/ScheduledNotesManager.jsx \
+            src/components/memories/MemoryForm.jsx
+          if git diff --cached --quiet; then
+            echo "Launch-critical frontend is already on Neon/Cloudflare."
+            exit 0
+          fi
+          git commit -m "Move launch-critical UI persistence to Cloudflare and Neon"
+          git push origin HEAD:migration/cloudflare-launch-20260911
