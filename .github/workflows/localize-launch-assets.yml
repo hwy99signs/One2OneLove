@@ -1,0 +1,74 @@
+name: One2OneLove Localize Launch Assets
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/localize-launch-assets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  localize-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+
+      - name: Replace legacy hosted brand assets with local Cloudflare assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png": "/assets/one2onelove-logo.png",
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png": "/assets/one2onelove-home-hero.png",
+              "https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png": "/assets/one2onelove-logo.png",
+          }
+          for path in Path('src').rglob('*'):
+              if not path.is_file() or path.suffix not in {'.js', '.jsx', '.ts', '.tsx', '.css'}:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              updated = text
+              for old, new in replacements.items():
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Verify brand asset hosts are gone from source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE "qtrypzzcjebvfcihiynt\.supabase\.co|hphhmjcutesqsdnubnnw\.supabase\.co" src \
+            --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' --include='*.css'; then
+            echo "Legacy One2OneLove asset host remains in source."
+            exit 1
+          fi
+          test -s public/assets/one2onelove-logo.png
+          test -s public/assets/one2onelove-home-hero.png
+
+      - name: Build after asset localization
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit localized asset references
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src public/assets
+          if git diff --cached --quiet; then
+            echo "Asset references are already localized."
+            exit 0
+          fi
+          git commit -m "Serve One2OneLove brand assets from Cloudflare build"
+          git push origin HEAD:migration/cloudflare-launch-20260911
