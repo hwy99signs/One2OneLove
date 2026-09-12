@@ -13,7 +13,7 @@
   }
 
   .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section > .relative.z-10 {
-    transform: scale(1.3);
+    transform: scale(1.2);
     transform-origin: center center;
   }
 }
