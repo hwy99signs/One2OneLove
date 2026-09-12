@@ -19,35 +19,65 @@ import {
 const translations = {
   en: {
     nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out" },
-    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" }
+    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
+    announcement: { label: "O2OL Announcement Scroll", text: "Be informed as soon as One2OneLove launches." }
   },
   es: {
     nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión" },
-    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" }
+    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
+    announcement: { label: "Anuncios O2OL", text: "Recibe aviso tan pronto como One2OneLove se lance." }
   },
   fr: {
     nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter" },
-    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" }
+    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
+    announcement: { label: "Annonces O2OL", text: "Soyez informé dès le lancement de One2OneLove." }
   },
   it: {
     nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci" },
-    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" }
+    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
+    announcement: { label: "Annunci O2OL", text: "Ricevi una notifica appena One2OneLove sarà lanciato." }
   },
   de: {
     nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden" },
-    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" }
+    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
+    announcement: { label: "O2OL Ankündigungen", text: "Erfahren Sie sofort, wenn One2OneLove startet." }
   },
   nl: {
     nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
-    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", aiCreator: "AI Content Maker", winCruise: "Win Prijzen!" }
+    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", aiCreator: "AI Content Maker", winCruise: "Win Prijzen!" },
+    announcement: { label: "O2OL Aankondigingen", text: "Blijf op de hoogte zodra One2OneLove wordt gelanceerd." }
   },
   pt: {
     nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", aiCreator: "Criador de Conteúdo IA", lgbtq: "Apoio LGBTQ+", developer: "Dev", requests: "Solicitações", chat: "Chat", signOut: "Sair" },
-    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", aiCreator: "Criador de Conteúdo IA", winCruise: "Ganhe Prêmios!" }
+    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", aiCreator: "Criador de Conteúdo IA", winCruise: "Ganhe Prêmios!" },
+    announcement: { label: "Anúncios O2OL", text: "Seja informado assim que o One2OneLove for lançado." }
   }
 };
 
 const LanguageContext = createContext();
+
+const FOOTER_COPY = {
+  en: {
+    loveGrow: "Love. Grow. Evolve. Together.", footerBody: "One2OneLove is designed to support healthier connection, thoughtful communication, self-reflection, shared memories, and real conversations about relationships—while welcoming people from every background.",
+    supportCol: "Support", company: "Company", help: "Help Center", contact: "Contact Us", privacy: "Privacy Policy", terms: "Terms of Service", about: "About Us", suggestions: "Suggestions",
+    copyright: "© 2026 One2OneLove. Made with ❤️ for people pursuing and building healthier love and relationships."
+  },
+  es: {
+    loveGrow: "Ama. Crece. Evoluciona. Juntos.", footerBody: "One2OneLove apoya conexiones más saludables, comunicación reflexiva, autorreflexión, recuerdos compartidos y conversaciones reales.",
+    supportCol: "Soporte", company: "Compañía", help: "Centro de ayuda", contact: "Contáctanos", privacy: "Privacidad", terms: "Términos de servicio", about: "Sobre nosotros", suggestions: "Sugerencias", copyright: "© 2026 One2OneLove. Hecho con ❤️ para relaciones más saludables."
+  },
+  fr: {
+    loveGrow: "Aimez. Grandissez. Évoluez. Ensemble.", footerBody: "One2OneLove favorise une connexion plus saine, une communication réfléchie, l’introspection, les souvenirs partagés et de vraies conversations.", supportCol: "Aide", company: "Entreprise", help: "Centre d’aide", contact: "Contact", privacy: "Confidentialité", terms: "Conditions d’utilisation", about: "À propos", suggestions: "Suggestions", copyright: "© 2026 One2OneLove. Fait avec ❤️ pour des relations plus saines."
+  },
+  it: {
+    loveGrow: "Ama. Cresci. Evolvi. Insieme.", footerBody: "One2OneLove sostiene connessioni più sane, comunicazione consapevole, autoriflessione, ricordi condivisi e conversazioni reali.", supportCol: "Supporto", company: "Azienda", help: "Centro assistenza", contact: "Contatti", privacy: "Privacy", terms: "Termini di servizio", about: "Chi siamo", suggestions: "Suggerimenti", copyright: "© 2026 One2OneLove. Creato con ❤️ per relazioni più sane."
+  },
+  de: {
+    loveGrow: "Lieben. Wachsen. Entwickeln. Gemeinsam.", footerBody: "One2OneLove unterstützt gesündere Verbindung, achtsame Kommunikation, Selbstreflexion, gemeinsame Erinnerungen und echte Gespräche.", supportCol: "Support", company: "Unternehmen", help: "Hilfe-Center", contact: "Kontakt", privacy: "Datenschutz", terms: "Nutzungsbedingungen", about: "Über uns", suggestions: "Vorschläge", copyright: "© 2026 One2OneLove. Mit ❤️ für gesündere Beziehungen."
+  }
+};
+
+function FooterLink({children,onClick}) { return <button onClick={onClick} className="block text-left py-1 hover:text-yellow-200">{children}</button>; }
 
 function LanguageProvider({ children }) {
   const [currentLanguage, setCurrentLanguage] = useState(() => {
@@ -101,6 +131,7 @@ function LanguageContent({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
   const closeTimeoutRef = useRef(null);
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
@@ -251,331 +282,91 @@ function LanguageContent({ children, currentPageName }) {
         }
       `}</style>
 
+      {/* Top Announcement Bar */}
+      {t.announcement && (
+        <div className="bg-indigo-950 text-white overflow-hidden py-2 flex items-center justify-center">
+          <div className="whitespace-nowrap text-lg md:text-xl font-medium tracking-wide animate-[marquee_20s_linear_infinite]" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+            <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcement.label}</span> 
+            <span className="text-white/90">{t.announcement.text}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
-      <header className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
-              <img 
-                src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
-                alt="One2One Love Logo" 
-                className="h-10 w-auto"
-                onError={(e) => {
-                  // Fallback to a placeholder or text if image fails to load
-                  e.target.style.display = 'none';
-                }}
-              />
-              <div className="hidden sm:block">
-                <div className="text-lg font-bold text-white leading-tight">One 2 One Love</div>
-              </div>
-            </Link>
+      <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md sticky top-0 z-50">
+        <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between gap-5">
+          <Link to={createPageUrl("Home")} className="shrink-0 hover:opacity-90 transition-opacity">
+            <img 
+              src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
+              alt="One2One Love Logo" 
+              className="h-[88px] w-auto object-contain"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </Link>
+          
+          <nav className="hidden lg:flex items-center gap-6 font-bold text-lg shrink-0">
+            <Link to={createPageUrl("Home")} className="hover:text-yellow-200">⌂ {t.nav.home}</Link>
+            
+            <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+              <button className="hover:text-yellow-200">♡ {t.nav.action} ▾</button>
+              {actionOpen && (
+                <div className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
+                  <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
+                  <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
+                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
+                  <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
+                  <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}</Link>
+                  <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>📷 {t.actionMenu.memoryLane}</Link>
+                  <Link to={createPageUrl("CoupleSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>👥 {t.actionMenu.coupleSupport}</Link>
+                </div>
+              )}
+            </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center mx-4">
-              <Link
-                to={createPageUrl("Home")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Home className="w-4 h-4" />
-                {t.nav.home}
-              </Link>
-
-              <div 
-                className="relative"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
-                <button
-                  className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-                >
-                  <Heart className="w-4 h-4" />
-                  {t.nav.action}
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                {actionOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-xl shadow-2xl overflow-hidden z-50">
-                    <Link
-                      to={createPageUrl("LoveNotes")}
-                      className="w-full px-6 py-4 text-left bg-gradient-to-r from-pink-400 to-pink-600 text-white hover:from-pink-500 hover:to-pink-700 transition-all font-semibold flex items-center gap-3"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 fill-current" />
-                      {t.actionMenu.sendLoveNote}
-                    </Link>
-
-                    <Link
-                      to={createPageUrl("LGBTQSupport")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Rainbow className="w-5 h-5 text-purple-600" />
-                      <span>{t.actionMenu.lgbtqSupport}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipCoach")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Sparkles className="w-5 h-5 text-purple-600" />
-                      <span>AI Relationship Coach</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("CoupleSupport")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Users className="w-5 h-5 text-purple-600" />
-                      <span>{t.actionMenu.coupleSupport}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipQuizzes")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.relationshipQuizzes}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipMilestones")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.relationshipMilestones}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("RelationshipGoals")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Target className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.relationshipGoals}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("DateIdeas")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.dateIdeas}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("MemoryLane")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Heart className="w-5 h-5 text-pink-600" />
-                      <span>{t.actionMenu.memoryLane}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("AIContentCreator")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Sparkles className="w-5 h-5 text-blue-600" />
-                      <span>{t.actionMenu.aiCreator}</span>
-                    </Link>
-                    
-                    <Link
-                      to={createPageUrl("WinACruise")}
-                      className="w-full px-6 py-4 text-left bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600 transition-all font-semibold flex items-center gap-3"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Gift className="w-5 h-5" />
-                      {t.actionMenu.winCruise}
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <Link
-                to={createPageUrl("Community")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Users className="w-4 h-4" />
-                {t.nav.community}
-              </Link>
-
-              <Link
-                to={createPageUrl("LGBTQSupport")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Rainbow className="w-4 h-4" />
-                {t.nav.lgbtq}
-              </Link>
-              
-              {isAuthenticated && (
-                <Link
-                  to={createPageUrl("Profile")}
-                  className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-                >
-                  <User className="w-4 h-4" />
-                  {t.nav.profile}
+            {isAuthenticated ? (
+              <>
+                <Link to={createPageUrl("FriendRequests")} className="hover:text-yellow-200 relative">
+                  🔔 {t.nav.requests}
                 </Link>
-              )}
-
-              <Link
-                to={createPageUrl("Developer")}
-                className="flex items-center gap-1 text-yellow-300 hover:text-yellow-100 hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Code className="w-4 h-4" />
-                {t.nav.developer}
-              </Link>
-            </nav>
-
-            {/* Right side buttons */}
-            <div className="flex items-center gap-2">
-              {/* Friend Requests Icon - Only show when authenticated */}
-              {isAuthenticated && (
-                <Link to={createPageUrl("FriendRequests")} className="hidden md:block">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
-                    title={t.nav.requests}
-                  >
-                    <Bell className="w-5 h-5" />
-                    <span className="hidden xl:inline ml-2">{t.nav.requests}</span>
-                  </Button>
+                <Link to={createPageUrl("Chat")} className="hover:text-yellow-200 relative">
+                  💬 {t.nav.chat}
+                  {totalUnreadCount > 0 && (
+                    <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                      {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                    </span>
+                  )}
                 </Link>
-              )}
+                <Link to={createPageUrl("Profile")} className="hover:text-yellow-200">👤 {t.nav.profile}</Link>
+                <button onClick={handleSignOut} className="hover:text-yellow-200">{t.nav.signOut}</button>
+              </>
+            ) : (
+              <>
+                <Link to={createPageUrl("Invite")} className="hover:text-yellow-200">{t.nav.invite}</Link>
+                <button onClick={handleSignIn} className="hover:text-yellow-200">{t.nav.signIn}</button>
+                <button onClick={handleSignUp} className="text-yellow-300 text-xl hover:text-yellow-100">{t.nav.signUp}</button>
+              </>
+            )}
 
-              {/* Chat Icon - Only show when authenticated */}
-              {isAuthenticated && (
-                <Link to={createPageUrl("Chat")} className="hidden md:block">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap relative" 
-                    title={t.nav.chat}
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="hidden xl:inline ml-2">{t.nav.chat}</span>
-                    {totalUnreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                        {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
-              )}
-
-              {/* Show Invite, Sign In/Sign Up only when NOT authenticated */}
-              {!isAuthenticated && (
-                <>
-                  <Link to={createPageUrl("Invite")} className="hidden md:block">
-                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap" title={t.nav.invite}>
-                      <UserCheck className="w-4 h-4 mr-1" />
-                      <span className="hidden xl:inline">{t.nav.invite}</span>
-                    </Button>
-                  </Link>
-                  <Button 
-                    size="sm" 
-                    className="hidden md:flex bg-white/20 hover:bg-white/30 text-white border border-white/30 whitespace-nowrap"
-                    onClick={handleSignUp}
-                    title={t.nav.signUp}
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    <span className="hidden xl:inline">{t.nav.signUp}</span>
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
-                    onClick={handleSignIn}
-                    title={t.nav.signIn}
-                  >
-                    <LogIn className="w-4 h-4 mr-2" />
-                    <span className="hidden xl:inline">{t.nav.signIn}</span>
-                  </Button>
-                </>
-              )}
-              
+            <div className="relative">
               <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className="w-[120px] h-9 bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm">
-                  <SelectValue>
-                    <div className="flex items-center gap-1">
-                      <div className="flex items-center gap-1">
-                        {selectedLanguage?.flags.slice(0, 1).map((flag, index) => (
-                          <img 
-                            key={index}
-                            src={`https://flagcdn.com/w20/${flag.country}.png`}
-                            srcSet={`https://flagcdn.com/w40/${flag.country}.png 2x`}
-                            width="16"
-                            alt={flag.alt}
-                            className="shadow-sm"
-                          />
-                        ))}
-                      </div>
-                      <span className="font-medium text-xs">{selectedLanguage?.code.toUpperCase()}</span>
-                    </div>
-                  </SelectValue>
+                <SelectTrigger className="w-36 rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300 h-auto font-bold text-lg">
+                  <SelectValue placeholder="Language" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 rounded-lg shadow-xl">
-                  {languages.map((lang) => (
-                    <SelectItem 
-                      key={lang.code} 
-                      value={lang.code}
-                      disabled={!lang.active}
-                      className={`cursor-pointer hover:bg-gray-50 py-3 px-4 focus:bg-gray-100 ${!lang.active ? 'opacity-50' : ''}`}
-                    >
-                      <div className="flex items-center gap-3 relative">
-                        <div className="flex items-center gap-1 min-w-[60px]">
-                          {lang.flags.map((flag, index) => (
-                            <img 
-                              key={index}
-                              src={`https://flagcdn.com/w20/${flag.country}.png`}
-                              srcSet={`https://flagcdn.com/w40/${flag.country}.png 2x`}
-                              width="20"
-                              alt={flag.alt}
-                              className="shadow-sm"
-                            />
-                          ))}
-                        </div>
-                        <span className="text-gray-800 font-medium">{lang.name}</span>
-                        {!lang.active && (
-                          <span className="ml-auto text-xs font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
-                            Coming Soon
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
+                <SelectContent>
+                  <SelectItem value="en">US English</SelectItem>
+                  <SelectItem value="es">ES Español</SelectItem>
+                  <SelectItem value="fr">FR Français</SelectItem>
+                  <SelectItem value="it">IT Italiano</SelectItem>
+                  <SelectItem value="de">DE Deutsch</SelectItem>
                 </SelectContent>
               </Select>
-
-              {/* Sign Out Button - Only show when authenticated, after language dropdown */}
-              {isAuthenticated && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 whitespace-nowrap"
-                  onClick={handleSignOut}
-                  title={t.nav.signOut}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span className="hidden xl:inline">{t.nav.signOut}</span>
-                </Button>
-              )}
-
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
             </div>
+          </nav>
+          
+          {/* Mobile menu button */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
 
           {/* Mobile Menu */}
@@ -853,6 +644,25 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Main Content */}
       <main>{children}</main>
+
+      {/* Footer */}
+      <section className="bg-white text-center px-5 py-5 border-t">
+        <h3 className="font-black text-lg">{fT.loveGrow}</h3>
+        <p className="text-slate-600 max-w-5xl mx-auto mt-1">{fT.footerBody}</p>
+      </section>
+
+      <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
+          <div>
+            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" alt="One2OneLove" className="h-28 w-auto" />
+            <div className="text-lg mt-2">{fT.loveGrow}</div>
+            <div className="flex gap-3 mt-5 text-2xl"><span>●</span><span>◉</span><span>𝕏</span><span>♪</span><span>↗</span></div>
+          </div>
+          <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
+          <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
+        </div>
+        <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
+      </footer>
     </div>
   );
 }

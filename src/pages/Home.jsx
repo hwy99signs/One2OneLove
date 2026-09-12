@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "./Layout";
-import { Home as HomeIcon, Heart, ChevronDown, UserPlus, Globe } from "lucide-react";
-
 const LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png";
 const HERO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png";
 
@@ -68,76 +66,12 @@ export default function Home() {
   const navigate = useNavigate();
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
-  const [actionOpen, setActionOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState(0);
 
-  useEffect(() => {
-    const outerHeader = document.querySelector("#root header");
-    const previousDisplay = outerHeader?.style.display;
-    if (outerHeader) outerHeader.style.display = "none";
-    return () => {
-      if (outerHeader) outerHeader.style.display = previousDisplay || "";
-    };
-  }, []);
-
   const go = (page) => navigate(createPageUrl(page));
-  const langName = { en: "US English", es: "ES Español", fr: "FR Français", it: "IT Italiano", de: "DE Deutsch" }[currentLanguage] || "US English";
 
   return (
     <div className="min-h-screen bg-white text-slate-950 overflow-x-hidden">
-      {/* Top Announcement Bar */}
-      <div className="bg-indigo-950 text-white overflow-hidden py-2 flex items-center justify-center">
-        <div className="whitespace-nowrap text-lg md:text-xl font-medium tracking-wide animate-[marquee_20s_linear_infinite]" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
-          <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcementLabel}</span> 
-          <span className="text-white/90">{t.announcement}</span>
-        </div>
-      </div>
-
-      <header className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <button onClick={() => go("Home")} className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
-              <img src={LOGO} alt="One2OneLove" className="h-10 w-auto object-contain" />
-              <div className="hidden sm:block">
-                <div className="text-lg font-bold text-white leading-tight">One 2 One Love</div>
-              </div>
-            </button>
-            <nav className="hidden lg:flex items-center gap-1 font-medium text-sm">
-              <button onClick={() => go("Home")} className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm">
-                <HomeIcon className="w-4 h-4" /> {t.home}
-              </button>
-              
-              <div className="relative">
-                <button onClick={() => setActionOpen(v => !v)} className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm">
-                  <Heart className="w-4 h-4" /> {t.action} <ChevronDown className="w-4 h-4" />
-                </button>
-                {actionOpen && <div className="absolute right-0 top-10 w-60 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm">
-                  {TOOLS.slice(0,6).map(([icon,name,page]) => <button key={page} onClick={() => {setActionOpen(false); go(page);}} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">{icon} {name}</button>)}
-                </div>}
-              </div>
-              
-              <button onClick={() => go("Invite")} className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm">
-                <UserPlus className="w-4 h-4" /> {t.invite}
-              </button>
-              
-              <button onClick={() => go("SignUp")} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 px-4 py-2 rounded-lg transition-all font-medium text-sm ml-2">
-                <Heart className="w-4 h-4 fill-current" /> {t.signUp}
-              </button>
-              
-              <div className="relative ml-2">
-                <button onClick={() => setLangOpen(v => !v)} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-2 rounded-lg transition-all font-medium text-sm">
-                  <Globe className="w-4 h-4" /> {langName} <ChevronDown className="w-4 h-4" />
-                </button>
-                {langOpen && <div className="absolute right-0 top-10 w-44 bg-white text-slate-900 rounded-xl shadow-xl p-2 z-50 text-sm">
-                  {[['en','US English'],['es','ES Español'],['fr','FR Français'],['it','IT Italiano'],['de','DE Deutsch']].map(([code,label]) => <button key={code} onClick={() => {changeLanguage(code); setLangOpen(false);}} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">{label}</button>)}
-                </div>}
-              </div>
-            </nav>
-          </div>
-        </div>
-      </header>
-
       <section className="relative min-h-[900px] flex items-center justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative z-10 max-w-5xl mx-auto px-6 text-center text-white pt-8 pb-8">
@@ -199,25 +133,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white text-center px-5 py-5 border-t">
-        <h3 className="font-black text-lg">{t.loveGrow}</h3>
-        <p className="text-slate-600 max-w-5xl mx-auto mt-1">{t.footerBody}</p>
-      </section>
-
-      <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
-          <div>
-            <img src={LOGO} alt="One2OneLove" className="h-28 w-auto" />
-            <div className="text-lg mt-2">Love. Grow. Evolve. Together.</div>
-            <div className="flex gap-3 mt-5 text-2xl"><span>●</span><span>◉</span><span>𝕏</span><span>♪</span><span>↗</span></div>
-          </div>
-          <div><h4 className="text-xl font-black mb-4">{t.supportCol}</h4><FooterLink onClick={() => go("HelpCenter")}>{t.help}</FooterLink><FooterLink onClick={() => go("ContactUs")}>{t.contact}</FooterLink><FooterLink onClick={() => go("PrivacyPolicy")}>{t.privacy}</FooterLink><FooterLink onClick={() => go("TermsOfService")}>{t.terms}</FooterLink></div>
-          <div><h4 className="text-xl font-black mb-4">{t.company}</h4><FooterLink onClick={() => go("AboutUs")}>{t.about}</FooterLink><FooterLink onClick={() => go("Suggestions")}>{t.suggestions}</FooterLink></div>
-        </div>
-        <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{t.copyright}</div>
-      </footer>
-
       <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-35%); } }`}</style>
+    </div>
+  );
+}
     </div>
   );
 }
@@ -230,5 +149,3 @@ function Stat({value,label,white,tone,trophy,accent}) {
 function Info({icon,title,body}) {
   return <div className="rounded-2xl bg-white/10 p-6 text-center shadow-lg"><div className="text-4xl">{icon}</div><h3 className="text-2xl font-black mt-2">{title}</h3><p className="text-base mt-2 leading-relaxed">{body}</p></div>;
 }
-
-function FooterLink({children,onClick}) { return <button onClick={onClick} className="block text-left py-1 hover:text-yellow-200">{children}</button>; }
