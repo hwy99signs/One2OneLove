@@ -1,0 +1,51 @@
+name: One2OneLove Materialize Launch Assets
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/materialize-launch-assets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+
+      - name: Download exact approved One2OneLove homepage assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/assets
+          curl --fail --location --silent --show-error \
+            "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" \
+            --output public/assets/one2onelove-logo.png
+          curl --fail --location --silent --show-error \
+            "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png" \
+            --output public/assets/one2onelove-home-hero.png
+          test -s public/assets/one2onelove-logo.png
+          test -s public/assets/one2onelove-home-hero.png
+          file public/assets/one2onelove-logo.png
+          file public/assets/one2onelove-home-hero.png
+
+      - name: Commit immutable launch assets to migration branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/assets/one2onelove-logo.png public/assets/one2onelove-home-hero.png
+          if git diff --cached --quiet; then
+            echo "Approved launch assets are already materialized."
+            exit 0
+          fi
+          git commit -m "Store approved One2OneLove homepage assets locally"
+          git push origin HEAD:migration/cloudflare-launch-20260911
