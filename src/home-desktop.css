@@ -1,0 +1,210 @@
+/* One2OneLove homepage desktop sizing only.
+   Purpose: preserve the approved layout while making 100% browser zoom
+   visually match the previously approved desktop scale. Mobile/tablet
+   remain untouched. */
+
+@media (min-width: 1024px) {
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header > div {
+    padding: 0.5rem 1rem;
+    gap: 1rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header img {
+    height: 4.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header .h-12 {
+    height: 2.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header .whitespace-nowrap {
+    font-size: 1.375rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header nav {
+    gap: 1rem;
+    font-size: 1rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header nav > button.text-xl {
+    font-size: 1.125rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header nav .px-4.py-3 {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section {
+    min-height: 720px;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section > .relative.z-10 {
+    max-width: 64rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section > .relative.z-10 > img {
+    height: 9.5rem;
+    margin-bottom: 0;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section h1 {
+    font-size: 4.5rem;
+    line-height: 1;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section h1 + div {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    margin-top: 0.375rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .relative.z-10 > p:nth-of-type(1) {
+    margin-top: 1.5rem;
+    font-size: 1.25rem;
+    line-height: 1.65rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .relative.z-10 > p:nth-of-type(2) {
+    margin-top: 1rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .relative.z-10 > p:nth-of-type(3) {
+    margin-top: 1.25rem;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .grid.grid-cols-1.md\:grid-cols-2 {
+    max-width: 40rem;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .grid.grid-cols-1.md\:grid-cols-2 > button {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    line-height: 1.35rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .flex.flex-wrap.justify-center {
+    margin-top: 2.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .flex.flex-wrap.justify-center > div {
+    min-width: 6.75rem;
+    padding: 0.4rem 0.65rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section .flex.flex-wrap.justify-center > div > div:first-child {
+    font-size: 1rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section h2 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section > div > p {
+    margin-top: 0.625rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid {
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid > div {
+    padding: 1rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid > div > div:first-child {
+    font-size: 2rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid h3 {
+    font-size: 1.25rem;
+    line-height: 1.6rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid p {
+    font-size: 0.875rem;
+    line-height: 1.35rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid + div {
+    margin-top: 0.75rem;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section .grid + div > div:first-child {
+    font-size: 1rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section h2 {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section > div > p {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    margin-top: 0.625rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section .grid {
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section .grid > button {
+    min-height: 4.25rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 1rem;
+    line-height: 1.35rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section .grid + div {
+    margin-top: 2rem;
+    padding: 1.5rem 2rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section .grid + div h3 {
+    font-size: 1.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section + section + section .grid + div p {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > footer {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > footer img {
+    height: 5.5rem;
+  }
+
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > footer > div:first-child {
+    gap: 2rem;
+  }
+}
