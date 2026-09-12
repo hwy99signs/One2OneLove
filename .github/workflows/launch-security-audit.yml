@@ -1,0 +1,50 @@
+name: One2OneLove Launch Security Audit
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/launch-security-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > /tmp/audit.json
+          AUDIT_EXIT=$?
+          set -e
+          node - <<'NODE'
+          const fs = require('fs');
+          const d = JSON.parse(fs.readFileSync('/tmp/audit.json','utf8'));
+          const counts = d.metadata?.vulnerabilities || {};
+          console.log('Production dependency vulnerability counts:', JSON.stringify(counts));
+          const vulns = d.vulnerabilities || {};
+          for (const [name, v] of Object.entries(vulns)) {
+            console.log(`${v.severity || 'unknown'}: ${name} -> ${v.via?.map?.(x => typeof x === 'string' ? x : x.title).filter(Boolean).join(' | ') || 'dependency advisory'}`);
+          }
+          NODE
+          echo "npm audit exit code: $AUDIT_EXIT"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: one2onelove-production-dependency-audit
+          path: /tmp/audit.json
+          retention-days: 3
