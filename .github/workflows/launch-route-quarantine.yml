@@ -1,0 +1,100 @@
+name: One2OneLove Launch Route Quarantine
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/launch-route-quarantine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  quarantine-legacy-routes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+
+      - name: Quarantine stale and prohibited legacy routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/pages/index.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          routes = [
+              'InfluencerSignup', 'ProfessionalSignup', 'TherapistSignup',
+              'WinACruise', 'RelationshipCoach', 'CouplesProfile',
+              'Developer', 'LGBTQSupport', 'PremiumFeatures',
+              'AboutUs', 'HelpCenter', 'ContactUs', 'PrivacyPolicy',
+              'Suggestions', 'PodcastsSupport', 'Reviews'
+          ]
+
+          # Remove direct imports so stale code and legacy Supabase paths are not bundled.
+          for name in routes:
+              text = re.sub(rf'\nimport {re.escape(name)} from "\./{re.escape(name)}";\n', '\n', text)
+
+          # Remove these pages from current-page lookup map.
+          for name in routes:
+              text = re.sub(rf'\n\s*{re.escape(name)}:\s*{re.escape(name)},\s*\n', '\n', text)
+
+          # Ensure Navigate is available for graceful legacy URL redirects.
+          text = text.replace(
+              "import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';",
+              "import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';"
+          )
+
+          # Replace stale/prohibited route components with safe redirects to the approved homepage.
+          for name in routes:
+              pattern = re.compile(rf'<Route path="/{re.escape(name)}" element={{<{re.escape(name)} />}} />')
+              text, count = pattern.subn(f'<Route path="/{name}" element={{<Navigate to="/" replace />}} />', text)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one /{name} route, found {count}')
+
+          # Safety checks: no quarantined components remain imported or rendered.
+          for name in routes:
+              if re.search(rf'import\s+{re.escape(name)}\s+from', text):
+                  raise SystemExit(f'{name} import remains')
+              if f'element={{<{name} />}}' in text:
+                  raise SystemExit(f'{name} component route remains')
+
+          path.write_text(text, encoding='utf-8')
+          print('Quarantined legacy routes:', ', '.join(routes))
+          PY
+
+      - name: Verify launch route bundle has no direct legacy Supabase imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -nE 'import .*InfluencerSignup|import .*ProfessionalSignup|import .*TherapistSignup|import .*WinACruise|import .*RelationshipCoach|import .*CouplesProfile|import .*PremiumFeatures' src/pages/index.jsx; then
+            echo 'Legacy Supabase-backed launch routes are still imported.'
+            exit 1
+          fi
+
+      - name: Build after route quarantine
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit launch route quarantine
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/index.jsx
+          if git diff --cached --quiet; then
+            echo "Legacy routes already quarantined."
+            exit 0
+          fi
+          git commit -m "Quarantine stale legacy routes from launch bundle"
+          git push origin HEAD:migration/cloudflare-launch-20260911
