@@ -9,6 +9,7 @@ on:
       - "src/**"
       - "public/**"
       - "worker/**"
+      - "package-lock.json"
       - "cloudflare/wrangler.production.jsonc"
       - ".github/workflows/cloudflare-production-deploy.yml"
   workflow_dispatch:
@@ -43,6 +44,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --audit-level=high
+
       - name: Build approved launch frontend
         run: npm run build
 
@@ -51,11 +58,24 @@ jobs:
 
       - name: Deploy full-stack production Worker
         id: deploy
-        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
+          set +e
           npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc 2>&1 | tee /tmp/wrangler-production.log
+          WRANGLER_EXIT=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$WRANGLER_EXIT" -ne 0 ]; then
+            # Wrangler can upload/deploy the Worker successfully and then fail only while
+            # attaching custom domains before the newly-added Cloudflare zone is active.
+            if grep -q "Deployed one2onelove-launch triggers" /tmp/wrangler-production.log && \
+               grep -Eq 'code: 10083|does not exist on your account|code: 10082|Can.t infer zone' /tmp/wrangler-production.log; then
+              echo "Worker deployed successfully; custom-domain attachment is pending Cloudflare zone activation."
+              exit 0
+            fi
+            exit "$WRANGLER_EXIT"
+          fi
 
       - name: Upload deployment diagnostics
         if: always()
@@ -65,11 +85,6 @@ jobs:
           path: /tmp/wrangler-production.log
           if-no-files-found: ignore
           retention-days: 1
-
-      - name: Stop if Cloudflare deployment failed
-        if: steps.deploy.outcome != 'success'
-        shell: bash
-        run: exit 1
 
       - name: Verify production Worker homepage
         shell: bash
