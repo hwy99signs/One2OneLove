@@ -1,0 +1,25 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "one2onelove",
+  "compatibility_date": "2026-09-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "../worker/index.ts",
+  "assets": {
+    "not_found_handling": "single-page-application"
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "ef44564dbfca4e1bb13176ee568aaddf"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "one2onelove-media"
+    }
+  ]
+}
