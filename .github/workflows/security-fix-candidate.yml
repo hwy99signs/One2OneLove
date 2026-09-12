@@ -1,0 +1,85 @@
+name: One2OneLove Security Fix Candidate
+
+on:
+  push:
+    branches:
+      - security/launch-audit-fixes-20260912
+    paths:
+      - ".github/workflows/security-fix-candidate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  safe-audit-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout security candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: security/launch-audit-fixes-20260912
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Record production audit before fixes
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > /tmp/audit-before.json
+          set -e
+          node - <<'NODE'
+          const d=require('/tmp/audit-before.json');
+          console.log('BEFORE', JSON.stringify(d.metadata?.vulnerabilities || {}));
+          NODE
+
+      - name: Apply non-breaking npm audit fixes only
+        shell: bash
+        run: |
+          set +e
+          npm audit fix
+          EXIT=$?
+          set -e
+          echo "npm audit fix exit code: $EXIT"
+
+      - name: Build after dependency fixes
+        run: npm run build
+
+      - name: Record production audit after fixes
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > /tmp/audit-after.json
+          set -e
+          node - <<'NODE'
+          const before=require('/tmp/audit-before.json').metadata?.vulnerabilities || {};
+          const after=require('/tmp/audit-after.json').metadata?.vulnerabilities || {};
+          console.log('BEFORE', JSON.stringify(before));
+          console.log('AFTER', JSON.stringify(after));
+          if ((after.critical || 0) > (before.critical || 0)) process.exit(1);
+          if ((after.high || 0) > (before.high || 0)) process.exit(1);
+          NODE
+
+      - name: Commit tested dependency fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "No non-breaking dependency fixes available."
+            exit 0
+          fi
+          git commit -m "Apply tested non-breaking launch dependency security fixes"
+          git push origin HEAD:security/launch-audit-fixes-20260912
+
+      - name: Upload audit comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: one2onelove-security-fix-audit
+          path: |
+            /tmp/audit-before.json
+            /tmp/audit-after.json
+          retention-days: 3
