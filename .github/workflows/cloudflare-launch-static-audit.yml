@@ -19,12 +19,36 @@ jobs:
       - name: Checkout migration branch
         uses: actions/checkout@v4
 
-      - name: Report remaining legacy runtime dependencies
+      - name: Block legacy runtime dependencies in launch-critical UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          critical=(
+            src/pages/Home.jsx
+            src/pages/SignIn.jsx
+            src/pages/LoveNotes.jsx
+            src/pages/DateIdeas.jsx
+            src/pages/MemoryLane.jsx
+            src/pages/AIContentCreator.jsx
+            src/pages/Layout.jsx
+            src/contexts/AuthContext.jsx
+            src/lib/launchSignupService.js
+            src/lib/verifiedLoginService.js
+            src/components/lovenotes/ScheduledNotesManager.jsx
+            src/components/memories/MemoryForm.jsx
+          )
+          if grep -nE "@/lib/supabase|from ['\"]@supabase|supabase\.auth|supabase\.from|supabase\.storage|supabase\.channel|supabase\.removeChannel|netlify|vercel\.app|vercel\.com|base44" "${critical[@]}"; then
+            echo "Launch-critical One2OneLove UI still contains a legacy runtime dependency."
+            exit 1
+          fi
+          echo "Launch-critical UI is clear of Supabase, Netlify, Vercel and Base44 runtime dependencies."
+
+      - name: Report remaining non-critical legacy runtime dependencies
         shell: bash
         run: |
           set -euo pipefail
           echo "=== Direct Supabase imports/usages under src/ ==="
-          grep -RInE "@/lib/supabase|from ['\"]@supabase|supabase\.auth|supabase\.from|supabase\.storage" src \
+          grep -RInE "@/lib/supabase|from ['\"]@supabase|supabase\.auth|supabase\.from|supabase\.storage|supabase\.channel|supabase\.removeChannel" src \
             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
 
           echo "=== Supabase-hosted asset URLs under src/ ==="
