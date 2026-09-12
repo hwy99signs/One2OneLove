@@ -1,0 +1,112 @@
+name: One2OneLove Cloudflare Production Worker
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - "src/**"
+      - "public/**"
+      - "worker/**"
+      - "cloudflare/wrangler.production.jsonc"
+      - ".github/workflows/cloudflare-production-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-production-worker:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PROD_URL: https://one2onelove.hwy99signs.workers.dev
+    steps:
+      - name: Checkout Cloudflare migration branch
+        uses: actions/checkout@v4
+
+      - name: Verify Cloudflare secrets
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is missing" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is missing" && exit 1)
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build approved launch frontend
+        run: npm run build
+
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+
+      - name: Bundle exact approved homepage assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/assets
+          curl --fail --location --silent --show-error \
+            "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" \
+            --output dist/assets/one2onelove-logo.png
+          curl --fail --location --silent --show-error \
+            "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png" \
+            --output dist/assets/one2onelove-home-hero.png
+          test -s dist/assets/one2onelove-logo.png
+          test -s dist/assets/one2onelove-home-hero.png
+
+      - name: Make launch build self-contained on Cloudflare
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png": "/assets/one2onelove-logo.png",
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png": "/assets/one2onelove-home-hero.png",
+          }
+          for path in Path("dist").rglob("*"):
+              if not path.is_file() or path.suffix not in {".js", ".css", ".html"}:
+                  continue
+              text = path.read_text(encoding="utf-8")
+              updated = text
+              for old, new in replacements.items():
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding="utf-8")
+          PY
+
+      - name: Deploy full-stack production Worker
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
+
+      - name: Verify production Worker homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            STATUS="$(curl --silent --output /tmp/home.html --write-out '%{http_code}' "$PROD_URL/")" && [ "$STATUS" = "200" ] && break
+            sleep 2
+          done
+          test "$STATUS" = "200"
+          grep -qi '<html' /tmp/home.html
+
+      - name: Verify production Worker assets and SPA routes
+        shell: bash
+        run: |
+          curl --fail --silent --show-error "$PROD_URL/assets/one2onelove-logo.png" --output /tmp/logo.png
+          curl --fail --silent --show-error "$PROD_URL/assets/one2onelove-home-hero.png" --output /tmp/hero.png
+          test -s /tmp/logo.png
+          test -s /tmp/hero.png
+          STATUS="$(curl --silent --output /tmp/route.html --write-out '%{http_code}' "$PROD_URL/CooperativeGames")"
+          test "$STATUS" = "200"
+          grep -qi '<html' /tmp/route.html
+
+      - name: Verify production API and Neon
+        shell: bash
+        run: |
+          BODY="$(curl --fail --silent --show-error "$PROD_URL/api/health")"
+          echo "$BODY"
+          node -e 'const d=JSON.parse(process.argv[1]); if(!d.ok || d.database!=="one2onelove" || !d.users_ready || !d.love_notes_ready) process.exit(1)' "$BODY"
+          STATUS="$(curl --silent --output /tmp/session.json --write-out '%{http_code}' "$PROD_URL/api/auth/get-session")"
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
