@@ -6,6 +6,16 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "one2onelove.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.one2onelove.com",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "../dist",
     "binding": "ASSETS",
