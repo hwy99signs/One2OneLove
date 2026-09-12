@@ -137,9 +137,6 @@ export default function Home() {
     </div>
   );
 }
-    </div>
-  );
-}
 
 function Stat({value,label,white,tone,trophy,accent}) {
   const tones = {orange:"from-yellow-400 to-orange-500",blue:"from-blue-500 to-cyan-500",green:"from-green-500 to-emerald-500"};
