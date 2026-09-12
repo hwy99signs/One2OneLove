@@ -1,52 +1,57 @@
-import { supabase, handleSupabaseError, isSupabaseConfigured } from "@/lib/supabase";
+import { authApi } from '@/lib/one2oneApi';
+
+function userFromPayload(payload) {
+  return payload?.user || payload?.data?.user || null;
+}
+
+function isVerified(user) {
+  return user?.emailVerified === true || user?.email_verified === true || Boolean(user?.email_confirmed_at);
+}
 
 export async function verifiedEmailLogin(email, password) {
-  if (!isSupabaseConfigured()) {
-    return {
-      success: false,
-      error: "One2OneLove account services are not configured.",
-    };
-  }
-
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const payload = await authApi.signIn(email, password);
+    const user = userFromPayload(payload);
 
-    if (error) {
+    if (!user) {
       return {
         success: false,
-        error: handleSupabaseError(error) || error.message,
+        error: 'Sign in failed. Please try again.',
       };
     }
 
-    if (!data?.user || !data?.session) {
-      return {
-        success: false,
-        error: "Sign in failed. Please try again.",
-      };
-    }
-
-    if (!data.user.email_confirmed_at) {
-      await supabase.auth.signOut().catch(() => {});
+    if (!isVerified(user)) {
+      await authApi.signOut().catch(() => {});
       return {
         success: false,
         emailVerificationRequired: true,
-        error: "Please verify your email address before signing in. Check your inbox for the One2OneLove verification email.",
+        error: 'Please verify your email address before signing in. Check your inbox for the One2OneLove verification email.',
       };
     }
 
     return {
       success: true,
-      user: data.user,
-      session: data.session,
+      user,
+      session: payload?.session || payload?.data?.session || null,
     };
   } catch (error) {
-    console.error("Verified login error:", error);
+    console.error('Verified login error:', error);
+    const message = String(error?.message || '');
+    const code = String(error?.code || '');
+    const verificationRequired =
+      error?.status === 403 && (/verif/i.test(message) || /EMAIL_NOT_VERIFIED/i.test(code));
+
+    if (verificationRequired) {
+      return {
+        success: false,
+        emailVerificationRequired: true,
+        error: 'Please verify your email address before signing in. Check your inbox for the One2OneLove verification email.',
+      };
+    }
+
     return {
       success: false,
-      error: error?.message || handleSupabaseError(error),
+      error: message || 'Sign in failed. Please try again.',
     };
   }
 }
