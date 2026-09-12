@@ -2,13 +2,9 @@ import Layout from "./Layout.jsx";
 
 import Home from "./Home";
 
-import InfluencerSignup from "./InfluencerSignup";
 
-import ProfessionalSignup from "./ProfessionalSignup";
 
-import TherapistSignup from "./TherapistSignup";
 
-import AboutUs from "./AboutUs";
 
 import SignIn from "./SignIn";
 
@@ -26,13 +22,11 @@ import DateIdeas from "./DateIdeas";
 
 import Profile from "./Profile";
 
-import WinACruise from "./WinACruise";
 
 import Invite from "./Invite";
 
 import CounselingSupport from "./CounselingSupport";
 
-import PodcastsSupport from "./PodcastsSupport";
 
 import ArticlesSupport from "./ArticlesSupport";
 
@@ -52,7 +46,6 @@ import Community from "./Community";
 
 import RelationshipMilestones from "./RelationshipMilestones";
 
-import RelationshipCoach from "./RelationshipCoach";
 
 import RelationshipGoals from "./RelationshipGoals";
 
@@ -60,9 +53,7 @@ import Meditation from "./Meditation";
 
 import CommunicationPractice from "./CommunicationPractice";
 
-import CouplesProfile from "./CouplesProfile";
 
-import Developer from "./Developer";
 
 import CoupleActivities from "./CoupleActivities";
 
@@ -74,27 +65,20 @@ import CouplesDashboard from "./CouplesDashboard";
 
 import CouplesCalendar from "./CouplesCalendar";
 
-import LGBTQSupport from "./LGBTQSupport";
 
-import HelpCenter from "./HelpCenter";
 
-import ContactUs from "./ContactUs";
 
-import PrivacyPolicy from "./PrivacyPolicy";
 
 import TermsOfService from "./TermsOfService";
 
 import Blog from "./Blog";
 
-import Reviews from "./Reviews";
 
-import Suggestions from "./Suggestions";
 
 import Leaderboard from "./Leaderboard";
 
 import Achievements from "./Achievements";
 
-import PremiumFeatures from "./PremiumFeatures";
 
 import Chat from "./Chat";
 
@@ -106,20 +90,11 @@ import PaymentSuccess from "./PaymentSuccess";
 
 import Subscription from "./Subscription";
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
     
     Home: Home,
-    
-    InfluencerSignup: InfluencerSignup,
-    
-    ProfessionalSignup: ProfessionalSignup,
-    
-    TherapistSignup: TherapistSignup,
-    
-    AboutUs: AboutUs,
-    
     SignIn: SignIn,
     
     SignUp: SignUp,
@@ -135,15 +110,9 @@ const PAGES = {
     DateIdeas: DateIdeas,
     
     Profile: Profile,
-    
-    WinACruise: WinACruise,
-    
     Invite: Invite,
     
     CounselingSupport: CounselingSupport,
-    
-    PodcastsSupport: PodcastsSupport,
-    
     ArticlesSupport: ArticlesSupport,
     
     InfluencersSupport: InfluencersSupport,
@@ -161,19 +130,11 @@ const PAGES = {
     Community: Community,
     
     RelationshipMilestones: RelationshipMilestones,
-    
-    RelationshipCoach: RelationshipCoach,
-    
     RelationshipGoals: RelationshipGoals,
     
     Meditation: Meditation,
     
     CommunicationPractice: CommunicationPractice,
-    
-    CouplesProfile: CouplesProfile,
-    
-    Developer: Developer,
-    
     CoupleActivities: CoupleActivities,
     
     SharedJournals: SharedJournals,
@@ -183,29 +144,12 @@ const PAGES = {
     CouplesDashboard: CouplesDashboard,
     
     CouplesCalendar: CouplesCalendar,
-    
-    LGBTQSupport: LGBTQSupport,
-    
-    HelpCenter: HelpCenter,
-    
-    ContactUs: ContactUs,
-    
-    PrivacyPolicy: PrivacyPolicy,
-    
     TermsOfService: TermsOfService,
     
     Blog: Blog,
-    
-    Reviews: Reviews,
-    
-    Suggestions: Suggestions,
-    
     Leaderboard: Leaderboard,
     
     Achievements: Achievements,
-    
-    PremiumFeatures: PremiumFeatures,
-    
     Chat: Chat,
     
     FindFriends: FindFriends,
@@ -245,13 +189,13 @@ function PagesContent() {
                 
                 <Route path="/Home" element={<Home />} />
                 
-                <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
+                <Route path="/InfluencerSignup" element={<Navigate to="/" replace />} />
                 
-                <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
+                <Route path="/ProfessionalSignup" element={<Navigate to="/" replace />} />
                 
-                <Route path="/TherapistSignup" element={<TherapistSignup />} />
+                <Route path="/TherapistSignup" element={<Navigate to="/" replace />} />
                 
-                <Route path="/AboutUs" element={<AboutUs />} />
+                <Route path="/AboutUs" element={<Navigate to="/" replace />} />
                 
                 <Route path="/SignIn" element={<SignIn />} />
                 
@@ -273,13 +217,13 @@ function PagesContent() {
                 
                 <Route path="/Profile" element={<Profile />} />
                 
-                <Route path="/WinACruise" element={<WinACruise />} />
+                <Route path="/WinACruise" element={<Navigate to="/" replace />} />
                 
                 <Route path="/Invite" element={<Invite />} />
                 
                 <Route path="/CounselingSupport" element={<CounselingSupport />} />
                 
-                <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
+                <Route path="/PodcastsSupport" element={<Navigate to="/" replace />} />
                 
                 <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
                 
@@ -299,7 +243,7 @@ function PagesContent() {
                 
                 <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
                 
-                <Route path="/RelationshipCoach" element={<RelationshipCoach />} />
+                <Route path="/RelationshipCoach" element={<Navigate to="/" replace />} />
                 
                 <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
                 
@@ -307,9 +251,9 @@ function PagesContent() {
                 
                 <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
                 
-                <Route path="/CouplesProfile" element={<CouplesProfile />} />
+                <Route path="/CouplesProfile" element={<Navigate to="/" replace />} />
                 
-                <Route path="/Developer" element={<Developer />} />
+                <Route path="/Developer" element={<Navigate to="/" replace />} />
                 
                 <Route path="/CoupleActivities" element={<CoupleActivities />} />
                 
@@ -321,27 +265,27 @@ function PagesContent() {
                 
                 <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
                 
-                <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
+                <Route path="/LGBTQSupport" element={<Navigate to="/" replace />} />
                 
-                <Route path="/HelpCenter" element={<HelpCenter />} />
+                <Route path="/HelpCenter" element={<Navigate to="/" replace />} />
                 
-                <Route path="/ContactUs" element={<ContactUs />} />
+                <Route path="/ContactUs" element={<Navigate to="/" replace />} />
                 
-                <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
+                <Route path="/PrivacyPolicy" element={<Navigate to="/" replace />} />
                 
                 <Route path="/TermsOfService" element={<TermsOfService />} />
                 
                 <Route path="/Blog" element={<Blog />} />
                 
-                <Route path="/Reviews" element={<Reviews />} />
+                <Route path="/Reviews" element={<Navigate to="/" replace />} />
                 
-                <Route path="/Suggestions" element={<Suggestions />} />
+                <Route path="/Suggestions" element={<Navigate to="/" replace />} />
                 
                 <Route path="/Leaderboard" element={<Leaderboard />} />
                 
                 <Route path="/Achievements" element={<Achievements />} />
                 
-                <Route path="/PremiumFeatures" element={<PremiumFeatures />} />
+                <Route path="/PremiumFeatures" element={<Navigate to="/" replace />} />
                 
                 <Route path="/Chat" element={<Chat />} />
                 
