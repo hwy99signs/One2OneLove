@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "./Layout";
 import { createPageUrl } from "@/utils";
 
-const LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png";
-const HERO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png";
+const LOGO = "/assets/one2onelove-logo.png";
+const HERO = "/assets/one2onelove-home-hero.png";
 const SHARE_URL = "https://one2onelove.com";
 
 const LANGS = [

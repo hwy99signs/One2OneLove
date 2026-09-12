@@ -39,7 +39,7 @@ export default function HeroSection({ stats }) {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: "url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png')",
+          backgroundImage: "url('/assets/one2onelove-home-hero.png')",
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
@@ -48,7 +48,7 @@ export default function HeroSection({ stats }) {
       <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
         <div className="flex justify-center mb-6">
           <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" 
+            src="/assets/one2onelove-logo.png" 
             alt="One2One Love Logo" 
             className="h-32 sm:h-40 md:h-48 w-auto drop-shadow-2xl"
           />
