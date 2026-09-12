@@ -1,0 +1,68 @@
+name: One2OneLove Cloudflare DNS Cutover Inspect
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/cloudflare-dns-cutover-inspect.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-dns:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      ZONE_NAME: one2onelove.com
+    steps:
+      - name: Verify Cloudflare token exists
+        shell: bash
+        run: test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Resolve active Cloudflare zone
+        id: zone
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones?name=$ZONE_NAME" > /tmp/zones.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const d = JSON.parse(fs.readFileSync('/tmp/zones.json','utf8'));
+          if (!d.success || !Array.isArray(d.result) || d.result.length !== 1) {
+            console.error('Unable to resolve exactly one Cloudflare zone.', d.errors || []);
+            process.exit(1);
+          }
+          const z = d.result[0];
+          console.log(`Cloudflare zone: ${z.name}; status=${z.status}; paused=${z.paused}`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `zone_id=${z.id}\n`);
+          NODE
+
+      - name: Inspect apex and www web records only
+        shell: bash
+        env:
+          ZONE_ID: ${{ steps.zone.outputs.zone_id }}
+        run: |
+          set -euo pipefail
+          for HOST in one2onelove.com www.one2onelove.com; do
+            curl --fail --silent --show-error \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=$HOST" > "/tmp/records-${HOST}.json"
+            HOST="$HOST" node - <<'NODE'
+            const fs = require('fs');
+            const host = process.env.HOST;
+            const d = JSON.parse(fs.readFileSync(`/tmp/records-${host}.json`,'utf8'));
+            if (!d.success) {
+              console.error(`DNS read failed for ${host}`, d.errors || []);
+              process.exit(1);
+            }
+            const records = (d.result || []).map(r => ({id:r.id,type:r.type,name:r.name,content:r.content,proxied:r.proxied,ttl:r.ttl}));
+            console.log(`${host} records: ${JSON.stringify(records)}`);
+            NODE
+          done
