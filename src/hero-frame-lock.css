@@ -1,0 +1,13 @@
+/* One2OneLove desktop hero frame lock.
+   Keeps the beach hero image in a stable 4:3 composition on wide screens.
+   This intentionally does NOT alter any text, buttons, tabs, cards, or navigation. */
+
+@media (min-width: 1280px) {
+  .min-h-screen.bg-white.text-slate-950.overflow-x-hidden > header + section {
+    min-height: 0 !important;
+    aspect-ratio: 4 / 3;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+  }
+}
