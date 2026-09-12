@@ -9,10 +9,12 @@
   "routes": [
     {
       "pattern": "one2onelove.com",
+      "zone_name": "one2onelove.com",
       "custom_domain": true
     },
     {
       "pattern": "www.one2onelove.com",
+      "zone_name": "one2onelove.com",
       "custom_domain": true
     }
   ],
