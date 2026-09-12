@@ -1,0 +1,190 @@
+const CONFIGURED_API_BASE = import.meta.env.VITE_O2OL_API_URL || '';
+
+export const ONE2ONE_API_BASE = CONFIGURED_API_BASE.replace(/\/$/, '');
+
+async function parseResponse(response) {
+  const type = response.headers.get('content-type') || '';
+  let payload = null;
+  if (type.includes('application/json')) {
+    payload = await response.json().catch(() => null);
+  } else {
+    payload = await response.text().catch(() => null);
+  }
+
+  if (!response.ok) {
+    const message = payload?.error?.message || payload?.message || `Request failed (${response.status})`;
+    const err = new Error(message);
+    err.status = response.status;
+    err.code = payload?.error?.code || null;
+    err.payload = payload;
+    throw err;
+  }
+
+  return payload;
+}
+
+export async function apiRequest(path, options = {}) {
+  const headers = new Headers(options.headers || {});
+  if (options.body && !headers.has('content-type') && typeof options.body !== 'string') {
+    headers.set('content-type', 'application/json');
+  }
+
+  const body = options.body && typeof options.body !== 'string'
+    ? JSON.stringify(options.body)
+    : options.body;
+
+  const response = await fetch(`${ONE2ONE_API_BASE}${path}`, {
+    ...options,
+    headers,
+    body,
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  return parseResponse(response);
+}
+
+export const authApi = {
+  async getSession() {
+    return apiRequest('/api/auth/get-session', { method: 'GET' });
+  },
+  async signIn(email, password) {
+    return apiRequest('/api/auth/sign-in/email', { method: 'POST', body: { email, password } });
+  },
+  async signUp(email, password, name) {
+    return apiRequest('/api/auth/sign-up/email', { method: 'POST', body: { email, password, name } });
+  },
+  async signOut() {
+    return apiRequest('/api/auth/sign-out', { method: 'POST', body: {} });
+  },
+  async requestPasswordReset(email, redirectTo) {
+    return apiRequest('/api/auth/request-password-reset', { method: 'POST', body: { email, redirectTo } });
+  },
+};
+
+export const profileApi = {
+  async get() {
+    const data = await apiRequest('/api/profile');
+    return data?.profile || null;
+  },
+  async update(updates) {
+    const data = await apiRequest('/api/profile', { method: 'PATCH', body: updates });
+    return data?.profile || null;
+  },
+};
+
+export const profileMediaApi = {
+  async upload(file) {
+    const response = await fetch(`${ONE2ONE_API_BASE}/api/profile/photo`, {
+      method: 'PUT',
+      headers: { 'content-type': file.type },
+      body: file,
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    const data = await parseResponse(response);
+    return data?.avatar_url || null;
+  },
+  async remove() {
+    return apiRequest('/api/profile/photo', { method: 'DELETE' });
+  },
+  publicUrl(userId) {
+    return `${ONE2ONE_API_BASE}/api/media/profile/${userId}`;
+  },
+};
+
+export const onboardingApi = {
+  async saveMember(payload) {
+    const data = await apiRequest('/api/onboarding/member', { method: 'POST', body: payload });
+    return data?.profile || null;
+  },
+};
+
+export const specialistProfileApi = {
+  async get(type) {
+    const data = await apiRequest(`/api/profiles/${type}`);
+    return data?.profile || null;
+  },
+  async save(type, payload) {
+    const data = await apiRequest(`/api/onboarding/${type}`, { method: 'POST', body: payload });
+    return data?.profile || null;
+  },
+  async update(type, payload) {
+    const data = await apiRequest(`/api/profiles/${type}`, { method: 'PATCH', body: payload });
+    return data?.profile || null;
+  },
+};
+
+export const loveNotesApi = {
+  async listSent() {
+    const data = await apiRequest('/api/love-notes/sent');
+    return data?.notes || [];
+  },
+  async recordSent(payload) {
+    const data = await apiRequest('/api/love-notes/sent', { method: 'POST', body: payload });
+    return data?.note || null;
+  },
+  async listScheduled() {
+    const data = await apiRequest('/api/love-notes/scheduled');
+    return data?.notes || [];
+  },
+  async schedule(payload) {
+    const data = await apiRequest('/api/love-notes/scheduled', { method: 'POST', body: payload });
+    return data?.note || null;
+  },
+  async cancelScheduled(id) {
+    const data = await apiRequest(`/api/love-notes/scheduled/${id}/cancel`, { method: 'PATCH', body: {} });
+    return data?.note || null;
+  },
+};
+
+export const goalsApi = {
+  async list(orderBy = '-created_at') {
+    const data = await apiRequest(`/api/goals?order=${encodeURIComponent(orderBy)}`);
+    return data?.goals || [];
+  },
+  async get(goalId) {
+    const data = await apiRequest(`/api/goals/${goalId}`);
+    return data?.goal || null;
+  },
+  async create(payload) {
+    const data = await apiRequest('/api/goals', { method: 'POST', body: payload });
+    return data?.goal || null;
+  },
+  async update(goalId, payload) {
+    const data = await apiRequest(`/api/goals/${goalId}`, { method: 'PATCH', body: payload });
+    return data?.goal || null;
+  },
+  async remove(goalId) {
+    return apiRequest(`/api/goals/${goalId}`, { method: 'DELETE' });
+  },
+  async setProgress(goalId, progress) {
+    const data = await apiRequest(`/api/goals/${goalId}/progress`, { method: 'PATCH', body: { progress } });
+    return data?.goal || null;
+  },
+  async complete(goalId) {
+    const data = await apiRequest(`/api/goals/${goalId}/complete`, { method: 'POST', body: {} });
+    return data?.goal || null;
+  },
+  async listSteps(goalId) {
+    const data = await apiRequest(`/api/goals/${goalId}/steps`);
+    return data?.steps || [];
+  },
+  async addStep(goalId, stepText) {
+    const data = await apiRequest(`/api/goals/${goalId}/steps`, { method: 'POST', body: { step_text: stepText } });
+    return data?.step || null;
+  },
+  async toggleStep(stepId, isCompleted) {
+    const data = await apiRequest(`/api/goals/steps/${stepId}`, { method: 'PATCH', body: { is_completed: isCompleted } });
+    return data?.step || null;
+  },
+  async removeStep(stepId) {
+    return apiRequest(`/api/goals/steps/${stepId}`, { method: 'DELETE' });
+  },
+  async stats() {
+    const data = await apiRequest('/api/goals/stats');
+    return data?.stats || { total: 0, completed: 0, in_progress: 0, cancelled: 0, avgProgress: 0 };
+  },
+};
+
+export const one2OneLogoUrl = `${ONE2ONE_API_BASE}/api/assets/brand/logo`;
