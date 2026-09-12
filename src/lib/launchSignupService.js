@@ -60,18 +60,27 @@ export async function registerLaunchUser({
 
     const emailAlreadyConfirmed = Boolean(data.user.email_confirmed_at);
 
-    // Launch policy requires verification before access. If Supabase email
-    // confirmation is enabled (the required production setting), signUp returns
-    // no authenticated session until the user verifies the email.
-    if (data.session && !emailAlreadyConfirmed) {
+    // One2OneLove launch policy requires email verification before access.
+    // With Supabase email confirmation enabled, a new signup is unconfirmed and
+    // receives a verification email. If Supabase ever returns an immediate session
+    // or an already-confirmed new user, sign out and fail closed so launch QA catches
+    // a misconfigured authentication setting rather than silently bypassing verification.
+    if (data.session) {
       await supabase.auth.signOut().catch(() => {});
+    }
+
+    if (emailAlreadyConfirmed) {
+      return {
+        success: false,
+        configurationError: true,
+        error: "Email verification is not being enforced by the authentication service. Enable email confirmation before launch.",
+      };
     }
 
     return {
       success: true,
       user: data.user,
-      emailVerificationRequired: !emailAlreadyConfirmed,
-      emailAlreadyConfirmed,
+      emailVerificationRequired: true,
       metadata,
     };
   } catch (error) {
