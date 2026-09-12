@@ -12,19 +12,21 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  "vars": {
+    "NEON_AUTH_BASE_URL": "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth",
+    "STRIPE_PRICE_PREMIERE": "price_1UCYBNCoKDheG1ASmUs8STHT",
+    "STRIPE_PRICE_EXCLUSIVE": "price_1UCYBUCoKDheG1ASN0Y58Ye5"
+  },
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "8bd364a17cdf44319d698cccf576c911"
+      "id": "ef44564dbfca4e1bb13176ee568aaddf"
     }
   ],
   "r2_buckets": [
     {
       "binding": "MEDIA",
-      "bucket_name": "one2onelove-media-migration"
+      "bucket_name": "one2onelove-media"
     }
-  ],
-  "vars": {
-    "NEON_AUTH_BASE_URL": "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth"
-  }
+  ]
 }
