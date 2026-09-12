@@ -1,0 +1,40 @@
+name: One2OneLove Cloudflare Launch Static Audit
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - "src/**"
+      - ".github/workflows/cloudflare-launch-static-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+
+      - name: Report remaining legacy runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== Direct Supabase imports/usages under src/ ==="
+          grep -RInE "@/lib/supabase|from ['\"]@supabase|supabase\.auth|supabase\.from|supabase\.storage" src \
+            --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Supabase-hosted asset URLs under src/ ==="
+          grep -RInE "supabase\.co|hphhmjcutesqsdnubnnw|qtrypzzcjebvfcihiynt" src \
+            --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Netlify/Vercel runtime references under src/ ==="
+          grep -RInE "netlify|vercel\.app|vercel\.com" src \
+            --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+
+          echo "=== Base44 runtime references under src/ ==="
+          grep -RInE "base44" src \
+            --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
