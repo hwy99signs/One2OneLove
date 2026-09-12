@@ -1,0 +1,95 @@
+name: One2OneLove Port Neon Runtime Layer
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/port-neon-runtime-layer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  port-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+          fetch-depth: 0
+
+      - name: Fetch verified Neon migration branch
+        run: git fetch origin migration/neon-cloudflare-one2onelove-20260905
+
+      - name: Port backend adapters without changing approved UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout origin/migration/neon-cloudflare-one2onelove-20260905 -- \
+            src/contexts/AuthContext.jsx \
+            src/lib/buddyApi.js \
+            src/lib/buddyService.js \
+            src/lib/calendarApi.js \
+            src/lib/calendarService.js \
+            src/lib/chatFeaturesService.js \
+            src/lib/chatService.js \
+            src/lib/communityApi.js \
+            src/lib/communityService.js \
+            src/lib/engagementService.js \
+            src/lib/goalsService.js \
+            src/lib/influencerService.js \
+            src/lib/journalApi.js \
+            src/lib/journalService.js \
+            src/lib/milestoneApi.js \
+            src/lib/milestonesService.js \
+            src/lib/presenceApi.js \
+            src/lib/presenceService.js \
+            src/lib/professionalService.js \
+            src/lib/profileService.js \
+            src/lib/storyApi.js \
+            src/lib/stripeService.js \
+            src/lib/successStoriesService.js \
+            src/lib/therapistService.js
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Verify runtime layer no longer imports Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE "@/lib/supabase|supabase\.auth|supabase\.from|supabase\.storage" \
+            src/contexts/AuthContext.jsx \
+            src/lib/buddyApi.js src/lib/buddyService.js \
+            src/lib/calendarApi.js src/lib/calendarService.js \
+            src/lib/chatFeaturesService.js src/lib/chatService.js \
+            src/lib/communityApi.js src/lib/communityService.js \
+            src/lib/engagementService.js src/lib/goalsService.js \
+            src/lib/influencerService.js src/lib/journalApi.js src/lib/journalService.js \
+            src/lib/milestoneApi.js src/lib/milestonesService.js \
+            src/lib/presenceApi.js src/lib/presenceService.js \
+            src/lib/professionalService.js src/lib/profileService.js \
+            src/lib/storyApi.js src/lib/stripeService.js src/lib/successStoriesService.js \
+            src/lib/therapistService.js; then
+            echo "Legacy Supabase runtime dependency remains in the ported layer."
+            exit 1
+          fi
+
+      - name: Commit verified runtime migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/contexts/AuthContext.jsx src/lib
+          if git diff --cached --quiet; then
+            echo "Runtime layer already current."
+            exit 0
+          fi
+          git commit -m "Move frontend runtime services to Cloudflare and Neon"
+          git push origin HEAD:migration/cloudflare-launch-20260911
