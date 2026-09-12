@@ -4,87 +4,91 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, MessageCircle, MapPin, Phone, ArrowLeft, Send } from "lucide-react";
+import { Mail, Globe, ArrowLeft, Send, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 
 const translations = {
   en: {
     title: "Contact Us",
-    subtitle: "We'd love to hear from you. Send us a message!",
+    subtitle: "Questions, support requests, feedback, privacy requests, or legal inquiries — we want to hear from you.",
     back: "Back",
     name: "Your Name",
     email: "Your Email",
     subject: "Subject",
     message: "Message",
-    sendMessage: "Send Message",
-    getInTouch: "Get in Touch",
-    emailUs: "Email Us",
-    callUs: "Call Us",
-    visitUs: "Visit Us",
-    successMessage: "Message sent! We'll get back to you soon. 💌"
+    sendMessage: "Open Email to Send Message",
+    getInTouch: "Send Us a Message",
+    support: "General Support",
+    legal: "Legal & Privacy",
+    website: "Website",
+    emailNotice: "Submitting this form opens your device's email application with your message prepared. Your message is not sent until you send it from your email application.",
+    safety: "For emergencies or immediate danger, contact local emergency services. One2OneLove is not an emergency or crisis-response service."
   },
   es: {
     title: "Contáctanos",
-    subtitle: "Nos encantaría saber de ti. ¡Envíanos un mensaje!",
+    subtitle: "Preguntas, soporte, comentarios, solicitudes de privacidad o consultas legales: queremos saber de ti.",
     back: "Volver",
     name: "Tu Nombre",
     email: "Tu Email",
     subject: "Asunto",
     message: "Mensaje",
-    sendMessage: "Enviar Mensaje",
-    getInTouch: "Ponte en Contacto",
-    emailUs: "Envíanos un Email",
-    callUs: "Llámanos",
-    visitUs: "Visítanos",
-    successMessage: "¡Mensaje enviado! Te responderemos pronto. 💌"
+    sendMessage: "Abrir Email para Enviar Mensaje",
+    getInTouch: "Envíanos un Mensaje",
+    support: "Soporte General",
+    legal: "Legal y Privacidad",
+    website: "Sitio Web",
+    emailNotice: "Al enviar este formulario se abrirá la aplicación de correo de tu dispositivo con el mensaje preparado. El mensaje no se envía hasta que tú lo envíes desde tu aplicación de correo.",
+    safety: "Para emergencias o peligro inmediato, contacta a los servicios de emergencia locales. One2OneLove no es un servicio de emergencia ni de respuesta a crisis."
   },
   fr: {
     title: "Nous Contacter",
-    subtitle: "Nous aimerions vous entendre. Envoyez-nous un message!",
+    subtitle: "Questions, assistance, commentaires, demandes de confidentialité ou questions juridiques : nous souhaitons vous entendre.",
     back: "Retour",
     name: "Votre Nom",
     email: "Votre Email",
     subject: "Sujet",
     message: "Message",
-    sendMessage: "Envoyer le Message",
-    getInTouch: "Contactez-Nous",
-    emailUs: "Envoyez-nous un Email",
-    callUs: "Appelez-Nous",
-    visitUs: "Visitez-Nous",
-    successMessage: "Message envoyé! Nous vous répondrons bientôt. 💌"
+    sendMessage: "Ouvrir l'Email pour Envoyer",
+    getInTouch: "Envoyez-Nous un Message",
+    support: "Assistance Générale",
+    legal: "Juridique et Confidentialité",
+    website: "Site Web",
+    emailNotice: "L'envoi de ce formulaire ouvre l'application de messagerie de votre appareil avec le message préparé. Le message n'est envoyé que lorsque vous l'envoyez depuis votre application de messagerie.",
+    safety: "En cas d'urgence ou de danger immédiat, contactez les services d'urgence locaux. One2OneLove n'est pas un service d'urgence ou de gestion de crise."
   },
   it: {
     title: "Contattaci",
-    subtitle: "Ci piacerebbe sentirti. Inviaci un messaggio!",
+    subtitle: "Domande, assistenza, feedback, richieste sulla privacy o questioni legali: vogliamo sentirti.",
     back: "Indietro",
     name: "Il Tuo Nome",
     email: "La Tua Email",
     subject: "Oggetto",
     message: "Messaggio",
-    sendMessage: "Invia Messaggio",
-    getInTouch: "Mettiti in Contatto",
-    emailUs: "Inviaci un'Email",
-    callUs: "Chiamaci",
-    visitUs: "Visitaci",
-    successMessage: "Messaggio inviato! Ti risponderemo presto. 💌"
+    sendMessage: "Apri Email per Inviare il Messaggio",
+    getInTouch: "Inviaci un Messaggio",
+    support: "Assistenza Generale",
+    legal: "Legale e Privacy",
+    website: "Sito Web",
+    emailNotice: "L'invio di questo modulo apre l'app email del dispositivo con il messaggio già preparato. Il messaggio non viene inviato finché non lo invii dalla tua applicazione email.",
+    safety: "Per emergenze o pericolo immediato, contatta i servizi di emergenza locali. One2OneLove non è un servizio di emergenza o di risposta alle crisi."
   },
   de: {
     title: "Kontaktieren Sie Uns",
-    subtitle: "Wir würden gerne von Ihnen hören. Senden Sie uns eine Nachricht!",
+    subtitle: "Fragen, Supportanfragen, Feedback, Datenschutzanfragen oder rechtliche Anliegen — wir möchten von Ihnen hören.",
     back: "Zurück",
     name: "Ihr Name",
     email: "Ihre E-Mail",
     subject: "Betreff",
     message: "Nachricht",
-    sendMessage: "Nachricht Senden",
-    getInTouch: "Kontaktieren Sie Uns",
-    emailUs: "Senden Sie uns eine E-Mail",
-    callUs: "Rufen Sie uns an",
-    visitUs: "Besuchen Sie uns",
-    successMessage: "Nachricht gesendet! Wir melden uns bald. 💌"
+    sendMessage: "E-Mail zum Senden Öffnen",
+    getInTouch: "Senden Sie Uns eine Nachricht",
+    support: "Allgemeiner Support",
+    legal: "Recht & Datenschutz",
+    website: "Webseite",
+    emailNotice: "Beim Absenden dieses Formulars wird die E-Mail-App Ihres Geräts mit einer vorbereiteten Nachricht geöffnet. Die Nachricht wird erst gesendet, wenn Sie sie in Ihrer E-Mail-App absenden.",
+    safety: "Bei Notfällen oder unmittelbarer Gefahr wenden Sie sich an die örtlichen Notdienste. One2OneLove ist kein Notfall- oder Krisendienst."
   }
 };
 
@@ -95,8 +99,14 @@ export default function ContactUs() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    toast.success(t.successMessage);
-    setFormData({ name: "", email: "", subject: "", message: "" });
+    const subject = formData.subject.trim() || "One2OneLove Support Request";
+    const body = [
+      `Name: ${formData.name}`,
+      `Email: ${formData.email}`,
+      "",
+      formData.message
+    ].join("\n");
+    window.location.href = `mailto:support@one2onelove.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   return (
@@ -141,6 +151,7 @@ export default function ContactUs() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t.message}</label>
                     <Textarea value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required className="h-32" />
                   </div>
+                  <p className="text-sm text-gray-500 leading-relaxed">{t.emailNotice}</p>
                   <Button type="submit" className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg">
                     <Send className="w-5 h-5 mr-2" />
                     {t.sendMessage}
@@ -158,22 +169,8 @@ export default function ContactUs() {
                     <Mail className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{t.emailUs}</h3>
-                    <p className="text-gray-600 text-sm">support@one2onelove.com</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{t.callUs}</h3>
-                    <p className="text-gray-600 text-sm">+1 (555) 123-4567</p>
+                    <h3 className="font-bold text-gray-900 mb-1">{t.support}</h3>
+                    <a href="mailto:support@one2onelove.com" className="text-blue-600 hover:underline text-sm">support@one2onelove.com</a>
                   </div>
                 </div>
               </CardContent>
@@ -183,13 +180,33 @@ export default function ContactUs() {
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-white" />
+                    <Shield className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-1">{t.visitUs}</h3>
-                    <p className="text-gray-600 text-sm">123 Love Street<br />Heart City, HC 12345</p>
+                    <h3 className="font-bold text-gray-900 mb-1">{t.legal}</h3>
+                    <a href="mailto:legal@one2onelove.com" className="text-purple-600 hover:underline text-sm">legal@one2onelove.com</a>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-xl">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Globe className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">{t.website}</h3>
+                    <a href="https://one2onelove.com" target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline text-sm">one2onelove.com</a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-xl border-amber-200 bg-amber-50">
+              <CardContent className="p-6 text-sm text-amber-900 leading-relaxed">
+                {t.safety}
               </CardContent>
             </Card>
           </motion.div>
