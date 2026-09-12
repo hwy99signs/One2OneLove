@@ -19,34 +19,25 @@ if (!isSupabaseConfigured()) {
 
 // Create Supabase client with enhanced session persistence
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder-key', 
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      // Enable automatic token refresh before expiry (refresh 60 seconds before expiry)
       autoRefreshToken: true,
-      // Persist session across browser refreshes and tabs
       persistSession: true,
-      // Detect OAuth callbacks
       detectSessionInUrl: true,
-      // Use localStorage for persistence (survives tab/window close)
       storage: window.localStorage,
-      // Consistent storage key for this app (DO NOT CHANGE THIS - it will log users out)
       storageKey: 'sb-one2one-love-auth-token',
-      // Use implicit flow for better compatibility
       flowType: 'implicit',
-      // Enable debug logging in development
       debug: import.meta.env.DEV
     },
     global: {
       headers: {
         'X-Client-Info': 'one2one-love-app',
-        // Prevent caching of API responses
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache'
       }
     },
-    // Configure realtime options
     realtime: {
       params: {
         eventsPerSecond: 10
@@ -55,7 +46,6 @@ export const supabase = createClient(
   }
 );
 
-// Add session recovery helper
 export const recoverSession = async () => {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -70,47 +60,39 @@ export const recoverSession = async () => {
   }
 };
 
-// Helper function to handle Supabase errors
 export const handleSupabaseError = (error) => {
   if (!error) return 'An unknown error occurred';
-  
-  // Common Supabase error messages
-  if (error.message) {
-    return error.message;
+
+  const lowerMessage = String(error.message || '').toLowerCase();
+
+  if (
+    error.code === 'email_not_confirmed' ||
+    lowerMessage.includes('email not confirmed') ||
+    lowerMessage.includes('email_not_confirmed')
+  ) {
+    return 'Please verify your email address before signing in. Check your inbox for the One2OneLove verification email.';
   }
-  
+
   if (error.code) {
     switch (error.code) {
-      case '23505': // Unique violation
+      case '23505':
         return 'This email is already registered';
-      case '23503': // Foreign key violation
+      case '23503':
         return 'Invalid reference data';
-      case 'PGRST116': // Not found
+      case 'PGRST116':
         return 'Resource not found';
       case 'invalid_credentials':
         return 'Invalid email or password';
-      case 'email_not_confirmed':
-        // Don't show error - allow sign in even without email confirmation
-        return null; // Return null to allow the sign in to proceed
       case 'too_many_requests':
         return 'Too many login attempts. Please try again later';
       default:
-        return error.message || 'An error occurred';
+        break;
     }
   }
-  
-  // Handle common Supabase auth error messages
-  if (error.message) {
-    const lowerMessage = error.message.toLowerCase();
-    if (lowerMessage.includes('invalid login credentials') || lowerMessage.includes('invalid password')) {
-      return 'Invalid email or password';
-    }
-    if (lowerMessage.includes('email not confirmed')) {
-      // Don't block sign in - allow users to use app without email confirmation
-      return null; // Return null to allow the sign in to proceed
-    }
-  }
-  
-  return 'An error occurred';
-};
 
+  if (lowerMessage.includes('invalid login credentials') || lowerMessage.includes('invalid password')) {
+    return 'Invalid email or password';
+  }
+
+  return error.message || 'An error occurred';
+};
