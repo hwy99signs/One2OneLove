@@ -24,6 +24,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       PREVIEW_URL: https://one2onelove-preview-migration.hwy99signs.workers.dev
+      MEDIA_BUCKET: one2onelove-media-migration
     steps:
       - name: Checkout launch migration branch
         uses: actions/checkout@v4
@@ -43,6 +44,50 @@ jobs:
       - name: Install Worker dependencies
         run: npm --prefix worker install --no-audit --no-fund
 
+      - name: Materialize approved homepage assets from Cloudflare R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/assets
+          npx --yes wrangler@latest r2 object get \
+            "$MEDIA_BUCKET/brand/one2onelove-logo.png" \
+            --file=dist/assets/one2onelove-logo.png \
+            --remote
+          npx --yes wrangler@latest r2 object get \
+            "$MEDIA_BUCKET/brand/one2onelove-home-hero.png" \
+            --file=dist/assets/one2onelove-home-hero.png \
+            --remote
+          test -s dist/assets/one2onelove-logo.png
+          test -s dist/assets/one2onelove-home-hero.png
+
+      - name: Remove legacy Supabase asset dependencies from launch build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png": "/assets/one2onelove-logo.png",
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png": "/assets/one2onelove-home-hero.png",
+          }
+          for path in Path("dist").rglob("*"):
+              if not path.is_file() or path.suffix not in {".js", ".css", ".html"}:
+                  continue
+              text = path.read_text(encoding="utf-8")
+              updated = text
+              for old, new in replacements.items():
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding="utf-8")
+          leftovers = []
+          for path in Path("dist").rglob("*"):
+              if path.is_file() and path.suffix in {".js", ".css", ".html"}:
+                  if "qtrypzzcjebvfcihiynt.supabase.co" in path.read_text(encoding="utf-8"):
+                      leftovers.append(str(path))
+          if leftovers:
+              raise SystemExit("Legacy launch asset URL remains in: " + ", ".join(leftovers))
+          PY
+
       - name: Deploy full-stack Cloudflare preview
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.preview-migration.jsonc
 
@@ -57,6 +102,17 @@ jobs:
           test "$STATUS" = "200"
           test -s /tmp/home.html
           grep -qi '<html' /tmp/home.html
+
+      - name: Verify Cloudflare-served homepage assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error "$PREVIEW_URL/assets/one2onelove-logo.png" --output /tmp/launch-logo.png
+          curl --fail --silent --show-error "$PREVIEW_URL/assets/one2onelove-home-hero.png" --output /tmp/launch-hero.png
+          test -s /tmp/launch-logo.png
+          test -s /tmp/launch-hero.png
+          file /tmp/launch-logo.png
+          file /tmp/launch-hero.png
 
       - name: Verify SPA fallback route
         shell: bash
@@ -80,7 +136,7 @@ jobs:
           test "$STATUS" -ge 200
           test "$STATUS" -lt 500
 
-      - name: Verify official logo from R2
+      - name: Verify official logo from R2 API
         shell: bash
         run: |
           curl --fail --silent --show-error "$PREVIEW_URL/api/assets/brand/logo" --output /tmp/logo.png
