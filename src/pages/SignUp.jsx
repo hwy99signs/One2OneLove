@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import RegularUserForm from "@/components/signup/RegularUserForm";
+import LaunchRegularUserForm from "@/components/signup/LaunchRegularUserForm";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
-      <RegularUserForm onBack={handleBack} />
+      <LaunchRegularUserForm onBack={handleBack} />
     </div>
   );
 }
