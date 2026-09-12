@@ -1,4 +1,4 @@
-import { supabase, handleSupabaseError, isSupabaseConfigured } from "@/lib/supabase";
+import { launchAuthApi } from '@/lib/launchAuthApi';
 
 export async function registerLaunchUser({
   name,
@@ -11,99 +11,58 @@ export async function registerLaunchUser({
   privacyPolicyAcknowledged,
   age18Confirmed,
 }) {
-  if (!isSupabaseConfigured()) {
-    return { success: false, error: "One2OneLove account services are not configured." };
-  }
-
   if (!country || !preferredLanguage) {
-    return { success: false, error: "Please select your country and preferred language." };
+    return { success: false, error: 'Please select your country and preferred language.' };
   }
 
-  if (!termsAcceptedAt || !termsVersion || !age18Confirmed) {
-    return { success: false, error: "Terms acceptance is required before account creation." };
+  if (!termsAcceptedAt || !termsVersion || !age18Confirmed || !privacyPolicyAcknowledged) {
+    return { success: false, error: 'Terms, privacy acknowledgement, and 18+ confirmation are required before account creation.' };
   }
-
-  const emailRedirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/SignIn?verified=1`
-      : "https://one2-one-love.vercel.app/SignIn?verified=1";
-
-  const metadata = {
-    name,
-    user_type: "regular",
-    country,
-    preferred_language: preferredLanguage,
-    terms_accepted_at: termsAcceptedAt,
-    terms_version: termsVersion,
-    privacy_policy_acknowledged: Boolean(privacyPolicyAcknowledged),
-    age_18_confirmed: Boolean(age18Confirmed),
-    signup_source: "one2onelove_prelaunch",
-  };
 
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const result = await launchAuthApi.register({
+      name,
       email,
       password,
-      options: {
-        emailRedirectTo,
-        data: metadata,
-      },
+      country,
+      preferredLanguage,
+      termsAcceptedAt,
+      termsVersion,
+      privacyPolicyAcknowledged: Boolean(privacyPolicyAcknowledged),
+      age18Confirmed: Boolean(age18Confirmed),
     });
 
-    if (error) {
-      return { success: false, error: handleSupabaseError(error) || error.message };
+    if (!result?.success || !result?.user) {
+      return { success: false, error: result?.error?.message || 'Account creation failed.' };
     }
 
-    if (!data?.user) {
-      return { success: false, error: "Account creation did not return a user record." };
-    }
-
-    const emailAlreadyConfirmed = Boolean(data.user.email_confirmed_at);
-
-    // One2OneLove launch policy requires email verification before access.
-    // With Supabase email confirmation enabled, a new signup is unconfirmed and
-    // receives a verification email. If Supabase ever returns an immediate session
-    // or an already-confirmed new user, sign out and fail closed so launch QA catches
-    // a misconfigured authentication setting rather than silently bypassing verification.
-    if (data.session) {
-      await supabase.auth.signOut().catch(() => {});
-    }
-
-    if (emailAlreadyConfirmed) {
+    if (result.user.emailVerified) {
       return {
         success: false,
         configurationError: true,
-        error: "Email verification is not being enforced by the authentication service. Enable email confirmation before launch.",
+        error: 'Email verification is not being enforced by the authentication service.',
       };
     }
 
     return {
       success: true,
-      user: data.user,
+      user: result.user,
       emailVerificationRequired: true,
-      metadata,
+      verificationEmailExpected: result.verificationEmailExpected !== false,
     };
   } catch (error) {
-    console.error("Launch registration error:", error);
-    return { success: false, error: error?.message || handleSupabaseError(error) };
+    console.error('Launch registration error:', error);
+    return { success: false, error: error?.message || 'Account creation failed.' };
   }
 }
 
 export async function resendLaunchVerification(email) {
-  const emailRedirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/SignIn?verified=1`
-      : "https://one2-one-love.vercel.app/SignIn?verified=1";
-
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email,
-    options: { emailRedirectTo },
-  });
-
-  if (error) {
-    return { success: false, error: handleSupabaseError(error) || error.message };
+  try {
+    const result = await launchAuthApi.resendVerification(email);
+    return result?.success
+      ? { success: true }
+      : { success: false, error: result?.error?.message || 'Verification email could not be sent.' };
+  } catch (error) {
+    return { success: false, error: error?.message || 'Verification email could not be sent.' };
   }
-
-  return { success: true };
 }
