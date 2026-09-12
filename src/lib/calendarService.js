@@ -1,371 +1,155 @@
-import { supabase, handleSupabaseError } from './supabase';
+import { calendarApi } from './calendarApi';
 
 /**
  * Calendar Events Service
- * Handles all calendar event operations with Supabase
+ * Public function signatures are retained for compatibility. The userId
+ * argument is no longer trusted for authorization; the Worker uses the active
+ * Neon Auth session to scope every operation to the signed-in user.
  */
 
-/**
- * Get all calendar events for the current user
- * @param {string} userId - The user's ID
- * @param {Object} options - Query options (filter, sort, etc.)
- * @returns {Promise<Array>} Array of calendar events
- */
-export const getCalendarEvents = async (userId, options = {}) => {
+export const getCalendarEvents = async (_userId, options = {}) => {
   try {
-    let query = supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId);
-
-    // Apply filters
-    if (options.eventType) {
-      query = query.eq('event_type', options.eventType);
-    }
-
-    if (options.startDate) {
-      query = query.gte('event_date', options.startDate);
-    }
-
-    if (options.endDate) {
-      query = query.lte('event_date', options.endDate);
-    }
-
-    // Apply sorting (default: event_date ascending)
-    const sortBy = options.sortBy || 'event_date';
-    const sortOrder = options.sortOrder || 'asc';
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data || [];
+    return await calendarApi.list(options);
   } catch (error) {
     console.error('Error fetching calendar events:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch calendar events');
   }
 };
 
-/**
- * Get a single calendar event by ID
- * @param {string} eventId - The event ID
- * @param {string} userId - The user's ID
- * @returns {Promise<Object>} Calendar event
- */
-export const getCalendarEvent = async (eventId, userId) => {
+export const getCalendarEvent = async (eventId, _userId) => {
   try {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('id', eventId)
-      .eq('user_id', userId)
-      .single();
-
-    if (error) throw error;
-    return data;
+    return await calendarApi.get(eventId);
   } catch (error) {
     console.error('Error fetching calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch calendar event');
   }
 };
 
-/**
- * Create a new calendar event
- * @param {string} userId - The user's ID
- * @param {Object} eventData - Event data
- * @returns {Promise<Object>} Created event
- */
-export const createCalendarEvent = async (userId, eventData) => {
+export const createCalendarEvent = async (_userId, eventData) => {
   try {
-    console.log('📅 Creating calendar event with data:', { userId, eventData });
-    
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-    
-    if (!eventData.title || !eventData.title.trim()) {
-      throw new Error('Event title is required');
-    }
-    
-    if (!eventData.event_date) {
-      throw new Error('Event date is required');
-    }
-    
-    const insertData = {
-      user_id: userId,
+    if (!eventData?.title?.trim()) throw new Error('Event title is required');
+    if (!eventData?.event_date) throw new Error('Event date is required');
+    return await calendarApi.create({
+      ...eventData,
       title: eventData.title.trim(),
-      description: eventData.description || null,
-      event_date: eventData.event_date,
-      event_time: eventData.event_time || null,
       event_type: eventData.event_type || 'other',
-      location: eventData.location || null,
-      notes: eventData.notes || null,
       color: eventData.color || 'pink',
       reminder_enabled: eventData.reminder_enabled !== false,
-      reminder_days_before: eventData.reminder_days_before || 1,
-      is_recurring: eventData.is_recurring || false,
+      reminder_days_before: eventData.reminder_days_before ?? 1,
+      is_recurring: Boolean(eventData.is_recurring),
       recurrence_pattern: eventData.recurrence_pattern || null,
-    };
-    
-    console.log('📤 Inserting into calendar_events:', insertData);
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('❌ Supabase error:', error);
-      throw error;
-    }
-    
-    console.log('✅ Event created successfully:', data);
-    return data;
+    });
   } catch (error) {
-    console.error('❌ Error creating calendar event:', error);
-    const errorMessage = error.message || handleSupabaseError(error) || 'Failed to create event';
-    throw new Error(errorMessage);
+    console.error('Error creating calendar event:', error);
+    throw new Error(error.message || 'Failed to create event');
   }
 };
 
-/**
- * Update an existing calendar event
- * @param {string} eventId - The event ID
- * @param {string} userId - The user's ID
- * @param {Object} updates - Fields to update
- * @returns {Promise<Object>} Updated event
- */
-export const updateCalendarEvent = async (eventId, userId, updates) => {
+export const updateCalendarEvent = async (eventId, _userId, updates) => {
   try {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .update(updates)
-      .eq('id', eventId)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    return await calendarApi.update(eventId, updates);
   } catch (error) {
     console.error('Error updating calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to update calendar event');
   }
 };
 
-/**
- * Delete a calendar event
- * @param {string} eventId - The event ID
- * @param {string} userId - The user's ID
- * @returns {Promise<void>}
- */
-export const deleteCalendarEvent = async (eventId, userId) => {
+export const deleteCalendarEvent = async (eventId, _userId) => {
   try {
-    const { error } = await supabase
-      .from('calendar_events')
-      .delete()
-      .eq('id', eventId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    await calendarApi.remove(eventId);
   } catch (error) {
     console.error('Error deleting calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to delete calendar event');
   }
 };
 
-/**
- * Get upcoming events (events in the future)
- * @param {string} userId - The user's ID
- * @param {number} limit - Number of events to return
- * @returns {Promise<Array>} Array of upcoming events
- */
-export const getUpcomingEvents = async (userId, limit = 10) => {
+export const getUpcomingEvents = async (_userId, limit = 10) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', today)
-      .order('event_date', { ascending: true })
-      .limit(limit);
-
-    if (error) throw error;
-    return data || [];
+    return await calendarApi.list({ startDate: today, sortBy: 'event_date', sortOrder: 'asc', limit });
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch upcoming events');
   }
 };
 
-/**
- * Get events for a specific month
- * @param {string} userId - The user's ID
- * @param {Date} month - The month to query
- * @returns {Promise<Array>} Array of events in the month
- */
-export const getEventsForMonth = async (userId, month) => {
+export const getEventsForMonth = async (_userId, month) => {
   try {
     const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
     const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-    
-    const startDate = startOfMonth.toISOString().split('T')[0];
-    const endDate = endOfMonth.toISOString().split('T')[0];
-
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    return await calendarApi.list({
+      startDate: startOfMonth.toISOString().split('T')[0],
+      endDate: endOfMonth.toISOString().split('T')[0],
+      sortBy: 'event_date',
+      sortOrder: 'asc',
+    });
   } catch (error) {
     console.error('Error fetching events for month:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch events for month');
   }
 };
 
-/**
- * Get events by type
- * @param {string} userId - The user's ID
- * @param {string} eventType - The event type to filter by
- * @returns {Promise<Array>} Array of events
- */
-export const getEventsByType = async (userId, eventType) => {
+export const getEventsByType = async (_userId, eventType) => {
   try {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('event_type', eventType)
-      .order('event_date', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    return await calendarApi.list({ eventType, sortBy: 'event_date', sortOrder: 'asc' });
   } catch (error) {
     console.error('Error fetching events by type:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch events by type');
   }
 };
 
-/**
- * Get events for today
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of events for today
- */
-export const getTodayEvents = async (userId) => {
+export const getTodayEvents = async (_userId) => {
   try {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('event_date', todayStr)
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
+    const today = new Date().toISOString().split('T')[0];
+    return await calendarApi.list({ startDate: today, endDate: today, sortBy: 'event_time', sortOrder: 'asc' });
   } catch (error) {
     console.error('Error fetching today events:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch today events');
   }
 };
 
-/**
- * Get events for this week
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of events for this week
- */
-export const getThisWeekEvents = async (userId) => {
+export const getThisWeekEvents = async (_userId) => {
   try {
     const today = new Date();
     const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    startOfWeek.setDate(today.getDate() - today.getDay());
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
-    
-    const startDate = startOfWeek.toISOString().split('T')[0];
-    const endDate = endOfWeek.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    return await calendarApi.list({
+      startDate: startOfWeek.toISOString().split('T')[0],
+      endDate: endOfWeek.toISOString().split('T')[0],
+      sortBy: 'event_date',
+      sortOrder: 'asc',
+    });
   } catch (error) {
     console.error('Error fetching this week events:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch this week events');
   }
 };
 
-/**
- * Get events for this month
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of events for this month
- */
-export const getThisMonthEvents = async (userId) => {
+export const getThisMonthEvents = async (_userId) => {
   try {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
-    const startDate = startOfMonth.toISOString().split('T')[0];
-    const endDate = endOfMonth.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
+    return await calendarApi.list({
+      startDate: startOfMonth.toISOString().split('T')[0],
+      endDate: endOfMonth.toISOString().split('T')[0],
+      sortBy: 'event_date',
+      sortOrder: 'asc',
+    });
   } catch (error) {
     console.error('Error fetching this month events:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch this month events');
   }
 };
 
-/**
- * Get upcoming events (future events only)
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of upcoming events
- */
-export const getUpcomingEventsFilter = async (userId) => {
+export const getUpcomingEventsFilter = async (_userId) => {
   try {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', todayStr)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
+    const today = new Date().toISOString().split('T')[0];
+    return await calendarApi.list({ startDate: today, sortBy: 'event_date', sortOrder: 'asc' });
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
-    throw new Error(handleSupabaseError(error));
+    throw new Error(error.message || 'Unable to fetch upcoming events');
   }
 };
-
