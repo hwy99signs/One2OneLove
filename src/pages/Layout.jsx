@@ -233,7 +233,7 @@ function LanguageContent({ children, currentPageName }) {
                 }}
               />
               <div className="hidden sm:block">
-                <div className="text-lg font-bold text-white leading-tight">One 2 One Love</div>
+                <div className="text-lg font-bold text-white leading-tight">One2OneLove</div>
               </div>
             </Link>
 
@@ -268,15 +268,6 @@ function LanguageContent({ children, currentPageName }) {
                     >
                       <Heart className="w-5 h-5 fill-current" />
                       {t.actionMenu.sendLoveNote}
-                    </Link>
-
-                    <Link
-                      to={createPageUrl("LGBTQSupport")}
-                      className="w-full px-6 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center gap-3 border-b border-gray-100"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Rainbow className="w-5 h-5 text-purple-600" />
-                      <span>{t.actionMenu.lgbtqSupport}</span>
                     </Link>
                     
                     <Link
@@ -350,15 +341,6 @@ function LanguageContent({ children, currentPageName }) {
                       <Sparkles className="w-5 h-5 text-blue-600" />
                       <span>{t.actionMenu.aiCreator}</span>
                     </Link>
-                    
-                    <Link
-                      to={createPageUrl("WinACruise")}
-                      className="w-full px-6 py-4 text-left bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600 transition-all font-semibold flex items-center gap-3"
-                      onClick={() => setActionOpen(false)}
-                    >
-                      <Gift className="w-5 h-5" />
-                      {t.actionMenu.winCruise}
-                    </Link>
                   </div>
                 )}
               </div>
@@ -370,14 +352,6 @@ function LanguageContent({ children, currentPageName }) {
                 <Users className="w-4 h-4" />
                 {t.nav.community}
               </Link>
-
-              <Link
-                to={createPageUrl("LGBTQSupport")}
-                className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Rainbow className="w-4 h-4" />
-                {t.nav.lgbtq}
-              </Link>
               
               {isAuthenticated && (
                 <Link
@@ -388,14 +362,6 @@ function LanguageContent({ children, currentPageName }) {
                   {t.nav.profile}
                 </Link>
               )}
-
-              <Link
-                to={createPageUrl("Developer")}
-                className="flex items-center gap-1 text-yellow-300 hover:text-yellow-100 hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm"
-              >
-                <Code className="w-4 h-4" />
-                {t.nav.developer}
-              </Link>
             </nav>
 
             {/* Right side buttons */}
@@ -584,17 +550,6 @@ function LanguageContent({ children, currentPageName }) {
                         {t.actionMenu.sendLoveNote}
                       </Link>
                       <Link
-                        to={createPageUrl("LGBTQSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Rainbow className="w-5 h-5" />
-                        {t.actionMenu.lgbtqSupport}
-                      </Link>
-                      <Link
                         to={createPageUrl("RelationshipCoach")}
                         className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
                         onClick={() => {
@@ -682,17 +637,6 @@ function LanguageContent({ children, currentPageName }) {
                         <Sparkles className="w-5 h-5" />
                         {t.actionMenu.aiCreator}
                       </Link>
-                      <Link
-                        to={createPageUrl("WinACruise")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Gift className="w-5 h-5" />
-                        {t.actionMenu.winCruise}
-                      </Link>
                     </div>
                   )}
                 </div>
@@ -705,14 +649,6 @@ function LanguageContent({ children, currentPageName }) {
                   <Users className="w-5 h-5" />
                   {t.nav.community}
                 </Link>
-                <Link
-                  to={createPageUrl("LGBTQSupport")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Rainbow className="w-5 h-5" />
-                  {t.nav.lgbtq}
-                </Link>
                 {isAuthenticated && (
                   <Link
                     to={createPageUrl("Profile")}
@@ -723,14 +659,6 @@ function LanguageContent({ children, currentPageName }) {
                     {t.nav.profile}
                   </Link>
                 )}
-                <Link
-                  to={createPageUrl("Developer")}
-                  className="flex items-center gap-2 text-yellow-300 hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Code className="w-5 h-5" />
-                  {t.nav.developer}
-                </Link>
                 <div className="border-t border-white/20 my-2"></div>
                 
                 {/* Friend Requests - Only show when authenticated */}
