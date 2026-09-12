@@ -24,7 +24,7 @@ jobs:
       - name: Fetch verified Neon migration branch
         run: git fetch origin migration/neon-cloudflare-one2onelove-20260905
 
-      - name: Port secondary launch-visible pages
+      - name: Port verified secondary launch-visible pages
         shell: bash
         run: |
           set -euo pipefail
@@ -33,8 +33,6 @@ jobs:
             src/pages/Leaderboard.jsx \
             src/pages/CoupleActivities.jsx \
             src/pages/CouplesDashboard.jsx \
-            src/pages/CouplesProfile.jsx \
-            src/pages/PremiumFeatures.jsx \
             src/pages/Achievements.jsx \
             src/components/gamification/PointsDisplay.jsx
 
@@ -47,8 +45,6 @@ jobs:
             src/pages/Leaderboard.jsx
             src/pages/CoupleActivities.jsx
             src/pages/CouplesDashboard.jsx
-            src/pages/CouplesProfile.jsx
-            src/pages/PremiumFeatures.jsx
             src/pages/Achievements.jsx
             src/components/gamification/PointsDisplay.jsx
           )
@@ -73,13 +69,11 @@ jobs:
             src/pages/Leaderboard.jsx \
             src/pages/CoupleActivities.jsx \
             src/pages/CouplesDashboard.jsx \
-            src/pages/CouplesProfile.jsx \
-            src/pages/PremiumFeatures.jsx \
             src/pages/Achievements.jsx \
             src/components/gamification/PointsDisplay.jsx
           if git diff --cached --quiet; then
-            echo "Secondary launch UI is already on the Neon/Cloudflare runtime."
+            echo "Verified secondary launch UI is already on the Neon/Cloudflare runtime."
             exit 0
           fi
-          git commit -m "Move secondary launch UI to Cloudflare and Neon"
+          git commit -m "Move verified secondary launch UI to Cloudflare and Neon"
           git push origin HEAD:migration/cloudflare-launch-20260911
