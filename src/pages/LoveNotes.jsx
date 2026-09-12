@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useLanguage } from "@/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { loveNotesApi, one2OneLogoUrl } from "@/lib/one2oneApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -532,6 +532,7 @@ export default function LoveNotes() {
   const t = translations[currentLanguage] || translations.en;
   const categories = getCategoriesForLanguage(t);
   const queryClient = useQueryClient();
+  const primarySendButtonRef = useRef(null);
   
   const allNotes = useMemo(() => generateNotes(currentLanguage), [currentLanguage]);
 
@@ -563,15 +564,12 @@ export default function LoveNotes() {
     queryKey: ['sentLoveNotes', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('sent_love_notes')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
+      try {
+        return await loveNotesApi.listSent();
+      } catch (error) {
         console.error('Error fetching sent notes:', error);
         return [];
       }
-      return data || [];
     },
     enabled: !!currentUser?.id,
     initialData: [],
@@ -600,13 +598,7 @@ export default function LoveNotes() {
   const sendNoteMutation = useMutation({
     mutationFn: async (data) => {
       if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('sent_love_notes')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return loveNotesApi.recordSent(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
@@ -616,13 +608,7 @@ export default function LoveNotes() {
   const scheduleMutation = useMutation({
     mutationFn: async (data) => {
       if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('scheduled_love_notes')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return loveNotesApi.schedule(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
@@ -723,6 +709,7 @@ export default function LoveNotes() {
       note_content: sendModalNote.content,
       scheduled_date: scheduleDate,
       scheduled_time: scheduleTime,
+      scheduled_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       recipient_phone: recipientPhone,
       delivery_method: 'sms',
       note_language: currentLanguage,
@@ -772,8 +759,46 @@ export default function LoveNotes() {
     return { type: recipientType, identifier: recipientIdentifier, social_platform: socialPlatform };
   };
 
+  const handleSendNow = (note) => {
+    if (!note) return;
+
+    const targetPhone = recipientPhone.trim();
+    if (!targetPhone) {
+      toast.error(t.pleaseEnterPhone);
+      return;
+    }
+
+    const limitCheckResult = checkLimitBeforeSend('text', targetPhone, 'text');
+    if (limitCheckResult === null) return;
+
+    const messageText = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
+    const smsUrl = `sms:${targetPhone}?body=${encodeURIComponent(messageText)}`;
+
+    // Keep the SMS launch inside the user's click/tap event. Awaiting backend work
+    // before opening sms: can cause browsers to block the action as a popup.
+    if (currentUser && limitCheckResult.type !== 'guest') {
+      sendNoteMutation.mutate({
+        note_title: note.title,
+        note_content: note.content,
+        recipient_type: limitCheckResult.type,
+        recipient_identifier: limitCheckResult.identifier,
+        social_platform: limitCheckResult.social_platform,
+        sent_date: new Date().toISOString(),
+        created_by: currentUser.id,
+      }, {
+        onError: (error) => console.error('Unable to record sent love note:', error),
+      });
+    }
+
+    window.location.href = smsUrl;
+    toast.success(t.openingText);
+    setSendModalNote(null);
+    setRecipientPhone('');
+    setIsScheduling(false);
+  };
+
   const handleSendVia = async (note, method) => {
-    const text = `${note.title}\n\n${note.content}\n\n❤️ From One 2 One Love`;
+    const text = `${note.title}\n\n${note.content}\n\n❤️ From One2One Love`;
     let currentRecipientPhoneInput = ''; // Used for text/whatsapp
     let targetPlatformIdentifier = method; // Used for social media methods
 
@@ -868,7 +893,7 @@ export default function LoveNotes() {
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img 
-              src="/assets/one2onelove-logo.png" 
+              src={one2OneLogoUrl} 
               alt="One2One Love Logo" 
               className="h-24 w-auto mb-4"
             />
@@ -1320,7 +1345,12 @@ export default function LoveNotes() {
                       type="button"
                       variant={!isScheduling ? "default" : "outline"}
                       className={!isScheduling ? "flex-1 bg-gradient-to-r from-pink-500 to-purple-600" : "flex-1"}
-                      onClick={() => setIsScheduling(false)}
+                      onClick={() => {
+              setIsScheduling(false);
+              window.requestAnimationFrame(() => {
+                primarySendButtonRef.current?.click();
+              });
+            }}
                     >
                       {t.sendNow}
                     </Button>
@@ -1458,7 +1488,8 @@ export default function LoveNotes() {
                   {t.cancel}
                 </Button>
                 <Button
-                  onClick={() => isScheduling ? handleScheduleNote() : handleSendVia(sendModalNote, 'text')}
+                  ref={primarySendButtonRef}
+                  onClick={() => isScheduling ? handleScheduleNote() : handleSendNow(sendModalNote)}
                   disabled={scheduleMutation.isPending}
                   className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                 >

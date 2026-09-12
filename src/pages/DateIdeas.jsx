@@ -8,7 +8,7 @@ import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { getCustomDateIdeas, createCustomDateIdea, updateCustomDateIdea } from "@/lib/engagementService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
@@ -119,16 +119,7 @@ export default function DateIdeas() {
     queryKey: ['customDates', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('custom_date_ideas')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error fetching custom dates:', error);
-        return [];
-      }
-      return data || [];
+      return await getCustomDateIdeas();
     },
     enabled: !!currentUser?.id,
     initialData: [],
@@ -138,17 +129,7 @@ export default function DateIdeas() {
     queryKey: ['savedDates', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('custom_date_ideas')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('is_favorite', true)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error fetching saved dates:', error);
-        return [];
-      }
-      return data || [];
+      return await getCustomDateIdeas({ favorite: true });
     },
     enabled: !!currentUser?.id,
     initialData: [],
@@ -157,13 +138,7 @@ export default function DateIdeas() {
   const createDateMutation = useMutation({
     mutationFn: async (data) => {
       if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('custom_date_ideas')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await createCustomDateIdea(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
@@ -174,14 +149,7 @@ export default function DateIdeas() {
 
   const updateDateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const { data: result, error } = await supabase
-        .from('custom_date_ideas')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await updateCustomDateIdea(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
@@ -344,7 +312,7 @@ export default function DateIdeas() {
   });
 
   const handleSaveDate = async (idea) => {
-    if (idea.id && idea.created_by === currentUser?.email) {
+    if (idea.id && idea.user_id === currentUser?.id) {
       await updateDateMutation.mutateAsync({
         id: idea.id,
         data: { ...idea, is_favorite: !idea.is_favorite }
@@ -360,7 +328,7 @@ export default function DateIdeas() {
       return;
     }
     
-    if (idea.id && idea.created_by === currentUser?.email) {
+    if (idea.id && idea.user_id === currentUser?.id) {
       await updateDateMutation.mutateAsync({
         id: idea.id,
         data: { ...idea, partner_email: partnerEmail }
@@ -370,10 +338,10 @@ export default function DateIdeas() {
   };
 
   const handleCompleteDate = async (idea) => {
-    if (idea.id && idea.created_by === currentUser?.email) {
+    if (idea.id && idea.user_id === currentUser?.id) {
       await updateDateMutation.mutateAsync({
         id: idea.id,
-        data: { ...idea, completed: true, completed_date: new Date().toISOString() }
+        data: { is_completed: true }
       });
       toast.success(t.dateCompleted);
     }
@@ -516,7 +484,7 @@ export default function DateIdeas() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredIdeas.map((idea, index) => {
             const Icon = idea.icon || Heart;
-            const isCustom = idea.created_by === currentUser?.email;
+            const isCustom = idea.user_id === currentUser?.id;
             return (
               <motion.div
                 key={idea.id || index}
@@ -531,7 +499,7 @@ export default function DateIdeas() {
                     </div>
                     <CardTitle className="text-2xl font-bold text-gray-900">
                       {idea.title}
-                      {idea.completed && <Check className="inline-block w-5 h-5 text-green-600 ml-2" />}
+                      {idea.is_completed && <Check className="inline-block w-5 h-5 text-green-600 ml-2" />}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -565,7 +533,7 @@ export default function DateIdeas() {
                         <Button size="sm" variant="outline" onClick={() => handleShareDate(idea)}>
                           <Share2 className="w-4 h-4" />
                         </Button>
-                        {!idea.completed && (
+                        {!idea.is_completed && (
                           <Button size="sm" variant="outline" onClick={() => handleCompleteDate(idea)}>
                             <Check className="w-4 h-4" />
                           </Button>

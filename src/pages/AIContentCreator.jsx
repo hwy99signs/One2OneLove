@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 import { Sparkles, Heart, MessageCircle, Gift, Calendar, Loader2, Copy, Check, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
