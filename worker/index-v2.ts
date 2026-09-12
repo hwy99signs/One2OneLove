@@ -1,5 +1,6 @@
 // @ts-nocheck
 import baseWorker from './index';
+import { handleLaunchAuthRequest } from './launch-auth';
 import { handleSpecialProfileRequest } from './onboarding';
 import { handleMemberOnboarding } from './member-onboarding';
 import { handleProfileMediaRequest } from './profile-media';
@@ -18,6 +19,11 @@ import { handleEngagementRequest } from './engagement';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/launch-signup')) {
+      const response = await handleLaunchAuthRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/engagement')) {
       const response = await handleEngagementRequest(request, env, url);
