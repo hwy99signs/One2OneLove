@@ -1,0 +1,73 @@
+name: One2OneLove Clean Launch Navigation
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-launch-20260911
+    paths:
+      - ".github/workflows/clean-launch-navigation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clean-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout launch migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/cloudflare-launch-20260911
+
+      - name: Remove prohibited legacy navigation items
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/pages/Layout.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          removed = {}
+          for route in ('LGBTQSupport', 'WinACruise', 'Developer'):
+              pattern = re.compile(
+                  r'\n\s*<Link\b(?:(?!</Link>).)*?to=\{createPageUrl\(["\']' + re.escape(route) + r'["\']\)\}(?:(?!</Link>).)*?</Link>',
+                  re.S,
+              )
+              text, count = pattern.subn('', text)
+              removed[route] = count
+
+          if removed['LGBTQSupport'] < 2 or removed['WinACruise'] < 1 or removed['Developer'] < 1:
+              raise SystemExit(f'Expected legacy navigation blocks were not found safely: {removed}')
+
+          text = text.replace('>One 2 One Love<', '>One2OneLove<')
+
+          for route in ('LGBTQSupport', 'WinACruise', 'Developer'):
+              if f'createPageUrl("{route}")' in text or f"createPageUrl('{route}')" in text:
+                  raise SystemExit(f'{route} is still exposed in Layout navigation')
+
+          path.write_text(text, encoding='utf-8')
+          print('Removed legacy navigation blocks:', removed)
+          PY
+
+      - name: Build after navigation cleanup
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit navigation cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/Layout.jsx
+          if git diff --cached --quiet; then
+            echo "Launch navigation already clean."
+            exit 0
+          fi
+          git commit -m "Remove prohibited legacy links from launch navigation"
+          git push origin HEAD:migration/cloudflare-launch-20260911
