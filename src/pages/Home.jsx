@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "./Layout";
+import { Home as HomeIcon, Heart, ChevronDown, UserPlus, Globe } from "lucide-react";
 
 const LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png";
 const HERO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/bd7450758_-appbackgroundphoto.png";
@@ -85,34 +86,55 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white text-slate-950 overflow-x-hidden">
-      <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md">
-        <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center gap-5">
-          <button onClick={() => go("Home")} className="shrink-0">
-            <img src={LOGO} alt="One2OneLove" className="h-[88px] w-auto object-contain" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold text-slate-900 mb-1">{t.announcementLabel}</div>
-            <div className="h-12 rounded-2xl border border-white/35 bg-white/10 overflow-hidden flex items-center px-4">
-              <div className="whitespace-nowrap text-[24px] md:text-[30px] font-extrabold drop-shadow animate-[marquee_18s_linear_infinite]">– {t.announcement}</div>
-            </div>
+      {/* Top Announcement Bar */}
+      <div className="bg-indigo-950 text-white overflow-hidden py-2 flex items-center justify-center">
+        <div className="whitespace-nowrap text-lg md:text-xl font-medium tracking-wide animate-[marquee_20s_linear_infinite]" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+          <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcementLabel}</span> 
+          <span className="text-white/90">{t.announcement}</span>
+        </div>
+      </div>
+
+      <header className="bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg sticky top-0 z-50">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <button onClick={() => go("Home")} className="flex items-center gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
+              <img src={LOGO} alt="One2OneLove" className="h-10 w-auto object-contain" />
+              <div className="hidden sm:block">
+                <div className="text-lg font-bold text-white leading-tight">One 2 One Love</div>
+              </div>
+            </button>
+            <nav className="hidden lg:flex items-center gap-1 font-medium text-sm">
+              <button onClick={() => go("Home")} className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm">
+                <HomeIcon className="w-4 h-4" /> {t.home}
+              </button>
+              
+              <div className="relative">
+                <button onClick={() => setActionOpen(v => !v)} className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm">
+                  <Heart className="w-4 h-4" /> {t.action} <ChevronDown className="w-4 h-4" />
+                </button>
+                {actionOpen && <div className="absolute right-0 top-10 w-60 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm">
+                  {TOOLS.slice(0,6).map(([icon,name,page]) => <button key={page} onClick={() => {setActionOpen(false); go(page);}} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">{icon} {name}</button>)}
+                </div>}
+              </div>
+              
+              <button onClick={() => go("Invite")} className="flex items-center gap-1 text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all font-medium text-sm">
+                <UserPlus className="w-4 h-4" /> {t.invite}
+              </button>
+              
+              <button onClick={() => go("SignUp")} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 px-4 py-2 rounded-lg transition-all font-medium text-sm ml-2">
+                <Heart className="w-4 h-4 fill-current" /> {t.signUp}
+              </button>
+              
+              <div className="relative ml-2">
+                <button onClick={() => setLangOpen(v => !v)} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-2 rounded-lg transition-all font-medium text-sm">
+                  <Globe className="w-4 h-4" /> {langName} <ChevronDown className="w-4 h-4" />
+                </button>
+                {langOpen && <div className="absolute right-0 top-10 w-44 bg-white text-slate-900 rounded-xl shadow-xl p-2 z-50 text-sm">
+                  {[['en','US English'],['es','ES Español'],['fr','FR Français'],['it','IT Italiano'],['de','DE Deutsch']].map(([code,label]) => <button key={code} onClick={() => {changeLanguage(code); setLangOpen(false);}} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">{label}</button>)}
+                </div>}
+              </div>
+            </nav>
           </div>
-          <nav className="hidden lg:flex items-center gap-6 font-bold text-lg shrink-0">
-            <button onClick={() => go("Home")} className="hover:text-yellow-200">⌂ {t.home}</button>
-            <div className="relative">
-              <button onClick={() => setActionOpen(v => !v)} className="hover:text-yellow-200">♡ {t.action} ▾</button>
-              {actionOpen && <div className="absolute right-0 top-8 w-60 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm">
-                {TOOLS.slice(0,6).map(([icon,name,page]) => <button key={page} onClick={() => {setActionOpen(false); go(page);}} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">{icon} {name}</button>)}
-              </div>}
-            </div>
-            <button onClick={() => go("Invite")} className="hover:text-yellow-200">{t.invite}</button>
-            <button onClick={() => go("SignUp")} className="text-yellow-300 text-xl hover:text-yellow-100">{t.signUp}</button>
-            <div className="relative">
-              <button onClick={() => setLangOpen(v => !v)} className="rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300">{langName} ▾</button>
-              {langOpen && <div className="absolute right-0 top-14 w-44 bg-white text-slate-900 rounded-xl shadow-xl p-2 z-50 text-sm">
-                {[['en','US English'],['es','ES Español'],['fr','FR Français'],['it','IT Italiano'],['de','DE Deutsch']].map(([code,label]) => <button key={code} onClick={() => {changeLanguage(code); setLangOpen(false);}} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100">{label}</button>)}
-              </div>}
-            </div>
-          </nav>
         </div>
       </header>
 
