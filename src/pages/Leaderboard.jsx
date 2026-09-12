@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { getPoints } from "@/lib/engagementService";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Crown, Medal, Star, TrendingUp, Users, Zap, ArrowLeft } from "lucide-react";
@@ -89,15 +89,7 @@ export default function Leaderboard() {
     queryKey: ['userPoints', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('gamification_points')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
-        console.error('Error fetching points:', error);
-        return [];
-      }
-      return data || [];
+      return await getPoints();
     },
     enabled: !!currentUser?.id,
     initialData: [],

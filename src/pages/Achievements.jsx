@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { getPoints, getBadges } from "@/lib/engagementService";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trophy, Heart, Calendar, Star, Zap, Target, Gift, Crown, Award, ArrowLeft, Lock, Sparkles } from "lucide-react";
@@ -123,15 +123,7 @@ export default function Achievements() {
     queryKey: ['userPoints', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('gamification_points')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
-        console.error('Error fetching points:', error);
-        return [];
-      }
-      return data || [];
+      return await getPoints();
     },
     enabled: !!currentUser?.id,
     initialData: [],
@@ -141,15 +133,7 @@ export default function Achievements() {
     queryKey: ['badges', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('badges')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
-        console.error('Error fetching badges:', error);
-        return [];
-      }
-      return data || [];
+      return await getBadges();
     },
     enabled: !!currentUser?.id,
     initialData: [],
