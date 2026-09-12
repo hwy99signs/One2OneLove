@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Heart, Mail, Lock, Eye, EyeOff, X, UserCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { verifiedEmailLogin } from "@/lib/verifiedLoginService";
 
 const translations = {
   en: {
@@ -36,70 +36,40 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
-  const { login } = useAuth();
   const t = translations[currentLanguage] || translations.en;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error("Please enter both email and password");
       return;
     }
 
     setIsLoading(true);
-    console.log('🔵 Sign in form submitted for:', email);
 
     try {
-      // Clear any stale localStorage data that might interfere
-      // This ensures a clean login state
-      try {
-        const storageKey = 'sb-one2one-love-auth-token';
-        const existingData = localStorage.getItem(storageKey);
-        if (existingData) {
-          console.log('🧹 Clearing stale auth data from localStorage...');
-          // Don't clear completely, but let Supabase handle it
-          // The login function will handle session clearing
-        }
-      } catch (storageError) {
-        console.warn('⚠️ Could not check localStorage:', storageError);
-      }
-
-      // Add timeout to prevent infinite loading
-      const loginPromise = login(email, password);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Login timeout after 15 seconds')), 15000)
+      const loginPromise = verifiedEmailLogin(email, password);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Login timeout after 15 seconds")), 15000)
       );
-      
+
       const result = await Promise.race([loginPromise, timeoutPromise]);
-      console.log('🔵 Login result:', result);
-      
-      if (result && result.success) {
-        console.log('✅ Login successful, redirecting...');
+
+      if (result?.success) {
         toast.success("Successfully signed in!");
-        
-        // Set loading to false before redirect
         setIsLoading(false);
-        
-        // Small delay to ensure state updates, then redirect
         setTimeout(() => {
-          const profileUrl = createPageUrl("Profile");
-          console.log('🔵 Redirecting to:', profileUrl);
-          // Use window.location.replace for immediate redirect
-          window.location.replace(profileUrl);
+          window.location.replace(createPageUrl("Profile"));
         }, 100);
       } else {
-        const errorMessage = result?.error || "Invalid email or password. Please try again.";
-        console.error('❌ Login failed:', errorMessage);
-        toast.error(errorMessage);
+        toast.error(result?.error || "Invalid email or password. Please try again.");
         setIsLoading(false);
       }
     } catch (error) {
-      console.error("❌ Login error:", error);
-      const errorMessage = error.message || "An error occurred. Please try again.";
-      toast.error(errorMessage);
+      console.error("Sign in error:", error);
+      toast.error(error?.message || "An error occurred. Please try again.");
       setIsLoading(false);
     }
   };
@@ -120,15 +90,11 @@ export default function SignIn() {
           <h1 className="text-3xl font-bold text-gray-900">{t.signIn.title}</h1>
         </div>
 
-        <p className="text-gray-600 mb-8 text-center">
-          {t.signIn.subtitle}
-        </p>
+        <p className="text-gray-600 mb-8 text-center">{t.signIn.subtitle}</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.signIn.email} *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t.signIn.email} *</label>
             <div className="relative">
               <Mail size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -143,9 +109,7 @@ export default function SignIn() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t.signIn.password}
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t.signIn.password}</label>
             <div className="relative">
               <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
