@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X } from "lucide-react";
+import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
 import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/dateideas/dateIdeasLibrary";
 import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
+import { createCalendarEvent } from "@/lib/calendarService";
 
 const translations = {
   en: {
@@ -120,6 +122,11 @@ export default function DateIdeas() {
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'custom', 'saved'
   const [selectedIdea, setSelectedIdea] = useState(null);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduledEvent, setScheduledEvent] = useState(null);
+  const [isScheduling, setIsScheduling] = useState(false);
 
   const { user: currentUser } = useAuth();
 
@@ -142,25 +149,6 @@ export default function DateIdeas() {
     initialData: [],
   });
 
-  const { data: savedDates = [] } = useQuery({
-    queryKey: ['savedDates', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('custom_date_ideas')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('is_favorite', true)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error fetching saved dates:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!currentUser?.id,
-    initialData: [],
-  });
 
   const createDateMutation = useMutation({
     mutationFn: async (data) => {
@@ -186,6 +174,7 @@ export default function DateIdeas() {
         .from('custom_date_ideas')
         .update(data)
         .eq('id', id)
+        .eq('user_id', currentUser?.id)
         .select()
         .single();
       if (error) throw error;
@@ -193,7 +182,6 @@ export default function DateIdeas() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
-      queryClient.invalidateQueries({ queryKey: ['savedDates'] });
     }
   });
 
@@ -233,17 +221,47 @@ export default function DateIdeas() {
     'from-teal-500 to-cyan-500',
   ];
 
-  const predefinedDateIdeas = getDateIdeasForLanguage(currentLanguage).map((idea, index) => ({
+  const BUILTIN_DATE_STATE_PREFIX = '__o2ol_builtin_date__:';
+
+  const basePredefinedDateIdeas = getDateIdeasForLanguage(currentLanguage).map((idea, index) => ({
     ...idea,
     icon: iconMap[idea.iconKey] || Heart,
     color: dateIdeaColors[index % dateIdeaColors.length]
   }));
 
-  const allIdeas = viewMode === 'custom' 
-    ? customDates 
+  const builtInStateRecords = customDates.filter(record =>
+    String(record.title || '').startsWith(BUILTIN_DATE_STATE_PREFIX)
+  );
+  const customOnlyDates = customDates.filter(record =>
+    !String(record.title || '').startsWith(BUILTIN_DATE_STATE_PREFIX)
+  );
+  const builtInStateById = new Map(
+    builtInStateRecords.map(record => [
+      String(record.title).slice(BUILTIN_DATE_STATE_PREFIX.length),
+      record
+    ])
+  );
+
+  const predefinedDateIdeas = basePredefinedDateIdeas.map(idea => {
+    const stateRecord = builtInStateById.get(String(idea.id));
+    return {
+      ...idea,
+      user_record_id: stateRecord?.id || null,
+      is_favorite: Boolean(stateRecord?.is_favorite),
+      is_completed: Boolean(stateRecord?.is_completed)
+    };
+  });
+
+  const savedIdeas = [
+    ...predefinedDateIdeas.filter(idea => idea.is_favorite),
+    ...customOnlyDates.filter(idea => idea.is_favorite)
+  ];
+
+  const allIdeas = viewMode === 'custom'
+    ? customOnlyDates
     : viewMode === 'saved'
-    ? [...savedDates, ...predefinedDateIdeas.filter(idea => savedDates.some(saved => saved.title === idea.title))]
-    : [...predefinedDateIdeas, ...customDates];
+    ? savedIdeas
+    : [...predefinedDateIdeas, ...customOnlyDates];
 
   const filteredIdeas = allIdeas.filter(idea => (
     matchesDateIdeaFilter(idea, 'category', selectedCategory) &&
@@ -253,41 +271,200 @@ export default function DateIdeas() {
     matchesDateIdeaFilter(idea, 'stage', selectedStage)
   ));
 
+  const requireSignedIn = () => {
+    if (currentUser?.id) return true;
+    toast.error(t.signInRequired);
+    return false;
+  };
+
+  const firstFilterValue = (value) => Array.isArray(value) ? value[0] : (value || null);
+
+  const persistBuiltInState = async (idea, updates) => {
+    if (idea.user_record_id) {
+      return updateDateMutation.mutateAsync({ id: idea.user_record_id, data: updates });
+    }
+
+    const { data, error } = await supabase
+      .from('custom_date_ideas')
+      .insert({
+        user_id: currentUser.id,
+        title: `${BUILTIN_DATE_STATE_PREFIX}${idea.id}`,
+        description: idea.title,
+        category: firstFilterValue(idea.categories || idea.category),
+        budget: idea.budget || null,
+        location_type: firstFilterValue(idea.locations || idea.location_type),
+        occasion: firstFilterValue(idea.occasions || idea.occasion),
+        relationship_stage: firstFilterValue(idea.stages || idea.relationship_stage),
+        is_favorite: false,
+        is_completed: false,
+        ...updates
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  };
+
   const handleSaveDate = async (idea) => {
-    if (idea.id && idea.created_by === currentUser?.email) {
-      await updateDateMutation.mutateAsync({
-        id: idea.id,
-        data: { ...idea, is_favorite: !idea.is_favorite }
-      });
-      toast.success(idea.is_favorite ? "Removed from saved" : t.dateSaved);
+    if (!requireSignedIn()) return;
+    try {
+      const nextSaved = !Boolean(idea.is_favorite);
+      let record = null;
+      if (idea.week) {
+        record = await persistBuiltInState(idea, { is_favorite: nextSaved });
+      } else if (idea.id) {
+        record = await updateDateMutation.mutateAsync({ id: idea.id, data: { is_favorite: nextSaved } });
+      }
+      queryClient.invalidateQueries({ queryKey: ['customDates', currentUser.id] });
+      setSelectedIdea(current => current && current.id === idea.id
+        ? { ...current, is_favorite: nextSaved, user_record_id: record?.id || current.user_record_id }
+        : current);
+      toast.success(nextSaved ? t.dateSaved : t.dateUnsaved);
+    } catch (error) {
+      console.error('Error saving date idea:', error);
+      toast.error(t.actionFailed);
+    }
+  };
+
+  const buildShareText = (idea) => {
+    const pieces = [idea.title, idea.description];
+    if (idea.budget) pieces.push(`${t.budget}: ${t.budgetOptions?.[idea.budget] || idea.budget}`);
+    const locations = formatOptionList(idea.locations || idea.location_type, t.locationOptions);
+    if (locations) pieces.push(`${t.locations}: ${locations}`);
+    return pieces.filter(Boolean).join('\n\n');
+  };
+
+  const shareText = async ({ title, text, successMessage, copiedMessage }) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text });
+        toast.success(successMessage);
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        toast.success(copiedMessage);
+        return;
+      }
+      toast.error(t.shareUnavailable);
+    } catch (error) {
+      if (error?.name !== 'AbortError') {
+        console.error('Error sharing date:', error);
+        toast.error(t.actionFailed);
+      }
     }
   };
 
   const handleShareDate = async (idea) => {
-    const partnerEmail = localStorage.getItem('partnerEmail');
-    if (!partnerEmail) {
-      toast.error("Please set your partner's email in profile");
-      return;
-    }
-    
-    if (idea.id && idea.created_by === currentUser?.email) {
-      await updateDateMutation.mutateAsync({
-        id: idea.id,
-        data: { ...idea, partner_email: partnerEmail }
-      });
-      toast.success(t.dateShared);
-    }
+    await shareText({
+      title: idea.title,
+      text: buildShareText(idea),
+      successMessage: t.dateShared,
+      copiedMessage: t.shareCopied
+    });
   };
 
   const handleCompleteDate = async (idea) => {
-    if (idea.id && idea.created_by === currentUser?.email) {
-      await updateDateMutation.mutateAsync({
-        id: idea.id,
-        data: { ...idea, completed: true, completed_date: new Date().toISOString() }
-      });
+    if (!requireSignedIn()) return;
+    if (idea.is_completed) return;
+    try {
+      let record = null;
+      if (idea.week) {
+        record = await persistBuiltInState(idea, { is_completed: true });
+      } else if (idea.id) {
+        record = await updateDateMutation.mutateAsync({ id: idea.id, data: { is_completed: true } });
+      }
+      queryClient.invalidateQueries({ queryKey: ['customDates', currentUser.id] });
+      setSelectedIdea(current => current && current.id === idea.id
+        ? { ...current, is_completed: true, user_record_id: record?.id || current.user_record_id }
+        : current);
       toast.success(t.dateCompleted);
+    } catch (error) {
+      console.error('Error completing date idea:', error);
+      toast.error(t.actionFailed);
     }
   };
+
+  const openSchedule = () => {
+    if (!requireSignedIn()) return;
+    setScheduleDate('');
+    setScheduleTime('');
+    setScheduledEvent(null);
+    setShowScheduleForm(true);
+  };
+
+  const handleScheduleDate = async () => {
+    if (!requireSignedIn()) return;
+    if (!scheduleDate || !scheduleTime) {
+      toast.error(t.scheduleRequired);
+      return;
+    }
+    try {
+      setIsScheduling(true);
+      const event = await createCalendarEvent(currentUser.id, {
+        title: selectedIdea.title,
+        description: selectedIdea.description || null,
+        event_date: scheduleDate,
+        event_time: scheduleTime,
+        event_type: 'date',
+        location: formatOptionList(selectedIdea.locations || selectedIdea.location_type, t.locationOptions) || null,
+        notes: selectedIdea.week ? `One2OneLove Date Idea • Week ${selectedIdea.week}/52` : 'One2OneLove Date Idea',
+        color: 'pink',
+        reminder_enabled: true,
+        reminder_days_before: 1
+      });
+      setScheduledEvent({
+        id: event?.id || null,
+        title: selectedIdea.title,
+        date: scheduleDate,
+        time: scheduleTime
+      });
+      toast.success(t.dateScheduled);
+    } catch (error) {
+      console.error('Error scheduling date idea:', error);
+      toast.error(error?.message || t.actionFailed);
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const formatScheduledDate = (dateValue, timeValue) => {
+    if (!dateValue) return '';
+    try {
+      const value = new Date(`${dateValue}T${timeValue || '12:00'}`);
+      return new Intl.DateTimeFormat(currentLanguage || 'en', {
+        dateStyle: 'full',
+        timeStyle: timeValue ? 'short' : undefined
+      }).format(value);
+    } catch {
+      return `${dateValue}${timeValue ? ` ${timeValue}` : ''}`;
+    }
+  };
+
+  const handleShareScheduledDate = async () => {
+    if (!scheduledEvent || !selectedIdea) return;
+    const when = formatScheduledDate(scheduledEvent.date, scheduledEvent.time);
+    await shareText({
+      title: selectedIdea.title,
+      text: `${selectedIdea.title}\n${t.scheduledFor}: ${when}\n\n${selectedIdea.description || ''}`.trim(),
+      successMessage: t.scheduleShared,
+      copiedMessage: t.scheduleShareCopied
+    });
+  };
+
+  const openDateIdea = (idea) => {
+    setSelectedIdea(idea);
+    setShowScheduleForm(false);
+    setScheduleDate('');
+    setScheduleTime('');
+    setScheduledEvent(null);
+  };
+
+  const localToday = (() => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    return local.toISOString().split('T')[0];
+  })();
 
   const formatOptionList = (values, optionMap) => {
     const list = Array.isArray(values) ? values : values ? [values] : [];
@@ -347,7 +524,7 @@ export default function DateIdeas() {
               className={viewMode === 'saved' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
             >
               <Bookmark className="w-4 h-4 mr-2" />
-              {t.savedDates} ({savedDates.length})
+              {t.savedDates} ({savedIdeas.length})
             </Button>
           </div>
           <Button
@@ -444,7 +621,7 @@ export default function DateIdeas() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.015, 0.25) }}
-                onClick={() => setSelectedIdea(idea)}
+                onClick={() => openDateIdea(idea)}
                 className="w-full min-h-[86px] bg-white rounded-xl border border-gray-200 hover:border-pink-300 hover:shadow-lg transition-all duration-200 px-4 py-4 text-left flex items-center gap-4"
               >
                 <div className={`w-11 h-11 flex-shrink-0 bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} rounded-xl flex items-center justify-center shadow-md`}>
@@ -472,7 +649,7 @@ export default function DateIdeas() {
                 transition={{ duration: 0.18 }}
                 className="w-full max-w-2xl"
                 onClick={(event) => event.stopPropagation()}
-                onMouseLeave={() => setSelectedIdea(null)}
+                onMouseLeave={() => { if (!showScheduleForm) setSelectedIdea(null); }}
               >
                 <Card className="bg-white shadow-2xl border-2 border-pink-100 max-h-[85vh] overflow-y-auto">
                   <CardHeader className="relative pr-14">
@@ -515,24 +692,115 @@ export default function DateIdeas() {
                       <div className="sm:col-span-2"><span className="text-gray-500">{t.stages || t.stageLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.stages || selectedIdea.relationship_stage, t.stageOptions)}</span></div>
                     </div>
 
-                    {selectedIdea.created_by === currentUser?.email && (
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                        <Button size="sm" variant="outline" onClick={() => handleSaveDate(selectedIdea)} className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}>
-                          <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
-                          {t.addToSaved}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
-                          <Share2 className="w-4 h-4 mr-2" />
-                          {t.shareWithPartner}
-                        </Button>
-                        {!selectedIdea.completed && (
-                          <Button size="sm" variant="outline" onClick={() => handleCompleteDate(selectedIdea)}>
-                            <Check className="w-4 h-4 mr-2" />
-                            {t.markComplete}
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSaveDate(selectedIdea)}
+                        className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
+                      >
+                        <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
+                        {selectedIdea.is_favorite ? t.saved : t.addToSaved}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                        <Share2 className="w-4 h-4 mr-2" />
+                        {t.shareWithPartner}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={openSchedule}>
+                        <CalendarDays className="w-4 h-4 mr-2" />
+                        {t.schedule}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCompleteDate(selectedIdea)}
+                        disabled={Boolean(selectedIdea.is_completed)}
+                        className={selectedIdea.is_completed ? 'bg-green-50 border-green-300 text-green-700' : ''}
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        {selectedIdea.is_completed ? t.done : t.markComplete}
+                      </Button>
+                    </div>
+
+                    <AnimatePresence>
+                      {showScheduleForm && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="mt-4 rounded-xl border border-purple-200 bg-purple-50/60 p-4"
+                        >
+                          {!scheduledEvent ? (
+                            <>
+                              <div className="flex items-center gap-2 mb-4">
+                                <CalendarDays className="w-5 h-5 text-purple-600" />
+                                <h4 className="font-bold text-gray-900">{t.scheduleTitle}</h4>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleDate}</label>
+                                  <Input
+                                    type="date"
+                                    min={localToday}
+                                    value={scheduleDate}
+                                    onChange={(event) => setScheduleDate(event.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleTime}</label>
+                                  <div className="relative">
+                                    <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <Input
+                                      type="time"
+                                      value={scheduleTime}
+                                      onChange={(event) => setScheduleTime(event.target.value)}
+                                      className="pl-9"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-4">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowScheduleForm(false)}
+                                  disabled={isScheduling}
+                                >
+                                  {t.cancel}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={handleScheduleDate}
+                                  disabled={isScheduling || !scheduleDate || !scheduleTime}
+                                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                                >
+                                  <CalendarDays className="w-4 h-4 mr-2" />
+                                  {isScheduling ? t.scheduling : t.scheduleAction}
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-semibold text-gray-900 mb-1">{t.dateScheduled}</p>
+                              <p className="text-sm text-gray-700 mb-4">
+                                {t.scheduledFor}: {formatScheduledDate(scheduledEvent.date, scheduledEvent.time)}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Button type="button" size="sm" onClick={handleShareScheduledDate} className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                                  <Share2 className="w-4 h-4 mr-2" />
+                                  {t.shareSchedule}
+                                </Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setShowScheduleForm(false)}>
+                                  {t.close}
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </CardContent>
                 </Card>
               </motion.div>
