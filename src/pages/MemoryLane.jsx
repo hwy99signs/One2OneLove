@@ -28,6 +28,10 @@ const translations = {
     noMemoriesDesc: "Start building your memory lane by adding your first special moment!",
     addFirstMemory: "Add Your First Memory",
     deleteConfirm: "Are you sure you want to delete this memory?",
+    memorySaved: "Memory saved!",
+    memorySaveFailed: "Unable to save memory.",
+    memoryUpdateFailed: "Unable to update memory.",
+    memoryDeleteFailed: "Unable to delete memory.",
     back: "Back"
   },
   es: {
@@ -41,6 +45,10 @@ const translations = {
     noMemoriesDesc: "¡Comienza a construir tu carril de recuerdos agregando tu primer momento especial!",
     addFirstMemory: "Agrega Tu Primer Recuerdo",
     deleteConfirm: "¿Estás seguro de que quieres eliminar este recuerdo?",
+    memorySaved: "¡Recuerdo guardado!",
+    memorySaveFailed: "No se pudo guardar el recuerdo.",
+    memoryUpdateFailed: "No se pudo actualizar el recuerdo.",
+    memoryDeleteFailed: "No se pudo eliminar el recuerdo.",
     back: "Atrás"
   },
   fr: {
@@ -54,6 +62,10 @@ const translations = {
     noMemoriesDesc: "Commencez à construire votre allée des souvenirs en ajoutant votre premier moment spécial!",
     addFirstMemory: "Ajoutez Votre Premier Souvenir",
     deleteConfirm: "Êtes-vous sûr de vouloir supprimer ce souvenir?",
+    memorySaved: "Souvenir enregistré !",
+    memorySaveFailed: "Impossible d’enregistrer le souvenir.",
+    memoryUpdateFailed: "Impossible de mettre à jour le souvenir.",
+    memoryDeleteFailed: "Impossible de supprimer le souvenir.",
     back: "Retour"
   },
   it: {
@@ -67,6 +79,10 @@ const translations = {
     noMemoriesDesc: "Inizia a costruire il tuo viale dei ricordi aggiungendo il tuo primo momento speciale!",
     addFirstMemory: "Aggiungi Il Tuo Primo Ricordo",
     deleteConfirm: "Sei sicuro di voler eliminare questo ricordo?",
+    memorySaved: "Ricordo salvato!",
+    memorySaveFailed: "Impossibile salvare il ricordo.",
+    memoryUpdateFailed: "Impossibile aggiornare il ricordo.",
+    memoryDeleteFailed: "Impossibile eliminare il ricordo.",
     back: "Indietro"
   },
   de: {
@@ -80,6 +96,10 @@ const translations = {
     noMemoriesDesc: "Beginnen Sie, Ihre Erinnerungsgasse aufzubauen, indem Sie Ihren ersten besonderen Moment hinzufügen!",
     addFirstMemory: "Fügen Sie Ihre Erste Erinnerung Hinzu",
     deleteConfirm: "Sind Sie sicher, dass Sie diese Erinnerung löschen möchten?",
+    memorySaved: "Erinnerung gespeichert!",
+    memorySaveFailed: "Erinnerung konnte nicht gespeichert werden.",
+    memoryUpdateFailed: "Erinnerung konnte nicht aktualisiert werden.",
+    memoryDeleteFailed: "Erinnerung konnte nicht gelöscht werden.",
     back: "Zurück"
   },
   nl: {
@@ -93,6 +113,10 @@ const translations = {
     noMemoriesDesc: "Begin met het opbouwen van je herinneringslaan door je eerste speciale moment toe te voegen!",
     addFirstMemory: "Voeg Je Eerste Herinnering Toe",
     deleteConfirm: "Weet je zeker dat je deze herinnering wilt verwijderen?",
+    memorySaved: "Herinnering opgeslagen!",
+    memorySaveFailed: "Herinnering kon niet worden opgeslagen.",
+    memoryUpdateFailed: "Herinnering kon niet worden bijgewerkt.",
+    memoryDeleteFailed: "Herinnering kon niet worden verwijderd.",
     back: "Terug"
   },
   pt: {
@@ -106,6 +130,10 @@ const translations = {
     noMemoriesDesc: "Comece a construir sua alameda de memórias adicionando seu primeiro momento especial!",
     addFirstMemory: "Adicione Sua Primeira Memória",
     deleteConfirm: "Tem certeza de que deseja excluir esta memória?",
+    memorySaved: "Memória salva!",
+    memorySaveFailed: "Não foi possível salvar a memória.",
+    memoryUpdateFailed: "Não foi possível atualizar a memória.",
+    memoryDeleteFailed: "Não foi possível excluir a memória.",
     back: "Voltar"
   }
 };
@@ -140,11 +168,11 @@ export default function MemoryLane() {
       ]);
       setShowForm(false);
       setEditingMemory(null);
-      toast.success('Memory saved!');
+      toast.success(t.memorySaved);
     },
     onError: (error) => {
       console.error('Error creating memory:', error);
-      toast.error(error?.message || 'Unable to save memory.');
+      toast.error(error?.message || t.memorySaveFailed);
     },
   });
 
@@ -159,7 +187,7 @@ export default function MemoryLane() {
     },
     onError: (error) => {
       console.error('Error updating memory:', error);
-      toast.error(error?.message || 'Unable to update memory.');
+      toast.error(error?.message || t.memoryUpdateFailed);
     },
   });
 
@@ -172,7 +200,7 @@ export default function MemoryLane() {
     },
     onError: (error) => {
       console.error('Error deleting memory:', error);
-      toast.error(error?.message || 'Unable to delete memory.');
+      toast.error(error?.message || t.memoryDeleteFailed);
     },
   });
 
