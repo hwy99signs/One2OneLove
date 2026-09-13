@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
 import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/dateideas/dateIdeasLibrary";
+import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
 
 const translations = {
   en: {
@@ -108,7 +109,7 @@ const translations = {
 
 export default function DateIdeas() {
   const { currentLanguage } = useLanguage();
-  const t = translations[currentLanguage] || translations.en;
+  const t = DATE_IDEAS_UI[currentLanguage] || DATE_IDEAS_UI.en;
   const queryClient = useQueryClient();
 
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -377,7 +378,7 @@ export default function DateIdeas() {
         <div className="mb-8 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Filter className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t.filters}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -506,7 +507,7 @@ export default function DateIdeas() {
                     <p className="text-gray-700 leading-relaxed mb-6">{selectedIdea.description}</p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-6">
-                      <div><span className="text-gray-500">{t.difficulty}:</span> <span className="font-semibold text-gray-800">{formatDifficulty(selectedIdea.difficulty)}</span></div>
+                      <div><span className="text-gray-500">{t.difficulty}:</span> <span className="font-semibold text-gray-800">{t.difficultyOptions?.[selectedIdea.difficulty] || formatDifficulty(selectedIdea.difficulty)}</span></div>
                       <div><span className="text-gray-500">{t.duration}:</span> <span className="font-semibold text-gray-800">{selectedIdea.duration || (selectedIdea.duration_hours ? `${selectedIdea.duration_hours}h` : '')}</span></div>
                       <div><span className="text-gray-500">{t.budget}:</span> <span className="font-semibold text-gray-800">{t.budgetOptions?.[selectedIdea.budget] || selectedIdea.budget}</span></div>
                       <div><span className="text-gray-500">{t.locations || t.locationLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.locations || selectedIdea.location_type, t.locationOptions)}</span></div>
