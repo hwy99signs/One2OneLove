@@ -1,8 +1,8 @@
 import { supabase, handleSupabaseError } from './supabase';
 
 /**
- * Create an influencer profile
- * This should be called after creating the user account in AuthContext
+ * Create a creator / contributor profile.
+ * This is used by the broader Creator, Podcaster, Writer or Influencer onboarding path.
  */
 export const createInfluencerProfile = async (userId, influencerData) => {
   try {
@@ -21,16 +21,6 @@ export const createInfluencerProfile = async (userId, influencerData) => {
       phoneVerified,
     } = influencerData;
 
-    // Validate at least one platform link
-    const hasAtLeastOnePlatform = Object.values(platformLinks || {}).some(
-      link => link && link.trim() !== ''
-    );
-    
-    if (!hasAtLeastOnePlatform) {
-      return { success: false, error: 'At least one social media platform link is required' };
-    }
-
-    // Validate bio length
     if (!bio || bio.length < 100) {
       return { success: false, error: 'Bio must be at least 100 characters' };
     }
@@ -51,7 +41,7 @@ export const createInfluencerProfile = async (userId, influencerData) => {
         bio: bio,
         email_verified: emailVerified || false,
         phone_verified: phoneVerified || false,
-        status: 'pending', // All new influencer applications start as pending
+        status: 'pending',
       })
       .select()
       .single();
@@ -62,14 +52,11 @@ export const createInfluencerProfile = async (userId, influencerData) => {
 
     return { success: true, profile: data };
   } catch (error) {
-    console.error('Error creating influencer profile:', error);
+    console.error('Error creating contributor profile:', error);
     return { success: false, error: handleSupabaseError(error) };
   }
 };
 
-/**
- * Get influencer profile by user ID
- */
 export const getInfluencerProfile = async (userId) => {
   try {
     const { data, error } = await supabase
@@ -84,14 +71,11 @@ export const getInfluencerProfile = async (userId) => {
 
     return { success: true, profile: data };
   } catch (error) {
-    console.error('Error fetching influencer profile:', error);
+    console.error('Error fetching contributor profile:', error);
     return { success: false, error: handleSupabaseError(error) };
   }
 };
 
-/**
- * Update influencer profile
- */
 export const updateInfluencerProfile = async (userId, updates) => {
   try {
     const { data, error } = await supabase
@@ -110,8 +94,7 @@ export const updateInfluencerProfile = async (userId, updates) => {
 
     return { success: true, profile: data };
   } catch (error) {
-    console.error('Error updating influencer profile:', error);
+    console.error('Error updating contributor profile:', error);
     return { success: false, error: handleSupabaseError(error) };
   }
 };
-
