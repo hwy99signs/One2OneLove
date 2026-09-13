@@ -1,10 +1,11 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, Briefcase, Building2, Mic2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import ProfessionalApplication from "@/components/signup/ProfessionalApplication";
 
 const COPY = {
   en: {
@@ -48,16 +49,34 @@ const COPY = {
 };
 
 const OPTIONS = [
-  { key: "licensed", icon: BadgeCheck, page: "TherapistSignup", gradient: "from-emerald-500 to-teal-600" },
-  { key: "coach", icon: Briefcase, page: "RelationshipProfessionalSignup", gradient: "from-blue-500 to-indigo-600" },
-  { key: "contributor", icon: Mic2, page: "ContributorSignup", gradient: "from-fuchsia-500 to-purple-600" },
-  { key: "organization", icon: Building2, page: "OrganizationSignup", gradient: "from-amber-500 to-orange-600" },
+  { key: "licensed", icon: BadgeCheck, gradient: "from-emerald-500 to-teal-600" },
+  { key: "coach", icon: Briefcase, gradient: "from-blue-500 to-indigo-600" },
+  { key: "contributor", icon: Mic2, gradient: "from-fuchsia-500 to-purple-600" },
+  { key: "organization", icon: Building2, gradient: "from-amber-500 to-orange-600" },
 ];
 
 export default function ProfessionalSignup() {
   const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
   const t = COPY[currentLanguage] || COPY.en;
+  const selectedType = searchParams.get("type");
+
+  if (["coach", "organization"].includes(selectedType)) {
+    return <ProfessionalApplication mode={selectedType} />;
+  }
+
+  const openApplication = (key) => {
+    if (key === "licensed") {
+      navigate(createPageUrl("TherapistSignup"));
+      return;
+    }
+    if (key === "contributor") {
+      navigate(createPageUrl("InfluencerSignup"));
+      return;
+    }
+    setSearchParams({ type: key });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
@@ -73,7 +92,7 @@ export default function ProfessionalSignup() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {OPTIONS.map(({ key, icon: Icon, page, gradient }) => (
+          {OPTIONS.map(({ key, icon: Icon, gradient }) => (
             <Card key={key} className="shadow-xl border-2 border-transparent hover:border-purple-200 transition-all h-full">
               <CardContent className="p-7 h-full flex flex-col">
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg mb-5`}>
@@ -81,7 +100,7 @@ export default function ProfessionalSignup() {
                 </div>
                 <h2 className="text-2xl font-black text-gray-900 mb-3">{t[key].title}</h2>
                 <p className="text-gray-600 leading-relaxed mb-6 flex-1">{t[key].body}</p>
-                <Button onClick={() => navigate(createPageUrl(page))} className={`w-full bg-gradient-to-r ${gradient} text-white font-bold py-6`}>
+                <Button onClick={() => openApplication(key)} className={`w-full bg-gradient-to-r ${gradient} text-white font-bold py-6`}>
                   {t[key].button}
                 </Button>
               </CardContent>
