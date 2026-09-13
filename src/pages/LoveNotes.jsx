@@ -560,7 +560,7 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   const [allCategory, ...noteCategories] = categories;
   const baseData = loveNotesData[lang] || loveNotesData.en;
   const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;
-  const availableData = { ...baseData, ...addedData };
+  const availableData = { ...baseData, ...addedData, holiday: [...(baseData.holiday || []), ...(addedData.holiday || [])] };
   const availableCategories = noteCategories.filter(category => availableData[category.id]?.length > 0);
   return [
     allCategory,
@@ -573,7 +573,7 @@ const generateNotes = (lang) => {
   let id = 1;
   const baseData = loveNotesData[lang] || loveNotesData.en;
   const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;
-  const data = { ...baseData, ...addedData };
+  const data = { ...baseData, ...addedData, holiday: [...(baseData.holiday || []), ...(addedData.holiday || [])] };
 
   const categoryOrder = [
     'romantic', 'lgbtqRomantic', 'lgbtqSupport', 'lgbtqMilestone', 'sweet', 'playful', 'deep', 'appreciation',
