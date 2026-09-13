@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-export default function DismissibleDetailsBoundary({ children, hoverCloseDelay = 1400 }) {
+export default function DismissibleDetailsBoundary({ children, hoverCloseDelay = 1800 }) {
   const rootRef = useRef(null);
   const closeTimerRef = useRef(null);
 
