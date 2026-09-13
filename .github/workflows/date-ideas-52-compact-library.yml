@@ -1,0 +1,87 @@
+name: Date Ideas 52 Compact Library
+
+on:
+  push:
+    branches:
+      - date-ideas-52-compact-library
+    paths:
+      - .github/date-ideas-52-compact-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: date-ideas-52-compact-library
+          fetch-depth: 0
+
+      - name: Apply compact Date Ideas patch
+        run: python scripts/patch_date_ideas_52_compact.py
+
+      - name: Verify 52-date library and filter coverage
+        run: |
+          node --input-type=module <<'NODE'
+          import { DATE_IDEAS_PART_1 } from './src/components/dateideas/dateIdeasPart1.js';
+          import { DATE_IDEAS_PART_2 } from './src/components/dateideas/dateIdeasPart2.js';
+          import { DATE_IDEAS_PART_3 } from './src/components/dateideas/dateIdeasPart3.js';
+          import { DATE_IDEAS_PART_4 } from './src/components/dateideas/dateIdeasPart4.js';
+          import { DATE_IDEA_TITLES } from './src/components/dateideas/dateIdeaTitles.js';
+
+          const ideas = [...DATE_IDEAS_PART_1, ...DATE_IDEAS_PART_2, ...DATE_IDEAS_PART_3, ...DATE_IDEAS_PART_4];
+          if (ideas.length !== 52) throw new Error(`Expected exactly 52 date ideas, got ${ideas.length}`);
+          if (new Set(ideas.map(idea => idea.id)).size !== 52) throw new Error('Duplicate date idea IDs found');
+          if (new Set(ideas.map(idea => idea.week)).size !== 52) throw new Error('Each weekly date idea must have a unique week');
+
+          const required = {
+            categories: ['romantic','adventure','relaxing','indoor','outdoor','creative'],
+            budgets: ['free','low','medium','high'],
+            locations: ['home','outdoor','restaurant','activity_center','cultural','nature','urban'],
+            occasions: ['regular','anniversary','birthday','valentines','special','apology','celebration'],
+            stages: ['new','dating','committed','married','long_term']
+          };
+          const allValues = {
+            categories: new Set(ideas.flatMap(i => i.categories || [])),
+            budgets: new Set(ideas.map(i => i.budget)),
+            locations: new Set(ideas.flatMap(i => i.locations || [])),
+            occasions: new Set(ideas.flatMap(i => i.occasions || [])),
+            stages: new Set(ideas.flatMap(i => i.stages || []))
+          };
+          for (const [group, values] of Object.entries(required)) {
+            for (const value of values) {
+              if (!allValues[group].has(value)) throw new Error(`Missing filter coverage: ${group}.${value}`);
+            }
+          }
+
+          for (const lang of ['en','es','fr','it','de','nl','pt']) {
+            if (!Array.isArray(DATE_IDEA_TITLES[lang]) || DATE_IDEA_TITLES[lang].length !== 52) {
+              throw new Error(`${lang}: expected 52 localized titles`);
+            }
+          }
+          console.log('52 weekly date ideas and complete filter coverage verified.');
+          NODE
+
+      - name: Verify compact title and detail-card wiring
+        run: |
+          grep -q "getDateIdeasForLanguage(currentLanguage)" src/pages/DateIdeas.jsx
+          grep -q "matchesDateIdeaFilter(idea, 'category', selectedCategory)" src/pages/DateIdeas.jsx
+          grep -q "onClick={() => setSelectedIdea(idea)}" src/pages/DateIdeas.jsx
+          grep -q "onMouseLeave={() => setSelectedIdea(null)}" src/pages/DateIdeas.jsx
+          grep -q "52 date ideas — one for every week of the year" src/pages/DateIdeas.jsx
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit Date Ideas rebuild
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/DateIdeas.jsx
+          git commit -m "Rebuild Date Ideas as compact 52-week library"
+          git push origin HEAD:date-ideas-52-compact-library
