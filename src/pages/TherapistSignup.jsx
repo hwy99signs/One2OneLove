@@ -1,6 +1,6 @@
 import React from "react";
-import ProfessionalApplication from "@/components/signup/ProfessionalApplication";
+import LicensedProfessionalApplication from "@/components/signup/LicensedProfessionalApplication";
 
 export default function TherapistSignup() {
-  return <ProfessionalApplication mode="licensed" />;
+  return <LicensedProfessionalApplication />;
 }
