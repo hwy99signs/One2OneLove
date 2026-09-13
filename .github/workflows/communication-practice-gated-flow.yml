@@ -1,0 +1,78 @@
+name: Communication Practice Gated Flow
+
+on:
+  push:
+    branches:
+      - communication-practice-gated-flow
+    paths:
+      - .github/communication-practice-gated-flow-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: communication-practice-gated-flow
+          fetch-depth: 0
+
+      - name: Apply simulator flow patch
+        run: python scripts/patch_communication_practice_flow.py
+
+      - name: Verify requested behavior
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const page = fs.readFileSync('src/pages/CommunicationPractice.jsx','utf8');
+          const required = [
+            'const sessionLabels =',
+            'const shuffleArray =',
+            'const buildScenarioList =',
+            'correctPositions',
+            "option.type === 'excellent'",
+            'sessionEnded',
+            'sessionFinished',
+            'handleEndSession',
+            'sessionText.nextQuestion',
+            'sessionText.endSession',
+            'sessionText.reportCard',
+            'sessionText.questionsAnswered'
+          ];
+          for (const marker of required) if (!page.includes(marker)) throw new Error(`Missing marker: ${marker}`);
+          if (page.includes('onClick={handleTryAgain}')) throw new Error('Question-level retry still present');
+          if (page.includes("selectedResponse.type === 'good' ? t.good")) throw new Error('Good Approach still shown as separate pass state');
+          if (page.includes('options: [...scenarios[key].options].sort')) throw new Error('Old weak shuffle still present');
+          console.log('Flow markers verified: feedback retained, no retry, Next Question/End Session, partial report, balanced answer positions.');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify only Communication Practice page changed
+        run: |
+          node <<'NODE'
+          const { execSync } = require('child_process');
+          const files = execSync('git diff --name-only origin/master...HEAD', {encoding:'utf8'}).trim().split(/\n/).filter(Boolean);
+          const allowed = new Set([
+            'src/pages/CommunicationPractice.jsx',
+            'scripts/patch_communication_practice_flow.py',
+            '.github/workflows/communication-practice-gated-flow.yml',
+            '.github/communication-practice-gated-flow-trigger'
+          ]);
+          for (const file of files) if (!allowed.has(file)) throw new Error(`Unexpected changed file: ${file}`);
+          console.log(files.join('\n'));
+          NODE
+
+      - name: Commit simulator flow changes
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/CommunicationPractice.jsx
+          git commit -m "Update Communication Practice feedback and session flow"
+          git push origin HEAD:communication-practice-gated-flow
