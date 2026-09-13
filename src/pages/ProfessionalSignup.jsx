@@ -1,456 +1,93 @@
-
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Heart, Loader2, CheckCircle, User, Mail, Phone, Check, Building } from "lucide-react";
-import { toast } from "sonner";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, BadgeCheck, Briefcase, Building2, Mic2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import OtherUserSignupForm from "../components/signup/OtherUserSignupForm";
-import ProfilePhotoUpload from "../components/signup/ProfilePhotoUpload";
+import { useLanguage } from "@/Layout";
+
+const COPY = {
+  en: {
+    back: "Back to Sign Up",
+    title: "Professional Sign Up",
+    subtitle: "Choose the professional category that accurately describes how you will participate on One2One Love.",
+    note: "Licensed clinical care and non-clinical relationship guidance are kept separate so users always know what type of professional they are viewing.",
+    licensed: { title: "Licensed Therapist or Counselor", body: "For licensed mental-health professionals. Requires credential verification before approval.", button: "Start Credential Application" },
+    coach: { title: "Relationship Coach or Educator", body: "For non-clinical coaches, educators, mentors and relationship-focused professionals.", button: "Start Non-Clinical Application" },
+    contributor: { title: "Creator, Podcaster, Writer or Influencer", body: "For media contributors, creators, authors, speakers and relationship-focused voices.", button: "Start Contributor Application" },
+    organization: { title: "Organization or Professional Partner", body: "For organizations, practices, nonprofits, media companies and professional partners.", button: "Start Organization Application" },
+  },
+  es: {
+    back: "Volver a Registrarse", title: "Registro Profesional", subtitle: "Elija la categoría profesional que describa correctamente cómo participará en One2One Love.", note: "La atención clínica con licencia y la orientación no clínica se mantienen separadas para que los usuarios siempre sepan qué tipo de profesional están viendo.",
+    licensed: { title: "Terapeuta o Consejero con Licencia", body: "Para profesionales de salud mental con licencia. Requiere verificación de credenciales antes de la aprobación.", button: "Iniciar Solicitud de Credenciales" },
+    coach: { title: "Coach o Educador de Relaciones", body: "Para coaches, educadores, mentores y profesionales de relaciones no clínicos.", button: "Iniciar Solicitud No Clínica" },
+    contributor: { title: "Creador, Podcaster, Escritor o Influencer", body: "Para colaboradores de medios, creadores, autores, conferencistas y voces centradas en relaciones.", button: "Iniciar Solicitud de Colaborador" },
+    organization: { title: "Organización o Socio Profesional", body: "Para organizaciones, prácticas, entidades sin fines de lucro, medios y socios profesionales.", button: "Iniciar Solicitud de Organización" },
+  },
+  fr: {
+    back: "Retour à l’Inscription", title: "Inscription Professionnelle", subtitle: "Choisissez la catégorie qui décrit précisément votre participation sur One2One Love.", note: "Les soins cliniques agréés et l’accompagnement relationnel non clinique sont séparés afin que les utilisateurs sachent toujours quel type de professionnel ils consultent.",
+    licensed: { title: "Thérapeute ou Conseiller Agréé", body: "Pour les professionnels agréés de santé mentale. Vérification des qualifications obligatoire avant approbation.", button: "Commencer la Vérification" },
+    coach: { title: "Coach ou Éducateur Relationnel", body: "Pour les coaches, éducateurs, mentors et professionnels relationnels non cliniques.", button: "Commencer la Candidature Non Clinique" },
+    contributor: { title: "Créateur, Podcasteur, Auteur ou Influenceur", body: "Pour les contributeurs média, créateurs, auteurs, conférenciers et voix relationnelles.", button: "Commencer la Candidature Contributeur" },
+    organization: { title: "Organisation ou Partenaire Professionnel", body: "Pour les organisations, cabinets, associations, médias et partenaires professionnels.", button: "Commencer la Candidature Organisation" },
+  },
+  it: {
+    back: "Torna alla Registrazione", title: "Registrazione Professionale", subtitle: "Scegli la categoria che descrive correttamente il tuo ruolo su One2One Love.", note: "L’assistenza clinica autorizzata e il supporto relazionale non clinico restano separati affinché gli utenti sappiano sempre che tipo di professionista stanno consultando.",
+    licensed: { title: "Terapeuta o Consulente Abilitato", body: "Per professionisti della salute mentale abilitati. Richiede verifica delle credenziali prima dell’approvazione.", button: "Avvia Verifica Credenziali" },
+    coach: { title: "Coach o Educatore Relazionale", body: "Per coach, educatori, mentori e professionisti relazionali non clinici.", button: "Avvia Candidatura Non Clinica" },
+    contributor: { title: "Creator, Podcaster, Scrittore o Influencer", body: "Per contributor media, creator, autori, speaker e voci dedicate alle relazioni.", button: "Avvia Candidatura Contributor" },
+    organization: { title: "Organizzazione o Partner Professionale", body: "Per organizzazioni, studi, nonprofit, media e partner professionali.", button: "Avvia Candidatura Organizzazione" },
+  },
+  de: {
+    back: "Zurück zur Registrierung", title: "Professionelle Registrierung", subtitle: "Wählen Sie die Kategorie, die Ihre Teilnahme auf One2One Love korrekt beschreibt.", note: "Lizenzierte klinische Versorgung und nicht-klinische Beziehungsbegleitung bleiben getrennt, damit Nutzer immer wissen, welche Art Fachkraft sie sehen.",
+    licensed: { title: "Lizenzierter Therapeut oder Berater", body: "Für lizenzierte Fachkräfte der psychischen Gesundheit. Qualifikationsprüfung vor Genehmigung erforderlich.", button: "Qualifikationsprüfung Starten" },
+    coach: { title: "Beziehungscoach oder -pädagoge", body: "Für nicht-klinische Coaches, Pädagogen, Mentoren und Beziehungsexperten.", button: "Nicht-Klinische Bewerbung Starten" },
+    contributor: { title: "Creator, Podcaster, Autor oder Influencer", body: "Für Medien-Contributors, Creator, Autoren, Redner und beziehungsorientierte Stimmen.", button: "Contributor-Bewerbung Starten" },
+    organization: { title: "Organisation oder Professioneller Partner", body: "Für Organisationen, Praxen, gemeinnützige Einrichtungen, Medienunternehmen und professionelle Partner.", button: "Organisationsbewerbung Starten" },
+  },
+};
+
+const OPTIONS = [
+  { key: "licensed", icon: BadgeCheck, page: "TherapistSignup", gradient: "from-emerald-500 to-teal-600" },
+  { key: "coach", icon: Briefcase, page: "RelationshipProfessionalSignup", gradient: "from-blue-500 to-indigo-600" },
+  { key: "contributor", icon: Mic2, page: "ContributorSignup", gradient: "from-fuchsia-500 to-purple-600" },
+  { key: "organization", icon: Building2, page: "OrganizationSignup", gradient: "from-amber-500 to-orange-600" },
+];
 
 export default function ProfessionalSignup() {
-  // Basic info
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-
-  // Photo upload
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
-  // Verification state
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
-  const [phoneVerificationSent, setPhoneVerificationSent] = useState(false);
-  const [emailVerificationCode, setEmailVerificationCode] = useState("");
-  const [phoneVerificationCode, setPhoneVerificationCode] = useState("");
-
-  // Professional specific
-  const [organizationName, setOrganizationName] = useState("");
-  const [organizationType, setOrganizationType] = useState("");
-  const [serviceDescription, setServiceDescription] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [otherUserBio, setOtherUserBio] = useState("");
-
-  const [signupComplete, setSignupComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { registerProfessional } = useAuth();
   const navigate = useNavigate();
-
-  // Verification handlers
-  const handleSendEmailVerification = () => {
-    toast.success("Verification code sent to email!", {
-      description: "Use code: 123456"
-    });
-    setEmailVerificationSent(true);
-  };
-
-  const handleVerifyEmail = () => {
-    if (emailVerificationCode === "123456") {
-      setEmailVerified(true);
-      toast.success("Email verified successfully!");
-    } else {
-      toast.error("Invalid code. Please try again.");
-    }
-  };
-
-  const handleSendPhoneVerification = () => {
-    toast.success("Verification code sent via SMS!", {
-      description: "Use code: 123456"
-    });
-    setPhoneVerificationSent(true);
-  };
-
-  const handleVerifyPhone = () => {
-    if (phoneVerificationCode === "123456") {
-      setPhoneVerified(true);
-      toast.success("Phone verified successfully!");
-    } else {
-      toast.error("Invalid code. Please try again.");
-    }
-  };
-
-  // Upload photo to Supabase Storage
-  const uploadPhoto = async (file) => {
-    if (!file) return null;
-
-    try {
-      setUploadingPhoto(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `professional-profiles/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('professional-photos')
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('professional-photos')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      toast.error("Failed to upload photo. You can add it later.");
-      return null;
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate verifications
-    if (!emailVerified || !phoneVerified) {
-      toast.error("Please verify your email and phone number");
-      return;
-    }
-
-    // Validate required fields
-    if (!organizationName || !organizationName.trim()) {
-      toast.error("Please enter your practice/organization name");
-      return;
-    }
-
-    if (!organizationType) {
-      toast.error("Please select your practice type");
-      return;
-    }
-
-    if (!serviceDescription || !serviceDescription.trim()) {
-      toast.error("Please describe the services you offer");
-      return;
-    }
-
-    if (serviceDescription.length > 500) {
-      toast.error("Service description must be 500 characters or less");
-      return;
-    }
-
-    if (!otherUserBio || otherUserBio.length < 100) {
-      toast.error("Professional bio must be at least 100 characters");
-      return;
-    }
-
-    if (otherUserBio.length > 1000) {
-      toast.error("Professional bio must be 1000 characters or less");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Upload photo if provided
-      let photoUrl = null;
-      if (photoFile) {
-        photoUrl = await uploadPhoto(photoFile);
-      }
-
-      // Generate a temporary password (professional will need to set their own via email)
-      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-
-      // Register professional account
-      const result = await registerProfessional(
-        {
-          email,
-          password: tempPassword, // In production, send password reset email instead
-          firstName,
-          lastName,
-        },
-        {
-          firstName,
-          lastName,
-          phone,
-          organizationName,
-          practiceType: organizationType,
-          serviceDescription,
-          websiteUrl,
-          professionalBio: otherUserBio,
-          profilePhotoUrl: photoUrl,
-          emailVerified,
-          phoneVerified,
-        }
-      );
-
-      if (result.success) {
-        setSignupComplete(true);
-        toast.success("🎉 Professional application submitted successfully!");
-        // Note: In production, you'd send a password setup email here
-      } else {
-        toast.error(result.error || "Failed to submit application. Please try again.");
-      }
-    } catch (error) {
-      console.error('Signup error:', error);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (signupComplete) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-12 text-center">
-          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-16 h-16 text-green-600" />
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Application Submitted! 🎉
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Thank you for your interest in joining One 2 One Love as a professional partner!
-          </p>
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
-            <p className="text-gray-700 mb-4">
-              <strong>{firstName} {lastName}</strong>
-            </p>
-            <p className="text-gray-700 mb-2">
-              <strong>{organizationName}</strong>
-            </p>
-            <p className="text-gray-600 mb-2">
-              We've received your professional application and our team will review it shortly.
-            </p>
-            <p className="text-gray-600">
-              You'll receive an email at <strong>{email}</strong> within 3-5 business days.
-            </p>
-          </div>
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-lg px-8 py-6 h-auto"
-            onClick={() => window.location.href = "/"}
-          >
-            <Heart className="w-5 h-5 mr-2 fill-current" />
-            Back to Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const { currentLanguage } = useLanguage();
+  const t = COPY[currentLanguage] || COPY.en;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4 shadow-xl">
-            <Building className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-            Join as a Professional
-          </h1>
-          <p className="text-xl text-gray-600">
-            Partner with One 2 One Love and help couples build stronger relationships
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
+      <div className="max-w-6xl mx-auto">
+        <Button variant="ghost" onClick={() => navigate(createPageUrl("SignUp"))} className="mb-8 text-gray-600">
+          <ArrowLeft className="w-5 h-5 mr-2" />{t.back}
+        </Button>
+
+        <div className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{t.title}</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+          <p className="mt-5 max-w-4xl mx-auto rounded-2xl bg-white/80 border border-purple-100 p-4 text-gray-700 shadow-sm">{t.note}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-blue-200">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Basic Information</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name *
-                </label>
-                <div className="relative">
-                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="First name"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
-                    required
-                  />
+        <div className="grid md:grid-cols-2 gap-6">
+          {OPTIONS.map(({ key, icon: Icon, page, gradient }) => (
+            <Card key={key} className="shadow-xl border-2 border-transparent hover:border-purple-200 transition-all h-full">
+              <CardContent className="p-7 h-full flex flex-col">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg mb-5`}>
+                  <Icon className="w-7 h-7" />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name *
-                </label>
-                <div className="relative">
-                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Last name"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
-                      required
-                      disabled={emailVerified}
-                    />
-                  </div>
-                  {!emailVerified && (
-                    <button
-                      type="button"
-                      onClick={handleSendEmailVerification}
-                      disabled={!email}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
-                    >
-                      Verify
-                    </button>
-                  )}
-                  {emailVerified && (
-                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg flex items-center text-sm">
-                      <Check size={16} className="mr-1" /> Verified
-                    </div>
-                  )}
-                </div>
-                {emailVerificationSent && !emailVerified && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 mb-2">Enter code (use: 123456)</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={emailVerificationCode}
-                        onChange={(e) => setEmailVerificationCode(e.target.value)}
-                        placeholder="123456"
-                        className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm"
-                        maxLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyEmail}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Phone size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 123-4567"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
-                      required
-                      disabled={phoneVerified}
-                    />
-                  </div>
-                  {!phoneVerified && (
-                    <button
-                      type="button"
-                      onClick={handleSendPhoneVerification}
-                      disabled={phone.length < 10}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm"
-                    >
-                      Verify
-                    </button>
-                  )}
-                  {phoneVerified && (
-                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg flex items-center text-sm">
-                      <Check size={16} className="mr-1" /> Verified
-                    </div>
-                  )}
-                </div>
-                {phoneVerificationSent && !phoneVerified && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 mb-2">Enter code (use: 123456)</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={phoneVerificationCode}
-                        onChange={(e) => setPhoneVerificationCode(e.target.value)}
-                        placeholder="123456"
-                        className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm"
-                        maxLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyPhone}
-                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Photo Upload */}
-          <ProfilePhotoUpload
-            photoFile={photoFile}
-            setPhotoFile={setPhotoFile}
-            photoPreview={photoPreview}
-            setPhotoPreview={setPhotoPreview}
-          />
-
-          {/* Professional Information */}
-          <OtherUserSignupForm
-            organizationName={organizationName}
-            setOrganizationName={setOrganizationName}
-            organizationType={organizationType}
-            setOrganizationType={setOrganizationType}
-            serviceDescription={serviceDescription}
-            setServiceDescription={setServiceDescription}
-            websiteUrl={websiteUrl}
-            setWebsiteUrl={setWebsiteUrl}
-            otherUserBio={otherUserBio}
-            setOtherUserBio={setOtherUserBio}
-          />
-
-          <div className="flex justify-center">
-            <Button
-              type="submit"
-              disabled={isLoading || uploadingPhoto}
-              size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-lg px-12 py-6 h-auto shadow-xl"
-            >
-              {isLoading || uploadingPhoto ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  {uploadingPhoto ? "Uploading Photo..." : "Submitting..."}
-                </>
-              ) : (
-                <>
-                  <Building className="w-5 h-5 mr-2" />
-                  Submit Application
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+                <h2 className="text-2xl font-black text-gray-900 mb-3">{t[key].title}</h2>
+                <p className="text-gray-600 leading-relaxed mb-6 flex-1">{t[key].body}</p>
+                <Button onClick={() => navigate(createPageUrl(page))} className={`w-full bg-gradient-to-r ${gradient} text-white font-bold py-6`}>
+                  {t[key].button}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
