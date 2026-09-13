@@ -114,6 +114,9 @@ const translations = {
       religious: "Religious",
       service: "Service",
       workplace: "Workplace",
+      lgbtqRomantic: "LGBTQ Romantic",
+      lgbtqSupport: "LGBTQ Support",
+      lgbtqMilestone: "LGBTQ Milestone",
     }
   },
   es: {
@@ -212,6 +215,9 @@ const translations = {
       religious: "Religioso",
       service: "Servicio",
       workplace: "Lugar de Trabajo",
+      lgbtqRomantic: "Romance LGBTQ",
+      lgbtqSupport: "Apoyo LGBTQ",
+      lgbtqMilestone: "Hitos LGBTQ",
     }
   },
   fr: {
@@ -310,6 +316,9 @@ const translations = {
       religious: "Religieux",
       service: "Service",
       workplace: "Lieu de Travail",
+      lgbtqRomantic: "Romance LGBTQ",
+      lgbtqSupport: "Soutien LGBTQ",
+      lgbtqMilestone: "Étapes LGBTQ",
     }
   },
   it: {
@@ -408,6 +417,9 @@ const translations = {
       religious: "Religioso",
       service: "Servizio",
       workplace: "Posto di Lavoro",
+      lgbtqRomantic: "Romanticismo LGBTQ",
+      lgbtqSupport: "Supporto LGBTQ",
+      lgbtqMilestone: "Traguardi LGBTQ",
     }
   },
   de: {
@@ -506,6 +518,9 @@ const translations = {
       religious: "Religiös",
       service: "Dienst",
       workplace: "Arbeitsplatz",
+      lgbtqRomantic: "LGBTQ Romantik",
+      lgbtqSupport: "LGBTQ Unterstützung",
+      lgbtqMilestone: "LGBTQ Meilensteine",
     }
   }
 };
@@ -514,6 +529,9 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   const categories = [
   { id: 'all', name: t.categories.all, icon: '💝' },
   { id: 'romantic', name: t.categories.romantic, icon: '🌹' },
+  { id: 'lgbtqRomantic', name: t.categories.lgbtqRomantic, icon: '🏳️‍🌈' },
+  { id: 'lgbtqSupport', name: t.categories.lgbtqSupport, icon: '🤝' },
+  { id: 'lgbtqMilestone', name: t.categories.lgbtqMilestone, icon: '🎉' },
   { id: 'sweet', name: t.categories.sweet, icon: '💕' },
   { id: 'playful', name: t.categories.playful, icon: '😄' },
   { id: 'deep', name: t.categories.deep, icon: '💭' },
@@ -540,9 +558,13 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   { id: 'workplace', name: t.categories.workplace, icon: '💼' },
 ];
   const [allCategory, ...noteCategories] = categories;
+  const baseData = loveNotesData[lang] || loveNotesData.en;
+  const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;
+  const availableData = { ...baseData, ...addedData };
+  const availableCategories = noteCategories.filter(category => availableData[category.id]?.length > 0);
   return [
     allCategory,
-    ...noteCategories.sort((a, b) => a.name.localeCompare(b.name, lang, { sensitivity: 'base' }))
+    ...availableCategories.sort((a, b) => a.name.localeCompare(b.name, lang, { sensitivity: 'base' }))
   ];
 };
 
@@ -554,7 +576,7 @@ const generateNotes = (lang) => {
   const data = { ...baseData, ...addedData };
 
   const categoryOrder = [
-    'romantic', 'sweet', 'playful', 'deep', 'appreciation',
+    'romantic', 'lgbtqRomantic', 'lgbtqSupport', 'lgbtqMilestone', 'sweet', 'playful', 'deep', 'appreciation',
     'memories', 'future', 'morning', 'night', 'daily', 'special',
     'dateIdeas', 'milestone', 'justBecause', 'encouragement', 'apology',
     'family', 'friends', 'heartBroken', 'sick', 'goodLuck',
