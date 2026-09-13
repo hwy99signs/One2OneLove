@@ -1,0 +1,41 @@
+name: Remove Date Ideas Week Label
+
+on:
+  push:
+    branches:
+      - date-ideas-remove-week-label
+    paths:
+      - .github/remove-date-ideas-week-label-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: date-ideas-remove-week-label
+          fetch-depth: 0
+
+      - name: Apply week-label removal
+        run: python scripts/remove_date_ideas_week_label.py
+
+      - name: Verify visible week label is gone
+        run: |
+          ! grep -F "{t.week || 'Week'} {selectedIdea.week} / 52" src/pages/DateIdeas.jsx
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit Date Ideas card cleanup
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/DateIdeas.jsx
+          git commit -m "Remove week counter from Date Ideas cards"
+          git push origin HEAD:date-ideas-remove-week-label
