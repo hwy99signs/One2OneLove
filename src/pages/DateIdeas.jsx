@@ -516,7 +516,7 @@ export default function DateIdeas() {
               variant={viewMode === 'custom' ? 'default' : 'outline'}
               className={viewMode === 'custom' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
             >
-              {t.myCustomDates} ({customDates.length})
+              {t.myCustomDates} ({customOnlyDates.length})
             </Button>
             <Button
               onClick={() => setViewMode('saved')}
