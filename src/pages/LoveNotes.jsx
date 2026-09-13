@@ -686,12 +686,14 @@ export default function LoveNotes() {
       activeClass: 'border-violet-200 bg-violet-400 text-white shadow-[0_0_12px_rgba(196,181,253,1),0_0_26px_rgba(139,92,246,0.9)]',
     },
   ];
+  const missingYouSubcategories = holidaySubcategories.filter((subcategory) => subcategory.id !== 'all');
   const queryClient = useQueryClient();
   
   const allNotes = useMemo(() => generateNotes(currentLanguage), [currentLanguage]);
 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedHolidaySubcategory, setSelectedHolidaySubcategory] = useState('all');
+  const [selectedMissingYouSubcategory, setSelectedMissingYouSubcategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState(null);
   const [sendModalNote, setSendModalNote] = useState(null);
@@ -833,6 +835,10 @@ export default function LoveNotes() {
       filtered = filtered.filter(note => note.holidaySubcategory === selectedHolidaySubcategory);
     }
 
+    if (selectedCategory === 'missingYou' && selectedMissingYouSubcategory !== 'all') {
+      filtered = filtered.filter(note => Array.isArray(note.tags) && note.tags.includes(selectedMissingYouSubcategory));
+    }
+
     const personalizedNotes = filtered.map(note => personalizeNote(note));
 
     if (searchQuery.trim()) {
@@ -842,7 +848,7 @@ export default function LoveNotes() {
     }
 
     return filtered;
-  }, [selectedCategory, selectedHolidaySubcategory, searchQuery, partnerName, petName, specialPlace, allNotes]);
+  }, [selectedCategory, selectedHolidaySubcategory, selectedMissingYouSubcategory, searchQuery, partnerName, petName, specialPlace, allNotes]);
 
   const handleRandomNote = () => {
     setShowRandomCategoryPicker(true);
@@ -861,6 +867,7 @@ export default function LoveNotes() {
 
     setSelectedCategory(categoryId);
     setSelectedHolidaySubcategory('all');
+    setSelectedMissingYouSubcategory('all');
     setSearchQuery('');
     setShowRandomCategoryPicker(false);
     setSelectedNote(randomNote);
@@ -1216,6 +1223,7 @@ export default function LoveNotes() {
                 onClick={() => {
                   setSelectedCategory(category.id);
                   setSelectedHolidaySubcategory('all');
+                  setSelectedMissingYouSubcategory('all');
                   setSearchQuery('');
                 }}
                 className={`px-4 py-2 rounded-full font-medium transition-all ${
@@ -1251,6 +1259,37 @@ export default function LoveNotes() {
                   }}
                   className={`px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-extrabold tracking-wide transition-all animate-pulse motion-reduce:animate-none hover:scale-105 ${
                     selectedHolidaySubcategory === subcategory.id
+                      ? subcategory.activeClass
+                      : subcategory.neonClass
+                  }`}
+                  style={{ animationDuration: '0.9s' }}
+                >
+                  {subcategory.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedCategory === 'missingYou' && (
+          <div className="mb-5 flex justify-center">
+            <div
+              className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-pink-100 bg-white/80 p-1.5 shadow-sm"
+              role="tablist"
+              aria-label="Missing You note subcategories"
+            >
+              {missingYouSubcategories.map((subcategory) => (
+                <button
+                  key={subcategory.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedMissingYouSubcategory === subcategory.id}
+                  onClick={() => {
+                    setSelectedMissingYouSubcategory((current) => current === subcategory.id ? 'all' : subcategory.id);
+                    setSearchQuery('');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-extrabold tracking-wide transition-all animate-pulse motion-reduce:animate-none hover:scale-105 ${
+                    selectedMissingYouSubcategory === subcategory.id
                       ? subcategory.activeClass
                       : subcategory.neonClass
                   }`}
