@@ -1,0 +1,33 @@
+name: Full Neon Migration Check
+
+on:
+  push:
+    branches:
+      - full-neon-migration-2026-09-13
+
+permissions:
+  contents: read
+
+jobs:
+  audit-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Report remaining Supabase source references
+        shell: bash
+        run: |
+          echo '=== REMAINING_SUPABASE_REFERENCES_START ==='
+          grep -RInE "(@/lib/supabase|[./]supabase['\"]|supabase\.)" src --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+          echo '=== REMAINING_SUPABASE_REFERENCES_END ==='
+      - name: Build frontend
+        run: npm run build
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+      - name: Verify Worker runtime files
+        shell: bash
+        run: |
+          test -s worker/index-v2.ts
+          test -s cloudflare/wrangler.production.jsonc
+          grep -F 'run_worker_first' cloudflare/wrangler.production.jsonc >/dev/null
