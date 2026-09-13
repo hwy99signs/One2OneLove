@@ -256,12 +256,90 @@ const de = [
   ['recurringIssue','Ein Wiederkehrendes Problem Ansprechen','Derselbe Streit kommt immer wieder zurück und frühere Gespräche haben keine dauerhafte Veränderung gebracht.',['Da sind wir schon wieder. Dir ist es offensichtlich nicht wichtig genug, dich zu ändern.','Wir bleiben immer wieder am selben Thema hängen, und ich möchte nicht, dass wir uns damit weiter verletzen. Können wir herausfinden, was bisher nicht funktioniert hat, und eine andere Vereinbarung versuchen?','Es hat keinen Sinn mehr, darüber zu reden.','Dieses Thema kommt immer wieder. Ich möchte, dass wir uns auf eine kleine Veränderung konzentrieren, die wir beide wirklich umsetzen können.']]
 ];
 
+
+const roundVariantText = {
+  en: {
+    suffixes: ['Under Stress', 'While Making Plans', 'By Text', 'Around Other People'],
+    situations: [
+      'This time, the issue comes up when you are both tired and stressed after a long day.',
+      'This time, the issue comes up while the two of you are making plans and already feeling some pressure.',
+      'This time, the issue starts through text messages, where tone is easy to misread.',
+      'This time, the issue comes up around other people, and you want to handle it without embarrassing either person.'
+    ],
+    optionSets: [
+      ['You are making this way bigger than it needs to be. I am not discussing it.','I want to talk about this without blaming each other. I feel affected by what happened, and I want to understand your side and agree on a better next step.','Fine. Do whatever you want. I am done talking about it.','I can see this matters. Can we slow down, talk about what happened, and decide what would help next time?'],
+      ['This is ridiculous. You should already know why I am upset.','I want to be clear about what bothered me without attacking you. Can we talk through what each of us understood and what we need going forward?','Never mind. I will just keep it to myself.','I do not want this to become a bigger fight. Can we talk about it calmly and work out one practical change?'],
+      ['If you cared, you would not have done that in the first place.','I care about us more than winning this argument. I want to explain how this affected me, hear your perspective, and find a solution we can both live with.','Whatever. Forget I said anything.','I want us to understand each other better. Can we each explain what we meant and then agree on what to do next?'],
+      ['You always turn everything into a problem. I am walking away.','I want to address this respectfully and privately. I feel uncomfortable with what happened, and I would like us to talk about it and agree on a better way to handle it.','It is fine. I will just act like it did not bother me.','Can we talk about this when we have a little privacy? I want to understand what happened and keep it from becoming a bigger issue.']
+    ]
+  },
+  es: {
+    suffixes: ['Bajo Estrés', 'Al Hacer Planes', 'Por Mensaje', 'Frente a Otras Personas'],
+    situations: ['Esta vez, el problema surge cuando ambos están cansados y estresados después de un día largo.','Esta vez, el problema surge mientras hacen planes y los dos ya sienten cierta presión.','Esta vez, el problema comienza por mensajes de texto, donde el tono puede malinterpretarse fácilmente.','Esta vez, el problema surge frente a otras personas y quieres manejarlo sin avergonzar a nadie.'],
+    optionSets: [
+      ['Estás haciendo esto mucho más grande de lo que es. No voy a hablar de esto.','Quiero hablar de esto sin culparnos. Me afectó lo que pasó y quiero entender tu punto de vista y acordar un mejor próximo paso.','Está bien. Haz lo que quieras. Ya no quiero hablar.','Veo que esto importa. ¿Podemos bajar el tono, hablar de lo ocurrido y decidir qué ayudaría la próxima vez?'],
+      ['Esto es ridículo. Ya deberías saber por qué estoy molesto.','Quiero explicar claramente qué me molestó sin atacarte. ¿Podemos hablar de lo que entendió cada uno y de lo que necesitamos de ahora en adelante?','Olvídalo. Mejor me lo guardo.','No quiero que esto se convierta en una pelea mayor. ¿Podemos hablar con calma y acordar un cambio práctico?'],
+      ['Si te importara, no lo habrías hecho.','Me importa más nuestra relación que ganar esta discusión. Quiero explicar cómo me afectó, escuchar tu perspectiva y encontrar una solución que funcione para los dos.','Da igual. Olvida que dije algo.','Quiero que nos entendamos mejor. ¿Podemos explicar cada uno lo que quiso decir y acordar qué hacer después?'],
+      ['Siempre conviertes todo en un problema. Me voy.','Quiero tratar esto con respeto y en privado. Me incomodó lo que ocurrió y me gustaría que habláramos y acordáramos una mejor manera de manejarlo.','Está bien. Fingiré que no me molestó.','¿Podemos hablar de esto cuando tengamos un poco de privacidad? Quiero entender lo que pasó y evitar que se convierta en algo mayor.']
+    ]
+  },
+  fr: {
+    suffixes: ['Sous Stress', 'En Faisant des Projets', 'Par Message', 'Devant D’autres Personnes'],
+    situations: ['Cette fois, le problème survient alors que vous êtes tous les deux fatigués et stressés après une longue journée.','Cette fois, le problème apparaît pendant que vous faites des projets et que vous ressentez déjà une certaine pression.','Cette fois, le problème commence par messages, où le ton peut facilement être mal interprété.','Cette fois, le problème survient devant d’autres personnes et vous voulez le gérer sans embarrasser qui que ce soit.'],
+    optionSets: [
+      ['Tu en fais beaucoup trop. Je ne veux pas en parler.','Je veux en parler sans nous accuser. Ce qui s’est passé m’a affecté, et je veux comprendre ton point de vue et convenir d’une meilleure prochaine étape.','Très bien. Fais ce que tu veux. Je ne veux plus en parler.','Je vois que c’est important. Pouvons-nous ralentir, parler de ce qui s’est passé et décider de ce qui aiderait la prochaine fois ?'],
+      ['C’est ridicule. Tu devrais déjà savoir pourquoi je suis contrarié.','Je veux expliquer clairement ce qui m’a dérangé sans t’attaquer. Pouvons-nous parler de ce que chacun a compris et de ce dont nous avons besoin pour la suite ?','Laisse tomber. Je vais garder ça pour moi.','Je ne veux pas que cela devienne une plus grosse dispute. Pouvons-nous en parler calmement et convenir d’un changement concret ?'],
+      ['Si tu tenais à moi, tu ne l’aurais pas fait.','Notre relation compte plus pour moi que gagner cette dispute. Je veux expliquer l’impact sur moi, entendre ton point de vue et trouver une solution acceptable pour nous deux.','Peu importe. Oublie que j’ai dit quelque chose.','Je veux que nous nous comprenions mieux. Pouvons-nous expliquer chacun ce que nous voulions dire puis décider ensemble de la suite ?'],
+      ['Tu transformes toujours tout en problème. Je m’en vais.','Je veux aborder cela avec respect et en privé. Ce qui s’est passé m’a mis mal à l’aise, et j’aimerais que nous en parlions et trouvions une meilleure façon de gérer ce type de situation.','Ce n’est rien. Je vais faire comme si cela ne m’avait pas dérangé.','Pouvons-nous en parler quand nous aurons un peu d’intimité ? Je veux comprendre ce qui s’est passé et éviter que cela devienne un problème plus important.']
+    ]
+  },
+  it: {
+    suffixes: ['Sotto Stress', 'Mentre Fate Programmi', 'Via Messaggio', 'Davanti ad Altre Persone'],
+    situations: ['Questa volta il problema emerge quando siete entrambi stanchi e stressati dopo una lunga giornata.','Questa volta il problema emerge mentre state facendo programmi e sentite già un po’ di pressione.','Questa volta il problema inizia tramite messaggi, dove il tono può essere facilmente frainteso.','Questa volta il problema emerge davanti ad altre persone e vuoi gestirlo senza mettere in imbarazzo nessuno.'],
+    optionSets: [
+      ['Stai ingigantendo tutto. Non ne parlerò.','Voglio parlarne senza accusarci. Quello che è successo mi ha colpito e voglio capire il tuo punto di vista e concordare un passo successivo migliore.','Va bene. Fai quello che vuoi. Ho finito di parlarne.','Vedo che è importante. Possiamo rallentare, parlare di ciò che è successo e decidere cosa potrebbe aiutare la prossima volta?'],
+      ['È ridicolo. Dovresti già sapere perché sono arrabbiato.','Voglio spiegare chiaramente cosa mi ha infastidito senza attaccarti. Possiamo parlare di ciò che ognuno ha capito e di ciò di cui abbiamo bisogno d’ora in poi?','Lascia perdere. Me lo terrò per me.','Non voglio che diventi una lite più grande. Possiamo parlarne con calma e concordare un cambiamento pratico?'],
+      ['Se ti importasse, non lo avresti fatto.','Mi importa più di noi che di vincere questa discussione. Voglio spiegare come mi ha fatto sentire, ascoltare il tuo punto di vista e trovare una soluzione che vada bene a entrambi.','Non importa. Dimentica che ho detto qualcosa.','Voglio che ci capiamo meglio. Possiamo spiegare cosa intendevamo e poi concordare cosa fare dopo?'],
+      ['Trasformi sempre tutto in un problema. Me ne vado.','Voglio affrontare la cosa con rispetto e in privato. Quello che è successo mi ha messo a disagio e vorrei parlarne e concordare un modo migliore di gestirlo.','Va bene. Farò finta che non mi abbia dato fastidio.','Possiamo parlarne quando avremo un po’ di privacy? Voglio capire cosa è successo ed evitare che diventi un problema più grande.']
+    ]
+  },
+  de: {
+    suffixes: ['Unter Stress', 'Beim Planen', 'Per Nachricht', 'Vor Anderen Menschen'],
+    situations: ['Diesmal kommt das Thema auf, als ihr beide nach einem langen Tag müde und gestresst seid.','Diesmal entsteht das Problem, während ihr Pläne macht und beide bereits etwas unter Druck steht.','Diesmal beginnt das Problem über Textnachrichten, bei denen der Ton leicht missverstanden werden kann.','Diesmal kommt das Problem vor anderen Menschen auf, und du möchtest es ansprechen, ohne jemanden bloßzustellen.'],
+    optionSets: [
+      ['Du machst daraus viel zu viel. Darüber rede ich nicht.','Ich möchte darüber sprechen, ohne uns gegenseitig Vorwürfe zu machen. Was passiert ist, hat mich beschäftigt, und ich möchte deine Sicht verstehen und einen besseren nächsten Schritt vereinbaren.','Gut. Mach, was du willst. Ich rede nicht mehr darüber.','Ich sehe, dass das wichtig ist. Können wir einen Gang zurückschalten, darüber sprechen und überlegen, was beim nächsten Mal helfen würde?'],
+      ['Das ist lächerlich. Du solltest längst wissen, warum ich verärgert bin.','Ich möchte klar sagen, was mich gestört hat, ohne dich anzugreifen. Können wir besprechen, was jeder von uns verstanden hat und was wir künftig brauchen?','Vergiss es. Ich behalte es einfach für mich.','Ich möchte nicht, dass daraus ein größerer Streit wird. Können wir ruhig darüber sprechen und eine konkrete Veränderung vereinbaren?'],
+      ['Wenn dir etwas an mir läge, hättest du das nicht getan.','Unsere Beziehung ist mir wichtiger, als diesen Streit zu gewinnen. Ich möchte erklären, wie es mich getroffen hat, deine Sicht hören und eine Lösung finden, mit der wir beide leben können.','Egal. Vergiss, dass ich etwas gesagt habe.','Ich möchte, dass wir uns besser verstehen. Können wir beide erklären, was wir gemeint haben, und dann gemeinsam entscheiden, wie es weitergeht?'],
+      ['Du machst aus allem ein Problem. Ich gehe.','Ich möchte das respektvoll und privat ansprechen. Was passiert ist, war mir unangenehm, und ich würde gern darüber reden und eine bessere Art vereinbaren, damit umzugehen.','Schon gut. Ich tue einfach so, als hätte es mich nicht gestört.','Können wir darüber sprechen, wenn wir etwas Privatsphäre haben? Ich möchte verstehen, was passiert ist, und verhindern, dass daraus ein größeres Problem wird.']
+    ]
+  }
+};
+
+const expandScenarioBank = (lang, baseScenarios) => {
+  const localized = roundVariantText[lang] || roundVariantText.en;
+  const expanded = { ...baseScenarios };
+  Object.entries(baseScenarios).forEach(([id, scenario]) => {
+    localized.suffixes.forEach((suffix, index) => {
+      expanded[id + '_variant_' + (index + 1)] = {
+        title: scenario.title + ' — ' + suffix,
+        situation: scenario.situation + ' ' + localized.situations[index],
+        options: localized.optionSets[index].map((text, optionIndex) => ({
+          text,
+          type: optionTypes[optionIndex],
+          feedback: feedbackByLanguage[lang][optionTypes[optionIndex]]
+        }))
+      };
+    });
+  });
+  return expanded;
+};
+
 export const communicationPracticeScenarios = {
-  en: buildScenarios('en', en),
-  es: buildScenarios('es', es),
-  fr: buildScenarios('fr', fr),
-  it: buildScenarios('it', it),
-  de: buildScenarios('de', de)
+  en: expandScenarioBank('en', buildScenarios('en', en)),
+  es: expandScenarioBank('es', buildScenarios('es', es)),
+  fr: expandScenarioBank('fr', buildScenarios('fr', fr)),
+  it: expandScenarioBank('it', buildScenarios('it', it)),
+  de: expandScenarioBank('de', buildScenarios('de', de))
 };
 
 export default communicationPracticeScenarios;

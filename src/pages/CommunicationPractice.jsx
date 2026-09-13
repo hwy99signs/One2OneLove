@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, ArrowRight, RotateCcw, CheckCircle, AlertCircle, Lightbulb, Heart, ArrowLeft } from "lucide-react";
@@ -26,6 +26,11 @@ const translations = {
     completed: "Scenario Complete!",
     scenario: "Scenario",
     of: "of",
+    roundComplete: "Round Complete!",
+    correctAnswers: "Correct Answers",
+    wrongAnswers: "Wrong Answers",
+    percentageScore: "Percentage Score",
+    newRound: "Try Again",
     scenarios: {
       conflict: {
         title: "Resolving a Disagreement",
@@ -147,7 +152,12 @@ const translations = {
     needsWork: "Necesita Mejorar",
     completed: "¡Escenario Completo!",
     scenario: "Escenario",
-    of: "de"
+    of: "de",
+    roundComplete: "¡Ronda Completada!",
+    correctAnswers: "Respuestas Correctas",
+    wrongAnswers: "Respuestas Incorrectas",
+    percentageScore: "Puntuación Porcentual",
+    newRound: "Intentar de Nuevo"
   },
   fr: {
     title: "Simulateur de Pratique de Communication",
@@ -163,7 +173,12 @@ const translations = {
     needsWork: "Besoin d'Amélioration",
     completed: "Scénario Terminé!",
     scenario: "Scénario",
-    of: "de"
+    of: "de",
+    roundComplete: "Tour Terminé !",
+    correctAnswers: "Bonnes Réponses",
+    wrongAnswers: "Mauvaises Réponses",
+    percentageScore: "Score en Pourcentage",
+    newRound: "Réessayer"
   },
   it: {
     title: "Simulatore di Pratica di Comunicazione",
@@ -179,7 +194,12 @@ const translations = {
     needsWork: "Necessita Miglioramento",
     completed: "Scenario Completato!",
     scenario: "Scenario",
-    of: "di"
+    of: "di",
+    roundComplete: "Turno Completato!",
+    correctAnswers: "Risposte Corrette",
+    wrongAnswers: "Risposte Sbagliate",
+    percentageScore: "Punteggio Percentuale",
+    newRound: "Riprova"
   },
   de: {
     title: "Kommunikationspraxis-Simulator",
@@ -195,8 +215,22 @@ const translations = {
     needsWork: "Verbesserungsbedarf",
     completed: "Szenario Abgeschlossen!",
     scenario: "Szenario",
-    of: "von"
+    of: "von",
+    roundComplete: "Runde Abgeschlossen!",
+    correctAnswers: "Richtige Antworten",
+    wrongAnswers: "Falsche Antworten",
+    percentageScore: "Prozentwert",
+    newRound: "Erneut Versuchen"
   }
+};
+
+const ROUND_SIZE = 20;
+
+const pickRoundIds = (allIds, previousIds = []) => {
+  const previous = new Set(previousIds);
+  const fresh = allIds.filter(id => !previous.has(id));
+  const preferred = fresh.length >= ROUND_SIZE ? fresh : allIds;
+  return [...preferred].sort(() => Math.random() - 0.5).slice(0, ROUND_SIZE);
 };
 
 export default function CommunicationPractice() {
@@ -204,15 +238,25 @@ export default function CommunicationPractice() {
   const t = translations[currentLanguage] || translations.en;
   const scenarios = communicationPracticeScenarios[currentLanguage] || communicationPracticeScenarios.en;
   
+  const allScenarioIds = Object.keys(scenarios);
+  const [roundScenarioIds, setRoundScenarioIds] = useState(() => pickRoundIds(allScenarioIds));
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [selectedResponse, setSelectedResponse] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [completedScenarios, setCompletedScenarios] = useState([]);
+  const [roundResults, setRoundResults] = useState({});
 
-  const scenarioList = Object.keys(scenarios).map(key => ({
+  const scenarioList = useMemo(() => roundScenarioIds.map(key => ({
     id: key,
-    ...scenarios[key]
-  }));
+    ...scenarios[key],
+    options: [...scenarios[key].options].sort(() => Math.random() - 0.5)
+  })), [roundScenarioIds, scenarios]);
+
+  const correctAnswers = Object.values(roundResults).filter(Boolean).length;
+  const answeredCount = Object.keys(roundResults).length;
+  const wrongAnswers = answeredCount - correctAnswers;
+  const percentageScore = answeredCount ? Math.round((correctAnswers / answeredCount) * 100) : 0;
+  const roundComplete = answeredCount === ROUND_SIZE;
 
   const handleScenarioSelect = (scenario) => {
     setSelectedScenario(scenario);
@@ -223,6 +267,10 @@ export default function CommunicationPractice() {
   const handleResponseSelect = (option) => {
     setSelectedResponse(option);
     setShowFeedback(true);
+
+    if (!(selectedScenario.id in roundResults)) {
+      setRoundResults(prev => ({ ...prev, [selectedScenario.id]: option.type === 'excellent' }));
+    }
     
     if (option.type === 'excellent' && !completedScenarios.includes(selectedScenario.id)) {
       setCompletedScenarios([...completedScenarios, selectedScenario.id]);
@@ -232,13 +280,30 @@ export default function CommunicationPractice() {
 
   const handleNextScenario = () => {
     const currentIndex = scenarioList.findIndex(s => s.id === selectedScenario.id);
-    const nextIndex = (currentIndex + 1) % scenarioList.length;
-    handleScenarioSelect(scenarioList[nextIndex]);
+    const unanswered = scenarioList.find((scenario, index) => index > currentIndex && !(scenario.id in roundResults))
+      || scenarioList.find(scenario => !(scenario.id in roundResults));
+    if (answeredCount >= ROUND_SIZE || !unanswered) {
+      setSelectedScenario(null);
+      setSelectedResponse(null);
+      setShowFeedback(false);
+      return;
+    }
+    handleScenarioSelect(unanswered);
   };
 
   const handleTryAgain = () => {
     setSelectedResponse(null);
     setShowFeedback(false);
+  };
+
+  const handleNewRound = () => {
+    const previousRound = roundScenarioIds;
+    setRoundScenarioIds(pickRoundIds(allScenarioIds, previousRound));
+    setSelectedScenario(null);
+    setSelectedResponse(null);
+    setShowFeedback(false);
+    setCompletedScenarios([]);
+    setRoundResults({});
   };
 
   const getFeedbackIcon = (type) => {
@@ -262,6 +327,35 @@ export default function CommunicationPractice() {
         return 'from-orange-50 to-yellow-50 border-orange-300';
     }
   };
+
+  const roundSummary = (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 border-2 border-green-200 text-center"
+    >
+      <Heart className="w-12 h-12 text-green-600 mx-auto mb-4" />
+      <h3 className="text-3xl font-bold text-gray-900 mb-6">{t.roundComplete}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-6">
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-green-200">
+          <div className="text-sm text-gray-600">{t.correctAnswers}</div>
+          <div className="text-3xl font-bold text-green-600">{correctAnswers}</div>
+        </div>
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-red-200">
+          <div className="text-sm text-gray-600">{t.wrongAnswers}</div>
+          <div className="text-3xl font-bold text-red-600">{wrongAnswers}</div>
+        </div>
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-purple-200">
+          <div className="text-sm text-gray-600">{t.percentageScore}</div>
+          <div className="text-3xl font-bold text-purple-600">{percentageScore}%</div>
+        </div>
+      </div>
+      <Button onClick={handleNewRound} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 px-8">
+        <RotateCcw className="w-4 h-4 mr-2" />
+        {t.newRound}
+      </Button>
+    </motion.div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
@@ -292,7 +386,7 @@ export default function CommunicationPractice() {
           </p>
         </motion.div>
 
-        {!selectedScenario ? (
+        {roundComplete && !selectedScenario ? roundSummary : !selectedScenario ? (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               {t.selectScenario}
@@ -433,21 +527,6 @@ export default function CommunicationPractice() {
           </div>
         )}
 
-        {completedScenarios.length > 0 && !selectedScenario && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-12 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 border-2 border-green-200 text-center"
-          >
-            <Heart className="w-12 h-12 text-green-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Great Progress!
-            </h3>
-            <p className="text-gray-700">
-              You've completed {completedScenarios.length} out of {scenarioList.length} scenarios
-            </p>
-          </motion.div>
-        )}
       </div>
     </div>
   );
