@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Heart, MessageCircle, Gift, Clock, Hand, ChevronRight, ChevronLeft, Share2, RotateCcw, Save, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveLoveLanguage } from "@/lib/profileService";
 import { toast } from "sonner";
+import { buildLoveLanguageQuizSession } from "@/components/lovelanguage/LoveLanguageQuestionBank";
 
 const translations = {
   en: {
@@ -302,6 +303,7 @@ export default function LoveLanguageQuiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
+  const [quizSeed, setQuizSeed] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const { currentLanguage } = useLanguage();
@@ -346,16 +348,10 @@ export default function LoveLanguageQuiz() {
     },
   ];
 
-  const questions = t.questions.map((q, index) => ({
-    question: q.question,
-    options: [
-      { text: q.options[0], value: 'words' },
-      { text: q.options[1], value: 'quality' },
-      { text: q.options[2], value: 'gifts' },
-      { text: q.options[3], value: 'service' },
-      { text: q.options[4], value: 'touch' },
-    ]
-  }));
+  const questions = useMemo(
+    () => buildLoveLanguageQuizSession(t.questions, currentLanguage, 15),
+    [t.questions, currentLanguage, quizSeed]
+  );
 
   const handleAnswer = (value) => {
     const newAnswers = { ...answers, [currentQuestion]: value };
@@ -386,6 +382,7 @@ export default function LoveLanguageQuiz() {
     setAnswers({});
     setShowResults(false);
     setIsSaved(false);
+    setQuizSeed(seed => seed + 1);
   };
 
   const handleSaveResult = async () => {
