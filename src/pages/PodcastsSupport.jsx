@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Mic, ArrowLeft, Heart, Users, MessageCircle, TrendingUp, PlayCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,6 +138,26 @@ export default function PodcastsSupport() {
   const [openPodcast, setOpenPodcast] = useState(null);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState('');
   const [playingEpisodeId, setPlayingEpisodeId] = useState('');
+  const [estherPodcastArtwork, setEstherPodcastArtwork] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    fetch('https://itunes.apple.com/lookup?id=1237931798&entity=podcast')
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        const artwork = data?.results?.[0]?.artworkUrl600 || data?.results?.[0]?.artworkUrl100;
+        if (artwork) setEstherPodcastArtwork(artwork);
+      })
+      .catch(() => {
+        // The play screen still has a branded fallback if Apple artwork is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const categories = [
     { id: 'all', name: t.categories.all, icon: Mic, color: 'from-pink-500 to-rose-600' },
@@ -171,6 +191,11 @@ export default function PodcastsSupport() {
       color: "from-red-500 to-pink-600",
       description: "Real conversations exploring intimacy, desire, communication, trust, and the complexities of modern relationships.",
       rating: 4.8,
+      podcastArtworkUrl: estherPodcastArtwork,
+      hostImageUrl: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Esther%20Perel%20at%20SXSW%20London%202026.jpg?width=600",
+      hostImageAlt: "Esther Perel at SXSW London 2026",
+      hostImageCredit: "Mateusz Malta / Wikimedia Commons · CC BY-SA 4.0",
+      hostImageCreditUrl: "https://commons.wikimedia.org/wiki/File:Esther_Perel_at_SXSW_London_2026.jpg",
       featuredEpisodes: [
         {
           id: 'on-again-off-again',
@@ -462,13 +487,46 @@ export default function PodcastsSupport() {
       >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mb-2 shadow-lg">
-              <Mic className="w-7 h-7 text-white" />
+            <div className="flex items-center gap-5 pr-6">
+              <div className="relative shrink-0 pb-3 pr-3">
+                {openPodcast?.podcastArtworkUrl ? (
+                  <img
+                    src={openPodcast.podcastArtworkUrl}
+                    alt={`${openPodcast.title} podcast cover`}
+                    className="h-28 w-28 rounded-2xl object-cover shadow-lg ring-1 ring-black/5"
+                  />
+                ) : (
+                  <div className="h-28 w-28 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Mic className="w-12 h-12 text-white" />
+                  </div>
+                )}
+
+                {openPodcast?.hostImageUrl && (
+                  <img
+                    src={openPodcast.hostImageUrl}
+                    alt={openPodcast.hostImageAlt || openPodcast.host}
+                    className="absolute bottom-0 right-0 h-16 w-16 rounded-full object-cover object-top border-4 border-white shadow-lg"
+                  />
+                )}
+              </div>
+
+              <div className="min-w-0 text-left">
+                <DialogTitle className="text-2xl leading-tight">{openPodcast?.title}</DialogTitle>
+                <DialogDescription className="mt-1 text-base">
+                  {openPodcast?.host}
+                </DialogDescription>
+                {openPodcast?.hostImageCredit && (
+                  <a
+                    href={openPodcast.hostImageCreditUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-[11px] text-gray-500 underline-offset-2 hover:underline"
+                  >
+                    Photo: {openPodcast.hostImageCredit}
+                  </a>
+                )}
+              </div>
             </div>
-            <DialogTitle className="text-2xl">{openPodcast?.title}</DialogTitle>
-            <DialogDescription>
-              {openPodcast?.host}
-            </DialogDescription>
           </DialogHeader>
 
           {openPodcast && (
