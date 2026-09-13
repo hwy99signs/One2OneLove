@@ -6,6 +6,7 @@ import { handleMemberOnboarding } from './member-onboarding';
 import { handleProfileMediaRequest } from './profile-media';
 import { handleGoalsRequest } from './goals';
 import { handleCalendarRequest } from './calendar';
+import { handleDateIdeasRequest } from './date-ideas';
 import { handleJournalsRequest } from './journals';
 import { handleBuddiesRequest } from './buddies';
 import { handleMilestonesRequest } from './milestones';
@@ -72,6 +73,11 @@ export default {
 
     if (url.pathname.startsWith('/api/calendar-events')) {
       const response = await handleCalendarRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/date-ideas')) {
+      const response = await handleDateIdeasRequest(request, env, url);
       if (response) return response;
     }
 
