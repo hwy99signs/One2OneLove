@@ -629,9 +629,6 @@ export default function DateIdeas() {
                         );
                       })()}
                       <div>
-                        {selectedIdea.week && (
-                          <p className="text-sm font-semibold text-pink-600 mb-1">{t.week || 'Week'} {selectedIdea.week} / 52</p>
-                        )}
                         <CardTitle className="text-2xl font-bold text-gray-900">{selectedIdea.title}</CardTitle>
                       </div>
                     </div>
