@@ -4,7 +4,7 @@ compatibility_flags = ["nodejs_compat"]
 keep_vars = true
 preview_urls = true
 
-# Cloudflare build refresh: 2026-09-13 Love Notes Holiday tabs
+# Cloudflare build refresh: 2026-09-13 Love Notes 450-note library
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"
