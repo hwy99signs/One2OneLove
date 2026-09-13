@@ -19,6 +19,18 @@ jobs:
           ref: communication-practice-100-random-rounds
           fetch-depth: 0
 
+      - name: Repair temporary expansion script quoting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/expand_communication_practice_to_100.cjs')
+          s = p.read_text()
+          s = s.replace("expanded[\\`${id}_variant_\\${index + 1}\\`] = {", "expanded[id + '_variant_' + (index + 1)] = {")
+          s = s.replace("title: \\`\\${scenario.title} — \\${suffix}\\`,", "title: scenario.title + ' — ' + suffix,")
+          s = s.replace("situation: \\`\\${scenario.situation} \\${localized.situations[index]}\\`,", "situation: scenario.situation + ' ' + localized.situations[index],")
+          p.write_text(s)
+          PY
+
       - name: Apply 100-scenario randomized rounds
         run: node scripts/expand_communication_practice_to_100.cjs
 
