@@ -622,10 +622,30 @@ export default function LoveNotes() {
   const t = translations[currentLanguage] || translations.en;
   const categories = getCategoriesForLanguage(t, currentLanguage);
   const holidaySubcategories = [
-    { id: 'all', name: allHolidayLabels[currentLanguage] || allHolidayLabels.en, icon: '🎉' },
-    { id: 'romantic', name: t.categories.romantic, icon: '🌹' },
-    { id: 'family', name: t.categories.family, icon: '👨‍👩‍👧‍👦' },
-    { id: 'friends', name: t.categories.friends, icon: '👫' },
+    {
+      id: 'all',
+      name: allHolidayLabels[currentLanguage] || allHolidayLabels.en,
+      neonClass: 'border-cyan-300 bg-cyan-50 text-cyan-700 shadow-[0_0_8px_rgba(34,211,238,0.95),0_0_18px_rgba(34,211,238,0.65)]',
+      activeClass: 'border-cyan-200 bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,1),0_0_26px_rgba(34,211,238,0.9)]',
+    },
+    {
+      id: 'romantic',
+      name: t.categories.romantic,
+      neonClass: 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 shadow-[0_0_8px_rgba(232,121,249,0.95),0_0_18px_rgba(217,70,239,0.65)]',
+      activeClass: 'border-fuchsia-200 bg-fuchsia-400 text-slate-950 shadow-[0_0_12px_rgba(232,121,249,1),0_0_26px_rgba(217,70,239,0.9)]',
+    },
+    {
+      id: 'family',
+      name: t.categories.family,
+      neonClass: 'border-lime-300 bg-lime-50 text-lime-700 shadow-[0_0_8px_rgba(163,230,53,0.95),0_0_18px_rgba(132,204,22,0.65)]',
+      activeClass: 'border-lime-200 bg-lime-400 text-slate-950 shadow-[0_0_12px_rgba(163,230,53,1),0_0_26px_rgba(132,204,22,0.9)]',
+    },
+    {
+      id: 'friends',
+      name: t.categories.friends,
+      neonClass: 'border-violet-300 bg-violet-50 text-violet-700 shadow-[0_0_8px_rgba(196,181,253,0.95),0_0_18px_rgba(139,92,246,0.65)]',
+      activeClass: 'border-violet-200 bg-violet-400 text-white shadow-[0_0_12px_rgba(196,181,253,1),0_0_26px_rgba(139,92,246,0.9)]',
+    },
   ];
   const queryClient = useQueryClient();
   
@@ -1195,11 +1215,12 @@ export default function LoveNotes() {
                     setSelectedHolidaySubcategory(subcategory.id);
                     setSearchQuery('');
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-extrabold tracking-wide transition-all animate-pulse motion-reduce:animate-none hover:scale-105 ${
                     selectedHolidaySubcategory === subcategory.id
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
-                      : 'bg-transparent text-gray-600 hover:bg-pink-50 hover:text-pink-700'
+                      ? subcategory.activeClass
+                      : subcategory.neonClass
                   }`}
+                  style={{ animationDuration: '0.9s' }}
                 >
                   {subcategory.name}
                 </button>
