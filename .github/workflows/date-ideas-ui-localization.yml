@@ -1,0 +1,44 @@
+name: Date Ideas UI Localization
+
+on:
+  push:
+    branches:
+      - date-ideas-52-compact-library
+    paths:
+      - .github/date-ideas-ui-localization-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: date-ideas-52-compact-library
+          fetch-depth: 0
+      - name: Apply localized UI wiring
+        run: python scripts/patch_date_ideas_ui_localization.py
+      - name: Verify seven-language UI wiring
+        run: |
+          grep -q 'DATE_IDEAS_UI\[currentLanguage\]' src/pages/DateIdeas.jsx
+          grep -q '{t.filters}' src/pages/DateIdeas.jsx
+          node --input-type=module <<'NODE'
+          import { DATE_IDEAS_UI } from './src/components/dateideas/dateIdeasUiCopy.js';
+          for (const lang of ['en','es','fr','it','de','nl','pt']) {
+            if (!DATE_IDEAS_UI[lang]?.title || !DATE_IDEAS_UI[lang]?.filters) throw new Error(`${lang}: incomplete UI copy`);
+          }
+          console.log('Seven-language Date Ideas UI copy verified.');
+          NODE
+      - name: Install dependencies
+        run: npm ci
+      - name: Production build
+        run: npm run build
+      - name: Commit localized UI wiring
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/DateIdeas.jsx
+          git commit -m "Localize Date Ideas compact library UI"
+          git push origin HEAD:date-ideas-52-compact-library
