@@ -1,0 +1,58 @@
+name: Love Notes Minimum 15 Audit
+
+on:
+  push:
+    branches:
+      - love-notes-minimum-15-audit
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit Love Notes counts
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+
+          function loadMain() {
+            let src = fs.readFileSync('src/components/lovenotes/LoveNotesData.jsx','utf8');
+            src = src.replace('export const loveNotesData =', 'globalThis.loveNotesData =');
+            const ctx = { globalThis: {} };
+            vm.createContext(ctx);
+            vm.runInContext(src, ctx);
+            return ctx.globalThis.loveNotesData;
+          }
+
+          function loadAdditional(lang) {
+            let src = fs.readFileSync(`src/components/lovenotes/additional/LoveNotesAdditional.${lang}.js`,'utf8');
+            src = src.replace('export default', 'globalThis.additional =');
+            const ctx = { globalThis: {} };
+            vm.createContext(ctx);
+            vm.runInContext(src, ctx);
+            return ctx.globalThis.additional;
+          }
+
+          const langs = ['en','es','fr','it','de'];
+          const main = loadMain();
+          for (const lang of langs) {
+            const add = loadAdditional(lang);
+            const merged = { ...(main[lang] || {}), ...add };
+            merged.holiday = [...((main[lang]||{}).holiday||[]), ...(add.holiday||[])];
+            console.log(`\n=== ${lang.toUpperCase()} ===`);
+            const keys = [...new Set([...Object.keys(main[lang]||{}), ...Object.keys(add)])];
+            for (const key of keys) console.log(`${key}: ${merged[key]?.length || 0}`);
+            console.log(`TOTAL: ${keys.reduce((n,k)=>n+(merged[k]?.length||0),0)}`);
+          }
+
+          const lovePage = fs.readFileSync('src/pages/LoveNotes.jsx','utf8');
+          const m = lovePage.match(/const holidaySubcategoryAssignments = \[(.*?)\];/s);
+          if (m) {
+            const assignments = [...m[1].matchAll(/'(romantic|family|friends)'/g)].map(x=>x[1]);
+            const counts = assignments.reduce((o,x)=>(o[x]=(o[x]||0)+1,o),{});
+            console.log('\n=== HOLIDAY SUBCATEGORY ASSIGNMENTS ===');
+            console.log(counts);
+            console.log('total assignments:', assignments.length);
+          }
+          NODE
