@@ -577,10 +577,7 @@ const allHolidayLabels = {
 };
 
 const holidaySubcategoryAssignments = [
-  'romantic', 'romantic', 'romantic', 'family', 'family',
-  'romantic', 'romantic', 'family', 'friends', 'romantic',
-  'romantic', 'romantic', 'friends', 'family', 'friends',
-  'romantic', 'family', 'friends', 'family', 'romantic',
+  'romantic', 'romantic', 'romantic', 'family', 'family', 'romantic', 'romantic', 'family', 'friends', 'romantic', 'romantic', 'romantic', 'friends', 'family', 'friends', 'romantic', 'family', 'friends', 'family', 'romantic', 'romantic', 'romantic', 'romantic', 'romantic', 'romantic', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends'
 ];
 
 const generateNotes = (lang) => {
