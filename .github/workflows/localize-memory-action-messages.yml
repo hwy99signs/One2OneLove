@@ -1,0 +1,44 @@
+name: Localize Memory Action Messages
+
+on:
+  push:
+    branches:
+      - custom-date-memory-functional-fix
+    paths:
+      - .github/localize-memory-action-messages-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: custom-date-memory-functional-fix
+          fetch-depth: 0
+
+      - name: Apply localized Memory messages
+        run: python scripts/localize_memory_action_messages.py
+
+      - name: Verify no hard-coded English action messages remain
+        run: |
+          grep -q 'toast.success(t.memorySaved)' src/pages/MemoryLane.jsx
+          grep -q 't.memorySaveFailed' src/pages/MemoryLane.jsx
+          grep -q 't.memoryUpdateFailed' src/pages/MemoryLane.jsx
+          grep -q 't.memoryDeleteFailed' src/pages/MemoryLane.jsx
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit localized messages
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/MemoryLane.jsx
+          git commit -m "Localize Memory save feedback"
+          git push origin HEAD:custom-date-memory-functional-fix
