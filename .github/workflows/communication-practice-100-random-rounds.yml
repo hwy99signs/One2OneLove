@@ -32,7 +32,15 @@ jobs:
           PY
 
       - name: Apply 100-scenario randomized rounds
-        run: node scripts/expand_communication_practice_to_100.cjs
+        run: |
+          node scripts/expand_communication_practice_to_100.cjs
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/pages/CommunicationPractice.jsx')
+          s = p.read_text()
+          s = s.replace('    newRound: "Try Again"\n    scenarios:', '    newRound: "Try Again",\n    scenarios:')
+          p.write_text(s)
+          PY
 
       - name: Verify scenario bank and scoring behavior
         run: |
