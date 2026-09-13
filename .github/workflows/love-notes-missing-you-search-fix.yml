@@ -18,6 +18,8 @@ jobs:
         with:
           ref: love-notes-missing-you-search-fix
           fetch-depth: 0
+      - name: Tighten search generator
+        run: node scripts/patch_missing_you_search_generator.cjs
       - name: Apply Missing You category and search fix
         run: node scripts/add_missing_you_search_fix.cjs
       - name: Verify Missing You counts
