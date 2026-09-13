@@ -1,0 +1,102 @@
+name: Refresh One2OneLove Worker Assets From Master
+
+on:
+  push:
+    branches:
+      - verify-missing-you-worker-2026-09-13
+    paths:
+      - .github/deploy-current-master-worker-assets-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_URL: https://one2onelove-launch.hwy99signs.workers.dev
+    steps:
+      - name: Checkout current master frontend
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Verify Cloudflare credentials are available
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is missing" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is missing" && exit 1)
+
+      - name: Import existing production Worker runtime without changing frontend source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin migration/cloudflare-launch-20260911
+          rm -rf worker
+          git archive origin/migration/cloudflare-launch-20260911 worker | tar -x
+          mkdir -p cloudflare
+          git show origin/migration/cloudflare-launch-20260911:cloudflare/wrangler.production.jsonc > cloudflare/wrangler.production-existing.jsonc
+          test -s worker/index-v2.ts
+          test -s worker/package.json
+
+      - name: Create workers.dev-only deploy config preserving runtime bindings
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = Path('cloudflare/wrangler.production-existing.jsonc')
+          data = json.loads(source.read_text())
+          # Do not create, change, or remove public-domain routing in this refresh.
+          data.pop('routes', None)
+          data['workers_dev'] = True
+          Path('cloudflare/wrangler.worker-assets-refresh.jsonc').write_text(json.dumps(data, indent=2) + '\n')
+          PY
+          grep -q '"name": "one2onelove-launch"' cloudflare/wrangler.worker-assets-refresh.jsonc
+          ! grep -q 'one2onelove.com' cloudflare/wrangler.worker-assets-refresh.jsonc
+
+      - name: Install and build current master frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install existing Worker runtime dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+
+      - name: Deploy current frontend assets with existing Worker runtime
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.worker-assets-refresh.jsonc
+
+      - name: Verify Workers URL received the Missing You build
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          test -n "$LOCAL_JS"
+          MATCHED=no
+          for attempt in $(seq 1 12); do
+            curl --fail --silent --show-error "$WORKER_URL/" -o /tmp/remote-index.html
+            REMOTE_JS=$(grep -oE 'src="[^"]+\.js"' /tmp/remote-index.html | head -1 | sed 's/src="//;s/"//')
+            echo "Attempt $attempt: LOCAL_JS=$LOCAL_JS REMOTE_JS=$REMOTE_JS"
+            if [ "$LOCAL_JS" = "$REMOTE_JS" ]; then
+              MATCHED=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$MATCHED" = yes
+          curl --fail --silent --show-error "$WORKER_URL$REMOTE_JS" -o /tmp/remote-app.js
+          grep -F "I Miss Your Presence" /tmp/remote-app.js >/dev/null
+          grep -F "Missing You" /tmp/remote-app.js >/dev/null
+          echo "DEPLOYED_MISSING_YOU_BUILD_VERIFIED=yes"
+
+      - name: Verify existing Worker API runtime still responds
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATUS=$(curl --silent --output /tmp/health.json --write-out '%{http_code}' "$WORKER_URL/api/health")
+          cat /tmp/health.json
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
