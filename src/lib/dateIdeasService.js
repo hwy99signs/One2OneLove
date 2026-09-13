@@ -46,17 +46,42 @@ async function apiRequest(path, options = {}) {
   return payload;
 }
 
-function shouldFallback(error) {
-  return !error?.status || error.status === 401 || error.status === 403 || error.status === 404;
+function mergeServerAndLocal(serverRecords, localRecords) {
+  const localById = new Map(localRecords.map(record => [String(record.id), record]));
+  const serverIds = new Set(serverRecords.map(record => String(record.id)));
+  const mergedServer = serverRecords.map(record => ({
+    ...(localById.get(String(record.id)) || {}),
+    ...record,
+  }));
+  const localOnly = localRecords.filter(record => !serverIds.has(String(record.id)));
+  return [...localOnly, ...mergedServer];
+}
+
+function upsertLocal(userKey, record) {
+  const records = readLocal(userKey);
+  const index = records.findIndex(item => String(item.id) === String(record.id));
+  if (index >= 0) {
+    const next = [...records];
+    next[index] = { ...records[index], ...record, __local_mirror: true };
+    writeLocal(userKey, next);
+    return next[index];
+  }
+  const nextRecord = { ...record, __local_mirror: true };
+  writeLocal(userKey, [nextRecord, ...records]);
+  return nextRecord;
+}
+
+function removeLocal(userKey, id) {
+  writeLocal(userKey, readLocal(userKey).filter(record => String(record.id) !== String(id)));
 }
 
 export async function listDateIdeas(userKey) {
+  const localRecords = readLocal(userKey);
   try {
     const payload = await apiRequest('/api/date-ideas');
-    return payload.ideas || [];
-  } catch (error) {
-    if (!shouldFallback(error)) throw error;
-    return readLocal(userKey);
+    return mergeServerAndLocal(payload.ideas || [], localRecords);
+  } catch {
+    return localRecords;
   }
 }
 
@@ -66,10 +91,10 @@ export async function createDateIdea(userKey, data) {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return payload.idea;
-  } catch (error) {
-    if (!shouldFallback(error)) throw error;
-    const records = readLocal(userKey);
+    const record = { ...data, ...(payload.idea || {}) };
+    upsertLocal(userKey, record);
+    return record;
+  } catch {
     const record = {
       id: localId(),
       ...data,
@@ -77,61 +102,48 @@ export async function createDateIdea(userKey, data) {
       updated_at: new Date().toISOString(),
       __local: true,
     };
-    const next = [record, ...records];
-    writeLocal(userKey, next);
+    upsertLocal(userKey, record);
     return record;
   }
 }
 
 export async function updateDateIdea(userKey, id, updates) {
+  let serverRecord = null;
   if (!String(id || '').startsWith('local-')) {
     try {
       const payload = await apiRequest(`/api/date-ideas/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
       });
-      return payload.idea;
-    } catch (error) {
-      if (!shouldFallback(error)) throw error;
+      serverRecord = payload.idea || null;
+    } catch {
+      serverRecord = null;
     }
   }
 
-  const records = readLocal(userKey);
-  const index = records.findIndex(record => record.id === id);
-  if (index === -1) {
-    const record = {
-      id: id || localId(),
-      ...updates,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      __local: true,
-    };
-    writeLocal(userKey, [record, ...records]);
-    return record;
-  }
-  const updated = {
-    ...records[index],
+  const existing = readLocal(userKey).find(record => String(record.id) === String(id)) || {};
+  const record = {
+    ...existing,
     ...updates,
-    updated_at: new Date().toISOString(),
-    __local: true,
+    ...(serverRecord || {}),
+    id: serverRecord?.id || id || localId(),
+    updated_at: serverRecord?.updated_at || new Date().toISOString(),
+    created_at: serverRecord?.created_at || existing.created_at || new Date().toISOString(),
+    ...(serverRecord ? {} : { __local: true }),
   };
-  const next = [...records];
-  next[index] = updated;
-  writeLocal(userKey, next);
-  return updated;
+  upsertLocal(userKey, record);
+  return record;
 }
 
 export async function deleteDateIdea(userKey, id) {
   if (!String(id || '').startsWith('local-')) {
     try {
       await apiRequest(`/api/date-ideas/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      return;
-    } catch (error) {
-      if (!shouldFallback(error)) throw error;
+    } catch {
+      // The local mirror is still removed so the user action completes in preview mode.
     }
   }
-  const records = readLocal(userKey).filter(record => record.id !== id);
-  writeLocal(userKey, records);
+  removeLocal(userKey, id);
 }
 
 export function upsertLocalDateIdea(userKey, matcher, data) {
