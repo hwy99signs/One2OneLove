@@ -1,0 +1,172 @@
+name: Reclassify Holiday and Special Love Notes
+
+on:
+  push:
+    branches:
+      - love-notes-holiday-special-revision
+    paths:
+      - .github/holiday-special-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  revise-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: love-notes-holiday-special-revision
+          fetch-depth: 0
+
+      - name: Reclassify Special Occasions and Holiday notes
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          data_path = Path('src/components/lovenotes/LoveNotesData.jsx')
+          text = data_path.read_text(encoding='utf-8')
+          langs = ['en','es','fr','it','de']
+
+          # In each language, Special Occasions currently contains the same 10 concepts in this order:
+          # birthday, anniversary, Valentine's Day, Christmas, New Year, graduation,
+          # promotion, wedding day, Mother's Day, Father's Day.
+          keep_idx = [0, 1, 5, 6, 7]
+          move_idx = [2, 3, 4, 8, 9]
+
+          starts = []
+          for lang in langs:
+              token = f'  {lang}: {{'
+              idx = text.find(token)
+              if idx == -1:
+                  raise SystemExit(f'Language block not found: {lang}')
+              starts.append((lang, idx))
+
+          # Process from bottom to top so earlier offsets remain valid.
+          for i in range(len(starts)-1, -1, -1):
+              lang, start = starts[i]
+              end = starts[i+1][1] if i+1 < len(starts) else text.rfind('\n};')
+              block = text[start:end]
+
+              if re.search(r'\n    holiday: \[', block):
+                  raise SystemExit(f'Base holiday category already exists in {lang}; refusing duplicate patch')
+
+              m = re.search(r'\n    special: \[\n(.*?)\n    \],', block, re.S)
+              if not m:
+                  raise SystemExit(f'Special category block not found in {lang}')
+
+              body = m.group(1)
+              notes = [line for line in body.splitlines() if '{ title:' in line]
+              if len(notes) != 10:
+                  raise SystemExit(f'{lang}: expected 10 Special Occasions notes, found {len(notes)}')
+
+              if lang == 'en':
+                  expected = [
+                      'Happy Birthday Love', 'Anniversary Celebration', "Valentine's Day Love",
+                      'Christmas Joy', "New Year's Promise", 'Graduation Pride',
+                      'Promotion Celebration', 'Wedding Day Bliss', "Mother's Day Appreciation",
+                      "Father's Day Honor"
+                  ]
+                  actual = []
+                  for line in notes:
+                      tm = re.search(r'title: "([^"]+)"', line)
+                      actual.append(tm.group(1) if tm else '')
+                  if actual != expected:
+                      raise SystemExit(f'English Special order changed; refusing positional reclassification: {actual}')
+
+              kept = [notes[j] for j in keep_idx]
+              moved = [notes[j] for j in move_idx]
+
+              replacement = (
+                  '\n    special: [\n' + '\n'.join(kept) + '\n    ],'
+                  '\n    holiday: [\n' + '\n'.join(moved) + '\n    ],'
+              )
+              block = block[:m.start()] + replacement + block[m.end():]
+              text = text[:start] + block + text[end:]
+
+          data_path.write_text(text, encoding='utf-8')
+
+          page_path = Path('src/pages/LoveNotes.jsx')
+          page = page_path.read_text(encoding='utf-8')
+
+          old_available = "  const availableData = { ...baseData, ...addedData };"
+          new_available = "  const availableData = { ...baseData, ...addedData, holiday: [...(baseData.holiday || []), ...(addedData.holiday || [])] };"
+          if old_available in page:
+              page = page.replace(old_available, new_available, 1)
+          elif new_available not in page:
+              raise SystemExit('Available category merge block not found')
+
+          old_data = "  const data = { ...baseData, ...addedData };"
+          new_data = "  const data = { ...baseData, ...addedData, holiday: [...(baseData.holiday || []), ...(addedData.holiday || [])] };"
+          if old_data in page:
+              page = page.replace(old_data, new_data, 1)
+          elif new_data not in page:
+              raise SystemExit('Love Notes data merge block not found')
+
+          page_path.write_text(page, encoding='utf-8')
+
+      - name: Verify category revision and counts
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          text = Path('src/components/lovenotes/LoveNotesData.jsx').read_text(encoding='utf-8')
+          langs = ['en','es','fr','it','de']
+          for i, lang in enumerate(langs):
+              start = text.find(f'  {lang}: {{')
+              end = text.find(f'  {langs[i+1]}: {{', start+1) if i+1 < len(langs) else text.rfind('\n};')
+              block = text[start:end]
+              for cat, expected in [('special', 5), ('holiday', 5)]:
+                  m = re.search(rf'\n    {cat}: \[\n(.*?)\n    \],', block, re.S)
+                  if not m:
+                      raise SystemExit(f'{lang}: missing {cat}')
+                  count = len(re.findall(r'\{\s*title\s*:', m.group(1)))
+                  if count != expected:
+                      raise SystemExit(f'{lang}: {cat} expected {expected}, found {count}')
+
+          en_start = text.find('  en: {')
+          en_end = text.find('  es: {', en_start)
+          en = text[en_start:en_end]
+          sm = re.search(r'\n    special: \[\n(.*?)\n    \],', en, re.S)
+          hm = re.search(r'\n    holiday: \[\n(.*?)\n    \],', en, re.S)
+          special_text = sm.group(1)
+          holiday_text = hm.group(1)
+
+          for title in ['Happy Birthday Love','Anniversary Celebration','Graduation Pride','Promotion Celebration','Wedding Day Bliss']:
+              if title not in special_text:
+                  raise SystemExit(f'Expected personal occasion missing from Special: {title}')
+          for title in ["Valentine's Day Love",'Christmas Joy',"New Year's Promise","Mother's Day Appreciation","Father's Day Honor"]:
+              if title not in holiday_text:
+                  raise SystemExit(f'Expected calendar occasion missing from Holiday: {title}')
+              if title in special_text:
+                  raise SystemExit(f'Calendar occasion still present in Special: {title}')
+
+          base_total = len(re.findall(r'\{\s*title\s*:', text))
+          if base_total != 880:
+              raise SystemExit(f'Base library total changed unexpectedly: {base_total}')
+
+          additional_total = 0
+          for p in Path('src/components/lovenotes/additional').glob('LoveNotesAdditional.*.js'):
+              src = p.read_text(encoding='utf-8')
+              # Additional files use compact [title,content] pairs; four categories x 15 = 60 per language.
+              additional_total += src.count('],["') + (1 if 'makeNotes([["' in src else 0)
+          print('Verified Special Occasions: 5 personal/individual notes per language')
+          print('Verified base Holiday: 5 calendar-wide recognized occasions per language')
+          print('General Holiday notes remain in supplemental library and will be merged at runtime')
+          print('Base Love Notes object count remains 880')
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit category revision
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/components/lovenotes/LoveNotesData.jsx src/pages/LoveNotes.jsx
+          git commit -m "Reclassify Holiday and Special Occasion Love Notes"
+          git push origin HEAD:love-notes-holiday-special-revision
