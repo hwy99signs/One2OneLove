@@ -1,0 +1,37 @@
+name: Verify Love Notes 450 Worker
+
+on:
+  push:
+    branches:
+      - verify-love-notes-450-worker-2026-09-13
+    paths:
+      - .github/workflows/verify-love-notes-450-worker.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm ci
+      - name: Build current source
+        run: npm run build
+      - name: Compare deployed Worker bundle with current build
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://one2onelove-launch.hwy99signs.workers.dev"
+          curl --fail --silent --show-error "$URL/" -o /tmp/remote-index.html
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          REMOTE_JS=$(grep -oE 'src="[^"]+\.js"' /tmp/remote-index.html | head -1 | sed 's/src="//;s/"//')
+          echo "LOCAL_JS=$LOCAL_JS"
+          echo "REMOTE_JS=$REMOTE_JS"
+          test -n "$LOCAL_JS"
+          test -n "$REMOTE_JS"
+          test "$LOCAL_JS" = "$REMOTE_JS"
+          curl --fail --silent --show-error "$URL$REMOTE_JS" -o /tmp/remote-app.js
+          grep -F "Romantic — With Love" /tmp/remote-app.js >/dev/null
+          echo "DEPLOYED_WORKER_MATCHES_CURRENT_450_BUILD=yes"
