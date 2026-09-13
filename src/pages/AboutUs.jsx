@@ -11,6 +11,8 @@ const translations = {
     back: "Back",
     hero: "We Start Where Dating Sites Stop.",
     intro: "One2OneLove is an all-inclusive relationship platform built to support people who are pursuing, building, understanding, and nurturing healthy love and relationships. It is designed for people at many stages of connection, including dating, committed relationships, engagement, marriage, and personal relationship growth.",
+    ownershipTitle: "Ownership & Operation",
+    ownership: "The One2One Love Platform is owned and operated by ERANT Property Services LLC (EPS LLC), its parent company.",
     missionTitle: "Our Mission",
     mission: "Our mission is to bring practical relationship tools, thoughtful conversation, reflection, community, and supportive resources together in one place so people can communicate more intentionally, strengthen connection, celebrate meaningful moments, and make healthier relationship choices.",
     notDatingTitle: "What One2OneLove Is — and Is Not",
@@ -36,6 +38,7 @@ const translations = {
   es: {
     title: "Acerca de One2OneLove", subtitle: "Ama. Crece. Evoluciona. Juntos.", back: "Volver", hero: "Comenzamos Donde Terminan los Sitios de Citas.",
     intro: "One2OneLove es una plataforma inclusiva de relaciones creada para apoyar a personas que buscan, construyen, comprenden y nutren relaciones y vínculos saludables. Está diseñada para distintas etapas, incluidas citas, relaciones comprometidas, compromiso, matrimonio y crecimiento personal en las relaciones.",
+    ownershipTitle: "Propiedad y Operación", ownership: "La Plataforma One2One Love es propiedad de ERANT Property Services LLC (EPS LLC), su empresa matriz, y es operada por ella.",
     missionTitle: "Nuestra Misión", mission: "Nuestra misión es reunir en un solo lugar herramientas prácticas, conversación reflexiva, comunidad y recursos de apoyo para ayudar a las personas a comunicarse con mayor intención, fortalecer la conexión, celebrar momentos significativos y tomar decisiones relacionales más saludables.",
     notDatingTitle: "Qué Es One2OneLove — y Qué No Es", notDating: "One2OneLove no es un servicio de citas ni de emparejamiento. No unimos personas para citas. La plataforma comienza donde muchos servicios de citas terminan: ayudando a las personas a pensar, comunicarse, conectar, crecer y mantener relaciones.",
     valuesTitle: "Lo Que Guía la Plataforma",
@@ -54,6 +57,7 @@ const translations = {
   fr: {
     title: "À Propos de One2OneLove", subtitle: "Aimez. Grandissez. Évoluez. Ensemble.", back: "Retour", hero: "Nous Commençons Là Où les Sites de Rencontres S'Arrêtent.",
     intro: "One2OneLove est une plateforme relationnelle inclusive conçue pour soutenir les personnes qui recherchent, construisent, comprennent et entretiennent des relations saines. Elle s'adresse à de nombreuses étapes : rencontres, relation engagée, fiançailles, mariage et développement personnel relationnel.",
+    ownershipTitle: "Propriété et Exploitation", ownership: "La Plateforme One2One Love est détenue et exploitée par ERANT Property Services LLC (EPS LLC), sa société mère.",
     missionTitle: "Notre Mission", mission: "Notre mission est de réunir des outils pratiques, des conversations réfléchies, une communauté et des ressources de soutien afin d'aider les personnes à mieux communiquer, renforcer leurs liens, célébrer les moments importants et faire des choix relationnels plus sains.",
     notDatingTitle: "Ce Qu'est One2OneLove — et Ce Qu'il N'est Pas", notDating: "One2OneLove n'est pas un service de rencontres ou de mise en relation. Nous ne mettons pas les utilisateurs en relation pour des rendez-vous. La plateforme commence là où de nombreux sites de rencontres s'arrêtent : communication, compréhension, connexion, croissance et entretien des relations.",
     valuesTitle: "Ce Qui Guide la Plateforme",
@@ -72,6 +76,7 @@ const translations = {
   it: {
     title: "Chi Siamo — One2OneLove", subtitle: "Ama. Cresci. Evolvi. Insieme.", back: "Indietro", hero: "Iniziamo Dove i Siti di Incontri Si Fermano.",
     intro: "One2OneLove è una piattaforma inclusiva per le relazioni, creata per sostenere chi cerca, costruisce, comprende e coltiva relazioni sane. È pensata per diverse fasi: frequentazione, relazione stabile, fidanzamento, matrimonio e crescita personale nelle relazioni.",
+    ownershipTitle: "Proprietà e Gestione", ownership: "La Piattaforma One2One Love è di proprietà ed è gestita da ERANT Property Services LLC (EPS LLC), la sua società madre.",
     missionTitle: "La Nostra Missione", mission: "La nostra missione è riunire strumenti pratici, conversazioni consapevoli, comunità e risorse di supporto per aiutare le persone a comunicare con maggiore intenzione, rafforzare la connessione, celebrare momenti significativi e fare scelte relazionali più sane.",
     notDatingTitle: "Cos'è One2OneLove — e Cosa Non È", notDating: "One2OneLove non è un servizio di incontri o matchmaking. Non abbiniamo persone per appuntamenti. La piattaforma inizia dove molti servizi di incontri si fermano: comunicazione, comprensione, connessione, crescita e cura della relazione.",
     valuesTitle: "Cosa Guida la Piattaforma",
@@ -90,6 +95,7 @@ const translations = {
   de: {
     title: "Über One2OneLove", subtitle: "Lieben. Wachsen. Entwickeln. Gemeinsam.", back: "Zurück", hero: "Wir Beginnen, Wo Dating-Seiten Aufhören.",
     intro: "One2OneLove ist eine inklusive Beziehungsplattform für Menschen, die gesunde Liebe und Beziehungen suchen, aufbauen, verstehen und pflegen möchten. Sie richtet sich an viele Phasen: Dating, feste Beziehungen, Verlobung, Ehe und persönliche Beziehungsentwicklung.",
+    ownershipTitle: "Eigentum und Betrieb", ownership: "Die One2One Love Plattform befindet sich im Eigentum von ERANT Property Services LLC (EPS LLC), ihrer Muttergesellschaft, und wird von ihr betrieben.",
     missionTitle: "Unsere Mission", mission: "Unsere Mission ist es, praktische Beziehungstools, reflektierte Gespräche, Community und unterstützende Ressourcen an einem Ort zusammenzubringen, damit Menschen bewusster kommunizieren, Verbindung stärken, wichtige Momente feiern und gesündere Beziehungsentscheidungen treffen können.",
     notDatingTitle: "Was One2OneLove Ist — und Was Nicht", notDating: "One2OneLove ist kein Dating- oder Matchmaking-Dienst. Wir vermitteln keine Dates. Die Plattform beginnt dort, wo viele Dating-Dienste aufhören: bei Kommunikation, Verständnis, Verbindung, Wachstum und Pflege einer Beziehung.",
     valuesTitle: "Was die Plattform Leitet",
@@ -129,6 +135,10 @@ export default function AboutUs() {
           <p className="text-xl font-bold text-purple-600 mb-6">{t.subtitle}</p>
           <h2 className="text-3xl md:text-4xl font-black text-gray-800 mb-6">{t.hero}</h2>
           <p className="text-xl text-gray-600 leading-relaxed">{t.intro}</p>
+          <div className="mt-6 rounded-2xl border border-purple-200 bg-white/80 p-5 shadow-sm">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t.ownershipTitle}</h3>
+            <p className="text-gray-700 leading-relaxed">{t.ownership}</p>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto mt-10">
