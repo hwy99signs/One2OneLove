@@ -32,9 +32,12 @@ jobs:
             question: `Base ${q + 1}`,
             options: ids.map(id => `${id}-${q + 1}`)
           }));
+
           for (const lang of langs) {
             const bank = buildLoveLanguageQuestionBank(base, lang);
             if (bank.length !== 100) throw new Error(`${lang}: expected 100 bank questions, got ${bank.length}`);
+            if (new Set(bank.map(q => q.id)).size !== 100) throw new Error(`${lang}: duplicate bank question ids`);
+
             const session = buildLoveLanguageQuizSession(base, lang, 15);
             if (session.length !== 15) throw new Error(`${lang}: expected 15 session questions, got ${session.length}`);
             if (new Set(session.map(q => q.id)).size !== 15) throw new Error(`${lang}: duplicate question in session`);
@@ -47,12 +50,20 @@ jobs:
           }
 
           const positions = new Set();
-          for (let run = 0; run < 80; run += 1) {
-            const session = buildLoveLanguageQuizSession(base, 'en', 15);
-            const question = session.find(q => q.id === 'base-8');
-            if (question) positions.add(question.options.findIndex(o => o.value === 'quality'));
+          for (let run = 0; run < 30; run += 1) {
+            const fullSession = buildLoveLanguageQuizSession(base, 'en', 100);
+            const question = fullSession.find(q => q.id === 'base-8');
+            if (!question) throw new Error('Expected base-8 in full-bank shuffle audit');
+            positions.add(question.options.findIndex(o => o.value === 'quality'));
           }
-          if (positions.size < 2) throw new Error('Quality Time answer did not move across positions during shuffle audit');
+          if (positions.size < 3) throw new Error(`Quality Time answer only appeared in ${positions.size} position(s) during shuffle audit`);
+
+          const firstSessions = new Set();
+          for (let run = 0; run < 12; run += 1) {
+            firstSessions.add(buildLoveLanguageQuizSession(base, 'en', 15).map(q => q.id).join('|'));
+          }
+          if (firstSessions.size < 2) throw new Error('Random question selection did not vary across session audit');
+
           console.log('100-question banks, 15-question random sessions, and answer-position shuffling verified.');
           NODE
 
