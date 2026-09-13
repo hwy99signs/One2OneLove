@@ -89,6 +89,8 @@ import Blog from "./Blog";
 
 import Reviews from "./Reviews";
 
+import LeaveReview from "./LeaveReview";
+
 import Suggestions from "./Suggestions";
 
 import Leaderboard from "./Leaderboard";
@@ -198,6 +200,8 @@ const PAGES = {
     Blog: Blog,
     
     Reviews: Reviews,
+    
+    LeaveReview: LeaveReview,
     
     Suggestions: Suggestions,
     
@@ -348,6 +352,8 @@ function PagesContent() {
                 <Route path="/Blog" element={<Blog />} />
                 
                 <Route path="/Reviews" element={<Reviews />} />
+                
+                <Route path="/LeaveReview" element={<LeaveReview />} />
                 
                 <Route path="/Suggestions" element={<Suggestions />} />
                 
