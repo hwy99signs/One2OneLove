@@ -23,6 +23,8 @@ const translations = {
     back: "Back",
     searchPlaceholder: "Search love notes by title, content, or tags...",
     randomNote: "Random Note",
+    chooseNoteCategory: "Choose a Note Category",
+    chooseNoteCategoryDesc: "Select a category first. A random note will then be generated from that category.",
     send: "Send",
     showing: "Showing",
     loveNotes: "love notes",
@@ -115,6 +117,8 @@ const translations = {
     back: "Volver",
     searchPlaceholder: "Buscar notas de amor por título, contenido o etiquetas...",
     randomNote: "Nota Aleatoria",
+    chooseNoteCategory: "Elige una Categoría de Nota",
+    chooseNoteCategoryDesc: "Primero selecciona una categoría. Luego se generará una nota aleatoria de esa categoría.",
     send: "Enviar",
     showing: "Mostrando",
     loveNotes: "notas de amor",
@@ -207,6 +211,8 @@ const translations = {
     back: "Retour",
     searchPlaceholder: "Rechercher des notes d'amour par titre, contenu ou tags...",
     randomNote: "Note Aléatoire",
+    chooseNoteCategory: "Choisissez une Catégorie de Note",
+    chooseNoteCategoryDesc: "Sélectionnez d'abord une catégorie. Une note aléatoire sera ensuite générée à partir de cette catégorie.",
     send: "Envoyer",
     showing: "Affichage de",
     loveNotes: "notes d'amour",
@@ -299,6 +305,8 @@ const translations = {
     back: "Indietro",
     searchPlaceholder: "Cerca note d'amore per titolo, contenuto o tag...",
     randomNote: "Nota Casuale",
+    chooseNoteCategory: "Scegli una Categoria di Nota",
+    chooseNoteCategoryDesc: "Seleziona prima una categoria. Verrà quindi generata una nota casuale da quella categoria.",
     send: "Invia",
     showing: "Mostrando",
     loveNotes: "note d'amore",
@@ -391,6 +399,8 @@ const translations = {
     back: "Zurück",
     searchPlaceholder: "Liebesbotschaften nach Titel, Inhalt oder Tags suchen...",
     randomNote: "Zufällige Botschaft",
+    chooseNoteCategory: "Wähle eine Nachrichtenkategorie",
+    chooseNoteCategoryDesc: "Wähle zuerst eine Kategorie. Danach wird eine zufällige Nachricht aus dieser Kategorie erstellt.",
     send: "Senden",
     showing: "Zeige",
     loveNotes: "liebesbotschaften",
@@ -545,6 +555,7 @@ export default function LoveNotes() {
   const [scheduleTime, setScheduleTime] = useState('');
   const [showScheduledNotes, setShowScheduledNotes] = useState(false);
   const [showAIPersonalization, setShowAIPersonalization] = useState(false);
+  const [showRandomCategoryPicker, setShowRandomCategoryPicker] = useState(false);
 
 
   const [showPersonalization, setShowPersonalization] = useState(false);
@@ -689,8 +700,23 @@ export default function LoveNotes() {
   }, [selectedCategory, searchQuery, partnerName, petName, specialPlace, allNotes]);
 
   const handleRandomNote = () => {
-    const randomNoteIndex = Math.floor(Math.random() * allNotes.length);
-    const randomNote = allNotes[randomNoteIndex];
+    setShowRandomCategoryPicker(true);
+  };
+
+  const handleRandomCategorySelect = (categoryId) => {
+    const categoryNotes = allNotes.filter(note => note.category === categoryId);
+
+    if (categoryNotes.length === 0) {
+      toast.error(t.noNotesFound);
+      return;
+    }
+
+    const randomNoteIndex = Math.floor(Math.random() * categoryNotes.length);
+    const randomNote = categoryNotes[randomNoteIndex];
+
+    setSelectedCategory(categoryId);
+    setSearchQuery('');
+    setShowRandomCategoryPicker(false);
     setSelectedNote(randomNote);
   };
 
@@ -975,6 +1001,53 @@ export default function LoveNotes() {
             {t.viewScheduled}
           </Button>
         </div>
+
+        <AnimatePresence>
+          {showRandomCategoryPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="max-w-4xl mx-auto mb-8"
+            >
+              <Card className="border-2 border-pink-200 bg-white/95 shadow-xl">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+                    {t.chooseNoteCategory}
+                  </CardTitle>
+                  <p className="text-gray-600 mt-2">
+                    {t.chooseNoteCategoryDesc}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {categories.filter(category => category.id !== 'all').map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleRandomCategorySelect(category.id)}
+                        className="px-4 py-2 rounded-full font-medium bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-700 border border-pink-200 shadow-sm transition-all"
+                      >
+                        <span className="mr-2">{category.icon}</span>
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-6 flex justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowRandomCategoryPicker(false)}
+                      className="border-pink-300 hover:bg-pink-50"
+                    >
+                      {t.cancel}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {showScheduledNotes && (
