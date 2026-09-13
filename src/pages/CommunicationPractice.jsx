@@ -227,11 +227,11 @@ const translations = {
 const ROUND_SIZE = 20;
 
 const sessionLabels = {
-  en: { nextQuestion: "Next Question", endSession: "End Session", reportCard: "Session Report", questionsAnswered: "Questions Answered" },
-  es: { nextQuestion: "Siguiente Pregunta", endSession: "Finalizar Sesión", reportCard: "Informe de la Sesión", questionsAnswered: "Preguntas Respondidas" },
-  fr: { nextQuestion: "Question Suivante", endSession: "Terminer la Session", reportCard: "Bilan de la Session", questionsAnswered: "Questions Répondues" },
-  it: { nextQuestion: "Domanda Successiva", endSession: "Termina Sessione", reportCard: "Rapporto della Sessione", questionsAnswered: "Domande Risposte" },
-  de: { nextQuestion: "Nächste Frage", endSession: "Sitzung Beenden", reportCard: "Sitzungsbericht", questionsAnswered: "Beantwortete Fragen" }
+  en: { nextQuestion: "Next Question", endSession: "End Session", reportCard: "Session Report", questionsAnswered: "Questions Answered", exit: "Exit" },
+  es: { nextQuestion: "Siguiente Pregunta", endSession: "Finalizar Sesión", reportCard: "Informe de la Sesión", questionsAnswered: "Preguntas Respondidas", exit: "Salir" },
+  fr: { nextQuestion: "Question Suivante", endSession: "Terminer la Session", reportCard: "Bilan de la Session", questionsAnswered: "Questions Répondues", exit: "Quitter" },
+  it: { nextQuestion: "Domanda Successiva", endSession: "Termina Sessione", reportCard: "Rapporto della Sessione", questionsAnswered: "Domande Risposte", exit: "Esci" },
+  de: { nextQuestion: "Nächste Frage", endSession: "Sitzung Beenden", reportCard: "Sitzungsbericht", questionsAnswered: "Beantwortete Fragen", exit: "Beenden" }
 };
 
 const shuffleArray = (items) => {
@@ -399,10 +399,17 @@ export default function CommunicationPractice() {
           <div className="text-3xl font-bold text-purple-600">{percentageScore}%</div>
         </div>
       </div>
-      <Button onClick={handleNewRound} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 px-8">
-        <RotateCcw className="w-4 h-4 mr-2" />
-        {t.newRound}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+        <Button onClick={handleNewRound} className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 px-8">
+          <RotateCcw className="w-4 h-4 mr-2" />
+          {t.newRound}
+        </Button>
+        <Button asChild variant="outline" className="flex-1 px-8">
+          <Link to={createPageUrl("CoupleSupport")}>
+            {sessionText.exit}
+          </Link>
+        </Button>
+      </div>
     </motion.div>
   );
 
