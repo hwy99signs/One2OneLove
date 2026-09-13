@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Layout from "./Layout.jsx";
 
 import Home from "./Home";
@@ -235,6 +236,19 @@ function _getCurrentPage(url) {
 function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
+
+    useEffect(() => {
+        const scrollToTop = () => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+        };
+
+        scrollToTop();
+        const frame = window.requestAnimationFrame(scrollToTop);
+
+        return () => window.cancelAnimationFrame(frame);
+    }, [location.pathname, location.search, location.key]);
     
     return (
         <Layout currentPageName={currentPage}>
