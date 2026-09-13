@@ -510,7 +510,8 @@ const translations = {
   }
 };
 
-const getCategoriesForLanguage = (t) => [
+const getCategoriesForLanguage = (t, lang = 'en') => {
+  const categories = [
   { id: 'all', name: t.categories.all, icon: '💝' },
   { id: 'romantic', name: t.categories.romantic, icon: '🌹' },
   { id: 'sweet', name: t.categories.sweet, icon: '💕' },
@@ -538,6 +539,12 @@ const getCategoriesForLanguage = (t) => [
   { id: 'service', name: t.categories.service, icon: '🤝' },
   { id: 'workplace', name: t.categories.workplace, icon: '💼' },
 ];
+  const [allCategory, ...noteCategories] = categories;
+  return [
+    allCategory,
+    ...noteCategories.sort((a, b) => a.name.localeCompare(b.name, lang, { sensitivity: 'base' }))
+  ];
+};
 
 const generateNotes = (lang) => {
   const notes = [];
@@ -568,7 +575,7 @@ const generateNotes = (lang) => {
 export default function LoveNotes() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const categories = getCategoriesForLanguage(t);
+  const categories = getCategoriesForLanguage(t, currentLanguage);
   const queryClient = useQueryClient();
   
   const allNotes = useMemo(() => generateNotes(currentLanguage), [currentLanguage]);
