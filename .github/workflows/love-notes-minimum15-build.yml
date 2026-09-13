@@ -19,7 +19,9 @@ jobs:
           ref: love-notes-minimum-15
           fetch-depth: 0
       - name: Expand Love Notes data only
-        run: node scripts/expand_love_notes_minimum15.js
+        run: |
+          cp scripts/expand_love_notes_minimum15.js /tmp/expand_love_notes_minimum15.cjs
+          node /tmp/expand_love_notes_minimum15.cjs
       - name: Install dependencies
         run: npm ci
       - name: Production build
