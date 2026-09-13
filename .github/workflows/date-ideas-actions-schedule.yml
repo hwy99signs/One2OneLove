@@ -19,6 +19,17 @@ jobs:
           ref: date-ideas-actions-schedule
           fetch-depth: 0
 
+      - name: Fix patch replacement escaping
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/patch_date_ideas_actions_schedule.py')
+          s = p.read_text()
+          s = s.replace('handlers_pattern.subn(handlers_replacement, s, count=1)', 'handlers_pattern.subn(lambda _: handlers_replacement, s, count=1)')
+          s = s.replace('footer_pattern.subn(footer_replacement, s, count=1)', 'footer_pattern.subn(lambda _: footer_replacement, s, count=1)')
+          p.write_text(s)
+          PY
+
       - name: Apply Date Ideas actions and schedule patch
         run: python scripts/patch_date_ideas_actions_schedule.py
 
