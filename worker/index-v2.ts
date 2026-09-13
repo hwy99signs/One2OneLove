@@ -7,6 +7,7 @@ import { handleProfileMediaRequest } from './profile-media';
 import { handleGoalsRequest } from './goals';
 import { handleCalendarRequest } from './calendar';
 import { handleDateIdeasRequest } from './date-ideas';
+import { handleMemoriesRequest } from './memories';
 import { handleJournalsRequest } from './journals';
 import { handleBuddiesRequest } from './buddies';
 import { handleMilestonesRequest } from './milestones';
@@ -78,6 +79,11 @@ export default {
 
     if (url.pathname.startsWith('/api/date-ideas')) {
       const response = await handleDateIdeasRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/memories')) {
+      const response = await handleMemoriesRequest(request, env, url);
       if (response) return response;
     }
 
