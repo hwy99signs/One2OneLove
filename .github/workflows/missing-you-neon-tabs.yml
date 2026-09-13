@@ -1,0 +1,54 @@
+name: Missing You Neon Tabs
+
+on:
+  push:
+    branches:
+      - love-notes-missing-you-neon-tabs
+    paths:
+      - .github/missing-you-neon-tabs-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  update-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: love-notes-missing-you-neon-tabs
+          fetch-depth: 0
+      - name: Apply Missing You neon tabs
+        run: node scripts/add_missing_you_neon_tabs.cjs
+      - name: Verify wiring
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const src = fs.readFileSync('src/pages/LoveNotes.jsx','utf8');
+          const required = [
+            "selectedCategory === 'missingYou'",
+            'missingYouSubcategories.map',
+            'selectedMissingYouSubcategory',
+            "note.tags.includes(selectedMissingYouSubcategory)",
+            'aria-label="Missing You note subcategories"'
+          ];
+          for (const marker of required) {
+            if (!src.includes(marker)) throw new Error(`Missing marker: ${marker}`);
+          }
+          const visibleTabs = ['romantic','family','friends'];
+          for (const id of visibleTabs) {
+            if (!src.includes(`id: '${id}'`)) throw new Error(`Missing ${id} neon source`);
+          }
+          console.log('Missing You three-tab wiring verified.');
+          NODE
+      - name: Install dependencies
+        run: npm ci
+      - name: Production build
+        run: npm run build
+      - name: Commit Love Notes page change
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/LoveNotes.jsx
+          git commit -m "Show Missing You neon relationship tabs"
+          git push origin HEAD:love-notes-missing-you-neon-tabs
