@@ -23,7 +23,7 @@ const COPY = {
     toolLabels: {
       loveNotes: "Love Notes", loveLanguage: "Love Language", dateIdeas: "Date Ideas", memoryLane: "Memory Lane",
       relationshipSupport: "Relationship Support", relationshipGoals: "Relationship Goals", lgbtqSupport: "LGBTQ Support", relationshipGames: "Relationship Games",
-      milestones: "Milestones", communicationPractice: "Communication Practice", chatRoom: "Chat Room", findTherapist: "Find a Therapist"
+      milestones: "Milestones", communicationPractice: "Communication Practice", chatRoom: "Chat Room", findTherapist: "Find a Professional"
     },
     loveNotes: "Love Notes", loveNotesBody: "Create and share personalized love notes that help you express appreciation, affection, encouragement, and meaningful thoughts.",
     loveGrow: "Love. Grow. Evolve. Together.", footerBody: "One2OneLove is designed to support healthier connection, thoughtful communication, self-reflection, shared memories, and real conversations about relationships—while welcoming people from every background.",
@@ -43,7 +43,7 @@ const COPY = {
     toolLabels: {
       loveNotes: "Notas de Amor", loveLanguage: "Lenguaje del Amor", dateIdeas: "Ideas para Citas", memoryLane: "Recuerdos",
       relationshipSupport: "Apoyo para Relaciones", relationshipGoals: "Metas de Relación", lgbtqSupport: "Apoyo LGBTQ", relationshipGames: "Juegos de Relación",
-      milestones: "Hitos", communicationPractice: "Práctica de Comunicación", chatRoom: "Sala de Chat", findTherapist: "Encontrar un Terapeuta"
+      milestones: "Hitos", communicationPractice: "Práctica de Comunicación", chatRoom: "Sala de Chat", findTherapist: "Encontrar un Profesional"
     },
     loveNotes: "Notas de Amor", loveNotesBody: "Crea y comparte notas personalizadas para expresar aprecio, afecto, ánimo y pensamientos significativos.",
     loveGrow: "Ama. Crece. Evoluciona. Juntos.", footerBody: "One2OneLove apoya conexiones más saludables, comunicación reflexiva, autorreflexión, recuerdos compartidos y conversaciones reales.",
@@ -56,7 +56,7 @@ const COPY = {
     toolLabels: {
       loveNotes: "Notes d’Amour", loveLanguage: "Langage de l’Amour", dateIdeas: "Idées de Rendez-vous", memoryLane: "Souvenirs",
       relationshipSupport: "Soutien Relationnel", relationshipGoals: "Objectifs Relationnels", lgbtqSupport: "Soutien LGBTQ", relationshipGames: "Jeux Relationnels",
-      milestones: "Étapes Importantes", communicationPractice: "Pratique de la Communication", chatRoom: "Salon de Discussion", findTherapist: "Trouver un Thérapeute"
+      milestones: "Étapes Importantes", communicationPractice: "Pratique de la Communication", chatRoom: "Salon de Discussion", findTherapist: "Trouver un Professionnel"
     },
     loveNotes: "Notes d’Amour", loveNotesBody: "Créez et partagez des notes personnalisées pour exprimer appréciation, affection, encouragement et pensées significatives.", loveGrow: "Aimez. Grandissez. Évoluez. Ensemble.", footerBody: "One2OneLove favorise une connexion plus saine, une communication réfléchie, l’introspection, les souvenirs partagés et de vraies conversations.", supportCol: "Aide", company: "Entreprise", help: "Centre d’aide", contact: "Contact", privacy: "Confidentialité", terms: "Conditions d’utilisation", about: "À propos", suggestions: "Suggestions", copyright: "© 2026 One2OneLove. Fait avec ❤️ pour des relations plus saines."
   },
@@ -65,7 +65,7 @@ const COPY = {
     toolLabels: {
       loveNotes: "Note d’Amore", loveLanguage: "Linguaggio dell’Amore", dateIdeas: "Idee per Appuntamenti", memoryLane: "Ricordi",
       relationshipSupport: "Supporto Relazionale", relationshipGoals: "Obiettivi di Coppia", lgbtqSupport: "Supporto LGBTQ", relationshipGames: "Giochi di Coppia",
-      milestones: "Traguardi", communicationPractice: "Pratica di Comunicazione", chatRoom: "Chat", findTherapist: "Trova un Terapeuta"
+      milestones: "Traguardi", communicationPractice: "Pratica di Comunicazione", chatRoom: "Chat", findTherapist: "Trova un Professionista"
     },
     loveNotes: "Note d’Amore", loveNotesBody: "Crea e condividi note personalizzate per esprimere apprezzamento, affetto, incoraggiamento e pensieri significativi.", loveGrow: "Ama. Cresci. Evolvi. Insieme.", footerBody: "One2OneLove sostiene connessioni più sane, comunicazione consapevole, autoriflessione, ricordi condivisi e conversazioni reali.", supportCol: "Supporto", company: "Azienda", help: "Centro assistenza", contact: "Contatti", privacy: "Privacy", terms: "Termini di servizio", about: "Chi siamo", suggestions: "Suggerimenti", copyright: "© 2026 One2OneLove. Creato con ❤️ per relazioni più sane."
   },
@@ -74,7 +74,7 @@ const COPY = {
     toolLabels: {
       loveNotes: "Liebesbotschaften", loveLanguage: "Liebessprache", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungen",
       relationshipSupport: "Beziehungsunterstützung", relationshipGoals: "Beziehungsziele", lgbtqSupport: "LGBTQ-Unterstützung", relationshipGames: "Beziehungsspiele",
-      milestones: "Meilensteine", communicationPractice: "Kommunikationstraining", chatRoom: "Chatraum", findTherapist: "Therapeut finden"
+      milestones: "Meilensteine", communicationPractice: "Kommunikationstraining", chatRoom: "Chatraum", findTherapist: "Fachkraft finden"
     },
     loveNotes: "Liebesbotschaften", loveNotesBody: "Erstellen und teilen Sie persönliche Liebesbotschaften für Wertschätzung, Zuneigung, Ermutigung und bedeutungsvolle Gedanken.", loveGrow: "Lieben. Wachsen. Entwickeln. Gemeinsam.", footerBody: "One2OneLove unterstützt gesündere Verbindung, achtsame Kommunikation, Selbstreflexion, gemeinsame Erinnerungen und echte Gespräche.", supportCol: "Support", company: "Unternehmen", help: "Hilfe-Center", contact: "Kontakt", privacy: "Datenschutz", terms: "Nutzungsbedingungen", about: "Über uns", suggestions: "Vorschläge", copyright: "© 2026 One2OneLove. Mit ❤️ für gesündere Beziehungen."
   }
