@@ -568,6 +568,21 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   ];
 };
 
+const allHolidayLabels = {
+  en: 'All Holiday',
+  es: 'Todas las Festividades',
+  fr: 'Toutes les Fêtes',
+  it: 'Tutte le Festività',
+  de: 'Alle Feiertage',
+};
+
+const holidaySubcategoryAssignments = [
+  'romantic', 'romantic', 'romantic', 'family', 'family',
+  'romantic', 'romantic', 'family', 'friends', 'romantic',
+  'romantic', 'romantic', 'friends', 'family', 'friends',
+  'romantic', 'family', 'friends', 'family', 'romantic',
+];
+
 const generateNotes = (lang) => {
   const notes = [];
   let id = 1;
@@ -585,8 +600,16 @@ const generateNotes = (lang) => {
 
   categoryOrder.forEach(category => {
     if (data[category] && data[category].length > 0) {
-      data[category].forEach(note => {
-        notes.push({ id: id++, ...note, category: category });
+      data[category].forEach((note, noteIndex) => {
+        const holidaySubcategory = category === 'holiday'
+          ? holidaySubcategoryAssignments[noteIndex]
+          : undefined;
+        notes.push({
+          id: id++,
+          ...note,
+          category: category,
+          ...(holidaySubcategory ? { holidaySubcategory } : {})
+        });
       });
     }
   });
@@ -598,11 +621,18 @@ export default function LoveNotes() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const categories = getCategoriesForLanguage(t, currentLanguage);
+  const holidaySubcategories = [
+    { id: 'all', name: allHolidayLabels[currentLanguage] || allHolidayLabels.en, icon: '🎉' },
+    { id: 'romantic', name: t.categories.romantic, icon: '🌹' },
+    { id: 'family', name: t.categories.family, icon: '👨‍👩‍👧‍👦' },
+    { id: 'friends', name: t.categories.friends, icon: '👫' },
+  ];
   const queryClient = useQueryClient();
   
   const allNotes = useMemo(() => generateNotes(currentLanguage), [currentLanguage]);
 
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedHolidaySubcategory, setSelectedHolidaySubcategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState(null);
   const [sendModalNote, setSendModalNote] = useState(null);
@@ -740,6 +770,10 @@ export default function LoveNotes() {
       filtered = filtered.filter(note => note.category === selectedCategory);
     }
 
+    if (selectedCategory === 'holiday' && selectedHolidaySubcategory !== 'all') {
+      filtered = filtered.filter(note => note.holidaySubcategory === selectedHolidaySubcategory);
+    }
+
     const personalizedNotes = filtered.map(note => personalizeNote(note));
 
     if (searchQuery.trim()) {
@@ -754,7 +788,7 @@ export default function LoveNotes() {
     }
 
     return filtered;
-  }, [selectedCategory, searchQuery, partnerName, petName, specialPlace, allNotes]);
+  }, [selectedCategory, selectedHolidaySubcategory, searchQuery, partnerName, petName, specialPlace, allNotes]);
 
   const handleRandomNote = () => {
     setShowRandomCategoryPicker(true);
@@ -772,6 +806,7 @@ export default function LoveNotes() {
     const randomNote = categoryNotes[randomNoteIndex];
 
     setSelectedCategory(categoryId);
+    setSelectedHolidaySubcategory('all');
     setSearchQuery('');
     setShowRandomCategoryPicker(false);
     setSelectedNote(randomNote);
@@ -1126,6 +1161,7 @@ export default function LoveNotes() {
                 key={category.id}
                 onClick={() => {
                   setSelectedCategory(category.id);
+                  setSelectedHolidaySubcategory('all');
                   setSearchQuery('');
                 }}
                 className={`px-4 py-2 rounded-full font-medium transition-all ${
@@ -1139,6 +1175,29 @@ export default function LoveNotes() {
               </button>
             ))}
           </div>
+
+          {selectedCategory === 'holiday' && (
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              {holidaySubcategories.map((subcategory) => (
+                <button
+                  key={subcategory.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedHolidaySubcategory(subcategory.id);
+                    setSearchQuery('');
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                    selectedHolidaySubcategory === subcategory.id
+                      ? 'bg-pink-100 text-pink-700 border-pink-300 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-pink-50 hover:text-pink-700'
+                  }`}
+                >
+                  <span className="mr-2">{subcategory.icon}</span>
+                  {subcategory.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="text-center mb-8">
