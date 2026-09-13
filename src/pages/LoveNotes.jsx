@@ -14,6 +14,7 @@ import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager
 import AIPersonalizationModal from "../components/lovenotes/AIPersonalizationModal";
 import { loveNotesData } from "../components/lovenotes/LoveNotesData";
 import { additionalLoveNotesData } from "../components/lovenotes/additional";
+import { subjectSupplementalNotes } from "../components/lovenotes/additional/LoveNotesSubjectSupplemental";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -574,7 +575,7 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   ];
 };
 
-const allHolidayLabels = {
+const allSubjectLabels = {
   en: 'All',
   es: 'Todas',
   fr: 'Toutes',
@@ -582,9 +583,49 @@ const allHolidayLabels = {
   de: 'Alle',
 };
 
-const holidaySubcategoryAssignments = [
-  'romantic', 'romantic', 'romantic', 'family', 'family', 'romantic', 'romantic', 'family', 'friends', 'romantic', 'romantic', 'romantic', 'friends', 'family', 'friends', 'romantic', 'family', 'friends', 'family', 'romantic', 'romantic', 'romantic', 'romantic', 'romantic', 'romantic', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends', 'friends'
+const casualSubjectLabels = {
+  en: 'Casual',
+  es: 'Casual',
+  fr: 'Amical',
+  it: 'Informale',
+  de: 'Locker',
+};
+
+const standardSubjectAssignments = [
+  'romantic', 'romantic', 'romantic', 'romantic', 'romantic',
+  'family', 'family', 'family', 'family', 'family',
+  'casual', 'casual', 'casual', 'casual', 'casual',
 ];
+
+const dominantSubjectByCategory = {
+  romantic: 'romantic',
+  lgbtqRomantic: 'romantic',
+  family: 'family',
+  friends: 'casual',
+  dateIdeas: 'romantic',
+};
+
+const holidaySubjectAssignments = [
+  'romantic', 'romantic', 'romantic', 'family', 'family', 'romantic', 'romantic', 'family', 'casual', 'romantic',
+  'romantic', 'romantic', 'casual', 'family', 'casual', 'romantic', 'family', 'casual', 'family', 'romantic',
+  'romantic', 'romantic', 'romantic', 'romantic', 'romantic',
+  'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family',
+  'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual',
+];
+
+const missingYouSubjectAssignments = [
+  'romantic', 'romantic', 'romantic', 'romantic', 'romantic',
+  'family', 'family', 'family', 'family', 'family',
+  'casual', 'casual', 'casual', 'casual', 'casual',
+];
+
+const getSubjectForNote = (category, noteIndex, note) => {
+  if (note?.subject && ['romantic', 'family', 'casual'].includes(note.subject)) return note.subject;
+  if (category === 'holiday') return holidaySubjectAssignments[noteIndex] || standardSubjectAssignments[noteIndex % standardSubjectAssignments.length];
+  if (category === 'missingYou') return missingYouSubjectAssignments[noteIndex] || standardSubjectAssignments[noteIndex % standardSubjectAssignments.length];
+  if (dominantSubjectByCategory[category]) return dominantSubjectByCategory[category];
+  return standardSubjectAssignments[noteIndex % standardSubjectAssignments.length];
+};
 
 const generateNotes = (lang) => {
   const notes = [];
@@ -604,17 +645,28 @@ const generateNotes = (lang) => {
   categoryOrder.forEach(category => {
     if (data[category] && data[category].length > 0) {
       data[category].forEach((note, noteIndex) => {
-        const holidaySubcategory = category === 'holiday'
-          ? holidaySubcategoryAssignments[noteIndex]
-          : undefined;
         notes.push({
           id: id++,
           ...note,
           category: category,
-          ...(holidaySubcategory ? { holidaySubcategory } : {})
+          subject: getSubjectForNote(category, noteIndex, note),
         });
       });
     }
+  });
+
+  const subjectSupplements = subjectSupplementalNotes[lang] || subjectSupplementalNotes.en;
+  Object.entries(subjectSupplements).forEach(([category, bySubject]) => {
+    Object.entries(bySubject).forEach(([subject, extraNotes]) => {
+      extraNotes.forEach(note => {
+        notes.push({
+          id: id++,
+          ...note,
+          category,
+          subject,
+        });
+      });
+    });
   });
 
   return notes;
@@ -660,10 +712,10 @@ export default function LoveNotes() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const categories = getCategoriesForLanguage(t, currentLanguage);
-  const holidaySubcategories = [
+  const subjectTabs = [
     {
       id: 'all',
-      name: allHolidayLabels[currentLanguage] || allHolidayLabels.en,
+      name: allSubjectLabels[currentLanguage] || allSubjectLabels.en,
       neonClass: 'border-cyan-300 bg-cyan-50 text-cyan-700 shadow-[0_0_8px_rgba(34,211,238,0.95),0_0_18px_rgba(34,211,238,0.65)]',
       activeClass: 'border-cyan-200 bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,1),0_0_26px_rgba(34,211,238,0.9)]',
     },
@@ -680,8 +732,8 @@ export default function LoveNotes() {
       activeClass: 'border-lime-200 bg-lime-400 text-slate-950 shadow-[0_0_12px_rgba(163,230,53,1),0_0_26px_rgba(132,204,22,0.9)]',
     },
     {
-      id: 'friends',
-      name: t.categories.friends,
+      id: 'casual',
+      name: casualSubjectLabels[currentLanguage] || casualSubjectLabels.en,
       neonClass: 'border-violet-300 bg-violet-50 text-violet-700 shadow-[0_0_8px_rgba(196,181,253,0.95),0_0_18px_rgba(139,92,246,0.65)]',
       activeClass: 'border-violet-200 bg-violet-400 text-white shadow-[0_0_12px_rgba(196,181,253,1),0_0_26px_rgba(139,92,246,0.9)]',
     },
@@ -691,7 +743,7 @@ export default function LoveNotes() {
   const allNotes = useMemo(() => generateNotes(currentLanguage), [currentLanguage]);
 
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedHolidaySubcategory, setSelectedHolidaySubcategory] = useState('all');
+  const [selectedSubject, setSelectedSubject] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState(null);
   const [sendModalNote, setSendModalNote] = useState(null);
@@ -829,8 +881,8 @@ export default function LoveNotes() {
       filtered = filtered.filter(note => note.category === selectedCategory);
     }
 
-    if (selectedCategory === 'holiday' && selectedHolidaySubcategory !== 'all') {
-      filtered = filtered.filter(note => note.holidaySubcategory === selectedHolidaySubcategory);
+    if (selectedSubject !== 'all') {
+      filtered = filtered.filter(note => note.subject === selectedSubject);
     }
 
     const personalizedNotes = filtered.map(note => personalizeNote(note));
@@ -842,7 +894,7 @@ export default function LoveNotes() {
     }
 
     return filtered;
-  }, [selectedCategory, selectedHolidaySubcategory, searchQuery, partnerName, petName, specialPlace, allNotes]);
+  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes]);
 
   const handleRandomNote = () => {
     setShowRandomCategoryPicker(true);
@@ -860,7 +912,7 @@ export default function LoveNotes() {
     const randomNote = categoryNotes[randomNoteIndex];
 
     setSelectedCategory(categoryId);
-    setSelectedHolidaySubcategory('all');
+    setSelectedSubject('all');
     setSearchQuery('');
     setShowRandomCategoryPicker(false);
     setSelectedNote(randomNote);
@@ -1215,7 +1267,7 @@ export default function LoveNotes() {
                 key={category.id}
                 onClick={() => {
                   setSelectedCategory(category.id);
-                  setSelectedHolidaySubcategory('all');
+                  setSelectedSubject('all');
                   setSearchQuery('');
                 }}
                 className={`px-4 py-2 rounded-full font-medium transition-all ${
@@ -1232,25 +1284,25 @@ export default function LoveNotes() {
 
         </div>
 
-        {selectedCategory === 'holiday' && (
+        {(
           <div className="mb-5 flex justify-center">
             <div
               className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-pink-100 bg-white/80 p-1.5 shadow-sm"
               role="tablist"
-              aria-label="Holiday note subcategories"
+              aria-label="Love note subjects"
             >
-              {holidaySubcategories.map((subcategory) => (
+              {subjectTabs.map((subcategory) => (
                 <button
                   key={subcategory.id}
                   type="button"
                   role="tab"
-                  aria-selected={selectedHolidaySubcategory === subcategory.id}
+                  aria-selected={selectedSubject === subcategory.id}
                   onClick={() => {
-                    setSelectedHolidaySubcategory(subcategory.id);
+                    setSelectedSubject(subcategory.id);
                     setSearchQuery('');
                   }}
                   className={`px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-extrabold tracking-wide transition-all animate-pulse motion-reduce:animate-none hover:scale-105 ${
-                    selectedHolidaySubcategory === subcategory.id
+                    selectedSubject === subcategory.id
                       ? subcategory.activeClass
                       : subcategory.neonClass
                   }`}
