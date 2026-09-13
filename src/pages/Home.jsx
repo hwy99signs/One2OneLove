@@ -118,7 +118,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto mt-7">
             <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Love Language Quiz</button>
             <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Send A Love Note</button>
-            <button onClick={() => go("CommunicationPractice")} className="rounded-2xl bg-purple-600 hover:bg-purple-700 px-8 py-5 font-extrabold text-xl shadow-xl">🗣 Communication Practice</button>
+            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-8 py-5 font-extrabold text-xl shadow-xl">🎙 Podcast</button>
             <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-8 py-5 font-extrabold text-xl shadow-xl">▣ Date Ideas</button>
           </div>
 
