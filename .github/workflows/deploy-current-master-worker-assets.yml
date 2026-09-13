@@ -30,17 +30,22 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is missing" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is missing" && exit 1)
 
-      - name: Import existing production Worker runtime without changing frontend source
+      - name: Import freshly fetched Worker runtime without changing frontend source
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin migration/cloudflare-launch-20260911
+          RUNTIME_SHA="$(git rev-parse FETCH_HEAD)"
+          echo "Fresh Worker runtime commit: $RUNTIME_SHA"
           rm -rf worker
-          git archive origin/migration/cloudflare-launch-20260911 worker | tar -x
+          git archive "$RUNTIME_SHA" worker | tar -x
           mkdir -p cloudflare
-          git show origin/migration/cloudflare-launch-20260911:cloudflare/wrangler.production.jsonc > cloudflare/wrangler.production-existing.jsonc
+          git show "$RUNTIME_SHA":cloudflare/wrangler.production.jsonc > cloudflare/wrangler.production-existing.jsonc
           test -s worker/index-v2.ts
           test -s worker/package.json
+          test -s worker/memories.ts
+          grep -F "handleMemoriesRequest" worker/index-v2.ts >/dev/null
+          grep -F "/api/memories" worker/index-v2.ts >/dev/null
 
       - name: Create workers.dev-only deploy config preserving runtime bindings
         shell: bash
@@ -66,10 +71,10 @@ jobs:
       - name: Install existing Worker runtime dependencies
         run: npm --prefix worker install --no-audit --no-fund
 
-      - name: Deploy current frontend assets with existing Worker runtime
+      - name: Deploy current frontend assets with freshly fetched Worker runtime
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.worker-assets-refresh.jsonc
 
-      - name: Verify Workers URL received the Missing You build
+      - name: Verify Workers URL received current frontend build
         shell: bash
         run: |
           set -euo pipefail
@@ -88,11 +93,11 @@ jobs:
           done
           test "$MATCHED" = yes
           curl --fail --silent --show-error "$WORKER_URL$REMOTE_JS" -o /tmp/remote-app.js
-          grep -F "I Miss Your Presence" /tmp/remote-app.js >/dev/null
-          grep -F "Missing You" /tmp/remote-app.js >/dev/null
-          echo "DEPLOYED_MISSING_YOU_BUILD_VERIFIED=yes"
+          grep -F "o2ol_memories_local_v1" /tmp/remote-app.js >/dev/null
+          grep -F "o2ol_date_ideas_local_v1" /tmp/remote-app.js >/dev/null
+          echo "DEPLOYED_CURRENT_FRONTEND_VERIFIED=yes"
 
-      - name: Verify existing Worker API runtime still responds
+      - name: Verify Worker API runtime and Memories route
         shell: bash
         run: |
           set -euo pipefail
@@ -100,3 +105,9 @@ jobs:
           cat /tmp/health.json
           test "$STATUS" -ge 200
           test "$STATUS" -lt 500
+
+          MEM_STATUS=$(curl --silent --output /tmp/memories.json --write-out '%{http_code}' "$WORKER_URL/api/memories")
+          cat /tmp/memories.json
+          test "$MEM_STATUS" = "401"
+          grep -F "Authentication required" /tmp/memories.json >/dev/null
+          echo "DEPLOYED_MEMORIES_API_VERIFIED=yes"
