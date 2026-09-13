@@ -8,6 +8,7 @@ import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { communicationPracticeScenarios } from "@/components/communication/CommunicationPracticeScenarios";
 
 const translations = {
   en: {
@@ -201,7 +202,7 @@ const translations = {
 export default function CommunicationPractice() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const scenarios = t.scenarios || translations.en.scenarios;
+  const scenarios = communicationPracticeScenarios[currentLanguage] || communicationPracticeScenarios.en;
   
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [selectedResponse, setSelectedResponse] = useState(null);
