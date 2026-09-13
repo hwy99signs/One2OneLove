@@ -5,6 +5,9 @@ export async function registerLaunchUser({
   email,
   password,
   country,
+  countryName,
+  region,
+  city,
   preferredLanguage,
   termsAcceptedAt,
   termsVersion,
@@ -15,8 +18,8 @@ export async function registerLaunchUser({
     return { success: false, error: "One2OneLove account services are not configured." };
   }
 
-  if (!country || !preferredLanguage) {
-    return { success: false, error: "Please select your country and preferred language." };
+  if (!country || !city || !preferredLanguage) {
+    return { success: false, error: "Please select your country, enter your city, and select your preferred language." };
   }
 
   if (!termsAcceptedAt || !termsVersion || !age18Confirmed) {
@@ -28,10 +31,19 @@ export async function registerLaunchUser({
       ? `${window.location.origin}/SignIn?verified=1`
       : "https://one2-one-love.vercel.app/SignIn?verified=1";
 
+  const location = [city, region, countryName || country]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
   const metadata = {
     name,
     user_type: "regular",
     country,
+    country_name: countryName || country,
+    region: region || null,
+    city,
+    location,
     preferred_language: preferredLanguage,
     terms_accepted_at: termsAcceptedAt,
     terms_version: termsVersion,
@@ -60,11 +72,6 @@ export async function registerLaunchUser({
 
     const emailAlreadyConfirmed = Boolean(data.user.email_confirmed_at);
 
-    // One2OneLove launch policy requires email verification before access.
-    // With Supabase email confirmation enabled, a new signup is unconfirmed and
-    // receives a verification email. If Supabase ever returns an immediate session
-    // or an already-confirmed new user, sign out and fail closed so launch QA catches
-    // a misconfigured authentication setting rather than silently bypassing verification.
     if (data.session) {
       await supabase.auth.signOut().catch(() => {});
     }
