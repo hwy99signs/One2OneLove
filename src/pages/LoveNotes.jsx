@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
 import AIPersonalizationModal from "../components/lovenotes/AIPersonalizationModal";
 import { loveNotesData } from "../components/lovenotes/LoveNotesData";
+import { additionalLoveNotesData } from "../components/lovenotes/additional";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -109,6 +110,10 @@ const translations = {
       heartBroken: "Heart Broken",
       sick: "For Someone Sick",
       goodLuck: "Good Luck",
+      holiday: "Holiday",
+      religious: "Religious",
+      service: "Service",
+      workplace: "Workplace",
     }
   },
   es: {
@@ -203,6 +208,10 @@ const translations = {
       heartBroken: "Corazón Roto",
       sick: "Para Alguien Enfermo",
       goodLuck: "Buena Suerte",
+      holiday: "Festividades",
+      religious: "Religioso",
+      service: "Servicio",
+      workplace: "Lugar de Trabajo",
     }
   },
   fr: {
@@ -297,6 +306,10 @@ const translations = {
       heartBroken: "Cœur Brisé",
       sick: "Pour Quelqu'un Malade",
       goodLuck: "Bonne Chance",
+      holiday: "Fêtes",
+      religious: "Religieux",
+      service: "Service",
+      workplace: "Lieu de Travail",
     }
   },
   it: {
@@ -391,6 +404,10 @@ const translations = {
       heartBroken: "Cuore Spezzato",
       sick: "Per Qualcuno Malato",
       goodLuck: "Buona Fortuna",
+      holiday: "Festività",
+      religious: "Religioso",
+      service: "Servizio",
+      workplace: "Posto di Lavoro",
     }
   },
   de: {
@@ -485,6 +502,10 @@ const translations = {
       heartBroken: "Gebrochenes Herz",
       sick: "Für Jemanden Kranken",
       goodLuck: "Viel Glück",
+      holiday: "Feiertage",
+      religious: "Religiös",
+      service: "Dienst",
+      workplace: "Arbeitsplatz",
     }
   }
 };
@@ -512,18 +533,25 @@ const getCategoriesForLanguage = (t) => [
   { id: 'heartBroken', name: t.categories.heartBroken, icon: '💔' },
   { id: 'sick', name: t.categories.sick, icon: '🌸' },
   { id: 'goodLuck', name: t.categories.goodLuck, icon: '🍀' },
+  { id: 'holiday', name: t.categories.holiday, icon: '🎊' },
+  { id: 'religious', name: t.categories.religious, icon: '🕊️' },
+  { id: 'service', name: t.categories.service, icon: '🤝' },
+  { id: 'workplace', name: t.categories.workplace, icon: '💼' },
 ];
 
 const generateNotes = (lang) => {
   const notes = [];
   let id = 1;
-  const data = loveNotesData[lang] || loveNotesData.en;
+  const baseData = loveNotesData[lang] || loveNotesData.en;
+  const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;
+  const data = { ...baseData, ...addedData };
 
   const categoryOrder = [
     'romantic', 'sweet', 'playful', 'deep', 'appreciation',
     'memories', 'future', 'morning', 'night', 'daily', 'special',
     'dateIdeas', 'milestone', 'justBecause', 'encouragement', 'apology',
-    'family', 'friends', 'heartBroken', 'sick', 'goodLuck'
+    'family', 'friends', 'heartBroken', 'sick', 'goodLuck',
+    'holiday', 'religious', 'service', 'workplace'
   ];
 
   categoryOrder.forEach(category => {
