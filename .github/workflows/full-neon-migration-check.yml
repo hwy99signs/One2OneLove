@@ -21,6 +21,12 @@ jobs:
           echo '=== REMAINING_SUPABASE_REFERENCES_START ==='
           grep -RInE "(@/lib/supabase|[./]supabase['\"]|supabase\.)" src --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
           echo '=== REMAINING_SUPABASE_REFERENCES_END ==='
+      - name: Report migration service consumers
+        shell: bash
+        run: |
+          echo '=== SERVICE_CONSUMERS_START ==='
+          grep -RInE "(chatService|chatFeaturesService|communityService|successStoriesService|professionalService|therapistService|influencerService|reviewService|stripeService)" src --include='*.js' --include='*.jsx' || true
+          echo '=== SERVICE_CONSUMERS_END ==='
       - name: Build frontend
         run: npm run build
       - name: Install Worker dependencies
