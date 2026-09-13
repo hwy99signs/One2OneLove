@@ -1,0 +1,121 @@
+name: Audit One2OneLove Platform Features
+
+on:
+  push:
+    branches:
+      - audit-platform-features-20260913
+    paths:
+      - .github/audit-platform-features-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit-platform-features-20260913
+          fetch-depth: 0
+
+      - name: Fetch deployed Worker runtime source
+        run: |
+          git fetch origin migration/cloudflare-launch-20260911
+          rm -rf /tmp/o2ol-worker
+          mkdir -p /tmp/o2ol-worker
+          git archive origin/migration/cloudflare-launch-20260911 worker | tar -x -C /tmp/o2ol-worker
+
+      - name: Verify production build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Static feature wiring audit
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json
+
+          root = Path('.')
+          pages = sorted((root/'src/pages').glob('*.jsx'))
+          print('=== PAGE AUDIT ===')
+          for p in pages:
+              text = p.read_text(errors='ignore')
+              imports = sorted(set(re.findall(r'from\s+["\'](?:@/|\.\.?/)(lib/[^"\']+)["\']', text)))
+              api = sorted(set(re.findall(r'["\'](/api/[^"\'`?${} ]+)', text)))
+              signals = []
+              low = text.lower()
+              if 'supabase' in low: signals.append('SUPABASE')
+              if 'base44' in low: signals.append('BASE44')
+              if 'localstorage' in low: signals.append('LOCALSTORAGE')
+              if 'sessionstorage' in low: signals.append('SESSIONSTORAGE')
+              if re.search(r'coming\s+soon|not\s+implemented|placeholder|todo|fixme', low): signals.append('INCOMPLETE_TEXT')
+              if 'disabled={' in text or ' disabled ' in text: signals.append('DISABLED_UI')
+              if 'useauth' in low: signals.append('AUTH')
+              if 'usequery' in low or 'usemutation' in low: signals.append('QUERY')
+              print(f'{p.name}|libs={",".join(imports) or "-"}|api={",".join(api) or "-"}|signals={",".join(signals) or "-"}|lines={text.count(chr(10))+1}')
+
+          print('\n=== LIBRARY/SERVICE AUDIT ===')
+          for p in sorted((root/'src/lib').glob('*')):
+              if not p.is_file(): continue
+              text = p.read_text(errors='ignore')
+              low = text.lower()
+              endpoints = sorted(set(re.findall(r'["\'`](/api/[^"\'`?${} ]+)', text)))
+              flags=[]
+              if 'supabase' in low: flags.append('SUPABASE')
+              if 'base44' in low: flags.append('BASE44')
+              if 'localstorage' in low: flags.append('LOCALSTORAGE')
+              if 'fetch(' in low: flags.append('FETCH')
+              if re.search(r'coming\s+soon|not\s+implemented|placeholder|todo|fixme', low): flags.append('INCOMPLETE_TEXT')
+              print(f'{p.name}|api={",".join(endpoints) or "-"}|flags={",".join(flags) or "-"}|lines={text.count(chr(10))+1}')
+
+          print('\n=== DIRECT LEGACY REFERENCES IN SRC ===')
+          for p in sorted((root/'src').rglob('*')):
+              if not p.is_file() or p.suffix not in {'.js','.jsx','.ts','.tsx'}: continue
+              text=p.read_text(errors='ignore')
+              hits=[]
+              for term in ('supabase','base44'):
+                  if term in text.lower(): hits.append(term.upper())
+              if hits:
+                  print(f'{p}|{",".join(hits)}')
+
+          print('\n=== DEPLOYED WORKER ROUTE MODULES ===')
+          wroot=Path('/tmp/o2ol-worker/worker')
+          for p in sorted(wroot.glob('*.ts')):
+              text=p.read_text(errors='ignore')
+              routes=sorted(set(re.findall(r"/api/[A-Za-z0-9_./:-]+", text)))
+              if routes:
+                  print(f'{p.name}|routes={",".join(routes[:40])}')
+          PY
+
+      - name: Current Worker smoke audit
+        shell: bash
+        env:
+          WORKER_URL: https://one2onelove-launch.hwy99signs.workers.dev
+        run: |
+          set +e
+          echo '=== WORKER SMOKE AUDIT ==='
+          for path in \
+            /api/health \
+            /api/profile \
+            /api/love-notes/sent \
+            /api/love-notes/scheduled \
+            /api/goals \
+            /api/calendar-events \
+            /api/date-ideas \
+            /api/memories \
+            /api/journals \
+            /api/buddies \
+            /api/milestones \
+            /api/presence \
+            /api/stories \
+            /api/communities \
+            /api/chat \
+            /api/billing \
+            /api/engagement; do
+              code=$(curl -sS -o /tmp/body -w '%{http_code}' "$WORKER_URL$path")
+              body=$(head -c 180 /tmp/body | tr '\n' ' ')
+              echo "$path|HTTP=$code|$body"
+          done
