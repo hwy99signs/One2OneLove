@@ -4,11 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { submitReview } from "@/lib/reviewService";
-import { toast } from "sonner";
 
 const locales = { en: "en-US", es: "es-ES", fr: "fr-FR", it: "it-IT", de: "de-DE" };
 
@@ -135,6 +135,10 @@ function formatCountry(value, language) {
   return country;
 }
 
+function notifyError(message) {
+  toast({ title: message, variant: "destructive" });
+}
+
 export default function LeaveReview() {
   const { currentLanguage } = useLanguage();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -159,27 +163,27 @@ export default function LeaveReview() {
     event.preventDefault();
 
     if (!rating) {
-      toast.error(t.selectRating);
+      notifyError(t.selectRating);
       return;
     }
 
     if (reviewText.trim().length < 10) {
-      toast.error(t.reviewRequired);
+      notifyError(t.reviewRequired);
       return;
     }
 
     if (!profileComplete) {
-      toast.error(t.missing);
+      notifyError(t.missing);
       return;
     }
 
     setSubmitting(true);
     try {
       await submitReview({ rating, reviewText });
-      toast.success(t.success);
+      toast({ title: t.success });
       navigate(createPageUrl("Reviews"));
     } catch (error) {
-      toast.error(error?.message || "Unable to submit your review.");
+      notifyError(error?.message || "Unable to submit your review.");
     } finally {
       setSubmitting(false);
     }
