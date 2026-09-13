@@ -1,0 +1,50 @@
+name: Change Hero Communication Practice To Podcast
+
+on:
+  push:
+    branches:
+      - hero-podcast-tab-20260913
+    paths:
+      - .github/hero-podcast-tab-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  change:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update hero tab only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/pages/Home.jsx')
+          s = p.read_text()
+          old = '<button onClick={() => go("CommunicationPractice")} className="rounded-2xl bg-purple-600 hover:bg-purple-700 px-8 py-5 font-extrabold text-xl shadow-xl">🗣 Communication Practice</button>'
+          new = '<button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-8 py-5 font-extrabold text-xl shadow-xl">🎙 Podcast</button>'
+          if old not in s:
+            raise SystemExit('Target hero button not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Verify exact change
+        shell: bash
+        run: |
+          grep -F 'go("PodcastsSupport")' src/pages/Home.jsx
+          grep -F 'bg-orange-500 hover:bg-orange-600' src/pages/Home.jsx
+          grep -F '>🎙 Podcast</button>' src/pages/Home.jsx
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+      - name: Commit change
+        shell: bash
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/Home.jsx
+          git commit -m "Replace hero Communication Practice tab with orange Podcast tab"
+          git push origin HEAD:hero-podcast-tab-20260913
