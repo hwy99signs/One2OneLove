@@ -1,0 +1,81 @@
+name: Verify Missing You Worker Build
+
+on:
+  push:
+    branches:
+      - verify-missing-you-worker-2026-09-13
+    paths:
+      - .github/verify-missing-you-worker-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source library counts and search implementation
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          let src = fs.readFileSync('src/components/lovenotes/LoveNotesData.jsx','utf8');
+          src = src.replace('export const loveNotesData =', 'globalThis.loveNotesData =');
+          const mainCtx = { globalThis: {} };
+          vm.createContext(mainCtx);
+          vm.runInContext(src, mainCtx);
+          const main = mainCtx.globalThis.loveNotesData;
+          for (const lang of ['en','es','fr','it','de']) {
+            let addSrc = fs.readFileSync(`src/components/lovenotes/additional/LoveNotesAdditional.${lang}.js`,'utf8');
+            addSrc = addSrc.replace('export default', 'globalThis.additional =');
+            const addCtx = { globalThis: {} };
+            vm.createContext(addCtx);
+            vm.runInContext(addSrc, addCtx);
+            const add = addCtx.globalThis.additional;
+            const merged = { ...(main[lang] || {}), ...add };
+            merged.holiday = [...((main[lang] || {}).holiday || []), ...(add.holiday || [])];
+            const total = Object.values(merged).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+            if (total !== 465) throw new Error(`${lang}: expected 465 Love Notes, got ${total}`);
+            if ((merged.missingYou || []).length !== 15) throw new Error(`${lang}: Missing You count is not 15`);
+            const relationCounts = merged.missingYou.reduce((o,n) => {
+              const relation = ['romantic','family','friends'].find(tag => n.tags.includes(tag));
+              o[relation] = (o[relation] || 0) + 1;
+              return o;
+            }, {});
+            if (relationCounts.romantic !== 5 || relationCounts.family !== 5 || relationCounts.friends !== 5) throw new Error(`${lang}: bad Missing You split ${JSON.stringify(relationCounts)}`);
+            console.log(lang, total, relationCounts);
+          }
+          const page = fs.readFileSync('src/pages/LoveNotes.jsx','utf8');
+          for (const required of ['matchesLoveNoteSearch','forms.has(word)',"missingYou: \"Missing You\"","id: 'missingYou'"]) {
+            if (!page.includes(required)) throw new Error(`Missing source marker: ${required}`);
+          }
+          if (page.includes('word.startsWith(queryWord)')) throw new Error('Old prefix-only search is still present');
+          NODE
+      - name: Install dependencies
+        run: npm ci
+      - name: Build current source
+        run: npm run build
+      - name: Verify deployed Worker matches current build
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://one2onelove-launch.hwy99signs.workers.dev"
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          test -n "$LOCAL_JS"
+          MATCHED=no
+          for attempt in $(seq 1 30); do
+            curl --fail --silent --show-error "$URL/" -o /tmp/remote-index.html
+            REMOTE_JS=$(grep -oE 'src="[^"]+\.js"' /tmp/remote-index.html | head -1 | sed 's/src="//;s/"//')
+            echo "Attempt $attempt: LOCAL_JS=$LOCAL_JS REMOTE_JS=$REMOTE_JS"
+            if [ "$LOCAL_JS" = "$REMOTE_JS" ]; then
+              MATCHED=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$MATCHED" = yes
+          curl --fail --silent --show-error "$URL$REMOTE_JS" -o /tmp/remote-app.js
+          grep -F "I Miss Your Presence" /tmp/remote-app.js >/dev/null
+          grep -F "Missing You" /tmp/remote-app.js >/dev/null
+          echo "DEPLOYED_MISSING_YOU_BUILD_VERIFIED=yes"
