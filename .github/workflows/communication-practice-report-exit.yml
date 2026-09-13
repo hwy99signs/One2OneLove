@@ -1,0 +1,71 @@
+name: Communication Practice Report Exit
+
+on:
+  push:
+    branches:
+      - communication-practice-report-exit
+    paths:
+      - .github/communication-practice-report-exit-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: communication-practice-report-exit
+          fetch-depth: 0
+
+      - name: Apply report Exit patch
+        run: python scripts/patch_communication_practice_report_exit.py
+
+      - name: Verify requested behavior
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const page = fs.readFileSync('src/pages/CommunicationPractice.jsx','utf8');
+          const required = [
+            'exit: "Exit"',
+            'exit: "Salir"',
+            'exit: "Quitter"',
+            'exit: "Esci"',
+            'exit: "Beenden"',
+            '{sessionText.exit}',
+            'to={createPageUrl("CoupleSupport")}',
+            'onClick={handleNewRound}'
+          ];
+          for (const marker of required) if (!page.includes(marker)) throw new Error(`Missing marker: ${marker}`);
+          console.log('Report-card Try Again + Exit controls verified.');
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify only Communication Practice page changed
+        run: |
+          node <<'NODE'
+          const { execSync } = require('child_process');
+          const files = execSync('git diff --name-only origin/master...HEAD', {encoding:'utf8'}).trim().split(/\n/).filter(Boolean);
+          const allowed = new Set([
+            'src/pages/CommunicationPractice.jsx',
+            'scripts/patch_communication_practice_report_exit.py',
+            '.github/workflows/communication-practice-report-exit.yml',
+            '.github/communication-practice-report-exit-trigger'
+          ]);
+          for (const file of files) if (!allowed.has(file)) throw new Error(`Unexpected changed file: ${file}`);
+          console.log(files.join('\n'));
+          NODE
+
+      - name: Commit report Exit change
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/CommunicationPractice.jsx
+          git commit -m "Add Exit option to Communication Practice report"
+          git push origin HEAD:communication-practice-report-exit
