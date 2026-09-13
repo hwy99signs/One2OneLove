@@ -9,13 +9,13 @@ import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
 import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/dateideas/dateIdeasLibrary";
 import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
 import { createCalendarEvent } from "@/lib/calendarService";
+import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
 
 const translations = {
   en: {
@@ -130,37 +130,18 @@ export default function DateIdeas() {
 
   const { user: currentUser } = useAuth();
 
+  const dateIdeasUserKey = currentUser?.id || 'guest';
+
   const { data: customDates = [] } = useQuery({
-    queryKey: ['customDates', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('custom_date_ideas')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error fetching custom dates:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!currentUser?.id,
+    queryKey: ['customDates', dateIdeasUserKey],
+    queryFn: () => listDateIdeas(dateIdeasUserKey),
+    enabled: true,
     initialData: [],
   });
 
 
   const createDateMutation = useMutation({
-    mutationFn: async (data) => {
-      if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('custom_date_ideas')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: (data) => createDateIdea(dateIdeasUserKey, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
       toast.success(t.customDateCreated);
@@ -169,17 +150,7 @@ export default function DateIdeas() {
   });
 
   const updateDateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const { data: result, error } = await supabase
-        .from('custom_date_ideas')
-        .update(data)
-        .eq('id', id)
-        .eq('user_id', currentUser?.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: ({ id, data }) => updateDateIdea(dateIdeasUserKey, id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customDates'] });
     }
@@ -271,11 +242,7 @@ export default function DateIdeas() {
     matchesDateIdeaFilter(idea, 'stage', selectedStage)
   ));
 
-  const requireSignedIn = () => {
-    if (currentUser?.id) return true;
-    toast.error(t.signInRequired);
-    return false;
-  };
+  const requireSignedIn = () => true;
 
   const firstFilterValue = (value) => Array.isArray(value) ? value[0] : (value || null);
 
@@ -284,29 +251,21 @@ export default function DateIdeas() {
       return updateDateMutation.mutateAsync({ id: idea.user_record_id, data: updates });
     }
 
-    const { data, error } = await supabase
-      .from('custom_date_ideas')
-      .insert({
-        user_id: currentUser.id,
-        title: `${BUILTIN_DATE_STATE_PREFIX}${idea.id}`,
-        description: idea.title,
-        category: firstFilterValue(idea.categories || idea.category),
-        budget: idea.budget || null,
-        location_type: firstFilterValue(idea.locations || idea.location_type),
-        occasion: firstFilterValue(idea.occasions || idea.occasion),
-        relationship_stage: firstFilterValue(idea.stages || idea.relationship_stage),
-        is_favorite: false,
-        is_completed: false,
-        ...updates
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    return createDateIdea(dateIdeasUserKey, {
+      title: `${BUILTIN_DATE_STATE_PREFIX}${idea.id}`,
+      description: idea.title,
+      category: firstFilterValue(idea.categories || idea.category),
+      budget: idea.budget || null,
+      location_type: firstFilterValue(idea.locations || idea.location_type),
+      occasion: firstFilterValue(idea.occasions || idea.occasion),
+      relationship_stage: firstFilterValue(idea.stages || idea.relationship_stage),
+      is_favorite: false,
+      is_completed: false,
+      ...updates
+    });
   };
 
   const handleSaveDate = async (idea) => {
-    if (!requireSignedIn()) return;
     try {
       const nextSaved = !Boolean(idea.is_favorite);
       let record = null;
@@ -315,7 +274,7 @@ export default function DateIdeas() {
       } else if (idea.id) {
         record = await updateDateMutation.mutateAsync({ id: idea.id, data: { is_favorite: nextSaved } });
       }
-      queryClient.invalidateQueries({ queryKey: ['customDates', currentUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['customDates', dateIdeasUserKey] });
       setSelectedIdea(current => current && current.id === idea.id
         ? { ...current, is_favorite: nextSaved, user_record_id: record?.id || current.user_record_id }
         : current);
@@ -365,7 +324,6 @@ export default function DateIdeas() {
   };
 
   const handleCompleteDate = async (idea) => {
-    if (!requireSignedIn()) return;
     if (idea.is_completed) return;
     try {
       let record = null;
@@ -374,7 +332,7 @@ export default function DateIdeas() {
       } else if (idea.id) {
         record = await updateDateMutation.mutateAsync({ id: idea.id, data: { is_completed: true } });
       }
-      queryClient.invalidateQueries({ queryKey: ['customDates', currentUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['customDates', dateIdeasUserKey] });
       setSelectedIdea(current => current && current.id === idea.id
         ? { ...current, is_completed: true, user_record_id: record?.id || current.user_record_id }
         : current);
@@ -386,7 +344,6 @@ export default function DateIdeas() {
   };
 
   const openSchedule = () => {
-    if (!requireSignedIn()) return;
     setScheduleDate('');
     setScheduleTime('');
     setScheduledEvent(null);
@@ -394,14 +351,13 @@ export default function DateIdeas() {
   };
 
   const handleScheduleDate = async () => {
-    if (!requireSignedIn()) return;
     if (!scheduleDate || !scheduleTime) {
       toast.error(t.scheduleRequired);
       return;
     }
     try {
       setIsScheduling(true);
-      const event = await createCalendarEvent(currentUser.id, {
+      const event = await createCalendarEvent(dateIdeasUserKey, {
         title: selectedIdea.title,
         description: selectedIdea.description || null,
         event_date: scheduleDate,
