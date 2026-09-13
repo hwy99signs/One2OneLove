@@ -304,7 +304,7 @@ function LanguageContent({ children, currentPageName }) {
         <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between gap-5">
           <Link to={createPageUrl("Home")} className="shrink-0 hover:opacity-90 transition-opacity">
             <img 
-              src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
+              src="/assets/o2ol-logo.png" 
               alt="One2One Love Logo" 
               className="h-[88px] w-auto object-contain"
               onError={(e) => { e.target.style.display = 'none'; }}
@@ -661,7 +661,7 @@ function LanguageContent({ children, currentPageName }) {
       <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
         <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
           <div>
-            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" alt="One2OneLove" className="h-28 w-auto" />
+            <img src="/assets/o2ol-logo.png" alt="One2OneLove" className="h-28 w-auto" />
             <div className="text-lg mt-2">{fT.loveGrow}</div>
             <div className="flex gap-4 mt-5 text-2xl">
               <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
