@@ -1,6 +1,7 @@
 // @ts-nocheck
 import baseWorker from './index';
 import { handleLaunchAuthRequest } from './launch-auth';
+import { handleProfessionalSignup } from './professional-signup';
 import { handleSpecialProfileRequest } from './onboarding';
 import { handleMemberOnboarding } from './member-onboarding';
 import { handleProfileMediaRequest } from './profile-media';
@@ -24,6 +25,11 @@ export default {
 
     if (url.pathname.startsWith('/api/launch-signup')) {
       const response = await handleLaunchAuthRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/professional-signup') {
+      const response = await handleProfessionalSignup(request, env, url);
       if (response) return response;
     }
 
