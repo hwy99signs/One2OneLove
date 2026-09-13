@@ -142,10 +142,18 @@ export default function DateIdeas() {
 
   const createDateMutation = useMutation({
     mutationFn: (data) => createDateIdea(dateIdeasUserKey, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customDates'] });
+    onSuccess: (created) => {
+      queryClient.setQueryData(['customDates', dateIdeasUserKey], (current = []) => [
+        created,
+        ...current.filter(item => String(item.id) !== String(created.id)),
+      ]);
+      setViewMode('custom');
       toast.success(t.customDateCreated);
       setShowCustomForm(false);
+    },
+    onError: (error) => {
+      console.error('Error creating custom date:', error);
+      toast.error(error?.message || t.actionFailed);
     }
   });
 
@@ -503,6 +511,7 @@ export default function DateIdeas() {
               <CustomDateForm
                 onSubmit={(data) => createDateMutation.mutate(data)}
                 onCancel={() => setShowCustomForm(false)}
+                isLoading={createDateMutation.isPending}
               />
             </motion.div>
           )}

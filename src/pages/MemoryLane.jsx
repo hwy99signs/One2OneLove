@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { listMemories, createMemory, updateMemory, deleteMemory } from "@/lib/memoryService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, MapPin, Filter, Grid, List, ArrowLeft } from "lucide-react";
@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { toast } from "sonner";
 
 import MemoryForm from "../components/memories/MemoryForm";
 import MemoryCard from "../components/memories/MemoryCard";
@@ -121,73 +122,57 @@ export default function MemoryLane() {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
+  const memoryUserKey = user?.id || 'guest';
 
   const { data: memories = [], isLoading } = useQuery({
-    queryKey: ['memories', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('memory_date', { ascending: false });
-      if (error) {
-        console.error('Error fetching memories:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!user?.id,
+    queryKey: ['memories', memoryUserKey],
+    queryFn: () => listMemories(memoryUserKey),
+    enabled: true,
     initialData: [],
   });
 
   const createMemoryMutation = useMutation({
-    mutationFn: async (memoryData) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('memories')
-        .insert({ ...memoryData, user_id: user.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['memories'] });
+    mutationFn: (memoryData) => createMemory(memoryUserKey, memoryData),
+    onSuccess: (created) => {
+      queryClient.setQueryData(['memories', memoryUserKey], (current = []) => [
+        created,
+        ...current.filter(item => String(item.id) !== String(created.id)),
+      ]);
       setShowForm(false);
       setEditingMemory(null);
+      toast.success('Memory saved!');
+    },
+    onError: (error) => {
+      console.error('Error creating memory:', error);
+      toast.error(error?.message || 'Unable to save memory.');
     },
   });
 
   const updateMemoryMutation = useMutation({
-    mutationFn: async ({ id, memoryData }) => {
-      const { data: result, error } = await supabase
-        .from('memories')
-        .update(memoryData)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['memories'] });
+    mutationFn: ({ id, memoryData }) => updateMemory(memoryUserKey, id, memoryData),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['memories', memoryUserKey], (current = []) =>
+        current.map(item => String(item.id) === String(updated.id) ? updated : item)
+      );
       setShowForm(false);
       setEditingMemory(null);
+    },
+    onError: (error) => {
+      console.error('Error updating memory:', error);
+      toast.error(error?.message || 'Unable to update memory.');
     },
   });
 
   const deleteMemoryMutation = useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('memories')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-      return id;
+    mutationFn: (id) => deleteMemory(memoryUserKey, id),
+    onSuccess: (id) => {
+      queryClient.setQueryData(['memories', memoryUserKey], (current = []) =>
+        current.filter(item => String(item.id) !== String(id))
+      );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['memories'] });
+    onError: (error) => {
+      console.error('Error deleting memory:', error);
+      toast.error(error?.message || 'Unable to delete memory.');
     },
   });
 

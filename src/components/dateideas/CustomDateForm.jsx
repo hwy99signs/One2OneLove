@@ -35,7 +35,7 @@ const translations = {
   }
 };
 
-export default function CustomDateForm({ dateIdea, onSubmit, onCancel }) {
+export default function CustomDateForm({ dateIdea, onSubmit, onCancel, isLoading = false }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
@@ -191,10 +191,10 @@ export default function CustomDateForm({ dateIdea, onSubmit, onCancel }) {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+            <Button type="button" variant="outline" className="flex-1" onClick={onCancel} disabled={isLoading}>
               {t.cancel}
             </Button>
-            <Button type="submit" className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+            <Button type="submit" disabled={isLoading} className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
               {t.save}
             </Button>
           </div>
