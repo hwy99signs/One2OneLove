@@ -569,11 +569,11 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
 };
 
 const allHolidayLabels = {
-  en: 'All Holiday',
-  es: 'Todas las Festividades',
-  fr: 'Toutes les Fêtes',
-  it: 'Tutte le Festività',
-  de: 'Alle Feiertage',
+  en: 'All',
+  es: 'Todas',
+  fr: 'Toutes',
+  it: 'Tutte',
+  de: 'Alle',
 };
 
 const holidaySubcategoryAssignments = [
@@ -1176,29 +1176,37 @@ export default function LoveNotes() {
             ))}
           </div>
 
-          {selectedCategory === 'holiday' && (
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+        </div>
+
+        {selectedCategory === 'holiday' && (
+          <div className="mb-5 flex justify-center">
+            <div
+              className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-pink-100 bg-white/80 p-1.5 shadow-sm"
+              role="tablist"
+              aria-label="Holiday note subcategories"
+            >
               {holidaySubcategories.map((subcategory) => (
                 <button
                   key={subcategory.id}
                   type="button"
+                  role="tab"
+                  aria-selected={selectedHolidaySubcategory === subcategory.id}
                   onClick={() => {
                     setSelectedHolidaySubcategory(subcategory.id);
                     setSearchQuery('');
                   }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                     selectedHolidaySubcategory === subcategory.id
-                      ? 'bg-pink-100 text-pink-700 border-pink-300 shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:bg-pink-50 hover:text-pink-700'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
+                      : 'bg-transparent text-gray-600 hover:bg-pink-50 hover:text-pink-700'
                   }`}
                 >
-                  <span className="mr-2">{subcategory.icon}</span>
                   {subcategory.name}
                 </button>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="text-center mb-8">
           <p className="text-gray-600">
