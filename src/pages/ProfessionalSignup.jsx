@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 import ProfessionalApplication from "@/components/signup/ProfessionalApplication";
+import DismissibleDetailsBoundary from "@/components/signup/DismissibleDetailsBoundary";
 
 const COPY = {
   en: {
@@ -63,7 +64,7 @@ export default function ProfessionalSignup() {
   const selectedType = searchParams.get("type");
 
   if (["coach", "organization"].includes(selectedType)) {
-    return <ProfessionalApplication mode={selectedType} />;
+    return <DismissibleDetailsBoundary><ProfessionalApplication mode={selectedType} /></DismissibleDetailsBoundary>;
   }
 
   const openApplication = (key) => {
