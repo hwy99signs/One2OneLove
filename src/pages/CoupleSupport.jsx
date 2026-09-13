@@ -321,7 +321,11 @@ export default function CoupleSupport() {
     }
   ];
 
+  const hiddenCategoryIds = new Set(['goals', 'groupActivities', 'counseling', 'influencers']);
+
   const filteredCategories = categories.filter(category => {
+    if (hiddenCategoryIds.has(category.id)) return false;
+
     const matchesSearch = !searchQuery || 
       category.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       category.description.toLowerCase().includes(searchQuery.toLowerCase());
