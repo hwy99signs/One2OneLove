@@ -772,5 +772,142 @@ export default {
         "ánimo"
       ]
     }
+  ],
+  "missingYou": [
+    {
+      "title": "Extraño Tu Presencia",
+      "content": "Extraño cómo todo se siente un poco mejor cuando estás a mi lado. No veo la hora de volver a estar cerca de ti.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Contando los Días para Verte",
+      "content": "Sigo contando los días hasta volver a verte. Extrañarte solo me recuerda cuánto significas para mí.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Ojalá Estuvieras Aquí",
+      "content": "Ojalá estuvieras aquí para cambiar esta distancia por tu sonrisa, tu cariño y un momento tranquilo juntos.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "La Distancia Se Siente Más Larga",
+      "content": "Hoy la distancia se siente más larga porque mi corazón sigue buscándote. Te extraño más de lo que estas palabras pueden decir.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Hasta Que Estemos Juntos Otra Vez",
+      "content": "Hasta que volvamos a estar juntos, recuerda esto: eres amado, deseado y profundamente extrañado.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Te Extraño en Casa",
+      "content": "La casa no se siente igual cuando no estás. Extraño tu presencia y el cariño que aportas a nuestra familia.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "La Familia Se Siente Lejos",
+      "content": "No importa cuántos kilómetros haya entre nosotros, sigues cerca de mi corazón. Te extraño y deseo que volvamos a estar juntos.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Pensando en Ti, Familia",
+      "content": "Hoy he estado pensando en ti y extrañando esas pequeñas cosas que hacen tan especial ser familia.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Guárdame un Lugar",
+      "content": "Guárdame un lugar, una historia y un abrazo. Extraño estar juntos y compartir nuestros momentos familiares.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Espero Nuestro Próximo Abrazo",
+      "content": "Te extraño más de lo que esperaba. Ya estoy deseando el próximo abrazo familiar y el tiempo que compartiremos.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Extraño Nuestras Risas",
+      "content": "Extraño esa clase de risa que solo aparece cuando estamos juntos. Ya nos hace falta tiempo de amigos.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Necesitamos Ponernos al Día",
+      "content": "Te extraño, amigo. Tenemos historias que contar, risas pendientes y una buena conversación esperándonos.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Amistad a la Distancia",
+      "content": "La distancia puede cambiar el paisaje, pero no cambia nuestra amistad. Te extraño y pienso en ti a menudo.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "No Es Igual Sin Ti",
+      "content": "Las cosas simplemente no son iguales cuando no estás. Extraño tu energía, tu humor y tener a mi amigo cerca.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Vuelve Pronto",
+      "content": "Vuelve pronto, o al menos llámame. Extraño a mi amigo y tenemos demasiadas cosas que contarnos.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    }
   ]
 };

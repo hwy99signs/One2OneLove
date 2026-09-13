@@ -772,5 +772,142 @@ export default {
         "incoraggiamento"
       ]
     }
+  ],
+  "missingYou": [
+    {
+      "title": "Mi Manca la Tua Presenza",
+      "content": "Mi manca il modo in cui tutto sembra un po’ più bello quando sei accanto a me. Non vedo l’ora di riaverti vicino.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Conto i Giorni per Rivederti",
+      "content": "Continuo a contare i giorni fino a quando potrò rivederti. La tua mancanza mi ricorda quanto sei importante per me.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Vorrei Che Fossi Qui",
+      "content": "Vorrei che fossi qui per sostituire questa distanza con il tuo sorriso, il tuo affetto e un momento tranquillo insieme.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "La Distanza Sembra Più Lunga",
+      "content": "Oggi la distanza sembra più lunga perché il mio cuore continua a cercarti. Mi manchi più di quanto riesca a dire.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Finché Saremo di Nuovo Insieme",
+      "content": "Finché non saremo di nuovo insieme, ricorda questo: sei amato, desiderato e mi manchi profondamente.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Mi Manchi a Casa",
+      "content": "La casa non sembra la stessa quando non ci sei. Mi manca la tua presenza e il calore che porti alla nostra famiglia.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "La Famiglia Sembra Lontana",
+      "content": "Non importa quanti chilometri ci separano, sei sempre vicino al mio cuore. Mi manchi e non vedo l’ora di stare di nuovo insieme.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Ti Penso, Famiglia",
+      "content": "Oggi ti penso e mi mancano le piccole cose che rendono così speciale essere una famiglia.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Tienimi un Posto",
+      "content": "Tienimi un posto, una storia e un abbraccio. Mi manca stare insieme e condividere i nostri semplici momenti di famiglia.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Aspetto il Nostro Prossimo Abbraccio",
+      "content": "Mi manchi più di quanto pensassi. Non vedo già l’ora del prossimo abbraccio in famiglia e del tempo insieme.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Mi Mancano le Nostre Risate",
+      "content": "Mi manca quel tipo di risata che nasce solo quando siamo insieme. È ora di ritrovarci tra amici.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Dobbiamo Aggiornarci",
+      "content": "Mi manchi, amico mio. Abbiamo storie da raccontare, risate da recuperare e una bella chiacchierata che ci aspetta.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Amicizia a Distanza",
+      "content": "La distanza può cambiare il panorama, ma non cambia l’amicizia. Mi manchi e ti penso spesso.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Non È lo Stesso Senza di Te",
+      "content": "Le cose semplicemente non sono le stesse senza di te. Mi mancano la tua energia, il tuo umorismo e averti vicino.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Torna Presto",
+      "content": "Torna presto, o almeno chiamami. Mi manca il mio amico e abbiamo troppe cose da raccontarci.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    }
   ]
 };

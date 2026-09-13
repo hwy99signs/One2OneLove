@@ -772,5 +772,142 @@ export default {
         "encouragement"
       ]
     }
+  ],
+  "missingYou": [
+    {
+      "title": "Ta Présence Me Manque",
+      "content": "Tout semble un peu mieux quand tu es près de moi. Ta présence me manque et j’ai hâte de te retrouver.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Je Compte les Jours",
+      "content": "Je compte les jours jusqu’à ce que je puisse te revoir. Ton absence me rappelle simplement combien tu comptes pour moi.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "J’aimerais Que Tu Sois Ici",
+      "content": "J’aimerais que tu sois ici pour remplacer cette distance par ton sourire, ta tendresse et un moment tranquille ensemble.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "La Distance Paraît Plus Longue",
+      "content": "Aujourd’hui, la distance paraît plus longue parce que mon cœur te cherche sans cesse. Tu me manques énormément.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Jusqu’à Nos Retrouvailles",
+      "content": "Jusqu’à ce que nous soyons réunis, garde ceci en toi : tu es aimé, désiré et profondément regretté.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Tu Manques à la Maison",
+      "content": "La maison n’est pas tout à fait la même sans toi. Ta présence et la chaleur que tu apportes à notre famille me manquent.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "La Famille Semble Loin",
+      "content": "Peu importe les kilomètres entre nous, tu restes proche de mon cœur. Tu me manques et j’ai hâte que nous soyons réunis.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Je Pense à Toi, Ma Famille",
+      "content": "Je pense à toi aujourd’hui et les petits moments qui rendent la famille si précieuse me manquent.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Garde-Moi une Place",
+      "content": "Garde-moi une place, une histoire et un câlin. Les moments simples en famille me manquent.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Hâte de Notre Prochain Câlin",
+      "content": "Tu me manques plus que je ne l’aurais imaginé. J’attends déjà notre prochain câlin en famille avec impatience.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Nos Fous Rires Me Manquent",
+      "content": "Les rires que nous partageons me manquent. Il est grand temps que nous retrouvions un peu de temps entre amis.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Il Faut Qu’on Se Raconte Tout",
+      "content": "Tu me manques, mon ami. Nous avons des histoires, des rires et une vraie conversation à rattraper.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Amitié Malgré la Distance",
+      "content": "La distance change le décor, pas l’amitié. Tu me manques et je pense souvent à toi.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Ce N’est Pas Pareil Sans Toi",
+      "content": "Ce n’est tout simplement pas pareil sans toi. Ton énergie, ton humour et ta présence me manquent.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Reviens Vite",
+      "content": "Reviens vite, ou appelle-moi au moins. Mon ami me manque et nous avons beaucoup trop de choses à nous raconter.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    }
   ]
 };

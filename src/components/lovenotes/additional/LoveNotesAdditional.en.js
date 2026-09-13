@@ -772,5 +772,142 @@ export default {
         "encouragement"
       ]
     }
+  ],
+  "missingYou": [
+    {
+      "title": "I Miss Your Presence",
+      "content": "I miss the way everything feels a little better when you are beside me. I cannot wait to be close to you again.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Counting Down to You",
+      "content": "I keep counting the days until I can see you again. Missing you only reminds me how much you mean to me.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Wish You Were Here",
+      "content": "I wish you were here so I could trade this distance for your smile, your touch, and a quiet moment together.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Distance Feels Longer",
+      "content": "The distance feels longer today because my heart keeps reaching for you. I miss you more than these words can say.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Until We Are Together Again",
+      "content": "Until we are together again, carry this with you: you are loved, wanted, and deeply missed.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Missing Home With You",
+      "content": "Home does not feel quite the same when you are not here. I miss your presence and the comfort you bring to our family.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Family Feels Far Away",
+      "content": "No matter how many miles are between us, you are still close in my heart. I miss you and cannot wait until we are together again.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Thinking of You, Family",
+      "content": "I have been thinking about you today and missing the little things that make being family so special.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Save Me a Seat",
+      "content": "Save me a seat, a story, and a hug. I miss being together and making ordinary family moments feel special.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Cannot Wait for Our Next Hug",
+      "content": "I miss you more than I expected. I am already looking forward to the next family hug and the time we get to share.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Miss Our Laughs",
+      "content": "I miss the kind of laughter that only happens when we are together. We are overdue for some friend time.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "We Need a Catch-Up",
+      "content": "I miss you, my friend. We have stories to tell, laughs to recover, and a proper catch-up waiting for us.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Friendship Across the Miles",
+      "content": "Distance can change the scenery, but it does not change the friendship. I miss you and think of you often.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "It Is Not the Same Without You",
+      "content": "Things are simply not the same without you around. I miss your energy, your humor, and having my friend nearby.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Come Back Soon",
+      "content": "Come back soon—or at least call me. I miss my friend, and there is far too much life to catch up on.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    }
   ]
 };

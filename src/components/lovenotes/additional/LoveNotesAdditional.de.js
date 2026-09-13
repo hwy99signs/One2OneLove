@@ -772,5 +772,142 @@ export default {
         "ermutigung"
       ]
     }
+  ],
+  "missingYou": [
+    {
+      "title": "Deine Nähe Fehlt Mir",
+      "content": "Alles fühlt sich ein wenig besser an, wenn du bei mir bist. Deine Nähe fehlt mir und ich kann es kaum erwarten, dich wieder bei mir zu haben.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Ich Zähle die Tage",
+      "content": "Ich zähle die Tage, bis ich dich wiedersehen kann. Dich zu vermissen erinnert mich nur daran, wie viel du mir bedeutest.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Ich Wünschte, Du Wärst Hier",
+      "content": "Ich wünschte, du wärst hier, damit diese Entfernung deinem Lächeln, deiner Nähe und einem ruhigen Moment zu zweit Platz macht.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Die Entfernung Fühlt Sich Größer An",
+      "content": "Heute fühlt sich die Entfernung größer an, weil mein Herz immer wieder nach dir sucht. Du fehlst mir mehr, als Worte sagen können.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Bis Wir Wieder Zusammen Sind",
+      "content": "Bis wir wieder zusammen sind, vergiss das nicht: Du wirst geliebt, gebraucht und sehr vermisst.",
+      "tags": [
+        "missing",
+        "you",
+        "romantic"
+      ]
+    },
+    {
+      "title": "Du Fehlst Zu Hause",
+      "content": "Zu Hause fühlt es sich nicht ganz gleich an, wenn du nicht da bist. Deine Nähe und die Wärme, die du unserer Familie gibst, fehlen mir.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Die Familie Fühlt Sich Weit Weg An",
+      "content": "Egal wie viele Kilometer zwischen uns liegen, in meinem Herzen bist du nah. Du fehlst mir und ich freue mich auf unser Wiedersehen.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Ich Denke an Dich, Familie",
+      "content": "Heute denke ich an dich und vermisse die kleinen Dinge, die Familie so besonders machen.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Halt Mir Einen Platz Frei",
+      "content": "Halt mir einen Platz, eine Geschichte und eine Umarmung frei. Mir fehlt unsere gemeinsame Familienzeit.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Ich Freue Mich auf Unsere Nächste Umarmung",
+      "content": "Du fehlst mir mehr, als ich erwartet habe. Ich freue mich schon auf unsere nächste Familienumarmung und gemeinsame Zeit.",
+      "tags": [
+        "missing",
+        "you",
+        "family"
+      ]
+    },
+    {
+      "title": "Unser Lachen Fehlt Mir",
+      "content": "Mir fehlt dieses Lachen, das nur entsteht, wenn wir zusammen sind. Es wird Zeit für echte Freundeszeit.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Wir Müssen Uns Austauschen",
+      "content": "Du fehlst mir, mein Freund. Wir haben Geschichten, Lachen und ein richtiges Gespräch nachzuholen.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Freundschaft Über die Entfernung",
+      "content": "Entfernung verändert die Aussicht, aber nicht unsere Freundschaft. Du fehlst mir und ich denke oft an dich.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Ohne Dich Ist Es Nicht Dasselbe",
+      "content": "Ohne dich ist es einfach nicht dasselbe. Deine Energie, dein Humor und deine Nähe fehlen mir.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    },
+    {
+      "title": "Komm Bald Wieder",
+      "content": "Komm bald wieder oder ruf mich wenigstens an. Mein Freund fehlt mir und wir haben viel zu viel nachzuholen.",
+      "tags": [
+        "missing",
+        "you",
+        "friends"
+      ]
+    }
   ]
 };

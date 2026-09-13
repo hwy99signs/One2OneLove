@@ -111,6 +111,7 @@ const translations = {
       sick: "For Someone Sick",
       goodLuck: "Good Luck",
       holiday: "Holiday",
+      missingYou: "Missing You",
       religious: "Religious",
       service: "Service",
       workplace: "Workplace",
@@ -212,6 +213,7 @@ const translations = {
       sick: "Para Alguien Enfermo",
       goodLuck: "Buena Suerte",
       holiday: "Festividades",
+      missingYou: "Te Echo de Menos",
       religious: "Religioso",
       service: "Servicio",
       workplace: "Lugar de Trabajo",
@@ -313,6 +315,7 @@ const translations = {
       sick: "Pour Quelqu'un Malade",
       goodLuck: "Bonne Chance",
       holiday: "Fêtes",
+      missingYou: "Tu Me Manques",
       religious: "Religieux",
       service: "Service",
       workplace: "Lieu de Travail",
@@ -414,6 +417,7 @@ const translations = {
       sick: "Per Qualcuno Malato",
       goodLuck: "Buona Fortuna",
       holiday: "Festività",
+      missingYou: "Mi Manchi",
       religious: "Religioso",
       service: "Servizio",
       workplace: "Posto di Lavoro",
@@ -515,6 +519,7 @@ const translations = {
       sick: "Für Jemanden Kranken",
       goodLuck: "Viel Glück",
       holiday: "Feiertage",
+      missingYou: "Du Fehlst Mir",
       religious: "Religiös",
       service: "Dienst",
       workplace: "Arbeitsplatz",
@@ -553,6 +558,7 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   { id: 'sick', name: t.categories.sick, icon: '🌸' },
   { id: 'goodLuck', name: t.categories.goodLuck, icon: '🍀' },
   { id: 'holiday', name: t.categories.holiday, icon: '🎊' },
+  { id: 'missingYou', name: t.categories.missingYou, icon: '💌' },
   { id: 'religious', name: t.categories.religious, icon: '🕊️' },
   { id: 'service', name: t.categories.service, icon: '🤝' },
   { id: 'workplace', name: t.categories.workplace, icon: '💼' },
@@ -592,7 +598,7 @@ const generateNotes = (lang) => {
     'memories', 'future', 'morning', 'night', 'daily', 'special',
     'dateIdeas', 'milestone', 'justBecause', 'encouragement', 'apology',
     'family', 'friends', 'heartBroken', 'sick', 'goodLuck',
-    'holiday', 'religious', 'service', 'workplace'
+    'holiday', 'missingYou', 'religious', 'service', 'workplace'
   ];
 
   categoryOrder.forEach(category => {
@@ -612,6 +618,42 @@ const generateNotes = (lang) => {
   });
 
   return notes;
+};
+
+const getSearchWords = (value) =>
+  String(value || '')
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .match(/[a-z0-9]+/g) || [];
+
+const matchesLoveNoteSearch = (note, query) => {
+  const queryWords = getSearchWords(query);
+  if (queryWords.length === 0) return true;
+
+  const searchableWords = getSearchWords([
+    note.title,
+    note.content,
+    ...(Array.isArray(note.tags) ? note.tags : []),
+  ].join(' '));
+
+  const getSearchForms = (term) => {
+    const forms = new Set([term, term + 's', term + 'es', term + 'ed', term + 'ing']);
+    if (term.endsWith('e') && term.length > 2) {
+      forms.add(term + 'd');
+      forms.add(term.slice(0, -1) + 'ing');
+    }
+    if (term.endsWith('y') && term.length > 2) {
+      forms.add(term.slice(0, -1) + 'ies');
+      forms.add(term.slice(0, -1) + 'ied');
+    }
+    return forms;
+  };
+
+  return queryWords.every(queryWord => {
+    const forms = getSearchForms(queryWord);
+    return searchableWords.some(word => forms.has(word));
+  });
 };
 
 export default function LoveNotes() {
@@ -794,12 +836,7 @@ export default function LoveNotes() {
     const personalizedNotes = filtered.map(note => personalizeNote(note));
 
     if (searchQuery.trim()) {
-      const searchLower = searchQuery.toLowerCase();
-      filtered = personalizedNotes.filter(note =>
-        note.title.toLowerCase().includes(searchLower) ||
-        note.content.toLowerCase().includes(searchLower) ||
-        note.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
+      filtered = personalizedNotes.filter(note => matchesLoveNoteSearch(note, searchQuery));
     } else {
         filtered = personalizedNotes;
     }
