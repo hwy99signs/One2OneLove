@@ -1,371 +1,240 @@
-import { supabase, handleSupabaseError } from './supabase';
+const LOCAL_KEY = 'o2ol_calendar_events_local_v1';
 
-/**
- * Calendar Events Service
- * Handles all calendar event operations with Supabase
- */
+function storageKey(userId) {
+  return `${LOCAL_KEY}:${userId || 'guest'}`;
+}
 
-/**
- * Get all calendar events for the current user
- * @param {string} userId - The user's ID
- * @param {Object} options - Query options (filter, sort, etc.)
- * @returns {Promise<Array>} Array of calendar events
- */
+function readLocal(userId) {
+  try {
+    const raw = window.localStorage.getItem(storageKey(userId));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocal(userId, events) {
+  try {
+    window.localStorage.setItem(storageKey(userId), JSON.stringify(events));
+  } catch {
+    // Local persistence is a resilience fallback only.
+  }
+}
+
+function localId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return `local-${crypto.randomUUID()}`;
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    credentials: 'include',
+    headers: {
+      accept: 'application/json',
+      ...(options.body ? { 'content-type': 'application/json' } : {}),
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(payload?.error?.message || `Calendar request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+  return payload;
+}
+
+function shouldFallback(error) {
+  return !error?.status || error.status === 401 || error.status === 403 || error.status === 404;
+}
+
+function sortEvents(events, sortBy = 'event_date', sortOrder = 'asc') {
+  const direction = sortOrder === 'desc' ? -1 : 1;
+  return [...events].sort((a, b) => {
+    const av = a?.[sortBy] ?? '';
+    const bv = b?.[sortBy] ?? '';
+    if (av === bv) return String(a?.event_time || '').localeCompare(String(b?.event_time || '')) * direction;
+    return String(av).localeCompare(String(bv)) * direction;
+  });
+}
+
+function filterLocal(events, options = {}) {
+  let out = [...events];
+  if (options.eventType) out = out.filter(event => event.event_type === options.eventType);
+  if (options.startDate) out = out.filter(event => String(event.event_date) >= options.startDate);
+  if (options.endDate) out = out.filter(event => String(event.event_date) <= options.endDate);
+  out = sortEvents(out, options.sortBy || 'event_date', options.sortOrder || 'asc');
+  if (options.limit) out = out.slice(0, options.limit);
+  return out;
+}
+
 export const getCalendarEvents = async (userId, options = {}) => {
+  const params = new URLSearchParams();
+  if (options.eventType) params.set('eventType', options.eventType);
+  if (options.startDate) params.set('startDate', options.startDate);
+  if (options.endDate) params.set('endDate', options.endDate);
+  if (options.sortBy) params.set('sortBy', options.sortBy);
+  if (options.sortOrder) params.set('sortOrder', options.sortOrder);
+  if (options.limit) params.set('limit', String(options.limit));
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+
   try {
-    let query = supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId);
-
-    // Apply filters
-    if (options.eventType) {
-      query = query.eq('event_type', options.eventType);
-    }
-
-    if (options.startDate) {
-      query = query.gte('event_date', options.startDate);
-    }
-
-    if (options.endDate) {
-      query = query.lte('event_date', options.endDate);
-    }
-
-    // Apply sorting (default: event_date ascending)
-    const sortBy = options.sortBy || 'event_date';
-    const sortOrder = options.sortOrder || 'asc';
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data || [];
+    const payload = await apiRequest(`/api/calendar-events${suffix}`);
+    return payload.events || [];
   } catch (error) {
-    console.error('Error fetching calendar events:', error);
-    throw new Error(handleSupabaseError(error));
+    if (!shouldFallback(error)) throw error;
+    return filterLocal(readLocal(userId), options);
   }
 };
 
-/**
- * Get a single calendar event by ID
- * @param {string} eventId - The event ID
- * @param {string} userId - The user's ID
- * @returns {Promise<Object>} Calendar event
- */
 export const getCalendarEvent = async (eventId, userId) => {
-  try {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('id', eventId)
-      .eq('user_id', userId)
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+  if (!String(eventId || '').startsWith('local-')) {
+    try {
+      const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`);
+      return payload.event;
+    } catch (error) {
+      if (!shouldFallback(error)) throw error;
+    }
   }
+  return readLocal(userId).find(event => event.id === eventId) || null;
 };
 
-/**
- * Create a new calendar event
- * @param {string} userId - The user's ID
- * @param {Object} eventData - Event data
- * @returns {Promise<Object>} Created event
- */
 export const createCalendarEvent = async (userId, eventData) => {
+  if (!userId) throw new Error('User ID is required');
+  if (!eventData?.title?.trim()) throw new Error('Event title is required');
+  if (!eventData?.event_date) throw new Error('Event date is required');
+
+  const payload = {
+    title: eventData.title.trim(),
+    description: eventData.description || null,
+    event_date: eventData.event_date,
+    event_time: eventData.event_time || null,
+    event_type: eventData.event_type || 'other',
+    location: eventData.location || null,
+    notes: eventData.notes || null,
+    color: eventData.color || 'pink',
+    reminder_enabled: eventData.reminder_enabled !== false,
+    reminder_days_before: Number.isFinite(Number(eventData.reminder_days_before)) ? Number(eventData.reminder_days_before) : 1,
+    is_recurring: Boolean(eventData.is_recurring),
+    recurrence_pattern: eventData.recurrence_pattern || null,
+  };
+
   try {
-    console.log('📅 Creating calendar event with data:', { userId, eventData });
-    
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-    
-    if (!eventData.title || !eventData.title.trim()) {
-      throw new Error('Event title is required');
-    }
-    
-    if (!eventData.event_date) {
-      throw new Error('Event date is required');
-    }
-    
-    const insertData = {
+    const result = await apiRequest('/api/calendar-events', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return result.event;
+  } catch (error) {
+    if (!shouldFallback(error)) throw error;
+    const events = readLocal(userId);
+    const event = {
+      id: localId(),
       user_id: userId,
-      title: eventData.title.trim(),
-      description: eventData.description || null,
-      event_date: eventData.event_date,
-      event_time: eventData.event_time || null,
-      event_type: eventData.event_type || 'other',
-      location: eventData.location || null,
-      notes: eventData.notes || null,
-      color: eventData.color || 'pink',
-      reminder_enabled: eventData.reminder_enabled !== false,
-      reminder_days_before: eventData.reminder_days_before || 1,
-      is_recurring: eventData.is_recurring || false,
-      recurrence_pattern: eventData.recurrence_pattern || null,
+      ...payload,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      __local: true,
     };
-    
-    console.log('📤 Inserting into calendar_events:', insertData);
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('❌ Supabase error:', error);
-      throw error;
-    }
-    
-    console.log('✅ Event created successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('❌ Error creating calendar event:', error);
-    const errorMessage = error.message || handleSupabaseError(error) || 'Failed to create event';
-    throw new Error(errorMessage);
+    writeLocal(userId, [event, ...events]);
+    return event;
   }
 };
 
-/**
- * Update an existing calendar event
- * @param {string} eventId - The event ID
- * @param {string} userId - The user's ID
- * @param {Object} updates - Fields to update
- * @returns {Promise<Object>} Updated event
- */
 export const updateCalendarEvent = async (eventId, userId, updates) => {
-  try {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .update(updates)
-      .eq('id', eventId)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error updating calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+  if (!String(eventId || '').startsWith('local-')) {
+    try {
+      const payload = await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+      return payload.event;
+    } catch (error) {
+      if (!shouldFallback(error)) throw error;
+    }
   }
+
+  const events = readLocal(userId);
+  const index = events.findIndex(event => event.id === eventId);
+  if (index === -1) throw new Error('Calendar event not found');
+  const updated = { ...events[index], ...updates, updated_at: new Date().toISOString(), __local: true };
+  const next = [...events];
+  next[index] = updated;
+  writeLocal(userId, next);
+  return updated;
 };
 
-/**
- * Delete a calendar event
- * @param {string} eventId - The event ID
- * @param {string} userId - The user's ID
- * @returns {Promise<void>}
- */
 export const deleteCalendarEvent = async (eventId, userId) => {
-  try {
-    const { error } = await supabase
-      .from('calendar_events')
-      .delete()
-      .eq('id', eventId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error deleting calendar event:', error);
-    throw new Error(handleSupabaseError(error));
+  if (!String(eventId || '').startsWith('local-')) {
+    try {
+      await apiRequest(`/api/calendar-events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
+      return;
+    } catch (error) {
+      if (!shouldFallback(error)) throw error;
+    }
   }
+  writeLocal(userId, readLocal(userId).filter(event => event.id !== eventId));
 };
 
-/**
- * Get upcoming events (events in the future)
- * @param {string} userId - The user's ID
- * @param {number} limit - Number of events to return
- * @returns {Promise<Array>} Array of upcoming events
- */
 export const getUpcomingEvents = async (userId, limit = 10) => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', today)
-      .order('event_date', { ascending: true })
-      .limit(limit);
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching upcoming events:', error);
-    throw new Error(handleSupabaseError(error));
-  }
+  const today = new Date().toISOString().split('T')[0];
+  return getCalendarEvents(userId, {
+    startDate: today,
+    sortBy: 'event_date',
+    sortOrder: 'asc',
+    limit,
+  });
 };
 
-/**
- * Get events for a specific month
- * @param {string} userId - The user's ID
- * @param {Date} month - The month to query
- * @returns {Promise<Array>} Array of events in the month
- */
 export const getEventsForMonth = async (userId, month) => {
-  try {
-    const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
-    const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-    
-    const startDate = startOfMonth.toISOString().split('T')[0];
-    const endDate = endOfMonth.toISOString().split('T')[0];
-
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching events for month:', error);
-    throw new Error(handleSupabaseError(error));
-  }
+  const start = new Date(month.getFullYear(), month.getMonth(), 1);
+  const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+  return getCalendarEvents(userId, {
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+    sortBy: 'event_date',
+    sortOrder: 'asc',
+  });
 };
 
-/**
- * Get events by type
- * @param {string} userId - The user's ID
- * @param {string} eventType - The event type to filter by
- * @returns {Promise<Array>} Array of events
- */
-export const getEventsByType = async (userId, eventType) => {
-  try {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('event_type', eventType)
-      .order('event_date', { ascending: true });
+export const getEventsByType = async (userId, eventType) => getCalendarEvents(userId, {
+  eventType,
+  sortBy: 'event_date',
+  sortOrder: 'asc',
+});
 
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching events by type:', error);
-    throw new Error(handleSupabaseError(error));
-  }
-};
-
-/**
- * Get events for today
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of events for today
- */
 export const getTodayEvents = async (userId) => {
-  try {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('event_date', todayStr)
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching today events:', error);
-    throw new Error(handleSupabaseError(error));
-  }
+  const today = new Date().toISOString().split('T')[0];
+  return getCalendarEvents(userId, {
+    startDate: today,
+    endDate: today,
+    sortBy: 'event_date',
+    sortOrder: 'asc',
+  });
 };
 
-/**
- * Get events for this week
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of events for this week
- */
 export const getThisWeekEvents = async (userId) => {
-  try {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
-    
-    const startDate = startOfWeek.toISOString().split('T')[0];
-    const endDate = endOfWeek.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching this week events:', error);
-    throw new Error(handleSupabaseError(error));
-  }
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(today.getDate() - today.getDay());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return getCalendarEvents(userId, {
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+    sortBy: 'event_date',
+    sortOrder: 'asc',
+  });
 };
 
-/**
- * Get events for this month
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of events for this month
- */
-export const getThisMonthEvents = async (userId) => {
-  try {
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
-    const startDate = startOfMonth.toISOString().split('T')[0];
-    const endDate = endOfMonth.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: false });
+export const getThisMonthEvents = async (userId) => getEventsForMonth(userId, new Date());
 
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching this month events:', error);
-    throw new Error(handleSupabaseError(error));
-  }
-};
-
-/**
- * Get upcoming events (future events only)
- * @param {string} userId - The user's ID
- * @returns {Promise<Array>} Array of upcoming events
- */
 export const getUpcomingEventsFilter = async (userId) => {
-  try {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('event_date', todayStr)
-      .order('event_date', { ascending: true })
-      .order('event_time', { ascending: true, nullsFirst: false });
-
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching upcoming events:', error);
-    throw new Error(handleSupabaseError(error));
-  }
+  const today = new Date().toISOString().split('T')[0];
+  return getCalendarEvents(userId, {
+    startDate: today,
+    sortBy: 'event_date',
+    sortOrder: 'asc',
+  });
 };
-
