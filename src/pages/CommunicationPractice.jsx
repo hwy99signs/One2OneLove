@@ -226,6 +226,43 @@ const translations = {
 
 const ROUND_SIZE = 20;
 
+const sessionLabels = {
+  en: { nextQuestion: "Next Question", endSession: "End Session", reportCard: "Session Report", questionsAnswered: "Questions Answered" },
+  es: { nextQuestion: "Siguiente Pregunta", endSession: "Finalizar Sesión", reportCard: "Informe de la Sesión", questionsAnswered: "Preguntas Respondidas" },
+  fr: { nextQuestion: "Question Suivante", endSession: "Terminer la Session", reportCard: "Bilan de la Session", questionsAnswered: "Questions Répondues" },
+  it: { nextQuestion: "Domanda Successiva", endSession: "Termina Sessione", reportCard: "Rapporto della Sessione", questionsAnswered: "Domande Risposte" },
+  de: { nextQuestion: "Nächste Frage", endSession: "Sitzung Beenden", reportCard: "Sitzungsbericht", questionsAnswered: "Beantwortete Fragen" }
+};
+
+const shuffleArray = (items) => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+const buildScenarioList = (roundScenarioIds, scenarios) => {
+  const correctPositions = shuffleArray(
+    roundScenarioIds.map((_, index) => index % 4)
+  );
+
+  return roundScenarioIds.map((key, index) => {
+    const source = scenarios[key];
+    const correct = source.options.find(option => option.type === 'excellent');
+    const others = shuffleArray(source.options.filter(option => option.type !== 'excellent'));
+    const options = [...others];
+    options.splice(correctPositions[index], 0, correct);
+
+    return {
+      id: key,
+      ...source,
+      options
+    };
+  });
+};
+
 const pickRoundIds = (allIds, previousIds = []) => {
   const previous = new Set(previousIds);
   const fresh = allIds.filter(id => !previous.has(id));
@@ -236,6 +273,7 @@ const pickRoundIds = (allIds, previousIds = []) => {
 export default function CommunicationPractice() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const sessionText = sessionLabels[currentLanguage] || sessionLabels.en;
   const scenarios = communicationPracticeScenarios[currentLanguage] || communicationPracticeScenarios.en;
   
   const allScenarioIds = Object.keys(scenarios);
@@ -245,18 +283,19 @@ export default function CommunicationPractice() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [completedScenarios, setCompletedScenarios] = useState([]);
   const [roundResults, setRoundResults] = useState({});
+  const [sessionEnded, setSessionEnded] = useState(false);
 
-  const scenarioList = useMemo(() => roundScenarioIds.map(key => ({
-    id: key,
-    ...scenarios[key],
-    options: [...scenarios[key].options].sort(() => Math.random() - 0.5)
-  })), [roundScenarioIds, scenarios]);
+  const scenarioList = useMemo(
+    () => buildScenarioList(roundScenarioIds, scenarios),
+    [roundScenarioIds, scenarios]
+  );
 
   const correctAnswers = Object.values(roundResults).filter(Boolean).length;
   const answeredCount = Object.keys(roundResults).length;
   const wrongAnswers = answeredCount - correctAnswers;
   const percentageScore = answeredCount ? Math.round((correctAnswers / answeredCount) * 100) : 0;
   const roundComplete = answeredCount === ROUND_SIZE;
+  const sessionFinished = sessionEnded || roundComplete;
 
   const handleScenarioSelect = (scenario) => {
     setSelectedScenario(scenario);
@@ -271,9 +310,12 @@ export default function CommunicationPractice() {
     if (!(selectedScenario.id in roundResults)) {
       setRoundResults(prev => ({ ...prev, [selectedScenario.id]: option.type === 'excellent' }));
     }
-    
-    if (option.type === 'excellent' && !completedScenarios.includes(selectedScenario.id)) {
-      setCompletedScenarios([...completedScenarios, selectedScenario.id]);
+
+    if (!completedScenarios.includes(selectedScenario.id)) {
+      setCompletedScenarios(prev => [...prev, selectedScenario.id]);
+    }
+
+    if (option.type === 'excellent') {
       toast.success(t.completed);
     }
   };
@@ -291,7 +333,9 @@ export default function CommunicationPractice() {
     handleScenarioSelect(unanswered);
   };
 
-  const handleTryAgain = () => {
+  const handleEndSession = () => {
+    setSessionEnded(true);
+    setSelectedScenario(null);
     setSelectedResponse(null);
     setShowFeedback(false);
   };
@@ -304,6 +348,7 @@ export default function CommunicationPractice() {
     setShowFeedback(false);
     setCompletedScenarios([]);
     setRoundResults({});
+    setSessionEnded(false);
   };
 
   const getFeedbackIcon = (type) => {
@@ -335,8 +380,12 @@ export default function CommunicationPractice() {
       className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 border-2 border-green-200 text-center"
     >
       <Heart className="w-12 h-12 text-green-600 mx-auto mb-4" />
-      <h3 className="text-3xl font-bold text-gray-900 mb-6">{t.roundComplete}</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-6">
+      <h3 className="text-3xl font-bold text-gray-900 mb-6">{sessionText.reportCard}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-6">
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-blue-200">
+          <div className="text-sm text-gray-600">{sessionText.questionsAnswered}</div>
+          <div className="text-3xl font-bold text-blue-600">{answeredCount}</div>
+        </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border border-green-200">
           <div className="text-sm text-gray-600">{t.correctAnswers}</div>
           <div className="text-3xl font-bold text-green-600">{correctAnswers}</div>
@@ -386,7 +435,7 @@ export default function CommunicationPractice() {
           </p>
         </motion.div>
 
-        {roundComplete && !selectedScenario ? roundSummary : !selectedScenario ? (
+        {sessionFinished && !selectedScenario ? roundSummary : !selectedScenario ? (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               {t.selectScenario}
@@ -433,13 +482,15 @@ export default function CommunicationPractice() {
                   <CardTitle className="text-2xl font-bold text-gray-900">
                     {selectedScenario.title}
                   </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedScenario(null)}
-                  >
-                    ← Back
-                  </Button>
+                  {!showFeedback && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedScenario(null)}
+                    >
+                      ← Back
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -491,8 +542,7 @@ export default function CommunicationPractice() {
                       <div className="flex items-center gap-3">
                         {getFeedbackIcon(selectedResponse.type)}
                         <CardTitle className="text-2xl font-bold text-gray-900">
-                          {selectedResponse.type === 'excellent' ? t.excellent : 
-                           selectedResponse.type === 'good' ? t.good : t.needsWork}
+                          {selectedResponse.type === 'excellent' ? t.excellent : t.needsWork}
                         </CardTitle>
                       </div>
                     </CardHeader>
@@ -500,23 +550,20 @@ export default function CommunicationPractice() {
                       <p className="text-gray-800 text-lg leading-relaxed mb-6">
                         {selectedResponse.feedback}
                       </p>
-                      <div className="flex gap-3">
-                        {selectedResponse.type !== 'excellent' && (
-                          <Button
-                            onClick={handleTryAgain}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            {t.tryAgain}
-                          </Button>
-                        )}
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <Button
                           onClick={handleNextScenario}
                           className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
                         >
-                          {t.nextScenario}
+                          {sessionText.nextQuestion}
                           <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                        <Button
+                          onClick={handleEndSession}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          {sessionText.endSession}
                         </Button>
                       </div>
                     </CardContent>
