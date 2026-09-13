@@ -1,0 +1,88 @@
+name: Patch Love Notes Categories
+
+on:
+  push:
+    branches:
+      - love-notes-holiday-religious-service-workplace
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: love-notes-holiday-religious-service-workplace
+
+      - name: Wire new Love Notes categories into existing page
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/LoveNotes.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 match, found {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              'import { loveNotesData } from "../components/lovenotes/LoveNotesData";\n',
+              'import { loveNotesData } from "../components/lovenotes/LoveNotesData";\nimport { additionalLoveNotesData } from "../components/lovenotes/additional";\n',
+              'additional data import'
+          )
+
+          label_replacements = [
+              ('      goodLuck: "Good Luck",\n', '      goodLuck: "Good Luck",\n      holiday: "Holiday",\n      religious: "Religious",\n      service: "Service",\n      workplace: "Workplace",\n'),
+              ('      goodLuck: "Buena Suerte",\n', '      goodLuck: "Buena Suerte",\n      holiday: "Festividades",\n      religious: "Religioso",\n      service: "Servicio",\n      workplace: "Lugar de Trabajo",\n'),
+              ('      goodLuck: "Bonne Chance",\n', '      goodLuck: "Bonne Chance",\n      holiday: "Fêtes",\n      religious: "Religieux",\n      service: "Service",\n      workplace: "Lieu de Travail",\n'),
+              ('      goodLuck: "Buona Fortuna",\n', '      goodLuck: "Buona Fortuna",\n      holiday: "Festività",\n      religious: "Religioso",\n      service: "Servizio",\n      workplace: "Posto di Lavoro",\n'),
+              ('      goodLuck: "Viel Glück",\n', '      goodLuck: "Viel Glück",\n      holiday: "Feiertage",\n      religious: "Religiös",\n      service: "Dienst",\n      workplace: "Arbeitsplatz",\n'),
+          ]
+          for idx, (old, new) in enumerate(label_replacements, start=1):
+              replace_once(old, new, f'language category labels {idx}')
+
+          replace_once(
+              "  { id: 'goodLuck', name: t.categories.goodLuck, icon: '🍀' },\n];",
+              "  { id: 'goodLuck', name: t.categories.goodLuck, icon: '🍀' },\n  { id: 'holiday', name: t.categories.holiday, icon: '🎊' },\n  { id: 'religious', name: t.categories.religious, icon: '🕊️' },\n  { id: 'service', name: t.categories.service, icon: '🤝' },\n  { id: 'workplace', name: t.categories.workplace, icon: '💼' },\n];",
+              'category selector'
+          )
+
+          replace_once(
+              "  const data = loveNotesData[lang] || loveNotesData.en;\n",
+              "  const baseData = loveNotesData[lang] || loveNotesData.en;\n  const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;\n  const data = { ...baseData, ...addedData };\n",
+              'data merge'
+          )
+
+          replace_once(
+              "    'family', 'friends', 'heartBroken', 'sick', 'goodLuck'\n",
+              "    'family', 'friends', 'heartBroken', 'sick', 'goodLuck',\n    'holiday', 'religious', 'service', 'workplace'\n",
+              'category generation order'
+          )
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit verified integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/LoveNotes.jsx
+          if git diff --cached --quiet; then
+            echo "No integration changes to commit."
+            exit 0
+          fi
+          git commit -m "Wire new Love Notes categories into collection"
+          git push origin HEAD:love-notes-holiday-religious-service-workplace
