@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check } from "lucide-react";
+import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,11 +12,12 @@ import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
+import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/dateideas/dateIdeasLibrary";
 
 const translations = {
   en: {
     title: "Date Ideas for Couples",
-    subtitle: "Discover creative and romantic ways to spend quality time together",
+    subtitle: "52 date ideas — one for every week of the year",
     back: "Back",
     categoryLabel: "Category",
     budgetLabel: "Budget",
@@ -42,6 +43,11 @@ const translations = {
     dateShared: "Shared with partner!",
     dateCompleted: "Marked as completed!",
     customDateCreated: "Custom date created!",
+    week: "Week",
+    close: "Close",
+    locations: "Location",
+    occasions: "Occasion",
+    stages: "Relationship Stage",
     categories: {
       all: "All Ideas",
       romantic: "Romantic",
@@ -112,6 +118,7 @@ export default function DateIdeas() {
   const [selectedStage, setSelectedStage] = useState('all');
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'custom', 'saved'
+  const [selectedIdea, setSelectedIdea] = useState(null);
 
   const { user: currentUser } = useAuth();
 
@@ -199,134 +206,37 @@ export default function DateIdeas() {
     { id: 'creative', name: t.categories.creative, icon: Sparkles },
   ];
 
-  const predefinedDateIdeas = [
-    {
-      id: 1,
-      title: t.dateIdeas.stargazing.title,
-      description: t.dateIdeas.stargazing.description,
-      category: 'romantic',
-      budget: 'free',
-      icon: Star,
-      color: 'from-purple-500 to-pink-500',
-      difficulty: t.dateIdeas.stargazing.difficulty,
-      duration: t.dateIdeas.stargazing.duration,
-      location_type: t.dateIdeas.stargazing.location_type,
-      occasion: t.dateIdeas.stargazing.occasion,
-      relationship_stage: t.dateIdeas.stargazing.relationship_stage
-    },
-    {
-      id: 2,
-      title: t.dateIdeas.cookingClass.title,
-      description: t.dateIdeas.cookingClass.description,
-      category: 'creative',
-      budget: 'medium',
-      icon: Utensils,
-      color: 'from-orange-500 to-red-500',
-      difficulty: t.dateIdeas.cookingClass.difficulty,
-      duration: t.dateIdeas.cookingClass.duration,
-      location_type: t.dateIdeas.cookingClass.location_type,
-      occasion: t.dateIdeas.cookingClass.occasion,
-      relationship_stage: t.dateIdeas.cookingClass.relationship_stage
-    },
-    {
-      id: 3,
-      title: t.dateIdeas.coffeeHopping.title,
-      description: t.dateIdeas.coffeeHopping.description,
-      category: 'relaxing',
-      budget: 'low',
-      icon: Coffee,
-      color: 'from-amber-500 to-orange-500',
-      difficulty: t.dateIdeas.coffeeHopping.difficulty,
-      duration: t.dateIdeas.coffeeHopping.duration,
-      location_type: t.dateIdeas.coffeeHopping.location_type,
-      occasion: t.dateIdeas.coffeeHopping.occasion,
-      relationship_stage: t.dateIdeas.coffeeHopping.relationship_stage
-    },
-    {
-      id: 4,
-      title: t.dateIdeas.movieMarathon.title,
-      description: t.dateIdeas.movieMarathon.description,
-      category: 'indoor',
-      budget: 'free',
-      icon: Film,
-      color: 'from-blue-500 to-purple-500',
-      difficulty: t.dateIdeas.movieMarathon.difficulty,
-      duration: t.dateIdeas.movieMarathon.duration,
-      location_type: t.dateIdeas.movieMarathon.location_type,
-      occasion: t.dateIdeas.movieMarathon.occasion,
-      relationship_stage: t.dateIdeas.movieMarathon.relationship_stage
-    },
-    {
-      id: 5,
-      title: t.dateIdeas.liveMusic.title,
-      description: t.dateIdeas.liveMusic.description,
-      category: 'romantic',
-      budget: 'medium',
-      icon: Music,
-      color: 'from-pink-500 to-rose-500',
-      difficulty: t.dateIdeas.liveMusic.difficulty,
-      duration: t.dateIdeas.liveMusic.duration,
-      location_type: t.dateIdeas.liveMusic.location_type,
-      occasion: t.dateIdeas.liveMusic.occasion,
-      relationship_stage: t.dateIdeas.liveMusic.relationship_stage
-    },
-    {
-      id: 6,
-      title: t.dateIdeas.hiking.title,
-      description: t.dateIdeas.hiking.description,
-      category: 'adventure',
-      budget: 'free',
-      icon: Mountain,
-      color: 'from-green-500 to-emerald-500',
-      difficulty: t.dateIdeas.hiking.difficulty,
-      duration: t.dateIdeas.hiking.duration,
-      location_type: t.dateIdeas.hiking.location_type,
-      occasion: t.dateIdeas.hiking.occasion,
-      relationship_stage: t.dateIdeas.hiking.relationship_stage
-    },
-    {
-      id: 7,
-      title: t.dateIdeas.beachSunset.title,
-      description: t.dateIdeas.beachSunset.description,
-      category: 'outdoor',
-      budget: 'free',
-      icon: Waves,
-      color: 'from-cyan-500 to-blue-500',
-      difficulty: t.dateIdeas.beachSunset.difficulty,
-      duration: t.dateIdeas.beachSunset.duration,
-      location_type: t.dateIdeas.beachSunset.location_type,
-      occasion: t.dateIdeas.beachSunset.occasion,
-      relationship_stage: t.dateIdeas.beachSunset.relationship_stage
-    },
-    {
-      id: 8,
-      title: t.dateIdeas.paintSip.title,
-      description: t.dateIdeas.paintSip.description,
-      category: 'creative',
-      budget: 'low',
-      icon: Sparkles,
-      color: 'from-purple-500 to-pink-500',
-      difficulty: t.dateIdeas.paintSip.difficulty,
-      duration: t.dateIdeas.paintSip.duration,
-      location_type: t.dateIdeas.paintSip.location_type,
-      occasion: t.dateIdeas.paintSip.occasion,
-      relationship_stage: t.dateIdeas.paintSip.relationship_stage
-    },
-    {
-      id: 9,
-      title: t.dateIdeas.exploreNeighborhood.title,
-      description: t.dateIdeas.exploreNeighborhood.description,
-      category: 'adventure',
-      budget: 'medium',
-      icon: MapPin,
-      color: 'from-teal-500 to-cyan-500',
-      difficulty: t.dateIdeas.exploreNeighborhood.difficulty,
-      duration: t.dateIdeas.exploreNeighborhood.duration,
-      location_type: t.dateIdeas.exploreNeighborhood.location_type,
-      occasion: t.dateIdeas.exploreNeighborhood.occasion,
-      relationship_stage: t.dateIdeas.exploreNeighborhood.relationship_stage
-    },
+  const iconMap = {
+    heart: Heart,
+    coffee: Coffee,
+    utensils: Utensils,
+    film: Film,
+    music: Music,
+    map: MapPin,
+    star: Star,
+    sparkles: Sparkles,
+    home: Home,
+    tree: TreePine,
+    waves: Waves,
+    mountain: Mountain,
+  };
+
+  const dateIdeaColors = [
+    'from-purple-500 to-pink-500',
+    'from-orange-500 to-red-500',
+    'from-amber-500 to-orange-500',
+    'from-blue-500 to-purple-500',
+    'from-pink-500 to-rose-500',
+    'from-green-500 to-emerald-500',
+    'from-cyan-500 to-blue-500',
+    'from-teal-500 to-cyan-500',
   ];
+
+  const predefinedDateIdeas = getDateIdeasForLanguage(currentLanguage).map((idea, index) => ({
+    ...idea,
+    icon: iconMap[idea.iconKey] || Heart,
+    color: dateIdeaColors[index % dateIdeaColors.length]
+  }));
 
   const allIdeas = viewMode === 'custom' 
     ? customDates 
@@ -334,14 +244,13 @@ export default function DateIdeas() {
     ? [...savedDates, ...predefinedDateIdeas.filter(idea => savedDates.some(saved => saved.title === idea.title))]
     : [...predefinedDateIdeas, ...customDates];
 
-  const filteredIdeas = allIdeas.filter(idea => {
-    const categoryMatch = selectedCategory === 'all' || idea.category === selectedCategory;
-    const budgetMatch = selectedBudget === 'all' || idea.budget === selectedBudget;
-    const locationMatch = selectedLocation === 'all' || idea.location_type === selectedLocation;
-    const occasionMatch = selectedOccasion === 'all' || idea.occasion === selectedOccasion;
-    const stageMatch = selectedStage === 'all' || idea.relationship_stage === selectedStage || idea.relationship_stage === 'any';
-    return categoryMatch && budgetMatch && locationMatch && occasionMatch && stageMatch;
-  });
+  const filteredIdeas = allIdeas.filter(idea => (
+    matchesDateIdeaFilter(idea, 'category', selectedCategory) &&
+    matchesDateIdeaFilter(idea, 'budget', selectedBudget) &&
+    matchesDateIdeaFilter(idea, 'location', selectedLocation) &&
+    matchesDateIdeaFilter(idea, 'occasion', selectedOccasion) &&
+    matchesDateIdeaFilter(idea, 'stage', selectedStage)
+  ));
 
   const handleSaveDate = async (idea) => {
     if (idea.id && idea.created_by === currentUser?.email) {
@@ -377,6 +286,17 @@ export default function DateIdeas() {
       });
       toast.success(t.dateCompleted);
     }
+  };
+
+  const formatOptionList = (values, optionMap) => {
+    const list = Array.isArray(values) ? values : values ? [values] : [];
+    return list.map(value => optionMap?.[value] || String(value).replaceAll('_', ' ')).join(' • ');
+  };
+
+  const formatDifficulty = (value) => {
+    if (!value) return '';
+    const text = String(value);
+    return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
   return (
@@ -513,75 +433,111 @@ export default function DateIdeas() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredIdeas.map((idea, index) => {
             const Icon = idea.icon || Heart;
-            const isCustom = idea.created_by === currentUser?.email;
             return (
-              <motion.div
-                key={idea.id || index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
+              <motion.button
+                type="button"
+                key={idea.id || `${idea.title}-${index}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(index * 0.015, 0.25) }}
+                onClick={() => setSelectedIdea(idea)}
+                className="w-full min-h-[86px] bg-white rounded-xl border border-gray-200 hover:border-pink-300 hover:shadow-lg transition-all duration-200 px-4 py-4 text-left flex items-center gap-4"
               >
-                <Card className="h-full hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-pink-200">
-                  <CardHeader>
-                    <div className={`w-16 h-16 bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
-                      <Icon className="w-8 h-8 text-white" />
+                <div className={`w-11 h-11 flex-shrink-0 bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} rounded-xl flex items-center justify-center shadow-md`}>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+                <span className="font-bold text-gray-900 leading-snug">{idea.title}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence>
+          {selectedIdea && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/25 backdrop-blur-[1px] flex items-center justify-center p-4"
+              onClick={() => setSelectedIdea(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                transition={{ duration: 0.18 }}
+                className="w-full max-w-2xl"
+                onClick={(event) => event.stopPropagation()}
+                onMouseLeave={() => setSelectedIdea(null)}
+              >
+                <Card className="bg-white shadow-2xl border-2 border-pink-100 max-h-[85vh] overflow-y-auto">
+                  <CardHeader className="relative pr-14">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t.close || 'Close'}
+                      onClick={() => setSelectedIdea(null)}
+                      className="absolute right-3 top-3 rounded-full"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                    <div className="flex items-center gap-4">
+                      {(() => {
+                        const DetailIcon = selectedIdea.icon || Heart;
+                        return (
+                          <div className={`w-14 h-14 flex-shrink-0 bg-gradient-to-br ${selectedIdea.color || 'from-pink-500 to-purple-600'} rounded-2xl flex items-center justify-center shadow-lg`}>
+                            <DetailIcon className="w-7 h-7 text-white" />
+                          </div>
+                        );
+                      })()}
+                      <div>
+                        {selectedIdea.week && (
+                          <p className="text-sm font-semibold text-pink-600 mb-1">{t.week || 'Week'} {selectedIdea.week} / 52</p>
+                        )}
+                        <CardTitle className="text-2xl font-bold text-gray-900">{selectedIdea.title}</CardTitle>
+                      </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-gray-900">
-                      {idea.title}
-                      {idea.completed && <Check className="inline-block w-5 h-5 text-green-600 ml-2" />}
-                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4 leading-relaxed">{idea.description}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{t.difficulty}:</span>
-                        <span className="font-semibold text-gray-700">{idea.difficulty}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{t.duration}:</span>
-                        <span className="font-semibold text-gray-700">{idea.duration || `${idea.duration_hours}h`}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{t.budget}:</span>
-                        <span className="font-semibold text-gray-700 capitalize">{idea.budget}</span>
-                      </div>
+                    <p className="text-gray-700 leading-relaxed mb-6">{selectedIdea.description}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-6">
+                      <div><span className="text-gray-500">{t.difficulty}:</span> <span className="font-semibold text-gray-800">{formatDifficulty(selectedIdea.difficulty)}</span></div>
+                      <div><span className="text-gray-500">{t.duration}:</span> <span className="font-semibold text-gray-800">{selectedIdea.duration || (selectedIdea.duration_hours ? `${selectedIdea.duration_hours}h` : '')}</span></div>
+                      <div><span className="text-gray-500">{t.budget}:</span> <span className="font-semibold text-gray-800">{t.budgetOptions?.[selectedIdea.budget] || selectedIdea.budget}</span></div>
+                      <div><span className="text-gray-500">{t.locations || t.locationLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.locations || selectedIdea.location_type, t.locationOptions)}</span></div>
+                      <div className="sm:col-span-2"><span className="text-gray-500">{t.occasions || t.occasionLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.occasions || selectedIdea.occasion, t.occasionOptions)}</span></div>
+                      <div className="sm:col-span-2"><span className="text-gray-500">{t.stages || t.stageLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.stages || selectedIdea.relationship_stage, t.stageOptions)}</span></div>
                     </div>
 
-                    {isCustom && (
-                      <div className="flex gap-2 mb-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSaveDate(idea)}
-                          className={idea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
-                        >
-                          <Bookmark className={`w-4 h-4 ${idea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
+                    {selectedIdea.created_by === currentUser?.email && (
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                        <Button size="sm" variant="outline" onClick={() => handleSaveDate(selectedIdea)} className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}>
+                          <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
+                          {t.addToSaved}
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleShareDate(idea)}>
-                          <Share2 className="w-4 h-4" />
+                        <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                          <Share2 className="w-4 h-4 mr-2" />
+                          {t.shareWithPartner}
                         </Button>
-                        {!idea.completed && (
-                          <Button size="sm" variant="outline" onClick={() => handleCompleteDate(idea)}>
-                            <Check className="w-4 h-4" />
+                        {!selectedIdea.completed && (
+                          <Button size="sm" variant="outline" onClick={() => handleCompleteDate(selectedIdea)}>
+                            <Check className="w-4 h-4 mr-2" />
+                            {t.markComplete}
                           </Button>
                         )}
                       </div>
                     )}
-
-                    <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                      {t.getDetails}
-                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
-            );
-          })}
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {filteredIdeas.length === 0 && (
           <div className="text-center py-12">
