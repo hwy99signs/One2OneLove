@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
-import LaunchRegularUserForm from "@/components/signup/LaunchRegularUserForm";
+import IndividualSignupForm from "@/components/signup/IndividualSignupForm";
 
 const COPY = {
   en: { title: "Create Your One2One Love Account", subtitle: "Choose how you are joining the platform.", individual: "Individual", individualBody: "Join as a member to use One2One Love relationship tools, community and member features.", professional: "Professional / Contributor", professionalBody: "Apply as a licensed professional, coach or educator, creator/media contributor, organization or professional partner.", continue: "Continue", back: "Back" },
@@ -32,7 +32,7 @@ export default function SignUp() {
   if (mode === "individual") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 py-12 px-4">
-        <LaunchRegularUserForm onBack={handleBack} />
+        <IndividualSignupForm onBack={handleBack} />
       </div>
     );
   }
