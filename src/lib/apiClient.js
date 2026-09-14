@@ -72,6 +72,13 @@ export async function requestPasswordReset(email, redirectTo) {
   });
 }
 
+export async function resetPassword(newPassword, token) {
+  return apiRequest('/api/auth/reset-password', {
+    method: 'POST',
+    body: { newPassword, token },
+  });
+}
+
 export async function getProfile() {
   const payload = await apiRequest('/api/profile');
   return payload?.profile || null;
