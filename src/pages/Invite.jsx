@@ -1,333 +1,131 @@
-import React, { useState } from "react";
-import { Heart, Copy, Share2, Facebook, Twitter, Instagram, Linkedin, Mail, MessageSquare, Smartphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { Copy, Facebook, Heart, Linkedin, Mail, MessageSquare, Share2, Smartphone, Twitter } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { useLanguage } from '@/Layout';
+
+const copy = {
+  en: {
+    title:'Invite Friends & Family', subtitle:'Share One2OneLove with people you care about.', message:"I found One2OneLove, a relationship platform with practical tools, conversations and resources for healthier connection. Take a look 💕",
+    textTitle:'Invite by Text Message', emailTitle:'Invite by Email', linkTitle:'Share Your Invite Link', socialTitle:'Share Via', phone:'Enter phone number', email:'Enter email address', send:'Send', copy:'Copy', copied:'Invite link copied!', needPhone:'Enter a phone number first.', needEmail:'Enter an email address first.', openingText:'Opening your text message app…', openingEmail:'Opening your email app…', copiedPost:'Invite text copied. Paste it into the app you want to use.', why:'Why share One2OneLove?', reasons:['Help people you care about discover practical relationship tools.','Bring more thoughtful voices into the One2OneLove community.','Give friends and family an easy way to explore healthier communication and connection.']
+  },
+  es: {
+    title:'Invitar a Amigos y Familia', subtitle:'Comparte One2OneLove con las personas que te importan.', message:'Encontré One2OneLove, una plataforma de relaciones con herramientas prácticas, conversaciones y recursos para conexiones más saludables. Échale un vistazo 💕',
+    textTitle:'Invitar por Mensaje de Texto', emailTitle:'Invitar por Correo', linkTitle:'Comparte Tu Enlace de Invitación', socialTitle:'Compartir Vía', phone:'Ingresa el número de teléfono', email:'Ingresa el correo electrónico', send:'Enviar', copy:'Copiar', copied:'¡Enlace copiado!', needPhone:'Primero ingresa un número de teléfono.', needEmail:'Primero ingresa un correo electrónico.', openingText:'Abriendo tu aplicación de mensajes…', openingEmail:'Abriendo tu aplicación de correo…', copiedPost:'Texto de invitación copiado. Pégalo en la aplicación que quieras usar.', why:'¿Por qué compartir One2OneLove?', reasons:['Ayuda a las personas que quieres a descubrir herramientas prácticas para sus relaciones.','Trae más voces reflexivas a la comunidad One2OneLove.','Da a amigos y familia una forma sencilla de explorar una comunicación y conexión más saludables.']
+  },
+  fr: {
+    title:'Inviter Amis et Famille', subtitle:'Partagez One2OneLove avec les personnes qui comptent pour vous.', message:'J’ai découvert One2OneLove, une plateforme relationnelle avec des outils pratiques, des conversations et des ressources pour des liens plus sains. Jetez-y un œil 💕',
+    textTitle:'Inviter par SMS', emailTitle:'Inviter par E-mail', linkTitle:'Partager Votre Lien d’Invitation', socialTitle:'Partager Via', phone:'Entrez le numéro de téléphone', email:'Entrez l’adresse e-mail', send:'Envoyer', copy:'Copier', copied:'Lien d’invitation copié !', needPhone:'Entrez d’abord un numéro de téléphone.', needEmail:'Entrez d’abord une adresse e-mail.', openingText:'Ouverture de votre application de messages…', openingEmail:'Ouverture de votre application e-mail…', copiedPost:'Texte d’invitation copié. Collez-le dans l’application de votre choix.', why:'Pourquoi partager One2OneLove ?', reasons:['Aidez vos proches à découvrir des outils relationnels pratiques.','Apportez davantage de voix réfléchies à la communauté One2OneLove.','Offrez à vos proches un moyen simple d’explorer une communication et une connexion plus saines.']
+  },
+  it: {
+    title:'Invita Amici e Famiglia', subtitle:'Condividi One2OneLove con le persone a cui tieni.', message:'Ho trovato One2OneLove, una piattaforma per le relazioni con strumenti pratici, conversazioni e risorse per connessioni più sane. Dagli un’occhiata 💕',
+    textTitle:'Invita via Messaggio', emailTitle:'Invita via Email', linkTitle:'Condividi il Tuo Link di Invito', socialTitle:'Condividi Tramite', phone:'Inserisci il numero di telefono', email:'Inserisci l’indirizzo email', send:'Invia', copy:'Copia', copied:'Link di invito copiato!', needPhone:'Inserisci prima un numero di telefono.', needEmail:'Inserisci prima un indirizzo email.', openingText:'Apertura dell’app messaggi…', openingEmail:'Apertura dell’app email…', copiedPost:'Testo dell’invito copiato. Incollalo nell’app che vuoi usare.', why:'Perché condividere One2OneLove?', reasons:['Aiuta le persone a cui tieni a scoprire strumenti pratici per le relazioni.','Porta più voci attente nella comunità One2OneLove.','Offri ad amici e familiari un modo semplice per esplorare una comunicazione e una connessione più sane.']
+  },
+  de: {
+    title:'Freunde & Familie Einladen', subtitle:'Teile One2OneLove mit Menschen, die dir wichtig sind.', message:'Ich habe One2OneLove entdeckt – eine Beziehungsplattform mit praktischen Werkzeugen, Gesprächen und Ressourcen für gesündere Verbindung. Schau es dir an 💕',
+    textTitle:'Per Textnachricht Einladen', emailTitle:'Per E-Mail Einladen', linkTitle:'Deinen Einladungslink Teilen', socialTitle:'Teilen Über', phone:'Telefonnummer eingeben', email:'E-Mail-Adresse eingeben', send:'Senden', copy:'Kopieren', copied:'Einladungslink kopiert!', needPhone:'Gib zuerst eine Telefonnummer ein.', needEmail:'Gib zuerst eine E-Mail-Adresse ein.', openingText:'Nachrichten-App wird geöffnet…', openingEmail:'E-Mail-App wird geöffnet…', copiedPost:'Einladungstext kopiert. Füge ihn in die gewünschte App ein.', why:'Warum One2OneLove teilen?', reasons:['Hilf Menschen, die dir wichtig sind, praktische Beziehungswerkzeuge zu entdecken.','Bring weitere nachdenkliche Stimmen in die One2OneLove Community.','Gib Freunden und Familie einen einfachen Weg zu gesünderer Kommunikation und Verbindung.']
+  }
+};
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
+  document.execCommand('copy');
+  area.remove();
+}
 
 export default function Invite() {
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const inviteLink = typeof window !== 'undefined' ? `${window.location.origin}/Invite` : 'https://one2onelove.com/Invite';
-  const inviteMessage = "I've been using One2OneLove to strengthen my relationships and I think you'll love it too! Join me on this romantic journey. 💕";
+  const { currentLanguage } = useLanguage();
+  const t = copy[currentLanguage] || copy.en;
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const inviteLink = typeof window !== 'undefined' ? `${window.location.origin}/SignUp` : 'https://one2onelove.com/SignUp';
+  const shareText = `${t.message}\n\n${inviteLink}`;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteLink);
-    toast.success('Link copied to clipboard!');
+  const handleCopyLink = async () => {
+    try { await copyToClipboard(inviteLink); toast.success(t.copied); }
+    catch { toast.error('Unable to copy the link.'); }
   };
 
-  const handleEmailInvite = (e) => {
-    e.preventDefault();
-    if (!email.trim()) {
-      toast.error('Please enter an email address');
-      return;
-    }
-    const subject = encodeURIComponent('Join me on One2OneLove');
-    const body = encodeURIComponent(`${inviteMessage}\n\n${inviteLink}`);
+  const handleEmailInvite = event => {
+    event.preventDefault();
+    if (!email.trim()) return toast.error(t.needEmail);
+    const subject = encodeURIComponent('One2OneLove');
+    const body = encodeURIComponent(shareText);
     window.location.href = `mailto:${encodeURIComponent(email.trim())}?subject=${subject}&body=${body}`;
-    toast.info('Opening your email app...');
-    setEmail("");
+    toast.info(t.openingEmail);
   };
 
-  const handleSMSInvite = (e) => {
-    e.preventDefault();
-    if (!phoneNumber.trim()) {
-      toast.error('Please enter a phone number');
-      return;
-    }
-    const text = encodeURIComponent(`${inviteMessage}\n\n${inviteLink}`);
-    window.open(`sms:${phoneNumber}?body=${text}`);
-    toast.success('Opening text message...');
-    setPhoneNumber("");
+  const handleSMSInvite = event => {
+    event.preventDefault();
+    if (!phoneNumber.trim()) return toast.error(t.needPhone);
+    window.location.href = `sms:${phoneNumber.trim()}?body=${encodeURIComponent(shareText)}`;
+    toast.info(t.openingText);
   };
 
-  const shareVia = (platform) => {
-    const text = encodeURIComponent(inviteMessage);
+  const shareVia = async platform => {
+    const text = encodeURIComponent(t.message);
     const url = encodeURIComponent(inviteLink);
-    
-    switch(platform) {
-      case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`);
-        break;
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`);
-        break;
-      case 'instagram':
-        navigator.clipboard.writeText(`${inviteMessage}\n\n${inviteLink}`);
-        toast.success('Copied! Paste in Instagram');
-        break;
-      case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
-        break;
-      case 'tiktok':
-        navigator.clipboard.writeText(`${inviteMessage}\n\n${inviteLink}`);
-        toast.success('Copied! Paste in TikTok');
-        break;
-      case 'youtube':
-        navigator.clipboard.writeText(`${inviteMessage}\n\n${inviteLink}`);
-        toast.success('Copied! Paste in YouTube');
-        break;
-      case 'whatsapp':
-        window.open(`https://wa.me/?text=${text}%20${url}`);
-        break;
-      case 'sms':
-        window.open(`sms:?body=${text}%20${url}`);
-        break;
-      default:
-        break;
+    if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'noopener,noreferrer');
+    else if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'noopener,noreferrer');
+    else if (platform === 'linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'noopener,noreferrer');
+    else if (platform === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
+    else {
+      try { await copyToClipboard(shareText); toast.success(t.copiedPost); }
+      catch { toast.error('Unable to copy the invite text.'); }
     }
   };
+
+  const cards = [
+    ['facebook','Facebook',Facebook,'bg-blue-600'],
+    ['x','X',Twitter,'bg-slate-900'],
+    ['linkedin','LinkedIn',Linkedin,'bg-blue-700'],
+    ['whatsapp','WhatsApp',MessageSquare,'bg-green-600'],
+    ['instagram','Instagram',Share2,'bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600'],
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl">
-            <Share2 className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Invite Friends & Family
-          </h1>
-          <p className="text-xl text-gray-600">
-            Share the love and earn rewards
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
+      <div className="mx-auto max-w-3xl">
+        <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="mb-10 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg"><Share2 size={30}/></div>
+          <h1 className="text-4xl font-black text-slate-900">{t.title}</h1>
+          <p className="mt-3 text-xl text-slate-600">{t.subtitle}</p>
         </motion.div>
 
-        {/* Testimonial Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <Card className="bg-pink-50 border-2 border-pink-200 shadow-lg">
-            <CardContent className="pt-6">
-              <p className="text-center text-gray-700 italic leading-relaxed">
-                "{inviteMessage}"
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <div className="mb-7 rounded-3xl border border-pink-200 bg-pink-50 p-6 text-center text-slate-700 shadow-sm"><p className="italic leading-7">“{t.message}”</p></div>
 
-        {/* SMS Invite Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <Card className="shadow-xl">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Invite via Text Message</h3>
-              <form onSubmit={handleSMSInvite} className="flex gap-3">
-                <Input
-                  type="tel"
-                  placeholder="Enter phone number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="flex-1 h-12"
-                />
-                <Button
-                  type="submit"
-                  className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 px-6"
-                >
-                  <Smartphone className="w-4 h-4 mr-2" />
-                  Send
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-black text-slate-900">{t.textTitle}</h2>
+            <form onSubmit={handleSMSInvite} className="mt-4 flex gap-3"><input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder={t.phone} className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100"/><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 font-black text-white"><Smartphone size={17}/>{t.send}</button></form>
+          </section>
 
-        {/* Email Invite Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-8"
-        >
-          <Card className="shadow-xl">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Invite via Email</h3>
-              <form onSubmit={handleEmailInvite} className="flex gap-3">
-                <Input
-                  type="email"
-                  placeholder="Enter email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 h-12"
-                />
-                <Button
-                  type="submit"
-                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-6"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-black text-slate-900">{t.emailTitle}</h2>
+            <form onSubmit={handleEmailInvite} className="mt-4 flex gap-3"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100"/><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 font-black text-white"><Mail size={17}/>{t.send}</button></form>
+          </section>
+        </div>
 
-        {/* Share Link Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-8"
-        >
-          <Card className="shadow-xl">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Share Link</h3>
-              <div className="flex gap-3">
-                <Input
-                  value={inviteLink}
-                  readOnly
-                  className="flex-1 h-12 bg-gray-50"
-                />
-                <Button
-                  onClick={handleCopyLink}
-                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-6"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-black text-slate-900">{t.linkTitle}</h2>
+          <div className="mt-4 flex gap-3"><input value={inviteLink} readOnly className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"/><button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 font-black text-white"><Copy size={17}/>{t.copy}</button></div>
+        </section>
 
-        {/* Share Via Social Media */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mb-8"
-        >
-          <Card className="shadow-xl">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Share Via</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <button
-                  onClick={() => shareVia('facebook')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Facebook className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">Facebook</span>
-                </button>
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-black text-slate-900">{t.socialTitle}</h2>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">{cards.map(([id,label,Icon,bg]) => <button key={id} type="button" onClick={() => shareVia(id)} className="rounded-2xl border border-slate-200 p-3 text-center transition hover:-translate-y-0.5 hover:shadow-md"><div className={`mx-auto flex h-11 w-11 items-center justify-center rounded-full ${bg} text-white`}><Icon size={21}/></div><span className="mt-2 block text-xs font-bold text-slate-700">{label}</span></button>)}</div>
+        </section>
 
-                <button
-                  onClick={() => shareVia('twitter')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center">
-                    <Twitter className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">Twitter</span>
-                </button>
-
-                <button
-                  onClick={() => shareVia('instagram')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-pink-600 hover:bg-pink-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <Instagram className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">Instagram</span>
-                </button>
-
-                <button
-                  onClick={() => shareVia('linkedin')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-blue-700 hover:bg-blue-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-blue-700 rounded-full flex items-center justify-center">
-                    <Linkedin className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">LinkedIn</span>
-                </button>
-
-                <button
-                  onClick={() => shareVia('tiktok')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-cyan-400 hover:bg-cyan-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-black to-cyan-400 rounded-full flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6">
-                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">TikTok</span>
-                </button>
-
-                <button
-                  onClick={() => shareVia('youtube')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-red-600 hover:bg-red-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">YouTube</span>
-                </button>
-
-                <button
-                  onClick={() => shareVia('whatsapp')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-green-600 hover:bg-green-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">WhatsApp</span>
-                </button>
-
-                <button
-                  onClick={() => shareVia('sms')}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-purple-600 hover:bg-purple-50 transition-all"
-                >
-                  <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">SMS</span>
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Why Invite Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card className="bg-gradient-to-r from-pink-500 to-purple-600 shadow-xl">
-            <CardContent className="pt-6 pb-6 text-white">
-              <h3 className="text-xl font-bold mb-4">Why invite friends?</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-3">
-                  <Heart className="w-5 h-5 mt-0.5 flex-shrink-0 fill-current" />
-                  <span>Help your loved ones strengthen their relationships</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Heart className="w-5 h-5 mt-0.5 flex-shrink-0 fill-current" />
-                  <span>Earn rewards for every friend who joins</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Heart className="w-5 h-5 mt-0.5 flex-shrink-0 fill-current" />
-                  <span>Build a community of love and connection</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <section className="mt-6 rounded-3xl bg-gradient-to-r from-pink-500 to-purple-600 p-7 text-white shadow-lg">
+          <h2 className="text-xl font-black">{t.why}</h2>
+          <div className="mt-4 space-y-3">{t.reasons.map(reason => <div key={reason} className="flex items-start gap-3"><Heart className="mt-0.5 shrink-0 fill-white" size={18}/><p className="leading-6 text-white/95">{reason}</p></div>)}</div>
+        </section>
       </div>
     </div>
   );
