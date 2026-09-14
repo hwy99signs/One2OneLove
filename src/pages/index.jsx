@@ -38,6 +38,7 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
+import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -114,71 +115,73 @@ function PagesContent() {
 
   return (
     <Layout currentPageName={currentPage}>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/Home" element={<Home />} />
-        <Route path="/AboutUs" element={<AboutUs />} />
-        <Route path="/SignIn" element={<SignIn />} />
-        <Route path="/login" element={<SignIn />} />
-        <Route path="/SignUp" element={<SignUp />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/AdminAccess" element={<AdminAccess />} />
-        <Route path="/MemoryLane" element={<MemoryLane />} />
-        <Route path="/LoveNotes" element={<LoveNotes />} />
-        <Route path="/SendCredits" element={<SendCredits />} />
-        <Route path="/CoupleSupport" element={<CoupleSupport />} />
-        <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
-        <Route path="/DateIdeas" element={<DateIdeas />} />
-        <Route path="/Profile" element={<Profile />} />
-        <Route path="/Invite" element={<Invite />} />
-        <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
-        <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
-        <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
-        <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
-        <Route path="/ForgotPassword" element={<ForgotPassword />} />
-        <Route path="/Dashboard" element={<Dashboard />} />
-        <Route path="/Community" element={<Chat />} />
-        <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
-        <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
-        <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
-        <Route path="/CouplesProfile" element={<CouplesProfile />} />
-        <Route path="/CoupleActivities" element={<CoupleActivities />} />
-        <Route path="/SharedJournals" element={<SharedJournals />} />
-        <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
-        <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
-        <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
-        <Route path="/HelpCenter" element={<HelpCenter />} />
-        <Route path="/ContactUs" element={<ContactUs />} />
-        <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
-        <Route path="/TermsOfService" element={<TermsOfService />} />
-        <Route path="/Reviews" element={<Reviews />} />
-        <Route path="/LeaveReview" element={<LeaveReview />} />
-        <Route path="/Suggestions" element={<Suggestions />} />
-        <Route path="/Chat" element={<Chat />} />
-        <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/Subscription" element={<Subscription />} />
+      <LaunchAccessGate pathname={location.pathname}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/Home" element={<Home />} />
+          <Route path="/AboutUs" element={<AboutUs />} />
+          <Route path="/SignIn" element={<SignIn />} />
+          <Route path="/login" element={<SignIn />} />
+          <Route path="/SignUp" element={<SignUp />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/AdminAccess" element={<AdminAccess />} />
+          <Route path="/MemoryLane" element={<MemoryLane />} />
+          <Route path="/LoveNotes" element={<LoveNotes />} />
+          <Route path="/SendCredits" element={<SendCredits />} />
+          <Route path="/CoupleSupport" element={<CoupleSupport />} />
+          <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
+          <Route path="/DateIdeas" element={<DateIdeas />} />
+          <Route path="/Profile" element={<Profile />} />
+          <Route path="/Invite" element={<Invite />} />
+          <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
+          <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
+          <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
+          <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
+          <Route path="/ForgotPassword" element={<ForgotPassword />} />
+          <Route path="/Dashboard" element={<Dashboard />} />
+          <Route path="/Community" element={<Chat />} />
+          <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
+          <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
+          <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
+          <Route path="/CouplesProfile" element={<CouplesProfile />} />
+          <Route path="/CoupleActivities" element={<CoupleActivities />} />
+          <Route path="/SharedJournals" element={<SharedJournals />} />
+          <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
+          <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
+          <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
+          <Route path="/HelpCenter" element={<HelpCenter />} />
+          <Route path="/ContactUs" element={<ContactUs />} />
+          <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
+          <Route path="/TermsOfService" element={<TermsOfService />} />
+          <Route path="/Reviews" element={<Reviews />} />
+          <Route path="/LeaveReview" element={<LeaveReview />} />
+          <Route path="/Suggestions" element={<Suggestions />} />
+          <Route path="/Chat" element={<Chat />} />
+          <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/Subscription" element={<Subscription />} />
 
-        {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
-        <Route path="/InfluencerSignup" element={<Navigate to="/Home" replace />} />
-        <Route path="/ProfessionalSignup" element={<Navigate to="/Home" replace />} />
-        <Route path="/TherapistSignup" element={<Navigate to="/Home" replace />} />
-        <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
-        <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
-        <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
-        <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
-        <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
-        <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
-        <Route path="/Developer" element={<Navigate to="/Home" replace />} />
-        <Route path="/CooperativeGames" element={<Navigate to="/CoupleActivities" replace />} />
-        <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
-        <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
-        <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
-        <Route path="/FindFriends" element={<Navigate to="/Community" replace />} />
-        <Route path="/FriendRequests" element={<Navigate to="/Community" replace />} />
-        <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
-        <Route path="*" element={<Navigate to="/Home" replace />} />
-      </Routes>
+          {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
+          <Route path="/InfluencerSignup" element={<Navigate to="/Home" replace />} />
+          <Route path="/ProfessionalSignup" element={<Navigate to="/Home" replace />} />
+          <Route path="/TherapistSignup" element={<Navigate to="/Home" replace />} />
+          <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
+          <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
+          <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
+          <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
+          <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
+          <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
+          <Route path="/Developer" element={<Navigate to="/Home" replace />} />
+          <Route path="/CooperativeGames" element={<Navigate to="/CoupleActivities" replace />} />
+          <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
+          <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
+          <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
+          <Route path="/FindFriends" element={<Navigate to="/Community" replace />} />
+          <Route path="/FriendRequests" element={<Navigate to="/Community" replace />} />
+          <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
+          <Route path="*" element={<Navigate to="/Home" replace />} />
+        </Routes>
+      </LaunchAccessGate>
     </Layout>
   );
 }
