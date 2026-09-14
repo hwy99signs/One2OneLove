@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,17 +21,39 @@ const defaultLabels = {
   genericError: 'An error occurred. Please try again.',
 };
 
+const TIER_SELECTED_EVENT = 'o2ol-tier-selected';
+
 export default function TierCard({ tier, index, onSelect, isSelected, showPayment = false, labels = {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isHighlighted, setIsHighlighted] = useState(Boolean(isSelected));
   const copy = { ...defaultLabels, ...labels };
   const displayName = tier.displayName || tier.name;
   const pricingPending = tier.price === null || tier.price === undefined;
 
+  useEffect(() => {
+    setIsHighlighted(Boolean(isSelected));
+  }, [isSelected]);
+
+  useEffect(() => {
+    const handleTierSelected = (event) => {
+      setIsHighlighted(event.detail === tier.name);
+    };
+
+    window.addEventListener(TIER_SELECTED_EVENT, handleTierSelected);
+    return () => window.removeEventListener(TIER_SELECTED_EVENT, handleTierSelected);
+  }, [tier.name]);
+
+  const selectThisTier = () => {
+    window.dispatchEvent(new CustomEvent(TIER_SELECTED_EVENT, { detail: tier.name }));
+    if (onSelect) onSelect(tier);
+  };
+
   const handleChoosePlan = async () => {
+    selectThisTier();
+
     if (tier.checkoutDisabled || pricingPending) return;
 
     if (onSelect && !showPayment) {
-      onSelect(tier);
       return;
     }
 
@@ -64,8 +86,6 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
       } finally {
         setIsProcessing(false);
       }
-    } else if (onSelect) {
-      onSelect(tier);
     }
   };
 
@@ -77,9 +97,10 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
       className="h-full"
     >
       <Card
-        className={`relative h-full flex flex-col transition-all duration-300 hover:shadow-2xl ${
-          tier.popular ? 'border-4 border-purple-400 scale-105' : 'border-2 hover:border-purple-200'
-        } ${isSelected ? 'ring-4 ring-purple-500 ring-offset-2' : ''}`}
+        onClick={selectThisTier}
+        className={`relative h-full flex flex-col cursor-pointer border-2 transition-all duration-300 hover:shadow-2xl hover:border-purple-200 ${
+          isHighlighted ? 'ring-4 ring-purple-500 ring-offset-2' : ''
+        }`}
       >
         {tier.popular && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
@@ -126,20 +147,23 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
           </ul>
 
           <Button
-            onClick={handleChoosePlan}
-            disabled={isProcessing || tier.checkoutDisabled || pricingPending}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleChoosePlan();
+            }}
+            disabled={isProcessing}
             className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${
               tier.popular
                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
                 : 'bg-gray-800 hover:bg-gray-900 text-white'
-            } ${isSelected ? 'ring-4 ring-purple-500' : ''}`}
+            }`}
           >
             {isProcessing ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 {copy.processing}
               </>
-            ) : isSelected ? (
+            ) : isHighlighted ? (
               `✓ ${copy.selected}`
             ) : pricingPending || tier.checkoutDisabled ? (
               copy.pricingPendingButton
