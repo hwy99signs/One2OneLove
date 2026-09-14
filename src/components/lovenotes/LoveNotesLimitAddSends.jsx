@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Heart, MessageSquare, PlusCircle, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { getLoveNoteUsage } from '@/lib/loveNotesService';
 
 const COPY = {
@@ -89,11 +90,26 @@ export default function LoveNotesLimitAddSends() {
     const observer = new MutationObserver(attach);
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     const onUsage = () => refreshUsage();
+    const onQuotaError = event => {
+      const detail = event?.detail || {};
+      const preferred = (() => { try { return localStorage.getItem('preferredLanguage') || 'en'; } catch (_) { return 'en'; } })();
+      const actionLabel = (COPY[preferred] || COPY.en).topup;
+      if (detail.code === 'send_limit_reached' && detail.topUpUrl) {
+        toast.error(detail.message || 'Your included sends are used.', {
+          action: { label: actionLabel, onClick: goToTopUp },
+        });
+      } else {
+        toast.error(detail.message || 'Your Love Note sending allowance has been reached.');
+      }
+      refreshUsage();
+    };
     window.addEventListener('o2ol-love-note-usage-changed', onUsage);
+    window.addEventListener('o2ol-love-note-quota-error', onQuotaError);
 
     return () => {
       observer.disconnect();
       window.removeEventListener('o2ol-love-note-usage-changed', onUsage);
+      window.removeEventListener('o2ol-love-note-quota-error', onQuotaError);
       if (host?.isConnected) host.remove();
       if (currentGrid?.isConnected) currentGrid.style.display = previousDisplay;
       setMount(null);
