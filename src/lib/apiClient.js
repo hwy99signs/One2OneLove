@@ -53,16 +53,25 @@ export async function getAuthSession() {
 
 export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
   let lastError = null;
+
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const auth = await getAuthSession();
       if (auth) return auth;
+      lastError = null;
     } catch (error) {
       lastError = error;
-      if (error?.status === 401) return null;
     }
-    if (attempt < attempts - 1) await wait(delayMs * (attempt + 1));
+
+    if (attempt < attempts - 1) {
+      await wait(delayMs * (attempt + 1));
+    }
   }
+
+  // Only accept an unauthorized result after every retry has had a chance to
+  // recover. This prevents a single transient Worker/Neon auth response from
+  // silently signing an active member out while navigating the app.
+  if (lastError?.status === 401) return null;
   if (lastError) throw lastError;
   return null;
 }
