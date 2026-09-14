@@ -17,7 +17,29 @@ export const createCheckoutSession = async (_priceId, planName, amount) => {
     });
     return { success: true, sessionId: payload?.sessionId, url: payload?.url };
   } catch (error) {
-    return { success: false, error: error?.message || 'Failed to create checkout session' };
+    return {
+      success: false,
+      error: error?.message || 'Failed to create checkout session',
+      code: error?.payload?.error?.code || null,
+      status: error?.status || null,
+    };
+  }
+};
+
+export const changePlanDuringTrial = async (planName) => {
+  try {
+    const payload = await apiRequest('/api/billing/change-plan', {
+      method: 'POST',
+      body: { planName },
+    });
+    return { success: true, plan: payload?.plan, updatedInPlace: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error?.message || 'Failed to update trial plan',
+      code: error?.payload?.error?.code || null,
+      status: error?.status || null,
+    };
   }
 };
 
@@ -44,7 +66,12 @@ export const handleSubscriptionCheckout = async (plan) => {
   try {
     const planName = plan?.name === 'Basic' ? 'Basis' : plan?.name;
     const result = await createCheckoutSession(plan?.priceId, planName, plan?.price);
-    if (!result.success) return result;
+    if (!result.success) {
+      if (result.code === 'subscription_exists') {
+        return changePlanDuringTrial(planName);
+      }
+      return result;
+    }
     if (!result.url) throw new Error('No checkout URL received.');
     window.location.href = result.url;
     return { success: true };
@@ -93,7 +120,7 @@ export const hasFeatureAccess = (feature, user) => {
   if (!user?.subscription_plan) return false;
   const storedPlan = user.subscription_plan === 'Basic' ? 'Basis' : user.subscription_plan;
   if (user.subscription_status && !['active', 'trial'].includes(user.subscription_status)) return false;
-  const effectivePlan = user.subscription_status === 'trial' ? 'Premiere' : storedPlan;
+  const effectivePlan = user.subscription_status === 'trial' ? 'Exclusive' : storedPlan;
   return featureAccess[effectivePlan]?.includes(feature) || false;
 };
 
@@ -116,6 +143,7 @@ const featureAccess = {
   Basis: basis,
   Basic: basis,
   Premiere: premiere,
+  Premier: premiere,
   Exclusive: exclusive,
 };
 
