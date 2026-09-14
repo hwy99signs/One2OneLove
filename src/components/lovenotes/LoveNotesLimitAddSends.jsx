@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { PlusCircle } from 'lucide-react';
 
 const COPY = {
-  en: { title: 'Get More Sends', subtitle: 'Plans & send options' },
-  es: { title: 'Obtener Más Envíos', subtitle: 'Planes y opciones de envío' },
-  fr: { title: 'Obtenir Plus d’Envois', subtitle: 'Forfaits et options d’envoi' },
-  it: { title: 'Ottieni Più Invii', subtitle: 'Piani e opzioni di invio' },
-  de: { title: 'Mehr Sendungen', subtitle: 'Tarife und Sendeoptionen' },
+  en: { title: 'Get More Sends', subtitle: 'Buy extra sends' },
+  es: { title: 'Obtener Más Envíos', subtitle: 'Comprar envíos extra' },
+  fr: { title: 'Obtenir Plus d’Envois', subtitle: 'Acheter des envois supplémentaires' },
+  it: { title: 'Ottieni Più Invii', subtitle: 'Acquista invii extra' },
+  de: { title: 'Mehr Sendungen', subtitle: 'Zusätzliche Sendungen kaufen' },
 };
 
 const LIMIT_HEADINGS = [
@@ -76,7 +76,7 @@ export default function LoveNotesLimitAddSends() {
   return createPortal(
     <button
       type="button"
-      onClick={() => window.location.assign('/Subscription')}
+      onClick={() => window.location.assign('/SendCredits')}
       className="h-full w-full rounded-xl border-2 border-dashed border-pink-300 bg-white p-4 text-left shadow-sm transition hover:border-pink-500 hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2"
       aria-label={copy.title}
     >
