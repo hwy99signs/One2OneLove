@@ -4,6 +4,8 @@ import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
 import LoveNotesLimitAddSends from "@/components/lovenotes/LoveNotesLimitAddSends.jsx"
 import AdminFeatureHeaderLock from "@/components/admin/AdminFeatureHeaderLock.jsx"
+import AdminEntryTab from "@/components/admin/AdminEntryTab.jsx"
+import AdminMfaGate from "@/components/admin/AdminMfaGate.jsx"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -33,15 +35,16 @@ function App() {
       <AuthProvider>
         {isAdminRoute ? (
           <BrowserRouter>
-            <Admin />
+            <AdminMfaGate><Admin /></AdminMfaGate>
           </BrowserRouter>
         ) : isAnalyticsRoute ? (
           <BrowserRouter>
-            <Analytics />
+            <AdminMfaGate><Analytics /></AdminMfaGate>
           </BrowserRouter>
         ) : (
           <Pages />
         )}
+        <AdminEntryTab />
         <LoveNotesLimitAddSends />
         <AdminFeatureHeaderLock />
         <Toaster />
