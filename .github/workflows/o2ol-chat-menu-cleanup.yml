@@ -18,7 +18,7 @@ jobs:
         with:
           ref: o2ol-password-reset-preview
 
-      - name: Remove dead chat action and wire message info
+      - name: Finish chat actions and remove exposed map token
         shell: bash
         run: |
           python3 <<'PY'
@@ -50,7 +50,39 @@ jobs:
           replace('src/components/chat/ChatWindow.jsx',
                   """                      onSelect={(msg) => {\n                        // TODO: Implement select functionality\n                        console.log('Select:', msg);\n                      }}""",
                   """                      onInfo={async (msg) => {\n                        try {\n                          const info = await getMessageInfo(msg.id);\n                          const details = [\n                            info?.sent_at_formatted ? `Sent: ${info.sent_at_formatted}` : null,\n                            info?.delivered_at_formatted ? `Delivered: ${info.delivered_at_formatted}` : null,\n                            info?.read_at_formatted ? `Read: ${info.read_at_formatted}` : null,\n                          ].filter(Boolean);\n                          toast.info(details.join(' • ') || 'Message information unavailable');\n                        } catch (error) {\n                          toast.error(error?.message || 'Unable to load message information');\n                        }\n                      }}""")
+
+          # Remove the hard-coded Mapbox token. Location cards remain clickable and show their location marker/address.
+          chat = Path('src/components/chat/ChatMessage.jsx')
+          text = chat.read_text()
+          start_marker = '          <img\n            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/'
+          start = text.find(start_marker)
+          if start == -1:
+              raise SystemExit('Mapbox image block not found in ChatMessage.jsx')
+          end = text.find('          />', start)
+          if end == -1:
+              raise SystemExit('Mapbox image block end not found in ChatMessage.jsx')
+          text = text[:start] + text[end + len('          />\n'):]
+          chat.write_text(text)
+
+          profile = Path('src/components/chat/UserProfile.jsx')
+          text = profile.read_text()
+          start_marker = '                          <img\n                            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/'
+          start = text.find(start_marker)
+          if start == -1:
+              raise SystemExit('Mapbox image block not found in UserProfile.jsx')
+          end = text.find('                          />', start)
+          if end == -1:
+              raise SystemExit('Mapbox image block end not found in UserProfile.jsx')
+          text = text[:start] + text[end + len('                          />\n'):]
+          profile.write_text(text)
           PY
+
+      - name: Validate no Mapbox secret remains
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RIn 'api.mapbox.com/styles/v1/mapbox/streets-v11/static' src/components/chat
+          ! grep -RIn 'pk.eyJ1IjoibWFwYm94Ii' src/components/chat
 
       - name: Validate build
         run: |
@@ -63,7 +95,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/components/chat/ChatMessage.jsx src/components/chat/ChatWindow.jsx
+          git add src/components/chat/ChatMessage.jsx src/components/chat/ChatWindow.jsx src/components/chat/UserProfile.jsx
           git diff --cached --quiet && exit 0
-          git commit -m 'Finish migrated chat message actions'
+          git commit -m 'Finish migrated chat actions and remove exposed map token'
           git push origin HEAD:o2ol-password-reset-preview
