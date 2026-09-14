@@ -9,7 +9,7 @@ import { createPageUrl } from "@/utils";
 import { UserPresenceBadge } from "@/components/presence/UserPresenceIndicator";
 
 export default function BuddyCard({ buddy, onAccept, onDecline, showActions = false }) {
-  // Handle both old format (user2_name) and new format (name) from Supabase
+  // Handle both old format (user2_name) and new format (name) from legacy backend
   const buddyName = buddy.name || buddy.user2_name || buddy.user1_name || 'Unknown';
   const buddyEmail = buddy.email;
   const buddyAvatar = buddy.avatar_url;

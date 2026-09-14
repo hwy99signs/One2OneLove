@@ -201,7 +201,7 @@ export default function Community() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
-  const { user } = useAuth(); // Get current user from Supabase
+  const { user } = useAuth(); // Get current user from legacy backend
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('forums');
@@ -219,14 +219,14 @@ export default function Community() {
     initialData: [],
   });
 
-  // Fetch stories from Supabase
+  // Fetch stories from legacy backend
   const { data: stories = [] } = useQuery({
     queryKey: ['stories', searchQuery],
     queryFn: () => getStories('-created_at', null, searchQuery || null),
     initialData: [],
   });
 
-  // Fetch REAL buddies from Supabase
+  // Fetch REAL buddies from legacy backend
   const { data: myBuddies = [] } = useQuery({
     queryKey: ['myBuddies', user?.id],
     queryFn: async () => {
@@ -245,7 +245,7 @@ export default function Community() {
     initialData: [],
   });
 
-  // Filter buddies - accepted friends only (from Supabase)
+  // Filter buddies - accepted friends only (from legacy backend)
   const activeBuddies = myBuddies;
   const pendingBuddies = []; // No pending here, those are in FriendRequests page
 

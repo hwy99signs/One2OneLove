@@ -211,9 +211,9 @@ export default function AIContentCreator() {
       
       Make it heartfelt, genuine, and personal. Use beautiful language and emotional depth.`;
 
-      // TODO: Implement AI content generation with Supabase Edge Functions or external AI service (OpenAI, Anthropic, etc.)
+      // TODO: Implement AI content generation with an external AI service (OpenAI, Anthropic, etc.)
       // This requires setting up an Edge Function that calls an AI API
-      throw new Error('AI Content Creator feature requires implementation with Supabase Edge Functions or external AI service');
+      throw new Error('AI Content Creator feature requires implementation with an external AI service');
       
       // Example implementation would be:
       // const { data, error } = await AI provider API('generate-content', {

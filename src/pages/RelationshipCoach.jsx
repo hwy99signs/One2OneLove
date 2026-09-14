@@ -132,7 +132,7 @@ export default function RelationshipCoach() {
     queryKey: ['coach-conversations', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // TODO: Implement AI coach conversations with Supabase Edge Functions or external AI service
+      // TODO: Implement AI coach conversations with an external AI service
       // This requires setting up chat functionality with AI (OpenAI, Anthropic, etc.)
       return [];
     },
@@ -142,8 +142,8 @@ export default function RelationshipCoach() {
 
   const createConversationMutation = useMutation({
     mutationFn: async () => {
-      // TODO: Implement conversation creation with Supabase
-      throw new Error('AI Coach feature requires implementation with Supabase Edge Functions or external AI service');
+      // TODO: Implement conversation creation with an AI provider
+      throw new Error('AI Coach feature requires implementation with an external AI service');
     },
     onSuccess: (newConv) => {
       queryClient.invalidateQueries({ queryKey: ['coach-conversations'] });
@@ -154,7 +154,7 @@ export default function RelationshipCoach() {
 
   const deleteConversationMutation = useMutation({
     mutationFn: async (convId) => {
-      // TODO: Implement conversation deletion with Supabase
+      // TODO: Implement conversation deletion with an AI provider
       throw new Error('AI Coach feature requires implementation');
     },
     onSuccess: (_, deletedConvId) => {
@@ -178,7 +178,7 @@ export default function RelationshipCoach() {
   }, [messages]);
 
   const loadConversation = async (conversationId) => {
-    // TODO: Implement conversation loading from Supabase
+    // TODO: Implement conversation loading from the AI service
     setCurrentConversationId(conversationId);
     setMessages([]);
   };
@@ -186,7 +186,7 @@ export default function RelationshipCoach() {
   const handleSendMessage = async (messageText = inputMessage) => {
     if (!messageText.trim()) return;
     
-    toast.error('AI Coach feature requires implementation with Supabase Edge Functions or external AI service');
+    toast.error('AI Coach feature requires implementation with an external AI service');
     setIsSending(false);
     // TODO: Implement message sending with AI integration
   };

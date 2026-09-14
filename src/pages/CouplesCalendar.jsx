@@ -173,7 +173,7 @@ export default function CouplesCalendar() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Fetch calendar events from Supabase based on selected filter
+  // Fetch calendar events from legacy backend based on selected filter
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['calendarEvents', user?.id, selectedFilter],
     queryFn: () => {

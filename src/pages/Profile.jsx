@@ -957,7 +957,7 @@ export default function Profile() {
     setUploadingImage(true);
 
     try {
-      // Upload image to Supabase Storage
+      // Upload image to legacy backend Storage
       const imageUrl = await uploadProfilePicture(file, user.id);
       
       // Update user profile with new image URL
