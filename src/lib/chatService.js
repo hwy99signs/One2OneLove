@@ -1,9 +1,9 @@
 import { apiRequest } from './apiClient';
 
-export const getMyConversations = async () => {
-  const payload = await apiRequest('/api/chat/conversations');
-  return payload?.conversations || [];
-};
+// Direct/private member chat is deferred for launch. The public topic-based
+// Community Chat is the supported launch surface. Returning an empty list here
+// prevents the global layout from polling a deferred API every few seconds.
+export const getMyConversations = async () => [];
 
 export const getOrCreateConversation = async (otherUserId) => {
   const payload = await apiRequest('/api/chat/conversations', {
@@ -21,12 +21,7 @@ export const getMessages = async (conversationId) => {
 export const sendMessage = async (conversationId, receiverId, content, messageType = 'text', replyToId = null) => {
   const payload = await apiRequest(`/api/chat/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: {
-      receiver_id: receiverId,
-      content,
-      message_type: messageType,
-      reply_to_id: replyToId || null,
-    },
+    body: { receiver_id: receiverId, content, message_type: messageType, reply_to_id: replyToId || null },
   });
   return payload?.message || null;
 };
@@ -49,32 +44,21 @@ export const sendFileMessage = async (conversationId, receiverId, file, messageT
 export const sendLocationMessage = async (conversationId, receiverId, location) => {
   const payload = await apiRequest(`/api/chat/conversations/${encodeURIComponent(conversationId)}/location`, {
     method: 'POST',
-    body: {
-      receiver_id: receiverId,
-      lat: location?.lat,
-      lng: location?.lng,
-      address: location?.address || 'Location',
-    },
+    body: { receiver_id: receiverId, lat: location?.lat, lng: location?.lng, address: location?.address || 'Location' },
   });
   return payload?.message || null;
 };
 
 export const markMessagesAsRead = async (conversationId) => {
-  await apiRequest(`/api/chat/conversations/${encodeURIComponent(conversationId)}/read`, {
-    method: 'POST', body: {},
-  });
+  await apiRequest(`/api/chat/conversations/${encodeURIComponent(conversationId)}/read`, { method: 'POST', body: {} });
 };
 
 export const markMessageDelivered = async (messageId) => {
-  await apiRequest(`/api/chat/messages/${encodeURIComponent(messageId)}/delivered`, {
-    method: 'POST', body: {},
-  });
+  await apiRequest(`/api/chat/messages/${encodeURIComponent(messageId)}/delivered`, { method: 'POST', body: {} });
 };
 
 export const markMessageRead = async (messageId) => {
-  await apiRequest(`/api/chat/messages/${encodeURIComponent(messageId)}/read`, {
-    method: 'POST', body: {},
-  });
+  await apiRequest(`/api/chat/messages/${encodeURIComponent(messageId)}/read`, { method: 'POST', body: {} });
 };
 
 export const markPendingMessagesDelivered = async () => {
@@ -88,9 +72,7 @@ export const getMessageWithReply = async (messageId) => {
 };
 
 export const editMessage = async (messageId, newContent) => {
-  const payload = await apiRequest(`/api/chat/messages/${encodeURIComponent(messageId)}`, {
-    method: 'PATCH', body: { content: newContent },
-  });
+  const payload = await apiRequest(`/api/chat/messages/${encodeURIComponent(messageId)}`, { method: 'PATCH', body: { content: newContent } });
   return payload?.message || null;
 };
 
@@ -99,9 +81,7 @@ export const deleteMessage = async (messageId) => {
 };
 
 export const updateConversationSettings = async (conversationId, settings) => {
-  await apiRequest(`/api/chat/conversations/${encodeURIComponent(conversationId)}/settings`, {
-    method: 'PATCH', body: settings,
-  });
+  await apiRequest(`/api/chat/conversations/${encodeURIComponent(conversationId)}/settings`, { method: 'PATCH', body: settings });
 };
 
 export const deleteConversation = async (conversationId) => {
