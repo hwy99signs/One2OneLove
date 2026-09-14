@@ -1,0 +1,103 @@
+name: Deploy O2OL Production Routes
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/deploy-o2ol-production-routes-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      APEX_URL: https://one2onelove.com
+      WWW_URL: https://www.one2onelove.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Build production application
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          npm ci
+          npm run build
+          npm --prefix worker install --no-audit --no-fund
+          if grep -RInEi 'supabase|supabase\.co|@supabase' src worker package.json package-lock.json public 2>/dev/null; then
+            echo 'Legacy Supabase reference found in active production application.' >&2
+            exit 1
+          fi
+
+      - name: Create route-based production config
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          src=Path('cloudflare/wrangler.production.jsonc')
+          data=json.loads(src.read_text())
+          data['workers_dev']=True
+          data['routes']=[
+            {'pattern':'one2onelove.com/*','zone_name':'one2onelove.com'},
+            {'pattern':'www.one2onelove.com/*','zone_name':'one2onelove.com'},
+          ]
+          Path('cloudflare/wrangler.production-routes.jsonc').write_text(json.dumps(data,indent=2)+'\n')
+          PY
+          cat cloudflare/wrangler.production-routes.jsonc
+
+      - name: Deploy Worker routes to production domains
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production-routes.jsonc
+
+      - name: Verify production frontend and API
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          echo "Expected bundle: $LOCAL_JS"
+          verify_frontend() {
+            BASE="$1"; OK=no
+            for attempt in $(seq 1 24); do
+              HTML=$(curl -fsS --max-time 20 "$BASE/" 2>/dev/null || true)
+              REMOTE_JS=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//' || true)
+              echo "$BASE frontend attempt $attempt -> $REMOTE_JS"
+              if [ "$REMOTE_JS" = "$LOCAL_JS" ]; then OK=yes; break; fi
+              sleep 5
+            done
+            test "$OK" = yes
+            curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
+            grep -F '/api/consents/adult-sensitive' /tmp/app.js >/dev/null
+            grep -F '/api/contests/leaderboard' /tmp/app.js >/dev/null
+            ! grep -Fi 'supabase' /tmp/app.js
+          }
+          verify_api() {
+            BASE="$1"; OK=no
+            for attempt in $(seq 1 24); do
+              CODE=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
+              echo "$BASE health attempt $attempt -> $CODE"
+              if [ "$CODE" = 200 ] && grep -F '"service":"one2onelove-api"' /tmp/health.json >/dev/null 2>&1; then OK=yes; break; fi
+              sleep 5
+            done
+            test "$OK" = yes
+            CODE=$(curl -sS --max-time 20 -o /tmp/reviews.json -w '%{http_code}' "$BASE/api/reviews")
+            test "$CODE" = 200
+            grep -qi '^{' /tmp/reviews.json
+            CODE=$(curl -sS --max-time 20 -o /tmp/memories.json -w '%{http_code}' "$BASE/api/memories")
+            test "$CODE" = 401
+            grep -qi '^{' /tmp/memories.json
+          }
+          verify_frontend "$APEX_URL"
+          verify_frontend "$WWW_URL"
+          verify_api "$APEX_URL"
+          verify_api "$WWW_URL"
+          echo 'O2OL_PRODUCTION_ROUTE_CUTOVER_VERIFIED=yes'
