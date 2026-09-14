@@ -5,11 +5,11 @@ import { toast } from 'sonner';
 import { getLoveNoteUsage } from '@/lib/loveNotesService';
 
 const COPY = {
-  en: { plan: 'Your Plan', sms: 'SMS Love Notes', included: 'included remaining', extra: 'Extra Sends', extraHint: 'purchased balance', social: 'Social Media', socialHint: '1 per platform', topup: 'Get More Sends', topupHint: 'Buy extra sends', add: '+ Add Sends', loading: 'Loading…' },
-  es: { plan: 'Tu Plan', sms: 'Notas de Amor SMS', included: 'incluidos restantes', extra: 'Envíos Extra', extraHint: 'saldo comprado', social: 'Redes Sociales', socialHint: '1 por plataforma', topup: 'Obtener Más Envíos', topupHint: 'Comprar envíos extra', add: '+ Añadir Envíos', loading: 'Cargando…' },
-  fr: { plan: 'Votre Forfait', sms: 'Notes d’Amour SMS', included: 'inclus restants', extra: 'Envois Supplémentaires', extraHint: 'solde acheté', social: 'Réseaux Sociaux', socialHint: '1 par plateforme', topup: 'Obtenir Plus d’Envois', topupHint: 'Acheter des envois supplémentaires', add: '+ Ajouter des Envois', loading: 'Chargement…' },
-  it: { plan: 'Il Tuo Piano', sms: 'Note d’Amore SMS', included: 'inclusi rimanenti', extra: 'Invii Extra', extraHint: 'saldo acquistato', social: 'Social Media', socialHint: '1 per piattaforma', topup: 'Ottieni Più Invii', topupHint: 'Acquista invii extra', add: '+ Aggiungi Invii', loading: 'Caricamento…' },
-  de: { plan: 'Dein Tarif', sms: 'SMS-Liebesnachrichten', included: 'inklusive übrig', extra: 'Zusätzliche Sendungen', extraHint: 'gekauftes Guthaben', social: 'Soziale Medien', socialHint: '1 pro Plattform', topup: 'Mehr Sendungen', topupHint: 'Zusätzliche Sendungen kaufen', add: '+ Sendungen Hinzufügen', loading: 'Wird geladen…' },
+  en: { plan: 'Your Plan', sms: 'SMS Love Notes', included: 'included remaining', extra: 'Extra Sends', extraHint: 'purchased balance', social: 'Social Media', socialHint: '1 per platform', topup: 'Get More Sends', topupHint: 'Buy extra sends', add: '+ Add Sends', loading: 'Loading…', today: 'today' },
+  es: { plan: 'Tu Plan', sms: 'Notas de Amor SMS', included: 'incluidos restantes', extra: 'Envíos Extra', extraHint: 'saldo comprado', social: 'Redes Sociales', socialHint: '1 por plataforma', topup: 'Obtener Más Envíos', topupHint: 'Comprar envíos extra', add: '+ Añadir Envíos', loading: 'Cargando…', today: 'hoy' },
+  fr: { plan: 'Votre Forfait', sms: 'Notes d’Amour SMS', included: 'inclus restants', extra: 'Envois Supplémentaires', extraHint: 'solde acheté', social: 'Réseaux Sociaux', socialHint: '1 par plateforme', topup: 'Obtenir Plus d’Envois', topupHint: 'Acheter des envois supplémentaires', add: '+ Ajouter des Envois', loading: 'Chargement…', today: 'aujourd’hui' },
+  it: { plan: 'Il Tuo Piano', sms: 'Note d’Amore SMS', included: 'inclusi rimanenti', extra: 'Invii Extra', extraHint: 'saldo acquistato', social: 'Social Media', socialHint: '1 per piattaforma', topup: 'Ottieni Più Invii', topupHint: 'Acquista invii extra', add: '+ Aggiungi Invii', loading: 'Caricamento…', today: 'oggi' },
+  de: { plan: 'Dein Tarif', sms: 'SMS-Liebesnachrichten', included: 'inklusive übrig', extra: 'Zusätzliche Sendungen', extraHint: 'gekauftes Guthaben', social: 'Soziale Medien', socialHint: '1 pro Plattform', topup: 'Mehr Sendungen', topupHint: 'Zusätzliche Sendungen kaufen', add: '+ Sendungen Hinzufügen', loading: 'Wird geladen…', today: 'heute' },
 };
 
 const LIMIT_HEADINGS = [
@@ -19,6 +19,14 @@ const LIMIT_HEADINGS = [
   ['fr', 'limites d’envoi'],
   ['it', 'limiti di invio'],
   ['de', 'sendelimits'],
+];
+
+const DEFERRED_AI_LABELS = [
+  'ai personalize',
+  'personalización con ia',
+  'personnaliser avec ia',
+  'personalizza con ia',
+  'ki personalisieren',
 ];
 
 function findTarget() {
@@ -31,6 +39,20 @@ function findTarget() {
     if (grid && grid.classList.contains('grid')) return { grid, lang: match[0] };
   }
   return null;
+}
+
+function hideDeferredAiButtons(hiddenButtons) {
+  if (!window.location.pathname.toLowerCase().includes('/lovenotes')) return;
+  const buttons = Array.from(document.querySelectorAll('button'));
+  for (const button of buttons) {
+    const text = (button.textContent || '').trim().toLowerCase();
+    if (!DEFERRED_AI_LABELS.some(label => text.includes(label))) continue;
+    if (!hiddenButtons.has(button)) {
+      hiddenButtons.set(button, button.style.display);
+      button.style.display = 'none';
+      button.setAttribute('data-o2ol-launch-deferred-ai', 'true');
+    }
+  }
 }
 
 function readSocialValue(grid) {
@@ -63,9 +85,11 @@ export default function LoveNotesLimitAddSends() {
     let currentGrid = null;
     let host = null;
     let previousDisplay = '';
+    const hiddenButtons = new Map();
 
     const attach = () => {
       if (!window.location.pathname.toLowerCase().includes('/lovenotes')) return;
+      hideDeferredAiButtons(hiddenButtons);
       if (host?.isConnected) {
         if (currentGrid) setSocialValue(readSocialValue(currentGrid));
         return;
@@ -112,6 +136,12 @@ export default function LoveNotesLimitAddSends() {
       window.removeEventListener('o2ol-love-note-quota-error', onQuotaError);
       if (host?.isConnected) host.remove();
       if (currentGrid?.isConnected) currentGrid.style.display = previousDisplay;
+      for (const [button, display] of hiddenButtons.entries()) {
+        if (button?.isConnected) {
+          button.style.display = display;
+          button.removeAttribute('data-o2ol-launch-deferred-ai');
+        }
+      }
       setMount(null);
     };
   }, []);
@@ -121,7 +151,7 @@ export default function LoveNotesLimitAddSends() {
   const plan = usage?.plan || copy.loading;
   const included = usage ? `${usage.includedRemaining}/${usage.monthlyLimit}` : '—';
   const extra = usage ? String(usage.extraAvailable || 0) : '—';
-  const daily = usage?.dailyLimit ? `${usage.dailyRemaining}/${usage.dailyLimit} today` : null;
+  const daily = usage?.dailyLimit ? `${usage.dailyRemaining}/${usage.dailyLimit} ${copy.today}` : null;
 
   return createPortal(
     <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
