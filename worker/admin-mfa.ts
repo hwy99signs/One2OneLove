@@ -8,7 +8,7 @@ const JSON_HEADERS = {
 };
 
 const COOKIE_NAME = '__Host-o2ol_admin_mfa';
-const MFA_TTL_SECONDS = 2 * 60 * 60;
+const MFA_TTL_SECONDS = 5 * 60;
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -202,6 +202,10 @@ export async function enforceAdminMfa(request, env) {
 export async function handleAdminMfaRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/admin/mfa')) return null;
 
+  if (url.pathname === '/api/admin/mfa/end' && request.method === 'POST') {
+    return json({ ok: true, verified: false, reason: 'idle_timeout' }, 200, { 'set-cookie': clearMfaCookie() });
+  }
+
   const status = await adminMfaStatus(request, env);
   if (status.response) return status.response;
   const { auth, admin } = status;
@@ -211,11 +215,33 @@ export async function handleAdminMfaRequest(request, env, url) {
       ok: true,
       verified: status.verified,
       expiresAt: status.expiresAt,
+      idleTimeoutSeconds: MFA_TTL_SECONDS,
       email: maskedEmail(admin.email),
     });
   }
 
+  if (url.pathname === '/api/admin/mfa/touch' && request.method === 'POST') {
+    if (!status.verified) return fail('Administrator verification required.', 428, 'mfa_required');
+    const issued = await createMfaToken(auth, env);
+    return json({
+      ok: true,
+      verified: true,
+      expiresAt: issued.expiresAt,
+      idleTimeoutSeconds: MFA_TTL_SECONDS,
+    }, 200, { 'set-cookie': mfaCookie(issued.token) });
+  }
+
   if (url.pathname === '/api/admin/mfa/request' && request.method === 'POST') {
+    if (status.verified) {
+      return json({
+        ok: true,
+        sent: false,
+        alreadyVerified: true,
+        expiresAt: status.expiresAt,
+        idleTimeoutSeconds: MFA_TTL_SECONDS,
+        email: maskedEmail(admin.email),
+      });
+    }
     const upstream = await betterAuthOtp(request, env, '/email-otp/send-verification-otp', {
       email: admin.email,
       type: 'sign-in',
@@ -224,7 +250,7 @@ export async function handleAdminMfaRequest(request, env, url) {
       const payload = await upstream.json().catch(() => null);
       return fail(payload?.message || payload?.error?.message || 'Unable to send the administrator verification code.', upstream.status || 502, 'mfa_send_failed');
     }
-    return json({ ok: true, sent: true, email: maskedEmail(admin.email) }, 200, { 'set-cookie': clearMfaCookie() });
+    return json({ ok: true, sent: true, email: maskedEmail(admin.email) });
   }
 
   if (url.pathname === '/api/admin/mfa/verify' && request.method === 'POST') {
@@ -247,6 +273,7 @@ export async function handleAdminMfaRequest(request, env, url) {
       ok: true,
       verified: true,
       expiresAt: issued.expiresAt,
+      idleTimeoutSeconds: MFA_TTL_SECONDS,
       email: maskedEmail(admin.email),
     }, 200, { 'set-cookie': mfaCookie(issued.token) });
   }
