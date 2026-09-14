@@ -1,0 +1,48 @@
+name: O2OL AI Content Creator One-Time Migration Fix
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - .github/workflows/o2ol-ai-content-migration-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-ai-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - name: Connect AI Content Creator to Worker
+        env:
+          REPLACEMENT_B64: "ICBjb25zdCBoYW5kbGVHZW5lcmF0ZSA9IGFzeW5jICgpID0+IHsKICAgIGlmICghZm9ybURhdGEuY29udGVudFR5cGUgfHwgIWZvcm1EYXRhLnRvbmUpIHsKICAgICAgdG9hc3QuZXJyb3IoIlBsZWFzZSBzZWxlY3QgY29udGVudCB0eXBlIGFuZCB0b25lIik7CiAgICAgIHJldHVybjsKICAgIH0KCiAgICBzZXRJc0dlbmVyYXRpbmcodHJ1ZSk7CiAgICB0cnkgewogICAgICBjb25zdCBjb250ZW50ID0gYXdhaXQgZ2VuZXJhdGVSZWxhdGlvbnNoaXBDb250ZW50KHsKICAgICAgICAuLi5mb3JtRGF0YSwKICAgICAgICBsYW5ndWFnZTogY3VycmVudExhbmd1YWdlLAogICAgICB9KTsKICAgICAgaWYgKCFjb250ZW50KSB0aHJvdyBuZXcgRXJyb3IoJ0FJIENvbnRlbnQgQ3JlYXRvciByZXR1cm5lZCBubyBjb250ZW50LicpOwogICAgICBzZXRHZW5lcmF0ZWRDb250ZW50KGNvbnRlbnQpOwogICAgfSBjYXRjaCAoZXJyb3IpIHsKICAgICAgdG9hc3QuZXJyb3IoZXJyb3I/Lm1lc3NhZ2UgfHwgIkZhaWxlZCB0byBnZW5lcmF0ZSBjb250ZW50LiBQbGVhc2UgdHJ5IGFnYWluLiIpOwogICAgICBjb25zb2xlLmVycm9yKGVycm9yKTsKICAgIH0gZmluYWxseSB7CiAgICAgIHNldElzR2VuZXJhdGluZyhmYWxzZSk7CiAgICB9CiAgfTsKCg=="
+        run: |
+          python - <<'PY'
+          import base64, os
+          from pathlib import Path
+          path = Path('src/pages/AIContentCreator.jsx')
+          text = path.read_text()
+          anchor = 'import { createPageUrl } from "@/utils";\n'
+          addition = 'import { generateRelationshipContent } from "@/lib/aiService";\n'
+          if addition not in text:
+              if anchor not in text:
+                  raise SystemExit('Import anchor not found')
+              text = text.replace(anchor, anchor + addition, 1)
+          start = text.index('  const handleGenerate = async () => {')
+          end = text.index('  const handleCopy = () => {', start)
+          replacement = base64.b64decode(os.environ['REPLACEMENT_B64']).decode()
+          path.write_text(text[:start] + replacement + text[end:])
+          PY
+
+      - name: Commit AI Content Creator migration fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/AIContentCreator.jsx
+          git commit -m "Connect AI Content Creator to Cloudflare Worker"
+          git push origin HEAD:o2ol-password-reset-preview
