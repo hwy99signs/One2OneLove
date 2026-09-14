@@ -62,13 +62,31 @@ export const redirectToCheckout = async (sessionIdOrUrl) => {
   throw new Error('Checkout URL was not returned by the billing service.');
 };
 
+export const getUserSubscription = async () => {
+  try {
+    const payload = await apiRequest('/api/billing/subscription');
+    return payload?.subscription || null;
+  } catch {
+    return null;
+  }
+};
+
 export const handleSubscriptionCheckout = async (plan) => {
   try {
     const planName = plan?.name === 'Basic' ? 'Basis' : plan?.name;
     const result = await createCheckoutSession(plan?.priceId, planName, plan?.price);
     if (!result.success) {
       if (result.code === 'subscription_exists') {
-        return changePlanDuringTrial(planName);
+        const current = await getUserSubscription();
+        const status = String(current?.subscription_status || '').toLowerCase();
+        if (status === 'trial' || status === 'trialing') {
+          return changePlanDuringTrial(planName);
+        }
+        return {
+          success: false,
+          code: 'active_plan_change_policy_pending',
+          error: 'Active subscription plan changes are not enabled from this screen yet.',
+        };
       }
       return result;
     }
@@ -77,15 +95,6 @@ export const handleSubscriptionCheckout = async (plan) => {
     return { success: true };
   } catch (error) {
     return { success: false, error: error?.message || 'Failed to start checkout process' };
-  }
-};
-
-export const getUserSubscription = async () => {
-  try {
-    const payload = await apiRequest('/api/billing/subscription');
-    return payload?.subscription || null;
-  } catch {
-    return null;
   }
 };
 
