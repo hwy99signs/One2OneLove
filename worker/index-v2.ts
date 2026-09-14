@@ -21,6 +21,7 @@ import { handleEngagementRequest } from './engagement';
 import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
+import { handleWhatShouldTheyDoRequest } from './what-should-they-do';
 
 export default {
   async fetch(request, env, ctx) {
@@ -43,6 +44,11 @@ export default {
 
     if (url.pathname.startsWith('/api/consents')) {
       const response = await handleConsentsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/what-should-they-do')) {
+      const response = await handleWhatShouldTheyDoRequest(request, env, url);
       if (response) return response;
     }
 
