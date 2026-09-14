@@ -7,6 +7,7 @@ import ProfileLaunchFixes from "@/components/profile/ProfileLaunchFixes.jsx"
 import AdminFeatureHeaderLock from "@/components/admin/AdminFeatureHeaderLock.jsx"
 import AdminEntryTab from "@/components/admin/AdminEntryTab.jsx"
 import AdminMfaGate from "@/components/admin/AdminMfaGate.jsx"
+import AdminUserModeToggle from "@/components/admin/AdminUserModeToggle.jsx"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -46,6 +47,7 @@ function App() {
           <Pages />
         )}
         <AdminEntryTab />
+        <AdminUserModeToggle />
         <LoveNotesLimitAddSends />
         <ProfileLaunchFixes />
         <AdminFeatureHeaderLock />
