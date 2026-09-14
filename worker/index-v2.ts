@@ -18,6 +18,9 @@ import { handleCommunitiesRequest } from './communities';
 import { handleChatRequest } from './chat';
 import { handleBillingRequest } from './billing';
 import { handleEngagementRequest } from './engagement';
+import { handleReviewsRequest } from './reviews';
+import { handleConsentsRequest } from './consents';
+import { handleContestsRequest } from './contests';
 
 export default {
   async fetch(request, env, ctx) {
@@ -30,6 +33,21 @@ export default {
 
     if (url.pathname === '/api/professional-signup') {
       const response = await handleProfessionalSignup(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/reviews')) {
+      const response = await handleReviewsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/consents')) {
+      const response = await handleConsentsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/contests')) {
+      const response = await handleContestsRequest(request, env, url);
       if (response) return response;
     }
 
