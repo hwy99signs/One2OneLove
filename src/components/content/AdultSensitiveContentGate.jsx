@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/Layout";
-import { supabase } from "@/lib/supabase";
+import { getAdultSensitiveConsent, saveAdultSensitiveConsent } from "@/lib/consentService";
 
 export const ADULT_SENSITIVE_CONTENT_CONSENT_VERSION = "2026-09-13-v1";
 
@@ -161,12 +161,9 @@ export default function AdultSensitiveContentGate({ children }) {
       setError("");
 
       try {
-        const { data, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-
-        const consent = data?.user?.user_metadata?.adult_sensitive_content_consent;
+        const consent = await getAdultSensitiveConsent();
         const accepted =
-          consent?.version === ADULT_SENSITIVE_CONTENT_CONSENT_VERSION &&
+          consent?.consent_version === ADULT_SENSITIVE_CONTENT_CONSENT_VERSION &&
           consent?.age_18_plus === true &&
           consent?.sensitive_content_acknowledged === true;
 
@@ -192,20 +189,12 @@ export default function AdultSensitiveContentGate({ children }) {
     setError("");
 
     try {
-      const acceptedAt = new Date().toISOString();
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-          adult_sensitive_content_consent: {
-            version: ADULT_SENSITIVE_CONTENT_CONSENT_VERSION,
-            accepted_at: acceptedAt,
-            age_18_plus: true,
-            sensitive_content_acknowledged: true,
-            source: "adult_sensitive_content_gate",
-          },
-        },
+      await saveAdultSensitiveConsent({
+        version: ADULT_SENSITIVE_CONTENT_CONSENT_VERSION,
+        age_18_plus: true,
+        sensitive_content_acknowledged: true,
+        source: "adult_sensitive_content_gate",
       });
-
-      if (updateError) throw updateError;
       setHasConsent(true);
     } catch (saveError) {
       console.error("Adult content consent save failed:", saveError);

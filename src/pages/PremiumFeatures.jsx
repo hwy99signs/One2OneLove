@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import { getEngagementPoints } from "@/lib/engagementService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Unlock, Sparkles, Trophy, Crown, Star, TrendingUp, Heart, Calendar, Brain, Palette, Headphones, ArrowLeft, Zap } from "lucide-react";
 import { motion } from "framer-motion";
@@ -180,18 +180,7 @@ export default function PremiumFeatures() {
 
   const { data: userPoints = [] } = useQuery({
     queryKey: ['userPoints', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('gamification_points')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
-        console.error('Error fetching points:', error);
-        return [];
-      }
-      return data || [];
-    },
+    queryFn: async () => currentUser?.id ? getEngagementPoints() : [],
     enabled: !!currentUser?.id,
     initialData: [],
   });

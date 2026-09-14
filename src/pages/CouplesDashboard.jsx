@@ -3,10 +3,11 @@ import React, { useMemo } from "react";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import * as journalService from "@/lib/journalService";
 import * as goalsService from "@/lib/goalsService";
 import * as milestonesService from "@/lib/milestonesService";
+import { listMemories } from "@/lib/memoryService";
+import { getEngagementBadges } from "@/lib/engagementService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -105,10 +106,7 @@ export default function CouplesDashboard() {
 
   const { data: badges = [] } = useQuery({
     queryKey: ['badges'],
-    queryFn: async () => {
-      // TODO: Implement badges service
-      return [];
-    },
+    queryFn: async () => getEngagementBadges(),
     initialData: []
   });
 
@@ -141,19 +139,7 @@ export default function CouplesDashboard() {
 
   const { data: memories = [] } = useQuery({
     queryKey: ['memories'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('memory_date', { ascending: false });
-      if (error) {
-        console.error('Error fetching memories:', error);
-        return [];
-      }
-      return data || [];
-    },
+    queryFn: async () => user?.id ? listMemories(user.id) : [],
     enabled: !!user?.id,
     initialData: []
   });

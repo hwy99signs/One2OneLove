@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 import { Sparkles, Heart, MessageCircle, Gift, Calendar, Loader2, Copy, Check, Download, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -217,7 +216,7 @@ export default function AIContentCreator() {
       throw new Error('AI Content Creator feature requires implementation with Supabase Edge Functions or external AI service');
       
       // Example implementation would be:
-      // const { data, error } = await supabase.functions.invoke('generate-content', {
+      // const { data, error } = await AI provider API('generate-content', {
       //   body: { prompt, contentType, tone, length, partnerName, details }
       // });
       // if (error) throw error;

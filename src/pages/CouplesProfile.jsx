@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { searchUsers } from "@/lib/buddyService";
+import { listMemories } from "@/lib/memoryService";
+import { updateProfile } from "@/lib/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, User, Mail, Calendar, MapPin, Edit, Save, X, Sparkles, Gift, TrendingUp, Award, ArrowRight, MessageCircle, Users, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -379,17 +381,8 @@ export default function CouplesProfile() {
     queryKey: ['partnerUser', currentUser?.partner_email],
     queryFn: async () => {
       if (!currentUser?.partner_email) return null;
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', currentUser.partner_email)
-          .single();
-        if (error) return null;
-        return data;
-      } catch {
-        return null;
-      }
+      const matches = await searchUsers(currentUser.id, currentUser.partner_email);
+      return matches.find(u => String(u.email || '').toLowerCase() === String(currentUser.partner_email).toLowerCase()) || null;
     },
     enabled: !!currentUser?.partner_email,
     initialData: null
@@ -399,17 +392,8 @@ export default function CouplesProfile() {
     queryKey: ['memories', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (error) {
-        console.error('Error fetching memories:', error);
-        return [];
-      }
-      return data || [];
+      const items = await listMemories(currentUser.id);
+      return [...items].sort((a,b) => new Date(b.created_at || b.memory_date || 0) - new Date(a.created_at || a.memory_date || 0)).slice(0,5);
     },
     enabled: !!currentUser?.id,
     initialData: [],
@@ -418,14 +402,7 @@ export default function CouplesProfile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('users')
-        .update(data)
-        .eq('id', currentUser.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await updateProfile(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
-// Base44 removed - using Supabase instead
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -14,7 +13,7 @@ import { createPageUrl } from "@/utils";
 import ForumCard from "../components/community/ForumCard";
 import ForumPostCard from "../components/community/ForumPostCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMyBuddies } from "@/lib/buddyService";
+import { getMyBuddies, acceptBuddyRequest } from "@/lib/buddyService";
 import StoryCard from "../components/community/StoryCard";
 import BuddyCard from "../components/community/BuddyCard";
 import PostStoryForm from "../components/community/PostStoryForm";
@@ -296,26 +295,14 @@ export default function Community() {
   };
 
   const updateBuddyMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const { data: result, error } = await supabase
-        .from('buddy_matches')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: async (requestId) => acceptBuddyRequest(requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBuddies'] });
     }
   });
 
   const handleAcceptBuddy = async (buddy) => {
-    await updateBuddyMutation.mutateAsync({
-      id: buddy.id,
-      data: { ...buddy, status: 'active' }
-    });
+    await updateBuddyMutation.mutateAsync(buddy.request_id || buddy.id);
     toast.success("Buddy accepted!");
   };
 

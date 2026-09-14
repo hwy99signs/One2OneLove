@@ -17,6 +17,7 @@ import {
   sendLocationMessage,
   markMessagesAsRead,
   markMessageDelivered,
+  markPendingMessagesDelivered,
   editMessage,
   deleteMessage,
   updateConversationSettings,
@@ -25,7 +26,6 @@ import {
   unsubscribeFromMessages,
   subscribeToConversations,
 } from '@/lib/chatService';
-import { supabase } from '@/lib/supabase';
 import { pinMessage, unpinMessage } from '@/lib/chatFeaturesService';
 
 export default function Chat() {
@@ -233,70 +233,30 @@ export default function Chat() {
     };
   }, [user]);
 
-  // CRITICAL: Global subscription to mark ALL incoming messages as delivered
-  // This ensures senders see double ticks even if receiver's chat isn't open
+  // Keep delivery/read state current through the Cloudflare + Neon API.
   useEffect(() => {
     if (!user) return;
+    let active = true;
 
-    console.log('🔔 Setting up GLOBAL message delivery subscription for user:', user.id);
-
-    // Subscribe to ALL new messages where current user is receiver
-    const globalSubscription = supabase
-      .channel(`global-messages-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        async (payload) => {
-          const newMessage = payload.new;
-          console.log('📬 GLOBAL: New message received for you:', newMessage.id);
-          
-          // Mark as delivered immediately (even if chat isn't open)
-          try {
-            if (!newMessage.delivered_at) {
-              await markMessageDelivered(newMessage.id);
-              console.log('✅ GLOBAL: Message marked as delivered - sender will see double ticks');
-            }
-            
-            // CRITICAL: If chat is open, mark as read immediately and recalculate count
-            if (selectedChatId === newMessage.conversation_id) {
-              console.log('📬 GLOBAL: Chat is open, marking as read immediately');
-              await markMessagesAsRead(newMessage.conversation_id);
-              
-              // Force immediate recalculation
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                const { error: recalcError } = await supabase
-                  .rpc('recalculate_unread_count', {
-                    p_conversation_id: newMessage.conversation_id,
-                    p_user_id: user.id
-                  });
-                
-                if (recalcError) {
-                  console.warn('⚠️ Could not recalculate:', recalcError);
-                }
-              }
-            }
-            
-            // Invalidate queries to update UI
-            queryClient.invalidateQueries(['messages']);
-            queryClient.invalidateQueries(['conversations']);
-          } catch (error) {
-            console.error('❌ GLOBAL: Error processing new message:', error);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('🔕 Unsubscribing from global message delivery');
-      supabase.removeChannel(globalSubscription);
+    const syncDelivery = async () => {
+      if (!active) return;
+      try {
+        await markPendingMessagesDelivered();
+        if (selectedChatId) await markMessagesAsRead(selectedChatId);
+        queryClient.invalidateQueries({ queryKey: ['messages'] });
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      } catch (error) {
+        console.warn('Message delivery sync failed:', error);
+      }
     };
-  }, [user, queryClient]);
+
+    syncDelivery();
+    const timer = window.setInterval(syncDelivery, 2500);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [user, selectedChatId, queryClient]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({

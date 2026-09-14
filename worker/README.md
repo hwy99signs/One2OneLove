@@ -35,4 +35,4 @@ Planned compatibility routes:
 - `/api/subscriptions/*`
 - `/api/stripe/*`
 
-The migration should replace direct `supabase.from(...)` calls service-by-service rather than changing all pages at once.
+The migration should replace direct `legacy backend.from(...)` calls service-by-service rather than changing all pages at once.
