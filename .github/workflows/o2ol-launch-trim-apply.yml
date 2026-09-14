@@ -1,0 +1,34 @@
+name: O2OL Launch Trim Apply
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - .github/workflows/o2ol-launch-trim-apply.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+          fetch-depth: 0
+
+      - name: Apply launch trim
+        run: python .github/scripts/apply_launch_trim.py
+
+      - name: Review changed files
+        run: git diff --check && git status --short
+
+      - name: Commit preview launch trim
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/billing.ts src/pages/Subscription.jsx src/pages/index.jsx src/pages/Layout.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx src/pages/CoupleActivities.jsx src/data/subscriptionPlanCopy.js
+          git commit -m "Trim O2OL launch surface and enable full-access trial"
+          git push origin o2ol-password-reset-preview
