@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-// AI personalization requires Supabase Edge Functions implementation
+// AI personalization requires legacy backend Edge Functions implementation
 import { toast } from "sonner";
 
 const personalityTraits = [
@@ -53,15 +53,15 @@ The note should:
 
 Return ONLY the love note text, no titles or extra formatting.`;
 
-      // TODO: Implement AI personalization with Supabase Edge Functions
-      // const { data, error } = await supabase.functions.invoke('personalize-content', {
+      // TODO: Implement AI personalization with legacy backend Edge Functions
+      // const { data, error } = await legacy backend.functions.invoke('personalize-content', {
       //   body: { prompt, partnerName, selectedTraits, sharedMemories, insideJokes, noteStyle, currentLanguage }
       // });
       // if (error) throw error;
       // const response = data.content;
       
       // For now, show error message
-      toast.error('AI personalization feature requires Supabase Edge Functions implementation');
+      toast.error('AI personalization feature requires legacy backend Edge Functions implementation');
       return;
       
       // Once implemented, uncomment below:

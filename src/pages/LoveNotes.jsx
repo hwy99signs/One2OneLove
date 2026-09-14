@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -772,15 +772,7 @@ export default function LoveNotes() {
     queryKey: ['sentLoveNotes', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
-      const { data, error } = await supabase
-        .from('sent_love_notes')
-        .select('*')
-        .eq('user_id', currentUser.id);
-      if (error) {
-        console.error('Error fetching sent notes:', error);
-        return [];
-      }
-      return data || [];
+      return await listSentLoveNotes();
     },
     enabled: !!currentUser?.id,
     initialData: [],
@@ -809,13 +801,7 @@ export default function LoveNotes() {
   const sendNoteMutation = useMutation({
     mutationFn: async (data) => {
       if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('sent_love_notes')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await recordSentLoveNote(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
@@ -825,13 +811,7 @@ export default function LoveNotes() {
   const scheduleMutation = useMutation({
     mutationFn: async (data) => {
       if (!currentUser?.id) throw new Error('User not authenticated');
-      const { data: result, error } = await supabase
-        .from('scheduled_love_notes')
-        .insert({ ...data, user_id: currentUser.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
+      return await scheduleLoveNote(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
@@ -1092,7 +1072,7 @@ export default function LoveNotes() {
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img 
-              src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
+              src="/assets/o2ol-logo.png" 
               alt="One2One Love Logo" 
               className="h-24 w-auto mb-4"
             />

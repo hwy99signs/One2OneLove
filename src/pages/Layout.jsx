@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { getMyConversations } from "@/lib/chatService";
-import { supabase } from "@/lib/supabase";
 import {
   Select,
   SelectContent,
@@ -158,41 +157,6 @@ function LanguageContent({ children, currentPageName }) {
     cacheTime: 0, // Don't cache to ensure fresh data
   });
 
-  // Subscribe to real-time conversation updates to update badge immediately
-  useEffect(() => {
-    if (!user || !isAuthenticated) return;
-
-    console.log('🔔 Setting up real-time subscription for conversation updates (badge)');
-    
-    // Subscribe to conversation updates where user is either user1 or user2
-    const subscription = supabase
-      .channel(`conversations-badge-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'conversations',
-          // This will trigger for any conversation where user is involved
-          // We can't filter by OR in Supabase realtime, so we subscribe to all and filter in callback
-        },
-        (payload) => {
-          const conv = payload.new;
-          // Only process if this conversation involves the current user
-          if (conv.user1_id === user.id || conv.user2_id === user.id) {
-            console.log('📬 Conversation updated (badge refresh):', conv.id);
-            // Immediately refetch conversations to update badge
-            refetchConversations();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('🔕 Unsubscribing from conversation badge updates');
-      supabase.removeChannel(subscription);
-    };
-  }, [user, isAuthenticated, refetchConversations]);
 
   // Calculate total unread messages count
   const totalUnreadCount = conversations.reduce((total, conv) => {
@@ -304,7 +268,7 @@ function LanguageContent({ children, currentPageName }) {
         <div className="max-w-[1400px] mx-auto px-5 py-[0.225rem] flex items-center justify-between gap-5">
           <Link to={createPageUrl("Home")} className="shrink-0 hover:opacity-90 transition-opacity">
             <img 
-              src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
+              src="/assets/o2ol-logo.png" 
               alt="One2One Love Logo" 
               className="h-[88px] w-auto object-contain"
               onError={(e) => { e.target.style.display = 'none'; }}
@@ -661,7 +625,7 @@ function LanguageContent({ children, currentPageName }) {
       <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
         <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
           <div>
-            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691277042e7df273d4135492/19ffc2fa2_ONE2ONELOVELOGO.png" alt="One2OneLove" className="h-28 w-auto" />
+            <img src="/assets/o2ol-logo.png" alt="One2OneLove" className="h-28 w-auto" />
             <div className="text-lg mt-2">{fT.loveGrow}</div>
             <div className="flex gap-4 mt-5 text-2xl">
               <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>

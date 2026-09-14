@@ -222,16 +222,16 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
         const file = files[i];
         setUploadProgress(prev => [...prev, { name: file.name, status: 'uploading' }]);
         
-        // TODO: Implement file upload with Supabase Storage
-        // const { data, error } = await supabase.storage
+        // TODO: Implement file upload with legacy backend Storage
+        // const { data, error } = await legacy backend.storage
         //   .from('memories')
         //   .upload(`${user.id}/${Date.now()}_${file.name}`, file);
         // if (error) throw error;
-        // const { data: { publicUrl } } = supabase.storage
+        // const { data: { publicUrl } } = legacy backend.storage
         //   .from('memories')
         //   .getPublicUrl(data.path);
         // const file_url = publicUrl;
-        throw new Error('File upload requires Supabase Storage implementation');
+        throw new Error('File upload requires legacy backend Storage implementation');
         newUrls.push(file_url);
         
         setUploadProgress(prev => 

@@ -31,7 +31,7 @@ const translations = {
   },
 };
 
-// No more mock data - using real users from Supabase!
+// No more mock data - using real users from legacy backend!
 
 export default function FindFriends() {
   const navigate = useNavigate();

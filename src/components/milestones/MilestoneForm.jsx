@@ -206,7 +206,7 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
 
     setUploading(true);
     try {
-      // Upload files to Supabase Storage
+      // Upload files to legacy backend Storage
       const urls = await uploadMilestonePhotos(files, milestone?.id);
       
       setFormData(prev => ({

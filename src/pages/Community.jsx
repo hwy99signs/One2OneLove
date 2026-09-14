@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
-// Base44 removed - using Supabase instead
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -14,7 +13,7 @@ import { createPageUrl } from "@/utils";
 import ForumCard from "../components/community/ForumCard";
 import ForumPostCard from "../components/community/ForumPostCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMyBuddies } from "@/lib/buddyService";
+import { getMyBuddies, acceptBuddyRequest } from "@/lib/buddyService";
 import StoryCard from "../components/community/StoryCard";
 import BuddyCard from "../components/community/BuddyCard";
 import PostStoryForm from "../components/community/PostStoryForm";
@@ -202,7 +201,7 @@ export default function Community() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
-  const { user } = useAuth(); // Get current user from Supabase
+  const { user } = useAuth(); // Get current user from legacy backend
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('forums');
@@ -220,14 +219,14 @@ export default function Community() {
     initialData: [],
   });
 
-  // Fetch stories from Supabase
+  // Fetch stories from legacy backend
   const { data: stories = [] } = useQuery({
     queryKey: ['stories', searchQuery],
     queryFn: () => getStories('-created_at', null, searchQuery || null),
     initialData: [],
   });
 
-  // Fetch REAL buddies from Supabase
+  // Fetch REAL buddies from legacy backend
   const { data: myBuddies = [] } = useQuery({
     queryKey: ['myBuddies', user?.id],
     queryFn: async () => {
@@ -246,7 +245,7 @@ export default function Community() {
     initialData: [],
   });
 
-  // Filter buddies - accepted friends only (from Supabase)
+  // Filter buddies - accepted friends only (from legacy backend)
   const activeBuddies = myBuddies;
   const pendingBuddies = []; // No pending here, those are in FriendRequests page
 
@@ -296,26 +295,14 @@ export default function Community() {
   };
 
   const updateBuddyMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const { data: result, error } = await supabase
-        .from('buddy_matches')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
+    mutationFn: async (requestId) => acceptBuddyRequest(requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBuddies'] });
     }
   });
 
   const handleAcceptBuddy = async (buddy) => {
-    await updateBuddyMutation.mutateAsync({
-      id: buddy.id,
-      data: { ...buddy, status: 'active' }
-    });
+    await updateBuddyMutation.mutateAsync(buddy.request_id || buddy.id);
     toast.success("Buddy accepted!");
   };
 
