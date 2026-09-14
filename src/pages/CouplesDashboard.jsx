@@ -1,252 +1,53 @@
+import React, { useMemo } from 'react';
+import { Heart, Sparkles, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useLanguage } from '@/Layout';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import * as journalService from '@/lib/journalService';
+import * as goalsService from '@/lib/goalsService';
+import * as milestonesService from '@/lib/milestonesService';
+import { listMemories } from '@/lib/memoryService';
+import { getActivityProgress } from '@/lib/activityService';
+import MetricsOverview from '../components/dashboard/MetricsOverview';
+import UpcomingActivities from '../components/dashboard/UpcomingActivities';
+import MilestoneCelebration from '../components/dashboard/MilestoneCelebration';
+import InsightsPanel from '../components/dashboard/InsightsPanel';
 
-import React, { useMemo } from "react";
-import { useLanguage } from "@/Layout";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
-import * as journalService from "@/lib/journalService";
-import * as goalsService from "@/lib/goalsService";
-import * as milestonesService from "@/lib/milestonesService";
-import { listMemories } from "@/lib/memoryService";
-import { getEngagementBadges } from "@/lib/engagementService";
-import { getActivityProgress, getCooperativeGameHistory } from "@/lib/activityService";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Heart, TrendingUp, Award, Sparkles, ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
-import MetricsOverview from "../components/dashboard/MetricsOverview";
-import ActivityProgress from "../components/dashboard/ActivityProgress";
-import BadgesDisplay from "../components/dashboard/BadgesDisplay";
-import UpcomingActivities from "../components/dashboard/UpcomingActivities";
-import MilestoneCelebration from "../components/dashboard/MilestoneCelebration";
-import InsightsPanel from "../components/dashboard/InsightsPanel";
-
-const translations = {
-  en: {
-    title: "Couple's Dashboard",
-    subtitle: "Your relationship journey at a glance",
-    welcome: "Welcome back",
-    metrics: "Key Metrics",
-    progress: "Activity Progress",
-    badges: "Your Badges",
-    upcoming: "Recommended Activities",
-    milestones: "Milestone Celebrations",
-    viewAll: "View All",
-    startActivity: "Start Activity",
-    celebrate: "Celebrate"
-  },
-  es: {
-    title: "Panel de Pareja",
-    subtitle: "Tu viaje de relación de un vistazo",
-    welcome: "Bienvenido de nuevo",
-    metrics: "Métricas Clave",
-    progress: "Progreso de Actividades",
-    badges: "Tus Insignias",
-    upcoming: "Actividades Recomendadas",
-    milestones: "Celebraciones de Hitos",
-    viewAll: "Ver Todo",
-    startActivity: "Iniciar Actividad",
-    celebrate: "Celebrar"
-  },
-  fr: {
-    title: "Tableau de Bord du Couple",
-    subtitle: "Votre parcours relationnel en un coup d'œil",
-    welcome: "Bon retour",
-    metrics: "Métriques Clés",
-    progress: "Progrès des Activités",
-    badges: "Vos Badges",
-    upcoming: "Activités Recommandées",
-    milestones: "Célébrations de Jalons",
-    viewAll: "Voir Tout",
-    startActivity: "Commencer l'Activité",
-    celebrate: "Célébrer"
-  },
-  it: {
-    title: "Dashboard di Coppia",
-    subtitle: "Il tuo percorso di relazione a colpo d'occhio",
-    welcome: "Bentornato",
-    metrics: "Metriche Chiave",
-    progress: "Progressi delle Attività",
-    badges: "I Tuoi Badge",
-    upcoming: "Attività Consigliate",
-    milestones: "Celebrazioni dei Traguardi",
-    viewAll: "Vedi Tutto",
-    startActivity: "Inizia Attività",
-    celebrate: "Celebra"
-  },
-  de: {
-    title: "Paar-Dashboard",
-    subtitle: "Ihre Beziehungsreise auf einen Blick",
-    welcome: "Willkommen zurück",
-    metrics: "Wichtige Metriken",
-    progress: "Aktivitätsfortschritt",
-    badges: "Ihre Abzeichen",
-    upcoming: "Empfohlene Aktivitäten",
-    milestones: "Meilenstein-Feiern",
-    viewAll: "Alle Ansehen",
-    startActivity: "Aktivität Starten",
-    celebrate: "Feiern"
-  }
+const copy = {
+  en:{ welcome:'Welcome back', subtitle:'Your relationship journey at a glance', metrics:'Your Relationship Activity', upcoming:'Recommended Next Steps' },
+  es:{ welcome:'Bienvenido de nuevo', subtitle:'Tu recorrido de relación de un vistazo', metrics:'Actividad de Tu Relación', upcoming:'Próximos Pasos Recomendados' },
+  fr:{ welcome:'Bon retour', subtitle:'Votre parcours relationnel en un coup d’œil', metrics:'Activité de Votre Relation', upcoming:'Prochaines Étapes Recommandées' },
+  it:{ welcome:'Bentornato', subtitle:'Il tuo percorso di relazione a colpo d’occhio', metrics:'Attività della Tua Relazione', upcoming:'Prossimi Passi Consigliati' },
+  de:{ welcome:'Willkommen zurück', subtitle:'Deine Beziehungsreise auf einen Blick', metrics:'Deine Beziehungsaktivität', upcoming:'Empfohlene Nächste Schritte' },
 };
 
 export default function CouplesDashboard() {
   const { currentLanguage } = useLanguage();
-  const t = translations[currentLanguage] || translations.en;
-
+  const t = copy[currentLanguage] || copy.en;
   const { user } = useAuth();
 
-  const { data: activityProgress = [] } = useQuery({
-    queryKey: ['activityProgress'],
-    queryFn: async () => user?.id ? getActivityProgress() : [],
-    enabled: !!user?.id,
-    initialData: []
-  });
+  const { data: activityProgress = [] } = useQuery({ queryKey:['activityProgress'], queryFn:async () => user?.id ? getActivityProgress() : [], enabled:!!user?.id, initialData:[] });
+  const { data: goals = [] } = useQuery({ queryKey:['goals'], queryFn:() => goalsService.getGoals('-created_at'), initialData:[] });
+  const { data: milestones = [] } = useQuery({ queryKey:['milestones'], queryFn:() => milestonesService.getMilestones('-created_at'), initialData:[] });
+  const { data: journals = [] } = useQuery({ queryKey:['journals'], queryFn:() => journalService.getJournalEntries('-entry_date'), initialData:[] });
+  const { data: memories = [] } = useQuery({ queryKey:['memories'], queryFn:async () => user?.id ? listMemories(user.id) : [], enabled:!!user?.id, initialData:[] });
 
-  const { data: badges = [] } = useQuery({
-    queryKey: ['badges'],
-    queryFn: async () => getEngagementBadges(),
-    initialData: []
-  });
-
-  const { data: goals = [] } = useQuery({
-    queryKey: ['goals'],
-    queryFn: () => goalsService.getGoals('-created_at'),
-    initialData: []
-  });
-
-  const { data: milestones = [] } = useQuery({
-    queryKey: ['milestones'],
-    queryFn: () => milestonesService.getMilestones('-created_at'),
-    initialData: []
-  });
-
-  const { data: journals = [] } = useQuery({
-    queryKey: ['journals'],
-    queryFn: () => journalService.getJournalEntries('-entry_date'),
-    initialData: []
-  });
-
-  const { data: games = [] } = useQuery({
-    queryKey: ['games'],
-    queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
-    enabled: !!user?.id,
-    initialData: []
-  });
-
-  const { data: memories = [] } = useQuery({
-    queryKey: ['memories'],
-    queryFn: async () => user?.id ? listMemories(user.id) : [],
-    enabled: !!user?.id,
-    initialData: []
-  });
-
-  const allData = useMemo(() => ({
-    activityProgress,
-    badges,
-    goals,
-    milestones,
-    journals,
-    games,
-    memories
-  }), [activityProgress, badges, goals, milestones, journals, games, memories]);
+  const allData = useMemo(() => ({ activityProgress, goals, milestones, journals, memories }), [activityProgress, goals, milestones, journals, memories]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                {t.welcome}{user?.full_name ? `, ${user.full_name}` : ''}! 💕
-              </h1>
-              <p className="text-xl text-gray-600">{t.subtitle}</p>
-            </div>
-            <div className="hidden md:block">
-              <div className="w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl">
-                <Heart className="w-10 h-10 text-white fill-white" />
-              </div>
-            </div>
-          </div>
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="mb-8">
+          <div className="flex items-center justify-between gap-4"><div><h1 className="text-4xl font-black text-gray-900 md:text-5xl">{t.welcome}{user?.name ? `, ${user.name}` : ''}! 💕</h1><p className="mt-2 text-xl text-gray-600">{t.subtitle}</p></div><div className="hidden h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600 shadow-xl md:flex"><Heart className="h-10 w-10 fill-white text-white"/></div></div>
         </motion.div>
 
-        {/* Milestone Celebrations */}
-        <MilestoneCelebration milestones={allData.milestones} />
+        <MilestoneCelebration milestones={allData.milestones}/>
+        <InsightsPanel data={allData}/>
 
-        {/* Relationship Insights */}
-        <InsightsPanel data={allData} />
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.1}} className="mb-8"><h2 className="mb-4 flex items-center gap-2 text-2xl font-bold text-gray-900"><TrendingUp className="h-6 w-6 text-purple-600"/>{t.metrics}</h2><MetricsOverview data={allData}/></motion.div>
 
-        {/* Key Metrics */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
-              {t.metrics}
-            </h2>
-          </div>
-          <MetricsOverview data={allData} />
-        </motion.div>
-
-        <div className="grid lg:grid-cols-3 gap-8 mb-8">
-          {/* Activity Progress */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-2"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {t.progress}
-              </h2>
-              <Link to={createPageUrl("CoupleActivities")}>
-                <Button variant="ghost" size="sm">
-                  {t.viewAll} <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <ActivityProgress data={allData} />
-          </motion.div>
-
-          {/* Badges */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Award className="w-6 h-6 text-amber-600" />
-                {t.badges}
-              </h2>
-            </div>
-            <BadgesDisplay badges={allData.badges} />
-          </motion.div>
-        </div>
-
-        {/* Upcoming/Recommended Activities */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-purple-600" />
-              {t.upcoming}
-            </h2>
-          </div>
-          <UpcomingActivities data={allData} />
-        </motion.div>
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.2}}><h2 className="mb-4 flex items-center gap-2 text-2xl font-bold text-gray-900"><Sparkles className="h-6 w-6 text-purple-600"/>{t.upcoming}</h2><UpcomingActivities data={allData}/></motion.div>
       </div>
     </div>
   );
