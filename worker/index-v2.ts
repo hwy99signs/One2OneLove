@@ -3,6 +3,7 @@ import baseWorker from './index';
 import { handleAdminRequest } from './admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleFeatureUsageRequest } from './feature-usage';
+import { handleSendCreditWebhook, handleSendCreditsRequest } from './send-credits';
 import { handleLaunchAuthRequest } from './launch-auth';
 import { handleProfessionalSignup } from './professional-signup';
 import { handleSpecialProfileRequest } from './onboarding';
@@ -29,6 +30,16 @@ import { handleAiRequest } from './ai';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname === '/api/billing/webhook') {
+      const sendCreditResponse = await handleSendCreditWebhook(request.clone(), env, url);
+      if (sendCreditResponse) return sendCreditResponse;
+    }
+
+    if (url.pathname.startsWith('/api/send-credits')) {
+      const response = await handleSendCreditsRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname === '/api/admin/analytics') {
       const response = await handleAnalyticsRequest(request, env, url);
