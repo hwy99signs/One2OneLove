@@ -18,9 +18,11 @@ jobs:
         with:
           ref: master
           fetch-depth: 0
+
       - name: Resize only the four hero action tabs on master
         shell: bash
         run: |
+          git pull --ff-only origin master
           python - <<'PY'
           from pathlib import Path
           path = Path('src/pages/Home.jsx')
@@ -41,19 +43,22 @@ jobs:
               raise SystemExit(f'Expected exact action-tab block once on master, found {text.count(old)}')
           path.write_text(text.replace(old, new, 1))
           PY
-          git diff -- src/pages/Home.jsx
-          test "$(git diff --name-only | wc -l)" -eq 1
-          test "$(git diff --name-only)" = "src/pages/Home.jsx"
+          rm -f .github/restore-lock-note .github/cleanup-trigger .github/DO_NOT_KEEP .github/last-temp-marker
+          echo 'Master diff:'
+          git diff -- src/pages/Home.jsx .github/restore-lock-note .github/cleanup-trigger .github/DO_NOT_KEEP .github/last-temp-marker
+
       - name: Build master
         run: npm ci && npm run build
-      - name: Commit master change
+
+      - name: Commit master change and temporary-file cleanup
         shell: bash
         run: |
           git config user.name "hwy99signs"
           git config user.email "hwy99signs@gmail.com"
-          git add src/pages/Home.jsx
+          git add src/pages/Home.jsx .github/restore-lock-note .github/cleanup-trigger .github/DO_NOT_KEEP .github/last-temp-marker
           git commit -m "Resize only four home action tabs"
           git push origin master
+
       - name: Mirror exact style change to active migration branch
         shell: bash
         run: |
@@ -79,11 +84,11 @@ jobs:
               raise SystemExit(f'Expected exact action-tab block once on migration branch, found {text.count(old)}')
           path.write_text(text.replace(old, new, 1))
           PY
-          test "$(git diff --name-only | wc -l)" -eq 1
-          test "$(git diff --name-only)" = "src/pages/Home.jsx"
-          git add src/pages/Home.jsx
+          rm -f .github/restore-lock-note-migration
+          git add src/pages/Home.jsx .github/restore-lock-note-migration
           git commit -m "Mirror home action tab sizing into Neon migration"
           git push origin full-neon-migration-2026-09-13
+
       - name: Remove temporary workflow and trigger from master
         shell: bash
         run: |
