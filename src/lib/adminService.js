@@ -17,3 +17,12 @@ export async function getAdminDashboard() {
   });
   return parseJson(response);
 }
+
+export async function getAdminAnalytics() {
+  const response = await fetch('/api/admin/analytics', {
+    method: 'GET',
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+  });
+  return parseJson(response);
+}
