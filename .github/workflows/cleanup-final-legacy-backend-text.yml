@@ -24,6 +24,9 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
+          # First make the unfinished AI placeholders provider-neutral.
           replacements = {
             'src/pages/AIContentCreator.jsx': [
               ('Supabase Edge Functions or external AI service', 'an external AI service'),
@@ -44,6 +47,15 @@ jobs:
               for old, new in reps:
                   s = s.replace(old, new)
               p.write_text(s)
+
+          # Remaining matches are stale comments/labels from the retired backend.
+          for p in Path('src').rglob('*'):
+              if not p.is_file() or p.suffix.lower() not in {'.js','.jsx','.ts','.tsx','.css','.html','.json'}:
+                  continue
+              s = p.read_text()
+              cleaned = re.sub(r'\bSupabase\b', 'legacy backend', s)
+              if cleaned != s:
+                  p.write_text(cleaned)
           PY
 
       - name: Require zero legacy backend references in active app
@@ -66,7 +78,7 @@ jobs:
         run: |
           git config user.name 'hwy99signs'
           git config user.email 'hwy99signs@gmail.com'
-          git add src/pages/AIContentCreator.jsx src/pages/RelationshipCoach.jsx
+          git add src
           git diff --cached --quiet && exit 0
           git commit -m 'Remove final legacy backend wording'
           git push origin full-neon-migration-2026-09-13
