@@ -18,11 +18,7 @@ function fail(message, status = 400, code = 'bad_request') {
 async function withDb(env, fn) {
   const client = new Client({ connectionString: env.HYPERDRIVE.connectionString });
   await client.connect();
-  try {
-    return await fn(client);
-  } finally {
-    await client.end();
-  }
+  try { return await fn(client); } finally { await client.end(); }
 }
 
 async function readJson(request) {
@@ -74,13 +70,21 @@ async function authPost(request, env, path, body) {
   });
 }
 
+async function readUpstream(upstream) {
+  const text = await upstream.text();
+  let payload = null;
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
+  return { text, payload };
+}
+
 async function launchReadiness(env) {
   return withDb(env, async (db) => {
     const result = await db.query(`
       SELECT
         to_regclass('public.signup_consents') IS NOT NULL AS consent_table_ready,
         COALESCE((email_and_password->>'requireEmailVerification')::boolean, false) AS verification_required,
-        COALESCE((email_and_password->>'sendVerificationEmailOnSignUp')::boolean, false) AS verification_email_on_signup
+        COALESCE((email_and_password->>'sendVerificationEmailOnSignUp')::boolean, false) AS verification_email_on_signup,
+        COALESCE(email_and_password->>'emailVerificationMethod','') AS verification_method
       FROM neon_auth.project_config
       WHERE name='One2OneLove'
       LIMIT 1
@@ -110,25 +114,18 @@ async function registerLaunchUser(request, env) {
 
   if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
   if (password.length < 8) return fail('Password must contain at least 8 characters.');
-  if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) {
-    return fail('Please select one of the supported One2OneLove languages.');
-  }
-  if (!privacyAcknowledged || !age18Confirmed) {
-    return fail('Privacy acknowledgement and 18+ confirmation are required.');
-  }
+  if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) return fail('Please select one of the supported One2OneLove languages.');
+  if (!privacyAcknowledged || !age18Confirmed) return fail('Privacy acknowledgement and 18+ confirmation are required.');
   const acceptedDate = new Date(termsAcceptedAt);
   if (Number.isNaN(acceptedDate.getTime())) return fail('Terms acceptance date is invalid.');
 
-  const callbackURL = callbackFor(request);
   const upstream = await authPost(request, env, '/sign-up/email', {
     email,
     password,
     name,
-    callbackURL,
+    callbackURL: callbackFor(request),
   });
-  const text = await upstream.text();
-  let payload = null;
-  try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
+  const { payload } = await readUpstream(upstream);
 
   if (!upstream.ok) {
     const message = payload?.message || payload?.error?.message || 'Account creation failed.';
@@ -136,9 +133,7 @@ async function registerLaunchUser(request, env) {
   }
 
   const user = payload?.user || payload?.data?.user || null;
-  if (!user?.id) {
-    return fail('Account creation did not return a user record.', 502, 'invalid_auth_response');
-  }
+  if (!user?.id) return fail('Account creation did not return a user record.', 502, 'invalid_auth_response');
 
   await withDb(env, async (db) => {
     await db.query(
@@ -157,13 +152,15 @@ async function registerLaunchUser(request, env) {
     );
   });
 
-  // Do not forward any signup session cookie. Launch policy requires email
-  // verification before a browser receives an authenticated One2OneLove session.
+  // Current One2OneLove auth configuration uses OTP email verification.
+  // The auth provider sends the initial OTP during signup. No signup session
+  // cookie is forwarded; the member signs in normally after verification.
   return json({
     ok: true,
     success: true,
     user: { id: user.id, email: user.email || email, emailVerified: user.emailVerified === true },
     emailVerificationRequired: true,
+    verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
   }, 201);
 }
@@ -174,24 +171,45 @@ async function resendVerification(request, env) {
   const email = clean(body.email, 320, true)?.toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
 
-  const upstream = await authPost(request, env, '/send-verification-email', {
+  const upstream = await authPost(request, env, '/email-otp/send-verification-otp', {
     email,
-    callbackURL: callbackFor(request),
+    type: 'email-verification',
   });
-  const text = await upstream.text();
-  let payload = null;
-  try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-
+  const { payload } = await readUpstream(upstream);
   if (!upstream.ok) {
-    const message = payload?.message || payload?.error?.message || 'Verification email could not be sent.';
+    const message = payload?.message || payload?.error?.message || 'Verification code could not be sent.';
     return fail(message, upstream.status, payload?.code || payload?.error?.code || 'verification_send_failed');
   }
-
   return json({ ok: true, success: true });
+}
+
+async function verifyLaunchEmail(request, env) {
+  if (request.method !== 'POST') return fail('Method not allowed.', 405, 'method_not_allowed');
+  const body = await readJson(request);
+  const email = clean(body.email, 320, true)?.toLowerCase();
+  const otp = String(body.otp || '').trim();
+  if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
+  if (!/^\d{6}$/.test(otp)) return fail('Enter the 6-digit verification code.', 400, 'invalid_otp');
+
+  const upstream = await authPost(request, env, '/email-otp/verify-email', { email, otp });
+  const { payload } = await readUpstream(upstream);
+  if (!upstream.ok) {
+    const message = payload?.message || payload?.error?.message || 'The verification code is invalid or expired.';
+    return fail(message, upstream.status === 429 ? 429 : 400, payload?.code || payload?.error?.code || 'invalid_otp');
+  }
+
+  const verified = await withDb(env, async db => {
+    const result = await db.query('SELECT "emailVerified" FROM neon_auth."user" WHERE lower(email)=lower($1) LIMIT 1', [email]);
+    return result.rows[0]?.emailVerified === true;
+  });
+
+  if (!verified) return fail('Email verification did not complete. Request a new code and try again.', 409, 'verification_incomplete');
+  return json({ ok: true, success: true, verified: true });
 }
 
 export async function handleLaunchAuthRequest(request, env, url) {
   if (url.pathname === '/api/launch-signup') return registerLaunchUser(request, env);
   if (url.pathname === '/api/launch-signup/resend') return resendVerification(request, env);
+  if (url.pathname === '/api/launch-signup/verify') return verifyLaunchEmail(request, env);
   return null;
 }
