@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  IS_WSTD_PREVIEW_DEMO,
   getWhatShouldTheyDoQuestions,
   getWhatShouldTheyDoResults,
   submitWhatShouldTheyDoVote,
@@ -79,7 +80,9 @@ function ResultsPanel({ results, selectedOptionId, onNext, nextLabel }) {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
           <BarChart3 className="h-6 w-6" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900">Here’s what everybody said</h2>
+        <h2 className="text-2xl font-black text-slate-900">
+          {results.preview ? 'Preview results — sample vote totals' : 'Here’s what everybody said'}
+        </h2>
         <p className="mt-1 text-sm text-slate-500">
           {results.totalVotes.toLocaleString()} total vote{results.totalVotes === 1 ? '' : 's'}
         </p>
@@ -248,6 +251,12 @@ export default function WhatShouldTheyDoGame({ onExit }) {
         <div className="mb-7 h-2 overflow-hidden rounded-full bg-white shadow-inner">
           <motion.div className="h-full rounded-full bg-emerald-500" animate={{ width: `${progress}%` }} />
         </div>
+
+        {IS_WSTD_PREVIEW_DEMO && (
+          <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-950">
+            <span className="font-black">Preview mode:</span> vote totals are sample data so you can review the experience while we build. Your preview vote is not written to the live One2OneLove database.
+          </div>
+        )}
 
         <Card className="overflow-hidden border-0 bg-white shadow-xl shadow-emerald-900/5">
           <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5 text-white sm:px-8">
