@@ -1,0 +1,69 @@
+name: O2OL Chat Menu Migration Cleanup
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - .github/workflows/o2ol-chat-menu-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - name: Remove dead chat action and wire message info
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'Missing expected block in {path}: {old[:120]!r}')
+              p.write_text(text.replace(old, new, count))
+
+          replace('src/components/chat/ChatMessage.jsx',
+                  """  onDelete,\n  onSelect,\n  onShare,""",
+                  """  onDelete,\n  onInfo,\n  onShare,""")
+          replace('src/components/chat/ChatMessage.jsx',
+                  """  const handleSelect = () => {\n    onSelect?.(message);\n  };\n\n""",
+                  "")
+          replace('src/components/chat/ChatMessage.jsx',
+                  """                <DropdownMenuItem onClick={handleSelect} className=\"hover:bg-gray-800\">\n                  <CheckSquare className=\"w-4 h-4 mr-2\" />\n                  {t.select}\n                </DropdownMenuItem>\n""",
+                  "")
+          replace('src/components/chat/ChatMessage.jsx',
+                  """                <DropdownMenuItem className=\"hover:bg-gray-800\">\n                  <Info className=\"w-4 h-4 mr-2\" />\n                  {t.info}\n                </DropdownMenuItem>""",
+                  """                <DropdownMenuItem onClick={() => onInfo?.(message)} className=\"hover:bg-gray-800\">\n                  <Info className=\"w-4 h-4 mr-2\" />\n                  {t.info}\n                </DropdownMenuItem>""")
+
+          replace('src/components/chat/ChatWindow.jsx',
+                  "import { getPinnedMessages, toggleReaction, toggleStarMessage } from '@/lib/chatFeaturesService';",
+                  "import { getPinnedMessages, toggleReaction, toggleStarMessage, getMessageInfo } from '@/lib/chatFeaturesService';")
+          replace('src/components/chat/ChatWindow.jsx',
+                  """                      onSelect={(msg) => {\n                        // TODO: Implement select functionality\n                        console.log('Select:', msg);\n                      }}""",
+                  """                      onInfo={async (msg) => {\n                        try {\n                          const info = await getMessageInfo(msg.id);\n                          const details = [\n                            info?.sent_at_formatted ? `Sent: ${info.sent_at_formatted}` : null,\n                            info?.delivered_at_formatted ? `Delivered: ${info.delivered_at_formatted}` : null,\n                            info?.read_at_formatted ? `Read: ${info.read_at_formatted}` : null,\n                          ].filter(Boolean);\n                          toast.info(details.join(' • ') || 'Message information unavailable');\n                        } catch (error) {\n                          toast.error(error?.message || 'Unable to load message information');\n                        }\n                      }}""")
+          PY
+
+      - name: Validate build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit chat cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/components/chat/ChatMessage.jsx src/components/chat/ChatWindow.jsx
+          git diff --cached --quiet && exit 0
+          git commit -m 'Finish migrated chat message actions'
+          git push origin HEAD:o2ol-password-reset-preview
