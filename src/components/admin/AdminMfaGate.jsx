@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAdminMfaStatus } from '@/lib/adminMfaService';
+import { endAdminMfa, getAdminMfaStatus, touchAdminMfa } from '@/lib/adminMfaService';
+
+const ADMIN_IDLE_MS = 5 * 60 * 1000;
+const SERVER_TOUCH_THROTTLE_MS = 30 * 1000;
 
 export default function AdminMfaGate({ children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -40,6 +43,72 @@ export default function AdminMfaGate({ children }) {
 
     return () => { active = false; };
   }, [isAuthenticated, isLoading, user?.role]);
+
+  useEffect(() => {
+    if (!allowed) return undefined;
+
+    let idleTimer = null;
+    let lastServerTouch = Date.now();
+    let ending = false;
+
+    const finishAdminSession = async () => {
+      if (ending) return;
+      ending = true;
+      try {
+        await endAdminMfa();
+      } catch {
+        // The browser-side idle timeout still exits Admin even if the cleanup request fails.
+      } finally {
+        try { sessionStorage.setItem('o2olAdminIdleLogout', '1'); } catch {}
+        window.location.replace('/Home');
+      }
+    };
+
+    const resetIdleTimer = () => {
+      if (idleTimer) window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(finishAdminSession, ADMIN_IDLE_MS);
+    };
+
+    const renewServerSession = async () => {
+      const now = Date.now();
+      if (now - lastServerTouch < SERVER_TOUCH_THROTTLE_MS || ending) return;
+      lastServerTouch = now;
+      try {
+        await touchAdminMfa();
+      } catch (error) {
+        if ([401, 403, 428].includes(error?.status)) {
+          finishAdminSession();
+        }
+      }
+    };
+
+    const registerActivity = () => {
+      if (ending) return;
+      resetIdleTimer();
+      renewServerSession();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') registerActivity();
+    };
+
+    resetIdleTimer();
+
+    window.addEventListener('pointerdown', registerActivity, { passive: true });
+    window.addEventListener('keydown', registerActivity);
+    window.addEventListener('scroll', registerActivity, { passive: true });
+    window.addEventListener('touchstart', registerActivity, { passive: true });
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      if (idleTimer) window.clearTimeout(idleTimer);
+      window.removeEventListener('pointerdown', registerActivity);
+      window.removeEventListener('keydown', registerActivity);
+      window.removeEventListener('scroll', registerActivity);
+      window.removeEventListener('touchstart', registerActivity);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [allowed]);
 
   if (isLoading || checking || !allowed) {
     return (
