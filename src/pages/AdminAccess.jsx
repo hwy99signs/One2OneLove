@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { requestAdminMfaCode, verifyAdminMfaCode } from '@/lib/adminMfaService';
+import { getAdminMfaStatus, requestAdminMfaCode, verifyAdminMfaCode } from '@/lib/adminMfaService';
+
+const SENT_AT_KEY = 'o2ol-admin-mfa-code-sent-at';
+const CODE_REUSE_MS = 4 * 60 * 1000;
 
 export default function AdminAccess() {
   const navigate = useNavigate();
@@ -15,13 +18,16 @@ export default function AdminAccess() {
 
   const sendCode = async (showToast = true) => {
     setSending(true);
+    const now = Date.now();
     try {
+      sessionStorage.setItem(SENT_AT_KEY, String(now));
       const result = await requestAdminMfaCode();
       setEmail(result?.email || 'your admin email');
       setSent(true);
       setCooldown(30);
       if (showToast) toast.success('A new administrator verification code was sent.');
     } catch (error) {
+      sessionStorage.removeItem(SENT_AT_KEY);
       if (error?.status === 401) {
         window.location.replace('/SignIn');
         return;
@@ -38,7 +44,36 @@ export default function AdminAccess() {
   };
 
   useEffect(() => {
-    sendCode(false);
+    let active = true;
+    (async () => {
+      try {
+        const status = await getAdminMfaStatus();
+        if (!active) return;
+        setEmail(status?.email || 'your admin email');
+        if (status?.verified) {
+          window.location.replace('/Admin');
+          return;
+        }
+
+        const sentAt = Number(sessionStorage.getItem(SENT_AT_KEY) || 0);
+        if (sentAt && Date.now() - sentAt < CODE_REUSE_MS) {
+          setSent(true);
+          setSending(false);
+          return;
+        }
+
+        await sendCode(false);
+      } catch (error) {
+        if (!active) return;
+        if (error?.status === 401) window.location.replace('/SignIn');
+        else if (error?.status === 403) window.location.replace('/Home');
+        else {
+          setSending(false);
+          toast.error(error?.message || 'Unable to verify administrator access.');
+        }
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -60,6 +95,7 @@ export default function AdminAccess() {
     setVerifying(true);
     try {
       await verifyAdminMfaCode(code);
+      sessionStorage.removeItem(SENT_AT_KEY);
       toast.success('Administrator verification complete.');
       window.location.replace('/Admin');
     } catch (error) {
@@ -67,6 +103,12 @@ export default function AdminAccess() {
     } finally {
       setVerifying(false);
     }
+  };
+
+  const resend = async () => {
+    sessionStorage.removeItem(SENT_AT_KEY);
+    setOtp('');
+    await sendCode(true);
   };
 
   return (
@@ -92,9 +134,9 @@ export default function AdminAccess() {
           <div className="flex items-start gap-3">
             <Mail className="mt-0.5 shrink-0 text-sky-600" size={19}/>
             <div>
-              <p className="text-sm font-bold text-sky-900">Verification code sent</p>
+              <p className="text-sm font-bold text-sky-900">Verification code {sent ? 'sent' : 'required'}</p>
               <p className="mt-1 text-sm text-sky-800">Enter the 6-digit code sent to <strong>{email}</strong>.</p>
-              <p className="mt-1 text-xs text-sky-700">The code expires in about 5 minutes.</p>
+              <p className="mt-1 text-xs text-sky-700">The code expires in about 5 minutes. Refreshing this page will no longer replace a still-valid code.</p>
             </div>
           </div>
         </div>
@@ -128,11 +170,11 @@ export default function AdminAccess() {
         <div className="mt-5 border-t border-slate-200 pt-5 text-center">
           <button
             type="button"
-            onClick={() => sendCode(true)}
+            onClick={resend}
             disabled={sending || verifying || cooldown > 0}
             className="text-sm font-semibold text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:text-slate-400"
           >
-            {sending ? 'Sending code…' : cooldown > 0 ? `Resend code in ${cooldown}s` : sent ? 'Resend verification code' : 'Send verification code'}
+            {sending ? 'Sending code…' : cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend verification code'}
           </button>
         </div>
       </div>
