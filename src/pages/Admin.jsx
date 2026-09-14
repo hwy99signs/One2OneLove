@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, Users, X,
 } from 'lucide-react';
-import { getAdminDashboard } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard } from '../lib/adminService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -72,10 +72,20 @@ function TableShell({ children }) { return <div className="overflow-x-auto round
 function Empty({ children='No records yet.' }) { return <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm text-slate-500">{children}</div>; }
 function Heading({ title, subtitle }) { return <div className="mb-5"><h2 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>; }
 
+function DeliveryHealth({ firstLabel, firstValue, passed, failed, pending }) {
+  return <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-semibold text-blue-700">{firstLabel}</p><p className="mt-1 text-2xl font-black text-blue-900">{number(firstValue)}</p></div>
+    <div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-semibold text-emerald-700">Passed</p><p className="mt-1 text-2xl font-black text-emerald-900">{number(passed)}</p></div>
+    <div className="rounded-xl bg-rose-50 p-4"><p className="text-xs font-semibold text-rose-700">Failed</p><p className="mt-1 text-2xl font-black text-rose-900">{number(failed)}</p></div>
+    <div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-semibold text-amber-700">Pending</p><p className="mt-1 text-2xl font-black text-amber-900">{number(pending)}</p></div>
+  </div>;
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const [section,setSection] = useState('overview');
   const [data,setData] = useState(null);
+  const [analytics,setAnalytics] = useState(null);
   const [loading,setLoading] = useState(true);
   const [refreshing,setRefreshing] = useState(false);
   const [error,setError] = useState(null);
@@ -85,7 +95,11 @@ export default function Admin() {
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
     setError(null);
-    try { setData(await getAdminDashboard()); } catch (err) { setError(err); }
+    try {
+      const [dashboardData,analyticsData] = await Promise.all([getAdminDashboard(),getAdminAnalytics()]);
+      setData(dashboardData);
+      setAnalytics(analyticsData);
+    } catch (err) { setError(err); }
     finally { setLoading(false); setRefreshing(false); }
   };
   useEffect(() => { load(false); }, []);
@@ -105,6 +119,7 @@ export default function Admin() {
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
   const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, features=featureUsage.features || [];
+  const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
   const topFeatures=features.filter(f=>f.total_activity>0).slice(0,6);
 
   const nav = (
@@ -113,6 +128,7 @@ export default function Admin() {
         <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-rose-600 text-white"><Heart size={20}/></div><div><div className="font-black text-slate-900">One2OneLove</div><div className="text-xs font-semibold text-rose-600">ADMIN CONTROL</div></div></div>
       </div>
       <nav className="space-y-1 p-3">
+        <button onClick={()=>{navigate('/Analytics');setMobileNav(false);}} className="mb-2 flex w-full items-center gap-3 rounded-xl bg-slate-900 px-3 py-3 text-left text-sm font-semibold text-white hover:bg-slate-800"><TrendingUp size={18}/>Analytics</button>
         {sections.map(({id,label,icon:Icon}) => <button key={id} onClick={()=>{setSection(id);setMobileNav(false);}} className={cx('flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition',section===id?'bg-rose-50 text-rose-700':'text-slate-600 hover:bg-slate-50 hover:text-slate-900')}><Icon size={18}/>{label}</button>)}
       </nav>
       <div className="mt-auto border-t border-slate-200 p-4"><div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><ShieldCheck size={16} className="mb-1"/>Secure admin-only access. Dashboard controls remain read-only during launch QA.</div><button onClick={()=>navigate('/Home')} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ArrowLeft size={16}/>Exit Admin</button></div>
@@ -128,7 +144,7 @@ export default function Admin() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3"><button className="rounded-lg border border-slate-200 p-2 lg:hidden" onClick={()=>setMobileNav(true)}><Menu size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Operations Dashboard</p><h1 className="text-lg font-bold text-slate-900">{sections.find(s=>s.id===section)?.label}</h1></div></div>
-            <div className="flex items-center gap-2"><Pill tone="blue">Preview</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
+            <div className="flex items-center gap-2"><button onClick={()=>navigate('/Analytics')} className="hidden items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:inline-flex"><TrendingUp size={15}/>Analytics</button><Pill tone="blue">Preview</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
           </div>
         </header>
 
@@ -146,13 +162,17 @@ export default function Admin() {
               <Metric icon={UserCheck} label="Verified Profiles" value={number(users.verified)} note={`${number(users.inactive)} inactive profiles`} tone="green"/>
             </div>
 
-            <div className="mt-6 grid gap-6 xl:grid-cols-2">
+            <div className="mt-6 grid gap-6 xl:grid-cols-3">
               <Panel title="Tier Breakdown" subtitle="All three launch tiers are always shown, including zero-count tiers.">
-                <div className="grid gap-3 sm:grid-cols-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="mt-1 text-3xl font-black text-slate-900">{number(plan.count)}</p><p className="text-xs text-slate-500">members</p></div>)}</div>
+                <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">members</p></div>)}</div>
               </Panel>
-              <Panel title="Love Note Delivery Health" subtitle="Scheduled usage plus successful and failed scheduled deliveries.">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-semibold text-blue-700">Scheduled</p><p className="mt-1 text-2xl font-black text-blue-900">{number(love.scheduled_total)}</p></div><div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-semibold text-emerald-700">Passed</p><p className="mt-1 text-2xl font-black text-emerald-900">{number(love.scheduled_passed)}</p></div><div className="rounded-xl bg-rose-50 p-4"><p className="text-xs font-semibold text-rose-700">Failed</p><p className="mt-1 text-2xl font-black text-rose-900">{number(love.scheduled_failed)}</p></div><div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-semibold text-amber-700">Pending</p><p className="mt-1 text-2xl font-black text-amber-900">{number(love.scheduled_pending)}</p></div></div>
+              <Panel title="Scheduled Love Note Delivery Health" subtitle="How scheduled Love Notes are performing after they enter the scheduler.">
+                <DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600"><Pill tone="blue">{number(love.scheduler_users)} people have scheduled</Pill><Pill tone="purple">{number(love.scheduled_30d)} schedules in 30 days</Pill></div>
+              </Panel>
+              <Panel title="Direct Love Note Delivery Health" subtitle="Direct sends are separated from scheduled sends so you can compare delivery performance.">
+                <DeliveryHealth firstLabel="Sent" firstValue={direct.sent} passed={direct.passed} failed={direct.failed} pending={direct.pending}/>
+                {!direct.receiptTrackingActive && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Passed, Failed and Pending will populate from carrier delivery receipts after the SMS provider callback is connected. Until then, they remain zero rather than estimating.</p>}
               </Panel>
             </div>
 
@@ -171,7 +191,7 @@ export default function Admin() {
 
           {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
 
-          {section==='love-notes' && <div><Heading title="Love Notes Operations" subtitle="Monitor scheduler adoption, scheduled volume, successful deliveries and failures."/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={Users} label="Scheduler Users" value={number(loveNotes.schedulers?.users_total)} note={`${number(loveNotes.schedulers?.users_30d)} in 30 days`} tone="blue"/><Metric icon={CalendarDays} label="Schedules Created" value={number(loveNotes.schedulers?.schedules_total)} note={`${number(loveNotes.schedulers?.schedules_30d)} in 30 days`} tone="violet"/><Metric icon={CheckCircle2} label="Passed" value={number(love.scheduled_passed)} note="successful scheduled sends" tone="green"/><Metric icon={AlertTriangle} label="Failed" value={number(love.scheduled_failed)} note="delivery failures" tone="rose"/><Metric icon={Clock3} label="Avg Schedules / User" value={decimal(loveNotes.schedulers?.avg_schedules_per_user)} note="all-time scheduler frequency" tone="amber"/></div><div className="mt-6">{(loveNotes.recent||[]).length?<TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Note</th><th className="px-4 py-3">Delivery</th><th className="px-4 py-3">Scheduled</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{loveNotes.recent.map(item=><tr key={item.id}><td className="px-4 py-3"><div className="font-semibold">{item.note_title||'Love Note'}</div><div className="text-xs text-slate-500">{item.email||item.user_id}</div></td><td className="px-4 py-3">{item.delivery_method||'—'}{item.recipient_phone_masked&&<div className="text-xs text-slate-400">{item.recipient_phone_masked}</div>}</td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{item.scheduled_date||'—'} {item.scheduled_time||''}</td><td className="px-4 py-3"><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill>{item.failure_reason&&<div className="mt-1 max-w-xs text-xs text-rose-600">{item.failure_reason}</div>}</td></tr>)}</tbody></table></TableShell>:<Empty>No scheduled Love Notes yet.</Empty>}</div></div>}
+          {section==='love-notes' && <div><Heading title="Love Notes Operations" subtitle="Monitor scheduler adoption, scheduled volume, successful deliveries and failures."/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={Users} label="Scheduler Users" value={number(loveNotes.schedulers?.users_total)} note={`${number(loveNotes.schedulers?.users_30d)} in 30 days`} tone="blue"/><Metric icon={CalendarDays} label="Schedules Created" value={number(loveNotes.schedulers?.schedules_total)} note={`${number(loveNotes.schedulers?.schedules_30d)} in 30 days`} tone="violet"/><Metric icon={CheckCircle2} label="Passed" value={number(love.scheduled_passed)} note="successful scheduled sends" tone="green"/><Metric icon={AlertTriangle} label="Failed" value={number(love.scheduled_failed)} note="delivery failures" tone="rose"/><Metric icon={Clock3} label="Avg Schedules / User" value={decimal(loveNotes.schedulers?.avg_schedules_per_user)} note="all-time scheduler frequency" tone="amber"/></div><div className="mt-6 grid gap-6 xl:grid-cols-2"><Panel title="Scheduled Delivery Health"><DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/></Panel><Panel title="Direct Delivery Health"><DeliveryHealth firstLabel="Sent" firstValue={direct.sent} passed={direct.passed} failed={direct.failed} pending={direct.pending}/></Panel></div><div className="mt-6">{(loveNotes.recent||[]).length?<TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Note</th><th className="px-4 py-3">Delivery</th><th className="px-4 py-3">Scheduled</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{loveNotes.recent.map(item=><tr key={item.id}><td className="px-4 py-3"><div className="font-semibold">{item.note_title||'Love Note'}</div><div className="text-xs text-slate-500">{item.email||item.user_id}</div></td><td className="px-4 py-3">{item.delivery_method||'—'}{item.recipient_phone_masked&&<div className="text-xs text-slate-400">{item.recipient_phone_masked}</div>}</td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{item.scheduled_date||'—'} {item.scheduled_time||''}</td><td className="px-4 py-3"><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill>{item.failure_reason&&<div className="mt-1 max-w-xs text-xs text-rose-600">{item.failure_reason}</div>}</td></tr>)}</tbody></table></TableShell>:<Empty>No scheduled Love Notes yet.</Empty>}</div></div>}
 
           {section==='applications' && <div><Heading title="Professional Applications" subtitle="Licensed professionals, relationship professionals and contributors."/>{applications.length?<div className="grid gap-4 lg:grid-cols-2">{applications.map(item=><div key={`${item.application_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.applicant_name||'Unnamed applicant'}</p><p className="text-sm text-slate-500">{item.email||'No email'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div><div className="mt-3 text-sm text-slate-600"><div>Type: {String(item.application_type||'').replaceAll('_',' ')}</div><div>Submitted: {date(item.created_at)}</div>{item.rejection_reason&&<div className="mt-2 rounded-lg bg-rose-50 p-2 text-rose-700">{item.rejection_reason}</div>}</div></div>)}</div>:<Empty>No professional applications yet.</Empty>}</div>}
 
