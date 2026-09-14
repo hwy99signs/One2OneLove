@@ -9,6 +9,7 @@ import { Calendar as CalendarIcon, MapPin, Upload, X, Loader2, Image as ImageIco
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
+import { uploadMemoryMedia } from "@/lib/memoryService";
 
 const translations = {
   en: {
@@ -214,27 +215,19 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
   const [uploadProgress, setUploadProgress] = useState([]);
 
   const handleFileUpload = async (files) => {
+    const selectedFiles = Array.from(files || []);
+    if (!selectedFiles.length) return;
+
     setUploadingFiles(true);
+    setUploadProgress(selectedFiles.map(file => ({ name: file.name, status: 'uploading' })));
     const newUrls = [];
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setUploadProgress(prev => [...prev, { name: file.name, status: 'uploading' }]);
-        
-        // TODO: Implement file upload with legacy backend Storage
-        // const { data, error } = await legacy backend.storage
-        //   .from('memories')
-        //   .upload(`${user.id}/${Date.now()}_${file.name}`, file);
-        // if (error) throw error;
-        // const { data: { publicUrl } } = legacy backend.storage
-        //   .from('memories')
-        //   .getPublicUrl(data.path);
-        // const file_url = publicUrl;
-        throw new Error('File upload requires legacy backend Storage implementation');
-        newUrls.push(file_url);
-        
-        setUploadProgress(prev => 
+      for (const file of selectedFiles) {
+        const fileUrl = await uploadMemoryMedia(file, memory?.id || null);
+        if (!fileUrl) throw new Error('Memory media upload did not return a URL.');
+        newUrls.push(fileUrl);
+        setUploadProgress(prev =>
           prev.map(p => p.name === file.name ? { ...p, status: 'completed' } : p)
         );
       }
@@ -243,10 +236,10 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
         ...prev,
         media_urls: [...prev.media_urls, ...newUrls]
       }));
-      
-      toast.success(`${files.length} ${t.uploadSuccess}`);
+      toast.success(`${selectedFiles.length} ${t.uploadSuccess}`);
     } catch (error) {
-      toast.error(t.uploadFailed);
+      console.error('Memory media upload failed:', error);
+      toast.error(error?.message || t.uploadFailed);
     } finally {
       setUploadingFiles(false);
       setUploadProgress([]);
