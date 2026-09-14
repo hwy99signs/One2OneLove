@@ -6,52 +6,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { handleSubscriptionCheckout } from '@/lib/stripeService';
 import { toast } from 'sonner';
 
-export default function TierCard({ tier, index, onSelect, isSelected, showPayment = false }) {
+const defaultLabels = {
+  mostPopular: 'MOST POPULAR',
+  free: 'Free',
+  month: 'month',
+  processing: 'Processing...',
+  selected: 'Selected',
+  choose: 'Choose',
+  paymentFailed: 'Failed to process payment',
+  basicSuccess: 'Successfully subscribed to Basic plan!',
+  redirecting: 'Redirecting to Stripe checkout...',
+  genericError: 'An error occurred. Please try again.',
+};
+
+export default function TierCard({ tier, index, onSelect, isSelected, showPayment = false, labels = {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const copy = { ...defaultLabels, ...labels };
+  const displayName = tier.displayName || tier.name;
 
   const handleChoosePlan = async () => {
     if (onSelect && !showPayment) {
-      // If in signup flow, just select the plan
       onSelect(tier);
       return;
     }
 
-    // If showing payment, process checkout
     if (showPayment) {
       setIsProcessing(true);
-      
       try {
-        // Ensure tier has all required properties
         const planData = {
           name: tier.name,
           price: tier.price || 0,
           priceId: tier.priceId || `price_${tier.name.toLowerCase()}`,
-          isFree: tier.isFree || tier.price === 0
+          isFree: tier.isFree || tier.price === 0,
         };
 
         const result = await handleSubscriptionCheckout(planData);
-        
         if (!result.success) {
-          toast.error(result.error || 'Failed to process payment');
+          toast.error(result.error || copy.paymentFailed);
           setIsProcessing(false);
           return;
         }
-        
-        // Note: For successful paid checkout, user will be redirected to Stripe
-        // For free plan, user stays on page and sees success message
+
         if (planData.isFree || planData.price === 0) {
-          toast.success('Successfully subscribed to Basic plan!');
-          // Reload to refresh user data
+          toast.success(copy.basicSuccess);
           setTimeout(() => window.location.reload(), 1000);
         } else {
-          // For paid plans, redirect happens in handleSubscriptionCheckout
-          // Show a brief message before redirect
-          toast.success('Redirecting to Stripe checkout...');
-          // The redirect happens automatically in stripeService.js
+          toast.success(copy.redirecting);
         }
       } catch (error) {
         console.error('Checkout error:', error);
-        toast.error(error.message || 'An error occurred. Please try again.');
+        toast.error(error.message || copy.genericError);
       } finally {
         setIsProcessing(false);
       }
@@ -59,6 +63,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
       onSelect(tier);
     }
   };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -66,18 +71,16 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className="h-full"
     >
-      <Card 
+      <Card
         className={`relative h-full flex flex-col transition-all duration-300 hover:shadow-2xl ${
           tier.popular ? 'border-4 border-purple-400 scale-105' : 'border-2 hover:border-purple-200'
-        } ${
-          isSelected ? 'ring-4 ring-purple-500 ring-offset-2' : ''
-        }`}
+        } ${isSelected ? 'ring-4 ring-purple-500 ring-offset-2' : ''}`}
       >
         {tier.popular && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
             <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg flex items-center gap-1">
               <Sparkles className="w-4 h-4" />
-              MOST POPULAR
+              {copy.mostPopular}
             </span>
           </div>
         )}
@@ -88,17 +91,17 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
               {tier.icon}
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">{tier.name}</CardTitle>
+          <CardTitle className="text-3xl font-bold">{displayName}</CardTitle>
           <CardDescription className="text-base mt-2">{tier.description}</CardDescription>
-          
+
           <div className="mt-6">
             <div className="flex items-baseline justify-center">
               {tier.isFree ? (
-                <span className="text-5xl font-bold text-green-600">Free</span>
+                <span className="text-5xl font-bold text-green-600">{copy.free}</span>
               ) : (
                 <>
                   <span className="text-5xl font-bold text-gray-900">${tier.price}</span>
-                  <span className="text-xl text-gray-500 ml-2">/{tier.period}</span>
+                  <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
                 </>
               )}
             </div>
@@ -119,22 +122,20 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
             onClick={handleChoosePlan}
             disabled={isProcessing}
             className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${
-              tier.popular 
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg' 
+              tier.popular
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
                 : 'bg-gray-800 hover:bg-gray-900 text-white'
-            } ${
-              isSelected ? 'ring-4 ring-purple-500' : ''
-            }`}
+            } ${isSelected ? 'ring-4 ring-purple-500' : ''}`}
           >
             {isProcessing ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Processing...
+                {copy.processing}
               </>
             ) : isSelected ? (
-              '✓ Selected'
+              `✓ ${copy.selected}`
             ) : (
-              `Choose ${tier.name}`
+              `${copy.choose} ${displayName}`
             )}
           </Button>
         </CardContent>
@@ -142,4 +143,3 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
     </motion.div>
   );
 }
-
