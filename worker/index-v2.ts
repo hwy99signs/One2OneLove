@@ -1,5 +1,6 @@
 // @ts-nocheck
 import baseWorker from './index';
+import { handleAdminRequest } from './admin';
 import { handleLaunchAuthRequest } from './launch-auth';
 import { handleProfessionalSignup } from './professional-signup';
 import { handleSpecialProfileRequest } from './onboarding';
@@ -26,6 +27,11 @@ import { handleAiRequest } from './ai';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/admin')) {
+      const response = await handleAdminRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/ai')) {
       const response = await handleAiRequest(request, env, url);
