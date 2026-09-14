@@ -103,11 +103,14 @@ async function requireUser(request, env) {
   const auth = await getSession(request, env);
   if (!auth) return { response: error('Authentication required.', 401, 'unauthorized') };
 
-  // Ensure every authenticated Neon user has an application profile.
+  // Ensure every authenticated Neon user has an application profile. Newly
+  // created launch members remain inactive until Stripe activates a trial or
+  // paid subscription. Existing migrated profiles are preserved as-is.
   await withDb(env, async (db) => {
     await db.query(
-      `INSERT INTO public.users (id, email, name, user_type, is_active)
-       VALUES ($1::uuid, $2, $3, 'regular', true)
+      `INSERT INTO public.users
+        (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
+       VALUES ($1::uuid, $2, $3, 'regular', true, 'Basis', 0.00, 'inactive')
        ON CONFLICT (id) DO UPDATE SET
          email = EXCLUDED.email,
          name = COALESCE(NULLIF(public.users.name, ''), EXCLUDED.name),
@@ -370,9 +373,9 @@ export default {
     ctx.waitUntil((async () => {
       try {
         const dueCount = await dueLoveNotesCheck(env);
-        console.log(`One2OneLove scheduled Love Notes due: ${dueCount}. Delivery remains disabled until an approved provider is configured.`);
+        console.log(`Scheduled Love Notes due: ${dueCount}. Delivery remains disabled until provider approval and configuration.`);
       } catch (err) {
-        console.error('Scheduled Love Notes queue check failed', err);
+        console.error('One2OneLove scheduled job error', err);
       }
     })());
   },
