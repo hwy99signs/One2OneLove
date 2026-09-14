@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import TierCard from '@/components/subscriptions/TierCard';
 import { getUserSubscription, getPaymentHistory } from '@/lib/stripeService';
 import { toast } from 'sonner';
+import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
 const translations = {
   en: {
@@ -127,7 +128,9 @@ const tierBase = {
 export default function Subscription() {
   const { user } = useAuth();
   const { currentLanguage } = useLanguage();
-  const t = translations[currentLanguage] || translations.en;
+  const baseTranslation = translations[currentLanguage] || translations.en;
+  const planTranslation = subscriptionPlanCopy[currentLanguage] || subscriptionPlanCopy.en;
+  const t = { ...baseTranslation, ...planTranslation, plans: planTranslation.plans };
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
 
