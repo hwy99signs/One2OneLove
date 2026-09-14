@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { generateRelationshipContent } from "@/lib/aiService";
 
 const translations = {
   en: {
@@ -196,35 +197,15 @@ export default function AIContentCreator() {
     }
 
     setIsGenerating(true);
-
     try {
-      const lengthGuide = {
-        short: "50-100 words",
-        medium: "150-250 words",
-        long: "300-400 words"
-      };
-
-      const prompt = `Create a ${formData.tone} ${formData.contentType} for someone's romantic partner. 
-      ${formData.partnerName ? `The partner's name is ${formData.partnerName}.` : ''}
-      Length: ${lengthGuide[formData.length]}.
-      ${formData.details ? `Additional context: ${formData.details}` : ''}
-      
-      Make it heartfelt, genuine, and personal. Use beautiful language and emotional depth.`;
-
-      // TODO: Implement AI content generation with an external AI service (OpenAI, Anthropic, etc.)
-      // This requires setting up an Edge Function that calls an AI API
-      throw new Error('AI Content Creator feature requires implementation with an external AI service');
-      
-      // Example implementation would be:
-      // const { data, error } = await AI provider API('generate-content', {
-      //   body: { prompt, contentType, tone, length, partnerName, details }
-      // });
-      // if (error) throw error;
-      // setGeneratedContent(data.content);
-      
-      toast.error('AI Content Creator feature requires implementation');
+      const content = await generateRelationshipContent({
+        ...formData,
+        language: currentLanguage,
+      });
+      if (!content) throw new Error('AI Content Creator returned no content.');
+      setGeneratedContent(content);
     } catch (error) {
-      toast.error("Failed to generate content. Please try again.");
+      toast.error(error?.message || "Failed to generate content. Please try again.");
       console.error(error);
     } finally {
       setIsGenerating(false);
