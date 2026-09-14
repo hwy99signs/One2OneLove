@@ -31,6 +31,7 @@ export async function registerLaunchUser({
       success: true,
       user: payload?.user || null,
       emailVerificationRequired: payload?.emailVerificationRequired !== false,
+      verificationMethod: payload?.verificationMethod || 'otp',
       verificationEmailExpected: payload?.verificationEmailExpected !== false,
     };
   } catch (error) {
@@ -46,6 +47,18 @@ export async function resendLaunchVerification(email) {
     });
     return { success: true };
   } catch (error) {
-    return { success: false, error: error?.message || 'Verification email could not be sent.' };
+    return { success: false, error: error?.message || 'Verification code could not be sent.' };
+  }
+}
+
+export async function verifyLaunchEmail(email, otp) {
+  try {
+    const payload = await apiRequest('/api/launch-signup/verify', {
+      method: 'POST',
+      body: { email, otp },
+    });
+    return { success: payload?.verified === true };
+  } catch (error) {
+    return { success: false, error: error?.message || 'The verification code is invalid or expired.' };
   }
 }
