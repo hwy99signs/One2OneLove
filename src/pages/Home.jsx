@@ -88,11 +88,9 @@ const TOOLS = [
   ["🤝", "relationshipSupport", "CoupleSupport", "from-sky-600 to-blue-700"],
   ["🎯", "relationshipGoals", "RelationshipGoals", "from-amber-500 to-yellow-600"],
   ["🌈", "lgbtqSupport", "LGBTQSupport", "from-fuchsia-600 to-purple-700"],
-  ["🎮", "relationshipGames", "CooperativeGames", "from-orange-600 to-red-600"],
   ["💗", "milestones", "RelationshipMilestones", "from-pink-600 to-fuchsia-700"],
   ["🗣", "communicationPractice", "CommunicationPractice", "from-teal-600 to-emerald-700"],
   ["💬", "chatRoom", "Chat", "from-blue-600 to-indigo-700"],
-  ["🩺", "findTherapist", "CounselingSupport", "from-emerald-600 to-teal-700"]
 ];
 
 export default function Home() {

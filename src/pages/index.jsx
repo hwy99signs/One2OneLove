@@ -109,7 +109,7 @@ import PaymentSuccess from "./PaymentSuccess";
 
 import Subscription from "./Subscription";
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
     
@@ -291,17 +291,17 @@ function PagesContent() {
                 
                 <Route path="/Profile" element={<Profile />} />
                 
-                <Route path="/WinACruise" element={<WinACruise />} />
+                <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/Invite" element={<Invite />} />
                 
-                <Route path="/CounselingSupport" element={<CounselingSupport />} />
+                <Route path="/CounselingSupport" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
                 
                 <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
                 
-                <Route path="/InfluencersSupport" element={<InfluencersSupport />} />
+                <Route path="/InfluencersSupport" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
                 
@@ -309,7 +309,7 @@ function PagesContent() {
                 
                 <Route path="/ForgotPassword" element={<ForgotPassword />} />
                 
-                <Route path="/AIContentCreator" element={<AIContentCreator />} />
+                <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
@@ -317,7 +317,7 @@ function PagesContent() {
                 
                 <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
                 
-                <Route path="/RelationshipCoach" element={<RelationshipCoach />} />
+                <Route path="/RelationshipCoach" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
                 
@@ -327,13 +327,13 @@ function PagesContent() {
                 
                 <Route path="/CouplesProfile" element={<CouplesProfile />} />
                 
-                <Route path="/Developer" element={<Developer />} />
+                <Route path="/Developer" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/CoupleActivities" element={<CoupleActivities />} />
                 
                 <Route path="/SharedJournals" element={<SharedJournals />} />
                 
-                <Route path="/CooperativeGames" element={<CooperativeGames />} />
+                <Route path="/CooperativeGames" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
                 
@@ -357,11 +357,11 @@ function PagesContent() {
                 
                 <Route path="/Suggestions" element={<Suggestions />} />
                 
-                <Route path="/Leaderboard" element={<Leaderboard />} />
+                <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
                 
-                <Route path="/Achievements" element={<Achievements />} />
+                <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
                 
-                <Route path="/PremiumFeatures" element={<PremiumFeatures />} />
+                <Route path="/PremiumFeatures" element={<Navigate to="/Home" replace />} />
                 
                 <Route path="/Chat" element={<Chat />} />
                 

@@ -391,7 +391,7 @@ function LanguageContent({ children, currentPageName }) {
                         {t.actionMenu.lgbtqSupport}
                       </Link>
                       <Link
-                        to={createPageUrl("RelationshipCoach")}
+                        to={createPageUrl("RelationshipCoach")} style={{ display: 'none' }}
                         className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
@@ -468,7 +468,7 @@ function LanguageContent({ children, currentPageName }) {
                         {t.actionMenu.memoryLane}
                       </Link>
                       <Link
-                        to={createPageUrl("AIContentCreator")}
+                        to={createPageUrl("AIContentCreator")} style={{ display: 'none' }}
                         className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
@@ -479,7 +479,7 @@ function LanguageContent({ children, currentPageName }) {
                         {t.actionMenu.aiCreator}
                       </Link>
                       <Link
-                        to={createPageUrl("WinACruise")}
+                        to={createPageUrl("WinACruise")} style={{ display: 'none' }}
                         className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
@@ -520,7 +520,7 @@ function LanguageContent({ children, currentPageName }) {
                   </Link>
                 )}
                 <Link
-                  to={createPageUrl("Developer")}
+                  to={createPageUrl("Developer")} style={{ display: 'none' }}
                   className="flex items-center gap-2 text-yellow-300 hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >

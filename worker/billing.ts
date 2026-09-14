@@ -78,12 +78,12 @@ function planMonthlyPrice(plan) {
 function planUsage(plan) {
   if (plan === 'Exclusive') return { smsLoveNotesMonthly: 60, smsLoveNotesDaily: 2, dateIdeasMonthly: null, loveNoteCategories: 29 };
   if (plan === 'Premiere') return { smsLoveNotesMonthly: 30, smsLoveNotesDaily: 1, dateIdeasMonthly: 8, loveNoteCategories: 18 };
-  return { smsLoveNotesMonthly: 8, smsLoveNotesDaily: null, dateIdeasMonthly: 1, loveNoteCategories: 6 };
+  return { smsLoveNotesMonthly: 4, smsLoveNotesDaily: null, dateIdeasMonthly: 1, loveNoteCategories: 6 };
 }
 function decorateSubscription(user) {
   const storedPlan = canonicalPlan(user?.subscription_plan) || 'Basis';
-  const effectivePlan = user?.subscription_status === 'trial' ? 'Premiere' : storedPlan;
-  return { ...user, effective_plan: effectivePlan, trial_entitlement: user?.subscription_status === 'trial' ? 'Premiere' : null, usage_limits: planUsage(effectivePlan) };
+  const effectivePlan = user?.subscription_status === 'trial' ? 'Exclusive' : storedPlan;
+  return { ...user, effective_plan: effectivePlan, trial_entitlement: user?.subscription_status === 'trial' ? 'Exclusive' : null, usage_limits: planUsage(effectivePlan) };
 }
 async function stripeRequest(env, method, path, params = null) {
   if (!stripeConfigured(env)) {
@@ -198,8 +198,8 @@ async function checkout(db, env, request, auth, input) {
   params.set('subscription_data[metadata][plan_name]', plan);
   if (startTrial) {
     params.set('subscription_data[trial_period_days]', '7');
-    params.set('metadata[trial_entitlement]', 'Premiere');
-    params.set('subscription_data[metadata][trial_entitlement]', 'Premiere');
+    params.set('metadata[trial_entitlement]', 'Exclusive');
+    params.set('subscription_data[metadata][trial_entitlement]', 'Exclusive');
   }
   const checkoutSession = await stripeRequest(env, 'POST', '/checkout/sessions', params);
   return json({ ok: true, sessionId: checkoutSession.id, url: checkoutSession.url, plan, trial: startTrial });

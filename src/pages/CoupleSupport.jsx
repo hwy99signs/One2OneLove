@@ -321,7 +321,7 @@ export default function CoupleSupport() {
     }
   ];
 
-  const hiddenCategoryIds = new Set(['goals', 'groupActivities', 'counseling', 'influencers']);
+  const hiddenCategoryIds = new Set(['aiCoach', 'groupActivities', 'counseling', 'influencers']);
 
   const filteredCategories = categories.filter(category => {
     if (hiddenCategoryIds.has(category.id)) return false;
