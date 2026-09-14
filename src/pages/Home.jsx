@@ -115,11 +115,11 @@ export default function Home() {
           <p className="mt-5 text-lg md:text-xl leading-relaxed drop-shadow max-w-5xl mx-auto">{t.support}</p>
           <p className="mt-7 text-xl md:text-2xl font-black text-yellow-300 drop-shadow">{t.langs}</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto mt-7">
-            <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Love Language Quiz</button>
-            <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Send A Love Note</button>
-            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-8 py-5 font-extrabold text-xl shadow-xl">🎙 Podcast</button>
-            <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-8 py-5 font-extrabold text-xl shadow-xl">▣ Date Ideas</button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-[70%] max-w-[33.6rem] mx-auto mt-7">
+            <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">♡ Love Language Quiz</button>
+            <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">♡ Send A Love Note</button>
+            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">🎙 Podcast</button>
+            <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">▣ Date Ideas</button>
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mt-16 text-slate-900">
