@@ -5,7 +5,7 @@ import { Crown, Sparkles, CheckCircle, ArrowRight, CreditCard } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import TierCard from '@/components/subscriptions/TierCard';
-import { getUserSubscription, getPaymentHistory } from '@/lib/stripeService';
+import { getUserSubscription, getPaymentHistory, startPremierTrial } from '@/lib/stripeService';
 import { toast } from 'sonner';
 import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
@@ -119,10 +119,21 @@ const translations = {
   }
 };
 
+
+const TRIAL_COPY = {
+  en: { title: '7 Days of Premier Free', body: 'Add a credit or debit card to start. You will not be charged today. After 7 days, your membership continues on Basic at $4.99/month unless you choose Premier, Exclusive, or cancel.', start: 'Start 7-Day Premier Trial', starting: 'Opening secure checkout...', active: 'Your Premier trial is active.' },
+  es: { title: '7 Días de Premier Gratis', body: 'Agrega una tarjeta de crédito o débito para comenzar. No se te cobrará hoy. Después de 7 días, tu membresía continúa en Básico por $4.99/mes a menos que elijas Premier, Exclusive o canceles.', start: 'Comenzar Prueba Premier de 7 Días', starting: 'Abriendo pago seguro...', active: 'Tu prueba Premier está activa.' },
+  fr: { title: '7 Jours de Premier Gratuits', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Aucun prélèvement aujourd’hui. Après 7 jours, votre abonnement continue en Basic à 4,99 $/mois sauf si vous choisissez Premier, Exclusive ou annulez.', start: 'Commencer l’Essai Premier de 7 Jours', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai Premier est actif.' },
+  it: { title: '7 Giorni di Premier Gratis', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non verrà addebitato nulla. Dopo 7 giorni, l’abbonamento continua con Basic a $4,99/mese salvo scelta di Premier, Exclusive o annullamento.', start: 'Inizia la Prova Premier di 7 Giorni', starting: 'Apertura del pagamento sicuro...', active: 'La tua prova Premier è attiva.' },
+  de: { title: '7 Tage Premier Kostenlos', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Heute erfolgt keine Belastung. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Basic für 4,99 $/Monat weiter, sofern Sie nicht Premier, Exclusive wählen oder kündigen.', start: '7-Tage-Premier-Test Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr Premier-Test ist aktiv.' },
+  nl: { title: '7 Dagen Premier Gratis', body: 'Voeg een creditcard of betaalpas toe om te starten. Vandaag wordt niets afgeschreven. Na 7 dagen gaat je lidmaatschap verder met Basic voor $4,99/maand, tenzij je Premier, Exclusive kiest of opzegt.', start: 'Start 7-Daagse Premier Proefperiode', starting: 'Beveiligde checkout openen...', active: 'Je Premier-proefperiode is actief.' },
+  pt: { title: '7 Dias de Premier Grátis', body: 'Adicione um cartão de crédito ou débito para começar. Nada será cobrado hoje. Após 7 dias, sua assinatura continua no Basic por US$ 4,99/mês, a menos que escolha Premier, Exclusive ou cancele.', start: 'Iniciar Teste Premier de 7 Dias', starting: 'Abrindo checkout seguro...', active: 'Seu teste Premier está ativo.' },
+};
+
 const tierBase = {
-  Basic: { name: 'Basic', price: null, icon: '💝', gradient: 'from-blue-400 to-blue-600', popular: false, isFree: false, checkoutDisabled: true },
-  Premiere: { name: 'Premiere', price: null, icon: '💖', gradient: 'from-purple-400 to-pink-500', popular: true, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_premiere', checkoutDisabled: true },
-  Exclusive: { name: 'Exclusive', price: null, icon: '👑', gradient: 'from-yellow-400 to-orange-500', popular: false, priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_exclusive', checkoutDisabled: true }
+  Basic: { name: 'Basic', price: 4.99, icon: '💝', gradient: 'from-blue-400 to-blue-600', popular: false, isFree: false, priceId: import.meta.env.VITE_STRIPE_PRICE_BASIC || 'price_1UFUS7CoKDheG1ASULR2gdsn', checkoutDisabled: false },
+  Premiere: { name: 'Premiere', price: 9.99, icon: '💖', gradient: 'from-purple-400 to-pink-500', popular: true, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_1UFUSDCoKDheG1AS2AgFooh0', checkoutDisabled: false },
+  Exclusive: { name: 'Exclusive', price: 19.99, icon: '👑', gradient: 'from-yellow-400 to-orange-500', popular: false, priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_1UFUSKCoKDheG1ASG5zk97Ph', checkoutDisabled: false }
 };
 
 export default function Subscription() {
@@ -131,8 +142,10 @@ export default function Subscription() {
   const baseTranslation = translations[currentLanguage] || translations.en;
   const planTranslation = subscriptionPlanCopy[currentLanguage] || subscriptionPlanCopy.en;
   const t = { ...baseTranslation, ...planTranslation, plans: planTranslation.plans };
+  const trialCopy = TRIAL_COPY[currentLanguage] || TRIAL_COPY.en;
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
+  const [trialLoading, setTrialLoading] = useState(false);
 
   useEffect(() => {
     const loadSubscriptionData = async () => {
@@ -148,12 +161,23 @@ export default function Subscription() {
     if (user) loadSubscriptionData();
   }, [user, t.loadError]);
 
-  const currentPlanRaw = user?.subscription_plan || 'Basic';
+  const currentPlanRaw = currentSubscription?.effective_plan || user?.subscription_plan || 'Basic';
   const currentPlan = currentPlanRaw === 'Basis' ? 'Basic' : currentPlanRaw;
   const currentPlanDisplay = t.plans[currentPlan]?.displayName || currentPlan;
   const tiers = useMemo(() => ['Basic', 'Premiere', 'Exclusive'].map((name) => ({ ...tierBase[name], ...t.plans[name], periodLabel: t.labels.month })), [t]);
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat(currentLanguage || 'en', { year: 'numeric', month: 'short', day: '2-digit' }), [currentLanguage]);
   const statusLabel = (status) => t.statuses[status] || status;
+  const needsBillingSetup = Boolean(user && currentSubscription && !currentSubscription.stripe_subscription_id);
+  const trialActive = currentSubscription?.subscription_status === 'trial';
+
+  const handleStartTrial = async () => {
+    setTrialLoading(true);
+    const result = await startPremierTrial();
+    if (!result.success) {
+      toast.error(result.error || 'Unable to start the Premier trial.');
+      setTrialLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -169,7 +193,21 @@ export default function Subscription() {
           </p>
         </div>
 
-        {currentSubscription && currentSubscription.subscription_status === 'active' && currentPlan !== 'Basic' && (
+        {(needsBillingSetup || trialActive) && (
+          <Card className="mb-8 border-2 border-pink-300 bg-gradient-to-r from-pink-50 to-purple-50">
+            <CardContent className="p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 mb-2">{trialCopy.title}</h2>
+                  <p className="text-gray-700 max-w-3xl">{trialActive ? trialCopy.active : trialCopy.body}</p>
+                </div>
+                {needsBillingSetup && <Button onClick={handleStartTrial} disabled={trialLoading} className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold px-7 py-6 whitespace-nowrap">{trialLoading ? trialCopy.starting : trialCopy.start}</Button>}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentSubscription && ['active', 'trial'].includes(currentSubscription.subscription_status) && currentPlan !== 'Basic' && (
           <Card className="mb-8 border-2 border-purple-200 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-600" />{t.currentSubscription}</CardTitle>

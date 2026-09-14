@@ -68,7 +68,8 @@ export default function SignIn() {
     if (result?.success) {
       toast.success("Successfully signed in!");
       setTimeout(() => {
-        window.location.replace(createPageUrl("Profile"));
+        const needsBillingSetup = !result?.user?.stripe_subscription_id || !['active', 'trial'].includes(result?.user?.subscription_status);
+        window.location.replace(createPageUrl(needsBillingSetup ? "Subscription" : "Profile"));
       }, 100);
       return true;
     }

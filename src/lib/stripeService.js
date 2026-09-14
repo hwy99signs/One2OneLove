@@ -21,6 +21,17 @@ export const createCheckoutSession = async (_priceId, planName, amount) => {
   }
 };
 
+export const startPremierTrial = async () => {
+  try {
+    const payload = await apiRequest('/api/billing/trial', { method: 'POST', body: {} });
+    if (!payload?.url) throw new Error('No checkout URL received.');
+    window.location.href = payload.url;
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error?.message || 'Failed to start Premier trial' };
+  }
+};
+
 export const redirectToCheckout = async (sessionIdOrUrl) => {
   if (/^https?:\/\//i.test(String(sessionIdOrUrl || ''))) {
     window.location.href = sessionIdOrUrl;
@@ -32,10 +43,6 @@ export const redirectToCheckout = async (sessionIdOrUrl) => {
 export const handleSubscriptionCheckout = async (plan) => {
   try {
     const planName = plan?.name === 'Basic' ? 'Basis' : plan?.name;
-    if (Number(plan?.price || 0) === 0 || planName === 'Basis') {
-      await apiRequest('/api/billing/basis', { method: 'POST', body: {} });
-      return { success: true };
-    }
     const result = await createCheckoutSession(plan?.priceId, planName, plan?.price);
     if (!result.success) return result;
     if (!result.url) throw new Error('No checkout URL received.');
@@ -84,11 +91,10 @@ export const reactivateSubscription = async () => {
 
 export const hasFeatureAccess = (feature, user) => {
   if (!user?.subscription_plan) return false;
-  const rawPlan = user.subscription_plan === 'Basic' ? 'Basis' : user.subscription_plan;
-  if (user.subscription_status && !['active', 'trial'].includes(user.subscription_status)) {
-    return rawPlan === 'Basis' && featureAccess.Basis.includes(feature);
-  }
-  return featureAccess[rawPlan]?.includes(feature) || false;
+  const storedPlan = user.subscription_plan === 'Basic' ? 'Basis' : user.subscription_plan;
+  if (user.subscription_status && !['active', 'trial'].includes(user.subscription_status)) return false;
+  const effectivePlan = user.subscription_status === 'trial' ? 'Premiere' : storedPlan;
+  return featureAccess[effectivePlan]?.includes(feature) || false;
 };
 
 const basis = [

@@ -6,7 +6,7 @@ const JSON_HEADERS = {
   'cache-control': 'no-store',
   'x-content-type-options': 'nosniff',
 };
-const PAID_PLANS = new Set(['Premiere', 'Exclusive']);
+const PAID_PLANS = new Set(['Basis', 'Premiere', 'Exclusive']);
 const ALL_PLANS = new Set(['Basis', 'Premiere', 'Exclusive']);
 
 function json(data, status = 200) {
@@ -64,9 +64,26 @@ function stripeConfigured(env) {
   return Boolean(env.STRIPE_SECRET_KEY);
 }
 function stripePriceForPlan(env, plan) {
+  if (plan === 'Basis') return env.STRIPE_PRICE_BASIC || null;
   if (plan === 'Premiere') return env.STRIPE_PRICE_PREMIERE || null;
   if (plan === 'Exclusive') return env.STRIPE_PRICE_EXCLUSIVE || null;
   return null;
+}
+function planMonthlyPrice(plan) {
+  if (plan === 'Basis') return 4.99;
+  if (plan === 'Premiere') return 9.99;
+  if (plan === 'Exclusive') return 19.99;
+  return 0;
+}
+function planUsage(plan) {
+  if (plan === 'Exclusive') return { smsLoveNotesMonthly: 60, smsLoveNotesDaily: 2, dateIdeasMonthly: null, loveNoteCategories: 29 };
+  if (plan === 'Premiere') return { smsLoveNotesMonthly: 30, smsLoveNotesDaily: 1, dateIdeasMonthly: 8, loveNoteCategories: 18 };
+  return { smsLoveNotesMonthly: 8, smsLoveNotesDaily: null, dateIdeasMonthly: 1, loveNoteCategories: 6 };
+}
+function decorateSubscription(user) {
+  const storedPlan = canonicalPlan(user?.subscription_plan) || 'Basis';
+  const effectivePlan = user?.subscription_status === 'trial' ? 'Premiere' : storedPlan;
+  return { ...user, effective_plan: effectivePlan, trial_entitlement: user?.subscription_status === 'trial' ? 'Premiere' : null, usage_limits: planUsage(effectivePlan) };
 }
 async function stripeRequest(env, method, path, params = null) {
   if (!stripeConfigured(env)) {
@@ -127,35 +144,41 @@ async function updateFromSubscription(db, userId, subscription, planOverride = n
   const plan = canonicalPlan(planOverride || subscription?.metadata?.plan_name);
   const status = normalizedSubscriptionStatus(subscription?.status);
   const period = subscriptionPeriod(subscription);
+  const trialEnd = safeUnixDate(subscription?.trial_end);
+  const itemPriceCents = Number(subscription?.items?.data?.[0]?.price?.unit_amount);
+  const derivedPrice = Number.isFinite(Number(priceOverride)) ? Number(priceOverride) : Number.isFinite(itemPriceCents) ? itemPriceCents / 100 : planMonthlyPrice(plan);
   const fields = [
     'subscription_status=$1',
     'stripe_subscription_id=$2',
     'subscription_current_period_start=$3',
     'subscription_current_period_end=$4',
     'cancel_at_period_end=$5',
+    'trial_end_date=$6',
     'updated_at=now()',
   ];
-  const values = [status, subscription?.id || null, period.start, period.end, Boolean(subscription?.cancel_at_period_end)];
+  const values = [status, subscription?.id || null, period.start, period.end, Boolean(subscription?.cancel_at_period_end), trialEnd];
   if (plan && ALL_PLANS.has(plan)) {
     values.push(plan);
     fields.push(`subscription_plan=$${values.length}`);
   }
-  if (Number.isFinite(Number(priceOverride)) && Number(priceOverride) >= 0) {
-    values.push(Number(priceOverride));
+  if (Number.isFinite(derivedPrice) && derivedPrice >= 0) {
+    values.push(derivedPrice);
     fields.push(`subscription_price=$${values.length}`);
   }
   values.push(userId);
   await db.query(`UPDATE public.users SET ${fields.join(',')} WHERE id=$${values.length}::uuid`, values);
 }
 async function checkout(db, env, request, auth, input) {
-  const plan = canonicalPlan(input?.planName || input?.plan_name || input?.plan);
-  if (!PAID_PLANS.has(plan)) return fail('Choose Premiere or Exclusive for paid checkout.');
+  const startTrial = Boolean(input?.startTrial || input?.start_trial);
+  const requestedPlan = canonicalPlan(input?.planName || input?.plan_name || input?.plan);
+  const plan = startTrial ? 'Basis' : requestedPlan;
+  if (!PAID_PLANS.has(plan)) return fail('Choose Basic, Premier, or Exclusive for paid checkout.');
   const priceId = stripePriceForPlan(env, plan);
   if (!priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
 
   const billingUser = await getBillingUser(db, auth.user.id);
   if (billingUser.stripe_subscription_id && ['active', 'trial'].includes(billingUser.subscription_status)) {
-    return fail('An active paid subscription already exists. Manage that subscription before starting another checkout.', 409, 'subscription_exists');
+    return fail('An active subscription already exists. Manage that subscription before starting another checkout.', 409, 'subscription_exists');
   }
   const customerId = await getOrCreateCustomer(db, env, auth, billingUser);
   const origin = new URL(request.url).origin;
@@ -163,6 +186,7 @@ async function checkout(db, env, request, auth, input) {
   params.set('customer', customerId);
   params.set('mode', 'subscription');
   params.set('payment_method_types[0]', 'card');
+  params.set('payment_method_collection', 'always');
   params.set('line_items[0][price]', priceId);
   params.set('line_items[0][quantity]', '1');
   params.set('success_url', `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`);
@@ -172,28 +196,16 @@ async function checkout(db, env, request, auth, input) {
   params.set('metadata[plan_name]', plan);
   params.set('subscription_data[metadata][user_id]', auth.user.id);
   params.set('subscription_data[metadata][plan_name]', plan);
+  if (startTrial) {
+    params.set('subscription_data[trial_period_days]', '7');
+    params.set('metadata[trial_entitlement]', 'Premiere');
+    params.set('subscription_data[metadata][trial_entitlement]', 'Premiere');
+  }
   const checkoutSession = await stripeRequest(env, 'POST', '/checkout/sessions', params);
-  return json({ ok: true, sessionId: checkoutSession.id, url: checkoutSession.url, plan });
+  return json({ ok: true, sessionId: checkoutSession.id, url: checkoutSession.url, plan, trial: startTrial });
 }
-async function switchToBasis(db, userId) {
-  const current = await getBillingUser(db, userId);
-  if (current.stripe_subscription_id && ['active', 'trial'].includes(current.subscription_status)) {
-    return fail('Cancel the active paid subscription before switching to Basis.', 409, 'active_paid_subscription');
-  }
-  if (current.subscription_plan !== 'Basis') {
-    await db.query(
-      `INSERT INTO public.subscription_changes(user_id,from_plan,to_plan,change_type)
-       VALUES($1::uuid,$2,'Basis','downgrade')`,
-      [userId, current.subscription_plan],
-    );
-  }
-  await db.query(
-    `UPDATE public.users SET subscription_plan='Basis',subscription_price=0,subscription_status='active',
-      stripe_subscription_id=NULL,subscription_current_period_start=NULL,subscription_current_period_end=NULL,
-      cancel_at_period_end=false,updated_at=now() WHERE id=$1::uuid`,
-    [userId],
-  );
-  return json({ ok: true, subscription: await getBillingUser(db, userId) });
+async function switchToBasis() {
+  return fail('Basic is now a paid plan. Use subscription checkout.', 410, 'paid_plan_required');
 }
 async function cancelSubscription(db, env, userId) {
   const user = await getBillingUser(db, userId);
@@ -278,7 +290,7 @@ async function handleWebhookEvent(db, env, event) {
       if (!userId || !plan || !subscriptionId) return;
       const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`);
       await db.query('UPDATE public.users SET stripe_customer_id=COALESCE(stripe_customer_id,$1) WHERE id=$2::uuid', [typeof object.customer === 'string' ? object.customer : object.customer?.id || null, userId]);
-      await updateFromSubscription(db, userId, subscription, plan, Number(object.amount_total || 0) / 100);
+      await updateFromSubscription(db, userId, subscription, plan, planMonthlyPrice(plan));
       break;
     }
     case 'customer.subscription.created':
@@ -298,7 +310,7 @@ async function handleWebhookEvent(db, env, event) {
         await db.query(`INSERT INTO public.subscription_changes(user_id,from_plan,to_plan,change_type) VALUES($1::uuid,$2,'Basis','cancel')`, [userId,user.subscription_plan]);
       }
       await db.query(
-        `UPDATE public.users SET subscription_plan='Basis',subscription_price=0,subscription_status='cancelled',
+        `UPDATE public.users SET subscription_plan='Basis',subscription_price=4.99,subscription_status='cancelled',
           stripe_subscription_id=NULL,subscription_current_period_start=NULL,subscription_current_period_end=NULL,
           cancel_at_period_end=false,canceled_at=now(),updated_at=now() WHERE id=$1::uuid`,
         [userId],
@@ -340,14 +352,17 @@ export async function handleBillingRequest(request, env, url) {
 
     return await withDb(env, async db => {
       if (url.pathname === '/api/billing/subscription' && request.method === 'GET') {
-        return json({ ok: true, subscription: await getBillingUser(db, auth.user.id) });
+        return json({ ok: true, subscription: decorateSubscription(await getBillingUser(db, auth.user.id)) });
       }
       if (url.pathname === '/api/billing/payments' && request.method === 'GET') {
         const result = await db.query('SELECT * FROM public.payment_history WHERE user_id=$1::uuid ORDER BY created_at DESC LIMIT 100', [auth.user.id]);
         return json({ ok: true, payments: result.rows });
       }
       if (url.pathname === '/api/billing/basis' && request.method === 'POST') {
-        return switchToBasis(db, auth.user.id);
+        return switchToBasis();
+      }
+      if (url.pathname === '/api/billing/trial' && request.method === 'POST') {
+        return checkout(db, env, request, auth, { planName: 'Basis', startTrial: true });
       }
       if (url.pathname === '/api/billing/checkout' && request.method === 'POST') {
         return checkout(db, env, request, auth, await readJson(request));
@@ -359,7 +374,7 @@ export async function handleBillingRequest(request, env, url) {
         return reactivateSubscription(db, env, auth.user.id);
       }
       if (url.pathname === '/api/billing/config' && request.method === 'GET') {
-        return json({ ok: true, paid_checkout_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_PREMIERE && env.STRIPE_PRICE_EXCLUSIVE), webhook_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET) });
+        return json({ ok: true, paid_checkout_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_BASIC && env.STRIPE_PRICE_PREMIERE && env.STRIPE_PRICE_EXCLUSIVE), webhook_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET) });
       }
       return fail('Not found.', 404, 'not_found');
     });
