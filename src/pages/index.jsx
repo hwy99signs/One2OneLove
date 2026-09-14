@@ -7,6 +7,7 @@ import TherapistSignup from "./TherapistSignup";
 import AboutUs from "./AboutUs";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
+import AdminAccess from "./AdminAccess";
 import MemoryLane from "./MemoryLane";
 import LoveNotes from "./LoveNotes";
 import SendCredits from "./SendCredits";
@@ -58,7 +59,7 @@ import Subscription from "./Subscription";
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
-  Home, InfluencerSignup, ProfessionalSignup, TherapistSignup, AboutUs, SignIn, SignUp,
+  Home, InfluencerSignup, ProfessionalSignup, TherapistSignup, AboutUs, SignIn, SignUp, AdminAccess,
   MemoryLane, LoveNotes, SendCredits, CoupleSupport, LoveLanguageQuiz, DateIdeas, Profile, WinACruise, Invite,
   CounselingSupport, PodcastsSupport, ArticlesSupport, InfluencersSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, AIContentCreator, Dashboard, Community, RelationshipMilestones,
@@ -148,6 +149,7 @@ function PagesContent() {
         <Route path="/login" element={<SignIn />} />
         <Route path="/SignUp" element={<SignUp />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/AdminAccess" element={<AdminAccess />} />
         <Route path="/MemoryLane" element={<MemoryLane />} />
         <Route path="/LoveNotes" element={<LoveNotes />} />
         <Route path="/SendCredits" element={<SendCredits />} />
