@@ -71,6 +71,8 @@ import SharedJournals from "./SharedJournals";
 
 import CooperativeGames from "./CooperativeGames";
 
+import Games from "./Games";
+
 import CouplesDashboard from "./CouplesDashboard";
 
 import CouplesCalendar from "./CouplesCalendar";
@@ -182,6 +184,8 @@ const PAGES = {
     SharedJournals: SharedJournals,
     
     CooperativeGames: CooperativeGames,
+
+    Games: Games,
     
     CouplesDashboard: CouplesDashboard,
     
@@ -334,6 +338,8 @@ function PagesContent() {
                 <Route path="/SharedJournals" element={<SharedJournals />} />
                 
                 <Route path="/CooperativeGames" element={<CooperativeGames />} />
+
+                <Route path="/Games" element={<Games />} />
                 
                 <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
                 
