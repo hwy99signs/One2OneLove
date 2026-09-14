@@ -10,6 +10,8 @@ const defaultLabels = {
   mostPopular: 'MOST POPULAR',
   free: 'Free',
   month: 'month',
+  pricingPending: 'Pricing to be finalized',
+  pricingPendingButton: 'Pricing coming next',
   processing: 'Processing...',
   selected: 'Selected',
   choose: 'Choose',
@@ -23,8 +25,11 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
   const [isProcessing, setIsProcessing] = useState(false);
   const copy = { ...defaultLabels, ...labels };
   const displayName = tier.displayName || tier.name;
+  const pricingPending = tier.price === null || tier.price === undefined;
 
   const handleChoosePlan = async () => {
+    if (tier.checkoutDisabled || pricingPending) return;
+
     if (onSelect && !showPayment) {
       onSelect(tier);
       return;
@@ -96,7 +101,9 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
 
           <div className="mt-6">
             <div className="flex items-baseline justify-center">
-              {tier.isFree ? (
+              {pricingPending ? (
+                <span className="text-2xl font-bold text-purple-700">{copy.pricingPending}</span>
+              ) : tier.isFree ? (
                 <span className="text-5xl font-bold text-green-600">{copy.free}</span>
               ) : (
                 <>
@@ -120,7 +127,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
 
           <Button
             onClick={handleChoosePlan}
-            disabled={isProcessing}
+            disabled={isProcessing || tier.checkoutDisabled || pricingPending}
             className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${
               tier.popular
                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
@@ -134,6 +141,8 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
               </>
             ) : isSelected ? (
               `✓ ${copy.selected}`
+            ) : pricingPending || tier.checkoutDisabled ? (
+              copy.pricingPendingButton
             ) : (
               `${copy.choose} ${displayName}`
             )}
