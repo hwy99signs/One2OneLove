@@ -5,13 +5,25 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { PartyPopper, Gift, Calendar, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
+import { useLanguage } from '@/Layout';
+
+const copy = {
+  en:{ today:'🎉 TODAY!', tomorrow:'Tomorrow', inDays:n=>`In ${n} days`, celebrate:'Celebrate Now! 🎊', plan:'Plan Celebration' },
+  es:{ today:'🎉 ¡HOY!', tomorrow:'Mañana', inDays:n=>`En ${n} días`, celebrate:'¡Celebrar Ahora! 🎊', plan:'Planear Celebración' },
+  fr:{ today:'🎉 AUJOURD’HUI !', tomorrow:'Demain', inDays:n=>`Dans ${n} jours`, celebrate:'Célébrer Maintenant ! 🎊', plan:'Préparer la Célébration' },
+  it:{ today:'🎉 OGGI!', tomorrow:'Domani', inDays:n=>`Tra ${n} giorni`, celebrate:'Festeggia Ora! 🎊', plan:'Pianifica la Celebrazione' },
+  de:{ today:'🎉 HEUTE!', tomorrow:'Morgen', inDays:n=>`In ${n} Tagen`, celebrate:'Jetzt Feiern! 🎊', plan:'Feier Planen' },
+};
+
+const localeByLanguage = { en:'en-US', es:'es-ES', fr:'fr-FR', it:'it-IT', de:'de-DE' };
 
 export default function MilestoneCelebration({ milestones }) {
+  const { currentLanguage } = useLanguage();
+  const t = copy[currentLanguage] || copy.en;
+  const locale = localeByLanguage[currentLanguage] || localeByLanguage.en;
+
   const upcomingMilestone = useMemo(() => {
     const today = new Date();
-    
-    // Find milestones within next 7 days
     const upcoming = milestones
       .filter(m => {
         const date = new Date(m.date);
@@ -19,67 +31,39 @@ export default function MilestoneCelebration({ milestones }) {
         return diff >= 0 && diff <= 7;
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-
     return upcoming[0] || null;
   }, [milestones]);
 
   if (!upcomingMilestone) return null;
 
-  const daysUntil = Math.ceil((new Date(upcomingMilestone.date) - new Date()) / (1000 * 60 * 60 * 24));
+  const milestoneDate = new Date(upcomingMilestone.date);
+  const daysUntil = Math.ceil((milestoneDate - new Date()) / (1000 * 60 * 60 * 24));
   const isToday = daysUntil === 0;
   const isTomorrow = daysUntil === 1;
+  const whenLabel = isToday ? t.today : isTomorrow ? t.tomorrow : t.inDays(daysUntil);
+  const formattedDate = new Intl.DateTimeFormat(locale, { year:'numeric', month:'long', day:'numeric' }).format(milestoneDate);
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-        className="mb-8"
-      >
-        <Card className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 border-0 text-white overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
-          
-          <CardContent className="p-6 md:p-8 relative z-10">
-            <div className="flex items-center justify-between flex-wrap gap-4">
+      <motion.div initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} className="mb-8">
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white">
+          <div className="absolute right-0 top-0 -mr-32 -mt-32 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-32 -ml-32 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+          <CardContent className="relative z-10 p-6 md:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center animate-bounce">
-                  {isToday ? (
-                    <PartyPopper className="w-8 h-8 text-white" />
-                  ) : (
-                    <Gift className="w-8 h-8 text-white" />
-                  )}
+                <div className="flex h-16 w-16 animate-bounce items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                  {isToday ? <PartyPopper className="h-8 w-8 text-white" /> : <Gift className="h-8 w-8 text-white" />}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-5 h-5" />
-                    <span className="text-sm font-semibold opacity-90">
-                      {isToday ? "🎉 TODAY!" : isTomorrow ? "Tomorrow" : `In ${daysUntil} days`}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-bold mb-2">
-                    {upcomingMilestone.title}
-                  </h3>
-                  <p className="text-white/90 mb-1">
-                    {format(new Date(upcomingMilestone.date), 'MMMM d, yyyy')}
-                  </p>
-                  {upcomingMilestone.description && (
-                    <p className="text-white/80 text-sm max-w-2xl">
-                      {upcomingMilestone.description}
-                    </p>
-                  )}
+                  <div className="mb-2 flex items-center gap-2"><Calendar className="h-5 w-5"/><span className="text-sm font-semibold opacity-90">{whenLabel}</span></div>
+                  <h3 className="mb-2 text-2xl font-bold md:text-3xl">{upcomingMilestone.title}</h3>
+                  <p className="mb-1 text-white/90">{formattedDate}</p>
+                  {upcomingMilestone.description && <p className="max-w-2xl text-sm text-white/80">{upcomingMilestone.description}</p>}
                 </div>
               </div>
-              
               <Link to={createPageUrl("RelationshipMilestones")}>
-                <Button 
-                  size="lg"
-                  className="bg-white text-purple-600 hover:bg-white/90 shadow-xl font-semibold"
-                >
-                  {isToday ? "Celebrate Now! 🎊" : "Plan Celebration"}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                <Button size="lg" className="bg-white font-semibold text-purple-600 shadow-xl hover:bg-white/90">{isToday ? t.celebrate : t.plan}<ArrowRight className="ml-2 h-5 w-5"/></Button>
               </Link>
             </div>
           </CardContent>
