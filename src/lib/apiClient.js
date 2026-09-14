@@ -4,6 +4,10 @@ function extractError(payload, fallback) {
   return payload?.error?.message || payload?.message || payload?.error || fallback;
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function apiRequest(path, options = {}) {
   const { method = 'GET', body, headers = {}, rawBody, ...rest } = options;
   const requestHeaders = new Headers(headers);
@@ -47,12 +51,30 @@ export async function getAuthSession() {
   return user && session ? { user, session } : null;
 }
 
+export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const auth = await getAuthSession();
+      if (auth) return auth;
+    } catch (error) {
+      lastError = error;
+      if (error?.status === 401) return null;
+    }
+    if (attempt < attempts - 1) await wait(delayMs * (attempt + 1));
+  }
+  if (lastError) throw lastError;
+  return null;
+}
+
 export async function signInWithEmail(email, password) {
   await apiRequest('/api/auth/sign-in/email', {
     method: 'POST',
     body: { email, password },
   });
-  return getAuthSession();
+
+  // Let the browser persist the auth cookie before the session check.
+  return getAuthSessionWithRetry(4, 200);
 }
 
 export async function signOutAuth() {
