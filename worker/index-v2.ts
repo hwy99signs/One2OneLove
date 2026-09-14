@@ -4,6 +4,7 @@ import { handleAdminRequest } from './admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleFeatureUsageRequest } from './feature-usage';
 import { handleSendCreditWebhook, handleSendCreditsRequest } from './send-credits';
+import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
 import { handleLaunchAuthRequest } from './launch-auth';
 import { handleProfessionalSignup } from './professional-signup';
 import { handleSpecialProfileRequest } from './onboarding';
@@ -38,6 +39,11 @@ export default {
 
     if (url.pathname.startsWith('/api/send-credits')) {
       const response = await handleSendCreditsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/love-notes/')) {
+      const response = await handleLoveNoteEntitlementRequest(request, env, url);
       if (response) return response;
     }
 
