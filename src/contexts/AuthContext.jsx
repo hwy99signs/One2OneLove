@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   apiRequest,
-  getAuthSession,
+  getAuthSessionWithRetry,
   getProfile,
   signInWithEmail,
   signOutAuth,
@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
 
   const refreshUserProfile = async () => {
     try {
-      const auth = await getAuthSession();
+      const auth = await getAuthSessionWithRetry(3, 250);
       if (!auth?.user) {
         setUser(null);
         return null;
@@ -44,9 +44,14 @@ export function AuthProvider({ children }) {
       setUser(merged);
       return merged;
     } catch (error) {
-      if (error?.status !== 401) console.warn('Session refresh failed:', error);
-      setUser(null);
-      return null;
+      if (error?.status === 401) {
+        setUser(null);
+        return null;
+      }
+
+      // A temporary network/Worker/Neon error must not silently sign out a user.
+      console.warn('Session refresh failed; preserving current sign-in state:', error);
+      return undefined;
     }
   };
 
@@ -58,7 +63,7 @@ export function AuthProvider({ children }) {
       try {
         const current = await refreshUserProfile();
         if (!mounted) return;
-        setUser(current);
+        if (current !== undefined) setUser(current);
       } finally {
         if (mounted) setIsLoading(false);
       }
