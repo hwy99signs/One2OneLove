@@ -2,6 +2,7 @@
 import baseWorker from './index';
 import { handleAdminRequest } from './admin';
 import { handleAnalyticsRequest } from './analytics';
+import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest } from './feature-usage';
 import { handleSendCreditWebhook, handleSendCreditsRequest } from './send-credits';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
@@ -53,12 +54,21 @@ export default {
       if (response) return response;
     }
 
+    if (url.pathname.startsWith('/api/admin/mfa')) {
+      const response = await handleAdminMfaRequest(request, env, url);
+      if (response) return response;
+    }
+
     if (url.pathname === '/api/admin/analytics') {
+      const gate = await enforceAdminMfa(request, env);
+      if (gate) return gate;
       const response = await handleAnalyticsRequest(request, env, url);
       if (response) return response;
     }
 
     if (url.pathname.startsWith('/api/admin')) {
+      const gate = await enforceAdminMfa(request, env);
+      if (gate) return gate;
       const response = await handleAdminRequest(request, env, url);
       if (response) return response;
     }
