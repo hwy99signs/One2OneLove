@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
+import { useAuth } from "@/contexts/AuthContext";
+import { getMilestones, createMilestone, updateMilestone, deleteMilestone } from "@/lib/milestonesService";
 
 const translations = {
   en: {
@@ -322,10 +324,8 @@ export default function AnniversaryTracker() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
-  const [milestones, setMilestones] = useState(() => {
-    const saved = localStorage.getItem('anniversaryMilestones');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { user } = useAuth();
+  const [milestones, setMilestones] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -336,13 +336,32 @@ export default function AnniversaryTracker() {
   });
 
   useEffect(() => {
-    localStorage.setItem('anniversaryMilestones', JSON.stringify(milestones));
-  }, [milestones]);
+    let cancelled = false;
+    if (!user?.id) {
+      setMilestones([]);
+      return undefined;
+    }
+
+    getMilestones('date')
+      .then((rows) => {
+        if (cancelled) return;
+        setMilestones((rows || []).map((milestone) => ({
+          ...milestone,
+          type: milestone.milestone_type,
+          notes: milestone.description || ''
+        })));
+      })
+      .catch((error) => {
+        if (!cancelled) toast.error(error?.message || 'Unable to load milestones.');
+      });
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const milestoneTypes = [
     { id: 'anniversary', label: t.milestoneTypes.anniversary, icon: Heart, color: 'from-pink-500 to-rose-600' },
-    { id: 'first-date', label: t.milestoneTypes.firstDate, icon: Calendar, color: 'from-purple-500 to-pink-600' },
-    { id: 'first-kiss', label: t.milestoneTypes.firstKiss, icon: Heart, color: 'from-red-500 to-pink-600' },
+    { id: 'first_date', label: t.milestoneTypes.firstDate, icon: Calendar, color: 'from-purple-500 to-pink-600' },
+    { id: 'first_kiss', label: t.milestoneTypes.firstKiss, icon: Heart, color: 'from-red-500 to-pink-600' },
     { id: 'birthday', label: t.milestoneTypes.birthday, icon: Cake, color: 'from-yellow-500 to-orange-600' },
     { id: 'special', label: t.milestoneTypes.special, icon: Star, color: 'from-blue-500 to-cyan-600' }
   ];
@@ -371,38 +390,63 @@ export default function AnniversaryTracker() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.title || !formData.date) {
       toast.error(t.fillRequired);
       return;
     }
 
-    if (editingId) {
-      setMilestones(milestones.map(m => 
-        m.id === editingId ? { ...formData, id: editingId } : m
-      ));
-      toast.success(t.milestoneUpdated);
-    } else {
-      setMilestones([...milestones, { ...formData, id: Date.now() }]);
-      toast.success(t.milestoneAdded);
-    }
+    const payload = {
+      title: formData.title,
+      date: formData.date,
+      milestone_type: formData.type,
+      description: formData.notes || null,
+      is_recurring: ['anniversary', 'birthday'].includes(formData.type),
+      reminder_enabled: true,
+      reminder_days_before: 7
+    };
 
-    setFormData({ title: '', date: '', type: 'anniversary', notes: '' });
-    setShowAddForm(false);
-    setEditingId(null);
+    try {
+      if (editingId) {
+        const saved = await updateMilestone(editingId, payload);
+        setMilestones((current) => current.map((m) => m.id === editingId
+          ? { ...saved, type: saved.milestone_type, notes: saved.description || '' }
+          : m));
+        toast.success(t.milestoneUpdated);
+      } else {
+        const saved = await createMilestone(payload);
+        setMilestones((current) => [...current, { ...saved, type: saved.milestone_type, notes: saved.description || '' }]);
+        toast.success(t.milestoneAdded);
+      }
+
+      setFormData({ title: '', date: '', type: 'anniversary', notes: '' });
+      setShowAddForm(false);
+      setEditingId(null);
+    } catch (error) {
+      toast.error(error?.message || 'Unable to save milestone.');
+    }
   };
 
   const handleEdit = (milestone) => {
-    setFormData(milestone);
+    setFormData({
+      title: milestone.title || '',
+      date: String(milestone.date || '').slice(0, 10),
+      type: milestone.milestone_type || milestone.type || 'anniversary',
+      notes: milestone.description || milestone.notes || ''
+    });
     setEditingId(milestone.id);
     setShowAddForm(true);
   };
 
-  const handleDelete = (id) => {
-    setMilestones(milestones.filter(m => m.id !== id));
-    toast.success(t.milestoneDeleted);
+  const handleDelete = async (id) => {
+    try {
+      await deleteMilestone(id);
+      setMilestones((current) => current.filter((m) => m.id !== id));
+      toast.success(t.milestoneDeleted);
+    } catch (error) {
+      toast.error(error?.message || 'Unable to delete milestone.');
+    }
   };
 
   const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -574,7 +618,7 @@ export default function AnniversaryTracker() {
         ) : (
           <div className="space-y-4">
             {sortedMilestones.map((milestone, index) => {
-              const typeInfo = milestoneTypes.find(t => t.id === milestone.type);
+              const typeInfo = milestoneTypes.find(t => t.id === milestone.type) || milestoneTypes[milestoneTypes.length - 1];
               const Icon = typeInfo.icon;
               const countdown = calculateTimeUntil(milestone.date);
 

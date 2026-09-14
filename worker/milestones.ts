@@ -2,7 +2,7 @@
 import { Client } from 'pg';
 
 const HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
-const TYPES = new Set(['first_date', 'first_kiss', 'first_love', 'moving_in', 'engagement', 'wedding', 'anniversary', 'first_vacation', 'met_family', 'custom']);
+const TYPES = new Set(['first_date', 'first_kiss', 'first_love', 'moving_in', 'engagement', 'wedding', 'anniversary', 'birthday', 'special', 'first_vacation', 'met_family', 'custom']);
 const SORT_FIELDS = new Set(['date', 'created_at', 'updated_at', 'title', 'milestone_type']);
 const WRITE_FIELDS = new Set(['title', 'milestone_type', 'date', 'description', 'location', 'partner_email', 'media_urls', 'is_recurring', 'reminder_enabled', 'reminder_days_before', 'celebration_ideas', 'celebration_completed']);
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
