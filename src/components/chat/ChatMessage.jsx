@@ -297,14 +297,6 @@ const LocationMessage = ({ latitude, longitude, address }) => {
         className="block"
       >
         <div className="w-full h-48 bg-gray-200 flex items-center justify-center relative">
-          <img
-            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${longitude},${latitude})/${longitude},${latitude},15,0/400x200?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw`}
-            alt="Location"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
           <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50">
             <MapPin className="w-8 h-8 text-white" />
           </div>
@@ -331,7 +323,7 @@ export default function ChatMessage({
   onStar,
   onPin,
   onDelete,
-  onSelect,
+  onInfo,
   onShare,
   onReact,
   onCopy,
@@ -452,10 +444,6 @@ export default function ChatMessage({
     onReply?.(message);
   };
 
-  const handleSelect = () => {
-    onSelect?.(message);
-  };
-
   const handleShare = () => {
     if (navigator.share) {
       const shareData = {
@@ -562,15 +550,11 @@ export default function ChatMessage({
                   <Trash2 className="w-4 h-4 mr-2" />
                   {t.delete}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSelect} className="hover:bg-gray-800">
-                  <CheckSquare className="w-4 h-4 mr-2" />
-                  {t.select}
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleShare} className="hover:bg-gray-800">
                   <Share2 className="w-4 h-4 mr-2" />
                   {t.share}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="hover:bg-gray-800">
+                <DropdownMenuItem onClick={() => onInfo?.(message)} className="hover:bg-gray-800">
                   <Info className="w-4 h-4 mr-2" />
                   {t.info}
                 </DropdownMenuItem>

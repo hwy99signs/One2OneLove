@@ -396,14 +396,6 @@ export default function UserProfile({
                         className="border rounded-lg overflow-hidden bg-gray-50"
                       >
                         <div className="aspect-video bg-gray-200 relative">
-                          <img
-                            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${location.longitude},${location.latitude})/${location.longitude},${location.latitude},15,0/600x300?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw`}
-                            alt="Location"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
                           <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
                             <LocationIcon className="w-12 h-12 text-gray-400" />
                           </div>

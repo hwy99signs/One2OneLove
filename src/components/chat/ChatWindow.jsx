@@ -9,7 +9,7 @@ import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import UserProfile from './UserProfile';
 import { UserPresenceBadge } from '@/components/presence/UserPresenceIndicator';
-import { getPinnedMessages, toggleReaction, toggleStarMessage } from '@/lib/chatFeaturesService';
+import { getPinnedMessages, toggleReaction, toggleStarMessage, getMessageInfo } from '@/lib/chatFeaturesService';
 import { getMessages, markMessagesAsRead, markMessageDelivered } from '@/lib/chatService';
 
 const translations = {
@@ -542,9 +542,18 @@ export default function ChatWindow({
                           onDeleteMessage(msg.id, deleteType);
                         }
                       }}
-                      onSelect={(msg) => {
-                        // TODO: Implement select functionality
-                        console.log('Select:', msg);
+                      onInfo={async (msg) => {
+                        try {
+                          const info = await getMessageInfo(msg.id);
+                          const details = [
+                            info?.sent_at_formatted ? `Sent: ${info.sent_at_formatted}` : null,
+                            info?.delivered_at_formatted ? `Delivered: ${info.delivered_at_formatted}` : null,
+                            info?.read_at_formatted ? `Read: ${info.read_at_formatted}` : null,
+                          ].filter(Boolean);
+                          toast.info(details.join(' • ') || 'Message information unavailable');
+                        } catch (error) {
+                          toast.error(error?.message || 'Unable to load message information');
+                        }
                       }}
                       onShare={async (msg) => {
                         const content = msg?.text || msg?.content || msg?.fileUrl || '';
