@@ -1084,7 +1084,7 @@ export default function Profile() {
   const quickActions = [
     { icon: Heart, label: t.profile.actions.sendLoveNote, color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "LoveNotes" },
     { icon: BookOpen, label: t.profile.actions.createMemory, color: "bg-gradient-to-br from-purple-500 to-indigo-500", link: "SharedJournals" },
-    { icon: Target, label: t.profile.actions.calendar, color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "RelationshipGoals" },
+    { icon: Target, label: ({ en: "Relationship Goals", es: "Metas de Relación", fr: "Objectifs de Relation", it: "Obiettivi di Relazione", de: "Beziehungsziele", nl: "Relatiedoelen", pt: "Metas de Relacionamento" }[currentLanguage] || "Relationship Goals"), color: "bg-gradient-to-br from-pink-500 to-rose-500", link: "RelationshipGoals" },
     { icon: CalendarDays, label: t.profile.actions.calendar, color: "bg-gradient-to-br from-purple-500 to-indigo-500", link: "CouplesCalendar" },
     { icon: Sparkles, label: t.profile.actions.aiCreator, color: "bg-gradient-to-br from-blue-500 to-cyan-500", link: "AIContentCreator" },
     { icon: Gift, label: t.profile.actions.dateIdeas, color: "bg-gradient-to-br from-orange-500 to-yellow-500", link: "DateIdeas" }
