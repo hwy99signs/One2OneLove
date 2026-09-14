@@ -40,22 +40,39 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          OK=no
+
+          HTML_OK=no
           for attempt in $(seq 1 18); do
-            HTML=$(curl -fsS --max-time 20 "$PREVIEW_URL/home" 2>/dev/null || true)
+            HTML=$(curl -fsSL --max-time 20 "$PREVIEW_URL/home" 2>/dev/null || true)
             if printf '%s' "$HTML" | grep -qi '<!doctype html'; then
-              OK=yes
+              HTML_OK=yes
               break
             fi
             sleep 5
           done
-          test "$OK" = yes
+          test "$HTML_OK" = yes
+
           SCRIPT=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//')
-          curl -fsS --max-time 30 "$PREVIEW_URL$SCRIPT" -o /tmp/preview.js
+          test -n "$SCRIPT"
+          echo "Preview bundle: $SCRIPT"
+
+          JS_OK=no
+          for attempt in $(seq 1 18); do
+            CODE=$(curl -sSL --max-time 30 -o /tmp/preview.js -w '%{http_code}' "$PREVIEW_URL$SCRIPT" || true)
+            if [ "$CODE" = "200" ] && [ -s /tmp/preview.js ]; then
+              JS_OK=yes
+              break
+            fi
+            echo "Bundle attempt $attempt -> HTTP $CODE"
+            sleep 5
+          done
+          test "$JS_OK" = yes
           grep -F 'What Should They Do?' /tmp/preview.js >/dev/null
           grep -F 'Preview mode:' /tmp/preview.js >/dev/null
+
           API_CODE=$(curl -sS --max-time 20 -o /tmp/preview-api.json -w '%{http_code}' "$PREVIEW_URL/api/health")
           test "$API_CODE" = "503"
           grep -F 'preview_api_disabled' /tmp/preview-api.json >/dev/null
+
           echo "O2OL_PREVIEW_VERIFIED=yes"
           echo "O2OL_PREVIEW_URL=$PREVIEW_URL"
