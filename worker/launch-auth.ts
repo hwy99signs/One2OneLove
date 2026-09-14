@@ -136,25 +136,39 @@ async function registerLaunchUser(request, env) {
   if (!user?.id) return fail('Account creation did not return a user record.', 502, 'invalid_auth_response');
 
   await withDb(env, async (db) => {
-    await db.query(
-      `INSERT INTO public.signup_consents
-        (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
-         privacy_policy_acknowledged,age_18_confirmed,signup_source)
-       SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_prelaunch'
-       FROM neon_auth."user" WHERE id=$1::uuid AND lower(email)=lower($2)
-       ON CONFLICT (user_id, terms_version) DO UPDATE SET
-         country=EXCLUDED.country,
-         preferred_language=EXCLUDED.preferred_language,
-         terms_accepted_at=EXCLUDED.terms_accepted_at,
-         privacy_policy_acknowledged=true,
-         age_18_confirmed=true`,
-      [user.id, email, country, preferredLanguage, termsVersion, acceptedDate.toISOString()],
-    );
+    await db.query('BEGIN');
+    try {
+      await db.query(
+        `INSERT INTO public.signup_consents
+          (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
+           privacy_policy_acknowledged,age_18_confirmed,signup_source)
+         SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_launch'
+         FROM neon_auth."user" WHERE id=$1::uuid AND lower(email)=lower($2)
+         ON CONFLICT (user_id, terms_version) DO UPDATE SET
+           country=EXCLUDED.country,
+           preferred_language=EXCLUDED.preferred_language,
+           terms_accepted_at=EXCLUDED.terms_accepted_at,
+           privacy_policy_acknowledged=true,
+           age_18_confirmed=true`,
+        [user.id, email, country, preferredLanguage, termsVersion, acceptedDate.toISOString()],
+      );
+
+      // Newly registered members must complete the Stripe trial/card step before
+      // receiving paid-plan entitlements. Existing migrated members are not touched.
+      await db.query(
+        `INSERT INTO public.users
+          (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
+         VALUES ($1::uuid,$2,$3,'regular',true,'Basis',0,'inactive')
+         ON CONFLICT (id) DO NOTHING`,
+        [user.id, email, name],
+      );
+      await db.query('COMMIT');
+    } catch (error) {
+      await db.query('ROLLBACK');
+      throw error;
+    }
   });
 
-  // Current One2OneLove auth configuration uses OTP email verification.
-  // The auth provider sends the initial OTP during signup. No signup session
-  // cookie is forwarded; the member signs in normally after verification.
   return json({
     ok: true,
     success: true,
