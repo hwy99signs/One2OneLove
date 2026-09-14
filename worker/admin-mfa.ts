@@ -8,7 +8,7 @@ const JSON_HEADERS = {
 };
 
 const COOKIE_NAME = '__Host-o2ol_admin_mfa';
-const MFA_TTL_SECONDS = 30 * 60;
+const MFA_TTL_SECONDS = 2 * 60 * 60;
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
