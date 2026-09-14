@@ -1,0 +1,53 @@
+name: O2OL Subscription Tier Catalog
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - .github/workflows/o2ol-subscription-tier-catalog.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-tier-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+          fetch-depth: 0
+
+      - name: Wire researched tier catalog into Subscription page
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/Subscription.jsx')
+          text = path.read_text()
+
+          import_anchor = "import { toast } from 'sonner';"
+          catalog_import = "import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';"
+          if catalog_import not in text:
+              text = text.replace(import_anchor, import_anchor + "\n" + catalog_import)
+
+          old = "  const t = translations[currentLanguage] || translations.en;"
+          new = "  const baseTranslation = translations[currentLanguage] || translations.en;\n  const planTranslation = subscriptionPlanCopy[currentLanguage] || subscriptionPlanCopy.en;\n  const t = { ...baseTranslation, ...planTranslation, plans: planTranslation.plans };"
+          if old not in text:
+              raise SystemExit('Could not find Subscription translation assignment')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+
+      - name: Commit subscription tier catalog wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/Subscription.jsx
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Wire researched subscription tier catalog into preview"
+            git push origin HEAD:o2ol-password-reset-preview
+          fi
