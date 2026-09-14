@@ -1,0 +1,95 @@
+name: Resize Home Action Tabs
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/resize-home-action-tabs-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  resize-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Resize only the four hero action tabs on master
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/pages/Home.jsx')
+          text = path.read_text()
+          old = '''          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto mt-7">
+            <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Love Language Quiz</button>
+            <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Send A Love Note</button>
+            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-8 py-5 font-extrabold text-xl shadow-xl">🎙 Podcast</button>
+            <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-8 py-5 font-extrabold text-xl shadow-xl">▣ Date Ideas</button>
+          </div>'''
+          new = '''          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-[70%] max-w-[33.6rem] mx-auto mt-7">
+            <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">♡ Love Language Quiz</button>
+            <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">♡ Send A Love Note</button>
+            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">🎙 Podcast</button>
+            <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">▣ Date Ideas</button>
+          </div>'''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exact action-tab block once on master, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff -- src/pages/Home.jsx
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "src/pages/Home.jsx"
+      - name: Build master
+        run: npm ci && npm run build
+      - name: Commit master change
+        shell: bash
+        run: |
+          git config user.name "hwy99signs"
+          git config user.email "hwy99signs@gmail.com"
+          git add src/pages/Home.jsx
+          git commit -m "Resize only four home action tabs"
+          git push origin master
+      - name: Mirror exact style change to active migration branch
+        shell: bash
+        run: |
+          git checkout full-neon-migration-2026-09-13
+          git pull --ff-only origin full-neon-migration-2026-09-13
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/pages/Home.jsx')
+          text = path.read_text()
+          old = '''          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto mt-7">
+            <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Love Language Quiz</button>
+            <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-8 py-5 font-extrabold text-xl shadow-xl">♡ Send A Love Note</button>
+            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-8 py-5 font-extrabold text-xl shadow-xl">🎙 Podcast</button>
+            <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-8 py-5 font-extrabold text-xl shadow-xl">▣ Date Ideas</button>
+          </div>'''
+          new = '''          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-[70%] max-w-[33.6rem] mx-auto mt-7">
+            <button onClick={() => go("LoveLanguageQuiz")} className="rounded-2xl bg-pink-500 hover:bg-pink-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">♡ Love Language Quiz</button>
+            <button onClick={() => go("LoveNotes")} className="rounded-2xl bg-white hover:bg-slate-50 text-pink-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">♡ Send A Love Note</button>
+            <button onClick={() => go("PodcastsSupport")} className="rounded-2xl bg-orange-500 hover:bg-orange-600 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">🎙 Podcast</button>
+            <button onClick={() => go("DateIdeas")} className="rounded-2xl bg-teal-600 hover:bg-teal-700 px-[1.4rem] py-[0.525rem] font-extrabold text-[1.375rem]/[1.925rem] shadow-xl">▣ Date Ideas</button>
+          </div>'''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exact action-tab block once on migration branch, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "src/pages/Home.jsx"
+          git add src/pages/Home.jsx
+          git commit -m "Mirror home action tab sizing into Neon migration"
+          git push origin full-neon-migration-2026-09-13
+      - name: Remove temporary workflow and trigger from master
+        shell: bash
+        run: |
+          git checkout master
+          git pull --ff-only origin master
+          rm -f .github/workflows/resize-home-action-tabs.yml .github/resize-home-action-tabs-trigger
+          git add -A .github/workflows/resize-home-action-tabs.yml .github/resize-home-action-tabs-trigger
+          git commit -m "Remove temporary action-tab resize workflow [skip ci]"
+          git push origin master
