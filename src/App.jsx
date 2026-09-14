@@ -2,6 +2,7 @@ import './App.css'
 import Pages from "@/pages/index.jsx"
 import Admin from "@/pages/Admin.jsx"
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "sonner"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter } from "react-router-dom"
 import { AuthProvider } from "@/contexts/AuthContext"
@@ -41,6 +42,7 @@ function App() {
           <Pages />
         )}
         <Toaster />
+        <SonnerToaster richColors position="top-center" />
       </AuthProvider>
     </QueryClientProvider>
   )
