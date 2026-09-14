@@ -106,7 +106,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname.startsWith('/api/memories')) {
+    if (url.pathname.startsWith('/api/memories') || url.pathname.startsWith('/api/media/memories/')) {
       const response = await handleMemoriesRequest(request, env, url);
       if (response) return response;
     }
