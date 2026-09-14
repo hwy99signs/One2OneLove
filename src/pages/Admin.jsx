@@ -122,13 +122,15 @@ export default function Admin() {
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
   const topFeatures=features.filter(f=>f.total_activity>0).slice(0,6);
 
+  const openAnalytics = () => window.location.assign('/Analytics');
+
   const nav = (
     <>
       <div className="border-b border-slate-200 p-5">
         <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-rose-600 text-white"><Heart size={20}/></div><div><div className="font-black text-slate-900">One2OneLove</div><div className="text-xs font-semibold text-rose-600">ADMIN CONTROL</div></div></div>
       </div>
       <nav className="space-y-1 p-3">
-        <button onClick={()=>{navigate('/Analytics');setMobileNav(false);}} className="mb-2 flex w-full items-center gap-3 rounded-xl bg-slate-900 px-3 py-3 text-left text-sm font-semibold text-white hover:bg-slate-800"><TrendingUp size={18}/>Analytics</button>
+        <button onClick={()=>{openAnalytics();setMobileNav(false);}} className="mb-2 flex w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-left text-sm font-semibold text-rose-700 transition hover:bg-rose-100"><TrendingUp size={18}/>Analytics</button>
         {sections.map(({id,label,icon:Icon}) => <button key={id} onClick={()=>{setSection(id);setMobileNav(false);}} className={cx('flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition',section===id?'bg-rose-50 text-rose-700':'text-slate-600 hover:bg-slate-50 hover:text-slate-900')}><Icon size={18}/>{label}</button>)}
       </nav>
       <div className="mt-auto border-t border-slate-200 p-4"><div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><ShieldCheck size={16} className="mb-1"/>Secure admin-only access. Dashboard controls remain read-only during launch QA.</div><button onClick={()=>navigate('/Home')} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ArrowLeft size={16}/>Exit Admin</button></div>
@@ -144,7 +146,7 @@ export default function Admin() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3"><button className="rounded-lg border border-slate-200 p-2 lg:hidden" onClick={()=>setMobileNav(true)}><Menu size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Operations Dashboard</p><h1 className="text-lg font-bold text-slate-900">{sections.find(s=>s.id===section)?.label}</h1></div></div>
-            <div className="flex items-center gap-2"><button onClick={()=>navigate('/Analytics')} className="hidden items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 sm:inline-flex"><TrendingUp size={15}/>Analytics</button><Pill tone="blue">Preview</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
+            <div className="flex items-center gap-2"><button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button><Pill tone="blue">Preview</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
           </div>
         </header>
 
