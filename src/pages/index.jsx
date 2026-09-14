@@ -1,72 +1,52 @@
 import { useEffect } from 'react';
-import Layout from "./Layout.jsx";
-import Home from "./Home";
-import InfluencerSignup from "./InfluencerSignup";
-import ProfessionalSignup from "./ProfessionalSignup";
-import TherapistSignup from "./TherapistSignup";
-import AboutUs from "./AboutUs";
-import SignIn from "./SignIn";
-import SignUp from "./SignUp";
-import AdminAccess from "./AdminAccess";
-import MemoryLane from "./MemoryLane";
-import LoveNotes from "./LoveNotes";
-import SendCredits from "./SendCredits";
-import CoupleSupport from "./CoupleSupport";
-import LoveLanguageQuiz from "./LoveLanguageQuiz";
-import DateIdeas from "./DateIdeas";
-import Profile from "./Profile";
-import WinACruise from "./WinACruise";
-import Invite from "./Invite";
-import CounselingSupport from "./CounselingSupport";
-import PodcastsSupport from "./PodcastsSupport";
-import ArticlesSupport from "./ArticlesSupport";
-import InfluencersSupport from "./InfluencersSupport";
-import RelationshipQuizzes from "./RelationshipQuizzes";
-import AnniversaryTracker from "./AnniversaryTracker";
-import ForgotPassword from "./ForgotPassword";
-import AIContentCreator from "./AIContentCreator";
-import Dashboard from "./Dashboard";
-import Community from "./Community";
-import RelationshipMilestones from "./RelationshipMilestones";
-import RelationshipCoach from "./RelationshipCoach";
-import RelationshipGoals from "./RelationshipGoals";
-import Meditation from "./Meditation";
-import CommunicationPractice from "./CommunicationPractice";
-import CouplesProfile from "./CouplesProfile";
-import Developer from "./Developer";
-import CoupleActivities from "./CoupleActivities";
-import SharedJournals from "./SharedJournals";
-import CooperativeGames from "./CooperativeGames";
-import CouplesDashboard from "./CouplesDashboard";
-import CouplesCalendar from "./CouplesCalendar";
-import LGBTQSupport from "./LGBTQSupport";
-import HelpCenter from "./HelpCenter";
-import ContactUs from "./ContactUs";
-import PrivacyPolicy from "./PrivacyPolicy";
-import TermsOfService from "./TermsOfService";
-import Blog from "./Blog";
-import Reviews from "./Reviews";
-import LeaveReview from "./LeaveReview";
-import Suggestions from "./Suggestions";
-import Leaderboard from "./Leaderboard";
-import Achievements from "./Achievements";
-import PremiumFeatures from "./PremiumFeatures";
-import Chat from "./Chat";
-import FindFriends from "./FindFriends";
-import FriendRequests from "./FriendRequests";
-import PaymentSuccess from "./PaymentSuccess";
-import Subscription from "./Subscription";
+import Layout from './Layout.jsx';
+import Home from './Home';
+import AboutUs from './AboutUs';
+import SignIn from './SignIn';
+import SignUp from './SignUp';
+import AdminAccess from './AdminAccess';
+import MemoryLane from './MemoryLane';
+import LoveNotes from './LoveNotes';
+import SendCredits from './SendCredits';
+import CoupleSupport from './CoupleSupport';
+import LoveLanguageQuiz from './LoveLanguageQuiz';
+import DateIdeas from './DateIdeas';
+import Profile from './Profile';
+import Invite from './Invite';
+import PodcastsSupport from './PodcastsSupport';
+import ArticlesSupport from './ArticlesSupport';
+import RelationshipQuizzes from './RelationshipQuizzes';
+import AnniversaryTracker from './AnniversaryTracker';
+import ForgotPassword from './ForgotPassword';
+import Dashboard from './Dashboard';
+import RelationshipMilestones from './RelationshipMilestones';
+import RelationshipGoals from './RelationshipGoals';
+import CommunicationPractice from './CommunicationPractice';
+import CouplesProfile from './CouplesProfile';
+import CoupleActivities from './CoupleActivities';
+import SharedJournals from './SharedJournals';
+import CouplesDashboard from './CouplesDashboard';
+import CouplesCalendar from './CouplesCalendar';
+import LGBTQSupport from './LGBTQSupport';
+import HelpCenter from './HelpCenter';
+import ContactUs from './ContactUs';
+import PrivacyPolicy from './PrivacyPolicy';
+import TermsOfService from './TermsOfService';
+import Reviews from './Reviews';
+import LeaveReview from './LeaveReview';
+import Suggestions from './Suggestions';
+import Chat from './Chat';
+import PaymentSuccess from './PaymentSuccess';
+import Subscription from './Subscription';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
-  Home, InfluencerSignup, ProfessionalSignup, TherapistSignup, AboutUs, SignIn, SignUp, AdminAccess,
-  MemoryLane, LoveNotes, SendCredits, CoupleSupport, LoveLanguageQuiz, DateIdeas, Profile, WinACruise, Invite,
-  CounselingSupport, PodcastsSupport, ArticlesSupport, InfluencersSupport, RelationshipQuizzes,
-  AnniversaryTracker, ForgotPassword, AIContentCreator, Dashboard, Community, RelationshipMilestones,
-  RelationshipCoach, RelationshipGoals, Meditation, CommunicationPractice, CouplesProfile, Developer,
-  CoupleActivities, SharedJournals, CooperativeGames, CouplesDashboard, CouplesCalendar, LGBTQSupport,
-  HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Blog, Reviews, LeaveReview, Suggestions,
-  Leaderboard, Achievements, PremiumFeatures, Chat, FindFriends, FriendRequests, PaymentSuccess, Subscription,
+  Home, AboutUs, SignIn, SignUp, AdminAccess, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
+  AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
+  CommunicationPractice, CouplesProfile, CoupleActivities, SharedJournals, CouplesDashboard,
+  CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
+  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -83,10 +63,9 @@ const FEATURE_BY_ROUTE = {
   '/relationshipquizzes': 'Relationship Quizzes',
   '/anniversarytracker': 'Anniversary Tracker',
   '/dashboard': 'Member Profile',
-  '/community': 'Community',
+  '/community': 'Community Chat',
   '/relationshipmilestones': 'Relationship Milestones',
   '/relationshipgoals': 'Relationship Goals',
-  '/meditation': 'Meditation',
   '/communicationpractice': 'Communication Practice',
   '/couplesprofile': 'Couples Profile',
   '/coupleactivities': 'Couple Activities',
@@ -94,9 +73,7 @@ const FEATURE_BY_ROUTE = {
   '/couplesdashboard': 'Couples Dashboard',
   '/couplescalendar': 'Couples Calendar',
   '/lgbtqsupport': 'LGBTQ+ Support',
-  '/chat': 'Chat',
-  '/findfriends': 'Find Friends',
-  '/friendrequests': 'Friend Requests',
+  '/chat': 'Community Chat',
   '/subscription': 'Subscription / Billing',
 };
 
@@ -105,7 +82,7 @@ function _getCurrentPage(url) {
   let urlLastPart = url.split('/').pop();
   if (urlLastPart.includes('?')) urlLastPart = urlLastPart.split('?')[0];
   const pageName = Object.keys(PAGES).find(page => page.toLowerCase() === urlLastPart.toLowerCase());
-  return pageName || Object.keys(PAGES)[0];
+  return pageName || 'Home';
 }
 
 function trackFeatureView(pathname) {
@@ -129,7 +106,6 @@ function PagesContent() {
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
     };
-
     scrollToTop();
     trackFeatureView(location.pathname);
     const frame = window.requestAnimationFrame(scrollToTop);
@@ -141,9 +117,6 @@ function PagesContent() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/Home" element={<Home />} />
-        <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
-        <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
-        <Route path="/TherapistSignup" element={<TherapistSignup />} />
         <Route path="/AboutUs" element={<AboutUs />} />
         <Route path="/SignIn" element={<SignIn />} />
         <Route path="/login" element={<SignIn />} />
@@ -157,28 +130,20 @@ function PagesContent() {
         <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
         <Route path="/DateIdeas" element={<DateIdeas />} />
         <Route path="/Profile" element={<Profile />} />
-        <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
         <Route path="/Invite" element={<Invite />} />
-        <Route path="/CounselingSupport" element={<Navigate to="/Home" replace />} />
         <Route path="/PodcastsSupport" element={<PodcastsSupport />} />
         <Route path="/ArticlesSupport" element={<ArticlesSupport />} />
-        <Route path="/InfluencersSupport" element={<Navigate to="/Home" replace />} />
         <Route path="/RelationshipQuizzes" element={<RelationshipQuizzes />} />
         <Route path="/AnniversaryTracker" element={<AnniversaryTracker />} />
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
-        <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
         <Route path="/Dashboard" element={<Dashboard />} />
-        <Route path="/Community" element={<Community />} />
+        <Route path="/Community" element={<Chat />} />
         <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
-        <Route path="/RelationshipCoach" element={<Navigate to="/Home" replace />} />
         <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
-        <Route path="/Meditation" element={<Meditation />} />
         <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
         <Route path="/CouplesProfile" element={<CouplesProfile />} />
-        <Route path="/Developer" element={<Navigate to="/Home" replace />} />
         <Route path="/CoupleActivities" element={<CoupleActivities />} />
         <Route path="/SharedJournals" element={<SharedJournals />} />
-        <Route path="/CooperativeGames" element={<Navigate to="/Home" replace />} />
         <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
         <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
         <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
@@ -186,28 +151,38 @@ function PagesContent() {
         <Route path="/ContactUs" element={<ContactUs />} />
         <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
         <Route path="/TermsOfService" element={<TermsOfService />} />
-        <Route path="/Blog" element={<Blog />} />
         <Route path="/Reviews" element={<Reviews />} />
         <Route path="/LeaveReview" element={<LeaveReview />} />
         <Route path="/Suggestions" element={<Suggestions />} />
-        <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
-        <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
-        <Route path="/PremiumFeatures" element={<Navigate to="/Home" replace />} />
         <Route path="/Chat" element={<Chat />} />
-        <Route path="/FindFriends" element={<FindFriends />} />
-        <Route path="/FriendRequests" element={<FriendRequests />} />
         <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/Subscription" element={<Subscription />} />
+
+        {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
+        <Route path="/InfluencerSignup" element={<Navigate to="/Home" replace />} />
+        <Route path="/ProfessionalSignup" element={<Navigate to="/Home" replace />} />
+        <Route path="/TherapistSignup" element={<Navigate to="/Home" replace />} />
+        <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
+        <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
+        <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
+        <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
+        <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
+        <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
+        <Route path="/Developer" element={<Navigate to="/Home" replace />} />
+        <Route path="/CooperativeGames" element={<Navigate to="/CoupleActivities" replace />} />
+        <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
+        <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
+        <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
+        <Route path="/FindFriends" element={<Navigate to="/Community" replace />} />
+        <Route path="/FriendRequests" element={<Navigate to="/Community" replace />} />
+        <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
+        <Route path="*" element={<Navigate to="/Home" replace />} />
       </Routes>
     </Layout>
   );
 }
 
 export default function Pages() {
-  return (
-    <Router>
-      <PagesContent />
-    </Router>
-  );
+  return <Router><PagesContent /></Router>;
 }
