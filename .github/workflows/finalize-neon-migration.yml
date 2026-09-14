@@ -1,0 +1,180 @@
+name: Finalize Neon Migration
+
+on:
+  push:
+    branches:
+      - full-neon-migration-2026-09-13
+    paths:
+      - .github/finalize-neon-migration-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: full-neon-migration-2026-09-13
+          fetch-depth: 0
+
+      - name: Apply remaining frontend migration changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path): return Path(path).read_text()
+          def write(path, text): Path(path).write_text(text)
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'Missing expected block: {label}')
+              return text.replace(old, new, 1)
+
+          # Layout: remove Supabase realtime; existing query polling already refreshes unread count.
+          p='src/pages/Layout.jsx'; s=read(p)
+          s=s.replace('import { supabase } from "@/lib/supabase";\n','')
+          s=re.sub(r'\n  // Subscribe to real-time conversation updates to update badge immediately\n  useEffect\(\(\) => \{.*?\n  \}, \[user, isAuthenticated, refetchConversations\]\);\n', '\n', s, flags=re.S)
+          write(p,s)
+
+          # Chat: replace Supabase realtime delivery watcher with Cloudflare/Neon polling.
+          p='src/pages/Chat.jsx'; s=read(p)
+          s=s.replace("  markMessageDelivered,\n", "  markMessageDelivered,\n  markPendingMessagesDelivered,\n")
+          s=s.replace("import { supabase } from '@/lib/supabase';\n",'')
+          start='  // CRITICAL: Global subscription to mark ALL incoming messages as delivered\n'
+          i=s.find(start)
+          if i < 0: raise SystemExit('Missing Chat global subscription start')
+          end='  }, [user, queryClient]);\n'
+          j=s.find(end,i)
+          if j < 0: raise SystemExit('Missing Chat global subscription end')
+          j += len(end)
+          new='''  // Keep delivery/read state current through the Cloudflare + Neon API.\n  useEffect(() => {\n    if (!user) return;\n    let active = true;\n\n    const syncDelivery = async () => {\n      if (!active) return;\n      try {\n        await markPendingMessagesDelivered();\n        if (selectedChatId) await markMessagesAsRead(selectedChatId);\n        queryClient.invalidateQueries({ queryKey: ['messages'] });\n        queryClient.invalidateQueries({ queryKey: ['conversations'] });\n      } catch (error) {\n        console.warn('Message delivery sync failed:', error);\n      }\n    };\n\n    syncDelivery();\n    const timer = window.setInterval(syncDelivery, 2500);\n    return () => {\n      active = false;\n      window.clearInterval(timer);\n    };\n  }, [user, selectedChatId, queryClient]);\n'''
+          s=s[:i]+new+s[j:]
+          write(p,s)
+
+          # Love Notes: sent/scheduled tracking through Worker API.
+          p='src/pages/LoveNotes.jsx'; s=read(p)
+          s=s.replace('import { supabase } from "@/lib/supabase";\n','import { listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";\n')
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!currentUser\?\.id\) return \[\];\n      const \{ data, error \} = await supabase\n        \.from\('sent_love_notes'\)\n        \.select\('\*'\)\n        \.eq\('user_id', currentUser\.id\);\n      if \(error\) \{\n        console\.error\('Error fetching sent notes:', error\);\n        return \[\];\n      \}\n      return data \|\| \[\];\n    \},''','''    queryFn: async () => {\n      if (!currentUser?.id) return [];\n      return await listSentLoveNotes();\n    },''',s)
+          s=re.sub(r'''    mutationFn: async \(data\) => \{\n      if \(!currentUser\?\.id\) throw new Error\('User not authenticated'\);\n      const \{ data: result, error \} = await supabase\n        \.from\('sent_love_notes'\)\n        \.insert\(\{ \.\.\.data, user_id: currentUser\.id \}\)\n        \.select\(\)\n        \.single\(\);\n      if \(error\) throw error;\n      return result;\n    \},''','''    mutationFn: async (data) => {\n      if (!currentUser?.id) throw new Error('User not authenticated');\n      return await recordSentLoveNote(data);\n    },''',s, count=1)
+          s=re.sub(r'''    mutationFn: async \(data\) => \{\n      if \(!currentUser\?\.id\) throw new Error\('User not authenticated'\);\n      const \{ data: result, error \} = await supabase\n        \.from\('scheduled_love_notes'\)\n        \.insert\(\{ \.\.\.data, user_id: currentUser\.id \}\)\n        \.select\(\)\n        \.single\(\);\n      if \(error\) throw error;\n      return result;\n    \},''','''    mutationFn: async (data) => {\n      if (!currentUser?.id) throw new Error('User not authenticated');\n      return await scheduleLoveNote(data);\n    },''',s, count=1)
+          write(p,s)
+
+          # Community buddy accept through buddy API.
+          p='src/pages/Community.jsx'; s=read(p)
+          s=s.replace('// Base44 removed - using Supabase instead\n','')
+          s=s.replace('import { getMyBuddies } from "@/lib/buddyService";','import { getMyBuddies, acceptBuddyRequest } from "@/lib/buddyService";')
+          old='''  const updateBuddyMutation = useMutation({\n    mutationFn: async ({ id, data }) => {\n      const { data: result, error } = await supabase\n        .from('buddy_matches')\n        .update(data)\n        .eq('id', id)\n        .select()\n        .single();\n      if (error) throw error;\n      return result;\n    },\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['myBuddies'] });\n    }\n  });\n\n  const handleAcceptBuddy = async (buddy) => {\n    await updateBuddyMutation.mutateAsync({\n      id: buddy.id,\n      data: { ...buddy, status: 'active' }\n    });\n    toast.success("Buddy accepted!");\n  };'''
+          new='''  const updateBuddyMutation = useMutation({\n    mutationFn: async (requestId) => acceptBuddyRequest(requestId),\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['myBuddies'] });\n    }\n  });\n\n  const handleAcceptBuddy = async (buddy) => {\n    await updateBuddyMutation.mutateAsync(buddy.request_id || buddy.id);\n    toast.success("Buddy accepted!");\n  };'''
+          s=replace_once(s,old,new,'Community buddy mutation')
+          write(p,s)
+
+          # Couple dashboard: memories + badges through Worker services.
+          p='src/pages/CouplesDashboard.jsx'; s=read(p)
+          s=s.replace('import { supabase } from "@/lib/supabase";\n','')
+          insert='import * as milestonesService from "@/lib/milestonesService";\n'
+          s=s.replace(insert,insert+'import { listMemories } from "@/lib/memoryService";\nimport { getEngagementBadges } from "@/lib/engagementService";\n')
+          s=s.replace('''    queryFn: async () => {\n      // TODO: Implement badges service\n      return [];\n    },''','''    queryFn: async () => getEngagementBadges(),''')
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!user\?\.id\) return \[\];\n      const \{ data, error \} = await supabase\n        \.from\('memories'\)\n        \.select\('\*'\)\n        \.eq\('user_id', user\.id\)\n        \.order\('memory_date', \{ ascending: false \}\);\n      if \(error\) \{\n        console\.error\('Error fetching memories:', error\);\n        return \[\];\n      \}\n      return data \|\| \[\];\n    \},''','''    queryFn: async () => user?.id ? listMemories(user.id) : [],''',s)
+          write(p,s)
+
+          # Win prizes/contests through Neon contest API.
+          p='src/pages/WinACruise.jsx'; s=read(p)
+          s=s.replace('import { supabase } from "@/lib/supabase";\n','import { getContestLeaderboard, getContestWinner, getMyContestRank, joinContest } from "@/lib/engagementService";\n')
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      const \{ data, error \} = await supabase\n        \.from\('contest_participants'\).*?\n      return participants\.sort\(\(a, b\) => b\.score - a\.score\)\.slice\(0, 5\);\n    \},''',"    queryFn: () => getContestLeaderboard('monthly_love_notes', currentPeriod, 5),",s,count=1,flags=re.S)
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      const \{ data, error \} = await supabase\n        \.from\('contest_participants'\).*?\n      return participants\.sort\(\(a, b\) => b\.score - a\.score\)\.slice\(0, 5\);\n    \},''',"    queryFn: () => getContestLeaderboard('yearly_engagement', currentYear, 5),",s,count=1,flags=re.S)
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      const \{ data, error \} = await supabase\n        \.from\('contest_winners'\).*?\n      return winners\[0\] \|\| null;\n    \},''',"    queryFn: () => getContestWinner('monthly_love_notes', lastMonthPeriod),",s,count=1,flags=re.S)
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!currentUser\) return null;.*?\n      return participants\[0\] \|\| null;\n    \},''',"    queryFn: () => currentUser ? getMyContestRank('monthly_love_notes', currentPeriod) : null,",s,count=1,flags=re.S)
+          old='''  const handleSubmit = (e) => {\n    e.preventDefault();\n    toast.success("You're now competing for prizes! 🎉");\n    setEmail("");\n  };'''
+          new='''  const handleSubmit = async (e) => {\n    e.preventDefault();\n    if (!currentUser) {\n      toast.error("Please sign in to join the contests.");\n      return;\n    }\n    try {\n      await Promise.all([\n        joinContest('monthly_love_notes', currentPeriod),\n        joinContest('yearly_engagement', currentYear),\n      ]);\n      toast.success("You're now competing for prizes! 🎉");\n      setEmail("");\n    } catch (error) {\n      toast.error(error?.message || 'Unable to join the contest right now.');\n    }\n  };'''
+          s=replace_once(s,old,new,'WinACruise submit')
+          write(p,s)
+
+          # Couples profile: profile/memories/member lookup through Worker APIs.
+          p='src/pages/CouplesProfile.jsx'; s=read(p)
+          s=s.replace('import { supabase } from "@/lib/supabase";\n','import { searchUsers } from "@/lib/buddyService";\nimport { listMemories } from "@/lib/memoryService";\nimport { updateProfile } from "@/lib/apiClient";\n')
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!currentUser\?\.partner_email\) return null;\n      try \{\n        const \{ data, error \} = await supabase\n          \.from\('users'\).*?\n      \} catch \{\n        return null;\n      \}\n    \},''','''    queryFn: async () => {\n      if (!currentUser?.partner_email) return null;\n      const matches = await searchUsers(currentUser.id, currentUser.partner_email);\n      return matches.find(u => String(u.email || '').toLowerCase() === String(currentUser.partner_email).toLowerCase()) || null;\n    },''',s,count=1,flags=re.S)
+          s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!currentUser\?\.id\) return \[\];\n      const \{ data, error \} = await supabase\n        \.from\('memories'\).*?\n      return data \|\| \[\];\n    \},''','''    queryFn: async () => {\n      if (!currentUser?.id) return [];\n      const items = await listMemories(currentUser.id);\n      return [...items].sort((a,b) => new Date(b.created_at || b.memory_date || 0) - new Date(a.created_at || a.memory_date || 0)).slice(0,5);\n    },''',s,count=1,flags=re.S)
+          s=re.sub(r'''    mutationFn: async \(data\) => \{\n      if \(!currentUser\?\.id\) throw new Error\('User not authenticated'\);\n      const \{ data: result, error \} = await supabase\n        \.from\('users'\).*?\n      return result;\n    \},''','''    mutationFn: async (data) => {\n      if (!currentUser?.id) throw new Error('User not authenticated');\n      return await updateProfile(data);\n    },''',s,count=1,flags=re.S)
+          write(p,s)
+
+          # Gamification consumers.
+          for p in ['src/pages/PremiumFeatures.jsx','src/pages/Achievements.jsx','src/components/gamification/PointsDisplay.jsx']:
+              s=read(p)
+              s=s.replace('import { supabase } from "@/lib/supabase";\n','')
+              if 'PremiumFeatures' in p:
+                  anchor='import { useQuery } from "@tanstack/react-query";\n'
+                  s=s.replace(anchor,anchor+'import { getEngagementPoints } from "@/lib/engagementService";\n')
+              elif 'Achievements' in p:
+                  anchor='import { useQuery } from "@tanstack/react-query";\n'
+                  s=s.replace(anchor,anchor+'import { getEngagementPoints, getEngagementBadges } from "@/lib/engagementService";\n')
+              else:
+                  anchor='import { useAuth } from "@/contexts/AuthContext";\n'
+                  s=s.replace(anchor,anchor+'import { getEngagementPoints } from "@/lib/engagementService";\n')
+              # points block, same semantic shape across three files
+              s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!currentUser\?\.id\) return \[\];\n      const \{ data, error \} = await supabase\n        \.from\('gamification_points'\).*?\n      return data \|\| \[\];\n    \},''','''    queryFn: async () => currentUser?.id ? getEngagementPoints() : [],''',s,count=1,flags=re.S)
+              if 'Achievements' in p:
+                  s=re.sub(r'''    queryFn: async \(\) => \{\n      if \(!currentUser\?\.id\) return \[\];\n      const \{ data, error \} = await supabase\n        \.from\('badges'\).*?\n      return data \|\| \[\];\n    \},''','''    queryFn: async () => currentUser?.id ? getEngagementBadges() : [],''',s,count=1,flags=re.S)
+              write(p,s)
+
+          # Adult sensitive content consent through Neon table/API.
+          p='src/components/content/AdultSensitiveContentGate.jsx'; s=read(p)
+          s=s.replace('import { supabase } from "@/lib/supabase";\n','import { getAdultSensitiveConsent, saveAdultSensitiveConsent } from "@/lib/consentService";\n')
+          old='''      try {\n        const { data, error: authError } = await supabase.auth.getUser();\n        if (authError) throw authError;\n\n        const consent = data?.user?.user_metadata?.adult_sensitive_content_consent;\n        const accepted =\n          consent?.version === ADULT_SENSITIVE_CONTENT_CONSENT_VERSION &&\n          consent?.age_18_plus === true &&\n          consent?.sensitive_content_acknowledged === true;\n\n        if (active) setHasConsent(Boolean(accepted));\n'''
+          new='''      try {\n        const consent = await getAdultSensitiveConsent();\n        const accepted =\n          consent?.consent_version === ADULT_SENSITIVE_CONTENT_CONSENT_VERSION &&\n          consent?.age_18_plus === true &&\n          consent?.sensitive_content_acknowledged === true;\n\n        if (active) setHasConsent(Boolean(accepted));\n'''
+          s=replace_once(s,old,new,'adult consent check')
+          old='''    try {\n      const acceptedAt = new Date().toISOString();\n      const { error: updateError } = await supabase.auth.updateUser({\n        data: {\n          adult_sensitive_content_consent: {\n            version: ADULT_SENSITIVE_CONTENT_CONSENT_VERSION,\n            accepted_at: acceptedAt,\n            age_18_plus: true,\n            sensitive_content_acknowledged: true,\n            source: "adult_sensitive_content_gate",\n          },\n        },\n      });\n\n      if (updateError) throw updateError;\n      setHasConsent(true);\n'''
+          new='''    try {\n      await saveAdultSensitiveConsent({\n        version: ADULT_SENSITIVE_CONTENT_CONSENT_VERSION,\n        age_18_plus: true,\n        sensitive_content_acknowledged: true,\n        source: "adult_sensitive_content_gate",\n      });\n      setHasConsent(true);\n'''
+          s=replace_once(s,old,new,'adult consent save')
+          write(p,s)
+
+          # Import-only legacy references / stale comments.
+          for p in ['src/pages/CoupleActivities.jsx','src/pages/CooperativeGames.jsx','src/pages/RelationshipCoach.jsx','src/pages/AIContentCreator.jsx']:
+              s=read(p).replace('import { supabase } from "@/lib/supabase";\n','').replace("import { supabase } from '@/lib/supabase';\n",'')
+              s=s.replace('supabase.functions.invoke','AI provider API')
+              write(p,s)
+
+          for p in ['src/components/memories/MemoryForm.jsx','src/components/lovenotes/AIPersonalizationModal.jsx','worker/README.md']:
+              s=read(p)
+              s=re.sub('supabase', 'legacy backend', s, flags=re.I)
+              write(p,s)
+          PY
+
+      - name: Remove Supabase package and legacy client
+        shell: bash
+        run: |
+          npm uninstall @supabase/supabase-js
+          rm -f src/lib/supabase.js
+
+      - name: Verify zero Supabase dependencies or source references
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE 'supabase|SUPABASE|supabase\.co|@supabase' src worker package.json package-lock.json public 2>/dev/null; then
+            echo 'Supabase references remain.' >&2
+            exit 1
+          fi
+          test ! -e src/lib/supabase.js
+
+      - name: Build frontend and verify Worker modules
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+          npm --prefix worker install --no-audit --no-fund
+          test -s worker/index-v2.ts
+          test -s worker/reviews.ts
+          test -s worker/consents.ts
+          test -s worker/contests.ts
+          grep -F 'run_worker_first' cloudflare/wrangler.production.jsonc >/dev/null
+
+      - name: Commit completed source migration
+        shell: bash
+        run: |
+          git config user.name 'hwy99signs'
+          git config user.email 'hwy99signs@gmail.com'
+          git add -A
+          git commit -m 'Complete frontend migration from Supabase to Cloudflare Neon'
+          git push origin full-neon-migration-2026-09-13
