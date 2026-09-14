@@ -1,0 +1,33 @@
+name: Inspect O2OL Cloudflare DNS
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/inspect-o2ol-cloudflare-dns-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Inspect current DNS records for O2OL apex and www
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ZONE_JSON=$(curl -fsS -H "$AUTH" 'https://api.cloudflare.com/client/v4/zones?name=one2onelove.com&status=active')
+          echo "$ZONE_JSON" | jq -e '.success == true' >/dev/null
+          ZONE_ID=$(echo "$ZONE_JSON" | jq -r '.result[0].id // empty')
+          test -n "$ZONE_ID"
+          echo "ZONE_FOUND=yes"
+          RECORDS=$(curl -fsS -H "$AUTH" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?per_page=100")
+          echo "$RECORDS" | jq -e '.success == true' >/dev/null
+          echo 'CURRENT_O2OL_DNS_RECORDS:'
+          echo "$RECORDS" | jq -c '.result[] | select(.name=="one2onelove.com" or .name=="www.one2onelove.com") | {id,type,name,content,proxied,ttl}'
