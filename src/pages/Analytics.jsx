@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, BarChart3, CreditCard, Heart, Loader2, LockKeyhole,
   RefreshCw, TrendingUp, Users,
@@ -27,7 +26,6 @@ function ChartFrame({ children, height = 300 }) {
 }
 
 export default function Analytics() {
-  const navigate = useNavigate();
   const [data,setData] = useState(null);
   const [loading,setLoading] = useState(true);
   const [refreshing,setRefreshing] = useState(false);
@@ -50,7 +48,7 @@ export default function Analytics() {
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading Analytics</h1><p className="mt-2 text-sm text-slate-500">Building your One2OneLove trend view.</p></div></div>;
   if (error) {
     const unauthorized=error.status===401;
-    return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm"><LockKeyhole className="mx-auto text-rose-600" size={38}/><h1 className="mt-4 text-xl font-bold">{unauthorized?'Sign in required':'Administrator access required'}</h1><p className="mt-2 text-sm text-slate-500">Analytics is restricted to an authorized One2OneLove administrator account.</p><button onClick={()=>navigate(unauthorized?'/SignIn':'/Admin')} className="mt-6 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">Go back</button></div></div>;
+    return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm"><LockKeyhole className="mx-auto text-rose-600" size={38}/><h1 className="mt-4 text-xl font-bold">{unauthorized?'Sign in required':'Administrator access required'}</h1><p className="mt-2 text-sm text-slate-500">Analytics is restricted to an authorized One2OneLove administrator account.</p><button onClick={()=>window.location.assign(unauthorized?'/SignIn':'/Admin')} className="mt-6 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700">Go back</button></div></div>;
   }
 
   const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0' };
@@ -59,7 +57,7 @@ export default function Analytics() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3"><button onClick={()=>navigate('/Admin')} className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"><ArrowLeft size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">One2OneLove Admin</p><h1 className="text-xl font-black">Analytics</h1></div></div>
+          <div className="flex items-center gap-3"><button onClick={()=>window.location.assign('/Admin')} className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-700 hover:bg-rose-100"><ArrowLeft size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">One2OneLove Admin</p><h1 className="text-xl font-black">Analytics</h1></div></div>
           <button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={refreshing?'animate-spin':''}/>Refresh</button>
         </div>
       </header>
