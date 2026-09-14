@@ -1,0 +1,41 @@
+name: O2OL NPM Security Audit
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - .github/workflows/o2ol-npm-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+      - name: Install dependencies
+        run: npm ci
+      - name: Report dependency vulnerabilities
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > /tmp/audit.json
+          node <<'NODE'
+          const report = require('/tmp/audit.json');
+          const metadata = report.metadata?.vulnerabilities || {};
+          console.log('SUMMARY', JSON.stringify(metadata));
+          const vulnerabilities = report.vulnerabilities || {};
+          for (const [name, item] of Object.entries(vulnerabilities)) {
+            if (!['critical','high'].includes(item.severity)) continue;
+            console.log(`PACKAGE ${name} severity=${item.severity} direct=${Boolean(item.isDirect)} fixAvailable=${JSON.stringify(item.fixAvailable)}`);
+            for (const via of item.via || []) {
+              if (typeof via === 'string') continue;
+              console.log(`  VIA ${via.name || ''} ${via.title || ''} range=${via.range || ''}`);
+            }
+          }
+          NODE
+          exit 0
