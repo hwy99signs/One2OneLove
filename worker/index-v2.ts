@@ -21,10 +21,16 @@ import { handleEngagementRequest } from './engagement';
 import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
+import { handleAiRequest } from './ai';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/ai')) {
+      const response = await handleAiRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/launch-signup')) {
       const response = await handleLaunchAuthRequest(request, env, url);
