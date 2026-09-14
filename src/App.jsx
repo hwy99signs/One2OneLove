@@ -4,6 +4,7 @@ import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
 import LoveNotesLimitAddSends from "@/components/lovenotes/LoveNotesLimitAddSends.jsx"
 import ProfileLaunchFixes from "@/components/profile/ProfileLaunchFixes.jsx"
+import LaunchSurfaceCleanup from "@/components/launch/LaunchSurfaceCleanup.jsx"
 import AdminFeatureHeaderLock from "@/components/admin/AdminFeatureHeaderLock.jsx"
 import AdminEntryTab from "@/components/admin/AdminEntryTab.jsx"
 import AdminMfaGate from "@/components/admin/AdminMfaGate.jsx"
@@ -50,6 +51,7 @@ function App() {
         <AdminUserModeToggle />
         <LoveNotesLimitAddSends />
         <ProfileLaunchFixes />
+        <LaunchSurfaceCleanup />
         <AdminFeatureHeaderLock />
         <Toaster />
         <SonnerToaster richColors position="top-center" />
