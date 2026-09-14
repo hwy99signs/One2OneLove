@@ -22,6 +22,21 @@ const defaultLabels = {
   genericError: 'An error occurred. Please try again.',
 };
 
+const ACTIVE_CHANGE_COPY = {
+  en: 'Your current subscription is already active. We are keeping active-plan changes off until the upgrade/downgrade billing rule is finalized. Your existing plan is unchanged.',
+  es: 'Tu suscripción actual ya está activa. Los cambios de plan activo permanecerán desactivados hasta finalizar la regla de facturación para mejoras y reducciones. Tu plan actual no cambió.',
+  fr: 'Votre abonnement actuel est déjà actif. Les changements de formule active restent désactivés jusqu’à la finalisation de la règle de facturation des montées et baisses de gamme. Votre formule actuelle reste inchangée.',
+  it: 'Il tuo abbonamento attuale è già attivo. I cambi di piano attivo restano disattivati finché non viene definita la regola di fatturazione per upgrade e downgrade. Il tuo piano attuale non è cambiato.',
+  de: 'Ihre aktuelle Mitgliedschaft ist bereits aktiv. Änderungen eines aktiven Plans bleiben deaktiviert, bis die Abrechnungsregel für Upgrades und Downgrades festgelegt ist. Ihr bestehender Plan bleibt unverändert.',
+};
+
+function preferredLanguage() {
+  try {
+    const value = localStorage.getItem('preferredLanguage') || 'en';
+    return ACTIVE_CHANGE_COPY[value] ? value : 'en';
+  } catch (_) { return 'en'; }
+}
+
 const TIER_SELECTED_EVENT = 'o2ol-tier-selected';
 
 export default function TierCard({ tier, index, onSelect, isSelected, showPayment = false, labels = {} }) {
@@ -70,7 +85,11 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
 
         const result = await handleSubscriptionCheckout(planData);
         if (!result.success) {
-          toast.error(result.error || copy.paymentFailed);
+          if (result.code === 'active_plan_change_policy_pending') {
+            toast.info(ACTIVE_CHANGE_COPY[preferredLanguage()] || ACTIVE_CHANGE_COPY.en, { duration: 7000 });
+          } else {
+            toast.error(result.error || copy.paymentFailed);
+          }
           setIsProcessing(false);
           return;
         }
