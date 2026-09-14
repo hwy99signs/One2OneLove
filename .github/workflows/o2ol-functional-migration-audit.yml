@@ -32,14 +32,14 @@ jobs:
           echo '=== LEGACY BACKEND REFERENCES ==='
           grep -RInE --exclude-dir=node_modules --exclude-dir=dist --exclude='*.md' --exclude='*.txt' '(supabase|base44|legacy backend|Edge Functions implementation)' src worker || true
           echo '=== UNIMPLEMENTED FUNCTIONAL STUBS ==='
-          grep -RInE --exclude-dir=node_modules --exclude-dir=dist '(TODO: Implement|requires implementation|throw new Error\(.+(implementation|external AI service))' src worker || true
+          grep -RInE --exclude-dir=node_modules --exclude-dir=dist '(TODO: Implement|requires implementation|external AI service)' src worker || true
           echo '=== LOCAL STORAGE USAGE ==='
           grep -RInE --exclude-dir=node_modules --exclude-dir=dist 'localStorage\.' src || true
           echo '=== SESSION STORAGE USAGE ==='
           grep -RInE --exclude-dir=node_modules --exclude-dir=dist 'sessionStorage\.' src || true
-          echo '=== DIRECT FETCHES TO EXTERNAL BACKENDS ==='
-          grep -RInE --exclude-dir=node_modules --exclude-dir=dist 'https://[^"'"' ]+' src worker | head -200 || true
-          echo '=== API CLIENT ROUTES ==='
-          grep -RhoE --exclude-dir=node_modules --exclude-dir=dist "['\"](/api/[^'\"?]+)" src | sed -E "s/^[\"']//" | sort -u || true
-          echo '=== WORKER ROUTE PREFIXES ==='
-          grep -RhoE --exclude-dir=node_modules "'/api/[^']+|\"/api/[^\"]+" worker | sed -E "s/^[\"']//" | sort -u | head -300 || true
+          echo '=== EXTERNAL URL REFERENCES ==='
+          grep -RIn --exclude-dir=node_modules --exclude-dir=dist 'https://' src worker | head -250 || true
+          echo '=== SOURCE API REFERENCES ==='
+          grep -RIn --exclude-dir=node_modules --exclude-dir=dist '/api/' src | head -350 || true
+          echo '=== WORKER API REFERENCES ==='
+          grep -RIn --exclude-dir=node_modules '/api/' worker | head -400 || true
