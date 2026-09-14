@@ -9,6 +9,7 @@ import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import MemoryLane from "./MemoryLane";
 import LoveNotes from "./LoveNotes";
+import SendCredits from "./SendCredits";
 import CoupleSupport from "./CoupleSupport";
 import LoveLanguageQuiz from "./LoveLanguageQuiz";
 import DateIdeas from "./DateIdeas";
@@ -58,7 +59,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 
 const PAGES = {
   Home, InfluencerSignup, ProfessionalSignup, TherapistSignup, AboutUs, SignIn, SignUp,
-  MemoryLane, LoveNotes, CoupleSupport, LoveLanguageQuiz, DateIdeas, Profile, WinACruise, Invite,
+  MemoryLane, LoveNotes, SendCredits, CoupleSupport, LoveLanguageQuiz, DateIdeas, Profile, WinACruise, Invite,
   CounselingSupport, PodcastsSupport, ArticlesSupport, InfluencersSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, AIContentCreator, Dashboard, Community, RelationshipMilestones,
   RelationshipCoach, RelationshipGoals, Meditation, CommunicationPractice, CouplesProfile, Developer,
@@ -70,6 +71,7 @@ const PAGES = {
 const FEATURE_BY_ROUTE = {
   '/memorylane': 'Memory Lane',
   '/lovenotes': 'Love Notes',
+  '/sendcredits': 'Love Notes',
   '/couplesupport': 'Relationship Support',
   '/lovelanguagequiz': 'Love Language Quiz',
   '/dateideas': 'Date Ideas',
@@ -148,6 +150,7 @@ function PagesContent() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/MemoryLane" element={<MemoryLane />} />
         <Route path="/LoveNotes" element={<LoveNotes />} />
+        <Route path="/SendCredits" element={<SendCredits />} />
         <Route path="/CoupleSupport" element={<CoupleSupport />} />
         <Route path="/LoveLanguageQuiz" element={<LoveLanguageQuiz />} />
         <Route path="/DateIdeas" element={<DateIdeas />} />
