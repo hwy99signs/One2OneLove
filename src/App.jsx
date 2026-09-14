@@ -3,6 +3,7 @@ import Pages from "@/pages/index.jsx"
 import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
 import LoveNotesLimitAddSends from "@/components/lovenotes/LoveNotesLimitAddSends.jsx"
+import DateIdeasPlanAccess from "@/components/dateideas/DateIdeasPlanAccess.jsx"
 import ProfileLaunchFixes from "@/components/profile/ProfileLaunchFixes.jsx"
 import LaunchSurfaceCleanup from "@/components/launch/LaunchSurfaceCleanup.jsx"
 import AdminFeatureHeaderLock from "@/components/admin/AdminFeatureHeaderLock.jsx"
@@ -50,6 +51,7 @@ function App() {
         <AdminEntryTab />
         <AdminUserModeToggle />
         <LoveNotesLimitAddSends />
+        <DateIdeasPlanAccess />
         <ProfileLaunchFixes />
         <LaunchSurfaceCleanup />
         <AdminFeatureHeaderLock />
