@@ -2,11 +2,31 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getAdminMfaStatus } from '@/lib/adminMfaService';
 
 export default function AdminEntryTab() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [mount, setMount] = useState(null);
-  const isAdmin = Boolean(isAuthenticated && user?.role === 'admin');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (isLoading || !isAuthenticated) {
+      setIsAdmin(false);
+      return () => { active = false; };
+    }
+
+    (async () => {
+      try {
+        await getAdminMfaStatus();
+        if (active) setIsAdmin(true);
+      } catch (error) {
+        if (active) setIsAdmin(false);
+      }
+    })();
+
+    return () => { active = false; };
+  }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
     if (isLoading || !isAdmin) {
@@ -25,7 +45,6 @@ export default function AdminEntryTab() {
     }
 
     let host = null;
-    let currentNav = null;
 
     const attach = () => {
       if (host?.isConnected) return;
@@ -35,7 +54,13 @@ export default function AdminEntryTab() {
       const desktopNav = navs.find(nav => (nav.className || '').includes('lg:flex') && (nav.className || '').includes('items-center'));
       if (!desktopNav) return;
 
-      currentNav = desktopNav;
+      const existing = desktopNav.querySelector('[data-o2ol-admin-entry="true"]');
+      if (existing) {
+        host = existing;
+        setMount(host);
+        return;
+      }
+
       host = document.createElement('span');
       host.setAttribute('data-o2ol-admin-entry', 'true');
       const languageBlock = desktopNav.lastElementChild;
@@ -51,7 +76,6 @@ export default function AdminEntryTab() {
     return () => {
       observer.disconnect();
       if (host?.isConnected) host.remove();
-      if (currentNav?.isConnected) currentNav = null;
       setMount(null);
     };
   }, [isAdmin, isLoading]);
