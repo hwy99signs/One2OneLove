@@ -77,13 +77,25 @@ export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
 }
 
 export async function signInWithEmail(email, password) {
-  await apiRequest('/api/auth/sign-in/email', {
+  const payload = await apiRequest('/api/auth/sign-in/email', {
     method: 'POST',
-    body: { email, password },
+    body: { email: String(email || '').trim(), password },
   });
 
-  // Let the browser persist the auth cookie before the session check.
-  return getAuthSessionWithRetry(4, 200);
+  // Some Better Auth responses include the authenticated user/session directly.
+  // Prefer that immediately when present, while still relying on the browser
+  // cookie for every subsequent authenticated request.
+  const directUser = payload?.user ?? payload?.data?.user ?? null;
+  const directSession = payload?.session ?? payload?.data?.session ?? null;
+  if (directUser && directSession) {
+    return { user: directUser, session: directSession };
+  }
+
+  // Give the browser enough time to commit the Set-Cookie header before asking
+  // Neon Auth for the session. Cloudflare/Neon can occasionally need more than
+  // one short round-trip immediately after sign-in.
+  await wait(100);
+  return getAuthSessionWithRetry(7, 250);
 }
 
 export async function signOutAuth() {
