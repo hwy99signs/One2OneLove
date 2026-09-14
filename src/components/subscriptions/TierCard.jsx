@@ -18,6 +18,7 @@ const defaultLabels = {
   paymentFailed: 'Failed to process payment',
   basicSuccess: 'Successfully subscribed to Basic plan!',
   redirecting: 'Redirecting to Stripe checkout...',
+  planUpdated: 'Plan updated. Your 7-day full-access trial continues.',
   genericError: 'An error occurred. Please try again.',
 };
 
@@ -71,6 +72,12 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
         if (!result.success) {
           toast.error(result.error || copy.paymentFailed);
           setIsProcessing(false);
+          return;
+        }
+
+        if (result.updatedInPlace) {
+          toast.success(copy.planUpdated);
+          setTimeout(() => window.location.reload(), 700);
           return;
         }
 
