@@ -3,6 +3,7 @@ import Pages from "@/pages/index.jsx"
 import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
 import LoveNotesLimitAddSends from "@/components/lovenotes/LoveNotesLimitAddSends.jsx"
+import ProfileLaunchFixes from "@/components/profile/ProfileLaunchFixes.jsx"
 import AdminFeatureHeaderLock from "@/components/admin/AdminFeatureHeaderLock.jsx"
 import AdminEntryTab from "@/components/admin/AdminEntryTab.jsx"
 import AdminMfaGate from "@/components/admin/AdminMfaGate.jsx"
@@ -46,6 +47,7 @@ function App() {
         )}
         <AdminEntryTab />
         <LoveNotesLimitAddSends />
+        <ProfileLaunchFixes />
         <AdminFeatureHeaderLock />
         <Toaster />
         <SonnerToaster richColors position="top-center" />
