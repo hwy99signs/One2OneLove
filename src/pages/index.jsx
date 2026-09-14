@@ -38,6 +38,7 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
+import Games from './Games';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -46,7 +47,7 @@ const PAGES = {
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
-  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription,
+  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, Games,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -75,6 +76,7 @@ const FEATURE_BY_ROUTE = {
   '/lgbtqsupport': 'LGBTQ+ Support',
   '/chat': 'Community Chat',
   '/subscription': 'Subscription / Billing',
+  '/games': 'Games',
 };
 
 function _getCurrentPage(url) {
@@ -158,6 +160,7 @@ function PagesContent() {
         <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/Subscription" element={<Subscription />} />
+        <Route path="/Games" element={<Games />} />
 
         {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
         <Route path="/InfluencerSignup" element={<Navigate to="/Home" replace />} />
@@ -170,7 +173,7 @@ function PagesContent() {
         <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
         <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
         <Route path="/Developer" element={<Navigate to="/Home" replace />} />
-        <Route path="/CooperativeGames" element={<Navigate to="/CoupleActivities" replace />} />
+        <Route path="/CooperativeGames" element={<Navigate to="/Games" replace />} />
         <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
         <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
         <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
