@@ -33,3 +33,21 @@ export async function verifyAdminMfaCode(otp) {
     body: JSON.stringify({ otp }),
   }));
 }
+
+export async function touchAdminMfa() {
+  return parse(await fetch('/api/admin/mfa/touch', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({}),
+  }));
+}
+
+export async function endAdminMfa() {
+  return parse(await fetch('/api/admin/mfa/end', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({}),
+  }));
+}
