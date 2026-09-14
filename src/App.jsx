@@ -2,6 +2,7 @@ import './App.css'
 import Pages from "@/pages/index.jsx"
 import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
+import LoveNotesLimitAddSends from "@/components/lovenotes/LoveNotesLimitAddSends.jsx"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -40,6 +41,7 @@ function App() {
         ) : (
           <Pages />
         )}
+        <LoveNotesLimitAddSends />
         <Toaster />
         <SonnerToaster richColors position="top-center" />
       </AuthProvider>
