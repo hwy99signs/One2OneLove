@@ -65,6 +65,20 @@ export async function signOutAuth() {
   return true;
 }
 
+export async function sendEmailVerificationOtp(email) {
+  return apiRequest('/api/auth/email-otp/send-verification-otp', {
+    method: 'POST',
+    body: { email, type: 'email-verification' },
+  });
+}
+
+export async function verifyEmailOtp(email, otp) {
+  return apiRequest('/api/auth/email-otp/verify-email', {
+    method: 'POST',
+    body: { email, otp },
+  });
+}
+
 export async function requestPasswordReset(email, redirectTo) {
   return apiRequest('/api/auth/request-password-reset', {
     method: 'POST',
