@@ -1,6 +1,7 @@
 // @ts-nocheck
 import baseWorker from './index';
 import { handleAdminRequest } from './admin';
+import { handleFeatureUsageRequest } from './feature-usage';
 import { handleLaunchAuthRequest } from './launch-auth';
 import { handleProfessionalSignup } from './professional-signup';
 import { handleSpecialProfileRequest } from './onboarding';
@@ -30,6 +31,11 @@ export default {
 
     if (url.pathname.startsWith('/api/admin')) {
       const response = await handleAdminRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/feature-usage') {
+      const response = await handleFeatureUsageRequest(request, env, url);
       if (response) return response;
     }
 
