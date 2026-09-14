@@ -1,14 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Gamepad2, Trophy, Clock, Star, ArrowLeft } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Gamepad2, Trophy, Clock, Star, Play, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import GameCard from "../components/activities/GameCard";
-import WhatShouldTheyDoGame from "../features/whatShouldTheyDo/WhatShouldTheyDoGame";
 
 const translations = {
   en: {
@@ -19,6 +19,8 @@ const translations = {
     totalScore: "Total Score",
     avgTime: "Avg Time",
     featured: "Featured Games",
+    allGames: "All Games",
+    startGame: "Start Game"
   },
   es: {
     title: "Juegos Cooperativos",
@@ -28,51 +30,30 @@ const translations = {
     totalScore: "Puntuación Total",
     avgTime: "Tiempo Promedio",
     featured: "Juegos Destacados",
+    allGames: "Todos los Juegos",
+    startGame: "Iniciar Juego"
   }
 };
 
 export default function CooperativeGames() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
 
-  const selectedGame = searchParams.get('game');
+  const { user } = useAuth();
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Existing game history service will populate these stats when available.
+      // TODO: Implement cooperative games service
       return [];
     },
     enabled: !!user?.id,
     initialData: []
   });
 
-  if (selectedGame === 'what-should-they-do') {
-    return (
-      <WhatShouldTheyDoGame
-        onExit={() => {
-          const next = new URLSearchParams(searchParams);
-          next.delete('game');
-          setSearchParams(next, { replace: true });
-        }}
-      />
-    );
-  }
-
   const availableGames = [
-    {
-      id: 'what_should_they_do',
-      name: 'What Should They Do?',
-      description: 'Vote on real-life relationship dilemmas, see the global result, and compare how different countries voted.',
-      type: 'social_vote',
-      difficulty: 'easy',
-      icon: '🗳️',
-      href: '/CooperativeGames?game=what-should-they-do',
-      cta: 'Play & Vote'
-    },
     {
       id: 'trivia',
       name: 'Couple Trivia',
@@ -125,9 +106,9 @@ export default function CooperativeGames() {
 
   const stats = {
     gamesPlayed: games.length,
-    totalScore: games.reduce((sum, game) => sum + (game.score || 0), 0),
-    avgTime: games.length > 0
-      ? Math.round(games.reduce((sum, game) => sum + (game.duration_minutes || 0), 0) / games.length)
+    totalScore: games.reduce((sum, g) => sum + (g.score || 0), 0),
+    avgTime: games.length > 0 
+      ? Math.round(games.reduce((sum, g) => sum + (g.duration_minutes || 0), 0) / games.length)
       : 0
   };
 
