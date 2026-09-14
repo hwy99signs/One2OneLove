@@ -8,6 +8,16 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function retryAfterMs(response) {
+  const raw = response.headers.get('retry-after');
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const date = new Date(raw);
+  if (!Number.isNaN(date.getTime())) return Math.max(0, date.getTime() - Date.now());
+  return null;
+}
+
 export async function apiRequest(path, options = {}) {
   const { method = 'GET', body, headers = {}, rawBody, ...rest } = options;
   const requestHeaders = new Headers(headers);
@@ -35,9 +45,13 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    const error = new Error(extractError(payload, `Request failed (${response.status})`));
+    const fallback = response.status === 429
+      ? 'Too many sign-in requests were sent too quickly. Please wait a moment and try again.'
+      : `Request failed (${response.status})`;
+    const error = new Error(extractError(payload, fallback));
     error.status = response.status;
     error.payload = payload;
+    error.retryAfterMs = retryAfterMs(response);
     throw error;
   }
 
@@ -61,6 +75,10 @@ export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
       lastError = null;
     } catch (error) {
       lastError = error;
+      if (error?.status === 429 && attempt < attempts - 1) {
+        await wait(Math.min(Math.max(error.retryAfterMs || delayMs * 2, 500), 2500));
+        continue;
+      }
     }
 
     if (attempt < attempts - 1) {
@@ -68,41 +86,50 @@ export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
     }
   }
 
-  // Only accept an unauthorized result after every retry has had a chance to
-  // recover. This prevents a single transient Worker/Neon auth response from
-  // silently signing an active member out while navigating the app.
   if (lastError?.status === 401) return null;
   if (lastError) throw lastError;
   return null;
 }
 
 export async function signInWithEmail(email, password) {
-  const payload = await apiRequest('/api/auth/sign-in/email', {
-    method: 'POST',
-    body: { email: String(email || '').trim(), password },
-  });
-
-  // Some Better Auth responses include the authenticated user/session directly.
-  // Prefer that immediately when present, while still relying on the browser
-  // cookie for every subsequent authenticated request.
-  const directUser = payload?.user ?? payload?.data?.user ?? null;
-  const directSession = payload?.session ?? payload?.data?.session ?? null;
-  if (directUser && directSession) {
-    return { user: directUser, session: directSession };
+  let payload;
+  try {
+    payload = await apiRequest('/api/auth/sign-in/email', {
+      method: 'POST',
+      body: { email: String(email || '').trim(), password },
+    });
+  } catch (error) {
+    // A prior accepted sign-in can establish the cookie just before the provider
+    // rate-limits a repeated click. Recover that valid session instead of showing
+    // a false login failure.
+    if (error?.status === 429) {
+      await wait(Math.min(Math.max(error.retryAfterMs || 750, 500), 2000));
+      const existing = await getAuthSessionWithRetry(2, 750).catch(() => null);
+      if (existing) return existing;
+    }
+    throw error;
   }
 
-  // Give the browser enough time to commit the Set-Cookie header before asking
-  // Neon Auth for the session. Cloudflare/Neon can occasionally need more than
-  // one short round-trip immediately after sign-in.
-  await wait(100);
-  return getAuthSessionWithRetry(7, 250);
+  const directUser = payload?.user ?? payload?.data?.user ?? null;
+  const directSession = payload?.session ?? payload?.data?.session ?? null;
+
+  // Better Auth commonly returns the verified user immediately while the cookie
+  // is already being committed. Do not hammer get-session after a successful
+  // credential check; that created unnecessary 429s on launch QA.
+  if (directUser?.emailVerified !== false) {
+    if (directUser) return { user: directUser, session: directSession || { pending: true } };
+  }
+
+  // Unverified accounts intentionally receive no usable session. One short
+  // session check distinguishes that case from a slow cookie commit.
+  await wait(250);
+  return getAuthSessionWithRetry(2, 500);
 }
 
 export async function signOutAuth() {
   try {
     await apiRequest('/api/auth/sign-out', { method: 'POST', body: {} });
   } catch (error) {
-    // A missing/expired session should never trap a user in the signed-in UI.
     if (error.status !== 401) throw error;
   }
   return true;
