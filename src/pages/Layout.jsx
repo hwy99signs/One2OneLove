@@ -301,7 +301,7 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Header */}
       <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between gap-5">
+        <div className="max-w-[1400px] mx-auto px-5 py-[0.225rem] flex items-center justify-between gap-5">
           <Link to={createPageUrl("Home")} className="shrink-0 hover:opacity-90 transition-opacity">
             <img 
               src="https://hphhmjcutesqsdnubnnw.supabase.co/storage/v1/object/public/app-assets/logo.png" 
