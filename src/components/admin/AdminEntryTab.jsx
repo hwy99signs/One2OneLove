@@ -8,6 +8,7 @@ export default function AdminEntryTab() {
   const { isAuthenticated, isLoading } = useAuth();
   const [mount, setMount] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -80,16 +81,28 @@ export default function AdminEntryTab() {
     };
   }, [isAdmin, isLoading]);
 
+  const openAdmin = async () => {
+    if (opening) return;
+    setOpening(true);
+    try {
+      const status = await getAdminMfaStatus();
+      window.location.assign(status?.verified ? '/Admin' : '/AdminAccess');
+    } catch {
+      window.location.assign('/AdminAccess');
+    }
+  };
+
   if (!mount || !isAdmin) return null;
 
   return createPortal(
     <button
       type="button"
-      onClick={() => window.location.assign('/AdminAccess')}
-      className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-3 py-2 text-base font-bold text-white shadow-sm transition hover:bg-white/25 hover:text-yellow-100"
+      onClick={openAdmin}
+      disabled={opening}
+      className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-3 py-2 text-base font-bold text-white shadow-sm transition hover:bg-white/25 hover:text-yellow-100 disabled:opacity-60"
       aria-label="Open Admin"
     >
-      <ShieldCheck size={18}/>Admin
+      <ShieldCheck size={18}/>{opening ? 'Opening…' : 'Admin'}
     </button>,
     mount,
   );
