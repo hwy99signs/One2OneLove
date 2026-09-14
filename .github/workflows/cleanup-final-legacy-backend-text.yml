@@ -1,0 +1,72 @@
+name: Clean Final Legacy Backend Text
+
+on:
+  push:
+    branches:
+      - full-neon-migration-2026-09-13
+    paths:
+      - .github/cleanup-final-legacy-backend-text-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: full-neon-migration-2026-09-13
+          fetch-depth: 0
+
+      - name: Remove remaining legacy backend wording
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+            'src/pages/AIContentCreator.jsx': [
+              ('Supabase Edge Functions or external AI service', 'an external AI service'),
+              ('Supabase Edge Functions', 'an AI provider'),
+              ('with Supabase', 'with an AI provider'),
+              ('from Supabase', 'from the AI service'),
+            ],
+            'src/pages/RelationshipCoach.jsx': [
+              ('Supabase Edge Functions or external AI service', 'an external AI service'),
+              ('Supabase Edge Functions', 'an AI provider'),
+              ('with Supabase', 'with an AI provider'),
+              ('from Supabase', 'from the AI service'),
+            ],
+          }
+          for path, reps in replacements.items():
+              p = Path(path)
+              s = p.read_text()
+              for old, new in reps:
+                  s = s.replace(old, new)
+              p.write_text(s)
+          PY
+
+      - name: Require zero legacy backend references in active app
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInEi 'supabase|supabase\.co|@supabase' src worker package.json package-lock.json public 2>/dev/null; then
+            echo 'Legacy backend references remain in active application.' >&2
+            exit 1
+          fi
+          test ! -e src/lib/supabase.js
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name 'hwy99signs'
+          git config user.email 'hwy99signs@gmail.com'
+          git add src/pages/AIContentCreator.jsx src/pages/RelationshipCoach.jsx
+          git diff --cached --quiet && exit 0
+          git commit -m 'Remove final legacy backend wording'
+          git push origin full-neon-migration-2026-09-13
