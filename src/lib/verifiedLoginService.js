@@ -1,14 +1,27 @@
 import { getProfile, signInWithEmail } from './apiClient';
 
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function getProfileAfterLogin() {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const profile = await getProfile();
+      if (profile) return profile;
+      lastError = null;
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < 2) await wait(250 * (attempt + 1));
+  }
+  if (lastError?.status && ![401, 429].includes(lastError.status)) throw lastError;
+  return null;
+}
+
 export async function verifiedEmailLogin(email, password) {
   try {
     const auth = await signInWithEmail(email, password);
 
-    // Neon Auth can accept the email/password sign-in request, send an
-    // email-verification OTP, and intentionally withhold a session until the
-    // email is verified. In that case there is no thrown error to inspect, so
-    // treat a successful sign-in request with no session/user as verification
-    // required instead of showing a generic sign-in failure.
     if (!auth?.user) {
       return {
         success: false,
@@ -17,7 +30,7 @@ export async function verifiedEmailLogin(email, password) {
       };
     }
 
-    const profile = await getProfile().catch(() => null);
+    const profile = await getProfileAfterLogin();
     return {
       success: true,
       user: {
@@ -25,11 +38,14 @@ export async function verifiedEmailLogin(email, password) {
         ...(profile || {}),
       },
       session: auth.session,
+      profileLoaded: !!profile,
     };
   } catch (error) {
     const message = error?.message || 'Sign in failed. Please try again.';
     return {
       success: false,
+      status: error?.status || null,
+      retryAfterMs: error?.retryAfterMs || null,
       emailVerificationRequired: /verif|otp|code/i.test(message),
       error: message,
     };
