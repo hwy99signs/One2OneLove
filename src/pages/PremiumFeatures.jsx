@@ -185,16 +185,7 @@ export default function PremiumFeatures() {
     initialData: [],
   });
 
-  const { data: unlockedRewards = [] } = useQuery({
-    queryKey: ['premiumRewards', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      // TODO: Implement premium rewards service
-      return [];
-    },
-    enabled: !!currentUser?.id,
-    initialData: [],
-  });
+  const unlockedRewards = [];
 
   const totalPoints = userPoints.reduce((sum, p) => sum + (p.points_earned || p.points || 0), 0);
   const level = Math.floor(totalPoints / 100) + 1;

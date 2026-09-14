@@ -11,6 +11,7 @@ import {
   TrendingUp, Award, Flame, ArrowRight, Sparkles, Users
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { getActivityProgress, getActivityPreferences } from "@/lib/activityService";
 
 const translations = {
   en: {
@@ -183,22 +184,14 @@ export default function CoupleActivities() {
 
   const { data: progressData = [] } = useQuery({
     queryKey: ['activityProgress', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      // TODO: Implement activity progress service
-      return [];
-    },
+    queryFn: async () => user?.id ? getActivityProgress() : [],
     enabled: !!user?.id,
     initialData: []
   });
 
   const { data: preferences = null } = useQuery({
     queryKey: ['userPreferences', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      // TODO: Implement user preferences service
-      return null;
-    },
+    queryFn: async () => user?.id ? getActivityPreferences() : null,
     enabled: !!user?.id,
     initialData: null
   });

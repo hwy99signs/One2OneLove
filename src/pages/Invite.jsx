@@ -9,8 +9,8 @@ import { toast } from "sonner";
 export default function Invite() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const inviteLink = "https://lovenotes.app/invite";
-  const inviteMessage = "I've been using One 2 One Love to strengthen my relationships and I think you'll love it too! Join me on this romantic journey. 💕";
+  const inviteLink = typeof window !== 'undefined' ? `${window.location.origin}/Invite` : 'https://one2onelove.com/Invite';
+  const inviteMessage = "I've been using One2OneLove to strengthen my relationships and I think you'll love it too! Join me on this romantic journey. 💕";
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -23,7 +23,10 @@ export default function Invite() {
       toast.error('Please enter an email address');
       return;
     }
-    toast.success(`Invitation sent to ${email}! 💌`);
+    const subject = encodeURIComponent('Join me on One2OneLove');
+    const body = encodeURIComponent(`${inviteMessage}\n\n${inviteLink}`);
+    window.location.href = `mailto:${encodeURIComponent(email.trim())}?subject=${subject}&body=${body}`;
+    toast.info('Opening your email app...');
     setEmail("");
   };
 

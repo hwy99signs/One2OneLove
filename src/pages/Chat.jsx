@@ -22,11 +22,13 @@ import {
   deleteMessage,
   updateConversationSettings,
   deleteConversation,
+  clearConversation,
+  markConversationUnread,
   subscribeToMessages,
   unsubscribeFromMessages,
   subscribeToConversations,
 } from '@/lib/chatService';
-import { pinMessage, unpinMessage } from '@/lib/chatFeaturesService';
+import { pinMessage, unpinMessage, forwardMessage } from '@/lib/chatFeaturesService';
 
 export default function Chat() {
   const { currentLanguage } = useLanguage();
@@ -260,8 +262,8 @@ export default function Chat() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ conversationId, receiverId, content, type }) => {
-      return await sendMessage(conversationId, receiverId, content, type);
+    mutationFn: async ({ conversationId, receiverId, content, type, replyToId }) => {
+      return await sendMessage(conversationId, receiverId, content, type, replyToId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['messages', selectedChatId]);
@@ -363,7 +365,7 @@ export default function Chat() {
     },
   });
 
-  const handleSendMessage = async (text) => {
+  const handleSendMessage = async (text, replyToId = null) => {
     if (!selectedChatId || !selectedChat) return;
 
     await sendMessageMutation.mutateAsync({
@@ -371,6 +373,7 @@ export default function Chat() {
       receiverId: selectedChat.otherUserId,
       content: text,
       type: 'text',
+      replyToId,
     });
   };
 
@@ -431,9 +434,14 @@ export default function Chat() {
     }
   };
 
-  const handleMarkAsUnread = (chatId) => {
-    // This would require a backend update to set unread count
-    toast.success('Marked as unread');
+  const handleMarkAsUnread = async (chatId) => {
+    try {
+      await markConversationUnread(chatId);
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast.success('Marked as unread');
+    } catch (error) {
+      toast.error(error?.message || 'Failed to mark chat as unread');
+    }
   };
 
   const handlePin = async (chatId) => {
@@ -570,8 +578,38 @@ export default function Chat() {
   };
 
   const handleClearChat = async (chatId) => {
-    // This would require deleting all messages in the conversation
-    toast.info('Clear chat feature coming soon');
+    try {
+      await clearConversation(chatId);
+      queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast.success('Messages cleared');
+    } catch (error) {
+      toast.error(error?.message || 'Failed to clear messages');
+    }
+  };
+
+  const handleForwardMessage = async (message) => {
+    const candidates = conversations.filter((conversation) => conversation.id !== selectedChatId);
+    if (!message?.id || candidates.length === 0) {
+      toast.info('No other chat is available to forward this message to.');
+      return;
+    }
+    const choices = candidates.map((conversation, index) => `${index + 1}. ${conversation.name || 'Conversation'}`).join('\n');
+    const answer = window.prompt(`Forward to which chat?\n\n${choices}\n\nEnter a number:`);
+    if (!answer) return;
+    const index = Number(answer) - 1;
+    const target = candidates[index];
+    if (!target) {
+      toast.error('Please choose a valid chat number.');
+      return;
+    }
+    try {
+      await forwardMessage(message.id, target.id, target.otherUserId);
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast.success(`Forwarded to ${target.name || 'chat'}`);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to forward message');
+    }
   };
 
   const handleDeleteChat = async (chatId) => {
@@ -643,6 +681,7 @@ export default function Chat() {
           onDeleteChat={handleDeleteChat}
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteMessage}
+          onForwardMessage={handleForwardMessage}
           onMarkAsUnread={handleMarkAsUnread}
           onPin={handlePinMessage}
           onUnpin={handleUnpinMessage}

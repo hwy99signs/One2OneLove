@@ -8,6 +8,7 @@ import * as goalsService from "@/lib/goalsService";
 import * as milestonesService from "@/lib/milestonesService";
 import { listMemories } from "@/lib/memoryService";
 import { getEngagementBadges } from "@/lib/engagementService";
+import { getActivityProgress, getCooperativeGameHistory } from "@/lib/activityService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -97,10 +98,8 @@ export default function CouplesDashboard() {
 
   const { data: activityProgress = [] } = useQuery({
     queryKey: ['activityProgress'],
-    queryFn: async () => {
-      // TODO: Implement activity progress service
-      return [];
-    },
+    queryFn: async () => user?.id ? getActivityProgress() : [],
+    enabled: !!user?.id,
     initialData: []
   });
 
@@ -130,10 +129,8 @@ export default function CouplesDashboard() {
 
   const { data: games = [] } = useQuery({
     queryKey: ['games'],
-    queryFn: async () => {
-      // TODO: Implement cooperative games service
-      return [];
-    },
+    queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
+    enabled: !!user?.id,
     initialData: []
   });
 

@@ -9,7 +9,7 @@ import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import UserProfile from './UserProfile';
 import { UserPresenceBadge } from '@/components/presence/UserPresenceIndicator';
-import { getPinnedMessages } from '@/lib/chatFeaturesService';
+import { getPinnedMessages, toggleReaction, toggleStarMessage } from '@/lib/chatFeaturesService';
 import { getMessages, markMessagesAsRead, markMessageDelivered } from '@/lib/chatService';
 
 const translations = {
@@ -92,6 +92,7 @@ export default function ChatWindow({
   onPopOut,
   onEditMessage,
   onDeleteMessage,
+  onForwardMessage,
   isLoading = false
 }) {
   const { currentLanguage } = useLanguage();
@@ -99,6 +100,7 @@ export default function ChatWindow({
   const messagesEndRef = useRef(null);
   const scrollAreaRef = useRef(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
   const queryClient = useQueryClient();
 
   // Fetch pinned messages for the current conversation
@@ -224,7 +226,8 @@ export default function ChatWindow({
 
   const handleSendMessage = (text) => {
     if (onSendMessage && text.trim()) {
-      onSendMessage(text);
+      onSendMessage(text, replyingTo?.id || null);
+      setReplyingTo(null);
     }
   };
 
@@ -519,17 +522,15 @@ export default function ChatWindow({
                       isOwn={isOwn}
                       showAvatar={showAvatar}
                       showTime={showTime}
-                      onReply={(msg) => {
-                        // TODO: Implement reply functionality
-                        console.log('Reply to:', msg);
-                      }}
-                      onForward={(msg) => {
-                        // TODO: Implement forward functionality
-                        console.log('Forward:', msg);
-                      }}
-                      onStar={(msg, isStarred) => {
-                        // TODO: Implement star functionality
-                        console.log('Star:', msg, isStarred);
+                      onReply={(msg) => setReplyingTo(msg)}
+                      onForward={(msg) => onForwardMessage?.(msg)}
+                      onStar={async (msg) => {
+                        try {
+                          await toggleStarMessage(msg.id);
+                          queryClient.invalidateQueries({ queryKey: ['messages', chat?.id] });
+                        } catch (error) {
+                          toast.error(error?.message || 'Failed to update starred message');
+                        }
                       }}
                       onPin={(msg, isPinned, expiryDate) => {
                         if (onPin) {
@@ -545,17 +546,20 @@ export default function ChatWindow({
                         // TODO: Implement select functionality
                         console.log('Select:', msg);
                       }}
-                      onShare={(msg) => {
-                        // TODO: Implement share functionality
-                        console.log('Share:', msg);
+                      onShare={async (msg) => {
+                        const content = msg?.text || msg?.content || msg?.fileUrl || '';
+                        if (content) {
+                          await navigator.clipboard.writeText(content);
+                          toast.success('Message copied for sharing');
+                        }
                       }}
-                      onReact={(msg, emoji) => {
-                        // TODO: Implement reaction functionality
-                        console.log('React:', msg, emoji);
-                      }}
-                      onCopy={(msg) => {
-                        // TODO: Implement copy functionality
-                        console.log('Copy:', msg);
+                      onReact={async (msg, emoji) => {
+                        try {
+                          await toggleReaction(msg.id, emoji);
+                          queryClient.invalidateQueries({ queryKey: ['messages', chat?.id] });
+                        } catch (error) {
+                          toast.error(error?.message || 'Failed to update reaction');
+                        }
                       }}
                       onEdit={(msg, newText) => {
                         if (onEditMessage) {
@@ -571,6 +575,18 @@ export default function ChatWindow({
           )}
         </div>
       </div>
+
+      {replyingTo && (
+        <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-gray-600">Replying to {replyingTo.senderName || 'message'}</p>
+            <p className="text-sm text-gray-500 truncate">{replyingTo.text || replyingTo.content || replyingTo.fileName || 'Attachment'}</p>
+          </div>
+          <button type="button" onClick={() => setReplyingTo(null)} className="p-1 rounded-full hover:bg-gray-200" aria-label="Cancel reply">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Chat Input */}
       <ChatInput

@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import GameCard from "../components/activities/GameCard";
+import { getCooperativeGameHistory } from "@/lib/activityService";
 
 const translations = {
   en: {
@@ -44,11 +45,7 @@ export default function CooperativeGames() {
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      // TODO: Implement cooperative games service
-      return [];
-    },
+    queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
     enabled: !!user?.id,
     initialData: []
   });
