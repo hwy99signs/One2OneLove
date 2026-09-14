@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-// AI personalization requires legacy backend Edge Functions implementation
+import { generateRelationshipContent } from "@/lib/aiService";
 import { toast } from "sonner";
 
 const personalityTraits = [
@@ -37,51 +37,41 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
 
     setGenerating(true);
     try {
-      const prompt = `Generate a heartfelt, ${noteStyle} love note for my partner with the following characteristics:
+      const details = [
+        `Partner personality traits: ${selectedTraits.join(", ")}`,
+        sharedMemories ? `Shared memories: ${sharedMemories}` : "",
+        insideJokes ? `Inside jokes: ${insideJokes}` : "",
+        "Write 2-3 paragraphs. Naturally weave in the details without inventing facts. Return only the love note text."
+      ].filter(Boolean).join("\n");
 
-Personality traits: ${selectedTraits.join(", ")}
-${sharedMemories ? `Shared memories to reference: ${sharedMemories}` : ""}
-${insideJokes ? `Inside jokes to incorporate: ${insideJokes}` : ""}
+      const response = await generateRelationshipContent({
+        contentType: "loveNote",
+        tone: noteStyle,
+        length: "medium",
+        details,
+        partnerName: "",
+        language: currentLanguage,
+      });
 
-The note should:
-- Be tailored to their personality traits
-- Feel authentic and personal
-- Be 2-3 paragraphs long
-- ${sharedMemories ? "Naturally weave in the shared memories" : ""}
-- ${insideJokes ? "Subtly include the inside jokes" : ""}
-- Be in ${currentLanguage === 'es' ? 'Spanish' : currentLanguage === 'fr' ? 'French' : currentLanguage === 'it' ? 'Italian' : currentLanguage === 'de' ? 'German' : 'English'} language
-
-Return ONLY the love note text, no titles or extra formatting.`;
-
-      // TODO: Implement AI personalization with legacy backend Edge Functions
-      // const { data, error } = await legacy backend.functions.invoke('personalize-content', {
-      //   body: { prompt, partnerName, selectedTraits, sharedMemories, insideJokes, noteStyle, currentLanguage }
-      // });
-      // if (error) throw error;
-      // const response = data.content;
-      
-      // For now, show error message
-      toast.error('AI personalization feature requires legacy backend Edge Functions implementation');
-      return;
-      
-      // Once implemented, uncomment below:
-      // onNoteGenerated({
-      //   title: "AI-Personalized Love Note",
-      //   content: response,
-      //   category: noteStyle,
-      //   budget: "free",
-      //   tags: ["ai-generated", "personalized", ...selectedTraits.slice(0, 3)],
-      //   isAIGenerated: true
-      // });
-      // toast.success("Personalized note generated! 💕");
-      // onClose();
+      if (!response) throw new Error("AI personalization returned no content.");
+      onNoteGenerated({
+        title: "AI-Personalized Love Note",
+        content: response,
+        category: noteStyle,
+        budget: "free",
+        tags: ["ai-generated", "personalized", ...selectedTraits.slice(0, 3)],
+        isAIGenerated: true
+      });
+      toast.success("Personalized note generated! 💕");
+      onClose();
     } catch (error) {
       console.error("Error generating note:", error);
-      toast.error("Failed to generate note. Please try again.");
+      toast.error(error?.message || "Failed to generate note. Please try again.");
     } finally {
       setGenerating(false);
     }
   };
+
 
   return (
     <motion.div
