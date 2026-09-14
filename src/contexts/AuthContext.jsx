@@ -15,6 +15,7 @@ function mergeUser(authUser, profile) {
   return {
     id: authUser.id,
     email: authUser.email,
+    role: authUser.role || 'user',
     ...safeProfile,
     name: safeProfile.name || authUser.name || authUser.email?.split('@')[0] || 'Member',
     user_type: safeProfile.user_type || 'regular',
