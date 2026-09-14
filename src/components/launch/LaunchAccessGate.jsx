@@ -44,6 +44,14 @@ const REQUIRED_PLAN = {
   '/couplesdashboard': 'Exclusive',
 };
 
+const LOADING_COPY = {
+  en: 'Loading your One2OneLove access…',
+  es: 'Cargando tu acceso a One2OneLove…',
+  fr: 'Chargement de votre accès One2OneLove…',
+  it: 'Caricamento del tuo accesso One2OneLove…',
+  de: 'Ihr One2OneLove-Zugang wird geladen…',
+};
+
 function currentPlanFor(user) {
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
@@ -54,6 +62,15 @@ function currentPlanFor(user) {
   return 'Basic';
 }
 
+function preferredLanguage() {
+  try {
+    const value = localStorage.getItem('preferredLanguage') || 'en';
+    return LOADING_COPY[value] ? value : 'en';
+  } catch (_) {
+    return 'en';
+  }
+}
+
 export default function LaunchAccessGate({ pathname, children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const route = String(pathname || '/').toLowerCase().replace(/\/$/, '') || '/';
@@ -61,11 +78,12 @@ export default function LaunchAccessGate({ pathname, children }) {
   if (PUBLIC_ROUTES.has(route)) return children;
 
   if (isLoading) {
+    const language = preferredLanguage();
     return (
       <div className="flex min-h-[55vh] items-center justify-center bg-white">
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-pink-500 border-t-transparent" />
-          <p className="text-sm font-medium text-gray-600">Loading your One2OneLove access…</p>
+          <p className="text-sm font-medium text-gray-600">{LOADING_COPY[language]}</p>
         </div>
       </div>
     );
