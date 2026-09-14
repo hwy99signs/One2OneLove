@@ -1,6 +1,11 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { hasFeatureAccess } from '@/lib/stripeService';
 
+const canonicalPlan = (plan) => {
+  const value = String(plan || '').trim();
+  return value === 'Basic' || value === 'Basis' ? 'Basis' : value || 'Basis';
+};
+
 /**
  * Hook to check if user has access to a feature
  * @param {string} feature - Feature name to check
@@ -8,12 +13,11 @@ import { hasFeatureAccess } from '@/lib/stripeService';
  */
 export const useFeatureAccess = (feature) => {
   const { user } = useAuth();
+  const plan = canonicalPlan(user?.subscription_plan);
 
-  const hasAccess = hasFeatureAccess(feature, user);
-  
   return {
-    hasAccess,
-    plan: user?.subscription_plan || 'Basic',
+    hasAccess: hasFeatureAccess(feature, user),
+    plan,
     status: user?.subscription_status || 'inactive',
     user
   };
@@ -25,11 +29,8 @@ export const useFeatureAccess = (feature) => {
  */
 export const useHasPaidPlan = () => {
   const { user } = useAuth();
-  
-  return (
-    user?.subscription_plan !== 'Basic' &&
-    user?.subscription_status === 'active'
-  );
+  const plan = canonicalPlan(user?.subscription_plan);
+  return plan !== 'Basis' && ['active', 'trial'].includes(user?.subscription_status);
 };
 
 /**
@@ -38,11 +39,8 @@ export const useHasPaidPlan = () => {
  */
 export const useCanUpgrade = () => {
   const { user } = useAuth();
-  
-  const plan = user?.subscription_plan || 'Basis';
-  
-  // Can upgrade if on Basic or Premiere
-  return plan === 'Basic' || plan === 'Premiere';
+  const plan = canonicalPlan(user?.subscription_plan);
+  return plan === 'Basis' || plan === 'Premiere';
 };
 
 /**
@@ -51,11 +49,10 @@ export const useCanUpgrade = () => {
  */
 export const useFeatureLimits = () => {
   const { user } = useAuth();
-  
-  const plan = user?.subscription_plan || 'Basis';
-  
+  const plan = canonicalPlan(user?.subscription_plan);
+
   const limits = {
-    Basic: {
+    Basis: {
       loveNotes: 50,
       dateIdeas: 5,
       aiQuestions: 0,
@@ -74,9 +71,8 @@ export const useFeatureLimits = () => {
       quizzes: 'advanced'
     }
   };
-  
-  return limits[plan] || limits.Basic;
+
+  return limits[plan] || limits.Basis;
 };
 
 export default useFeatureAccess;
-
