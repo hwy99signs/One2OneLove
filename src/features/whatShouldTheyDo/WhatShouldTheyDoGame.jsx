@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeft,
   BarChart3,
   BriefcaseBusiness,
   ChevronRight,
@@ -10,7 +9,6 @@ import {
   Globe2,
   Heart,
   HeartCrack,
-  Home,
   Loader2,
   MapPin,
   MessageCircle,
@@ -19,7 +17,6 @@ import {
   RefreshCw,
   Search,
   Send,
-  UserRound,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -58,46 +55,56 @@ function countryName(countryCode) {
   }
 }
 
-function DesktopNav({ onExit, onSuggest }) {
+function GameControls({ onSuggest, onQuestions, searchQuery, onSearchChange, onSearch }) {
   return (
-    <header className="hidden border-b border-slate-200 bg-white lg:block">
-      <div className="mx-auto flex max-w-7xl items-center gap-8 px-7 py-4">
-        <button type="button" onClick={onExit} className="shrink-0">
-          <img src="/assets/o2ol-logo.png" alt="One2OneLove" className="h-14 w-auto object-contain" />
+    <div className="border-b border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-7xl items-center justify-end gap-3 px-4 py-3 sm:gap-5 sm:px-7 lg:gap-7">
+        <button
+          type="button"
+          onClick={onQuestions}
+          className="flex items-center gap-2 text-xs font-black text-[#17345f] transition hover:text-[#ff176b] sm:text-sm"
+        >
+          <Search className="h-5 w-5 sm:h-6 sm:w-6" />
+          <span>Questions</span>
         </button>
-        <nav className="flex flex-1 items-center justify-center gap-10 text-sm font-bold text-[#17345f]">
-          <button type="button" onClick={onExit} className="relative flex flex-col items-center gap-1 text-[#ff176b]">
-            <Home className="h-7 w-7 fill-current" />
-            <span>Home</span>
-            <span className="absolute -bottom-4 h-1 w-11 rounded-full bg-[#ff176b]" />
-          </button>
-          <button type="button" className="flex flex-col items-center gap-1 hover:text-[#ff176b]">
-            <Search className="h-7 w-7" />
-            <span>Questions</span>
-          </button>
-          <button type="button" onClick={onSuggest} className="flex flex-col items-center gap-1 hover:text-[#ff176b]">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1976f3] text-white shadow-md">
-              <Plus className="h-6 w-6" />
-            </span>
-            <span className="-mt-1 max-w-[86px] text-center leading-4">Suggest a Question</span>
-          </button>
-          <button type="button" className="flex flex-col items-center gap-1 hover:text-[#ff176b]">
-            <UserRound className="h-7 w-7" />
-            <span>Profile</span>
-          </button>
-        </nav>
-        <div className="flex w-64 items-center gap-3 rounded-full bg-slate-100 px-5 py-3 text-sm text-slate-400">
+
+        <button
+          type="button"
+          onClick={onSuggest}
+          className="flex items-center gap-2 text-xs font-black text-[#17345f] transition hover:text-[#ff176b] sm:text-sm"
+        >
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1976f3] text-white shadow-sm sm:h-9 sm:w-9">
+            <Plus className="h-5 w-5" />
+          </span>
+          <span>Suggest a Question</span>
+        </button>
+
+        <form onSubmit={onSearch} className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2.5 text-sm text-slate-500 sm:flex sm:w-52 lg:w-64">
+          <Search className="h-4 w-4 shrink-0" />
+          <input
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search dilemmas..."
+            className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+          />
+        </form>
+
+        <button
+          type="button"
+          onClick={onSearch}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-[#17345f] sm:hidden"
+          aria-label="Search dilemmas"
+        >
           <Search className="h-5 w-5" />
-          <span>Search dilemmas...</span>
-        </div>
+        </button>
       </div>
-    </header>
+    </div>
   );
 }
 
 function GameBrandHeader() {
   return (
-    <div className="flex items-start justify-between gap-3 px-5 pt-4 sm:px-7 lg:px-0 lg:pt-7">
+    <div className="flex items-start justify-between gap-3 px-5 pt-6 sm:px-7 lg:px-0 lg:pt-7">
       <div className="min-w-0 flex-1">
         <h1 className="text-[2.05rem] font-black uppercase leading-[0.9] tracking-[-0.055em] text-[#102f60] sm:text-[3.1rem] lg:text-[4.4rem]">
           What Should
@@ -111,7 +118,7 @@ function GameBrandHeader() {
         <div>Real People.</div>
         <div>Real Dilemmas.</div>
         <div>Real Opinions.</div>
-        <div className="mt-2 h-[2px] w-10 rotate-[-5deg] rounded-full bg-[#ff176b] sm:w-16 sm:h-[3px]" />
+        <div className="mt-2 h-[2px] w-10 rotate-[-5deg] rounded-full bg-[#ff176b] sm:h-[3px] sm:w-16" />
       </div>
     </div>
   );
@@ -150,7 +157,7 @@ function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, 
               type="button"
               disabled={pending}
               onClick={() => onSelect(option.id)}
-              className={`flex min-h-[60px] items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all sm:gap-3 sm:px-4 lg:min-h-[66px] ${style.bg} ${selected ? 'ring-3 ring-[#ff176b] ring-offset-2 shadow-md' : 'hover:-translate-y-0.5 hover:shadow-sm'}`}
+              className={`flex min-h-[60px] items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all sm:gap-3 sm:px-4 lg:min-h-[66px] ${style.bg} ${selected ? 'ring-2 ring-[#ff176b] ring-offset-2 shadow-md' : 'hover:-translate-y-0.5 hover:shadow-sm'}`}
             >
               <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${style.iconBg} ${style.iconColor}`}>
                 <Icon className="h-5 w-5" />
@@ -201,30 +208,6 @@ function AnotherQuestionCard({ question, onOpen }) {
           <ChevronRight className="h-5 w-5 shrink-0 text-[#31527b]" />
         </div>
       </button>
-    </div>
-  );
-}
-
-function MobileBottomNav({ onExit, onSuggest, onQuestions }) {
-  return (
-    <div className="sticky bottom-0 z-20 mt-5 border-t border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-4 text-[10px] font-bold text-[#24436b]">
-        <button type="button" onClick={onExit} className="flex flex-col items-center gap-1 text-[#ff176b]">
-          <Home className="h-6 w-6 fill-current" /> Home
-        </button>
-        <button type="button" onClick={onQuestions} className="flex flex-col items-center gap-1">
-          <Search className="h-6 w-6" /> Questions
-        </button>
-        <button type="button" onClick={onSuggest} className="flex flex-col items-center gap-0">
-          <span className="-mt-6 flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-[#1976f3] text-white shadow-lg">
-            <Plus className="h-7 w-7" />
-          </span>
-          <span className="mt-1 leading-3">Suggest<br />a Question</span>
-        </button>
-        <button type="button" className="flex flex-col items-center gap-1">
-          <UserRound className="h-6 w-6" /> Profile
-        </button>
-      </div>
     </div>
   );
 }
@@ -341,6 +324,7 @@ export default function WhatShouldTheyDoGame({ onExit }) {
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuggest, setShowSuggest] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const questionsQuery = useQuery({
     queryKey: ['what-should-they-do-questions'],
@@ -362,13 +346,25 @@ export default function WhatShouldTheyDoGame({ onExit }) {
     onError: error => setErrorMessage(error?.message || 'Your vote could not be recorded. Please try again.'),
   });
 
-  function nextQuestion() {
+  function showQuestionAt(index) {
     if (!questions.length) return;
-    setQuestionIndex((questionIndex + 1) % questions.length);
+    setQuestionIndex((index + questions.length) % questions.length);
     setSelectedOptionId(null);
     setResults(null);
     setErrorMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function nextQuestion() {
+    showQuestionAt(questionIndex + 1);
+  }
+
+  function searchQuestions(event) {
+    event?.preventDefault?.();
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
+    const foundIndex = questions.findIndex(item => `${item.scenario} ${item.category || ''}`.toLowerCase().includes(query));
+    if (foundIndex >= 0) showQuestionAt(foundIndex);
   }
 
   if (questionsQuery.isLoading) {
@@ -392,11 +388,15 @@ export default function WhatShouldTheyDoGame({ onExit }) {
 
   return (
     <div className="min-h-screen bg-white text-[#102f60]">
-      <DesktopNav onExit={onExit} onSuggest={() => setShowSuggest(true)} />
-      <main className="mx-auto w-full max-w-7xl pb-0 lg:px-7 lg:pb-12">
-        <div className="lg:hidden">
-          <button type="button" onClick={onExit} className="ml-4 mt-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-[#102f60] shadow-sm" aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
-        </div>
+      <GameControls
+        onSuggest={() => setShowSuggest(true)}
+        onQuestions={nextQuestion}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearch={searchQuestions}
+      />
+
+      <main className="mx-auto w-full max-w-7xl pb-8 lg:px-7 lg:pb-12">
         <GameBrandHeader />
 
         <AnimatePresence mode="wait">
@@ -425,7 +425,7 @@ export default function WhatShouldTheyDoGame({ onExit }) {
           )}
         </AnimatePresence>
       </main>
-      <MobileBottomNav onExit={onExit} onSuggest={() => setShowSuggest(true)} onQuestions={nextQuestion} />
+
       {showSuggest && <SuggestQuestionModal onClose={() => setShowSuggest(false)} />}
     </div>
   );
