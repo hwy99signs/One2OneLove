@@ -1,7 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
+import { installRuntimeLocalization } from '@/utils/runtimeLocalization'
 import '@/index.css'
+
+installRuntimeLocalization()
 
 const BACK_LABELS = ['back', 'volver', 'retour', 'indietro', 'zurück', 'terug', 'voltar']
 
@@ -67,4 +70,4 @@ window.addEventListener('popstate', scrollPageToTop)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
-) 
+)
