@@ -43,7 +43,7 @@ jobs:
             'An error occurred. Please try again.',
             'Could not resend the verification code.',
             'Love Notes Created','Happy Couples','Most Notes (Week)','Most Notes (Month)','Most Notes (Year)',
-            'Personalizado para'
+            'Personalizado para','Oops!'
           ]
           for x in extras: messages.append({'file':'audit-extra','text':x})
           seen=set(); unique=[]
@@ -61,15 +61,18 @@ jobs:
           import fs from 'node:fs';
           import { translateRuntimeText } from './src/utils/runtimeLocalization.js';
           import { translateStaticUiText } from './src/utils/staticUiLocalization.js';
+          import { translateI18nFallbackText } from './src/utils/i18nFallbackLocalization.js';
           const items=JSON.parse(fs.readFileSync('./i18n_messages.json','utf8'));
           const langs=['es','fr','it','de'];
           const allowedSame=new Set(['es|Personalizado para']);
           let failures=[];
           for(const {file,text} of items){
+            const testText=text.endsWith(': ') ? `${text}sample detail` : text;
             for(const lang of langs){
-              const out1=translateRuntimeText(text,lang);
-              const out2=translateStaticUiText(out1,lang);
-              if(out2===text && !allowedSame.has(`${lang}|${text}`)) failures.push(`${lang}|${file}|${text}`);
+              let out=translateRuntimeText(testText,lang);
+              out=translateStaticUiText(out,lang);
+              out=translateI18nFallbackText(out,lang);
+              if(out===testText && !allowedSame.has(`${lang}|${text}`)) failures.push(`${lang}|${file}|${text}`);
             }
           }
           console.log(`RUNTIME_TRANSLATION_CHECKS=${items.length*langs.length}`);
@@ -85,6 +88,7 @@ jobs:
           cat > check-static.mjs <<'JS'
           import { translateRuntimeText } from './src/utils/runtimeLocalization.js';
           import { translateStaticUiText } from './src/utils/staticUiLocalization.js';
+          import { translateI18nFallbackText } from './src/utils/i18nFallbackLocalization.js';
           const phrases=[
             'Loading One2OneLove Admin','Admin Verification','Go back','Analytics','Operations Dashboard','Refresh',
             'Your Friends','Pending Requests',"You don't have any buddies yet",'Loading users...',
@@ -103,19 +107,16 @@ jobs:
             'Check Your Email! 📧','Account Created Successfully!',"We've sent a verification email to:",
             'Next Steps:','Return here and sign in!',"💡 Can't find the email?",'Couple Membership Details',
             'First Name *','Last Name *','Email Address *','Phone Number *','Country *','Language Spoken *',
-            'Loading...','Uploading...','Click to upload photos','Connected','Shared Goal:','Accept','Decline'
+            'Loading...','Uploading...','Click to upload photos','Connected','Shared Goal:','Accept','Decline','Oops!'
           ];
           const langs=['es','fr','it','de'];
-          const legitimateSame=new Set([
-            'fr|Analytics','it|Analytics','de|Analytics',
-            'fr|Cancel','it|Cancel','de|Cancel'
-          ]);
           let failures=[];
           for(const text of phrases){
             for(const lang of langs){
-              const a=translateRuntimeText(text,lang);
-              const b=translateStaticUiText(a,lang);
-              if(b===text && !legitimateSame.has(`${lang}|${text}`)) failures.push(`${lang}|${text}`);
+              let out=translateRuntimeText(text,lang);
+              out=translateStaticUiText(out,lang);
+              out=translateI18nFallbackText(out,lang);
+              if(out===text) failures.push(`${lang}|${text}`);
             }
           }
           console.log(`STATIC_TRANSLATION_CHECKS=${phrases.length*langs.length}`);
@@ -158,7 +159,7 @@ jobs:
             'AI-Personalized Love Note',"Partner's Personality Traits *",'Generate Love Note',
             'Select a chat to start messaging','Loading messages...','No messages yet','Start the conversation!',
             'Delete Message','No conversations yet','Premium Feature','Upgrade Required','Choose Your Love Journey',
-            'Profile Photo (Optional)','Check Your Email! 📧','Couple Membership Details'
+            'Profile Photo (Optional)','Check Your Email! 📧','Couple Membership Details','Oops!'
           ];
           const browser=await chromium.launch({headless:true});
           let failures=[]; let checks=0;
@@ -170,17 +171,13 @@ jobs:
               const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
               try{
                 const response=await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});
-                await page.waitForTimeout(300);
+                await page.waitForTimeout(350);
                 const status=response?.status()||0;
                 const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
                 checks++;
                 if(status!==200) failures.push(`${lang}|${route}|status=${status}`);
                 if(errors.length) failures.push(`${lang}|${route}|pageerror=${errors.join('; ').slice(0,240)}`);
-                if(lang!=='en'){
-                  for(const phrase of forbidden){
-                    if(body.includes(phrase)) failures.push(`${lang}|${route}|english=${phrase}`);
-                  }
-                }
+                if(lang!=='en') for(const phrase of forbidden) if(body.includes(phrase)) failures.push(`${lang}|${route}|english=${phrase}`);
               }catch(e){failures.push(`${lang}|${route}|exception=${String(e).slice(0,240)}`);}
               await page.close();
             }
