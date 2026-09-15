@@ -3,10 +3,12 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import { installRuntimeLocalization } from '@/utils/runtimeLocalization'
 import { installStaticUiLocalization } from '@/utils/staticUiLocalization'
+import { installI18nFallbackLocalization } from '@/utils/i18nFallbackLocalization'
 import '@/index.css'
 
 installRuntimeLocalization()
 installStaticUiLocalization()
+installI18nFallbackLocalization()
 
 const BACK_LABELS = ['back', 'volver', 'retour', 'indietro', 'zurück', 'terug', 'voltar']
 
