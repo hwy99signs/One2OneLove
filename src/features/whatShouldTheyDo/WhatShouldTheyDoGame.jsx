@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import {
   getWhatShouldTheyDoQuestions,
-  getWhatShouldTheyDoResults,
   submitWhatShouldTheyDoVote,
 } from '@/lib/whatShouldTheyDo';
 
@@ -66,7 +65,6 @@ function DesktopNav({ onExit, onSuggest }) {
         <button type="button" onClick={onExit} className="shrink-0">
           <img src="/assets/o2ol-logo.png" alt="One2OneLove" className="h-14 w-auto object-contain" />
         </button>
-
         <nav className="flex flex-1 items-center justify-center gap-10 text-sm font-bold text-[#17345f]">
           <button type="button" onClick={onExit} className="relative flex flex-col items-center gap-1 text-[#ff176b]">
             <Home className="h-7 w-7 fill-current" />
@@ -88,7 +86,6 @@ function DesktopNav({ onExit, onSuggest }) {
             <span>Profile</span>
           </button>
         </nav>
-
         <div className="flex w-64 items-center gap-3 rounded-full bg-slate-100 px-5 py-3 text-sm text-slate-400">
           <Search className="h-5 w-5" />
           <span>Search dilemmas...</span>
@@ -100,22 +97,21 @@ function DesktopNav({ onExit, onSuggest }) {
 
 function GameBrandHeader() {
   return (
-    <div className="flex items-start justify-between gap-6 px-5 pt-5 sm:px-7 lg:px-0 lg:pt-7">
-      <div>
-        <h1 className="text-[2.25rem] font-black uppercase leading-[0.9] tracking-[-0.055em] text-[#102f60] sm:text-[3.1rem] lg:text-[4.4rem]">
+    <div className="flex items-start justify-between gap-3 px-5 pt-4 sm:px-7 lg:px-0 lg:pt-7">
+      <div className="min-w-0 flex-1">
+        <h1 className="text-[2.05rem] font-black uppercase leading-[0.9] tracking-[-0.055em] text-[#102f60] sm:text-[3.1rem] lg:text-[4.4rem]">
           What Should
           <span className="block text-[#ff176b]">They Do?</span>
         </h1>
-        <p className="mt-2 text-sm font-bold text-[#5c6b84] sm:text-lg lg:text-xl">
+        <p className="mt-2 text-[13px] font-bold text-[#5c6b84] sm:text-lg lg:text-xl">
           Vote first. Then see what the world thinks.
         </p>
       </div>
-
-      <div className="hidden shrink-0 border-l border-slate-300 pl-6 pt-2 text-sm font-bold leading-6 text-[#3e506f] sm:block lg:text-lg lg:leading-7">
+      <div className="shrink-0 border-l border-slate-300 pl-3 pt-1 text-[9px] font-bold leading-[1.35] text-[#3e506f] sm:pl-6 sm:text-sm sm:leading-6 lg:text-lg lg:leading-7">
         <div>Real People.</div>
         <div>Real Dilemmas.</div>
         <div>Real Opinions.</div>
-        <div className="mt-2 h-[3px] w-16 rotate-[-5deg] rounded-full bg-[#ff176b]" />
+        <div className="mt-2 h-[2px] w-10 rotate-[-5deg] rounded-full bg-[#ff176b] sm:w-16 sm:h-[3px]" />
       </div>
     </div>
   );
@@ -124,16 +120,16 @@ function GameBrandHeader() {
 function FeaturedDilemma({ question }) {
   const category = (question.category || 'work').replaceAll('-', ' ');
   return (
-    <div className="relative min-h-[300px] overflow-hidden rounded-2xl bg-slate-900 shadow-lg lg:min-h-[420px]">
+    <div className="relative min-h-[285px] overflow-hidden rounded-2xl bg-slate-900 shadow-lg sm:min-h-[340px] lg:min-h-[420px]">
       <img src={FEATURE_IMAGE} alt="Person considering a difficult decision" className="absolute inset-0 h-full w-full object-cover object-center" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-black/5" />
-      <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#1478f2] px-3 py-1.5 text-xs font-black uppercase text-white shadow-md">
+      <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-[#1478f2] px-3 py-1.5 text-[10px] font-black uppercase text-white shadow-md sm:left-4 sm:top-4 sm:text-xs">
         <BriefcaseBusiness className="h-4 w-4" /> {category}
       </div>
       <button type="button" className="absolute right-4 top-4 text-white/95" aria-label="Question options">
         <MoreHorizontal className="h-6 w-6" />
       </button>
-      <div className="absolute inset-x-0 bottom-0 px-5 pb-5 pt-16 text-xl font-black leading-[1.08] text-white sm:text-2xl lg:px-7 lg:pb-7 lg:text-[2rem]">
+      <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-16 text-[1.28rem] font-black leading-[1.08] text-white sm:px-5 sm:pb-5 sm:text-2xl lg:px-7 lg:pb-7 lg:text-[2rem]">
         {question.scenario}
       </div>
     </div>
@@ -143,26 +139,28 @@ function FeaturedDilemma({ question }) {
 function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, errorMessage }) {
   return (
     <div className="flex h-full flex-col gap-3">
-      {question.options.map((option, index) => {
-        const style = OPTION_STYLES[index % OPTION_STYLES.length];
-        const Icon = style.icon;
-        const selected = Number(selectedOptionId) === Number(option.id);
-        return (
-          <button
-            key={option.id}
-            type="button"
-            disabled={pending}
-            onClick={() => onSelect(option.id)}
-            className={`flex min-h-[66px] items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all ${style.bg} ${selected ? 'ring-3 ring-[#ff176b] ring-offset-2 shadow-md' : 'hover:-translate-y-0.5 hover:shadow-sm'}`}
-          >
-            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${style.iconBg} ${style.iconColor}`}>
-              <Icon className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1 text-sm font-black text-[#16345f] sm:text-[15px]">{option.label}</span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-[#31527b]" />
-          </button>
-        );
-      })}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+        {question.options.map((option, index) => {
+          const style = OPTION_STYLES[index % OPTION_STYLES.length];
+          const Icon = style.icon;
+          const selected = Number(selectedOptionId) === Number(option.id);
+          return (
+            <button
+              key={option.id}
+              type="button"
+              disabled={pending}
+              onClick={() => onSelect(option.id)}
+              className={`flex min-h-[60px] items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all sm:gap-3 sm:px-4 lg:min-h-[66px] ${style.bg} ${selected ? 'ring-3 ring-[#ff176b] ring-offset-2 shadow-md' : 'hover:-translate-y-0.5 hover:shadow-sm'}`}
+            >
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${style.iconBg} ${style.iconColor}`}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1 text-[11px] font-black leading-4 text-[#16345f] sm:text-sm lg:text-[15px]">{option.label}</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-[#31527b] sm:h-5 sm:w-5" />
+            </button>
+          );
+        })}
+      </div>
 
       {errorMessage && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{errorMessage}</div>}
 
@@ -170,7 +168,7 @@ function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, 
         type="button"
         disabled={!selectedOptionId || pending}
         onClick={onVote}
-        className="mt-auto flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-[#ff176b] px-5 py-4 text-lg font-black text-white shadow-lg shadow-pink-500/20 transition hover:bg-[#ec0f60] disabled:cursor-not-allowed disabled:opacity-45"
+        className="mt-auto flex min-h-[58px] w-full items-center justify-center gap-3 rounded-2xl bg-[#ff176b] px-5 py-3.5 text-base font-black text-white shadow-lg shadow-pink-500/20 transition hover:bg-[#ec0f60] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-[64px] sm:text-lg"
       >
         {pending ? <Loader2 className="h-6 w-6 animate-spin" /> : <BarChart3 className="h-6 w-6" />}
         <span>Cast Your Vote</span>
@@ -182,22 +180,22 @@ function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, 
 
 function AnotherQuestionCard({ question, onOpen }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-[0_10px_30px_rgba(24,52,95,0.08)] ring-1 ring-slate-100">
+    <div className="rounded-2xl bg-white p-3 shadow-[0_10px_30px_rgba(24,52,95,0.08)] ring-1 ring-slate-100 sm:p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#52657f]">Another Question</span>
-        <button type="button" onClick={onOpen} className="inline-flex items-center gap-1 text-xs font-black text-[#1d3557]">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#52657f] sm:text-[11px]">Another Question</span>
+        <button type="button" onClick={onOpen} className="inline-flex items-center gap-1 text-[10px] font-black text-[#1d3557] sm:text-xs">
           See All <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-      <button type="button" onClick={onOpen} className="w-full overflow-hidden rounded-xl text-left">
-        <div className="relative overflow-hidden rounded-xl">
-          <img src={NEXT_IMAGE} alt="Another relationship dilemma" className="h-36 w-full object-cover" />
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#ff176b] px-3 py-1 text-[10px] font-black uppercase text-white">
+      <button type="button" onClick={onOpen} className="flex w-full items-stretch gap-3 overflow-hidden rounded-xl text-left lg:block">
+        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl sm:h-24 sm:w-36 lg:h-36 lg:w-full">
+          <img src={NEXT_IMAGE} alt="Another relationship dilemma" className="h-full w-full object-cover" />
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#ff176b] px-2 py-1 text-[8px] font-black uppercase text-white sm:text-[9px] lg:left-3 lg:top-3 lg:px-3 lg:text-[10px]">
             <Heart className="h-3 w-3 fill-current" /> Relationships
           </span>
         </div>
-        <div className="flex items-center gap-3 px-1 pb-1 pt-3">
-          <p className="flex-1 text-sm font-black leading-5 text-[#112f5e]">
+        <div className="flex min-w-0 flex-1 items-center gap-2 py-1 lg:px-1 lg:pb-1 lg:pt-3">
+          <p className="flex-1 text-[11px] font-black leading-4 text-[#112f5e] sm:text-sm sm:leading-5">
             {question?.scenario || 'Tanya wants to help her mother financially, but her husband says they cannot afford it. What should she do?'}
           </p>
           <ChevronRight className="h-5 w-5 shrink-0 text-[#31527b]" />
@@ -256,7 +254,7 @@ function ResultsView({ question, results, selectedOptionId, onNext }) {
   const [tab, setTab] = useState('global');
   const countries = results?.countries || [];
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl px-5 pb-10 lg:px-0">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl px-5 pb-10 pt-5 lg:px-0">
       <div className="overflow-hidden rounded-3xl bg-white shadow-[0_16px_50px_rgba(24,52,95,0.12)] ring-1 ring-slate-100">
         <div className="bg-[#102f60] px-6 py-7 text-center text-white">
           <BarChart3 className="mx-auto h-8 w-8" />
@@ -395,7 +393,6 @@ export default function WhatShouldTheyDoGame({ onExit }) {
   return (
     <div className="min-h-screen bg-white text-[#102f60]">
       <DesktopNav onExit={onExit} onSuggest={() => setShowSuggest(true)} />
-
       <main className="mx-auto w-full max-w-7xl pb-0 lg:px-7 lg:pb-12">
         <div className="lg:hidden">
           <button type="button" onClick={onExit} className="ml-4 mt-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-[#102f60] shadow-sm" aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
@@ -415,9 +412,10 @@ export default function WhatShouldTheyDoGame({ onExit }) {
                   pending={voteMutation.isPending}
                   errorMessage={errorMessage}
                 />
-                <AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} />
+                <div className="hidden lg:block">
+                  <AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} />
+                </div>
               </div>
-
               <div className="mt-4 lg:hidden">
                 <AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} />
               </div>
@@ -427,7 +425,6 @@ export default function WhatShouldTheyDoGame({ onExit }) {
           )}
         </AnimatePresence>
       </main>
-
       <MobileBottomNav onExit={onExit} onSuggest={() => setShowSuggest(true)} onQuestions={nextQuestion} />
       {showSuggest && <SuggestQuestionModal onClose={() => setShowSuggest(false)} />}
     </div>
