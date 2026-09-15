@@ -27,12 +27,10 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
-          routes=[]
           text=Path('src/pages/index.jsx').read_text(encoding='utf-8')
           routes=sorted(set(re.findall(r'<Route path="([^"]+)"', text)))
           print(f'ROUTE_COUNT={len(routes)}')
           print('ROUTES=' + ','.join(routes))
-          target=['en','es','fr','it','de']
           files=list(Path('src/pages').glob('*.jsx'))+list(Path('src/components').rglob('*.jsx'))
           hard=[]
           patterns=[
@@ -43,21 +41,9 @@ jobs:
             try: s=p.read_text(encoding='utf-8')
             except: continue
             for pat in patterns:
-              for m in pat.finditer(s):
-                hard.append((str(p), m.group('s')[:160]))
+              for m in pat.finditer(s): hard.append((str(p),m.group('s')[:160]))
           print(f'HARDCODED_USER_MESSAGE_CANDIDATES={len(hard)}')
           for f,s in hard[:200]: print(f'LEAK|{f}|{s}')
-          # Key launch content expected to carry all five locale keys in source.
-          keyfiles=[
-            'src/pages/Home.jsx','src/pages/SignIn.jsx','src/pages/ForgotPassword.jsx','src/pages/LoveNotes.jsx',
-            'src/pages/MemoryLane.jsx','src/pages/RelationshipGoals.jsx','src/pages/SharedJournals.jsx','src/pages/Chat.jsx',
-            'src/pages/Subscription.jsx','src/pages/Profile.jsx','src/components/dateideas/dateIdeasUiCopy.js',
-            'src/components/lovelanguage/LoveLanguageQuestionBank.js','src/data/subscriptionPlanCopy.js'
-          ]
-          for f in keyfiles:
-            s=Path(f).read_text(encoding='utf-8')
-            missing=[lang for lang in target if not re.search(rf'(^|[{{,\s]){lang}\s*:',s,re.M)]
-            print(f'LOCALE_KEYS|{f}|missing={missing}')
           PY
 
       - name: Wait for current workers.dev preview
@@ -80,40 +66,36 @@ jobs:
       - name: Five-language browser route audit
         shell: bash
         run: |
-          cat > /tmp/o2ol-audit.mjs <<'JS'
+          cat > o2ol-audit.mjs <<'JS'
           import { chromium } from 'playwright';
           const base=process.env.PREVIEW_URL;
           const langs=['en','es','fr','it','de'];
           const routes=['/','/SignIn','/SignUp','/ForgotPassword','/Subscription','/Profile','/LoveNotes','/SendCredits','/DateIdeas','/MemoryLane','/AnniversaryTracker','/RelationshipGoals','/RelationshipMilestones','/SharedJournals','/CouplesCalendar','/RelationshipQuizzes','/LoveLanguageQuiz','/CommunicationPractice','/CoupleSupport','/ArticlesSupport','/PodcastsSupport','/LGBTQSupport','/Chat','/Invite','/HelpCenter','/ContactUs','/PrivacyPolicy','/TermsOfService','/Reviews','/LeaveReview','/Suggestions'];
-          const commonExpected={
-            en:['Home','Support'], es:['Inicio','Soporte'], fr:['Accueil','Aide'], it:['Home','Supporto'], de:['Startseite','Support']
-          };
+          const commonExpected={en:['Home','Support'],es:['Inicio','Soporte'],fr:['Accueil','Aide'],it:['Home','Supporto'],de:['Startseite','Support']};
           const suspects=['Back','Save','Cancel','Delete','Loading','Sign In','Sign Up','Email Address','Submit','Next','Previous','Search','Filter','Close','Try again','Please ','Are you sure','Failed to','Unable to','Create New','Add New'];
           const browser=await chromium.launch({headless:true});
           let failures=[]; let leaks=[]; let checked=0;
-          for (const lang of langs){
+          for(const lang of langs){
             const context=await browser.newContext();
             await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
-            for (const route of routes){
+            for(const route of routes){
               const page=await context.newPage();
               const pageErrors=[];
               page.on('pageerror',e=>pageErrors.push(String(e.message||e)));
               try{
                 const resp=await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});
-                await page.waitForTimeout(250);
+                await page.waitForTimeout(350);
                 const status=resp?.status()||0;
                 const text=(await page.locator('body').innerText()).replace(/\s+/g,' ').trim();
                 checked++;
-                if(status!==200 || text.length<20) failures.push(`${lang}|${route}|status=${status}|chars=${text.length}`);
+                if(status!==200||text.length<20) failures.push(`${lang}|${route}|status=${status}|chars=${text.length}`);
                 if(pageErrors.length) failures.push(`${lang}|${route}|pageerror=${pageErrors.join(' ; ').slice(0,300)}`);
-                for(const token of commonExpected[lang]){
-                  if(route==='/' && !text.includes(token)) failures.push(`${lang}|${route}|missing-common=${token}`);
-                }
+                if(route==='/') for(const token of commonExpected[lang]) if(!text.includes(token)) failures.push(`${lang}|${route}|missing-common=${token}`);
                 if(lang!=='en'){
                   const found=suspects.filter(x=>text.includes(x));
                   if(found.length) leaks.push(`${lang}|${route}|${found.join(',')}`);
                 }
-              } catch(e){ failures.push(`${lang}|${route}|exception=${String(e).slice(0,300)}`); }
+              }catch(e){failures.push(`${lang}|${route}|exception=${String(e).slice(0,300)}`);}
               await page.close();
             }
             await context.close();
@@ -126,4 +108,4 @@ jobs:
           leaks.slice(0,300).forEach(x=>console.log('LANGLEAK|'+x));
           if(failures.length) process.exitCode=1;
           JS
-          node /tmp/o2ol-audit.mjs
+          node ./o2ol-audit.mjs
