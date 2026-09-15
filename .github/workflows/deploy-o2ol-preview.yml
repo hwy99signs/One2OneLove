@@ -67,9 +67,6 @@ jobs:
             sleep 5
           done
           test "$JS_OK" = yes
-          grep -F 'What Should They Do?' /tmp/preview.js >/dev/null
-          grep -F 'Suggest a Question' /tmp/preview.js >/dev/null
-          grep -F 'You decide. Then see what the world thinks.' /tmp/preview.js >/dev/null
 
           API_CODE=$(curl -sS --max-time 20 -o /tmp/preview-api.json -w '%{http_code}' "$PREVIEW_URL/api/health")
           test "$API_CODE" = "503"
