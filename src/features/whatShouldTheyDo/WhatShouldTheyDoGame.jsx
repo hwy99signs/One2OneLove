@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
   BarChart3,
@@ -8,17 +8,26 @@ import {
   Globe2,
   Loader2,
   MapPin,
+  MessageCircleQuestion,
   RefreshCw,
+  Send,
+  Sparkles,
   Users,
+  X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   IS_WSTD_PREVIEW_DEMO,
   getWhatShouldTheyDoQuestions,
   getWhatShouldTheyDoResults,
   submitWhatShouldTheyDoVote,
 } from '@/lib/whatShouldTheyDo';
+
+const BAR_STYLES = [
+  'from-fuchsia-500 to-pink-500',
+  'from-violet-500 to-purple-500',
+  'from-amber-400 to-orange-500',
+  'from-cyan-500 to-teal-500',
+];
 
 function flagEmoji(countryCode) {
   if (!/^[A-Z]{2}$/.test(countryCode || '')) return '🌍';
@@ -33,122 +42,324 @@ function countryName(countryCode) {
   }
 }
 
-function ResultBars({ options = [], selectedOptionId }) {
+function AppHeader({ onExit, onSuggest }) {
   return (
-    <div className="space-y-4">
-      {options.map(option => (
-        <div key={option.optionId} className="space-y-1.5">
-          <div className="flex items-start justify-between gap-4 text-sm">
-            <div className="font-medium text-slate-800">
-              {option.label}
-              {Number(option.optionId) === Number(selectedOptionId) && (
-                <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                  Your vote
-                </span>
-              )}
-            </div>
-            <div className="shrink-0 font-bold text-slate-900">{option.percentage}%</div>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${option.percentage}%` }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
-            />
-          </div>
-          <div className="text-xs text-slate-500">{option.votes.toLocaleString()} vote{option.votes === 1 ? '' : 's'}</div>
-        </div>
+    <div className="flex items-center justify-between gap-3 px-5 pt-5">
+      <button
+        type="button"
+        onClick={onExit}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+        aria-label="Back to One2OneLove"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </button>
+
+      <button
+        type="button"
+        onClick={onSuggest}
+        className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-fuchsia-50 px-4 py-2 text-sm font-black text-fuchsia-700 transition hover:bg-fuchsia-100"
+      >
+        <MessageCircleQuestion className="h-4 w-4" />
+        Suggest a Question
+      </button>
+    </div>
+  );
+}
+
+function BrandTitle() {
+  return (
+    <div className="px-6 pb-4 pt-5 text-center">
+      <div className="text-[11px] font-black uppercase tracking-[0.28em] text-fuchsia-600">One2OneLove Games</div>
+      <h1 className="mt-1 text-4xl font-black leading-none tracking-[-0.04em] text-slate-950 sm:text-[2.7rem]">
+        What Should
+        <span className="block text-fuchsia-600">They Do?</span>
+      </h1>
+      <p className="mx-auto mt-3 max-w-sm text-sm font-semibold leading-6 text-slate-500">
+        You decide. Then see what the world thinks.
+      </p>
+    </div>
+  );
+}
+
+function ProgressDots({ current, total }) {
+  const shown = Math.min(total, 8);
+  const active = total ? Math.min(current, shown - 1) : 0;
+  return (
+    <div className="flex items-center justify-center gap-1.5 px-6 pb-5" aria-label={`Question ${current + 1} of ${total}`}>
+      {Array.from({ length: shown }).map((_, index) => (
+        <span
+          key={index}
+          className={`h-1.5 rounded-full transition-all ${index === active ? 'w-7 bg-fuchsia-600' : 'w-2 bg-slate-200'}`}
+        />
       ))}
     </div>
   );
 }
 
-function ResultsPanel({ results, selectedOptionId, onNext, nextLabel }) {
+function ResultBars({ options = [], selectedOptionId }) {
+  return (
+    <div className="space-y-5">
+      {options.map((option, index) => {
+        const chosen = Number(option.optionId) === Number(selectedOptionId);
+        return (
+          <div key={option.optionId}>
+            <div className="mb-2 flex items-start justify-between gap-4">
+              <div className="text-sm font-bold leading-5 text-slate-800">
+                {option.label}
+                {chosen && (
+                  <span className="ml-2 inline-flex rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-fuchsia-700">
+                    Your vote
+                  </span>
+                )}
+              </div>
+              <div className="shrink-0 text-lg font-black text-slate-950">{option.percentage}%</div>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${option.percentage}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className={`h-full rounded-full bg-gradient-to-r ${BAR_STYLES[index % BAR_STYLES.length]}`}
+              />
+            </div>
+            <div className="mt-1 text-[11px] font-semibold text-slate-400">
+              {option.votes.toLocaleString()} vote{option.votes === 1 ? '' : 's'}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ResultsScreen({ results, selectedOptionId, onNext, nextLabel, question }) {
   const [tab, setTab] = useState('global');
   const countries = results?.countries || [];
 
   return (
     <motion.div
       key="results"
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      className="space-y-5"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="px-5 pb-6"
     >
-      <div className="text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-          <BarChart3 className="h-6 w-6" />
+      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.12)]">
+        <div className="bg-slate-950 px-6 py-6 text-center text-white">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div className="text-[11px] font-black uppercase tracking-[0.22em] text-fuchsia-300">The World Voted</div>
+          <h2 className="mt-2 text-2xl font-black leading-tight">Here’s what everybody said.</h2>
+          <div className="mt-2 text-sm font-semibold text-slate-300">
+            {results.totalVotes.toLocaleString()} total vote{results.totalVotes === 1 ? '' : 's'}
+          </div>
         </div>
-        <h2 className="text-2xl font-black text-slate-900">
-          {results.preview ? 'Preview results — sample vote totals' : 'Here’s what everybody said'}
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          {results.totalVotes.toLocaleString()} total vote{results.totalVotes === 1 ? '' : 's'}
-        </p>
-      </div>
 
-      <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1">
-        <button
-          type="button"
-          onClick={() => setTab('global')}
-          className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
-            tab === 'global' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600'
-          }`}
-        >
-          <Globe2 className="h-4 w-4" /> Global
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('country')}
-          className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
-            tab === 'country' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600'
-          }`}
-        >
-          <MapPin className="h-4 w-4" /> By Country
-        </button>
-      </div>
+        <div className="px-5 py-5">
+          <div className="mb-5 rounded-2xl bg-slate-50 p-4">
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">The dilemma</div>
+            <div className="mt-1 text-sm font-bold leading-6 text-slate-800">{question.scenario}</div>
+          </div>
 
-      {tab === 'global' ? (
-        <ResultBars options={results.global} selectedOptionId={selectedOptionId} />
-      ) : countries.length ? (
-        <div className="space-y-4">
-          {countries.map(country => (
-            <Card key={country.countryCode} className="border-slate-200 shadow-none">
-              <CardContent className="p-4 sm:p-5">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
+          <div className="mb-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setTab('global')}
+              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-black transition ${
+                tab === 'global' ? 'bg-white text-fuchsia-700 shadow-sm' : 'text-slate-500'
+              }`}
+            >
+              <Globe2 className="h-4 w-4" /> Global
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('country')}
+              className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-black transition ${
+                tab === 'country' ? 'bg-white text-fuchsia-700 shadow-sm' : 'text-slate-500'
+              }`}
+            >
+              <MapPin className="h-4 w-4" /> By Country
+            </button>
+          </div>
+
+          {tab === 'global' ? (
+            <ResultBars options={results.global} selectedOptionId={selectedOptionId} />
+          ) : countries.length ? (
+            <div className="space-y-4">
+              {countries.map(country => (
+                <div key={country.countryCode} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="mb-4 flex items-center gap-3">
                     <span className="text-2xl" aria-hidden="true">{flagEmoji(country.countryCode)}</span>
                     <div>
-                      <div className="font-black text-slate-900">{countryName(country.countryCode)}</div>
-                      <div className="text-xs text-slate-500">{country.totalVotes.toLocaleString()} votes</div>
+                      <div className="font-black text-slate-950">{countryName(country.countryCode)}</div>
+                      <div className="text-xs font-semibold text-slate-400">{country.totalVotes.toLocaleString()} votes</div>
                     </div>
                   </div>
+                  <ResultBars options={country.options} selectedOptionId={selectedOptionId} />
                 </div>
-                <ResultBars options={country.options} selectedOptionId={selectedOptionId} />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
-          <Users className="mx-auto mb-3 h-7 w-7 text-slate-400" />
-          <div className="font-bold text-slate-800">Country results are building</div>
-          <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-slate-500">
-            A country appears here after at least 5 votes on this question. This keeps very small groups private and makes the comparison more useful.
-          </p>
-        </div>
-      )}
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
+              <Users className="mx-auto mb-3 h-7 w-7 text-slate-400" />
+              <div className="font-black text-slate-800">Country results are building.</div>
+              <p className="mt-1 text-sm leading-6 text-slate-500">A country appears after at least 5 votes on this question.</p>
+            </div>
+          )}
 
-      <Button
-        type="button"
-        onClick={onNext}
-        className="h-12 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-base font-bold hover:from-emerald-700 hover:to-teal-700"
-      >
-        {nextLabel}
-        <ChevronRight className="ml-2 h-5 w-5" />
-      </Button>
+          <button
+            type="button"
+            onClick={onNext}
+            className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-fuchsia-600 px-5 py-4 text-base font-black text-white shadow-lg shadow-fuchsia-600/20 transition hover:bg-fuchsia-700"
+          >
+            {nextLabel}
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
     </motion.div>
+  );
+}
+
+function QuestionScreen({ question, questionIndex, totalQuestions, voteMutation, resultsMutation, errorMessage }) {
+  return (
+    <motion.div
+      key={`question-${question.id}`}
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="px-5 pb-6"
+    >
+      <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.12)]">
+        <div className="relative overflow-hidden bg-gradient-to-br from-fuchsia-600 via-pink-500 to-orange-400 px-6 py-7 text-white">
+          <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
+          <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-white/10" />
+          <div className="relative">
+            <div className="flex items-center justify-between gap-3">
+              <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-sm">
+                {question.category.replaceAll('-', ' ')}
+              </span>
+              <span className="text-xs font-black text-white/80">{questionIndex + 1}/{totalQuestions}</span>
+            </div>
+            <div className="mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-fuchsia-600 shadow-lg">
+              <Sparkles className="h-7 w-7" />
+            </div>
+            <p className="mt-5 text-[1.42rem] font-black leading-[1.28] tracking-[-0.02em] sm:text-[1.55rem]">
+              {question.scenario}
+            </p>
+          </div>
+        </div>
+
+        <div className="px-5 py-5 sm:px-6">
+          <div className="mb-4 text-center">
+            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">What’s your call?</div>
+            <h2 className="mt-1 text-xl font-black text-slate-950">What should they do?</h2>
+          </div>
+
+          <div className="space-y-3">
+            {question.options.map((option, index) => (
+              <button
+                key={option.id}
+                type="button"
+                disabled={voteMutation.isPending || resultsMutation.isPending}
+                onClick={() => voteMutation.mutate({ questionId: question.id, optionId: option.id })}
+                className="group flex w-full items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-3.5 text-left transition hover:-translate-y-0.5 hover:border-fuchsia-400 hover:bg-fuchsia-50/60 disabled:cursor-wait disabled:opacity-60"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white transition group-hover:bg-fuchsia-600">
+                  {String.fromCharCode(65 + index)}
+                </span>
+                <span className="pr-2 text-sm font-black leading-5 text-slate-800 sm:text-[15px]">{option.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {errorMessage && (
+            <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{errorMessage}</div>
+          )}
+
+          {(voteMutation.isPending || resultsMutation.isPending) && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin" /> Counting your vote…
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => resultsMutation.mutate(question.id)}
+            disabled={resultsMutation.isPending || voteMutation.isPending}
+            className="mx-auto mt-5 block text-xs font-bold text-slate-400 underline-offset-4 transition hover:text-fuchsia-700 hover:underline"
+          >
+            See what the world thinks without voting
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function SuggestQuestionModal({ onClose }) {
+  const [questionText, setQuestionText] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  function submit(event) {
+    event.preventDefault();
+    if (!questionText.trim()) return;
+    setSubmitted(true);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 28, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="w-full max-w-md rounded-t-[32px] bg-white p-6 shadow-2xl sm:rounded-[32px]"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-fuchsia-600">Your turn</div>
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Suggest a Question</h2>
+          </div>
+          <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {!submitted ? (
+          <form onSubmit={submit} className="mt-5">
+            <p className="text-sm font-semibold leading-6 text-slate-500">
+              Give us a real-life relationship dilemma. Keep it anonymous and tell us what you want the world to vote on.
+            </p>
+            <textarea
+              value={questionText}
+              onChange={event => setQuestionText(event.target.value)}
+              placeholder="Example: My partner wants to move for a new job, but I don’t want to leave my family. What should we do?"
+              className="mt-4 min-h-36 w-full resize-none rounded-2xl border-2 border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-fuchsia-400 focus:bg-white"
+            />
+            <button
+              type="submit"
+              disabled={!questionText.trim()}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-base font-black text-white transition hover:bg-fuchsia-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Send className="h-4 w-4" /> Send My Question
+            </button>
+          </form>
+        ) : (
+          <div className="py-8 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-fuchsia-100 text-fuchsia-700">
+              <Sparkles className="h-7 w-7" />
+            </div>
+            <h3 className="mt-5 text-2xl font-black text-slate-950">Question received.</h3>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+              Look out for what the world thinks of your question.
+            </p>
+            <button type="button" onClick={onClose} className="mt-6 w-full rounded-2xl bg-fuchsia-600 px-5 py-4 font-black text-white">
+              Back to Voting
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </div>
   );
 }
 
@@ -157,6 +368,7 @@ export default function WhatShouldTheyDoGame({ onExit }) {
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showSuggest, setShowSuggest] = useState(false);
 
   const questionsQuery = useQuery({
     queryKey: ['what-should-they-do-questions'],
@@ -167,13 +379,17 @@ export default function WhatShouldTheyDoGame({ onExit }) {
   const questions = questionsQuery.data || [];
   const question = questions[questionIndex] || null;
 
-  const progress = useMemo(() => {
+  const progressIndex = useMemo(() => {
     if (!questions.length) return 0;
-    return Math.round(((questionIndex + 1) / questions.length) * 100);
+    return questionIndex % Math.min(questions.length, 8);
   }, [questionIndex, questions.length]);
 
   const voteMutation = useMutation({
     mutationFn: ({ questionId, optionId }) => submitWhatShouldTheyDoVote(questionId, optionId),
+    onMutate: ({ optionId }) => {
+      setSelectedOptionId(optionId);
+      setErrorMessage('');
+    },
     onSuccess: payload => {
       setSelectedOptionId(payload.selectedOptionId);
       setResults(payload.results);
@@ -191,24 +407,19 @@ export default function WhatShouldTheyDoGame({ onExit }) {
     onError: error => setErrorMessage(error?.message || 'Results could not be loaded. Please try again.'),
   });
 
-  function resetForQuestion(index) {
-    setQuestionIndex(index);
+  function nextQuestion() {
+    if (!questions.length) return;
+    setQuestionIndex((questionIndex + 1) % questions.length);
     setSelectedOptionId(null);
     setResults(null);
     setErrorMessage('');
   }
 
-  function nextQuestion() {
-    if (!questions.length) return;
-    resetForQuestion((questionIndex + 1) % questions.length);
-  }
-
   if (questionsQuery.isLoading) {
     return (
-      <div className="min-h-[70vh] bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-4 py-16">
-        <div className="mx-auto flex max-w-xl items-center justify-center gap-3 rounded-2xl bg-white p-8 shadow-sm">
-          <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
-          <span className="font-semibold text-slate-700">Loading the next dilemma…</span>
+      <div className="flex min-h-screen items-center justify-center bg-[#fff9f5] px-5">
+        <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-5 font-bold text-slate-700 shadow-lg">
+          <Loader2 className="h-5 w-5 animate-spin text-fuchsia-600" /> Loading the next dilemma…
         </div>
       </div>
     );
@@ -216,121 +427,61 @@ export default function WhatShouldTheyDoGame({ onExit }) {
 
   if (questionsQuery.isError || !question) {
     return (
-      <div className="min-h-[70vh] bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-4 py-16">
-        <Card className="mx-auto max-w-xl border-slate-200">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-xl font-black text-slate-900">The game isn’t ready to load yet.</h2>
-            <p className="mt-2 text-sm text-slate-500">The question bank may still be initializing.</p>
-            <div className="mt-5 flex justify-center gap-3">
-              <Button variant="outline" onClick={onExit}>Back</Button>
-              <Button onClick={() => questionsQuery.refetch()}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Try again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center bg-[#fff9f5] px-5">
+        <div className="w-full max-w-md rounded-[28px] bg-white p-7 text-center shadow-xl">
+          <h2 className="text-xl font-black text-slate-950">The game isn’t ready to load yet.</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-500">The question bank may still be initializing.</p>
+          <div className="mt-5 flex justify-center gap-3">
+            <button type="button" onClick={onExit} className="rounded-xl border border-slate-200 px-4 py-3 font-bold text-slate-700">Back</button>
+            <button type="button" onClick={() => questionsQuery.refetch()} className="inline-flex items-center gap-2 rounded-xl bg-fuchsia-600 px-4 py-3 font-bold text-white">
+              <RefreshCw className="h-4 w-4" /> Try again
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-4 py-8 sm:py-12">
-      <div className="mx-auto max-w-2xl">
-        <button
-          type="button"
-          onClick={onExit}
-          className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-emerald-700"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to games
-        </button>
-
-        <div className="mb-5 flex items-center justify-between text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          <span>What Should They Do?</span>
-          <span>Question {questionIndex + 1} of {questions.length}</span>
-        </div>
-        <div className="mb-7 h-2 overflow-hidden rounded-full bg-white shadow-inner">
-          <motion.div className="h-full rounded-full bg-emerald-500" animate={{ width: `${progress}%` }} />
-        </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#ffe8f3_0,_#fff9f5_32%,_#f7f5ff_100%)] px-0 py-0 sm:px-5 sm:py-8">
+      <div className="mx-auto min-h-screen w-full max-w-[470px] overflow-hidden bg-[#fffdfb] sm:min-h-0 sm:rounded-[36px] sm:border sm:border-white sm:shadow-[0_24px_90px_rgba(83,49,85,0.18)]">
+        <AppHeader onExit={onExit} onSuggest={() => setShowSuggest(true)} />
+        <BrandTitle />
+        <ProgressDots current={progressIndex} total={questions.length} />
 
         {IS_WSTD_PREVIEW_DEMO && (
-          <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-950">
-            <span className="font-black">Preview mode:</span> vote totals are sample data so you can review the experience while we build. Your preview vote is not written to the live One2OneLove database.
+          <div className="mx-5 mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-900">
+            Preview: sample vote totals are being used here. Nothing on this preview is writing votes to the live One2OneLove database.
           </div>
         )}
 
-        <Card className="overflow-hidden border-0 bg-white shadow-xl shadow-emerald-900/5">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5 text-white sm:px-8">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-100">{question.category.replaceAll('-', ' ')}</div>
-            <h1 className="mt-1 text-2xl font-black sm:text-3xl">{question.prompt}</h1>
-          </div>
+        <AnimatePresence mode="wait">
+          {!results ? (
+            <QuestionScreen
+              question={question}
+              questionIndex={questionIndex}
+              totalQuestions={questions.length}
+              voteMutation={voteMutation}
+              resultsMutation={resultsMutation}
+              errorMessage={errorMessage}
+            />
+          ) : (
+            <ResultsScreen
+              results={results}
+              selectedOptionId={selectedOptionId}
+              onNext={nextQuestion}
+              nextLabel={questionIndex === questions.length - 1 ? 'Start Again' : 'Next Question'}
+              question={question}
+            />
+          )}
+        </AnimatePresence>
 
-          <CardContent className="p-6 sm:p-8">
-            <AnimatePresence mode="wait">
-              {!results ? (
-                <motion.div
-                  key={`question-${question.id}`}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -12 }}
-                  className="space-y-6"
-                >
-                  <p className="text-lg font-semibold leading-8 text-slate-800 sm:text-xl">{question.scenario}</p>
-
-                  <div className="space-y-3">
-                    {question.options.map((option, index) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        disabled={voteMutation.isPending || resultsMutation.isPending}
-                        onClick={() => {
-                          setSelectedOptionId(option.id);
-                          voteMutation.mutate({ questionId: question.id, optionId: option.id });
-                        }}
-                        className="group flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-emerald-400 hover:bg-emerald-50/50 disabled:cursor-wait disabled:opacity-60"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-black text-slate-600 transition group-hover:bg-emerald-600 group-hover:text-white">
-                          {String.fromCharCode(65 + index)}
-                        </span>
-                        <span className="font-bold leading-6 text-slate-800">{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {errorMessage && (
-                    <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{errorMessage}</div>
-                  )}
-
-                  {(voteMutation.isPending || resultsMutation.isPending) && (
-                    <div className="flex items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Counting your vote…
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => resultsMutation.mutate(question.id)}
-                    disabled={resultsMutation.isPending || voteMutation.isPending}
-                    className="mx-auto block text-sm font-semibold text-slate-500 underline-offset-4 hover:text-emerald-700 hover:underline"
-                  >
-                    View results without voting
-                  </button>
-                </motion.div>
-              ) : (
-                <ResultsPanel
-                  results={results}
-                  selectedOptionId={selectedOptionId}
-                  onNext={nextQuestion}
-                  nextLabel={questionIndex === questions.length - 1 ? 'Start again' : 'Next question'}
-                />
-              )}
-            </AnimatePresence>
-          </CardContent>
-        </Card>
-
-        <p className="mt-5 text-center text-xs leading-5 text-slate-400">
-          Country comparison uses country-level request data only. It does not display a voter’s precise location.
-        </p>
+        <div className="px-7 pb-7 text-center text-[10px] font-semibold leading-5 text-slate-400">
+          Country comparisons use country-level data only. Precise voter locations are not displayed.
+        </div>
       </div>
+
+      {showSuggest && <SuggestQuestionModal onClose={() => setShowSuggest(false)} />}
     </div>
   );
 }
