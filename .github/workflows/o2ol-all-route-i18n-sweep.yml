@@ -1,0 +1,105 @@
+name: O2OL All-Route I18N Sweep
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+      - name: Install browser
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start preview
+        shell: bash
+        run: |
+          nohup npx vite preview --host 127.0.0.1 --port 4173 >/tmp/vite-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/ || true)
+            [ "$code" = "200" ] && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: Sweep all registered routes in five languages
+        shell: bash
+        run: |
+          cat > all-route-sweep.mjs <<'JS'
+          import { chromium } from 'playwright';
+          const base='http://127.0.0.1:4173';
+          const routes=['/','/AIContentCreator','/AboutUs','/Achievements','/AdminAccess','/AnniversaryTracker','/ArticlesSupport','/Blog','/Chat','/CommunicationPractice','/Community','/ContactUs','/CooperativeGames','/CounselingSupport','/CoupleActivities','/CoupleSupport','/CouplesCalendar','/CouplesDashboard','/CouplesProfile','/Dashboard','/DateIdeas','/Developer','/FindFriends','/ForgotPassword','/FriendRequests','/HelpCenter','/Home','/InfluencerSignup','/InfluencersSupport','/Invite','/LGBTQSupport','/Leaderboard','/LeaveReview','/LoveLanguageQuiz','/LoveNotes','/Meditation','/MemoryLane','/PaymentSuccess','/PodcastsSupport','/PremiumFeatures','/PrivacyPolicy','/ProfessionalSignup','/Profile','/RelationshipCoach','/RelationshipGoals','/RelationshipMilestones','/RelationshipQuizzes','/Reviews','/SendCredits','/SharedJournals','/SignIn','/SignUp','/Subscription','/Suggestions','/TermsOfService','/TherapistSignup','/WinACruise','/login','/payment-success','/signup'];
+          const langs=['en','es','fr','it','de'];
+          const ignoreExact=new Set(['One2OneLove','One 2 One Love','SMS','AI','LGBTQ','LGBTQ+','Facebook','Instagram','TikTok','Twitter','LinkedIn','Podcast','Basic','Premier','Exclusive','USD']);
+          const ignoreContains=['one2onelove.com','@one2onelove.com','http://','https://'];
+          function normalize(s){return s.replace(/\s+/g,' ').trim();}
+          function significant(s){
+            const t=normalize(s);
+            if(t.length<8||ignoreExact.has(t)||ignoreContains.some(x=>t.toLowerCase().includes(x))) return false;
+            if(/^[-+]?[$€£]?\d[\d.,%\s$€£-]*$/.test(t)) return false;
+            const words=(t.match(/[A-Za-zÀ-ÿ]+/g)||[]);
+            if(words.length<2) return false;
+            if(words.length===2 && words.every(w=>w.length<=4)) return false;
+            return true;
+          }
+          async function textNodes(page){
+            return await page.evaluate(() => {
+              const out=[]; const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+              let n; while((n=walker.nextNode())){
+                const p=n.parentElement; if(!p) continue;
+                const style=getComputedStyle(p); if(style.display==='none'||style.visibility==='hidden') continue;
+                const s=(n.nodeValue||'').replace(/\s+/g,' ').trim(); if(s) out.push(s);
+              }
+              return [...new Set(out)];
+            });
+          }
+          const browser=await chromium.launch({headless:true});
+          let failures=[]; let candidates=[]; let checks=0;
+          for(const route of routes){
+            const englishContext=await browser.newContext();
+            await englishContext.addInitScript(()=>localStorage.setItem('preferredLanguage','en'));
+            const ep=await englishContext.newPage();
+            let english=[];
+            try{
+              const r=await ep.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});
+              await ep.waitForTimeout(250);
+              if((r?.status()||0)!==200) failures.push(`en|${route}|status=${r?.status()||0}`);
+              english=(await textNodes(ep)).filter(significant);
+            }catch(e){failures.push(`en|${route}|${String(e).slice(0,160)}`);}
+            await ep.close(); await englishContext.close(); checks++;
+            const englishSet=new Set(english.map(normalize));
+            for(const lang of langs.slice(1)){
+              const context=await browser.newContext();
+              await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
+              const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
+              try{
+                const r=await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});
+                await page.waitForTimeout(250);
+                if((r?.status()||0)!==200) failures.push(`${lang}|${route}|status=${r?.status()||0}`);
+                if(errors.length) failures.push(`${lang}|${route}|pageerror=${errors.join('; ').slice(0,160)}`);
+                const nodes=(await textNodes(page)).filter(significant);
+                for(const raw of nodes){
+                  const t=normalize(raw);
+                  if(englishSet.has(t)) candidates.push(`${lang}|${route}|${t}`);
+                }
+              }catch(e){failures.push(`${lang}|${route}|${String(e).slice(0,160)}`);}
+              await page.close(); await context.close(); checks++;
+            }
+          }
+          await browser.close();
+          const uniq=[...new Set(candidates)];
+          console.log(`ALL_ROUTE_LANGUAGE_CHECKS=${checks}`);
+          console.log(`ROUTE_FAILURES=${failures.length}`); failures.forEach(x=>console.log('ROUTE_FAIL|'+x));
+          console.log(`SAME_TEXT_CANDIDATES=${uniq.length}`); uniq.forEach(x=>console.log('SAME_TEXT|'+x));
+          if(failures.length) process.exit(1);
+          JS
+          node ./all-route-sweep.mjs
