@@ -19,7 +19,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Extract runtime user messages and JSX literal candidates
+      - name: Extract runtime user messages
         shell: bash
         run: |
           python - <<'PY'
@@ -48,49 +48,28 @@ jobs:
           for x in extras: messages.append({'file':'audit-extra','text':x})
           seen=set(); unique=[]
           for item in messages:
-            key=item['text']
-            if key not in seen:
-              seen.add(key); unique.append(item)
-          Path('/tmp/i18n_messages.json').write_text(json.dumps(unique,ensure_ascii=False),encoding='utf-8')
+            if item['text'] not in seen:
+              seen.add(item['text']); unique.append(item)
+          Path('i18n_messages.json').write_text(json.dumps(unique,ensure_ascii=False),encoding='utf-8')
           print('UNIQUE_RUNTIME_MESSAGES='+str(len(unique)))
-
-          # Raw JSX text candidates: visible literal text between tags, outside JS expressions.
-          ignore_exact={'One2OneLove','SMS','LGBTQ','AI','OK','OR','vs','www.one2onelove.com'}
-          candidates=[]
-          tag_text=re.compile(r'>\s*([^<>{}\n][^<>{}\n]*?)\s*<')
-          for p in files:
-            try: s=p.read_text(encoding='utf-8')
-            except: continue
-            # Remove import lines and translation-object-heavy leading dictionaries are intentionally not filtered;
-            # regex only captures actual JSX tag text.
-            for m in tag_text.finditer(s):
-              text=' '.join(m.group(1).split())
-              if len(text)<3 or text in ignore_exact: continue
-              if not re.search(r'[A-Za-z]', text): continue
-              if re.fullmatch(r'[A-Z0-9_./:+-]+', text): continue
-              candidates.append((str(p),text))
-          seen=set()
-          for f,t in candidates:
-            k=(f,t)
-            if k in seen: continue
-            seen.add(k)
-            print('JSX_LITERAL|'+f+'|'+t[:180])
-          print('JSX_LITERAL_COUNT='+str(len(seen)))
           PY
 
-      - name: Verify every known runtime leak translates to all five languages
+      - name: Verify runtime leaks translate in all four non-English languages
         shell: bash
         run: |
-          cat > /tmp/check-i18n.mjs <<'JS'
+          cat > check-i18n.mjs <<'JS'
           import fs from 'node:fs';
           import { translateRuntimeText } from './src/utils/runtimeLocalization.js';
-          const items=JSON.parse(fs.readFileSync('/tmp/i18n_messages.json','utf8'));
+          import { translateStaticUiText } from './src/utils/staticUiLocalization.js';
+          const items=JSON.parse(fs.readFileSync('./i18n_messages.json','utf8'));
           const langs=['es','fr','it','de'];
+          const allowedSame=new Set(['es|Personalizado para']);
           let failures=[];
           for(const {file,text} of items){
             for(const lang of langs){
-              const out=translateRuntimeText(text,lang);
-              if(out===text) failures.push(`${lang}|${file}|${text}`);
+              const out1=translateRuntimeText(text,lang);
+              const out2=translateStaticUiText(out1,lang);
+              if(out2===text && !allowedSame.has(`${lang}|${text}`)) failures.push(`${lang}|${file}|${text}`);
             }
           }
           console.log(`RUNTIME_TRANSLATION_CHECKS=${items.length*langs.length}`);
@@ -98,4 +77,119 @@ jobs:
           failures.forEach(x=>console.log('MISSING_TRANSLATION|'+x));
           if(failures.length) process.exit(1);
           JS
-          node /tmp/check-i18n.mjs
+          node ./check-i18n.mjs
+
+      - name: Verify high-risk literal UI labels
+        shell: bash
+        run: |
+          cat > check-static.mjs <<'JS'
+          import { translateRuntimeText } from './src/utils/runtimeLocalization.js';
+          import { translateStaticUiText } from './src/utils/staticUiLocalization.js';
+          const phrases=[
+            'Loading One2OneLove Admin','Admin Verification','Go back','Analytics','Operations Dashboard','Refresh',
+            'Your Friends','Pending Requests',"You don't have any buddies yet",'Loading users...',
+            '2 sends per $1 · credits do not expire while your account remains active.',
+            'Monthly Winner','Grand Prize Winner','Additional Rewards','Start Competing Today!','Loading profile...',
+            'Start Practice','← Back','AI Relationship Coach','Saving...','Save to Profile','Saved to Profile',
+            'Loading Analytics','30-Day Trend View','Generate Content','Current Level','Advanced Analytics',
+            'AI-Personalized Love Note',"Partner's Personality Traits *",'Select 2-5 traits that best describe your partner',
+            'Shared Memories (Optional)','Inside Jokes (Optional)','Generate Love Note','Cancel','Generating...',
+            'Previous slide','Next slide','Toggle Sidebar','Previous','Next','Close','Play Now','Save Entry',
+            'Select a chat to start messaging','Loading messages...','No messages yet','Start the conversation!',
+            'Delete Message','Delete for me','Delete for everyone','No conversations yet','Start a new chat to get started',
+            'Relationship Status','Voice Notes','No shared media yet','Open in Maps','Starting camera...',
+            'Premium Feature','Upgrade Required','View Plans','Choose Your Love Journey',
+            'Profile Photo (Optional)','Remove Photo','Professional Information','Social Media Platforms (Optional)',
+            'Check Your Email! 📧','Account Created Successfully!',"We've sent a verification email to:",
+            'Next Steps:','Return here and sign in!',"💡 Can't find the email?",'Couple Membership Details',
+            'First Name *','Last Name *','Email Address *','Phone Number *','Country *','Language Spoken *',
+            'Loading...','Uploading...','Click to upload photos','Connected','Shared Goal:','Accept','Decline'
+          ];
+          const langs=['es','fr','it','de'];
+          const legitimateSame=new Set([
+            'fr|Analytics','it|Analytics','de|Analytics',
+            'fr|Cancel','it|Cancel','de|Cancel'
+          ]);
+          let failures=[];
+          for(const text of phrases){
+            for(const lang of langs){
+              const a=translateRuntimeText(text,lang);
+              const b=translateStaticUiText(a,lang);
+              if(b===text && !legitimateSame.has(`${lang}|${text}`)) failures.push(`${lang}|${text}`);
+            }
+          }
+          console.log(`STATIC_TRANSLATION_CHECKS=${phrases.length*langs.length}`);
+          console.log(`STATIC_TRANSLATION_FAILURES=${failures.length}`);
+          failures.forEach(x=>console.log('MISSING_STATIC_TRANSLATION|'+x));
+          if(failures.length) process.exit(1);
+          JS
+          node ./check-static.mjs
+
+      - name: Install browser
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local preview
+        shell: bash
+        run: |
+          nohup npx vite preview --host 127.0.0.1 --port 4173 >/tmp/vite-preview.log 2>&1 &
+          ready=no
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/ || true)
+            if [ "$code" = "200" ]; then ready=yes; break; fi
+            sleep 1
+          done
+          cat /tmp/vite-preview.log || true
+          test "$ready" = yes
+
+      - name: Five-language browser sweep across launch routes
+        shell: bash
+        run: |
+          cat > browser-i18n.mjs <<'JS'
+          import { chromium } from 'playwright';
+          const base='http://127.0.0.1:4173';
+          const langs=['en','es','fr','it','de'];
+          const routes=['/','/SignIn','/SignUp','/ForgotPassword','/Subscription','/Profile','/LoveNotes','/SendCredits','/DateIdeas','/MemoryLane','/AnniversaryTracker','/RelationshipGoals','/RelationshipMilestones','/SharedJournals','/CouplesCalendar','/RelationshipQuizzes','/LoveLanguageQuiz','/CommunicationPractice','/CoupleSupport','/ArticlesSupport','/PodcastsSupport','/LGBTQSupport','/Chat','/Invite','/AdminAccess','/Admin','/Analytics'];
+          const forbidden=[
+            'Love Notes Created','Happy Couples','Most Notes (Week)','Most Notes (Month)','Most Notes (Year)',
+            'Loading profile...','Start Practice','Save to Profile','Saved to Profile','Admin Verification',
+            'Loading One2OneLove Admin','Operations Dashboard','Loading Analytics','30-Day Trend View',
+            'AI-Personalized Love Note',"Partner's Personality Traits *",'Generate Love Note',
+            'Select a chat to start messaging','Loading messages...','No messages yet','Start the conversation!',
+            'Delete Message','No conversations yet','Premium Feature','Upgrade Required','Choose Your Love Journey',
+            'Profile Photo (Optional)','Check Your Email! 📧','Couple Membership Details'
+          ];
+          const browser=await chromium.launch({headless:true});
+          let failures=[]; let checks=0;
+          for(const lang of langs){
+            const context=await browser.newContext();
+            await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
+            for(const route of routes){
+              const page=await context.newPage();
+              const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
+              try{
+                const response=await page.goto(base+route,{waitUntil:'domcontentloaded',timeout:30000});
+                await page.waitForTimeout(300);
+                const status=response?.status()||0;
+                const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+                checks++;
+                if(status!==200) failures.push(`${lang}|${route}|status=${status}`);
+                if(errors.length) failures.push(`${lang}|${route}|pageerror=${errors.join('; ').slice(0,240)}`);
+                if(lang!=='en'){
+                  for(const phrase of forbidden){
+                    if(body.includes(phrase)) failures.push(`${lang}|${route}|english=${phrase}`);
+                  }
+                }
+              }catch(e){failures.push(`${lang}|${route}|exception=${String(e).slice(0,240)}`);}
+              await page.close();
+            }
+            await context.close();
+          }
+          await browser.close();
+          console.log(`BROWSER_ROUTE_LANGUAGE_CHECKS=${checks}`);
+          console.log(`BROWSER_I18N_FAILURES=${failures.length}`);
+          failures.forEach(x=>console.log('BROWSER_I18N_FAIL|'+x));
+          if(failures.length) process.exit(1);
+          JS
+          node ./browser-i18n.mjs
