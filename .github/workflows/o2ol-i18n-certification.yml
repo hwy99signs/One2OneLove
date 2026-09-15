@@ -1,0 +1,101 @@
+name: O2OL Five-Language Certification
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+
+permissions:
+  contents: read
+
+jobs:
+  i18n-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Extract runtime user messages and JSX literal candidates
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json
+          files=list(Path('src/pages').glob('*.jsx'))+list(Path('src/components').rglob('*.jsx'))
+          messages=[]
+          patterns=[
+            re.compile(r"toast\.(?:error|success|info|warning)\((['\"])(?P<s>[A-Za-z][^'\"]{3,})\1"),
+            re.compile(r"window\.confirm\((['\"])(?P<s>[A-Za-z][^'\"]{3,})\1"),
+          ]
+          for p in files:
+            try: s=p.read_text(encoding='utf-8')
+            except: continue
+            for pat in patterns:
+              for m in pat.finditer(s): messages.append({'file':str(p),'text':m.group('s')})
+          extras=[
+            'Email verification required.',
+            'Invalid email or password. Please try again.',
+            'Login timeout after 15 seconds',
+            'An error occurred. Please try again.',
+            'Could not resend the verification code.',
+            'Love Notes Created','Happy Couples','Most Notes (Week)','Most Notes (Month)','Most Notes (Year)',
+            'Personalizado para'
+          ]
+          for x in extras: messages.append({'file':'audit-extra','text':x})
+          seen=set(); unique=[]
+          for item in messages:
+            key=item['text']
+            if key not in seen:
+              seen.add(key); unique.append(item)
+          Path('/tmp/i18n_messages.json').write_text(json.dumps(unique,ensure_ascii=False),encoding='utf-8')
+          print('UNIQUE_RUNTIME_MESSAGES='+str(len(unique)))
+
+          # Raw JSX text candidates: visible literal text between tags, outside JS expressions.
+          ignore_exact={'One2OneLove','SMS','LGBTQ','AI','OK','OR','vs','www.one2onelove.com'}
+          candidates=[]
+          tag_text=re.compile(r'>\s*([^<>{}\n][^<>{}\n]*?)\s*<')
+          for p in files:
+            try: s=p.read_text(encoding='utf-8')
+            except: continue
+            # Remove import lines and translation-object-heavy leading dictionaries are intentionally not filtered;
+            # regex only captures actual JSX tag text.
+            for m in tag_text.finditer(s):
+              text=' '.join(m.group(1).split())
+              if len(text)<3 or text in ignore_exact: continue
+              if not re.search(r'[A-Za-z]', text): continue
+              if re.fullmatch(r'[A-Z0-9_./:+-]+', text): continue
+              candidates.append((str(p),text))
+          seen=set()
+          for f,t in candidates:
+            k=(f,t)
+            if k in seen: continue
+            seen.add(k)
+            print('JSX_LITERAL|'+f+'|'+t[:180])
+          print('JSX_LITERAL_COUNT='+str(len(seen)))
+          PY
+
+      - name: Verify every known runtime leak translates to all five languages
+        shell: bash
+        run: |
+          cat > /tmp/check-i18n.mjs <<'JS'
+          import fs from 'node:fs';
+          import { translateRuntimeText } from './src/utils/runtimeLocalization.js';
+          const items=JSON.parse(fs.readFileSync('/tmp/i18n_messages.json','utf8'));
+          const langs=['es','fr','it','de'];
+          let failures=[];
+          for(const {file,text} of items){
+            for(const lang of langs){
+              const out=translateRuntimeText(text,lang);
+              if(out===text) failures.push(`${lang}|${file}|${text}`);
+            }
+          }
+          console.log(`RUNTIME_TRANSLATION_CHECKS=${items.length*langs.length}`);
+          console.log(`RUNTIME_TRANSLATION_FAILURES=${failures.length}`);
+          failures.forEach(x=>console.log('MISSING_TRANSLATION|'+x));
+          if(failures.length) process.exit(1);
+          JS
+          node /tmp/check-i18n.mjs
