@@ -1,5 +1,13 @@
 const SUPPORTED = new Set(['en', 'es', 'fr', 'it', 'de']);
 
+const CORRECTIONS = {
+  'Available in 6 Languages:': 'Available in 5 Languages:',
+  'Disponible en 6 idiomas:': 'Disponible en 5 idiomas:',
+  'Disponible en 6 langues :': 'Disponible en 5 langues :',
+  'Disponibile in 6 lingue:': 'Disponibile in 5 lingue:',
+  'Verfügbar in 6 Sprachen:': 'Verfügbar in 5 Sprachen:'
+};
+
 const EXACT = {
   'Oops!': {
     es: '¡Ups!',
@@ -19,18 +27,23 @@ function currentLanguage() {
 }
 
 export function translateI18nFallbackText(value, language = currentLanguage()) {
-  if (typeof value !== 'string' || language === 'en') return value;
+  if (typeof value !== 'string') return value;
   const leading = value.match(/^\s*/)?.[0] || '';
   const trailing = value.match(/\s*$/)?.[0] || '';
   const core = value.trim();
   if (!core) return value;
+
+  const corrected = CORRECTIONS[core];
+  if (corrected) return `${leading}${corrected}${trailing}`;
+  if (language === 'en') return value;
+
   const translated = EXACT[core]?.[language];
   return translated ? `${leading}${translated}${trailing}` : value;
 }
 
 function localizeTree(root) {
   const language = currentLanguage();
-  if (language === 'en' || !root) return;
+  if (!root) return;
 
   if (root.nodeType === Node.TEXT_NODE) {
     const translated = translateI18nFallbackText(root.nodeValue, language);
