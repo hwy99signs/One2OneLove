@@ -1,13 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import WhatShouldTheyDoGameHybrid from "../features/whatShouldTheyDo/WhatShouldTheyDoGameHybrid";
+import WhatShouldTheyDoGameHybridReadable from "../features/whatShouldTheyDo/WhatShouldTheyDoGameHybridReadable";
 
 export default function Games() {
   const navigate = useNavigate();
 
   return (
-    <WhatShouldTheyDoGameHybrid
+    <WhatShouldTheyDoGameHybridReadable
       onExit={() => navigate(createPageUrl("Home"))}
     />
   );
