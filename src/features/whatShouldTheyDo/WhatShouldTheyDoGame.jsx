@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -42,6 +42,23 @@ const RESULT_STYLES = [
   'from-[#7c3aed] to-[#a78bfa]',
 ];
 
+const CATEGORY_LABELS = {
+  communication: 'Communication',
+  'trust-honesty': 'Trust & Honesty',
+  boundaries: 'Boundaries',
+  'conflict-repair': 'Conflict & Repair',
+  'emotional-needs': 'Emotional Needs',
+  'attachment-closeness': 'Attachment & Closeness',
+  'independence-togetherness': 'Independence vs. Togetherness',
+  'jealousy-insecurity': 'Jealousy & Insecurity',
+  'forgiveness-resentment': 'Forgiveness & Resentment',
+  'family-in-laws': 'Family & In-Laws',
+};
+
+function labelCategory(category) {
+  return CATEGORY_LABELS[category] || String(category || '').replaceAll('-', ' ');
+}
+
 function flagEmoji(countryCode) {
   if (!/^[A-Z]{2}$/.test(countryCode || '')) return '🌍';
   return String.fromCodePoint(...countryCode.split('').map(char => 127397 + char.charCodeAt(0)));
@@ -59,20 +76,12 @@ function GameControls({ onSuggest, onQuestions, searchQuery, onSearchChange, onS
   return (
     <div className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-end gap-3 px-4 py-3 sm:gap-5 sm:px-7 lg:gap-7">
-        <button
-          type="button"
-          onClick={onQuestions}
-          className="flex items-center gap-2 text-xs font-black text-[#17345f] transition hover:text-[#ff176b] sm:text-sm"
-        >
+        <button type="button" onClick={onQuestions} className="flex items-center gap-2 text-xs font-black text-[#17345f] transition hover:text-[#ff176b] sm:text-sm">
           <Search className="h-5 w-5 sm:h-6 sm:w-6" />
           <span>Questions</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onSuggest}
-          className="flex items-center gap-2 text-xs font-black text-[#17345f] transition hover:text-[#ff176b] sm:text-sm"
-        >
+        <button type="button" onClick={onSuggest} className="flex items-center gap-2 text-xs font-black text-[#17345f] transition hover:text-[#ff176b] sm:text-sm">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1976f3] text-white shadow-sm sm:h-9 sm:w-9">
             <Plus className="h-5 w-5" />
           </span>
@@ -81,20 +90,10 @@ function GameControls({ onSuggest, onQuestions, searchQuery, onSearchChange, onS
 
         <form onSubmit={onSearch} className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2.5 text-sm text-slate-500 sm:flex sm:w-52 lg:w-64">
           <Search className="h-4 w-4 shrink-0" />
-          <input
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search dilemmas..."
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-          />
+          <input value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search dilemmas..." className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" />
         </form>
 
-        <button
-          type="button"
-          onClick={onSearch}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-[#17345f] sm:hidden"
-          aria-label="Search dilemmas"
-        >
+        <button type="button" onClick={onSearch} className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-[#17345f] sm:hidden" aria-label="Search dilemmas">
           <Search className="h-5 w-5" />
         </button>
       </div>
@@ -110,9 +109,7 @@ function GameBrandHeader() {
           What Should
           <span className="block text-[#ff176b]">They Do?</span>
         </h1>
-        <p className="mt-2 text-[13px] font-bold text-[#5c6b84] sm:text-lg lg:text-xl">
-          Vote first. Then see what the world thinks.
-        </p>
+        <p className="mt-2 text-[13px] font-bold text-[#5c6b84] sm:text-lg lg:text-xl">Vote first. Then see what the world thinks.</p>
       </div>
       <div className="shrink-0 border-l border-slate-300 pl-3 pt-1 text-[9px] font-bold leading-[1.35] text-[#3e506f] sm:pl-6 sm:text-sm sm:leading-6 lg:text-lg lg:leading-7">
         <div>Real People.</div>
@@ -124,18 +121,18 @@ function GameBrandHeader() {
   );
 }
 
-function FeaturedDilemma({ question }) {
-  const category = (question.category || 'work').replaceAll('-', ' ');
+function FeaturedDilemma({ question, questionNumber, totalQuestions }) {
   return (
     <div className="relative min-h-[285px] overflow-hidden rounded-2xl bg-slate-900 shadow-lg sm:min-h-[340px] lg:min-h-[420px]">
       <img src={FEATURE_IMAGE} alt="Person considering a difficult decision" className="absolute inset-0 h-full w-full object-cover object-center" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-black/5" />
       <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-[#1478f2] px-3 py-1.5 text-[10px] font-black uppercase text-white shadow-md sm:left-4 sm:top-4 sm:text-xs">
-        <BriefcaseBusiness className="h-4 w-4" /> {category}
+        <BriefcaseBusiness className="h-4 w-4" /> {labelCategory(question.category)}
       </div>
-      <button type="button" className="absolute right-4 top-4 text-white/95" aria-label="Question options">
+      <div className="absolute right-4 top-4 flex items-center gap-3 text-white/95">
+        <span className="rounded-full bg-black/25 px-2.5 py-1 text-[10px] font-black backdrop-blur-sm">{questionNumber}/{totalQuestions}</span>
         <MoreHorizontal className="h-6 w-6" />
-      </button>
+      </div>
       <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-16 text-[1.28rem] font-black leading-[1.08] text-white sm:px-5 sm:pb-5 sm:text-2xl lg:px-7 lg:pb-7 lg:text-[2rem]">
         {question.scenario}
       </div>
@@ -152,16 +149,8 @@ function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, 
           const Icon = style.icon;
           const selected = Number(selectedOptionId) === Number(option.id);
           return (
-            <button
-              key={option.id}
-              type="button"
-              disabled={pending}
-              onClick={() => onSelect(option.id)}
-              className={`flex min-h-[60px] items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all sm:gap-3 sm:px-4 lg:min-h-[66px] ${style.bg} ${selected ? 'ring-2 ring-[#ff176b] ring-offset-2 shadow-md' : 'hover:-translate-y-0.5 hover:shadow-sm'}`}
-            >
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${style.iconBg} ${style.iconColor}`}>
-                <Icon className="h-5 w-5" />
-              </span>
+            <button key={option.id} type="button" disabled={pending} onClick={() => onSelect(option.id)} className={`flex min-h-[60px] items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all sm:gap-3 sm:px-4 lg:min-h-[66px] ${style.bg} ${selected ? 'ring-2 ring-[#ff176b] ring-offset-2 shadow-md' : 'hover:-translate-y-0.5 hover:shadow-sm'}`}>
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${style.iconBg} ${style.iconColor}`}><Icon className="h-5 w-5" /></span>
               <span className="min-w-0 flex-1 text-[11px] font-black leading-4 text-[#16345f] sm:text-sm lg:text-[15px]">{option.label}</span>
               <ChevronRight className="h-4 w-4 shrink-0 text-[#31527b] sm:h-5 sm:w-5" />
             </button>
@@ -171,12 +160,7 @@ function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, 
 
       {errorMessage && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{errorMessage}</div>}
 
-      <button
-        type="button"
-        disabled={!selectedOptionId || pending}
-        onClick={onVote}
-        className="mt-auto flex min-h-[58px] w-full items-center justify-center gap-3 rounded-2xl bg-[#ff176b] px-5 py-3.5 text-base font-black text-white shadow-lg shadow-pink-500/20 transition hover:bg-[#ec0f60] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-[64px] sm:text-lg"
-      >
+      <button type="button" disabled={!selectedOptionId || pending} onClick={onVote} className="mt-auto flex min-h-[58px] w-full items-center justify-center gap-3 rounded-2xl bg-[#ff176b] px-5 py-3.5 text-base font-black text-white shadow-lg shadow-pink-500/20 transition hover:bg-[#ec0f60] disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-[64px] sm:text-lg">
         {pending ? <Loader2 className="h-6 w-6 animate-spin" /> : <BarChart3 className="h-6 w-6" />}
         <span>Cast Your Vote</span>
         {!pending && <ChevronRight className="h-5 w-5" />}
@@ -185,29 +169,83 @@ function AnswerChoices({ question, selectedOptionId, onSelect, onVote, pending, 
   );
 }
 
-function AnotherQuestionCard({ question, onOpen }) {
+function AnotherQuestionCard({ question, onOpen, onSeeAll }) {
   return (
     <div className="rounded-2xl bg-white p-3 shadow-[0_10px_30px_rgba(24,52,95,0.08)] ring-1 ring-slate-100 sm:p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#52657f] sm:text-[11px]">Another Question</span>
-        <button type="button" onClick={onOpen} className="inline-flex items-center gap-1 text-[10px] font-black text-[#1d3557] sm:text-xs">
-          See All <ChevronRight className="h-4 w-4" />
-        </button>
+        <button type="button" onClick={onSeeAll} className="inline-flex items-center gap-1 text-[10px] font-black text-[#1d3557] sm:text-xs">See All <ChevronRight className="h-4 w-4" /></button>
       </div>
       <button type="button" onClick={onOpen} className="flex w-full items-stretch gap-3 overflow-hidden rounded-xl text-left lg:block">
         <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl sm:h-24 sm:w-36 lg:h-36 lg:w-full">
           <img src={NEXT_IMAGE} alt="Another relationship dilemma" className="h-full w-full object-cover" />
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#ff176b] px-2 py-1 text-[8px] font-black uppercase text-white sm:text-[9px] lg:left-3 lg:top-3 lg:px-3 lg:text-[10px]">
-            <Heart className="h-3 w-3 fill-current" /> Relationships
-          </span>
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#ff176b] px-2 py-1 text-[8px] font-black uppercase text-white sm:text-[9px] lg:left-3 lg:top-3 lg:px-3 lg:text-[10px]"><Heart className="h-3 w-3 fill-current" /> {labelCategory(question?.category || 'relationships')}</span>
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-2 py-1 lg:px-1 lg:pb-1 lg:pt-3">
-          <p className="flex-1 text-[11px] font-black leading-4 text-[#112f5e] sm:text-sm sm:leading-5">
-            {question?.scenario || 'Tanya wants to help her mother financially, but her husband says they cannot afford it. What should she do?'}
-          </p>
+          <p className="flex-1 text-[11px] font-black leading-4 text-[#112f5e] sm:text-sm sm:leading-5">{question?.scenario || 'Choose another question to keep the conversation going.'}</p>
           <ChevronRight className="h-5 w-5 shrink-0 text-[#31527b]" />
         </div>
       </button>
+    </div>
+  );
+}
+
+function QuestionsBrowser({ questions, initialQuery, onClose, onSelect }) {
+  const [query, setQuery] = useState(initialQuery || '');
+  const [category, setCategory] = useState('all');
+  const categories = useMemo(() => [...new Set(questions.map(item => item.category))], [questions]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return questions.filter(item => {
+      const categoryMatch = category === 'all' || item.category === category;
+      const queryMatch = !q || `${item.scenario} ${labelCategory(item.category)} ${item.options.map(option => option.label).join(' ')}`.toLowerCase().includes(q);
+      return categoryMatch && queryMatch;
+    });
+  }, [questions, query, category]);
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#102f60]/65 p-3 backdrop-blur-sm sm:p-6">
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-5xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-5 py-5 sm:px-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#ff176b]">Question Bank</div>
+              <h2 className="mt-1 text-2xl font-black text-[#102f60] sm:text-3xl">Browse What Should They Do?</h2>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{questions.length} questions · {categories.length} categories</p>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-full bg-slate-100 p-2.5 text-slate-600"><X className="h-5 w-5" /></button>
+          </div>
+          <div className="mt-4 flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3">
+            <Search className="h-5 w-5 text-slate-400" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search questions, categories, or answers..." className="min-w-0 flex-1 bg-transparent text-base text-slate-800 outline-none placeholder:text-slate-400" />
+          </div>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            <button type="button" onClick={() => setCategory('all')} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black ${category === 'all' ? 'bg-[#102f60] text-white' : 'bg-slate-100 text-[#17345f]'}`}>All {questions.length}</button>
+            {categories.map(item => (
+              <button key={item} type="button" onClick={() => setCategory(item)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black ${category === item ? 'bg-[#ff176b] text-white' : 'bg-slate-100 text-[#17345f]'}`}>
+                {labelCategory(item)} · {questions.filter(question => question.category === item).length}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
+          {filtered.map((item) => {
+            const index = questions.findIndex(question => question.id === item.id);
+            return (
+              <button key={item.id} type="button" onClick={() => onSelect(index)} className="rounded-2xl border border-slate-200 p-4 text-left transition hover:border-[#ff176b] hover:bg-pink-50/40">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1768c4]">{labelCategory(item.category)}</span>
+                  <span className="text-xs font-black text-slate-400">#{index + 1}</span>
+                </div>
+                <p className="text-sm font-black leading-5 text-[#102f60]">{item.scenario}</p>
+                <div className="mt-3 inline-flex items-center gap-1 text-xs font-black text-[#ff176b]">Open question <ChevronRight className="h-4 w-4" /></div>
+              </button>
+            );
+          })}
+          {!filtered.length && <div className="col-span-full py-12 text-center font-bold text-slate-500">No questions matched that search.</div>}
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -219,13 +257,8 @@ function ResultBars({ options = [], selectedOptionId }) {
         const chosen = Number(option.optionId) === Number(selectedOptionId);
         return (
           <div key={option.optionId}>
-            <div className="mb-2 flex items-center justify-between gap-4 text-sm font-bold text-[#16345f]">
-              <span>{option.label}{chosen ? ' · Your vote' : ''}</span>
-              <span className="text-base font-black">{option.percentage}%</span>
-            </div>
-            <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${option.percentage}%` }} className={`h-full rounded-full bg-gradient-to-r ${RESULT_STYLES[index % RESULT_STYLES.length]}`} />
-            </div>
+            <div className="mb-2 flex items-center justify-between gap-4 text-sm font-bold text-[#16345f]"><span>{option.label}{chosen ? ' · Your vote' : ''}</span><span className="text-base font-black">{option.percentage}%</span></div>
+            <div className="h-3 overflow-hidden rounded-full bg-slate-100"><motion.div initial={{ width: 0 }} animate={{ width: `${option.percentage}%` }} className={`h-full rounded-full bg-gradient-to-r ${RESULT_STYLES[index % RESULT_STYLES.length]}`} /></div>
           </div>
         );
       })}
@@ -248,36 +281,13 @@ function ResultsView({ question, results, selectedOptionId, onNext }) {
         <div className="p-5 sm:p-7">
           <div className="mb-6 rounded-2xl bg-slate-50 p-4 text-sm font-bold leading-6 text-[#16345f]">{question.scenario}</div>
           <div className="mb-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
-            <button type="button" onClick={() => setTab('global')} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black ${tab === 'global' ? 'bg-white text-[#ff176b] shadow-sm' : 'text-slate-500'}`}>
-              <Globe2 className="h-4 w-4" /> Global
-            </button>
-            <button type="button" onClick={() => setTab('country')} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black ${tab === 'country' ? 'bg-white text-[#ff176b] shadow-sm' : 'text-slate-500'}`}>
-              <MapPin className="h-4 w-4" /> By Country
-            </button>
+            <button type="button" onClick={() => setTab('global')} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black ${tab === 'global' ? 'bg-white text-[#ff176b] shadow-sm' : 'text-slate-500'}`}><Globe2 className="h-4 w-4" /> Global</button>
+            <button type="button" onClick={() => setTab('country')} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black ${tab === 'country' ? 'bg-white text-[#ff176b] shadow-sm' : 'text-slate-500'}`}><MapPin className="h-4 w-4" /> By Country</button>
           </div>
-          {tab === 'global' ? (
-            <ResultBars options={results.global} selectedOptionId={selectedOptionId} />
-          ) : countries.length ? (
-            <div className="space-y-4">
-              {countries.map(country => (
-                <div key={country.countryCode} className="rounded-2xl border border-slate-200 p-4">
-                  <div className="mb-4 flex items-center gap-3">
-                    <span className="text-2xl">{flagEmoji(country.countryCode)}</span>
-                    <div>
-                      <div className="font-black text-[#16345f]">{countryName(country.countryCode)}</div>
-                      <div className="text-xs text-slate-400">{country.totalVotes.toLocaleString()} votes</div>
-                    </div>
-                  </div>
-                  <ResultBars options={country.options} selectedOptionId={selectedOptionId} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm font-semibold text-slate-500">Country results appear after at least 5 votes in a country.</div>
-          )}
-          <button type="button" onClick={onNext} className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff176b] px-5 py-4 text-lg font-black text-white">
-            Next Question <ChevronRight className="h-5 w-5" />
-          </button>
+          {tab === 'global' ? <ResultBars options={results.global} selectedOptionId={selectedOptionId} /> : countries.length ? (
+            <div className="space-y-4">{countries.map(country => <div key={country.countryCode} className="rounded-2xl border border-slate-200 p-4"><div className="mb-4 flex items-center gap-3"><span className="text-2xl">{flagEmoji(country.countryCode)}</span><div><div className="font-black text-[#16345f]">{countryName(country.countryCode)}</div><div className="text-xs text-slate-400">{country.totalVotes.toLocaleString()} votes</div></div></div><ResultBars options={country.options} selectedOptionId={selectedOptionId} /></div>)}</div>
+          ) : <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm font-semibold text-slate-500">Country results appear after at least 5 votes in a country.</div>}
+          <button type="button" onClick={onNext} className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff176b] px-5 py-4 text-lg font-black text-white">Next Question <ChevronRight className="h-5 w-5" /></button>
         </div>
       </div>
     </motion.div>
@@ -290,28 +300,15 @@ function SuggestQuestionModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#102f60]/60 p-0 backdrop-blur-sm sm:items-center sm:p-6">
       <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full max-w-md rounded-t-[30px] bg-white p-6 shadow-2xl sm:rounded-[30px]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#ff176b]">Your Turn</div>
-            <h2 className="mt-1 text-2xl font-black text-[#102f60]">Suggest a Question</h2>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-full bg-slate-100 p-2 text-slate-600"><X className="h-5 w-5" /></button>
-        </div>
+        <div className="flex items-start justify-between gap-4"><div><div className="text-xs font-black uppercase tracking-[0.18em] text-[#ff176b]">Your Turn</div><h2 className="mt-1 text-2xl font-black text-[#102f60]">Suggest a Question</h2></div><button type="button" onClick={onClose} className="rounded-full bg-slate-100 p-2 text-slate-600"><X className="h-5 w-5" /></button></div>
         {!submitted ? (
           <form onSubmit={(event) => { event.preventDefault(); if (text.trim()) setSubmitted(true); }} className="mt-5">
             <p className="text-sm font-semibold leading-6 text-slate-500">Share an anonymous real-life dilemma you want the world to vote on.</p>
             <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Type your question here..." className="mt-4 min-h-36 w-full rounded-2xl border-2 border-slate-200 bg-slate-50 p-4 text-sm font-semibold outline-none focus:border-[#ff176b]" />
-            <button type="submit" disabled={!text.trim()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff176b] px-5 py-4 font-black text-white disabled:opacity-40">
-              <Send className="h-4 w-4" /> Send My Question
-            </button>
+            <button type="submit" disabled={!text.trim()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff176b] px-5 py-4 font-black text-white disabled:opacity-40"><Send className="h-4 w-4" /> Send My Question</button>
           </form>
         ) : (
-          <div className="py-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pink-100 text-[#ff176b]"><Heart className="h-7 w-7 fill-current" /></div>
-            <h3 className="mt-4 text-2xl font-black text-[#102f60]">Question received.</h3>
-            <p className="mt-2 text-sm font-semibold text-slate-500">Look out for what the world thinks of your question.</p>
-            <button type="button" onClick={onClose} className="mt-5 w-full rounded-2xl bg-[#102f60] px-5 py-4 font-black text-white">Back to Voting</button>
-          </div>
+          <div className="py-8 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pink-100 text-[#ff176b]"><Heart className="h-7 w-7 fill-current" /></div><h3 className="mt-4 text-2xl font-black text-[#102f60]">Question received.</h3><p className="mt-2 text-sm font-semibold text-slate-500">Look out for what the world thinks of your question.</p><button type="button" onClick={onClose} className="mt-5 w-full rounded-2xl bg-[#102f60] px-5 py-4 font-black text-white">Back to Voting</button></div>
         )}
       </motion.div>
     </div>
@@ -324,11 +321,12 @@ export default function WhatShouldTheyDoGame({ onExit }) {
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuggest, setShowSuggest] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const questionsQuery = useQuery({
     queryKey: ['what-should-they-do-questions'],
-    queryFn: () => getWhatShouldTheyDoQuestions(30),
+    queryFn: () => getWhatShouldTheyDoQuestions(150),
     staleTime: 60_000,
   });
 
@@ -338,11 +336,7 @@ export default function WhatShouldTheyDoGame({ onExit }) {
 
   const voteMutation = useMutation({
     mutationFn: ({ questionId, optionId }) => submitWhatShouldTheyDoVote(questionId, optionId),
-    onSuccess: payload => {
-      setSelectedOptionId(payload.selectedOptionId);
-      setResults(payload.results);
-      setErrorMessage('');
-    },
+    onSuccess: payload => { setSelectedOptionId(payload.selectedOptionId); setResults(payload.results); setErrorMessage(''); },
     onError: error => setErrorMessage(error?.message || 'Your vote could not be recorded. Please try again.'),
   });
 
@@ -352,6 +346,7 @@ export default function WhatShouldTheyDoGame({ onExit }) {
     setSelectedOptionId(null);
     setResults(null);
     setErrorMessage('');
+    setShowQuestions(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -359,73 +354,38 @@ export default function WhatShouldTheyDoGame({ onExit }) {
     showQuestionAt(questionIndex + 1);
   }
 
-  function searchQuestions(event) {
+  function openSearch(event) {
     event?.preventDefault?.();
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return;
-    const foundIndex = questions.findIndex(item => `${item.scenario} ${item.category || ''}`.toLowerCase().includes(query));
-    if (foundIndex >= 0) showQuestionAt(foundIndex);
+    setShowQuestions(true);
   }
 
-  if (questionsQuery.isLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-white"><Loader2 className="h-7 w-7 animate-spin text-[#ff176b]" /></div>;
-  }
+  if (questionsQuery.isLoading) return <div className="flex min-h-screen items-center justify-center bg-white"><Loader2 className="h-7 w-7 animate-spin text-[#ff176b]" /></div>;
 
   if (questionsQuery.isError || !question) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-5">
-        <div className="w-full max-w-md rounded-3xl border border-slate-200 p-7 text-center shadow-lg">
-          <h2 className="text-xl font-black text-[#102f60]">The game isn’t ready to load yet.</h2>
-          <p className="mt-2 text-sm font-semibold text-slate-500">The question bank may still be initializing.</p>
-          <div className="mt-5 flex justify-center gap-3">
-            <button type="button" onClick={onExit} className="rounded-xl border border-slate-200 px-4 py-3 font-bold">Back</button>
-            <button type="button" onClick={() => questionsQuery.refetch()} className="inline-flex items-center gap-2 rounded-xl bg-[#ff176b] px-4 py-3 font-bold text-white"><RefreshCw className="h-4 w-4" /> Try Again</button>
-          </div>
-        </div>
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center bg-white px-5"><div className="w-full max-w-md rounded-3xl border border-slate-200 p-7 text-center shadow-lg"><h2 className="text-xl font-black text-[#102f60]">The game isn’t ready to load yet.</h2><p className="mt-2 text-sm font-semibold text-slate-500">The question bank may still be initializing.</p><div className="mt-5 flex justify-center gap-3"><button type="button" onClick={onExit} className="rounded-xl border border-slate-200 px-4 py-3 font-bold">Back</button><button type="button" onClick={() => questionsQuery.refetch()} className="inline-flex items-center gap-2 rounded-xl bg-[#ff176b] px-4 py-3 font-bold text-white"><RefreshCw className="h-4 w-4" /> Try Again</button></div></div></div>;
   }
 
   return (
     <div className="min-h-screen bg-white text-[#102f60]">
-      <GameControls
-        onSuggest={() => setShowSuggest(true)}
-        onQuestions={nextQuestion}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSearch={searchQuestions}
-      />
+      <GameControls onSuggest={() => setShowSuggest(true)} onQuestions={() => setShowQuestions(true)} searchQuery={searchQuery} onSearchChange={setSearchQuery} onSearch={openSearch} />
 
       <main className="mx-auto w-full max-w-7xl pb-8 lg:px-7 lg:pb-12">
         <GameBrandHeader />
-
         <AnimatePresence mode="wait">
           {!results ? (
             <motion.div key={`q-${question.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="px-5 pb-4 pt-5 sm:px-7 lg:px-0 lg:pb-0">
               <div className="grid gap-4 lg:grid-cols-[1.65fr_0.95fr_0.92fr] lg:items-stretch lg:gap-5">
-                <FeaturedDilemma question={question} />
-                <AnswerChoices
-                  question={question}
-                  selectedOptionId={selectedOptionId}
-                  onSelect={(id) => { setSelectedOptionId(id); setErrorMessage(''); }}
-                  onVote={() => voteMutation.mutate({ questionId: question.id, optionId: selectedOptionId })}
-                  pending={voteMutation.isPending}
-                  errorMessage={errorMessage}
-                />
-                <div className="hidden lg:block">
-                  <AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} />
-                </div>
+                <FeaturedDilemma question={question} questionNumber={questionIndex + 1} totalQuestions={questions.length} />
+                <AnswerChoices question={question} selectedOptionId={selectedOptionId} onSelect={(id) => { setSelectedOptionId(id); setErrorMessage(''); }} onVote={() => voteMutation.mutate({ questionId: question.id, optionId: selectedOptionId })} pending={voteMutation.isPending} errorMessage={errorMessage} />
+                <div className="hidden lg:block"><AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} onSeeAll={() => setShowQuestions(true)} /></div>
               </div>
-              <div className="mt-4 lg:hidden">
-                <AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} />
-              </div>
+              <div className="mt-4 lg:hidden"><AnotherQuestionCard question={nextQuestionPreview} onOpen={nextQuestion} onSeeAll={() => setShowQuestions(true)} /></div>
             </motion.div>
-          ) : (
-            <ResultsView question={question} results={results} selectedOptionId={selectedOptionId} onNext={nextQuestion} />
-          )}
+          ) : <ResultsView question={question} results={results} selectedOptionId={selectedOptionId} onNext={nextQuestion} />}
         </AnimatePresence>
       </main>
 
+      {showQuestions && <QuestionsBrowser questions={questions} initialQuery={searchQuery} onClose={() => setShowQuestions(false)} onSelect={showQuestionAt} />}
       {showSuggest && <SuggestQuestionModal onClose={() => setShowSuggest(false)} />}
     </div>
   );
