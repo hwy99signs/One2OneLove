@@ -84,12 +84,40 @@ async function launchReadiness(env) {
         to_regclass('public.signup_consents') IS NOT NULL AS consent_table_ready,
         COALESCE((email_and_password->>'requireEmailVerification')::boolean, false) AS verification_required,
         COALESCE((email_and_password->>'sendVerificationEmailOnSignUp')::boolean, false) AS verification_email_on_signup,
-        COALESCE(email_and_password->>'emailVerificationMethod','') AS verification_method
+        COALESCE(email_and_password->>'emailVerificationMethod','') AS verification_method,
+        COALESCE((plugin_configs->'phoneNumber'->>'enabled')::boolean, false) AS phone_verification_enabled,
+        COALESCE(email_provider->>'type','') AS email_provider_type
       FROM neon_auth.project_config
       WHERE name='One2OneLove'
       LIMIT 1
     `);
     return result.rows[0] || {};
+  });
+}
+
+async function launchReadinessResponse(request, env) {
+  if (request.method !== 'GET') return fail('Method not allowed.', 405, 'method_not_allowed');
+  const readiness = await launchReadiness(env);
+  const emailVerificationReady = Boolean(
+    readiness.consent_table_ready &&
+    readiness.verification_required &&
+    readiness.verification_email_on_signup &&
+    readiness.verification_method
+  );
+  const phoneVerificationReady = readiness.phone_verification_enabled === true;
+
+  return json({
+    ok: true,
+    readiness: {
+      consentTableReady: readiness.consent_table_ready === true,
+      emailVerificationReady,
+      emailVerificationRequired: readiness.verification_required === true,
+      verificationEmailOnSignup: readiness.verification_email_on_signup === true,
+      emailVerificationMethod: readiness.verification_method || null,
+      emailProviderMode: readiness.email_provider_type || null,
+      phoneVerificationReady,
+      publicLaunchIdentityGateReady: emailVerificationReady && phoneVerificationReady,
+    },
   });
 }
 
@@ -222,6 +250,7 @@ async function verifyLaunchEmail(request, env) {
 }
 
 export async function handleLaunchAuthRequest(request, env, url) {
+  if (url.pathname === '/api/launch-signup/readiness') return launchReadinessResponse(request, env);
   if (url.pathname === '/api/launch-signup') return registerLaunchUser(request, env);
   if (url.pathname === '/api/launch-signup/resend') return resendVerification(request, env);
   if (url.pathname === '/api/launch-signup/verify') return verifyLaunchEmail(request, env);
