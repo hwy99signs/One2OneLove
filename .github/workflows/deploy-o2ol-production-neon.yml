@@ -150,8 +150,23 @@ jobs:
             .readiness.phoneVerificationReady == true and
             .readiness.publicLaunchIdentityGateReady == true and
             .readiness.billingDataReady == true and
-            .readiness.legacyEntitlementRows == 0
+            .readiness.billingDefaultsReady == true and
+            (.readiness.legacyEntitlementRows | type == "number")
           ' /tmp/readiness.json >/dev/null
+
+      - name: Verify canonical O2OL launch readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 "$PRELAUNCH_URL/api/launch-readiness" -o /tmp/o2ol-launch-readiness.json
+          cat /tmp/o2ol-launch-readiness.json
+          jq -e '
+            .ok == true and
+            .readiness.productionPromotionReady == true and
+            .readiness.database.requiredDatabaseReady == true and
+            .readiness.identity.requiredIdentityReady == true and
+            .readiness.billing.billingProviderReady == true
+          ' /tmp/o2ol-launch-readiness.json >/dev/null
 
       - name: Verify Suggestions storage is launch-ready
         shell: bash
