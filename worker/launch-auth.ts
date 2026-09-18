@@ -190,7 +190,7 @@ async function registerLaunchUser(request, env) {
       await db.query(
         `INSERT INTO public.users
           (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-         VALUES ($1::uuid,$2,$3,'regular',true,'Basis',0,'inactive')
+         VALUES ($1::uuid,$2,$3,'regular',true,'Basis',4.99,'inactive')
          ON CONFLICT (id) DO NOTHING`,
         [user.id, email, name],
       );
