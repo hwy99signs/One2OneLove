@@ -32,6 +32,7 @@ import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
+import { handleSuggestionsRequest } from './suggestions';
 
 export default {
   async fetch(request, env, ctx) {
@@ -99,6 +100,11 @@ export default {
 
     if (url.pathname === '/api/professional-signup') {
       const response = await handleProfessionalSignup(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/suggestions') {
+      const response = await handleSuggestionsRequest(request, env, url);
       if (response) return response;
     }
 
