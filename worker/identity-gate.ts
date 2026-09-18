@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { requiresApiEntitlement } from './api-entitlements';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -69,7 +70,10 @@ async function phoneVerificationRequired(env) {
 }
 
 export async function enforceLaunchIdentity(request, env, url) {
-  if (isPublicIdentityRoute(request, url)) return null;
+  if (isPublicIdentityRoute(request, url) || requiresApiEntitlement(url.pathname)) return null;
+
+  const requirePhone = await phoneVerificationRequired(env);
+  if (!requirePhone) return null;
 
   const auth = await session(request, env);
   if (!auth) return null;
@@ -81,8 +85,7 @@ export async function enforceLaunchIdentity(request, env, url) {
     }, 401);
   }
 
-  const requirePhone = await phoneVerificationRequired(env);
-  if (requirePhone && auth.user.phoneNumberVerified !== true) {
+  if (auth.user.phoneNumberVerified !== true) {
     return json({
       ok: false,
       error: { code: 'phone_verification_required', message: 'Phone verification is required.' },
