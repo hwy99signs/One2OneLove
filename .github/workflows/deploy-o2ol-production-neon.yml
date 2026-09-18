@@ -43,6 +43,10 @@ jobs:
             echo 'Legacy Supabase reference found in active production application.' >&2
             exit 1
           fi
+          if grep -RInEi 'vercel\.app|VERCEL_URL|@vercel/' src worker package.json package-lock.json public 2>/dev/null; then
+            echo 'Vercel runtime reference found in active production application.' >&2
+            exit 1
+          fi
 
       - name: Audit frontend dependencies for high-severity vulnerabilities
         run: npm audit --audit-level=high
