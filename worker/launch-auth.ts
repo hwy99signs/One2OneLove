@@ -87,7 +87,13 @@ async function launchReadiness(env) {
         COALESCE((email_and_password->>'sendVerificationEmailOnSignUp')::boolean, false) AS verification_email_on_signup,
         COALESCE(email_and_password->>'emailVerificationMethod','') AS verification_method,
         COALESCE((plugin_configs->'phoneNumber'->>'enabled')::boolean, false) AS phone_verification_enabled,
-        COALESCE(email_provider->>'type','') AS email_provider_type
+        COALESCE(email_provider->>'type','') AS email_provider_type,
+        (
+          SELECT count(*)::int
+          FROM public.users
+          WHERE stripe_subscription_id IS NULL
+            AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
+        ) AS legacy_entitlement_rows
       FROM neon_auth.project_config
       WHERE name='One2OneLove'
       LIMIT 1
@@ -108,6 +114,8 @@ async function launchReadinessResponse(request, env) {
   const emailDeliveryReady = Boolean(readiness.email_provider_type && readiness.email_provider_type !== 'shared');
   const phoneVerificationReady = readiness.phone_verification_enabled === true;
   const publicLaunchIdentityGateReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
+  const legacyEntitlementRows = Number(readiness.legacy_entitlement_rows || 0);
+  const billingDataReady = legacyEntitlementRows === 0;
 
   return json({
     ok: true,
@@ -121,6 +129,8 @@ async function launchReadinessResponse(request, env) {
       emailDeliveryReady,
       phoneVerificationReady,
       publicLaunchIdentityGateReady,
+      legacyEntitlementRows,
+      billingDataReady,
     },
   });
 }
