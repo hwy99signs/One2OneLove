@@ -73,7 +73,7 @@ export const getUserSubscription = async () => {
 
 export const handleSubscriptionCheckout = async (plan) => {
   try {
-    const planName = plan?.name === 'Basic' ? 'Basis' : plan?.name;
+    const planName = plan?.name;
     const result = await createCheckoutSession(plan?.priceId, planName, plan?.price);
     if (!result.success) {
       if (result.code === 'subscription_exists') {
@@ -130,17 +130,17 @@ export const hasFeatureAccess = (feature, user) => {
   if (!user?.subscription_plan || !user?.stripe_subscription_id) return false;
   const status = String(user?.subscription_status || '').toLowerCase();
   if (!['active', 'trial', 'trialing'].includes(status)) return false;
-  const storedPlan = user.subscription_plan === 'Basic' ? 'Basis' : user.subscription_plan;
+  const storedPlan = user.subscription_plan;
   const effectivePlan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
   return featureAccess[effectivePlan]?.includes(feature) || false;
 };
 
-const basis = [
+const basic = [
   'love_notes_limited', 'basic_quizzes', 'date_ideas_limited',
   'anniversary_reminders', 'memory_timeline', 'mobile_app', 'email_support',
 ];
 const premiere = [
-  ...basis, 'love_notes_extended', 'ai_coach_limited', 'unlimited_date_ideas',
+  ...basic, 'love_notes_extended', 'ai_coach_limited', 'unlimited_date_ideas',
   'goals_tracker', 'advanced_quizzes', 'surprise_messages', 'ad_free',
   'priority_support', 'early_access',
 ];
@@ -151,8 +151,7 @@ const exclusive = [
 ];
 
 const featureAccess = {
-  Basis: basis,
-  Basic: basis,
+  Basic: basic,
   Premiere: premiere,
   Premier: premiere,
   Exclusive: exclusive,
