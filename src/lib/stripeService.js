@@ -126,10 +126,12 @@ export const reactivateSubscription = async () => {
 };
 
 export const hasFeatureAccess = (feature, user) => {
-  if (!user?.subscription_plan) return false;
+  if (String(user?.role || '').toLowerCase() === 'admin') return true;
+  if (!user?.subscription_plan || !user?.stripe_subscription_id) return false;
+  const status = String(user?.subscription_status || '').toLowerCase();
+  if (!['active', 'trial', 'trialing'].includes(status)) return false;
   const storedPlan = user.subscription_plan === 'Basic' ? 'Basis' : user.subscription_plan;
-  if (user.subscription_status && !['active', 'trial'].includes(user.subscription_status)) return false;
-  const effectivePlan = user.subscription_status === 'trial' ? 'Exclusive' : storedPlan;
+  const effectivePlan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
   return featureAccess[effectivePlan]?.includes(feature) || false;
 };
 
