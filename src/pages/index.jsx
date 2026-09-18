@@ -38,6 +38,7 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
+import VerifyPhone from './VerifyPhone';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
@@ -47,7 +48,7 @@ const PAGES = {
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
-  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription,
+  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -160,6 +161,7 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Subscription" element={<Subscription />} />
+          <Route path="/VerifyPhone" element={<VerifyPhone />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/InfluencerSignup" element={<Navigate to="/Home" replace />} />
