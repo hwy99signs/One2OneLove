@@ -25,6 +25,7 @@ function isPublicIdentityRoute(request, url) {
   if (path.startsWith('/api/auth/')) return true;
   if (path.startsWith('/api/launch-signup')) return true;
   if (path === '/api/professional-signup') return true;
+  if (path === '/api/suggestions') return true;
   if (path === '/api/billing/webhook') return true;
   if (path === '/api/engagement/waitlist') return true;
 
