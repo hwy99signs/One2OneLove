@@ -52,19 +52,19 @@ const translations = {
   },
   de: {
     currentPlan: 'Aktueller Plan', viewPlans: 'Alle Pläne Anzeigen', planFeatures: 'Plan-Funktionen', unlockMore: 'Mehr Funktionen Freischalten', perMonth: 'pro Monat', free: 'KOSTENLOS', moreFeatures: 'weitere Funktionen', upgrade: 'Plan Upgraden', upgradeText: 'Upgrade auf Premiere oder Exclusive für unbegrenzte Funktionen!',
-    names: { Basic: 'Basis', Premiere: 'Premiere', Exclusive: 'Exklusiv' },
+    names: { Basic: 'Basic', Premiere: 'Premiere', Exclusive: 'Exklusiv' },
     features: {
       Basic: ['Zugriff auf über 50 Liebesnotizen', 'Grundlegende Beziehungsquizze', 'Monatliche Date-Ideen (5 Ideen)', 'Jahrestagserinnerungen', 'Digitale Erinnerungs-Zeitleiste', 'Zugriff auf die mobile App', 'E-Mail-Support'],
-      Premiere: ['Alles aus Basis, plus:', 'Über 1000 Liebesnotizen', 'KI-Beziehungscoach (50 Fragen/Monat)', 'Unbegrenzte Date-Ideen mit Filtern', 'Tracker für Beziehungsziele', 'Erweiterte Quizze und Kompatibilitätstests', 'Überraschungsnachrichten planen', 'Werbefreie Nutzung', 'Prioritäts-Support'],
+      Premiere: ['Alles aus Basic, plus:', 'Über 1000 Liebesnotizen', 'KI-Beziehungscoach (50 Fragen/Monat)', 'Unbegrenzte Date-Ideen mit Filtern', 'Tracker für Beziehungsziele', 'Erweiterte Quizze und Kompatibilitätstests', 'Überraschungsnachrichten planen', 'Werbefreie Nutzung', 'Prioritäts-Support'],
       Exclusive: ['Alles aus Premiere, plus:', 'Unbegrenzte Liebesnotizen-Bibliothek', 'Unbegrenzter KI-Beziehungscoach', 'KI-Content Creator', 'Personalisierte Beziehungsberichte', 'Exklusiver Community-Zugang für Paare', '1-zu-1-Expertenberatung (1/Monat)', 'Premium-WhatsApp-Support', 'VIP-Abzeichen und Anerkennung']
     }
   },
   nl: {
     currentPlan: 'Huidig Abonnement', viewPlans: 'Bekijk Alle Abonnementen', planFeatures: 'Abonnementsfuncties', unlockMore: 'Ontgrendel Meer Functies', perMonth: 'per maand', free: 'GRATIS', moreFeatures: 'meer functies', upgrade: 'Abonnement Upgraden', upgradeText: 'Upgrade naar Premiere of Exclusive voor onbeperkte functies!',
-    names: { Basic: 'Basis', Premiere: 'Premiere', Exclusive: 'Exclusief' },
+    names: { Basic: 'Basic', Premiere: 'Premiere', Exclusive: 'Exclusief' },
     features: {
-      Basic: ['Toegang tot 50+ liefdesbriefjes', 'Basis relatiequizzen', 'Maandelijkse date-ideeën (5 ideeën)', 'Jubileumherinneringen', 'Digitale herinneringstijdlijn', 'Toegang tot mobiele app', 'E-mailondersteuning'],
-      Premiere: ['Alles van Basis, plus:', '1000+ liefdesbriefjes', 'AI-relatiecoach (50 vragen/maand)', 'Onbeperkte date-ideeën met filters', 'Tracker voor relatiedoelen', 'Geavanceerde quizzen en compatibiliteitstests', 'Verrassingsberichten plannen', 'Advertentievrije ervaring', 'Prioriteitsondersteuning'],
+      Basic: ['Toegang tot 50+ liefdesbriefjes', 'Eenvoudige relatiequizzen', 'Maandelijkse date-ideeën (5 ideeën)', 'Jubileumherinneringen', 'Digitale herinneringstijdlijn', 'Toegang tot mobiele app', 'E-mailondersteuning'],
+      Premiere: ['Alles van Basic, plus:', '1000+ liefdesbriefjes', 'AI-relatiecoach (50 vragen/maand)', 'Onbeperkte date-ideeën met filters', 'Tracker voor relatiedoelen', 'Geavanceerde quizzen en compatibiliteitstests', 'Verrassingsberichten plannen', 'Advertentievrije ervaring', 'Prioriteitsondersteuning'],
       Exclusive: ['Alles van Premiere, plus:', 'Onbeperkte liefdesbriefjesbibliotheek', 'Onbeperkte AI-relatiecoach', 'AI-contentmaker', 'Gepersonaliseerde relatierapporten', 'Exclusieve communitytoegang voor koppels', '1-op-1 expertconsult (1/maand)', 'Premium WhatsApp-ondersteuning', 'VIP-badge en erkenning']
     }
   },
@@ -82,7 +82,7 @@ const translations = {
 export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const t = translations[currentLanguage] || translations.en;
   const rawPlan = user?.subscription_plan || 'Basic';
-  const userPlan = rawPlan === 'Basis' ? 'Basic' : rawPlan;
+  const userPlan = rawPlan;
   const planInfo = planMeta[userPlan] || planMeta.Basic;
   const launchPlanCopy = (subscriptionPlanCopy[currentLanguage] || subscriptionPlanCopy.en).plans;
   const planCopy = launchPlanCopy[userPlan] || launchPlanCopy.Basic;
