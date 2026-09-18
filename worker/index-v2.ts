@@ -103,7 +103,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname === '/api/suggestions') {
+    if (url.pathname.startsWith('/api/suggestions')) {
       const response = await handleSuggestionsRequest(request, env, url);
       if (response) return response;
     }
