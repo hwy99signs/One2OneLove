@@ -21,7 +21,20 @@ function clean(value, max) {
 }
 
 export async function handleSuggestionsRequest(request, env, url) {
-  if (url.pathname !== '/api/suggestions') return null;
+  if (!url.pathname.startsWith('/api/suggestions')) return null;
+
+  if (url.pathname === '/api/suggestions/readiness' && request.method === 'GET') {
+    const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
+    await db.connect();
+    try {
+      const ready = await db.query(`SELECT to_regclass('public.suggestions') IS NOT NULL AS ready`);
+      return json({ ok: true, ready: ready.rows[0]?.ready === true });
+    } finally {
+      await db.end();
+    }
+  }
+
+  if (url.pathname !== '/api/suggestions') return fail('Suggestion route not found.', 404, 'not_found');
   if (request.method !== 'POST') return fail('Method not allowed.', 405, 'method_not_allowed');
 
   try {
