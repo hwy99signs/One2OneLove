@@ -21,6 +21,12 @@ export default function AdminMfaGate({ children }) {
       window.location.replace('/Home');
       return;
     }
+    const phoneRequired = user?.phone_verification_required === true;
+    const phoneVerified = user?.phoneNumberVerified === true || user?.phone_number_verified === true;
+    if (phoneRequired && !phoneVerified) {
+      window.location.replace('/VerifyPhone');
+      return;
+    }
 
     let active = true;
     (async () => {
@@ -42,7 +48,7 @@ export default function AdminMfaGate({ children }) {
     })();
 
     return () => { active = false; };
-  }, [isAuthenticated, isLoading, user?.role]);
+  }, [isAuthenticated, isLoading, user?.role, user?.phone_verification_required, user?.phoneNumberVerified, user?.phone_number_verified]);
 
   useEffect(() => {
     if (!allowed) return undefined;
