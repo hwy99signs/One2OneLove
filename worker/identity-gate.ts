@@ -19,6 +19,7 @@ function isPublicIdentityRoute(request, url) {
 
   if (!path.startsWith('/api/')) return true;
   if (path === '/api/health') return true;
+  if (method === 'GET' && path === '/api/profile') return true;
   if (path.startsWith('/api/auth/')) return true;
   if (path.startsWith('/api/launch-signup')) return true;
   if (path === '/api/professional-signup') return true;
