@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { readContestLeaderboard, readContestWinner } from './contests';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -128,39 +129,6 @@ async function listDateIdeas(db, userId, favoriteOnly) {
   );
   return r.rows;
 }
-async function contestLeaderboard(db, type, period, limit = 5) {
-  if (!['monthly_love_notes', 'yearly_engagement'].includes(type)) throw new Error('Invalid contest type.');
-  const p = cleanText(period, 16, true);
-  const safeLimit = Math.max(1, Math.min(Number(limit) || 5, 50));
-  const r = await db.query(
-    `SELECT cp.id,cp.contest_type,cp.period,cp.score,cp.activities_count,cp.created_at,
-            COALESCE(NULLIF(u.name,''),'One2OneLove Member') AS display_name
-       FROM public.contest_participants cp
-       LEFT JOIN public.users u ON lower(u.email)=lower(cp.user_email)
-      WHERE cp.contest_type=$1 AND cp.period=$2
-      ORDER BY cp.score DESC,cp.activities_count DESC,cp.created_at ASC
-      LIMIT $3`,
-    [type, p, safeLimit],
-  );
-  return r.rows;
-}
-async function contestWinner(db, type, period) {
-  const r = await db.query(
-    `SELECT cw.id,cw.contest_type,cw.period,cw.rank,cw.prize_description,cw.won_at,cw.created_at,
-            COALESCE(NULLIF(u.name,''),'One2OneLove Member') AS winner_name,
-            COALESCE(cp.score,0) AS final_score
-       FROM public.contest_winners cw
-       LEFT JOIN public.users u ON lower(u.email)=lower(cw.user_email)
-       LEFT JOIN public.contest_participants cp
-         ON lower(cp.user_email)=lower(cw.user_email)
-        AND cp.contest_type=cw.contest_type AND cp.period=cw.period
-      WHERE cw.contest_type=$1 AND cw.period=$2
-      ORDER BY cw.rank ASC LIMIT 1`,
-    [type, cleanText(period, 16, true)],
-  );
-  return r.rows[0] || null;
-}
-
 export async function handleEngagementRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/engagement')) return null;
 
@@ -187,13 +155,13 @@ export async function handleEngagementRequest(request, env, url) {
     if (url.pathname === '/api/engagement/contests/leaderboard' && request.method === 'GET') {
       return await withDb(env, async db => json({
         ok: true,
-        participants: await contestLeaderboard(db, url.searchParams.get('type'), url.searchParams.get('period'), url.searchParams.get('limit')),
+        participants: await readContestLeaderboard(db, url.searchParams.get('type'), url.searchParams.get('period'), url.searchParams.get('limit')),
       }));
     }
     if (url.pathname === '/api/engagement/contests/winner' && request.method === 'GET') {
       return await withDb(env, async db => json({
         ok: true,
-        winner: await contestWinner(db, url.searchParams.get('type'), url.searchParams.get('period')),
+        winner: await readContestWinner(db, url.searchParams.get('type'), url.searchParams.get('period')),
       }));
     }
 
