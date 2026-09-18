@@ -78,8 +78,8 @@ export const subscriptionPlanCopy = {
   de: {
     subtitle: 'Vergleichen Sie genau, was Sie auf jeder Stufe nutzen können',
     plans: {
-      Basic: { displayName:'Basis', description:'Grundlegende Beziehungstools und Community-Zugang', features:['4 SMS-Liebesnachrichten pro Monat','Wähle 6 Liebesnachrichten-Kategorien','1 Date-Idee pro Monat','Beziehungsquiz','Liebessprachen-Quiz','Jahrestags-Tracker','Memory Lane','Community Chat','Einladen & Teilen'] },
-      Premiere: { displayName:'Premier', description:'Erweiterte Tools für Paare, die gemeinsam wachsen möchten', features:['30 SMS-Liebesnachrichten pro Monat — bis zu 1 pro Tag','Wähle 18 Liebesnachrichten-Kategorien','8 Date-Ideen pro Monat','Alles aus Basis, plus:','Beziehungsziele','Paarkalender','Geteilte Tagebücher','Beziehungsmeilensteine','Kommunikationsübungen','Paaraktivitäten','Beziehungs-Podcast-Bibliothek','LGBTQ+ Beziehungsunterstützung'] },
+      Basic: { displayName:'Basic', description:'Grundlegende Beziehungstools und Community-Zugang', features:['4 SMS-Liebesnachrichten pro Monat','Wähle 6 Liebesnachrichten-Kategorien','1 Date-Idee pro Monat','Beziehungsquiz','Liebessprachen-Quiz','Jahrestags-Tracker','Memory Lane','Community Chat','Einladen & Teilen'] },
+      Premiere: { displayName:'Premier', description:'Erweiterte Tools für Paare, die gemeinsam wachsen möchten', features:['30 SMS-Liebesnachrichten pro Monat — bis zu 1 pro Tag','Wähle 18 Liebesnachrichten-Kategorien','8 Date-Ideen pro Monat','Alles aus Basic, plus:','Beziehungsziele','Paarkalender','Geteilte Tagebücher','Beziehungsmeilensteine','Kommunikationsübungen','Paaraktivitäten','Beziehungs-Podcast-Bibliothek','LGBTQ+ Beziehungsunterstützung'] },
       Exclusive: { displayName:'Exklusiv', description:'Das umfassendste launch-bereite One2OneLove-Erlebnis', features:['60 SMS-Liebesnachrichten pro Monat — bis zu 2 pro Tag','Alle Liebesnachrichten-Kategorien','Unbegrenzte Date-Ideen','Alles aus Premier, plus:','Vollständige Beziehungsbibliothek','Paarprofil','Paar-Dashboard','Vollständiger Beziehungs-Support-Hub'] }
     }
   }
