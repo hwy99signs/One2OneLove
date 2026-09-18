@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
+import { getLoveNoteCategoryPreference, getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, saveLoveNoteCategoryPreference, scheduleLoveNote } from "@/lib/loveNotesService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -17,6 +17,7 @@ import { additionalLoveNotesData } from "../components/lovenotes/additional";
 import { subjectSupplementalNotes } from "../components/lovenotes/additional/LoveNotesSubjectSupplemental";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getAiConfig } from "@/lib/aiService";
 
 const translations = {
   en: {
@@ -708,10 +709,28 @@ const matchesLoveNoteSearch = (note, query) => {
   });
 };
 
+const categoryPlanCopy = {
+  en: { manage:'Choose Categories', title:'Your Love Note Categories', hint:(limit,plan)=>`${plan}: choose up to ${limit} categories for this month.`, save:'Save Categories', saved:'Love Note categories saved.', limit:(limit)=>`You can choose up to ${limit} categories.`, chooseOne:'Choose at least one category.' },
+  es: { manage:'Elegir Categorías', title:'Tus Categorías de Notas de Amor', hint:(limit,plan)=>`${plan}: elige hasta ${limit} categorías para este mes.`, save:'Guardar Categorías', saved:'Categorías de Notas de Amor guardadas.', limit:(limit)=>`Puedes elegir hasta ${limit} categorías.`, chooseOne:'Elige al menos una categoría.' },
+  fr: { manage:'Choisir les Catégories', title:'Vos Catégories de Notes d’Amour', hint:(limit,plan)=>`${plan} : choisissez jusqu’à ${limit} catégories pour ce mois.`, save:'Enregistrer les Catégories', saved:'Catégories de Notes d’Amour enregistrées.', limit:(limit)=>`Vous pouvez choisir jusqu’à ${limit} catégories.`, chooseOne:'Choisissez au moins une catégorie.' },
+  it: { manage:'Scegli Categorie', title:'Le Tue Categorie di Note d’Amore', hint:(limit,plan)=>`${plan}: scegli fino a ${limit} categorie per questo mese.`, save:'Salva Categorie', saved:'Categorie delle Note d’Amore salvate.', limit:(limit)=>`Puoi scegliere fino a ${limit} categorie.`, chooseOne:'Scegli almeno una categoria.' },
+  de: { manage:'Kategorien Auswählen', title:'Ihre Liebesnotizen-Kategorien', hint:(limit,plan)=>`${plan}: Wählen Sie diesen Monat bis zu ${limit} Kategorien.`, save:'Kategorien Speichern', saved:'Liebesnotizen-Kategorien gespeichert.', limit:(limit)=>`Sie können bis zu ${limit} Kategorien wählen.`, chooseOne:'Wählen Sie mindestens eine Kategorie.' },
+};
+
+function effectiveLoveNotesPlan(user) {
+  if (String(user?.role || '').toLowerCase() === 'admin') return 'Exclusive';
+  const status = String(user?.subscription_status || '').toLowerCase();
+  if (status === 'trial' || status === 'trialing') return 'Exclusive';
+  const raw = String(user?.subscription_plan || 'Basic').toLowerCase();
+  if (raw === 'exclusive') return 'Exclusive';
+  if (raw === 'premier' || raw === 'premiere') return 'Premier';
+  return 'Basic';
+}
+
 export default function LoveNotes() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const categories = getCategoriesForLanguage(t, currentLanguage);
+  const allCategories = getCategoriesForLanguage(t, currentLanguage);
   const subjectTabs = [
     {
       id: 'all',
@@ -754,7 +773,8 @@ export default function LoveNotes() {
   const [showScheduledNotes, setShowScheduledNotes] = useState(false);
   const [showAIPersonalization, setShowAIPersonalization] = useState(false);
   const [showRandomCategoryPicker, setShowRandomCategoryPicker] = useState(false);
-
+  const [showCategoryPreferences, setShowCategoryPreferences] = useState(false);
+  const [draftCategoryIds, setDraftCategoryIds] = useState([]);
 
   const [showPersonalization, setShowPersonalization] = useState(false);
   const [partnerName, setPartnerName] = useState(localStorage.getItem('partnerName') || '');
@@ -763,6 +783,37 @@ export default function LoveNotes() {
 
   // Fetch current user
   const { user: currentUser } = useAuth();
+
+  const effectivePlan = effectiveLoveNotesPlan(currentUser);
+  const categoryCopy = categoryPlanCopy[currentLanguage] || categoryPlanCopy.en;
+  const aiPlanEligible = effectivePlan === 'Exclusive';
+
+  const { data: categoryPreference } = useQuery({
+    queryKey: ['loveNoteCategoryPreference', currentUser?.id],
+    queryFn: getLoveNoteCategoryPreference,
+    enabled: !!currentUser?.id,
+    staleTime: 60 * 1000,
+  });
+
+  const { data: aiConfig } = useQuery({
+    queryKey: ['loveNotesAiConfig', currentUser?.id],
+    queryFn: getAiConfig,
+    enabled: !!currentUser?.id && aiPlanEligible,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const categoryLimit = Number(categoryPreference?.limit || (effectivePlan === 'Exclusive' ? 29 : effectivePlan === 'Premier' ? 18 : 6));
+  const allowedCategoryIds = useMemo(
+    () => new Set(categoryPreference?.categories || (effectivePlan === 'Exclusive' ? allCategories.filter(item => item.id !== 'all').map(item => item.id) : [])),
+    [categoryPreference?.categories, effectivePlan, allCategories],
+  );
+  const categories = useMemo(() => {
+    if (effectivePlan === 'Exclusive') return allCategories;
+    const all = allCategories.find(item => item.id === 'all');
+    const selected = allCategories.filter(item => item.id !== 'all' && allowedCategoryIds.has(item.id));
+    return all ? [all, ...selected] : selected;
+  }, [allCategories, allowedCategoryIds, effectivePlan]);
+  const aiPersonalizationReady = aiPlanEligible && aiConfig?.configured === true && aiConfig?.creator?.allowed === true;
 
   // Fetch user's partner identifier (email or phone) from profile or localStorage
   const partnerIdentifier = currentUser?.partner_email || localStorage.getItem('partnerEmail') || '';
@@ -840,6 +891,42 @@ export default function LoveNotes() {
     }
   });
 
+  const categoryPreferenceMutation = useMutation({
+    mutationFn: saveLoveNoteCategoryPreference,
+    onSuccess: (preference) => {
+      queryClient.setQueryData(['loveNoteCategoryPreference', currentUser?.id], preference);
+      setShowCategoryPreferences(false);
+      setSelectedCategory('all');
+      setSearchQuery('');
+      toast.success(categoryCopy.saved);
+    },
+    onError: (error) => toast.error(error?.message || categoryCopy.chooseOne),
+  });
+
+  const openCategoryPreferences = () => {
+    setDraftCategoryIds([...(categoryPreference?.categories || [])]);
+    setShowCategoryPreferences(true);
+  };
+
+  const toggleDraftCategory = (categoryId) => {
+    setDraftCategoryIds(current => {
+      if (current.includes(categoryId)) return current.filter(id => id !== categoryId);
+      if (current.length >= categoryLimit) {
+        toast.error(categoryCopy.limit(categoryLimit));
+        return current;
+      }
+      return [...current, categoryId];
+    });
+  };
+
+  const saveCategoryPreferences = () => {
+    if (!draftCategoryIds.length) {
+      toast.error(categoryCopy.chooseOne);
+      return;
+    }
+    categoryPreferenceMutation.mutate(draftCategoryIds);
+  };
+
   const savePersonalization = () => {
     localStorage.setItem('partnerName', partnerName);
     localStorage.setItem('petName', petName);
@@ -871,7 +958,9 @@ export default function LoveNotes() {
   };
 
   const displayedNotes = useMemo(() => {
-    let filtered = allNotes;
+    let filtered = effectivePlan === 'Exclusive'
+      ? allNotes
+      : allNotes.filter(note => allowedCategoryIds.has(note.category));
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(note => note.category === selectedCategory);
@@ -890,7 +979,7 @@ export default function LoveNotes() {
     }
 
     return filtered;
-  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes]);
+  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes, allowedCategoryIds, effectivePlan]);
 
   const handleRandomNote = () => {
     setShowRandomCategoryPicker(true);
@@ -1164,13 +1253,15 @@ export default function LoveNotes() {
               </button>
             )}
           </div>
-          <Button
-            onClick={() => setShowAIPersonalization(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 px-6"
-          >
-            <Sparkles className="w-5 h-5 mr-2" />
-            {t.aiPersonalize || 'AI Personalize'}
-          </Button>
+          {aiPersonalizationReady && (
+            <Button
+              onClick={() => setShowAIPersonalization(true)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 px-6"
+            >
+              <Sparkles className="w-5 h-5 mr-2" />
+              {t.aiPersonalize || 'AI Personalize'}
+            </Button>
+          )}
           <Button
             onClick={handleRandomNote}
             className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-12 px-6"
@@ -1244,6 +1335,59 @@ export default function LoveNotes() {
               className="mb-8"
             >
               <ScheduledNotesManager />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {effectivePlan !== 'Exclusive' && (
+          <div className="mb-5 flex justify-center">
+            <Button type="button" variant="outline" onClick={openCategoryPreferences} className="border-purple-300 text-purple-700 hover:bg-purple-50">
+              <Settings className="w-4 h-4 mr-2" />
+              {categoryCopy.manage} ({categoryPreference?.categories?.length || 0}/{categoryLimit})
+            </Button>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {showCategoryPreferences && effectivePlan !== 'Exclusive' && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="max-w-5xl mx-auto mb-8"
+            >
+              <Card className="border-2 border-purple-200 bg-white/95 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-purple-800">{categoryCopy.title}</CardTitle>
+                  <p className="text-sm text-gray-600">{categoryCopy.hint(categoryLimit, effectivePlan)}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {allCategories.filter(category => category.id !== 'all').map(category => {
+                      const selected = draftCategoryIds.includes(category.id);
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => toggleDraftCategory(category.id)}
+                          className={`px-4 py-2 rounded-full font-semibold border transition-all ${selected ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-700 border-purple-200 hover:bg-purple-50'}`}
+                        >
+                          <span className="mr-2">{category.icon}</span>{category.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-6 flex flex-wrap gap-3 justify-end">
+                    <Button type="button" variant="outline" onClick={() => setShowCategoryPreferences(false)} disabled={categoryPreferenceMutation.isPending}>
+                      {t.cancel}
+                    </Button>
+                    <Button type="button" onClick={saveCategoryPreferences} disabled={categoryPreferenceMutation.isPending || !draftCategoryIds.length} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                      {categoryPreferenceMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      {categoryCopy.save}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1370,7 +1514,7 @@ export default function LoveNotes() {
       </div>
 
       <AnimatePresence>
-        {showAIPersonalization && (
+        {showAIPersonalization && aiPersonalizationReady && (
           <AIPersonalizationModal
             onClose={() => setShowAIPersonalization(false)}
             onNoteGenerated={handleAIGeneratedNote}
