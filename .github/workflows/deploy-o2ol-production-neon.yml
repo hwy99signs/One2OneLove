@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RInE 'Promise\.resolve\(|Base44 removed' src worker 2>/dev/null; then
+          if grep -RInE --exclude-dir=node_modules 'Promise\.resolve\(|Base44 removed' src worker 2>/dev/null; then
             echo 'Legacy migration placeholder found in active O2OL code.' >&2
             exit 1
           fi
