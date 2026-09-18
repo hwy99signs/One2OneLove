@@ -16,7 +16,7 @@ function customerPlan(user) {
   if (role === 'admin') return 'Exclusive';
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
-  const raw = String(user?.subscription_plan || 'Basis').toLowerCase();
+  const raw = String(user?.subscription_plan || 'Basic').toLowerCase();
   if (raw === 'exclusive') return 'Exclusive';
   if (raw === 'premier' || raw === 'premiere') return 'Premier';
   return 'Basic';
