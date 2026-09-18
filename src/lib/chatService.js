@@ -3,7 +3,10 @@ import { apiRequest } from './apiClient';
 // Direct/private member chat is deferred for launch. The public topic-based
 // Community Chat is the supported launch surface. Returning an empty list here
 // prevents the global layout from polling a deferred API every few seconds.
-export const getMyConversations = async () => [];
+export const getMyConversations = async () => {
+  const payload = await apiRequest('/api/chat/conversations');
+  return payload?.conversations || [];
+};
 
 export const getOrCreateConversation = async (otherUserId) => {
   const payload = await apiRequest('/api/chat/conversations', {
