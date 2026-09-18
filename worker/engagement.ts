@@ -133,8 +133,8 @@ async function contestLeaderboard(db, type, period, limit = 5) {
   const p = cleanText(period, 16, true);
   const safeLimit = Math.max(1, Math.min(Number(limit) || 5, 50));
   const r = await db.query(
-    `SELECT cp.*,
-            COALESCE(u.name,split_part(cp.user_email,'@',1)) AS display_name
+    `SELECT cp.id,cp.contest_type,cp.period,cp.score,cp.activities_count,cp.created_at,
+            COALESCE(NULLIF(u.name,''),'One2OneLove Member') AS display_name
        FROM public.contest_participants cp
        LEFT JOIN public.users u ON lower(u.email)=lower(cp.user_email)
       WHERE cp.contest_type=$1 AND cp.period=$2
@@ -146,8 +146,8 @@ async function contestLeaderboard(db, type, period, limit = 5) {
 }
 async function contestWinner(db, type, period) {
   const r = await db.query(
-    `SELECT cw.*,
-            COALESCE(u.name,split_part(cw.user_email,'@',1)) AS winner_name,
+    `SELECT cw.id,cw.contest_type,cw.period,cw.rank,cw.prize_description,cw.won_at,cw.created_at,
+            COALESCE(NULLIF(u.name,''),'One2OneLove Member') AS winner_name,
             COALESCE(cp.score,0) AS final_score
        FROM public.contest_winners cw
        LEFT JOIN public.users u ON lower(u.email)=lower(cw.user_email)
