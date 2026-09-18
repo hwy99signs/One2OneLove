@@ -43,6 +43,7 @@ function callbackFor(request) {
     'https://one2onelove.com',
     'https://www.one2onelove.com',
     'https://one2onelove-launch.hwy99signs.workers.dev',
+    'https://one2onelove-prelaunch.hwy99signs.workers.dev',
     'https://one2onelove-preview-migration.hwy99signs.workers.dev',
   ]);
   const origin = request.headers.get('origin');
