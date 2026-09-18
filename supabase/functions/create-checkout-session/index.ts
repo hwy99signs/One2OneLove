@@ -79,7 +79,7 @@ serve(async (req) => {
 
     // Stripe Price IDs (you need to create these in Stripe Dashboard)
     const stripePriceIds: Record<string, string> = {
-      Basis: '', // Free plan, no price ID needed
+      Basic: '', // Free plan, no price ID needed
       Premiere: Deno.env.get('STRIPE_PRICE_PREMIERE') || '',
       Exclusive: Deno.env.get('STRIPE_PRICE_EXCLUSIVE') || '',
     }
