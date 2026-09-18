@@ -29,8 +29,9 @@ export const useFeatureAccess = (feature) => {
  */
 export const useHasPaidPlan = () => {
   const { user } = useAuth();
-  const plan = canonicalPlan(user?.subscription_plan);
-  return plan !== 'Basis' && ['active', 'trial'].includes(user?.subscription_status);
+  const status = String(user?.subscription_status || '').toLowerCase();
+  if (String(user?.role || '').toLowerCase() === 'admin') return true;
+  return Boolean(user?.stripe_subscription_id && ['active', 'trial', 'trialing'].includes(status));
 };
 
 /**
@@ -53,19 +54,19 @@ export const useFeatureLimits = () => {
 
   const limits = {
     Basis: {
-      loveNotes: 50,
-      dateIdeas: 5,
+      loveNotes: 4,
+      dateIdeas: 1,
       aiQuestions: 0,
       quizzes: 'basic'
     },
     Premiere: {
-      loveNotes: 1000,
-      dateIdeas: 'unlimited',
+      loveNotes: 30,
+      dateIdeas: 8,
       aiQuestions: 50,
       quizzes: 'advanced'
     },
     Exclusive: {
-      loveNotes: 'unlimited',
+      loveNotes: 60,
       dateIdeas: 'unlimited',
       aiQuestions: 'unlimited',
       quizzes: 'advanced'
