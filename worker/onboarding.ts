@@ -96,7 +96,7 @@ async function therapistUpsert(db, auth, body) {
        therapy_types,specializations,certifications,years_experience,consultation_fee,
        professional_bio,license_number,social_media_platforms,email_verified,phone_verified,status)
      VALUES ($1::uuid,$2,$3,$4,$5,$6::text[],$7::text[],$8::text[],$9::text[],$10::text[],
-             $11,$12,$13,$14,$15::jsonb,$16,$17,'pending')
+             $11,$12,$13,$14,$15::jsonb,false,false,'pending')
      ON CONFLICT (user_id) DO UPDATE SET
        first_name=EXCLUDED.first_name,last_name=EXCLUDED.last_name,phone=EXCLUDED.phone,
        profile_photo_url=EXCLUDED.profile_photo_url,licensed_countries=EXCLUDED.licensed_countries,
@@ -104,8 +104,7 @@ async function therapistUpsert(db, auth, body) {
        specializations=EXCLUDED.specializations,certifications=EXCLUDED.certifications,
        years_experience=EXCLUDED.years_experience,consultation_fee=EXCLUDED.consultation_fee,
        professional_bio=EXCLUDED.professional_bio,license_number=EXCLUDED.license_number,
-       social_media_platforms=EXCLUDED.social_media_platforms,email_verified=EXCLUDED.email_verified,
-       phone_verified=EXCLUDED.phone_verified,updated_at=now()
+       social_media_platforms=EXCLUDED.social_media_platforms,updated_at=now()
      RETURNING *`,
     [
       auth.user.id, firstName, lastName, text(body.phone, 80), text(body.profilePhotoUrl ?? body.profile_photo_url, 2000),
@@ -115,7 +114,6 @@ async function therapistUpsert(db, auth, body) {
       body.consultationFee ?? body.consultation_fee ? Number(body.consultationFee ?? body.consultation_fee) : null,
       text(body.professionalBio ?? body.professional_bio, 5000), text(body.licenseNumber ?? body.license_number, 250),
       JSON.stringify(object(body.socialMediaPlatforms ?? body.social_media_platforms)),
-      Boolean(body.emailVerified ?? body.email_verified), Boolean(body.phoneVerified ?? body.phone_verified),
     ],
   );
   return result.rows[0];
@@ -133,20 +131,19 @@ async function influencerUpsert(db, auth, body) {
     `INSERT INTO public.influencer_profiles
       (user_id,first_name,last_name,phone,profile_photo_url,total_follower_count,platform_links,
        content_categories,collaboration_types,bio,media_kit_url,email_verified,phone_verified,status)
-     VALUES ($1::uuid,$2,$3,$4,$5,$6,$7::jsonb,$8::text[],$9::text[],$10,$11,$12,$13,'pending')
+     VALUES ($1::uuid,$2,$3,$4,$5,$6,$7::jsonb,$8::text[],$9::text[],$10,$11,false,false,'pending')
      ON CONFLICT (user_id) DO UPDATE SET
        first_name=EXCLUDED.first_name,last_name=EXCLUDED.last_name,phone=EXCLUDED.phone,
        profile_photo_url=EXCLUDED.profile_photo_url,total_follower_count=EXCLUDED.total_follower_count,
        platform_links=EXCLUDED.platform_links,content_categories=EXCLUDED.content_categories,
        collaboration_types=EXCLUDED.collaboration_types,bio=EXCLUDED.bio,media_kit_url=EXCLUDED.media_kit_url,
-       email_verified=EXCLUDED.email_verified,phone_verified=EXCLUDED.phone_verified,updated_at=now()
+       updated_at=now()
      RETURNING *`,
     [
       auth.user.id, firstName, lastName, text(body.phone, 80), text(body.profilePhotoUrl ?? body.profile_photo_url, 2000),
       Number(body.totalFollowerCount ?? body.total_follower_count ?? 0), JSON.stringify(platformLinks),
       list(body.contentCategories ?? body.content_categories), list(body.collaborationTypes ?? body.collaboration_types),
       bio, text(body.mediaKitUrl ?? body.media_kit_url, 2000),
-      Boolean(body.emailVerified ?? body.email_verified), Boolean(body.phoneVerified ?? body.phone_verified),
     ],
   );
   return result.rows[0];
@@ -163,19 +160,18 @@ async function professionalUpsert(db, auth, body) {
     `INSERT INTO public.professional_profiles
       (user_id,first_name,last_name,phone,profile_photo_url,organization_name,practice_type,
        service_description,professional_bio,website_url,email_verified,phone_verified,status)
-     VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending')
+     VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,false,false,'pending')
      ON CONFLICT (user_id) DO UPDATE SET
        first_name=EXCLUDED.first_name,last_name=EXCLUDED.last_name,phone=EXCLUDED.phone,
        profile_photo_url=EXCLUDED.profile_photo_url,organization_name=EXCLUDED.organization_name,
        practice_type=EXCLUDED.practice_type,service_description=EXCLUDED.service_description,
        professional_bio=EXCLUDED.professional_bio,website_url=EXCLUDED.website_url,
-       email_verified=EXCLUDED.email_verified,phone_verified=EXCLUDED.phone_verified,updated_at=now()
+       updated_at=now()
      RETURNING *`,
     [
       auth.user.id, firstName, lastName, text(body.phone, 80), text(body.profilePhotoUrl ?? body.profile_photo_url, 2000),
       text(body.organizationName ?? body.organization_name, 250, true), text(body.practiceType ?? body.practice_type, 250, true),
       serviceDescription, professionalBio, text(body.websiteUrl ?? body.website_url, 2000),
-      Boolean(body.emailVerified ?? body.email_verified), Boolean(body.phoneVerified ?? body.phone_verified),
     ],
   );
   return result.rows[0];
