@@ -1,4 +1,4 @@
-name: O2OL temporary Basis tier audit
+name: O2OL temporary Basic normalization audit
 
 on:
   push:
@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Find tier-related Basis references
+      - name: Find remaining legacy tier spelling
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== EXACT Basis ==="
-          grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude='*.md' 'Basis' . || true
-          echo "=== LOWERCASE basis WITH TIER CONTEXT ==="
-          grep -RInEi --exclude-dir=node_modules --exclude-dir=dist --exclude='*.md' '(subscription|plan|tier|price|billing).{0,80}basis|basis.{0,80}(subscription|plan|tier|price|billing)' . || true
+          echo "=== EXACT OLD TIER SPELLING ==="
+          grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude='*.md' 'Bas''is' . || true
+          echo "=== LOWERCASE LEGACY TIER WITH CONTEXT ==="
+          grep -RInEi --exclude-dir=node_modules --exclude-dir=dist --exclude='*.md' '(subscription|plan|tier|price|billing).{0,80}bas''is|bas''is.{0,80}(subscription|plan|tier|price|billing)' . || true
