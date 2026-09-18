@@ -154,11 +154,36 @@ export async function handleCommunitiesRequest(request,env,url){
       if(request.method==='DELETE'){const r=await db.query('DELETE FROM public.post_comments WHERE id=$1::uuid AND author_id=$2::uuid RETURNING id',[id,auth.user.id]);return r.rowCount?json({ok:true}):fail('Comment not found.',404,'not_found');}
       return fail('Method not allowed.',405,'method_not_allowed');}
     const commentLike=url.pathname.match(/^\/api\/communities\/comments\/([0-9a-f-]{36})\/like$/i);
-    if(commentLike){if(!auth)return fail('Authentication required.',401,'unauthorized');if(request.method==='POST'){await db.query('INSERT INTO public.comment_likes(comment_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[commentLike[1],auth.user.id]);return json({ok:true});}if(request.method==='DELETE'){await db.query('DELETE FROM public.comment_likes WHERE comment_id=$1::uuid AND user_id=$2::uuid',[commentLike[1],auth.user.id]);return json({ok:true});}return fail('Method not allowed.',405,'method_not_allowed');}
+    if(commentLike){
+      if(!auth)return fail('Authentication required.',401,'unauthorized');
+      const target=await db.query(`SELECT p.community_id FROM public.post_comments c JOIN public.community_posts p ON p.id=c.post_id WHERE c.id=$1::uuid AND c.moderation_status='approved' AND p.moderation_status='approved'`,[commentLike[1]]);
+      if(!target.rows[0])return fail('Comment not found.',404,'not_found');
+      const access=await communityAccess(db,target.rows[0].community_id,auth);
+      if(!access.allowed)return fail('Community access denied.',403,'forbidden');
+      if(request.method==='POST'){await db.query('INSERT INTO public.comment_likes(comment_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[commentLike[1],auth.user.id]);return json({ok:true});}
+      if(request.method==='DELETE'){await db.query('DELETE FROM public.comment_likes WHERE comment_id=$1::uuid AND user_id=$2::uuid',[commentLike[1],auth.user.id]);return json({ok:true});}
+      return fail('Method not allowed.',405,'method_not_allowed');
+    }
     const postInteraction=url.pathname.match(/^\/api\/communities\/posts\/([0-9a-f-]{36})\/(like|share)$/i);
-    if(postInteraction){if(!auth)return fail('Authentication required.',401,'unauthorized');const postId=postInteraction[1];const action=postInteraction[2];
-      if(action==='like'){if(request.method==='POST'){await db.query('INSERT INTO public.post_likes(post_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[postId,auth.user.id]);return json({ok:true});}if(request.method==='DELETE'){await db.query('DELETE FROM public.post_likes WHERE post_id=$1::uuid AND user_id=$2::uuid',[postId,auth.user.id]);return json({ok:true});}}
-      if(action==='share'&&request.method==='POST'){const input=await readJson(request);const via=text(input.shared_via,100)||'internal';const dest=input.shared_to_community_id||null;const r=await db.query('INSERT INTO public.post_shares(post_id,user_id,shared_to_community_id,shared_via) VALUES($1::uuid,$2::uuid,$3::uuid,$4) RETURNING *',[postId,auth.user.id,dest,via]);return json({ok:true,share:r.rows[0]},201);}return fail('Method not allowed.',405,'method_not_allowed');}
+    if(postInteraction){
+      if(!auth)return fail('Authentication required.',401,'unauthorized');
+      const postId=postInteraction[1];const action=postInteraction[2];
+      const target=await db.query("SELECT community_id FROM public.community_posts WHERE id=$1::uuid AND moderation_status='approved'",[postId]);
+      if(!target.rows[0])return fail('Post not found.',404,'not_found');
+      const access=await communityAccess(db,target.rows[0].community_id,auth);
+      if(!access.allowed)return fail('Community access denied.',403,'forbidden');
+      if(action==='like'){
+        if(request.method==='POST'){await db.query('INSERT INTO public.post_likes(post_id,user_id) VALUES($1::uuid,$2::uuid) ON CONFLICT DO NOTHING',[postId,auth.user.id]);return json({ok:true});}
+        if(request.method==='DELETE'){await db.query('DELETE FROM public.post_likes WHERE post_id=$1::uuid AND user_id=$2::uuid',[postId,auth.user.id]);return json({ok:true});}
+      }
+      if(action==='share'&&request.method==='POST'){
+        const input=await readJson(request);const via=text(input.shared_via,100)||'internal';const dest=input.shared_to_community_id||null;
+        if(dest){const destination=await communityAccess(db,dest,auth);if(!destination.community)return fail('Destination community not found.',404,'not_found');if(!destination.allowed||!await requireActiveMember(db,destination.community,auth.user.id))return fail('Active destination community membership is required.',403,'forbidden');}
+        const saved=await db.query('INSERT INTO public.post_shares(post_id,user_id,shared_to_community_id,shared_via) VALUES($1::uuid,$2::uuid,$3::uuid,$4) RETURNING *',[postId,auth.user.id,dest,via]);
+        return json({ok:true,share:saved.rows[0]},201);
+      }
+      return fail('Method not allowed.',405,'method_not_allowed');
+    }
     const postsMatch=url.pathname.match(/^\/api\/communities\/([0-9a-f-]{36})\/posts$/i);
     if(postsMatch){const communityId=postsMatch[1];if(request.method==='GET')return json({ok:true,posts:await listPosts(db,communityId,auth,url)});if(!auth)return fail('Authentication required.',401,'unauthorized');if(request.method==='POST'){const access=await communityAccess(db,communityId,auth);if(!access.community)return fail('Community not found.',404,'not_found');if(!await requireActiveMember(db,access.community,auth.user.id))return fail('Active community membership is required.',403,'forbidden');if(!access.community.allow_member_posts&&access.community.creator_id!==auth.user.id)return fail('Member posts are disabled for this community.',403,'forbidden');const input=await readJson(request);const anonymous=Boolean(input.is_anonymous);const name=await authorName(db,auth,anonymous);const r=await db.query(`INSERT INTO public.community_posts(community_id,author_id,title,content,author_name,is_anonymous,tags,moderation_status) VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7::text[],'approved') RETURNING *`,[communityId,auth.user.id,text(input.title,300,true),text(input.content,30000,true),name,anonymous,textArray(input.tags)]);return json({ok:true,post:{...r.rows[0],created_date:r.rows[0].created_at}},201);}return fail('Method not allowed.',405,'method_not_allowed');}
     const postItem=url.pathname.match(/^\/api\/communities\/posts\/([0-9a-f-]{36})$/i);
