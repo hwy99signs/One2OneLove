@@ -18,6 +18,21 @@ function notifyQuotaError(error) {
   }
 }
 
+export async function getLoveNoteCategoryPreference() {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const payload = await apiRequest(`/api/love-notes/categories?tz=${encodeURIComponent(timezone)}`);
+  return payload?.preference || null;
+}
+
+export async function saveLoveNoteCategoryPreference(categories) {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const payload = await apiRequest(`/api/love-notes/categories?tz=${encodeURIComponent(timezone)}`, {
+    method: 'PUT',
+    body: { categories },
+  });
+  return payload?.preference || null;
+}
+
 export async function getLoveNoteUsage() {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const payload = await apiRequest(`/api/love-notes/usage?tz=${encodeURIComponent(timezone)}`);
