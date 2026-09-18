@@ -9,7 +9,7 @@ const HEADERS = {
 
 const BASIC_PREFIXES = [
   '/api/send-credits',
-  '/api/love-notes/',
+  '/api/love-notes',
   '/api/community-chat',
   '/api/chat',
   '/api/communities',
