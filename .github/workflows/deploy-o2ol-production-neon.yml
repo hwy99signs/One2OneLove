@@ -141,7 +141,11 @@ jobs:
               sleep 5
             done
             test "$OK" = yes
+            curl -fsS --max-time 20 "$BASE/VerifyPhone" -o /tmp/verify-phone.html
+            grep -F "$LOCAL_JS" /tmp/verify-phone.html >/dev/null
             curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
+            grep -F '/api/auth/phone-number/send-otp' /tmp/app.js >/dev/null
+            grep -F '/api/auth/phone-number/verify' /tmp/app.js >/dev/null
             grep -F '/api/consents/adult-sensitive' /tmp/app.js >/dev/null
             grep -F '/api/contests/leaderboard' /tmp/app.js >/dev/null
             if grep -Fi 'supabase' /tmp/app.js; then
@@ -178,6 +182,11 @@ jobs:
             done
             test "$PASS" = yes
             check_json "$BASE/api/reviews" 200 /tmp/reviews.json
+            jq -e 'all(.reviews[]?; (has("user_id") | not) and (has("email") | not))' /tmp/reviews.json >/dev/null
+            check_json "$BASE/api/stories" 200 /tmp/stories.json
+            jq -e 'all(.stories[]?; (has("user_id") | not) and (has("moderation_notes") | not) and (has("moderated_by") | not))' /tmp/stories.json >/dev/null
+            check_json "$BASE/api/contests/leaderboard?type=monthly_love_notes&period=2026-09&limit=1" 200 /tmp/contest.json
+            jq -e 'all(.participants[]?; (has("user_email") | not) and (has("email") | not))' /tmp/contest.json >/dev/null
             check_json "$BASE/api/memories" 401 /tmp/memories.json
             check_json "$BASE/api/consents/adult-sensitive" 401 /tmp/consent.json
           done
