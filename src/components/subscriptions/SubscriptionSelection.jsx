@@ -3,74 +3,44 @@ import { motion } from 'framer-motion';
 import { Heart, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TierCard from './TierCard';
+import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
 export default function SubscriptionSelection({ onBack, onSelectPlan }) {
   const [selectedTier, setSelectedTier] = useState(null);
 
+  const copy = subscriptionPlanCopy.en.plans;
   const tiers = [
     {
       name: 'Basic',
       price: 4.99,
       period: 'month',
-      description: 'Perfect for couples starting their journey',
+      description: copy.Basic.description,
       icon: '💝',
       gradient: 'from-blue-400 to-blue-600',
       popular: false,
       isFree: false,
-      features: [
-        'Access to 50+ Love Notes Library',
-        'Basic Relationship Quizzes',
-        'Monthly Date Ideas (5 ideas)',
-        'Anniversary Reminders',
-        'Digital Memory Timeline',
-        'Mobile App Access',
-        'Email Support'
-      ]
+      features: copy.Basic.features,
     },
     {
       name: 'Premiere',
       price: 9.99,
       period: 'month',
-      description: 'For couples ready to deepen their connection',
+      description: copy.Premiere.description,
       icon: '💖',
       gradient: 'from-purple-400 to-pink-500',
       popular: true,
-      features: [
-        'Everything in Basic, plus:',
-        '1000+ Love Notes Library',
-        'AI Relationship Coach (50 questions/month)',
-        'Unlimited Date Ideas with Filters',
-        'Relationship Goals Tracker',
-        'Advanced Quizzes & Compatibility Tests',
-        'Schedule Surprise Messages',
-        'Ad-Free Experience',
-        'Priority Support',
-        'Early Access to New Features'
-      ]
+      features: copy.Premiere.features,
     },
     {
       name: 'Exclusive',
       price: 19.99,
       period: 'month',
-      description: 'The ultimate experience for committed couples',
+      description: copy.Exclusive.description,
       icon: '👑',
       gradient: 'from-yellow-400 to-orange-500',
       popular: false,
-      features: [
-        'Everything in Premiere, plus:',
-        'Unlimited Love Notes Library',
-        'Unlimited AI Relationship Coach',
-        'AI Content Creator (poems, letters)',
-        'Personalized Relationship Reports',
-        'Exclusive Couples Community Access',
-        'Monthly Contest Entry for Prizes',
-        'LGBTQ+ Specialized Resources',
-        '1-on-1 Expert Consultation (1/month)',
-        'Premium WhatsApp Support',
-        'Exclusive Discounts on Lovers Store',
-        'VIP Badge & Recognition'
-      ]
-    }
+      features: copy.Exclusive.features,
+    },
   ];
 
   const handleSelectTier = (tier) => {
@@ -165,7 +135,7 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
             💜 Current launch pricing shown in USD • Cancel anytime • No hidden fees
           </p>
           <p className="text-gray-500 text-xs mt-2">
-            Prices shown in USD. Special discounts available for annual subscriptions.
+            Monthly plans shown in USD. Cancel anytime.
           </p>
         </motion.div>
       </div>
