@@ -25,7 +25,7 @@ async function sessionFromRequest(request, env) {
   const payload = await res.json().catch(() => null);
   const user = payload?.user ?? payload?.data?.user ?? null;
   const session = payload?.session ?? payload?.data?.session ?? null;
-  return user?.id && session ? { user, session } : null;
+  return user?.id && user?.emailVerified === true && session ? { user, session } : null;
 }
 
 export async function handleMemberOnboarding(request, env, url) {
