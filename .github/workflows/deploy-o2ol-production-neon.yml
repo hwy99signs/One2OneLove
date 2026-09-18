@@ -115,7 +115,9 @@ jobs:
             .readiness.emailVerificationReady == true and
             .readiness.emailDeliveryReady == true and
             .readiness.phoneVerificationReady == true and
-            .readiness.publicLaunchIdentityGateReady == true
+            .readiness.publicLaunchIdentityGateReady == true and
+            .readiness.billingDataReady == true and
+            .readiness.legacyEntitlementRows == 0
           ' /tmp/readiness.json >/dev/null
 
       - name: Verify Suggestions storage is launch-ready
