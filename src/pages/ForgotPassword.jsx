@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
-import { requestPasswordReset, resetPassword, readableApiError } from "@/lib/apiClient";
+import { apiRequest, requestPasswordReset, resetPassword, readableApiError } from "@/lib/apiClient";
 
 const translations = {
   en: {
@@ -267,6 +267,10 @@ export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
 
   const requestReset = async () => {
+    const readiness = await apiRequest('/api/launch-readiness');
+    if (readiness?.readiness?.identity?.emailDeliveryReady !== true) {
+      throw new Error(t.errorSending);
+    }
     const redirectTo = `${window.location.origin}${createPageUrl("ForgotPassword")}`;
     await requestPasswordReset(email.trim(), redirectTo);
   };
