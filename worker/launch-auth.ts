@@ -105,7 +105,9 @@ async function launchReadinessResponse(request, env) {
     readiness.verification_email_on_signup &&
     readiness.verification_method
   );
+  const emailDeliveryReady = Boolean(readiness.email_provider_type && readiness.email_provider_type !== 'shared');
   const phoneVerificationReady = readiness.phone_verification_enabled === true;
+  const publicLaunchIdentityGateReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
 
   return json({
     ok: true,
@@ -116,8 +118,9 @@ async function launchReadinessResponse(request, env) {
       verificationEmailOnSignup: readiness.verification_email_on_signup === true,
       emailVerificationMethod: readiness.verification_method || null,
       emailProviderMode: readiness.email_provider_type || null,
+      emailDeliveryReady,
       phoneVerificationReady,
-      publicLaunchIdentityGateReady: emailVerificationReady && phoneVerificationReady,
+      publicLaunchIdentityGateReady,
     },
   });
 }
