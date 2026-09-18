@@ -147,7 +147,7 @@ async function profileRoute(request, env, auth) {
                 avatar_url,bio,is_verified,is_active,location,interests,love_language,
                 date_frequency,communication_style,conflict_resolution,partner_name,
                 profile_completion_percentage,profile_completed_fields,profile_total_fields,
-                subscription_plan,subscription_price,subscription_status,
+                subscription_plan,subscription_price,subscription_status,stripe_subscription_id,
                 subscription_current_period_start,subscription_current_period_end,
                 cancel_at_period_end,created_at,updated_at
          FROM public.users WHERE id=$1::uuid`,
