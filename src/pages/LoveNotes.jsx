@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
+import { getLoveNoteDeliveryReadiness, listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -778,6 +778,14 @@ export default function LoveNotes() {
     initialData: [],
     staleTime: 60 * 1000,
   });
+
+  const { data: deliveryReadiness } = useQuery({
+    queryKey: ['loveNoteDeliveryReadiness', currentUser?.id],
+    queryFn: getLoveNoteDeliveryReadiness,
+    enabled: !!currentUser?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+  const scheduledSmsReady = deliveryReadiness?.scheduledSmsReady === true;
 
   // Calculate usage limits
   const partnerNotesSent = useMemo(() => sentNotes.filter(n => n.recipient_type === 'partner').length, [sentNotes]);
@@ -1595,7 +1603,8 @@ export default function LoveNotes() {
                   </p>
                 </div>
 
-                <div className="bg-purple-50 rounded-xl p-4">
+                {scheduledSmsReady && (
+                  <div className="bg-purple-50 rounded-xl p-4">
                   <h4 className="flex items-center gap-2 text-sm font-bold text-purple-900 mb-3">
                     {t.schedulingOptions}
                   </h4>
@@ -1654,6 +1663,7 @@ export default function LoveNotes() {
                     )}
                   </AnimatePresence>
                 </div>
+                )}
 
                 <div className="bg-purple-50 rounded-xl p-4">
                   <h4 className="flex items-center gap-2 text-sm font-bold text-purple-900 mb-2">
