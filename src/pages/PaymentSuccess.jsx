@@ -59,7 +59,6 @@ const COPY = {
 
 function displayPlan(plan) {
   const raw = String(plan || '');
-  if (raw === 'Basis') return 'Basic';
   if (raw === 'Premiere') return 'Premier';
   return raw || 'Basic';
 }
