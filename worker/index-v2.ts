@@ -32,6 +32,7 @@ import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
+import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 
 export default {
@@ -41,6 +42,11 @@ export default {
     if (url.pathname === '/api/billing/webhook') {
       const sendCreditResponse = await handleSendCreditWebhook(request.clone(), env, url);
       if (sendCreditResponse) return sendCreditResponse;
+    }
+
+    if (url.pathname === '/api/launch-readiness') {
+      const response = await handleLaunchReadinessRequest(request, env, url);
+      if (response) return response;
     }
 
     const identityGate = await enforceLaunchIdentity(request, env, url);
