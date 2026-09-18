@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLoveNoteDeliveryReadiness, listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
+import { getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, scheduleLoveNote } from "@/lib/loveNotesService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -83,8 +83,8 @@ const translations = {
     socialMedia: "Social Media",
     remaining: "remaining",
     limitReached: "Limit Reached!",
-    limitPartner: "You've reached the limit of 3 love notes to your partner.",
-    limitSMS: "You've reached the limit of 3 SMS love notes to others.",
+    limitPartner: "Your Love Note sending allowance has been reached.",
+    limitSMS: "Your Love Note sending allowance has been reached.",
     limitSocial: "You've already sent a love note to this social platform.",
     aiPersonalize: "AI Personalize",
     aiGeneratedNote: "AI-Generated Note",
@@ -185,8 +185,8 @@ const translations = {
     socialMedia: "Redes Sociales",
     remaining: "restantes",
     limitReached: "¡Límite Alcanzado!",
-    limitPartner: "Has alcanzado el límite de 3 notas de amor a tu pareja.",
-    limitSMS: "Has alcanzado el límite de 3 SMS de amor a otros.",
+    limitPartner: "Has alcanzado tu límite de envío de Notas de Amor.",
+    limitSMS: "Has alcanzado tu límite de envío de Notas de Amor.",
     limitSocial: "Ya has enviado una nota de amor a esta plataforma social.",
     aiPersonalize: "Personalización con IA",
     aiGeneratedNote: "Nota Generada por IA",
@@ -287,8 +287,8 @@ const translations = {
     socialMedia: "Réseaux Sociaux",
     remaining: "restantes",
     limitReached: "Limite Atteinte !",
-    limitPartner: "Vous avez atteint la limite de 3 notes d'amour à votre partenaire.",
-    limitSMS: "Vous avez atteint la limite de 3 SMS d'amour à d'autres.",
+    limitPartner: "Vous avez atteint votre limite d’envoi de Notes d’Amour.",
+    limitSMS: "Vous avez atteint votre limite d’envoi de Notes d’Amour.",
     limitSocial: "Vous avez déjà envoyé une note d'amour sur cette plateforme sociale.",
     aiPersonalize: "Personnaliser avec IA",
     aiGeneratedNote: "Note Générée par IA",
@@ -389,8 +389,8 @@ const translations = {
     socialMedia: "Social Media",
     remaining: "rimanenti",
     limitReached: "Limite Raggiunto!",
-    limitPartner: "Hai raggiunto il limite di 3 note d'amore al tuo partner.",
-    limitSMS: "Hai raggiunto il limite di 3 SMS d'amore ad altri.",
+    limitPartner: "Hai raggiunto il limite di invio delle Note d’Amore.",
+    limitSMS: "Hai raggiunto il limite di invio delle Note d’Amore.",
     limitSocial: "Hai già inviato una nota d'amore a questa piattaforma social.",
     aiPersonalize: "Personalizza con AI",
     aiGeneratedNote: "Nota Generata da AI",
@@ -491,8 +491,8 @@ const translations = {
     socialMedia: "Soziale Medien",
     remaining: "übrig",
     limitReached: "Limit Erreicht!",
-    limitPartner: "Du hast das Limit von 3 Liebesbotschaften an deinen Partner erreicht.",
-    limitSMS: "Du hast das Limit von 3 SMS-Liebesbotschaften an andere erreicht.",
+    limitPartner: "Du hast dein Sendelimit für Liebesbotschaften erreicht.",
+    limitSMS: "Du hast dein Sendelimit für Liebesbotschaften erreicht.",
     limitSocial: "Du hast bereits eine Liebesbotschaft an diese soziale Plattform gesendet.",
     aiPersonalize: "AI Personalisieren",
     aiGeneratedNote: "AI-Generierte Nachricht",
@@ -787,9 +787,17 @@ export default function LoveNotes() {
   });
   const scheduledSmsReady = deliveryReadiness?.scheduledSmsReady === true;
 
+  const { data: loveNoteUsage } = useQuery({
+    queryKey: ['loveNoteUsage', currentUser?.id],
+    queryFn: getLoveNoteUsage,
+    enabled: !!currentUser?.id,
+    staleTime: 30 * 1000,
+  });
+  const includedQuotaDisplay = loveNoteUsage
+    ? `${loveNoteUsage.includedRemaining}/${loveNoteUsage.monthlyLimit}`
+    : '—';
+
   // Calculate usage limits
-  const partnerNotesSent = useMemo(() => sentNotes.filter(n => n.recipient_type === 'partner').length, [sentNotes]);
-  const smsNotesSent = useMemo(() => sentNotes.filter(n => n.recipient_type === 'sms').length, [sentNotes]);
   
   const distinctSocialPlatformsUsed = useMemo(() => {
     const platforms = new Set();
@@ -801,8 +809,6 @@ export default function LoveNotes() {
     return platforms;
   }, [sentNotes]);
   
-  const partnerNotesRemaining = Math.max(0, 3 - partnerNotesSent);
-  const smsNotesRemaining = Math.max(0, 3 - smsNotesSent);
   const totalSocialPlatforms = 7; // whatsapp, facebook, instagram, twitter, tiktok, linkedin, email
   const socialPlatformsRemainingCount = Math.max(0, totalSocialPlatforms - distinctSocialPlatformsUsed.size);
 
@@ -813,6 +819,7 @@ export default function LoveNotes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
     }
   });
 
@@ -823,6 +830,7 @@ export default function LoveNotes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
       toast.success(t.scheduleSuccess);
       setSendModalNote(null);
       setRecipientPhone('');
@@ -957,17 +965,9 @@ export default function LoveNotes() {
     // In a real app, you'd verify if the recipientPhone matches a linked partner's phone.
     if (partnerIdentifier && currentRecipientPhoneInput === partnerIdentifier) {
         recipientType = 'partner';
-        if (partnerNotesSent >= 3) {
-            toast.error(t.limitPartner, { icon: <AlertCircle className="w-5 h-5" /> });
-            return null;
-        }
     } else if (method === 'text') {
-        // 2. Check for SMS to others (if not identified as partner)
+        // SMS allowance is enforced server-side from the member's paid plan.
         recipientType = 'sms';
-        if (smsNotesSent >= 3) {
-            toast.error(t.limitSMS, { icon: <AlertCircle className="w-5 h-5" /> });
-            return null;
-        }
     } else {
         // 3. Check for Social Media
         const socialPlatforms = ['whatsapp', 'facebook', 'instagram', 'twitter', 'tiktok', 'linkedin', 'email'];
@@ -1122,7 +1122,7 @@ export default function LoveNotes() {
                     <span className="text-sm font-semibold text-gray-700">{t.partnerNotes}</span>
                     <Heart className="w-5 h-5 text-pink-500" />
                   </div>
-                  <div className="text-2xl font-bold text-pink-600">{partnerNotesRemaining}/3</div>
+                  <div className="text-2xl font-bold text-pink-600">{includedQuotaDisplay}</div>
                   <div className="text-xs text-gray-500">{t.remaining}</div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -1130,7 +1130,7 @@ export default function LoveNotes() {
                     <span className="text-sm font-semibold text-gray-700">{t.smsNotes}</span>
                     <Phone className="w-5 h-5 text-blue-500" />
                   </div>
-                  <div className="text-2xl font-bold text-blue-600">{smsNotesRemaining}/3</div>
+                  <div className="text-2xl font-bold text-blue-600">{includedQuotaDisplay}</div>
                   <div className="text-xs text-gray-500">{t.remaining}</div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
