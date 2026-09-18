@@ -163,7 +163,8 @@ async function registerLaunchUser(request, env) {
   if (request.method !== 'POST') return fail('Method not allowed.', 405, 'method_not_allowed');
 
   const readiness = await launchReadiness(env);
-  if (!readiness.consent_table_ready || !readiness.verification_required) {
+  const emailDeliveryReady = Boolean(readiness.email_provider_type && readiness.email_provider_type !== 'shared');
+  if (!readiness.consent_table_ready || !readiness.verification_required || !emailDeliveryReady) {
     return fail('One2OneLove verified registration is not ready yet.', 503, 'registration_not_ready');
   }
 
@@ -247,6 +248,9 @@ async function registerLaunchUser(request, env) {
 
 async function resendVerification(request, env) {
   if (request.method !== 'POST') return fail('Method not allowed.', 405, 'method_not_allowed');
+  const readiness = await launchReadiness(env);
+  const emailDeliveryReady = Boolean(readiness.email_provider_type && readiness.email_provider_type !== 'shared');
+  if (!emailDeliveryReady) return fail('Verification email delivery is not ready yet.', 503, 'email_delivery_not_ready');
   const body = await readJson(request);
   const email = clean(body.email, 320, true)?.toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
