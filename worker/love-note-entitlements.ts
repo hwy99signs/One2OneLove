@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { scheduledSmsReadiness, scheduledSmsReady } from './scheduled-love-notes';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -210,17 +211,20 @@ async function postSent(db, auth, body) {
     throw error;
   }
 }
-async function postScheduled(db, auth, body) {
+async function postScheduled(db, env, auth, body) {
   const title = cleanText(body.note_title, 250, true);
   const content = cleanText(body.note_content, 10000, true);
   const scheduledDate = cleanText(body.scheduled_date, 10, true);
   const scheduledTime = cleanText(body.scheduled_time, 8, true);
   const scheduledTimezone = cleanText(body.scheduled_timezone || 'UTC', 100, true);
-  const recipientPhone = cleanText(body.recipient_phone, 100, true);
+  const rawPhone = cleanText(body.recipient_phone, 100, true);
+  const recipientPhone = String(rawPhone || '').replace(/[\\s().-]/g, '');
   const deliveryMethod = cleanText(body.delivery_method || 'sms', 20, true);
   const language = cleanText(body.note_language || 'en', 10, true);
   if (!validDateText(scheduledDate)) return fail('Invalid scheduled date.');
-  if (!new Set(['sms', 'email', 'whatsapp']).has(deliveryMethod)) return fail('Invalid delivery_method.');
+  if (deliveryMethod !== 'sms') return fail('Only scheduled SMS delivery is enabled for this launch.', 400, 'unsupported_delivery_method');
+  if (!/^\\+[1-9]\\d{7,14}$/.test(recipientPhone)) return fail('Enter a valid phone number with country code.', 400, 'invalid_phone');
+  if (!scheduledSmsReady(env)) return fail('Scheduled SMS delivery is not available yet.', 503, 'scheduled_sms_not_ready');
   const zone = await db.query(`SELECT 1 FROM pg_timezone_names WHERE name=$1 LIMIT 1`, [scheduledTimezone]);
   if (!zone.rowCount) return fail('Invalid scheduled_timezone.');
 
@@ -293,6 +297,7 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/love-notes/')) return null;
   const supported =
     url.pathname === '/api/love-notes/usage' ||
+    (url.pathname === '/api/love-notes/delivery-readiness' && request.method === 'GET') ||
     (url.pathname === '/api/love-notes/sent' && request.method === 'POST') ||
     (url.pathname === '/api/love-notes/scheduled' && request.method === 'POST') ||
     /^\/api\/love-notes\/scheduled\/[0-9a-f-]{36}\/cancel$/i.test(url.pathname);
@@ -308,11 +313,14 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
         const quotaDate = dateForTimezone(url.searchParams.get('tz') || 'UTC');
         return json({ ok: true, usage: await usageForDate(db, auth.user.id, quotaDate) });
       }
+      if (url.pathname === '/api/love-notes/delivery-readiness' && request.method === 'GET') {
+        return json({ ok: true, delivery: scheduledSmsReadiness(env) });
+      }
       if (url.pathname === '/api/love-notes/sent' && request.method === 'POST') {
         return postSent(db, auth, await readJson(request));
       }
       if (url.pathname === '/api/love-notes/scheduled' && request.method === 'POST') {
-        return postScheduled(db, auth, await readJson(request));
+        return postScheduled(db, env, auth, await readJson(request));
       }
       const cancelMatch = url.pathname.match(/^\/api\/love-notes\/scheduled\/([0-9a-f-]{36})\/cancel$/i);
       if (cancelMatch && (request.method === 'PATCH' || request.method === 'POST')) {
