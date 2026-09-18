@@ -149,7 +149,19 @@ async function profileRoute(request, env, auth) {
                 profile_completion_percentage,profile_completed_fields,profile_total_fields,
                 subscription_plan,subscription_price,subscription_status,stripe_subscription_id,
                 subscription_current_period_start,subscription_current_period_end,
-                cancel_at_period_end,created_at,updated_at
+                cancel_at_period_end,created_at,updated_at,
+                COALESCE((
+                  SELECT (to_jsonb(au)->>'phoneNumberVerified')::boolean
+                  FROM neon_auth."user" au WHERE au.id=$1::uuid
+                ),false) AS phone_number_verified,
+                (
+                  SELECT NULLIF(to_jsonb(au)->>'phoneNumber','')
+                  FROM neon_auth."user" au WHERE au.id=$1::uuid
+                ) AS phone_number,
+                COALESCE((
+                  SELECT (pc.plugin_configs->'phoneNumber'->>'enabled')::boolean
+                  FROM neon_auth.project_config pc WHERE pc.name='One2OneLove' LIMIT 1
+                ),false) AS phone_verification_required
          FROM public.users WHERE id=$1::uuid`,
         [auth.user.id],
       );
