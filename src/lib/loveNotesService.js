@@ -41,16 +41,7 @@ export async function getLoveNoteUsage() {
 
 export async function listSentLoveNotes() {
   const payload = await apiRequest('/api/love-notes/sent');
-  const notes = payload?.notes || [];
-  // The legacy Love Notes screen still contains an old hard-coded 3-send client cap.
-  // Server-side plan entitlements are now the source of truth, so mask only the two
-  // SMS recipient labels from that legacy counter while preserving all records.
-  return notes.map(note => {
-    if (note.recipient_type === 'partner' || note.recipient_type === 'sms') {
-      return { ...note, quota_recipient_type: note.recipient_type, recipient_type: 'quota_managed_sms' };
-    }
-    return note;
-  });
+  return payload?.notes || [];
 }
 
 export async function recordSentLoveNote(data) {
