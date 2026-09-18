@@ -59,6 +59,11 @@ export async function recordSentLoveNote(data) {
   }
 }
 
+export async function getLoveNoteDeliveryReadiness() {
+  const payload = await apiRequest('/api/love-notes/delivery-readiness');
+  return payload?.delivery || { scheduledSmsReady: false };
+}
+
 export async function listScheduledLoveNotes() {
   const payload = await apiRequest('/api/love-notes/scheduled');
   return payload?.notes || [];
