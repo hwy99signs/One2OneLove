@@ -49,10 +49,10 @@ async function withDb(env, fn) {
 }
 function canonicalPlan(value) {
   const plan = String(value || '').trim().toLowerCase();
-  if (plan === 'basic' || plan === 'basis') return 'Basis';
+  if (plan === 'basic') return 'Basic';
   if (plan === 'premiere') return 'Premiere';
   if (plan === 'exclusive') return 'Exclusive';
-  return 'Basis';
+  return 'Basic';
 }
 async function entitlement(db, userId, feature) {
   const result = await db.query(
@@ -71,7 +71,7 @@ async function entitlement(db, userId, feature) {
   }
 
   if (feature === 'relationship_coach') {
-    if (!paidActive || plan === 'Basis') {
+    if (!paidActive || plan === 'Basic') {
       return { allowed: false, plan, reason: 'AI Relationship Coach is available on Premiere and Exclusive plans.' };
     }
     if (plan === 'Exclusive') return { allowed: true, plan, limit: null };
