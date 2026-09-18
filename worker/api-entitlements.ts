@@ -37,10 +37,16 @@ function json(data, status = 200) {
 }
 
 function requiredPlan(pathname) {
+  if (pathname === '/api/engagement/waitlist') return null;
+  if (pathname === '/api/engagement/contests/leaderboard' || pathname === '/api/engagement/contests/winner') return null;
   if (pathname.startsWith('/api/ai/content')) return 'Exclusive';
   if (PREMIER_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Premier';
   if (BASIC_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Basic';
   return null;
+}
+
+export function requiresApiEntitlement(pathname) {
+  return requiredPlan(pathname) !== null;
 }
 
 function planLevel(value) {
@@ -79,7 +85,11 @@ export async function enforceApiEntitlement(request, env, url) {
   try {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
-              p.subscription_plan,p.subscription_status,p.stripe_subscription_id
+              p.subscription_plan,p.subscription_status,p.stripe_subscription_id,
+              COALESCE((
+                SELECT (pc.plugin_configs->'phoneNumber'->>'enabled')::boolean
+                FROM neon_auth.project_config pc WHERE pc.name='One2OneLove' LIMIT 1
+              ),false) AS phone_verification_required
          FROM neon_auth."user" u
          LEFT JOIN public.users p ON p.id=u.id
         WHERE u.id=$1::uuid`,
@@ -89,6 +99,14 @@ export async function enforceApiEntitlement(request, env, url) {
     if (!row || row.banned) {
       return json({ ok: false, error: { code: 'forbidden', message: 'Account access is unavailable.' } }, 403);
     }
+    const phoneVerified = auth.user.phoneNumberVerified === true;
+    if (row.phone_verification_required === true && !phoneVerified) {
+      return json({
+        ok: false,
+        error: { code: 'phone_verification_required', message: 'Phone verification is required.' },
+      }, 428);
+    }
+
     if (row.role === 'admin') return null;
 
     const status = String(row.subscription_status || '').toLowerCase();
