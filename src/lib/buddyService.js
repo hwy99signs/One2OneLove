@@ -22,6 +22,12 @@ export const searchUsers = async (_currentUserId, searchQuery) => {
   return payload?.users || [];
 };
 
+export const findUserByEmail = async (email) => {
+  const params = new URLSearchParams({ email: String(email || '').trim() });
+  const payload = await apiRequest(`/api/buddies/users/by-email?${params}`);
+  return payload?.user || null;
+};
+
 export const getUserProfile = async (userId) => {
   const payload = await apiRequest(`/api/buddies/users/${encodeURIComponent(userId)}`);
   return payload?.user || null;
