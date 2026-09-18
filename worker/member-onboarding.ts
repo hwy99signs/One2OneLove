@@ -52,7 +52,7 @@ export async function handleMemberOnboarding(request, env, url) {
       `INSERT INTO public.users
         (id,email,name,user_type,relationship_status,anniversary_date,partner_email,
          subscription_plan,subscription_price,subscription_status,is_active)
-       VALUES ($1::uuid,$2,$3,'regular',$4,$5::date,$6,'Basis',4.99,'inactive',true)
+       VALUES ($1::uuid,$2,$3,'regular',$4,$5::date,$6,'Basic',4.99,'inactive',true)
        ON CONFLICT (id) DO UPDATE SET
          email=EXCLUDED.email,
          name=COALESCE(NULLIF(EXCLUDED.name,''),public.users.name),
