@@ -74,8 +74,8 @@ function object(value) {
 
 async function ensureUser(db, auth, userType) {
   await db.query(
-    `INSERT INTO public.users (id,email,name,user_type,is_active)
-     VALUES ($1::uuid,$2,$3,$4,true)
+    `INSERT INTO public.users (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
+     VALUES ($1::uuid,$2,$3,$4,true,'Basis',4.99,'inactive')
      ON CONFLICT (id) DO UPDATE SET
        email=EXCLUDED.email,
        name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name),
