@@ -28,14 +28,6 @@ async function sessionFromRequest(request, env) {
   return user?.id && session ? { user, session } : null;
 }
 
-function normalizePlan(value) {
-  const raw = String(value || 'Basis').trim().toLowerCase();
-  if (raw === 'basic' || raw === 'basis' || raw === 'free') return 'Basis';
-  if (raw === 'premiere' || raw === 'premium') return 'Premiere';
-  if (raw === 'exclusive') return 'Exclusive';
-  return 'Basis';
-}
-
 export async function handleMemberOnboarding(request, env, url) {
   if (url.pathname !== '/api/onboarding/member') return null;
   if (request.method !== 'POST' && request.method !== 'PATCH') {
@@ -53,9 +45,6 @@ export async function handleMemberOnboarding(request, env, url) {
   const relationshipStatus = relationship && allowedRelationships.has(relationship) ? relationship : null;
   const anniversaryDate = body.anniversaryDate ?? body.anniversary_date ?? null;
   const partnerEmail = String(body.partnerEmail ?? body.partner_email ?? '').trim() || null;
-  const subscriptionPlan = normalizePlan(body.subscriptionPlan ?? body.subscription_plan);
-  const subscriptionPrice = Number(body.subscriptionPrice ?? body.subscription_price ?? 0);
-
   const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
   await db.connect();
   try {
@@ -63,7 +52,7 @@ export async function handleMemberOnboarding(request, env, url) {
       `INSERT INTO public.users
         (id,email,name,user_type,relationship_status,anniversary_date,partner_email,
          subscription_plan,subscription_price,subscription_status,is_active)
-       VALUES ($1::uuid,$2,$3,'regular',$4,$5::date,$6,$7,$8,'active',true)
+       VALUES ($1::uuid,$2,$3,'regular',$4,$5::date,$6,'Basis',4.99,'inactive',true)
        ON CONFLICT (id) DO UPDATE SET
          email=EXCLUDED.email,
          name=COALESCE(NULLIF(EXCLUDED.name,''),public.users.name),
@@ -71,9 +60,6 @@ export async function handleMemberOnboarding(request, env, url) {
          relationship_status=EXCLUDED.relationship_status,
          anniversary_date=EXCLUDED.anniversary_date,
          partner_email=EXCLUDED.partner_email,
-         subscription_plan=EXCLUDED.subscription_plan,
-         subscription_price=EXCLUDED.subscription_price,
-         subscription_status='active',
          is_active=true,
          updated_at=now()
        RETURNING *`,
@@ -84,8 +70,6 @@ export async function handleMemberOnboarding(request, env, url) {
         relationshipStatus,
         anniversaryDate || null,
         partnerEmail,
-        subscriptionPlan,
-        Number.isFinite(subscriptionPrice) ? subscriptionPrice : 0,
       ],
     );
     return json({ ok: true, profile: result.rows[0] }, request.method === 'POST' ? 201 : 200);
