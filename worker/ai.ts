@@ -60,9 +60,10 @@ async function entitlement(db, userId, feature) {
     [userId],
   );
   if (!result.rows[0]) return { allowed: false, reason: 'User profile not found.' };
-  const plan = canonicalPlan(result.rows[0].subscription_plan);
+  const storedPlan = canonicalPlan(result.rows[0].subscription_plan);
   const status = String(result.rows[0].subscription_status || '').toLowerCase();
   const paidActive = ['active', 'trial', 'trialing'].includes(status);
+  const plan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
 
   if (feature === 'content_creator') {
     return plan === 'Exclusive' && paidActive
