@@ -18,6 +18,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       APEX_URL: https://one2onelove.com
       WWW_URL: https://www.one2onelove.com
+      PRELAUNCH_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +43,178 @@ jobs:
             echo 'Legacy Supabase reference found in active production application.' >&2
             exit 1
           fi
+
+      - name: Verify production deployment isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^name = "one2onelove-prelaunch"        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
+
+      - name: Verify production frontend on custom domains
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          echo "Expected production bundle: $LOCAL_JS"
+          verify_frontend() {
+            BASE="$1"
+            OK=no
+            for attempt in $(seq 1 24); do
+              HTML=$(curl -fsS --max-time 20 "$BASE/" 2>/dev/null || true)
+              REMOTE_JS=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//' || true)
+              echo "$BASE attempt $attempt remote=$REMOTE_JS"
+              if [ "$REMOTE_JS" = "$LOCAL_JS" ]; then
+                OK=yes
+                break
+              fi
+              sleep 5
+            done
+            test "$OK" = yes
+            curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
+            grep -F '/api/consents/adult-sensitive' /tmp/app.js >/dev/null
+            grep -F '/api/contests/leaderboard' /tmp/app.js >/dev/null
+            if grep -Fi 'supabase' /tmp/app.js; then
+              echo 'Legacy Supabase marker found in deployed bundle.' >&2
+              exit 1
+            fi
+          }
+          verify_frontend "$APEX_URL"
+          verify_frontend "$WWW_URL"
+
+      - name: Verify production Neon API routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_json() {
+            URL="$1"; EXPECT="$2"; OUT="$3"
+            CODE=$(curl -sS --max-time 20 -o "$OUT" -w '%{http_code}' "$URL")
+            echo "$URL -> HTTP $CODE"
+            cat "$OUT"
+            test "$CODE" = "$EXPECT"
+            grep -qi '^{' "$OUT"
+            ! grep -qi '<!doctype html' "$OUT"
+          }
+          for BASE in "$APEX_URL" "$WWW_URL"; do
+            PASS=no
+            for attempt in $(seq 1 24); do
+              CODE=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
+              echo "$BASE/api/health attempt $attempt -> $CODE"
+              if [ "$CODE" = "200" ] && grep -F '"service":"one2onelove-api"' /tmp/health.json >/dev/null 2>&1; then
+                PASS=yes
+                break
+              fi
+              sleep 5
+            done
+            test "$PASS" = yes
+            check_json "$BASE/api/reviews" 200 /tmp/reviews.json
+            check_json "$BASE/api/memories" 401 /tmp/memories.json
+            check_json "$BASE/api/consents/adult-sensitive" 401 /tmp/consent.json
+          done
+          echo 'O2OL_PRODUCTION_NEON_VERIFIED=yes'
+ wrangler.toml
+          grep -F '"name": "one2onelove-launch"' cloudflare/wrangler.production.jsonc >/dev/null
+          ! grep -Eq '^name = "one2onelove-launch"        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
+
+      - name: Verify production frontend on custom domains
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          echo "Expected production bundle: $LOCAL_JS"
+          verify_frontend() {
+            BASE="$1"
+            OK=no
+            for attempt in $(seq 1 24); do
+              HTML=$(curl -fsS --max-time 20 "$BASE/" 2>/dev/null || true)
+              REMOTE_JS=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//' || true)
+              echo "$BASE attempt $attempt remote=$REMOTE_JS"
+              if [ "$REMOTE_JS" = "$LOCAL_JS" ]; then
+                OK=yes
+                break
+              fi
+              sleep 5
+            done
+            test "$OK" = yes
+            curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
+            grep -F '/api/consents/adult-sensitive' /tmp/app.js >/dev/null
+            grep -F '/api/contests/leaderboard' /tmp/app.js >/dev/null
+            if grep -Fi 'supabase' /tmp/app.js; then
+              echo 'Legacy Supabase marker found in deployed bundle.' >&2
+              exit 1
+            fi
+          }
+          verify_frontend "$APEX_URL"
+          verify_frontend "$WWW_URL"
+
+      - name: Verify production Neon API routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_json() {
+            URL="$1"; EXPECT="$2"; OUT="$3"
+            CODE=$(curl -sS --max-time 20 -o "$OUT" -w '%{http_code}' "$URL")
+            echo "$URL -> HTTP $CODE"
+            cat "$OUT"
+            test "$CODE" = "$EXPECT"
+            grep -qi '^{' "$OUT"
+            ! grep -qi '<!doctype html' "$OUT"
+          }
+          for BASE in "$APEX_URL" "$WWW_URL"; do
+            PASS=no
+            for attempt in $(seq 1 24); do
+              CODE=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
+              echo "$BASE/api/health attempt $attempt -> $CODE"
+              if [ "$CODE" = "200" ] && grep -F '"service":"one2onelove-api"' /tmp/health.json >/dev/null 2>&1; then
+                PASS=yes
+                break
+              fi
+              sleep 5
+            done
+            test "$PASS" = yes
+            check_json "$BASE/api/reviews" 200 /tmp/reviews.json
+            check_json "$BASE/api/memories" 401 /tmp/memories.json
+            check_json "$BASE/api/consents/adult-sensitive" 401 /tmp/consent.json
+          done
+          echo 'O2OL_PRODUCTION_NEON_VERIFIED=yes'
+ wrangler.toml
+          npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc
+
+      - name: Verify production Worker runtime secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          SECRETS_JSON=$(npx --yes wrangler@latest secret list --name one2onelove-launch --format json)
+          printf '%s' "$SECRETS_JSON" > /tmp/o2ol-secrets.json
+          for REQUIRED in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET OPENAI_API_KEY; do
+            jq -e --arg name "$REQUIRED" '.[] | select(.name == $name)' /tmp/o2ol-secrets.json >/dev/null
+          done
+
+      - name: Verify Cloudflare O2OL zone and routes access
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          curl -fsS -H "$AUTH" 'https://api.cloudflare.com/client/v4/zones?name=one2onelove.com' -o /tmp/zones.json
+          jq -e '.success == true and (.result | length) == 1' /tmp/zones.json >/dev/null
+          ZONE_ID=$(jq -r '.result[0].id' /tmp/zones.json)
+          test -n "$ZONE_ID"
+          curl -fsS -H "$AUTH" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" -o /tmp/routes.json
+          jq -e '.success == true' /tmp/routes.json >/dev/null
+
+      - name: Verify public-launch identity gate in prelaunch
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 "$PRELAUNCH_URL/api/launch-signup/readiness" -o /tmp/readiness.json
+          cat /tmp/readiness.json
+          jq -e '
+            .ok == true and
+            .readiness.consentTableReady == true and
+            .readiness.emailVerificationReady == true and
+            .readiness.emailDeliveryReady == true and
+            .readiness.phoneVerificationReady == true and
+            .readiness.publicLaunchIdentityGateReady == true
+          ' /tmp/readiness.json >/dev/null
 
       - name: Deploy Cloudflare Worker to production domains
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
