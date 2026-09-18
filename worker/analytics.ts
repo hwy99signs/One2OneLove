@@ -164,7 +164,7 @@ async function analytics(db) {
         VALUES ('Basic'::text,1),('Premier'::text,2),('Exclusive'::text,3)
       ), counts AS (
         SELECT CASE
-                 WHEN lower(COALESCE(subscription_plan,'Basis')) IN ('basis','basic') THEN 'Basic'
+                 WHEN lower(COALESCE(subscription_plan,'Basic')) IN ('basic') THEN 'Basic'
                  WHEN lower(COALESCE(subscription_plan,'')) IN ('premiere','premier') THEN 'Premier'
                  WHEN lower(COALESCE(subscription_plan,''))='exclusive' THEN 'Exclusive'
                  ELSE 'Basic'
