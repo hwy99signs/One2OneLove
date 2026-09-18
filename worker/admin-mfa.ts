@@ -38,7 +38,7 @@ async function getSession(request, env) {
   const payload = await response.json().catch(() => null);
   const user = payload?.user ?? payload?.data?.user ?? null;
   const active = payload?.session ?? payload?.data?.session ?? null;
-  return user?.id && active ? { user, session: active } : null;
+  return user?.id && user?.emailVerified === true && active ? { user, session: active } : null;
 }
 
 async function adminIdentity(env, userId) {
