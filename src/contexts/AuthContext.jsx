@@ -19,6 +19,10 @@ function mergeUser(authUser, profile) {
     ...safeProfile,
     name: safeProfile.name || authUser.name || authUser.email?.split('@')[0] || 'Member',
     user_type: safeProfile.user_type || 'regular',
+    emailVerified: authUser.emailVerified === true,
+    phoneNumber: authUser.phoneNumber || safeProfile.phone_number || null,
+    phoneNumberVerified: authUser.phoneNumberVerified === true || safeProfile.phone_number_verified === true,
+    phone_verification_required: safeProfile.phone_verification_required === true,
   };
 }
 
