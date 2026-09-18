@@ -59,6 +59,22 @@ function limitsFor(plan) {
   if (plan === 'Premier') return { monthly: 30, daily: 1 };
   return { monthly: 4, daily: null };
 }
+const LOVE_NOTE_CATEGORY_IDS = [
+  'romantic','lgbtqRomantic','lgbtqSupport','lgbtqMilestone','sweet','playful','deep',
+  'appreciation','memories','future','morning','night','daily','special','dateIdeas',
+  'milestone','justBecause','encouragement','apology','family','friends','heartBroken',
+  'sick','goodLuck','holiday','missingYou','religious','service','workplace',
+];
+const DEFAULT_CATEGORY_IDS = [
+  'romantic','sweet','appreciation','memories','daily','encouragement',
+  'playful','deep','future','morning','night','special',
+  'dateIdeas','milestone','justBecause','apology','family','friends',
+];
+function categoryLimit(plan) {
+  if (plan === 'Exclusive') return LOVE_NOTE_CATEGORY_IDS.length;
+  if (plan === 'Premier') return 18;
+  return 6;
+}
 function monthStart(dateText) {
   return `${String(dateText).slice(0, 7)}-01`;
 }
@@ -114,6 +130,62 @@ async function walletBalance(db, userId, lock = false) {
     updatedAt: result.rows[0]?.updated_at || null,
   };
 }
+async function categoryPreferenceForDate(db, userId, quotaDate) {
+  const plan = await planForUser(db, userId);
+  const quotaMonth = monthStart(quotaDate);
+  const limit = categoryLimit(plan.effectivePlan);
+  if (plan.effectivePlan === 'Exclusive') {
+    return { plan: plan.effectivePlan, limit, quotaMonth, categories: LOVE_NOTE_CATEGORY_IDS, configured: true };
+  }
+  const result = await db.query(
+    `SELECT plan,categories FROM public.love_note_category_preferences
+      WHERE user_id=$1::uuid AND quota_month=$2::date`,
+    [userId, quotaMonth],
+  );
+  const stored = Array.isArray(result.rows[0]?.categories) ? result.rows[0].categories : [];
+  const allowed = stored.filter(id => LOVE_NOTE_CATEGORY_IDS.includes(id)).slice(0, limit);
+  const defaults = DEFAULT_CATEGORY_IDS.slice(0, limit);
+  return {
+    plan: plan.effectivePlan,
+    limit,
+    quotaMonth,
+    categories: allowed.length ? allowed : defaults,
+    configured: allowed.length > 0,
+  };
+}
+async function saveCategoryPreference(db, userId, quotaDate, requestedCategories) {
+  const plan = await planForUser(db, userId);
+  const quotaMonth = monthStart(quotaDate);
+  const limit = categoryLimit(plan.effectivePlan);
+  if (plan.effectivePlan === 'Exclusive') {
+    return { plan: plan.effectivePlan, limit, quotaMonth, categories: LOVE_NOTE_CATEGORY_IDS, configured: true };
+  }
+  if (!Array.isArray(requestedCategories)) {
+    throw Object.assign(new Error('categories must be an array.'), { status: 400, code: 'bad_request' });
+  }
+  const categories = [...new Set(requestedCategories.map(v => String(v || '').trim()).filter(Boolean))];
+  if (!categories.length) {
+    throw Object.assign(new Error('Choose at least one Love Note category.'), { status: 400, code: 'category_required' });
+  }
+  const invalid = categories.filter(id => !LOVE_NOTE_CATEGORY_IDS.includes(id));
+  if (invalid.length) {
+    throw Object.assign(new Error('One or more Love Note categories are invalid.'), { status: 400, code: 'invalid_category' });
+  }
+  if (categories.length > limit) {
+    throw Object.assign(new Error(`Your ${plan.effectivePlan} plan allows up to ${limit} Love Note categories per month.`), {
+      status: 400, code: 'category_limit',
+    });
+  }
+  await db.query(
+    `INSERT INTO public.love_note_category_preferences(user_id,quota_month,plan,categories,updated_at)
+     VALUES($1::uuid,$2::date,$3,$4::jsonb,now())
+     ON CONFLICT(user_id,quota_month) DO UPDATE
+       SET plan=EXCLUDED.plan,categories=EXCLUDED.categories,updated_at=now()`,
+    [userId, quotaMonth, plan.effectivePlan, JSON.stringify(categories)],
+  );
+  return { plan: plan.effectivePlan, limit, quotaMonth, categories, configured: true };
+}
+
 async function usageForDate(db, userId, quotaDate) {
   const plan = await planForUser(db, userId);
   const quotaMonth = monthStart(quotaDate);
@@ -297,6 +369,7 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/love-notes/')) return null;
   const supported =
     url.pathname === '/api/love-notes/usage' ||
+    url.pathname === '/api/love-notes/categories' ||
     (url.pathname === '/api/love-notes/delivery-readiness' && request.method === 'GET') ||
     (url.pathname === '/api/love-notes/sent' && request.method === 'POST') ||
     (url.pathname === '/api/love-notes/scheduled' && request.method === 'POST') ||
@@ -312,6 +385,17 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
       if (url.pathname === '/api/love-notes/usage' && request.method === 'GET') {
         const quotaDate = dateForTimezone(url.searchParams.get('tz') || 'UTC');
         return json({ ok: true, usage: await usageForDate(db, auth.user.id, quotaDate) });
+      }
+      if (url.pathname === '/api/love-notes/categories') {
+        const quotaDate = dateForTimezone(url.searchParams.get('tz') || 'UTC');
+        if (request.method === 'GET') {
+          return json({ ok: true, preference: await categoryPreferenceForDate(db, auth.user.id, quotaDate) });
+        }
+        if (request.method === 'PUT' || request.method === 'POST') {
+          const input = await readJson(request);
+          return json({ ok: true, preference: await saveCategoryPreference(db, auth.user.id, quotaDate, input?.categories) });
+        }
+        return fail('Method not allowed.', 405, 'method_not_allowed');
       }
       if (url.pathname === '/api/love-notes/delivery-readiness' && request.method === 'GET') {
         return json({ ok: true, delivery: scheduledSmsReadiness(env) });
