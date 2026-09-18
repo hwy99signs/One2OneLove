@@ -5,6 +5,7 @@ const HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-cont
 const STORY_TYPES = new Set(['success', 'challenge', 'advice', 'milestone', 'transformation']);
 const SORT_FIELDS = new Set(['created_at', 'updated_at', 'likes_count', 'helpful_count', 'views_count', 'title']);
 const WRITE_FIELDS = new Set(['title', 'content', 'story_type', 'is_anonymous', 'relationship_length', 'tags']);
+const PUBLIC_STORY_COLUMNS = 'id,title,content,story_type,author_name,is_anonymous,relationship_length,tags,likes_count,helpful_count,views_count,is_featured,created_at,updated_at';
 
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: HEADERS }); }
 function fail(message, status = 400, code = 'bad_request') { return json({ ok: false, error: { code, message } }, status); }
@@ -82,16 +83,16 @@ async function listApproved(db, url, auth) {
   const desc = order.startsWith('-');
   const field = order.replace(/^-/, '');
   const sort = SORT_FIELDS.has(field) ? field : 'created_at';
-  const result = await db.query(`SELECT * FROM public.success_stories WHERE ${clauses.join(' AND ')} ORDER BY ${sort} ${desc ? 'DESC' : 'ASC'},id ASC`, values);
+  const result = await db.query(`SELECT ${PUBLIC_STORY_COLUMNS} FROM public.success_stories WHERE ${clauses.join(' AND ')} ORDER BY ${sort} ${desc ? 'DESC' : 'ASC'},id ASC`, values);
   return addInteractionFlags(db, result.rows, auth);
 }
 async function publicStory(db, storyId, auth, incrementViews = false) {
   if (incrementViews) {
-    const result = await db.query("UPDATE public.success_stories SET views_count=views_count+1 WHERE id=$1::uuid AND moderation_status='approved' RETURNING *", [storyId]);
+    const result = await db.query(`UPDATE public.success_stories SET views_count=views_count+1 WHERE id=$1::uuid AND moderation_status='approved' RETURNING ${PUBLIC_STORY_COLUMNS}`, [storyId]);
     if (!result.rows[0]) return null;
     return (await addInteractionFlags(db, [result.rows[0]], auth))[0];
   }
-  const result = await db.query("SELECT * FROM public.success_stories WHERE id=$1::uuid AND moderation_status='approved'", [storyId]);
+  const result = await db.query(`SELECT ${PUBLIC_STORY_COLUMNS} FROM public.success_stories WHERE id=$1::uuid AND moderation_status='approved'`, [storyId]);
   if (!result.rows[0]) return null;
   return (await addInteractionFlags(db, [result.rows[0]], auth))[0];
 }
