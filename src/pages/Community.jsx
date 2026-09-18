@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Heart, Users, MessageCircle, TrendingUp, Plus, Search, X, UserPlus, BookOpen, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +24,7 @@ import {
   toggleLikeStory, 
   toggleHelpfulStory 
 } from "@/lib/successStoriesService";
-import { getCommunities, getCommunityPosts, togglePostLike } from "@/lib/communityService";
+import { getCommunities, getCommunityPosts, togglePostLike, getPostComments, createComment } from "@/lib/communityService";
 
 const translations = {
   en: {
@@ -47,6 +48,7 @@ const translations = {
     errorSharing: "Failed to share your story. Please try again with love.",
     errorLike: "Failed to update like. Please try again.",
     errorHelpful: "Failed to update helpful. Please try again.",
+    repliesLabel: "Replies", writeReply: "Write a reply...", postReply: "Post Reply", closeReplies: "Close", noReplies: "No replies yet.", replyPosted: "Reply posted.", replyFailed: "Unable to post reply.", anonymous: "Anonymous", member: "Member",
     categories: {
       long_distance: "Long Distance",
       premarital: "Pre-marital",
@@ -81,6 +83,7 @@ const translations = {
     errorSharing: "No se pudo compartir tu historia. Por favor, inténtalo de nuevo con amor.",
     errorLike: "No se pudo actualizar el me gusta. Por favor, inténtalo de nuevo.",
     errorHelpful: "No se pudo actualizar útil. Por favor, inténtalo de nuevo.",
+    repliesLabel: "Respuestas", writeReply: "Escribe una respuesta...", postReply: "Publicar Respuesta", closeReplies: "Cerrar", noReplies: "Aún no hay respuestas.", replyPosted: "Respuesta publicada.", replyFailed: "No se pudo publicar la respuesta.", anonymous: "Anónimo", member: "Miembro",
     categories: {
       long_distance: "Distancia Larga",
       premarital: "Pre-matrimonial",
@@ -115,6 +118,7 @@ const translations = {
     errorSharing: "Échec du partage de votre histoire. Veuillez réessayer avec amour.",
     errorLike: "Échec de la mise à jour du j'aime. Veuillez réessayer.",
     errorHelpful: "Échec de la mise à jour utile. Veuillez réessayer.",
+    repliesLabel: "Réponses", writeReply: "Écrire une réponse...", postReply: "Publier la Réponse", closeReplies: "Fermer", noReplies: "Aucune réponse pour le moment.", replyPosted: "Réponse publiée.", replyFailed: "Impossible de publier la réponse.", anonymous: "Anonyme", member: "Membre",
     categories: {
       long_distance: "Relation à Distance",
       premarital: "Pré-matrimonial",
@@ -149,6 +153,7 @@ const translations = {
     errorSharing: "Impossibile condividere la tua storia. Per favore, riprova con amore.",
     errorLike: "Impossibile aggiornare il mi piace. Per favore, riprova.",
     errorHelpful: "Impossibile aggiornare utile. Per favore, riprova.",
+    repliesLabel: "Risposte", writeReply: "Scrivi una risposta...", postReply: "Pubblica Risposta", closeReplies: "Chiudi", noReplies: "Ancora nessuna risposta.", replyPosted: "Risposta pubblicata.", replyFailed: "Impossibile pubblicare la risposta.", anonymous: "Anonimo", member: "Membro",
     categories: {
       long_distance: "Distanza Larga",
       premarital: "Pre-matrimoniale",
@@ -183,6 +188,7 @@ const translations = {
     errorSharing: "Geschichte konnte nicht geteilt werden. Bitte versuche es mit Liebe erneut.",
     errorLike: "Like konnte nicht aktualisiert werden. Bitte versuche es erneut.",
     errorHelpful: "Hilfreich konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+    repliesLabel: "Antworten", writeReply: "Antwort schreiben...", postReply: "Antwort Veröffentlichen", closeReplies: "Schließen", noReplies: "Noch keine Antworten.", replyPosted: "Antwort veröffentlicht.", replyFailed: "Antwort konnte nicht veröffentlicht werden.", anonymous: "Anonym", member: "Mitglied",
     categories: {
       long_distance: "Fernbeziehung",
       premarital: "Voreheliche",
@@ -208,6 +214,8 @@ export default function Community() {
   const [selectedTab, setSelectedTab] = useState('forums');
   const [showStoryForm, setShowStoryForm] = useState(false);
   const [selectedForum, setSelectedForum] = useState(null);
+  const [replyPostId, setReplyPostId] = useState(null);
+  const [replyText, setReplyText] = useState('');
 
   const { data: forums = [] } = useQuery({
     queryKey: ['forums', searchQuery],
@@ -267,6 +275,37 @@ export default function Community() {
       toast.error(t.errorLike);
     }
   };
+
+  const { data: postComments = [] } = useQuery({
+    queryKey: ['postComments', replyPostId],
+    queryFn: () => replyPostId ? getPostComments(replyPostId) : [],
+    enabled: !!replyPostId,
+    initialData: [],
+  });
+
+  const createReplyMutation = useMutation({
+    mutationFn: async () => {
+      const content = replyText.trim();
+      if (!content || !replyPostId) return null;
+      return createComment(replyPostId, { content, is_anonymous: false });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['postComments', replyPostId] });
+      queryClient.invalidateQueries({ queryKey: ['forumPosts', selectedForum?.id] });
+      setReplyText('');
+      toast.success(t.replyPosted);
+    },
+    onError: (error) => {
+      console.error('Error creating forum reply:', error);
+      toast.error(error?.message || t.replyFailed);
+    },
+  });
+
+  const toggleReplies = (postId) => {
+    setReplyPostId(current => current === postId ? null : postId);
+    setReplyText('');
+  };
+
 
   const createStoryMutation = useMutation({
     mutationFn: (data) => createStory(data), // Stories are auto-approved in the service
@@ -398,12 +437,62 @@ export default function Community() {
 
                 <div className="grid gap-6">
                   {forumPosts.map((post) => (
-                    <ForumPostCard
-                      key={post.id}
-                      post={post}
-                      onLike={() => handleLikeForumPost(post)}
-                      onReply={() => {}}
-                    />
+                    <div key={post.id}>
+                      <ForumPostCard
+                        post={post}
+                        onLike={() => handleLikeForumPost(post)}
+                        onReply={() => toggleReplies(post.id)}
+                      />
+                      {replyPostId === post.id && (
+                        <Card className="mt-3 border-purple-100 bg-white">
+                          <CardContent className="p-5 space-y-4">
+                            <div className="flex items-center justify-between gap-4">
+                              <h4 className="font-semibold text-gray-900">{t.repliesLabel}</h4>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => toggleReplies(post.id)}>{t.closeReplies}</Button>
+                            </div>
+                            {postComments.length === 0 ? (
+                              <p className="text-sm text-gray-500">{t.noReplies}</p>
+                            ) : (
+                              <div className="space-y-3">
+                                {postComments.map((comment) => (
+                                  <div key={comment.id} className="rounded-xl bg-gray-50 p-3">
+                                    <div className="text-xs font-semibold text-purple-700 mb-1">
+                                      {comment.is_anonymous ? t.anonymous : (comment.author_name || t.member)}
+                                    </div>
+                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                                    {Array.isArray(comment.replies) && comment.replies.map((reply) => (
+                                      <div key={reply.id} className="mt-3 ml-4 border-l-2 border-purple-200 pl-3">
+                                        <div className="text-xs font-semibold text-purple-700 mb-1">
+                                          {reply.is_anonymous ? t.anonymous : (reply.author_name || t.member)}
+                                        </div>
+                                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{reply.content}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="space-y-2">
+                              <Textarea
+                                value={replyText}
+                                onChange={(event) => setReplyText(event.target.value)}
+                                placeholder={t.writeReply}
+                                maxLength={10000}
+                                rows={3}
+                              />
+                              <Button
+                                type="button"
+                                onClick={() => createReplyMutation.mutate()}
+                                disabled={!replyText.trim() || createReplyMutation.isPending}
+                                className="bg-gradient-to-r from-purple-500 to-pink-500"
+                              >
+                                {t.postReply}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
                   ))}
                   {forumPosts.length === 0 && (
                     <div className="text-center py-12">
