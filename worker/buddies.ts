@@ -3,7 +3,8 @@ import { Client } from 'pg';
 
 const HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
 const SORT_FIELDS = new Set(['created_at', 'name', 'updated_at']);
-const PUBLIC_USER_COLUMNS = 'id,name,email,avatar_url,bio,relationship_status,user_type,location,interests,partner_email,created_at';
+const PUBLIC_USER_COLUMNS = 'id,name,avatar_url,bio,relationship_status,user_type,location,interests,created_at';
+const PARTNER_LOOKUP_COLUMNS = `${PUBLIC_USER_COLUMNS},email`;
 
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: HEADERS }); }
 function fail(message, status = 400, code = 'bad_request') { return json({ ok: false, error: { code, message } }, status); }
@@ -78,6 +79,16 @@ export async function handleBuddiesRequest(request, env, url) {
   if (!auth) return fail('Authentication required.', 401, 'unauthorized');
   try {
     return await withDb(env, async (db) => {
+      if (url.pathname === '/api/buddies/users/by-email') {
+        if (request.method !== 'GET') return fail('Method not allowed.', 405, 'method_not_allowed');
+        const email = String(url.searchParams.get('email') || '').trim().toLowerCase();
+        if (!/^\S+@\S+\.\S+$/.test(email)) return fail('A valid partner email is required.');
+        const result = await db.query(
+          `SELECT ${PARTNER_LOOKUP_COLUMNS} FROM public.users WHERE lower(email)=lower($1) AND id<>$2::uuid AND is_active=true AND user_type='regular' LIMIT 1`,
+          [email, auth.user.id],
+        );
+        return json({ ok: true, user: result.rows[0] || null });
+      }
       const userMatch = url.pathname.match(/^\/api\/buddies\/users\/([0-9a-f-]{36})$/i);
       if (userMatch) {
         if (request.method !== 'GET') return fail('Method not allowed.', 405, 'method_not_allowed');
