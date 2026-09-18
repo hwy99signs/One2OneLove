@@ -9,6 +9,11 @@ const HEADERS = {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MESSAGE_TYPES = new Set(['text', 'image', 'video', 'audio', 'voice', 'file', 'location']);
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const INLINE_MEDIA_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav', 'audio/webm',
+  'video/mp4', 'video/webm', 'video/ogg',
+]);
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: HEADERS });
@@ -463,9 +468,13 @@ export async function handleChatRequest(request, env, url) {
           if (!object) return fail('File not found.',404,'not_found');
           const headers = new Headers();
           object.writeHttpMetadata(headers);
+          const storedType = String(headers.get('content-type') || message.file_type || 'application/octet-stream').split(';')[0].trim().toLowerCase();
+          const inlineSafe = INLINE_MEDIA_TYPES.has(storedType);
+          if (!inlineSafe) headers.set('content-type', 'application/octet-stream');
           headers.set('cache-control','private, max-age=3600');
           headers.set('x-content-type-options','nosniff');
-          headers.set('content-disposition', `inline; filename="${safeFileName(message.file_name)}"`);
+          headers.set('content-security-policy',"default-src 'none'; sandbox");
+          headers.set('content-disposition', `${inlineSafe ? 'inline' : 'attachment'}; filename="${safeFileName(message.file_name)}"`);
           return new Response(object.body,{headers});
         }
         return fail('Method not allowed.',405,'method_not_allowed');
