@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Heart, Gift, Star, Trophy, Zap, Crown, Sparkles, Target, Calendar, TrendingUp, Medal, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
@@ -161,8 +160,6 @@ const translations = {
 export default function WinACruise() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [email, setEmail] = useState("");
-
   const { user: currentUser } = useAuth();
 
   // Get current period (YYYY-MM format)
@@ -213,7 +210,6 @@ export default function WinACruise() {
         joinContest('yearly_engagement', currentYear),
       ]);
       toast.success("You're now competing for prizes! 🎉");
-      setEmail("");
     } catch (error) {
       toast.error(error?.message || 'Unable to join the contest right now.');
     }
@@ -324,7 +320,7 @@ export default function WinACruise() {
                     <div className="border-t border-white/30 pt-4">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm">{t.leader}:</span>
-                        <span className="font-bold">{monthlyLeader.user_name}</span>
+                        <span className="font-bold">{monthlyLeader.display_name}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm">{t.notesThisMonth}:</span>
@@ -357,7 +353,7 @@ export default function WinACruise() {
                             {index === 0 && <Crown className="w-4 h-4 text-yellow-300" />}
                             {index === 1 && <Medal className="w-4 h-4 text-gray-300" />}
                             {index === 2 && <Medal className="w-4 h-4 text-orange-400" />}
-                            <span>{participant.user_name}</span>
+                            <span>{participant.display_name}</span>
                           </div>
                           <span className="font-semibold">{participant.score}</span>
                         </div>
@@ -403,7 +399,7 @@ export default function WinACruise() {
                     <div className="border-t border-white/30 pt-4">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm">{t.leader}:</span>
-                        <span className="font-bold">{yearlyLeader.user_name}</span>
+                        <span className="font-bold">{yearlyLeader.display_name}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm">{t.engagementPoints}:</span>
@@ -424,7 +420,7 @@ export default function WinACruise() {
                             {index === 0 && <Crown className="w-4 h-4 text-yellow-300" />}
                             {index === 1 && <Medal className="w-4 h-4 text-gray-300" />}
                             {index === 2 && <Medal className="w-4 h-4 text-orange-400" />}
-                            <span>{participant.user_name}</span>
+                            <span>{participant.display_name}</span>
                           </div>
                           <span className="font-semibold">{participant.score}</span>
                         </div>
@@ -451,19 +447,6 @@ export default function WinACruise() {
             </CardHeader>
             <CardContent className="pt-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    {t.emailLabel} *
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t.emailPlaceholder}
-                    className="h-14 text-lg"
-                    required
-                  />
-                </div>
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold text-xl py-6 shadow-xl"
