@@ -23,6 +23,7 @@ import {
   toggleLikeStory, 
   toggleHelpfulStory 
 } from "@/lib/successStoriesService";
+import { getCommunities, getCommunityPosts, togglePostLike } from "@/lib/communityService";
 
 const translations = {
   en: {
@@ -201,32 +202,30 @@ export default function Community() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
-  const { user } = useAuth(); // Get current user from legacy backend
+  const { user } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('forums');
   const [showStoryForm, setShowStoryForm] = useState(false);
   const [selectedForum, setSelectedForum] = useState(null);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => Promise.resolve(null), // Base44 removed
-  });
-
   const { data: forums = [] } = useQuery({
-    queryKey: ['forums'],
-    queryFn: () => Promise.resolve([]), // Base44 removed
+    queryKey: ['forums', searchQuery],
+    queryFn: async () => {
+      const communities = await getCommunities('-created_at', null, searchQuery || null);
+      return communities.map((community) => ({ ...community, forum_name: community.name }));
+    },
     initialData: [],
   });
 
-  // Fetch stories from legacy backend
+  // Fetch stories from the Neon-backed API
   const { data: stories = [] } = useQuery({
     queryKey: ['stories', searchQuery],
     queryFn: () => getStories('-created_at', null, searchQuery || null),
     initialData: [],
   });
 
-  // Fetch REAL buddies from legacy backend
+  // Fetch current buddies from the Neon-backed API
   const { data: myBuddies = [] } = useQuery({
     queryKey: ['myBuddies', user?.id],
     queryFn: async () => {
@@ -245,7 +244,7 @@ export default function Community() {
     initialData: [],
   });
 
-  // Filter buddies - accepted friends only (from legacy backend)
+  // Filter buddies - accepted friends only
   const activeBuddies = myBuddies;
   const pendingBuddies = []; // No pending here, those are in FriendRequests page
 
@@ -253,11 +252,21 @@ export default function Community() {
     queryKey: ['forumPosts', selectedForum?.id],
     queryFn: async () => {
       if (!selectedForum) return [];
-      return Promise.resolve([]); // Base44 removed
+      return getCommunityPosts(selectedForum.id, '-created_at');
     },
     enabled: !!selectedForum,
     initialData: [],
   });
+
+  const handleLikeForumPost = async (post) => {
+    try {
+      await togglePostLike(post.id, post.userHasLiked);
+      queryClient.invalidateQueries({ queryKey: ['forumPosts', selectedForum?.id] });
+    } catch (error) {
+      console.error('Error toggling forum post like:', error);
+      toast.error(t.errorLike);
+    }
+  };
 
   const createStoryMutation = useMutation({
     mutationFn: (data) => createStory(data), // Stories are auto-approved in the service
@@ -392,7 +401,7 @@ export default function Community() {
                     <ForumPostCard
                       key={post.id}
                       post={post}
-                      onLike={() => {}}
+                      onLike={() => handleLikeForumPost(post)}
                       onReply={() => {}}
                     />
                   ))}
