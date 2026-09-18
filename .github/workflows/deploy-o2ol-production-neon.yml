@@ -65,6 +65,10 @@ jobs:
             echo 'Stale O2OL subscription pricing/free-plan assumption found.' >&2
             exit 1
           fi
+          if grep -RInE 'Bas[i]s|bas[i]s' worker src/hooks src/lib/stripeService.js src/pages/Subscription.jsx src/pages/PaymentSuccess.jsx src/components/profile src/components/dateideas src/components/launch supabase supabase-add-subscription-fields.sql ENV_SETUP_INSTRUCTIONS.txt neon-migrations 2>/dev/null; then
+            echo 'Legacy spelling of the O2OL Basic tier found.' >&2
+            exit 1
+          fi
           if grep -InE '3 SMS|limit of 3 SMS|>= 3' src/pages/LoveNotes.jsx 2>/dev/null; then
             echo 'Legacy three-SMS Love Notes client limit found.' >&2
             exit 1
