@@ -95,16 +95,15 @@ function messageShape(row, currentUserId) {
     content: row.reply_content,
     messageType: row.reply_message_type,
     senderId: row.reply_sender_id,
-    senderName: row.reply_sender_name || row.reply_sender_email || 'Unknown',
+    senderName: row.reply_sender_name || 'Unknown',
   } : null;
-  const senderEmail = row.sender_email || '';
-  const senderAvatar = row.sender_avatar || (senderEmail ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(senderEmail)}` : '');
+  const senderAvatar = row.sender_avatar || (row.sender_id ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(row.sender_id)}` : '');
   const item = {
     id: row.id,
     conversationId: row.conversation_id,
     senderId: row.sender_id,
     receiverId: row.receiver_id,
-    senderName: row.sender_name || senderEmail || 'Unknown',
+    senderName: row.sender_name || 'Unknown',
     senderAvatar,
     type: row.message_type,
     text: row.content,
@@ -140,9 +139,9 @@ function messageShape(row, currentUserId) {
 }
 async function loadMessage(db, messageId, currentUserId) {
   const result = await db.query(
-    `SELECT m.*, su.name AS sender_name, su.email AS sender_email, su.avatar_url AS sender_avatar,
+    `SELECT m.*, su.name AS sender_name, su.avatar_url AS sender_avatar,
             rm.id AS reply_id, rm.content AS reply_content, rm.message_type AS reply_message_type,
-            rm.sender_id AS reply_sender_id, ru.name AS reply_sender_name, ru.email AS reply_sender_email
+            rm.sender_id AS reply_sender_id, ru.name AS reply_sender_name
        FROM public.messages m
        JOIN public.conversations c ON c.id=m.conversation_id
        LEFT JOIN public.users su ON su.id=m.sender_id
@@ -161,9 +160,9 @@ async function listMessages(db, conversationId, userId) {
     [conversationId, userId],
   );
   const result = await db.query(
-    `SELECT m.*, su.name AS sender_name, su.email AS sender_email, su.avatar_url AS sender_avatar,
+    `SELECT m.*, su.name AS sender_name, su.avatar_url AS sender_avatar,
             rm.id AS reply_id, rm.content AS reply_content, rm.message_type AS reply_message_type,
-            rm.sender_id AS reply_sender_id, ru.name AS reply_sender_name, ru.email AS reply_sender_email
+            rm.sender_id AS reply_sender_id, ru.name AS reply_sender_name
        FROM public.messages m
        LEFT JOIN public.users su ON su.id=m.sender_id
        LEFT JOIN public.messages rm ON rm.id=m.reply_to_id
@@ -176,7 +175,7 @@ async function listMessages(db, conversationId, userId) {
 }
 async function listConversations(db, userId) {
   const result = await db.query(
-    `SELECT c.*, u.id AS other_user_id, u.name AS other_name, u.email AS other_email, u.avatar_url AS other_avatar
+    `SELECT c.*, u.id AS other_user_id, u.name AS other_name, u.avatar_url AS other_avatar
        FROM public.conversations c
        JOIN public.users u ON u.id=CASE WHEN c.user1_id=$1::uuid THEN c.user2_id ELSE c.user1_id END
       WHERE c.user1_id=$1::uuid OR c.user2_id=$1::uuid
@@ -188,9 +187,8 @@ async function listConversations(db, userId) {
     return {
       id: c.id,
       otherUserId: c.other_user_id,
-      name: c.other_name || c.other_email || 'Unknown User',
-      email: c.other_email,
-      avatar: c.other_avatar || (c.other_email ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c.other_email)}` : ''),
+      name: c.other_name || 'Unknown User',
+      avatar: c.other_avatar || (c.other_user_id ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c.other_user_id)}` : ''),
       lastMessage: c.last_message || '',
       lastMessageTime: c.last_message_time,
       unreadCount: isUser1 ? c.user1_unread_count : c.user2_unread_count,
@@ -235,7 +233,7 @@ async function setConversationSetting(db, conversation, userId, settings) {
 async function messageInfo(db, messageId, userId) {
   const raw = await requireMessage(db, messageId, userId);
   const people = await db.query(
-    `SELECT id,name,email,avatar_url FROM public.users WHERE id=ANY($1::uuid[])`,
+    `SELECT id,name,avatar_url FROM public.users WHERE id=ANY($1::uuid[])`,
     [[raw.sender_id, raw.receiver_id]],
   );
   const peopleMap = new Map(people.rows.map(p => [p.id, p]));
@@ -245,8 +243,8 @@ async function messageInfo(db, messageId, userId) {
   const forwarded = await db.query('SELECT original_message_id,forwarded_by,created_at FROM public.forwarded_messages WHERE new_message_id=$1::uuid ORDER BY created_at DESC LIMIT 1', [messageId]);
   let reply = null;
   if (raw.reply_to_id) {
-    const rr = await db.query(`SELECT m.id,m.content,m.message_type,m.sender_id,m.created_at,u.name,u.email FROM public.messages m LEFT JOIN public.users u ON u.id=m.sender_id WHERE m.id=$1::uuid`, [raw.reply_to_id]);
-    if (rr.rows[0]) reply = { id: rr.rows[0].id, content: rr.rows[0].content, message_type: rr.rows[0].message_type, sender_name: rr.rows[0].name || rr.rows[0].email || 'Unknown', created_at: rr.rows[0].created_at };
+    const rr = await db.query(`SELECT m.id,m.content,m.message_type,m.sender_id,m.created_at,u.name FROM public.messages m LEFT JOIN public.users u ON u.id=m.sender_id WHERE m.id=$1::uuid`, [raw.reply_to_id]);
+    if (rr.rows[0]) reply = { id: rr.rows[0].id, content: rr.rows[0].content, message_type: rr.rows[0].message_type, sender_name: rr.rows[0].name || 'Unknown', created_at: rr.rows[0].created_at };
   }
   const sender = peopleMap.get(raw.sender_id) || {};
   const receiver = peopleMap.get(raw.receiver_id) || {};
@@ -254,9 +252,9 @@ async function messageInfo(db, messageId, userId) {
   return {
     ...raw,
     file_url: publicFileUrl(raw),
-    sender_name: sender.name || sender.email || 'Unknown',
+    sender_name: sender.name || 'Unknown',
     sender_avatar: sender.avatar_url,
-    receiver_name: receiver.name || receiver.email || 'Unknown',
+    receiver_name: receiver.name || 'Unknown',
     receiver_avatar: receiver.avatar_url,
     reactions_count: reactions.rowCount,
     reactions: reactions.rows,
