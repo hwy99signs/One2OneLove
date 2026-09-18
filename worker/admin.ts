@@ -89,7 +89,7 @@ async function overview(db) {
         VALUES ('Basic'::text,1),('Premier'::text,2),('Exclusive'::text,3)
       ), counts AS (
         SELECT CASE
-                 WHEN lower(COALESCE(subscription_plan,'Basis')) IN ('basis','basic') THEN 'Basic'
+                 WHEN lower(COALESCE(subscription_plan,'Basic')) IN ('basic') THEN 'Basic'
                  WHEN lower(COALESCE(subscription_plan,'')) IN ('premiere','premier') THEN 'Premier'
                  WHEN lower(COALESCE(subscription_plan,''))='exclusive' THEN 'Exclusive'
                  ELSE 'Basic'
@@ -155,7 +155,7 @@ async function members(db) {
            COALESCE(u.is_active,true) AS is_active,
            COALESCE(u.is_verified,false) AS is_verified,
            CASE
-             WHEN lower(COALESCE(u.subscription_plan,'Basis')) IN ('basis','basic') THEN 'Basic'
+             WHEN lower(COALESCE(u.subscription_plan,'Basic')) IN ('basic') THEN 'Basic'
              WHEN lower(COALESCE(u.subscription_plan,'')) IN ('premiere','premier') THEN 'Premier'
              WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
              ELSE COALESCE(u.subscription_plan,'Basic')
