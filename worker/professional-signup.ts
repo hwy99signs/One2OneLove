@@ -75,7 +75,7 @@ async function saveProfile(db, mode, user, account, application) {
   const type = mode === 'licensed' ? 'therapist' : mode === 'contributor' ? 'influencer' : 'professional';
   await db.query(
     `INSERT INTO public.users(id,email,name,user_type,location,is_active,subscription_plan,subscription_status,subscription_price)
-     VALUES($1::uuid,$2,$3,$4,$5,true,'Basis','inactive',4.99)
+     VALUES($1::uuid,$2,$3,$4,$5,true,'Basic','inactive',4.99)
      ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email,name=EXCLUDED.name,user_type=EXCLUDED.user_type,location=EXCLUDED.location,updated_at=now()`,
     [user.id, account.email, fullName, type, locationLabel(application)],
   );
