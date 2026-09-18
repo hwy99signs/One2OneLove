@@ -1,0 +1,21 @@
+name: O2OL Temporary Lint Diagnostic
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - .github/workflows/o2ol-lint-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
