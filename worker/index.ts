@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { dispatchDueScheduledLoveNotes } from './scheduled-love-notes';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -380,8 +381,13 @@ export default {
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil((async () => {
       try {
-        const dueCount = await dueLoveNotesCheck(env);
-        console.log(`Scheduled Love Notes due: ${dueCount}. Delivery remains disabled until provider approval and configuration.`);
+        const result = await dispatchDueScheduledLoveNotes(env);
+        if (!result.ready) {
+          const dueCount = await dueLoveNotesCheck(env);
+          console.log(`Scheduled Love Notes due: ${dueCount}. Scheduled SMS remains dormant until provider and launch approval are configured.`);
+          return;
+        }
+        console.log('Scheduled Love Notes dispatch complete', result);
       } catch (err) {
         console.error('One2OneLove scheduled job error', err);
       }
