@@ -53,6 +53,23 @@ jobs:
             exit 1
           fi
 
+      - name: Verify no stale launch placeholders or legacy pricing assumptions
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE 'Promise\.resolve\(|Base44 removed' src worker 2>/dev/null; then
+            echo 'Legacy migration placeholder found in active O2OL code.' >&2
+            exit 1
+          fi
+          if grep -RInE 'isFree:[[:space:]]*true|price:[[:space:]]*0([,}]|$)|34\.99' src/components/subscriptions src/pages/Subscription.jsx 2>/dev/null; then
+            echo 'Stale O2OL subscription pricing/free-plan assumption found.' >&2
+            exit 1
+          fi
+          if grep -InE '3 SMS|limit of 3 SMS|>= 3' src/pages/LoveNotes.jsx 2>/dev/null; then
+            echo 'Legacy three-SMS Love Notes client limit found.' >&2
+            exit 1
+          fi
+
       - name: Audit frontend dependencies for high-severity vulnerabilities
         run: npm audit --audit-level=high
 
