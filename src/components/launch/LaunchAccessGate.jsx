@@ -99,7 +99,8 @@ export default function LaunchAccessGate({ pathname, children }) {
   if (route === '/subscription' || route === '/payment-success') return children;
 
   const status = String(user.subscription_status || '').toLowerCase();
-  if (!['active', 'trial', 'trialing'].includes(status)) {
+  const hasStripeSubscription = Boolean(user.stripe_subscription_id);
+  if (!['active', 'trial', 'trialing'].includes(status) || !hasStripeSubscription) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
 
