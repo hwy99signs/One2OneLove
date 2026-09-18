@@ -62,7 +62,7 @@ export async function getAuthSession() {
   const payload = await apiRequest('/api/auth/get-session');
   const user = payload?.user ?? payload?.data?.user ?? null;
   const session = payload?.session ?? payload?.data?.session ?? null;
-  return user && session ? { user, session } : null;
+  return user?.emailVerified === true && session ? { user, session } : null;
 }
 
 export async function getAuthSessionWithRetry(attempts = 3, delayMs = 250) {
@@ -116,8 +116,8 @@ export async function signInWithEmail(email, password) {
   // Better Auth commonly returns the verified user immediately while the cookie
   // is already being committed. Do not hammer get-session after a successful
   // credential check; that created unnecessary 429s on launch QA.
-  if (directUser?.emailVerified !== false) {
-    if (directUser) return { user: directUser, session: directSession || { pending: true } };
+  if (directUser?.emailVerified === true) {
+    return { user: directUser, session: directSession || { pending: true } };
   }
 
   // Unverified accounts intentionally receive no usable session. One short
