@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { searchUsers } from '@/lib/buddyService';
+import { findUserByEmail } from '@/lib/buddyService';
 import { listMemories } from '@/lib/memoryService';
 import { updateProfile } from '@/lib/apiClient';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -86,8 +86,7 @@ export default function CouplesProfile() {
     queryKey:['partnerUser',currentUser?.partner_email],
     queryFn:async () => {
       if (!currentUser?.id || !currentUser?.partner_email) return null;
-      const matches = await searchUsers(currentUser.id,currentUser.partner_email);
-      return matches.find(item => String(item.email || '').toLowerCase() === String(currentUser.partner_email).toLowerCase()) || null;
+      return findUserByEmail(currentUser.partner_email);
     },
     enabled:!!currentUser?.id && !!currentUser?.partner_email,
     initialData:null,
