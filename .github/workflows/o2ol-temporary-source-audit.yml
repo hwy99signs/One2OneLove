@@ -1,0 +1,29 @@
+name: O2OL temporary launch source audit
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+
+permissions:
+  contents: read
+
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report stale launch patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== OLD ACCESS HELPERS ==="
+          grep -RInE 'useHasPaidPlan|useCanUpgrade|useFeatureAccess|SubscriptionSelection|<FeatureGate|hasFeatureAccess' src || true
+          echo "=== STALE FREE OR OLD PRICE SIGNALS ==="
+          grep -RInE 'isFree:[[:space:]]*true|price:[[:space:]]*0([,}]|$)|19\.99|34\.99' src || true
+          echo "=== MIGRATION PLACEHOLDERS / NOOPS ==="
+          grep -RInE 'Promise\.resolve\(|Base44 removed|TODO|FIXME|on[A-Za-z0-9_]+=[{][(][)][[:space:]]*=>[[:space:]]*[{][}]' src worker || true
+          echo "=== LEGACY CLIENT LIMIT SIGNALS ==="
+          grep -RInE '3 SMS|limit of 3|>= 3|Remaining = Math\.max\(0, 3' src || true
+          echo "=== POSSIBLE FAKE-SUCCESS HANDLERS ==="
+          grep -RInE 'toast\.success|successMessage' src/pages src/components | head -n 500 || true
