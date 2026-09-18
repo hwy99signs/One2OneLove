@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/apiClient";
+import { Loader2 } from "lucide-react";
 
 const translations = {
   en: {
@@ -21,6 +23,7 @@ const translations = {
     suggestion: "Your Suggestion",
     submit: "Submit Suggestion",
     successMessage: "Thank you for your suggestion! We'll review it carefully. 💡",
+    errorMessage: "Your suggestion could not be submitted. Please try again.",
     types: { feature: "New Feature", improvement: "Improvement", bug: "Bug Report", other: "Other" },
     placeholder: "Tell us your idea in detail..."
   },
@@ -34,6 +37,7 @@ const translations = {
     suggestion: "Tu Sugerencia",
     submit: "Enviar Sugerencia",
     successMessage: "¡Gracias por tu sugerencia! La revisaremos cuidadosamente. 💡",
+    errorMessage: "No se pudo enviar tu sugerencia. Inténtalo de nuevo.",
     types: { feature: "Nueva Función", improvement: "Mejora", bug: "Reporte de Error", other: "Otro" },
     placeholder: "Cuéntanos tu idea en detalle..."
   },
@@ -47,6 +51,7 @@ const translations = {
     suggestion: "Votre Suggestion",
     submit: "Soumettre la Suggestion",
     successMessage: "Merci pour votre suggestion! Nous l'examinerons attentivement. 💡",
+    errorMessage: "Votre suggestion n’a pas pu être envoyée. Veuillez réessayer.",
     types: { feature: "Nouvelle Fonctionnalité", improvement: "Amélioration", bug: "Rapport de Bug", other: "Autre" },
     placeholder: "Parlez-nous de votre idée en détail..."
   },
@@ -60,6 +65,7 @@ const translations = {
     suggestion: "Il Tuo Suggerimento",
     submit: "Invia Suggerimento",
     successMessage: "Grazie per il tuo suggerimento! Lo esamineremo attentamente. 💡",
+    errorMessage: "Impossibile inviare il suggerimento. Riprova.",
     types: { feature: "Nuova Funzionalità", improvement: "Miglioramento", bug: "Segnalazione Bug", other: "Altro" },
     placeholder: "Raccontaci la tua idea in dettaglio..."
   },
@@ -73,6 +79,7 @@ const translations = {
     suggestion: "Ihr Vorschlag",
     submit: "Vorschlag Einreichen",
     successMessage: "Vielen Dank für Ihren Vorschlag! Wir werden ihn sorgfältig prüfen. 💡",
+    errorMessage: "Ihr Vorschlag konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
     types: { feature: "Neue Funktion", improvement: "Verbesserung", bug: "Fehlerbericht", other: "Sonstiges" },
     placeholder: "Erzählen Sie uns im Detail von Ihrer Idee..."
   }
@@ -82,11 +89,20 @@ export default function Suggestions() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const [formData, setFormData] = useState({ name: "", email: "", type: "feature", suggestion: "" });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.success(t.successMessage);
-    setFormData({ name: "", email: "", type: "feature", suggestion: "" });
+    setSubmitting(true);
+    try {
+      await apiRequest('/api/suggestions', { method: 'POST', body: formData });
+      toast.success(t.successMessage);
+      setFormData({ name: "", email: "", type: "feature", suggestion: "" });
+    } catch (error) {
+      toast.error(error?.message || t.errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -136,8 +152,8 @@ export default function Suggestions() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t.suggestion}</label>
                   <Textarea value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={t.placeholder} />
                 </div>
-                <Button type="submit" className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">
-                  <Send className="w-5 h-5 mr-2" />
+                <Button type="submit" disabled={submitting} className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">
+                  {submitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
                   {t.submit}
                 </Button>
               </form>
