@@ -95,7 +95,7 @@ async function getSession(request, env) {
   const payload = await res.json().catch(() => null);
   const user = payload?.user ?? payload?.data?.user ?? null;
   const session = payload?.session ?? payload?.data?.session ?? null;
-  if (!user?.id || !session) return null;
+  if (!user?.id || user?.emailVerified !== true || !session) return null;
   return { user, session };
 }
 
