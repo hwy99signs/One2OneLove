@@ -30,6 +30,7 @@ import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
+import { enforceApiEntitlement } from './api-entitlements';
 
 export default {
   async fetch(request, env, ctx) {
@@ -39,6 +40,9 @@ export default {
       const sendCreditResponse = await handleSendCreditWebhook(request.clone(), env, url);
       if (sendCreditResponse) return sendCreditResponse;
     }
+
+    const entitlementGate = await enforceApiEntitlement(request, env, url);
+    if (entitlementGate) return entitlementGate;
 
     if (url.pathname.startsWith('/api/send-credits')) {
       const response = await handleSendCreditsRequest(request, env, url);
