@@ -53,7 +53,7 @@ function planLevel(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (raw === 'exclusive') return 3;
   if (raw === 'premier' || raw === 'premiere') return 2;
-  if (raw === 'basic' || raw === 'basis') return 1;
+  if (raw === 'basic') return 1;
   return 0;
 }
 
