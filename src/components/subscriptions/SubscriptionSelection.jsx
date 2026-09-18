@@ -10,13 +10,13 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
   const tiers = [
     {
       name: 'Basic',
-      price: 0,
+      price: 4.99,
       period: 'month',
       description: 'Perfect for couples starting their journey',
       icon: '💝',
       gradient: 'from-blue-400 to-blue-600',
       popular: false,
-      isFree: true,
+      isFree: false,
       features: [
         'Access to 50+ Love Notes Library',
         'Basic Relationship Quizzes',
@@ -29,7 +29,7 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
     },
     {
       name: 'Premiere',
-      price: 19.99,
+      price: 9.99,
       period: 'month',
       description: 'For couples ready to deepen their connection',
       icon: '💖',
@@ -50,7 +50,7 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
     },
     {
       name: 'Exclusive',
-      price: 34.99,
+      price: 19.99,
       period: 'month',
       description: 'The ultimate experience for committed couples',
       icon: '👑',
@@ -162,7 +162,7 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
           className="mt-16 text-center"
         >
           <p className="text-gray-600 text-sm">
-            💜 All plans include a 14-day money-back guarantee • Cancel anytime • No hidden fees
+            💜 Current launch pricing shown in USD • Cancel anytime • No hidden fees
           </p>
           <p className="text-gray-500 text-xs mt-2">
             Prices shown in USD. Special discounts available for annual subscriptions.
