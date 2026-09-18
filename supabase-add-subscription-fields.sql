@@ -6,16 +6,16 @@
 
 -- Add subscription fields to users table
 ALTER TABLE public.users 
-ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'Basis',
-ADD COLUMN IF NOT EXISTS subscription_price DECIMAL(10,2) DEFAULT 0.00,
-ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'active',
+ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'Basic',
+ADD COLUMN IF NOT EXISTS subscription_price DECIMAL(10,2) DEFAULT 4.99,
+ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'inactive',
 ADD COLUMN IF NOT EXISTS subscription_start_date TIMESTAMPTZ DEFAULT NOW(),
 ADD COLUMN IF NOT EXISTS subscription_end_date TIMESTAMPTZ;
 
 -- Add check constraint for subscription plan
 ALTER TABLE public.users
 ADD CONSTRAINT check_subscription_plan 
-CHECK (subscription_plan IN ('Basis', 'Premiere', 'Exclusive'));
+CHECK (subscription_plan IN ('Basic', 'Premiere', 'Exclusive'));
 
 -- Add check constraint for subscription status
 ALTER TABLE public.users
@@ -30,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_users_subscription_plan
 ON public.users(subscription_plan);
 
 -- Add comment to columns
-COMMENT ON COLUMN public.users.subscription_plan IS 'User subscription tier: Basis, Premiere, or Exclusive';
+COMMENT ON COLUMN public.users.subscription_plan IS 'User subscription tier: Basic, Premiere, or Exclusive';
 COMMENT ON COLUMN public.users.subscription_price IS 'Monthly price of the subscription plan';
 COMMENT ON COLUMN public.users.subscription_status IS 'Current status of subscription: active, inactive, cancelled, expired, or trial';
 COMMENT ON COLUMN public.users.subscription_start_date IS 'Date when subscription started';
@@ -57,9 +57,9 @@ ORDER BY ordinal_position;
 -- If you have existing users without subscription data, update them
 UPDATE public.users
 SET 
-  subscription_plan = 'Basis',
-  subscription_price = 0.00,
-  subscription_status = 'active',
+  subscription_plan = 'Basic',
+  subscription_price = 4.99,
+  subscription_status = 'inactive',
   subscription_start_date = created_at
 WHERE subscription_plan IS NULL;
 
