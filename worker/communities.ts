@@ -105,7 +105,15 @@ async function listPosts(db, communityId, auth, url) {
   const search=(url.searchParams.get('search')||'').trim();
   if(search){values.push(`%${search}%`);clauses.push(`(title ILIKE $${values.length} OR content ILIKE $${values.length})`);}
   const sort=order(url.searchParams.get('order'),POST_SORT,'-created_at');
-  const result=await db.query(`SELECT * FROM public.community_posts WHERE ${clauses.join(' AND ')} ORDER BY is_pinned DESC,${sort.field} ${sort.dir},id ASC`,values);
+  const result=await db.query(
+    `SELECT id,community_id,CASE WHEN is_anonymous THEN NULL ELSE author_id END AS author_id,
+            title,content,author_name,is_anonymous,tags,is_pinned,is_locked,moderation_status,
+            likes_count,comments_count,shares_count,views_count,created_at,updated_at
+       FROM public.community_posts
+      WHERE ${clauses.join(' AND ')}
+      ORDER BY is_pinned DESC,${sort.field} ${sort.dir},id ASC`,
+    values,
+  );
   return postFlags(db,result.rows,auth);
 }
 async function comments(db, postId, auth) {
@@ -113,7 +121,10 @@ async function comments(db, postId, auth) {
   if(!postResult.rows[0]) throw Object.assign(new Error('Post not found.'),{status:404});
   const access=await communityAccess(db,postResult.rows[0].community_id,auth);
   if(!access.allowed) throw Object.assign(new Error('Community access denied.'),{status:403});
-  const result=await db.query("SELECT * FROM public.post_comments WHERE post_id=$1::uuid AND moderation_status='approved' ORDER BY created_at ASC",[postId]);
+  const result=await db.query(
+    "SELECT id,post_id,CASE WHEN is_anonymous THEN NULL ELSE author_id END AS author_id,parent_comment_id,content,author_name,is_anonymous,moderation_status,likes_count,created_at,updated_at FROM public.post_comments WHERE post_id=$1::uuid AND moderation_status='approved' ORDER BY created_at ASC",
+    [postId],
+  );
   let liked=new Set();
   if(auth&&result.rows.length){const l=await db.query('SELECT comment_id FROM public.comment_likes WHERE user_id=$1::uuid AND comment_id=ANY($2::uuid[])',[auth.user.id,result.rows.map(c=>c.id)]);liked=new Set(l.rows.map(x=>x.comment_id));}
   const top=[];const replies=new Map();
