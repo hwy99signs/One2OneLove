@@ -27,7 +27,7 @@ function parseLinks(value) {
   }, {});
 }
 function callbackFor(request) {
-  const allowed = new Set(['https://one2onelove.com','https://www.one2onelove.com','https://one2onelove-launch.hwy99signs.workers.dev','https://one2onelove-preview-migration.hwy99signs.workers.dev']);
+  const allowed = new Set(['https://one2onelove.com','https://www.one2onelove.com','https://one2onelove-launch.hwy99signs.workers.dev','https://one2onelove-prelaunch.hwy99signs.workers.dev','https://one2onelove-preview-migration.hwy99signs.workers.dev']);
   const origin = request.headers.get('origin');
   const base = origin && allowed.has(origin) ? origin : 'https://one2onelove.com';
   return `${base}/SignIn?verified=1`;
