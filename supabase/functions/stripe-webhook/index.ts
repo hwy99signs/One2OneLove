@@ -163,7 +163,7 @@ async function handleSubscriptionCanceled(
   await supabaseClient
     .from('users')
     .update({
-      subscription_plan: 'Basis',
+      subscription_plan: 'Basic',
       subscription_price: 0,
       subscription_status: 'canceled',
       stripe_subscription_id: null,
@@ -178,7 +178,7 @@ async function handleSubscriptionCanceled(
     .insert({
       user_id: userId,
       from_plan: subscription.metadata?.plan_name,
-      to_plan: 'Basis',
+      to_plan: 'Basic',
       change_type: 'cancel',
     })
 
