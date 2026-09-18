@@ -24,6 +24,7 @@ const BASIC_PREFIXES = [
 ];
 
 const PREMIER_PREFIXES = [
+  '/api/ai',
   '/api/milestones',
   '/api/media/milestones/',
   '/api/journals',
@@ -36,6 +37,7 @@ function json(data, status = 200) {
 }
 
 function requiredPlan(pathname) {
+  if (pathname.startsWith('/api/ai/content')) return 'Exclusive';
   if (PREMIER_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Premier';
   if (BASIC_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Basic';
   return null;
