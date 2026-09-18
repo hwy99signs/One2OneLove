@@ -118,6 +118,14 @@ jobs:
             .readiness.publicLaunchIdentityGateReady == true
           ' /tmp/readiness.json >/dev/null
 
+      - name: Verify Suggestions storage is launch-ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 "$PRELAUNCH_URL/api/suggestions/readiness" -o /tmp/suggestions-readiness.json
+          cat /tmp/suggestions-readiness.json
+          jq -e '.ok == true and .ready == true' /tmp/suggestions-readiness.json >/dev/null
+
       - name: Deploy Cloudflare Worker to production domains
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
 
