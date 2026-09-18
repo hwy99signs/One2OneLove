@@ -324,21 +324,17 @@ async function assetRoute(request, env, url) {
 async function healthRoute(env) {
   return withDb(env, async (db) => {
     const result = await db.query(
-      `SELECT current_database() AS database,
-              EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='users') AS users_ready,
-              EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='scheduled_love_notes') AS love_notes_ready,
-              (SELECT count(*)::int FROM public.app_migrations) AS migration_count`,
+      `SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='users') AS users_ready,
+              EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='scheduled_love_notes') AS love_notes_ready`,
     );
+    const ready = result.rows[0]?.users_ready === true && result.rows[0]?.love_notes_ready === true;
     return json({
-      ok: true,
+      ok: ready,
       service: 'one2onelove-api',
-      database: result.rows[0]?.database,
-      users_ready: result.rows[0]?.users_ready,
-      love_notes_ready: result.rows[0]?.love_notes_ready,
-      migration_count: result.rows[0]?.migration_count,
+      database_ready: ready,
       auth_proxy: true,
       storage: 'r2',
-    });
+    }, ready ? 200 : 503);
   });
 }
 
