@@ -25,7 +25,7 @@ export async function handleReviewsRequest(request, env, url) {
   try {
     if (url.pathname === '/api/reviews' && request.method === 'GET') {
       return await withDb(env, async db => {
-        const r = await db.query(`SELECT id,user_id,reviewer_name,city,country,rating,review_text,created_at FROM public.reviews WHERE is_published=true ORDER BY created_at DESC LIMIT 200`);
+        const r = await db.query(`SELECT id,reviewer_name,city,country,rating,review_text,created_at FROM public.reviews WHERE is_published=true ORDER BY created_at DESC LIMIT 200`);
         return json({ ok: true, reviews: r.rows });
       });
     }
