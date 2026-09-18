@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Crown, Check, ArrowRight, Sparkles } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
+import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
 const planMeta = {
-  Basic: { icon: '💝', gradient: 'from-blue-400 to-blue-600', price: 0 },
-  Premiere: { icon: '💖', gradient: 'from-purple-400 to-pink-500', price: 19.99 },
-  Exclusive: { icon: '👑', gradient: 'from-yellow-400 to-orange-500', price: 34.99 },
+  Basic: { icon: '💝', gradient: 'from-blue-400 to-blue-600', price: 4.99 },
+  Premiere: { icon: '💖', gradient: 'from-purple-400 to-pink-500', price: 9.99 },
+  Exclusive: { icon: '👑', gradient: 'from-yellow-400 to-orange-500', price: 19.99 },
 };
 
 const translations = {
@@ -83,20 +84,22 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const rawPlan = user?.subscription_plan || 'Basic';
   const userPlan = rawPlan === 'Basis' ? 'Basic' : rawPlan;
   const planInfo = planMeta[userPlan] || planMeta.Basic;
-  const features = t.features[userPlan] || t.features.Basic;
-  const isFree = userPlan === 'Basic';
+  const launchPlanCopy = (subscriptionPlanCopy[currentLanguage] || subscriptionPlanCopy.en).plans;
+  const planCopy = launchPlanCopy[userPlan] || launchPlanCopy.Basic;
+  const features = planCopy.features;
+  const isBasic = userPlan === 'Basic';
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-      <Card className={`shadow-xl border-2 ${isFree ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-white' : 'border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50'}`}>
+      <Card className={`shadow-xl border-2 ${isBasic ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-white' : 'border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50'}`}>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 bg-gradient-to-br ${planInfo.gradient} rounded-xl flex items-center justify-center shadow-lg`}><span className="text-2xl">{planInfo.icon}</span></div>
-              <div><p className="text-sm text-gray-600">{t.currentPlan}</p><h3 className="text-2xl font-bold text-gray-900">{t.names[userPlan] || userPlan}</h3></div>
+              <div><p className="text-sm text-gray-600">{t.currentPlan}</p><h3 className="text-2xl font-bold text-gray-900">{planCopy.displayName || t.names[userPlan] || userPlan}</h3></div>
             </div>
             <div className="text-right">
-              {isFree ? <div className="text-2xl font-bold text-green-600">{t.free}</div> : <><div className="text-2xl font-bold text-gray-900">${planInfo.price}</div><div className="text-xs text-gray-600">{t.perMonth}</div></>}
+              <><div className="text-2xl font-bold text-gray-900">${planInfo.price}</div><div className="text-xs text-gray-600">{t.perMonth}</div></>
             </div>
           </CardTitle>
         </CardHeader>
@@ -109,7 +112,7 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
             </div>
           </div>
 
-          {isFree && (
+          {isBasic && (
             <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
               <div className="flex items-start gap-3 mb-3"><Crown className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" /><div><h5 className="font-bold text-gray-900 mb-1">{t.unlockMore}</h5><p className="text-sm text-gray-700">{t.upgradeText}</p></div></div>
               <Link to={createPageUrl('Subscription')}><Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">{t.upgrade}<ArrowRight className="w-4 h-4 ml-2" /></Button></Link>
