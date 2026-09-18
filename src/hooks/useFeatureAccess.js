@@ -3,7 +3,7 @@ import { hasFeatureAccess } from '@/lib/stripeService';
 
 const canonicalPlan = (plan) => {
   const value = String(plan || '').trim();
-  return value === 'Basic' || value === 'Basis' ? 'Basis' : value || 'Basis';
+  return value === 'Basic' ? 'Basic' : value || 'Basic';
 };
 
 /**
@@ -41,7 +41,7 @@ export const useHasPaidPlan = () => {
 export const useCanUpgrade = () => {
   const { user } = useAuth();
   const plan = canonicalPlan(user?.subscription_plan);
-  return plan === 'Basis' || plan === 'Premiere';
+  return plan === 'Basic' || plan === 'Premiere';
 };
 
 /**
@@ -53,7 +53,7 @@ export const useFeatureLimits = () => {
   const plan = canonicalPlan(user?.subscription_plan);
 
   const limits = {
-    Basis: {
+    Basic: {
       loveNotes: 4,
       dateIdeas: 1,
       aiQuestions: 0,
@@ -73,7 +73,7 @@ export const useFeatureLimits = () => {
     }
   };
 
-  return limits[plan] || limits.Basis;
+  return limits[plan] || limits.Basic;
 };
 
 export default useFeatureAccess;
