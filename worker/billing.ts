@@ -187,6 +187,7 @@ async function checkout(db, env, request, auth, input) {
   params.set('mode', 'subscription');
   params.set('payment_method_types[0]', 'card');
   params.set('payment_method_collection', 'always');
+  params.set('branding_settings[display_name]', 'One2OneLove');
   params.set('line_items[0][price]', priceId);
   params.set('line_items[0][quantity]', '1');
   params.set('success_url', `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`);
