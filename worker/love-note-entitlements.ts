@@ -49,7 +49,7 @@ function cleanText(value, max = 5000, required = false) {
 }
 function canonicalPlan(value) {
   const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'basic' || raw === 'basis') return 'Basic';
+  if (raw === 'basic') return 'Basic';
   if (raw === 'premier' || raw === 'premiere') return 'Premier';
   if (raw === 'exclusive') return 'Exclusive';
   return 'Basic';
