@@ -31,6 +31,7 @@ import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
 import { enforceApiEntitlement } from './api-entitlements';
+import { enforceLaunchIdentity } from './identity-gate';
 
 export default {
   async fetch(request, env, ctx) {
@@ -40,6 +41,9 @@ export default {
       const sendCreditResponse = await handleSendCreditWebhook(request.clone(), env, url);
       if (sendCreditResponse) return sendCreditResponse;
     }
+
+    const identityGate = await enforceLaunchIdentity(request, env, url);
+    if (identityGate) return identityGate;
 
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;
