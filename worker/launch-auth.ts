@@ -93,7 +93,22 @@ async function launchReadiness(env) {
           FROM public.users
           WHERE stripe_subscription_id IS NULL
             AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
-        ) AS legacy_entitlement_rows
+        ) AS legacy_entitlement_rows,
+        COALESCE((
+          SELECT column_default = '''Basic''::text'
+          FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='users' AND column_name='subscription_plan'
+        ),false) AS basic_default_ready,
+        COALESCE((
+          SELECT column_default = '4.99'
+          FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='users' AND column_name='subscription_price'
+        ),false) AS price_default_ready,
+        COALESCE((
+          SELECT column_default = '''inactive''::text'
+          FROM information_schema.columns
+          WHERE table_schema='public' AND table_name='users' AND column_name='subscription_status'
+        ),false) AS status_default_ready
       FROM neon_auth.project_config
       WHERE name='One2OneLove'
       LIMIT 1
@@ -115,7 +130,15 @@ async function launchReadinessResponse(request, env) {
   const phoneVerificationReady = readiness.phone_verification_enabled === true;
   const publicLaunchIdentityGateReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
   const legacyEntitlementRows = Number(readiness.legacy_entitlement_rows || 0);
-  const billingDataReady = legacyEntitlementRows === 0;
+  const billingDefaultsReady = Boolean(
+    readiness.basic_default_ready &&
+    readiness.price_default_ready &&
+    readiness.status_default_ready
+  );
+  // Legacy migrated rows may still carry historical active/$0 values. They are
+  // informational only because both browser and API access gates independently
+  // require a Stripe-backed subscription for non-admin paid access.
+  const billingDataReady = billingDefaultsReady;
 
   return json({
     ok: true,
@@ -130,6 +153,7 @@ async function launchReadinessResponse(request, env) {
       phoneVerificationReady,
       publicLaunchIdentityGateReady,
       legacyEntitlementRows,
+      billingDefaultsReady,
       billingDataReady,
     },
   });
