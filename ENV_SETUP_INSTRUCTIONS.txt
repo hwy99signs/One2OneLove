@@ -25,11 +25,11 @@ FOR NOW, YOU CAN:
 
 ✅ Run the app normally
 ✅ View subscription pages
-✅ Use free "Basis" plan fully
+✅ Review the Basic plan UI and features
 ✅ Develop premium features
 ✅ Test UI/UX flow
 
-❌ Can't process real payments yet (add real key when ready)
+❌ Legacy local instructions only — active O2OL billing is handled by the Cloudflare Worker
 
 ========================================
 
