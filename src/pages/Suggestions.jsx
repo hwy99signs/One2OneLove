@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLanguage } from "@/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ const translations = {
     submit: "Submit Suggestion",
     successMessage: "Thank you for your suggestion! We'll review it carefully. 💡",
     errorMessage: "Your suggestion could not be submitted. Please try again.",
+    unavailable: "Suggestions are temporarily unavailable while launch storage is being finalized.",
     types: { feature: "New Feature", improvement: "Improvement", bug: "Bug Report", other: "Other" },
     placeholder: "Tell us your idea in detail..."
   },
@@ -37,6 +38,7 @@ const translations = {
     submit: "Enviar Sugerencia",
     successMessage: "¡Gracias por tu sugerencia! La revisaremos cuidadosamente. 💡",
     errorMessage: "No se pudo enviar tu sugerencia. Inténtalo de nuevo.",
+    unavailable: "Las sugerencias no están disponibles temporalmente mientras finalizamos el almacenamiento de lanzamiento.",
     types: { feature: "Nueva Función", improvement: "Mejora", bug: "Reporte de Error", other: "Otro" },
     placeholder: "Cuéntanos tu idea en detalle..."
   },
@@ -51,6 +53,7 @@ const translations = {
     submit: "Soumettre la Suggestion",
     successMessage: "Merci pour votre suggestion! Nous l'examinerons attentivement. 💡",
     errorMessage: "Votre suggestion n’a pas pu être envoyée. Veuillez réessayer.",
+    unavailable: "Les suggestions sont temporairement indisponibles pendant la finalisation du stockage de lancement.",
     types: { feature: "Nouvelle Fonctionnalité", improvement: "Amélioration", bug: "Rapport de Bug", other: "Autre" },
     placeholder: "Parlez-nous de votre idée en détail..."
   },
@@ -65,6 +68,7 @@ const translations = {
     submit: "Invia Suggerimento",
     successMessage: "Grazie per il tuo suggerimento! Lo esamineremo attentamente. 💡",
     errorMessage: "Impossibile inviare il suggerimento. Riprova.",
+    unavailable: "I suggerimenti non sono temporaneamente disponibili mentre finalizziamo l’archiviazione per il lancio.",
     types: { feature: "Nuova Funzionalità", improvement: "Miglioramento", bug: "Segnalazione Bug", other: "Altro" },
     placeholder: "Raccontaci la tua idea in dettaglio..."
   },
@@ -79,6 +83,7 @@ const translations = {
     submit: "Vorschlag Einreichen",
     successMessage: "Vielen Dank für Ihren Vorschlag! Wir werden ihn sorgfältig prüfen. 💡",
     errorMessage: "Ihr Vorschlag konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    unavailable: "Vorschläge sind vorübergehend nicht verfügbar, während der Launch-Speicher fertiggestellt wird.",
     types: { feature: "Neue Funktion", improvement: "Verbesserung", bug: "Fehlerbericht", other: "Sonstiges" },
     placeholder: "Erzählen Sie uns im Detail von Ihrer Idee..."
   }
@@ -89,9 +94,19 @@ export default function Suggestions() {
   const t = translations[currentLanguage] || translations.en;
   const [formData, setFormData] = useState({ name: "", email: "", type: "feature", suggestion: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [storageReady, setStorageReady] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    apiRequest('/api/suggestions/readiness')
+      .then(payload => { if (active) setStorageReady(payload?.ready === true); })
+      .catch(() => { if (active) setStorageReady(false); });
+    return () => { active = false; };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (storageReady !== true) return toast.error(t.unavailable);
     setSubmitting(true);
     try {
       await apiRequest('/api/suggestions', { method: 'POST', body: formData });
@@ -128,6 +143,11 @@ export default function Suggestions() {
               <CardTitle className="text-2xl">💡 {t.suggestion}</CardTitle>
             </CardHeader>
             <CardContent>
+              {storageReady === false && (
+                <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">
+                  {t.unavailable}
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -151,7 +171,7 @@ export default function Suggestions() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t.suggestion}</label>
                   <Textarea value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={t.placeholder} />
                 </div>
-                <Button type="submit" disabled={submitting} className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">
+                <Button type="submit" disabled={submitting || storageReady !== true} className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">
                   {submitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
                   {t.submit}
                 </Button>
