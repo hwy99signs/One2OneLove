@@ -109,6 +109,7 @@ async function createCheckout(db, env, request, auth, input) {
   params.set('customer', customerId);
   params.set('mode', 'payment');
   params.set('payment_method_types[0]', 'card');
+  params.set('branding_settings[display_name]', 'One2OneLove');
   params.set('line_items[0][price_data][currency]', 'usd');
   params.set('line_items[0][price_data][unit_amount]', String(amountCents));
   params.set('line_items[0][price_data][product_data][name]', 'One2OneLove Extra Love Note Sends');
