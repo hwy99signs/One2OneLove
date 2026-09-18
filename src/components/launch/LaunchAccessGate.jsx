@@ -93,6 +93,14 @@ export default function LaunchAccessGate({ pathname, children }) {
     return <Navigate to="/SignIn" replace />;
   }
 
+  if (route === '/verifyphone') return children;
+
+  const phoneRequired = user.phone_verification_required === true;
+  const phoneVerified = user.phoneNumberVerified === true || user.phone_number_verified === true;
+  if (phoneRequired && !phoneVerified) {
+    return <Navigate to="/VerifyPhone" replace />;
+  }
+
   const role = String(user.role || '').toLowerCase();
   if (role === 'admin') return children;
 
