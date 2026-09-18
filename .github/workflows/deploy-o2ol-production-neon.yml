@@ -44,6 +44,12 @@ jobs:
             exit 1
           fi
 
+      - name: Audit frontend dependencies for high-severity vulnerabilities
+        run: npm audit --audit-level=high
+
+      - name: Audit Worker dependencies for high-severity vulnerabilities
+        run: npm --prefix worker audit --audit-level=high
+
       - name: Verify production deployment isolation
         shell: bash
         run: |
