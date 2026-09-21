@@ -1,5 +1,6 @@
 -- One2OneLove public Suggestions form storage.
-CREATE TABLE public.suggestions (
+-- Idempotent so launch/prelaunch migration steps can safely re-run after partial completion.
+CREATE TABLE IF NOT EXISTS public.suggestions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NULL,
   email text NULL,
@@ -9,5 +10,5 @@ CREATE TABLE public.suggestions (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX suggestions_created_at_idx ON public.suggestions (created_at DESC);
-CREATE INDEX suggestions_status_created_at_idx ON public.suggestions (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS suggestions_created_at_idx ON public.suggestions (created_at DESC);
+CREATE INDEX IF NOT EXISTS suggestions_status_created_at_idx ON public.suggestions (status, created_at DESC);
