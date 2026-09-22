@@ -103,18 +103,18 @@ export default function Invite() {
         <div className="grid gap-6 md:grid-cols-2">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-black text-slate-900">{t.textTitle}</h2>
-            <form onSubmit={handleSMSInvite} className="mt-4 flex gap-3"><input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder={t.phone} className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100"/><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 font-black text-white"><Smartphone size={17}/>{t.send}</button></form>
+            <form onSubmit={handleSMSInvite} className="mt-4 flex gap-3"><input aria-label={t.phone} type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder={t.phone} className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100"/><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 font-black text-white"><Smartphone size={17}/>{t.send}</button></form>
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-black text-slate-900">{t.emailTitle}</h2>
-            <form onSubmit={handleEmailInvite} className="mt-4 flex gap-3"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100"/><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 font-black text-white"><Mail size={17}/>{t.send}</button></form>
+            <form onSubmit={handleEmailInvite} className="mt-4 flex gap-3"><input aria-label={t.email} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t.email} className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-100"/><button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 font-black text-white"><Mail size={17}/>{t.send}</button></form>
           </section>
         </div>
 
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-black text-slate-900">{t.linkTitle}</h2>
-          <div className="mt-4 flex gap-3"><input value={inviteLink} readOnly className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"/><button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 font-black text-white"><Copy size={17}/>{t.copy}</button></div>
+          <div className="mt-4 flex gap-3"><input aria-label={t.linkTitle} value={inviteLink} readOnly className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"/><button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 font-black text-white"><Copy size={17}/>{t.copy}</button></div>
         </section>
 
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
