@@ -1022,7 +1022,10 @@ export default function Profile() {
     );
   }
 
-  const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
+  const profileDateLocales = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
+  const joinDate = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString(profileDateLocales[currentLanguage] || 'en-US', { month: 'long', year: 'numeric' })
+    : 'Recently';
 
   // Get profile completion from backend (automatically calculated by database trigger)
   // Fallback to frontend calculation if backend values are not available
