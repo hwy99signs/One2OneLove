@@ -27,7 +27,7 @@ const translations = {
     amount: 'Amount',
     questions: 'Have questions about our plans?',
     contactSupport: 'Contact Support',
-    loadError: 'Failed to load subscription information',
+    loadError: 'Failed to load subscription information', trialStartError: 'Unable to start the Premier trial.',
     statuses: { active: 'Active', succeeded: 'Succeeded', failed: 'Failed', pending: 'Pending' },
     labels: {
       mostPopular: 'MOST POPULAR', free: 'Free', month: 'month', pricingPending: 'Pricing to be finalized', pricingPendingButton: 'Pricing coming next', processing: 'Processing...', selected: 'Selected', choose: 'Choose',
@@ -54,7 +54,7 @@ const translations = {
   es: {
     choosePlan: 'Compara los Planes de One2OneLove',
     subtitle: 'Elige el nivel de herramientas y experiencias para la relación que mejor se adapte a ti',
-    currentlyOn: 'Actualmente en', planWord: 'plan', currentSubscription: 'Tu Suscripción Actual', plan: 'Plan', status: 'Estado', renewsOn: 'Se Renueva El', notAvailable: 'N/D', cancelNotice: 'Tu suscripción se cancelará al final del período de facturación actual.', paymentHistory: 'Historial de Pagos', recentTransactions: 'Tus transacciones recientes', date: 'Fecha', amount: 'Monto', questions: '¿Tienes preguntas sobre nuestros planes?', contactSupport: 'Contactar Soporte', loadError: 'No se pudo cargar la información de la suscripción', statuses: { active: 'Activo', succeeded: 'Completado', failed: 'Fallido', pending: 'Pendiente' },
+    currentlyOn: 'Actualmente en', planWord: 'plan', currentSubscription: 'Tu Suscripción Actual', plan: 'Plan', status: 'Estado', renewsOn: 'Se Renueva El', notAvailable: 'N/D', cancelNotice: 'Tu suscripción se cancelará al final del período de facturación actual.', paymentHistory: 'Historial de Pagos', recentTransactions: 'Tus transacciones recientes', date: 'Fecha', amount: 'Monto', questions: '¿Tienes preguntas sobre nuestros planes?', contactSupport: 'Contactar Soporte', loadError: 'No se pudo cargar la información de la suscripción', trialStartError: 'No se pudo iniciar la prueba Premier.', statuses: { active: 'Activo', succeeded: 'Completado', failed: 'Fallido', pending: 'Pendiente' },
     labels: { mostPopular: 'MÁS POPULAR', free: 'Gratis', month: 'mes', pricingPending: 'Precio por finalizar', pricingPendingButton: 'Precio próximamente', processing: 'Procesando...', selected: 'Seleccionado', choose: 'Elegir', paymentFailed: 'No se pudo procesar el pago', basicSuccess: '¡Te suscribiste correctamente al plan Basic!', redirecting: 'Redirigiendo al pago de Stripe...', genericError: 'Ocurrió un error. Inténtalo de nuevo.' },
     plans: {
       Basic: { displayName: 'Básico', description: 'Herramientas esenciales para parejas que construyen y mantienen su conexión', features: ['Notas de Amor', 'Cuestionarios de Relación', 'Quiz del Lenguaje del Amor', 'Ideas para Citas', 'Seguimiento de Aniversarios', 'Memory Lane', 'Perfil de Miembro', 'Comunidad y Chat'] },
@@ -65,7 +65,7 @@ const translations = {
   fr: {
     choosePlan: 'Comparez les Formules One2OneLove',
     subtitle: 'Choisissez le niveau d’outils et d’expériences relationnelles qui vous convient',
-    currentlyOn: 'Formule actuelle', planWord: '', currentSubscription: 'Votre Abonnement Actuel', plan: 'Formule', status: 'Statut', renewsOn: 'Renouvellement Le', notAvailable: 'N/D', cancelNotice: 'Votre abonnement sera annulé à la fin de la période de facturation en cours.', paymentHistory: 'Historique des Paiements', recentTransactions: 'Vos transactions récentes', date: 'Date', amount: 'Montant', questions: 'Des questions sur nos formules ?', contactSupport: 'Contacter le Support', loadError: 'Impossible de charger les informations d’abonnement', statuses: { active: 'Actif', succeeded: 'Réussi', failed: 'Échoué', pending: 'En attente' },
+    currentlyOn: 'Formule actuelle', planWord: '', currentSubscription: 'Votre Abonnement Actuel', plan: 'Formule', status: 'Statut', renewsOn: 'Renouvellement Le', notAvailable: 'N/D', cancelNotice: 'Votre abonnement sera annulé à la fin de la période de facturation en cours.', paymentHistory: 'Historique des Paiements', recentTransactions: 'Vos transactions récentes', date: 'Date', amount: 'Montant', questions: 'Des questions sur nos formules ?', contactSupport: 'Contacter le Support', loadError: 'Impossible de charger les informations d’abonnement', trialStartError: 'Impossible de démarrer l’essai Premier.', statuses: { active: 'Actif', succeeded: 'Réussi', failed: 'Échoué', pending: 'En attente' },
     labels: { mostPopular: 'LE PLUS POPULAIRE', free: 'Gratuit', month: 'mois', pricingPending: 'Tarification à finaliser', pricingPendingButton: 'Tarification à venir', processing: 'Traitement...', selected: 'Sélectionné', choose: 'Choisir', paymentFailed: 'Échec du traitement du paiement', basicSuccess: 'Abonnement au plan Basic effectué avec succès !', redirecting: 'Redirection vers le paiement Stripe...', genericError: 'Une erreur s’est produite. Veuillez réessayer.' },
     plans: {
       Basic: { displayName: 'Basique', description: 'Les outils essentiels pour les couples qui construisent et entretiennent leur lien', features: ['Notes d’Amour', 'Quiz Relationnels', 'Quiz des Langages de l’Amour', 'Idées de Rendez-vous', 'Suivi des Anniversaires', 'Memory Lane', 'Profil Membre', 'Communauté et Chat'] },
@@ -76,7 +76,7 @@ const translations = {
   it: {
     choosePlan: 'Confronta i Piani One2OneLove',
     subtitle: 'Scegli il livello di strumenti ed esperienze di coppia più adatto a te',
-    currentlyOn: 'Piano attuale', planWord: '', currentSubscription: 'Il Tuo Abbonamento Attuale', plan: 'Piano', status: 'Stato', renewsOn: 'Rinnovo Il', notAvailable: 'N/D', cancelNotice: 'Il tuo abbonamento verrà annullato alla fine del periodo di fatturazione corrente.', paymentHistory: 'Cronologia Pagamenti', recentTransactions: 'Le tue transazioni recenti', date: 'Data', amount: 'Importo', questions: 'Hai domande sui nostri piani?', contactSupport: 'Contatta il Supporto', loadError: 'Impossibile caricare le informazioni sull’abbonamento', statuses: { active: 'Attivo', succeeded: 'Riuscito', failed: 'Fallito', pending: 'In sospeso' },
+    currentlyOn: 'Piano attuale', planWord: '', currentSubscription: 'Il Tuo Abbonamento Attuale', plan: 'Piano', status: 'Stato', renewsOn: 'Rinnovo Il', notAvailable: 'N/D', cancelNotice: 'Il tuo abbonamento verrà annullato alla fine del periodo di fatturazione corrente.', paymentHistory: 'Cronologia Pagamenti', recentTransactions: 'Le tue transazioni recenti', date: 'Data', amount: 'Importo', questions: 'Hai domande sui nostri piani?', contactSupport: 'Contatta il Supporto', loadError: 'Impossibile caricare le informazioni sull’abbonamento', trialStartError: 'Impossibile avviare la prova Premier.', statuses: { active: 'Attivo', succeeded: 'Riuscito', failed: 'Fallito', pending: 'In sospeso' },
     labels: { mostPopular: 'PIÙ POPOLARE', free: 'Gratis', month: 'mese', pricingPending: 'Prezzo da definire', pricingPendingButton: 'Prezzo in arrivo', processing: 'Elaborazione...', selected: 'Selezionato', choose: 'Scegli', paymentFailed: 'Impossibile elaborare il pagamento', basicSuccess: 'Abbonamento al piano Basic completato!', redirecting: 'Reindirizzamento al checkout Stripe...', genericError: 'Si è verificato un errore. Riprova.' },
     plans: {
       Basic: { displayName: 'Base', description: 'Strumenti essenziali per le coppie che costruiscono e mantengono il legame', features: ['Note d’Amore', 'Quiz di Relazione', 'Quiz dei Linguaggi dell’Amore', 'Idee per Appuntamenti', 'Tracker degli Anniversari', 'Memory Lane', 'Profilo Membro', 'Community e Chat'] },
@@ -87,7 +87,7 @@ const translations = {
   de: {
     choosePlan: 'One2OneLove-Pläne Vergleichen',
     subtitle: 'Wählen Sie die passenden Beziehungstools und Erlebnisse für sich',
-    currentlyOn: 'Aktueller Plan', planWord: '', currentSubscription: 'Dein Aktuelles Abonnement', plan: 'Plan', status: 'Status', renewsOn: 'Verlängert Am', notAvailable: 'k. A.', cancelNotice: 'Dein Abonnement wird am Ende des aktuellen Abrechnungszeitraums gekündigt.', paymentHistory: 'Zahlungsverlauf', recentTransactions: 'Deine letzten Transaktionen', date: 'Datum', amount: 'Betrag', questions: 'Fragen zu unseren Plänen?', contactSupport: 'Support Kontaktieren', loadError: 'Abonnementinformationen konnten nicht geladen werden', statuses: { active: 'Aktiv', succeeded: 'Erfolgreich', failed: 'Fehlgeschlagen', pending: 'Ausstehend' },
+    currentlyOn: 'Aktueller Plan', planWord: '', currentSubscription: 'Dein Aktuelles Abonnement', plan: 'Plan', status: 'Status', renewsOn: 'Verlängert Am', notAvailable: 'k. A.', cancelNotice: 'Dein Abonnement wird am Ende des aktuellen Abrechnungszeitraums gekündigt.', paymentHistory: 'Zahlungsverlauf', recentTransactions: 'Deine letzten Transaktionen', date: 'Datum', amount: 'Betrag', questions: 'Fragen zu unseren Plänen?', contactSupport: 'Support Kontaktieren', loadError: 'Abonnementinformationen konnten nicht geladen werden', trialStartError: 'Die Premier-Testphase konnte nicht gestartet werden.', statuses: { active: 'Aktiv', succeeded: 'Erfolgreich', failed: 'Fehlgeschlagen', pending: 'Ausstehend' },
     labels: { mostPopular: 'AM BELIEBTESTEN', free: 'Kostenlos', month: 'Monat', pricingPending: 'Preis wird noch festgelegt', pricingPendingButton: 'Preis folgt als Nächstes', processing: 'Verarbeitung...', selected: 'Ausgewählt', choose: 'Wählen', paymentFailed: 'Zahlung konnte nicht verarbeitet werden', basicSuccess: 'Basic-Plan erfolgreich abonniert!', redirecting: 'Weiterleitung zur Stripe-Kasse...', genericError: 'Ein Fehler ist aufgetreten. Bitte erneut versuchen.' },
     plans: {
       Basic: { displayName: 'Basic', description: 'Grundlegende Tools für Paare, die ihre Verbindung aufbauen und pflegen', features: ['Liebesnotizen', 'Beziehungsquizze', 'Liebessprachen-Quiz', 'Date-Ideen', 'Jahrestags-Tracker', 'Memory Lane', 'Mitgliederprofil', 'Community und Chat'] },
@@ -174,7 +174,7 @@ export default function Subscription() {
     setTrialLoading(true);
     const result = await startPremierTrial();
     if (!result.success) {
-      toast.error(result.error || 'Unable to start the Premier trial.');
+      toast.error(result.error || t.trialStartError);
       setTrialLoading(false);
     }
   };

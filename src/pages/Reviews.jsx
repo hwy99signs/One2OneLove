@@ -20,7 +20,8 @@ const translations = {
     noReviewsTitle: "No reviews yet",
     noReviewsBody: "There are no published reviews yet. Be the first member to share your experience.",
     loading: "Loading reviews...",
-    unavailable: "Reviews are temporarily unavailable. Please try again later."
+    unavailable: "Reviews are temporarily unavailable. Please try again later.",
+    ratingOutOfFive: "{rating} out of 5 stars"
   },
   es: {
     title: "Reseñas",
@@ -32,7 +33,8 @@ const translations = {
     noReviewsTitle: "Aún no hay reseñas",
     noReviewsBody: "Todavía no hay reseñas publicadas. Sé el primer miembro en compartir tu experiencia.",
     loading: "Cargando reseñas...",
-    unavailable: "Las reseñas no están disponibles temporalmente. Inténtalo de nuevo más tarde."
+    unavailable: "Las reseñas no están disponibles temporalmente. Inténtalo de nuevo más tarde.",
+    ratingOutOfFive: "{rating} de 5 estrellas"
   },
   fr: {
     title: "Avis",
@@ -44,7 +46,8 @@ const translations = {
     noReviewsTitle: "Aucun avis pour le moment",
     noReviewsBody: "Aucun avis n'a encore été publié. Soyez le premier membre à partager votre expérience.",
     loading: "Chargement des avis...",
-    unavailable: "Les avis sont temporairement indisponibles. Veuillez réessayer plus tard."
+    unavailable: "Les avis sont temporairement indisponibles. Veuillez réessayer plus tard.",
+    ratingOutOfFive: "{rating} sur 5 étoiles"
   },
   it: {
     title: "Recensioni",
@@ -56,7 +59,8 @@ const translations = {
     noReviewsTitle: "Nessuna recensione",
     noReviewsBody: "Non ci sono ancora recensioni pubblicate. Sii il primo membro a condividere la tua esperienza.",
     loading: "Caricamento recensioni...",
-    unavailable: "Le recensioni non sono temporaneamente disponibili. Riprova più tardi."
+    unavailable: "Le recensioni non sono temporaneamente disponibili. Riprova più tardi.",
+    ratingOutOfFive: "{rating} su 5 stelle"
   },
   de: {
     title: "Bewertungen",
@@ -68,7 +72,8 @@ const translations = {
     noReviewsTitle: "Noch keine Bewertungen",
     noReviewsBody: "Es wurden noch keine Bewertungen veröffentlicht. Teilen Sie als erstes Mitglied Ihre Erfahrung.",
     loading: "Bewertungen werden geladen...",
-    unavailable: "Bewertungen sind vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut."
+    unavailable: "Bewertungen sind vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
+    ratingOutOfFive: "{rating} von 5 Sternen"
   }
 };
 
@@ -196,7 +201,7 @@ export default function Reviews() {
                     <Card className="h-full hover:shadow-2xl transition-all border-2 border-transparent hover:border-pink-200">
                       <CardContent className="p-6">
                         <Quote className="w-8 h-8 text-pink-300 mb-4" />
-                        <div className="flex gap-1 mb-4" aria-label={`${review.rating} out of 5 stars`}>
+                        <div className="flex gap-1 mb-4" aria-label={t.ratingOutOfFive.replace("{rating}", String(review.rating))}>
                           {[1, 2, 3, 4, 5].map((value) => (
                             <Star key={value} className={`w-5 h-5 ${value <= Number(review.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
                           ))}

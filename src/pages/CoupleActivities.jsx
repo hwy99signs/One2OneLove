@@ -18,6 +18,7 @@ const translations = {
     title: "Couple Activities",
     subtitle: "Strengthen your bond through fun and meaningful activities",
     progressTracker: "Your Progress",
+    progressLabel: "Progress",
     recommendations: "Recommended For You",
     allActivities: "All Activities",
     streak: "day streak",
@@ -50,6 +51,7 @@ const translations = {
     title: "Actividades de Pareja",
     subtitle: "Fortalece tu vínculo a través de actividades divertidas y significativas",
     progressTracker: "Tu Progreso",
+    progressLabel: "Progreso",
     recommendations: "Recomendado Para Ti",
     allActivities: "Todas las Actividades",
     streak: "días seguidos",
@@ -82,6 +84,7 @@ const translations = {
     title: "Activités de Couple",
     subtitle: "Renforcez votre lien grâce à des activités amusantes et significatives",
     progressTracker: "Votre Progrès",
+    progressLabel: "Progression",
     recommendations: "Recommandé Pour Vous",
     allActivities: "Toutes les Activités",
     streak: "jours d'affilée",
@@ -114,6 +117,7 @@ const translations = {
     title: "Attività di Coppia",
     subtitle: "Rafforza il tuo legame attraverso attività divertenti e significative",
     progressTracker: "I Tuoi Progressi",
+    progressLabel: "Progresso",
     recommendations: "Consigliato Per Te",
     allActivities: "Tutte le Attività",
     streak: "giorni di fila",
@@ -146,6 +150,7 @@ const translations = {
     title: "Paar-Aktivitäten",
     subtitle: "Stärken Sie Ihre Bindung durch unterhaltsame und bedeutungsvolle Aktivitäten",
     progressTracker: "Dein Fortschritt",
+    progressLabel: "Fortschritt",
     recommendations: "Empfohlen Für Dich",
     allActivities: "Alle Aktivitäten",
     streak: "Tage in Folge",
@@ -404,7 +409,7 @@ export default function CoupleActivities() {
                       {progress && (
                         <div className="bg-purple-50 rounded-lg p-3 mb-4 text-sm">
                           <div className="flex justify-between mb-1">
-                            <span className="text-gray-600">Progress:</span>
+                            <span className="text-gray-600">{t.progressLabel}:</span>
                             <span className="font-semibold text-purple-600">
                               {progress.completion_count || 0} {t.completed}
                             </span>

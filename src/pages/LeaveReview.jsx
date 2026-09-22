@@ -36,6 +36,7 @@ const translations = {
     success: "Thank you. Your review has been submitted.",
     selectRating: "Please select a star rating.",
     reviewRequired: "Please write at least 10 characters in your review.",
+    starSingular: "star", starPlural: "stars", submitError: "Unable to submit your review.",
     dateNote: "The review date is added automatically when you submit."
   },
   es: {
@@ -56,6 +57,7 @@ const translations = {
     success: "Gracias. Tu reseña ha sido enviada.",
     selectRating: "Selecciona una calificación con estrellas.",
     reviewRequired: "Escribe al menos 10 caracteres en tu reseña.",
+    starSingular: "estrella", starPlural: "estrellas", submitError: "No se pudo enviar tu reseña.",
     dateNote: "La fecha de la reseña se añade automáticamente al enviarla."
   },
   fr: {
@@ -76,6 +78,7 @@ const translations = {
     success: "Merci. Votre avis a été envoyé.",
     selectRating: "Veuillez sélectionner une note en étoiles.",
     reviewRequired: "Veuillez écrire au moins 10 caractères.",
+    starSingular: "étoile", starPlural: "étoiles", submitError: "Impossible d’envoyer votre avis.",
     dateNote: "La date de l'avis est ajoutée automatiquement lors de l'envoi."
   },
   it: {
@@ -96,6 +99,7 @@ const translations = {
     success: "Grazie. La tua recensione è stata inviata.",
     selectRating: "Seleziona una valutazione in stelle.",
     reviewRequired: "Scrivi almeno 10 caratteri nella recensione.",
+    starSingular: "stella", starPlural: "stelle", submitError: "Impossibile inviare la recensione.",
     dateNote: "La data della recensione viene aggiunta automaticamente al momento dell'invio."
   },
   de: {
@@ -116,6 +120,7 @@ const translations = {
     success: "Vielen Dank. Ihre Bewertung wurde eingereicht.",
     selectRating: "Bitte wählen Sie eine Sternebewertung.",
     reviewRequired: "Bitte schreiben Sie mindestens 10 Zeichen.",
+    starSingular: "Stern", starPlural: "Sterne", submitError: "Ihre Bewertung konnte nicht gesendet werden.",
     dateNote: "Das Bewertungsdatum wird beim Absenden automatisch hinzugefügt."
   }
 };
@@ -183,7 +188,7 @@ export default function LeaveReview() {
       toast({ title: t.success });
       navigate(createPageUrl("Reviews"));
     } catch (error) {
-      notifyError(error?.message || "Unable to submit your review.");
+      notifyError(error?.message || t.submitError);
     } finally {
       setSubmitting(false);
     }
@@ -261,7 +266,7 @@ export default function LeaveReview() {
                       type="button"
                       onClick={() => setRating(value)}
                       className="p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      aria-label={`${value} ${value === 1 ? "star" : "stars"}`}
+                      aria-label={`${value} ${value === 1 ? t.starSingular : t.starPlural}`}
                       aria-checked={rating === value}
                       role="radio"
                     >

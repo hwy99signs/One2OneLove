@@ -30,6 +30,7 @@ const translations = {
     chooseNoteCategoryDesc: "Select a category first. A random note will then be generated from that category.",
     send: "Send",
     showing: "Showing",
+    subjectsAria: "Love note subjects",
     loveNotes: "love notes",
     matching: "matching",
     noNotesFound: "No love notes found",
@@ -132,6 +133,7 @@ const translations = {
     chooseNoteCategoryDesc: "Primero selecciona una categoría. Luego se generará una nota aleatoria de esa categoría.",
     send: "Enviar",
     showing: "Mostrando",
+    subjectsAria: "Temas de notas de amor",
     loveNotes: "notas de amor",
     matching: "coincidentes",
     noNotesFound: "No se encontraron notas de amor",
@@ -234,6 +236,7 @@ const translations = {
     chooseNoteCategoryDesc: "Sélectionnez d'abord une catégorie. Une note aléatoire sera ensuite générée à partir de cette catégorie.",
     send: "Envoyer",
     showing: "Affichage de",
+    subjectsAria: "Thèmes des notes d’amour",
     loveNotes: "notes d'amour",
     matching: "correspondant",
     noNotesFound: "Aucune note d'amour trouvée",
@@ -336,6 +339,7 @@ const translations = {
     chooseNoteCategoryDesc: "Seleziona prima una categoria. Verrà quindi generata una nota casuale da quella categoria.",
     send: "Invia",
     showing: "Mostrando",
+    subjectsAria: "Argomenti delle note d’amore",
     loveNotes: "note d'amore",
     matching: "corrispondenti",
     noNotesFound: "Nessuna nota d'amore trovata",
@@ -438,6 +442,7 @@ const translations = {
     chooseNoteCategoryDesc: "Wähle zuerst eine Kategorie. Danach wird eine zufällige Nachricht aus dieser Kategorie erstellt.",
     send: "Senden",
     showing: "Zeige",
+    subjectsAria: "Themen der Liebesbotschaften",
     loveNotes: "liebesbotschaften",
     matching: "passend",
     noNotesFound: "Keine Liebesbotschaften gefunden",
@@ -1421,7 +1426,7 @@ export default function LoveNotes() {
             <div
               className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-pink-100 bg-white/80 p-1.5 shadow-sm"
               role="tablist"
-              aria-label="Love note subjects"
+              aria-label={t.subjectsAria}
             >
               {subjectTabs.map((subcategory) => (
                 <button

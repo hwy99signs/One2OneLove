@@ -81,6 +81,19 @@ const translations = {
       backToHome: "Back to Home",
       pleaseSignIn: "Please sign in to view your profile",
       signIn: "Sign In",
+      loadingProfile: "Loading profile...",
+      recently: "Recently",
+      userFallback: "User",
+      profileUpdated: "Profile updated successfully!",
+      profileUpdateFailed: "Failed to update profile",
+      authRequired: "Please sign in to update your profile.",
+      regularOnlyUpdate: "Profile updates are available for regular users only.",
+      signInToUpload: "Please sign in to upload a profile picture",
+      photosRegularOnly: "Profile photos are currently available for regular users only",
+      selectImage: "Please select an image file",
+      imageTooLarge: "Image size should be less than 5MB",
+      imageUpdated: "Profile image updated successfully!",
+      imageUploadFailed: "Failed to upload image. Please try again.",
       profileCompletion: "Profile Completion",
       complete: "Complete",
       changeProfilePicture: "Change profile picture",
@@ -183,6 +196,19 @@ const translations = {
       backToHome: "Volver al Inicio",
       pleaseSignIn: "Por favor, inicie sesión para ver su perfil",
       signIn: "Iniciar Sesión",
+      loadingProfile: "Cargando perfil...",
+      recently: "Recientemente",
+      userFallback: "Usuario",
+      profileUpdated: "¡Perfil actualizado correctamente!",
+      profileUpdateFailed: "No se pudo actualizar el perfil",
+      authRequired: "Inicia sesión para actualizar tu perfil.",
+      regularOnlyUpdate: "Las actualizaciones de perfil están disponibles solo para miembros regulares.",
+      signInToUpload: "Inicia sesión para subir una foto de perfil",
+      photosRegularOnly: "Las fotos de perfil están disponibles solo para miembros regulares",
+      selectImage: "Selecciona un archivo de imagen",
+      imageTooLarge: "La imagen debe pesar menos de 5 MB",
+      imageUpdated: "¡Foto de perfil actualizada correctamente!",
+      imageUploadFailed: "No se pudo subir la imagen. Inténtalo de nuevo.",
       profileCompletion: "Finalización del Perfil",
       complete: "Completo",
       changeProfilePicture: "Cambiar foto de perfil",
@@ -285,6 +311,19 @@ const translations = {
       backToHome: "Retour à l'Accueil",
       pleaseSignIn: "Veuillez vous connecter pour voir votre profil",
       signIn: "Se Connecter",
+      loadingProfile: "Chargement du profil...",
+      recently: "Récemment",
+      userFallback: "Utilisateur",
+      profileUpdated: "Profil mis à jour avec succès !",
+      profileUpdateFailed: "Impossible de mettre à jour le profil",
+      authRequired: "Connectez-vous pour mettre à jour votre profil.",
+      regularOnlyUpdate: "Les mises à jour de profil sont réservées aux membres réguliers.",
+      signInToUpload: "Connectez-vous pour importer une photo de profil",
+      photosRegularOnly: "Les photos de profil sont réservées aux membres réguliers",
+      selectImage: "Sélectionnez un fichier image",
+      imageTooLarge: "L’image doit faire moins de 5 Mo",
+      imageUpdated: "Photo de profil mise à jour avec succès !",
+      imageUploadFailed: "Impossible d’importer l’image. Veuillez réessayer.",
       profileCompletion: "Achèvement du Profil",
       complete: "Complet",
       changeProfilePicture: "Changer la photo de profil",
@@ -387,6 +426,19 @@ const translations = {
       backToHome: "Torna alla Home",
       pleaseSignIn: "Accedi per visualizzare il tuo profilo",
       signIn: "Accedi",
+      loadingProfile: "Caricamento profilo...",
+      recently: "Recentemente",
+      userFallback: "Utente",
+      profileUpdated: "Profilo aggiornato correttamente!",
+      profileUpdateFailed: "Impossibile aggiornare il profilo",
+      authRequired: "Accedi per aggiornare il tuo profilo.",
+      regularOnlyUpdate: "Gli aggiornamenti del profilo sono disponibili solo per i membri regolari.",
+      signInToUpload: "Accedi per caricare una foto del profilo",
+      photosRegularOnly: "Le foto del profilo sono disponibili solo per i membri regolari",
+      selectImage: "Seleziona un file immagine",
+      imageTooLarge: "L’immagine deve essere inferiore a 5 MB",
+      imageUpdated: "Immagine del profilo aggiornata correttamente!",
+      imageUploadFailed: "Impossibile caricare l’immagine. Riprova.",
       profileCompletion: "Completamento Profilo",
       complete: "Completo",
       changeProfilePicture: "Cambia foto del profilo",
@@ -489,6 +541,19 @@ const translations = {
       backToHome: "Zurück zur Startseite",
       pleaseSignIn: "Bitte melden Sie sich an, um Ihr Profil anzuzeigen",
       signIn: "Anmelden",
+      loadingProfile: "Profil wird geladen...",
+      recently: "Kürzlich",
+      userFallback: "Benutzer",
+      profileUpdated: "Profil erfolgreich aktualisiert!",
+      profileUpdateFailed: "Profil konnte nicht aktualisiert werden",
+      authRequired: "Bitte melden Sie sich an, um Ihr Profil zu aktualisieren.",
+      regularOnlyUpdate: "Profilaktualisierungen sind nur für reguläre Mitglieder verfügbar.",
+      signInToUpload: "Bitte melden Sie sich an, um ein Profilbild hochzuladen",
+      photosRegularOnly: "Profilfotos sind nur für reguläre Mitglieder verfügbar",
+      selectImage: "Bitte wählen Sie eine Bilddatei aus",
+      imageTooLarge: "Das Bild muss kleiner als 5 MB sein",
+      imageUpdated: "Profilbild erfolgreich aktualisiert!",
+      imageUploadFailed: "Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
       profileCompletion: "Profilvollständigkeit",
       complete: "Vollständig",
       changeProfilePicture: "Profilbild ändern",
@@ -880,18 +945,18 @@ export default function Profile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      if (!isRegularUser) throw new Error('Profile updates are available for regular users only');
+      if (!user?.id) throw new Error(t.profile.authRequired);
+      if (!isRegularUser) throw new Error(t.profile.regularOnlyUpdate);
       return await updateUserProfile(user.id, data);
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['user', user?.id] });
       await refreshUserProfile();
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      toast.success(t.profile.profileUpdated);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error.message || t.profile.profileUpdateFailed);
     }
   });
 
@@ -925,24 +990,24 @@ export default function Profile() {
     if (!file) return;
 
     if (!user?.id) {
-      toast.error('Please sign in to upload a profile picture');
+      toast.error(t.profile.signInToUpload);
       return;
     }
 
     if (!isRegularUser) {
-      toast.error('Profile photos are currently available for regular users only');
+      toast.error(t.profile.photosRegularOnly);
       return;
     }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t.profile.selectImage);
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
+      toast.error(t.profile.imageTooLarge);
       return;
     }
 
@@ -964,12 +1029,12 @@ export default function Profile() {
       await updateUserProfile(user.id, { avatar_url: imageUrl });
       await refreshUserProfile();
       
-      toast.success('Profile image updated successfully!');
+      toast.success(t.profile.imageUpdated);
       setImagePreview(null);
       setProfileImage(null);
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error(error.message || 'Failed to upload image. Please try again.');
+      toast.error(error.message || t.profile.imageUploadFailed);
       setImagePreview(null);
       setProfileImage(null);
     } finally {
@@ -984,7 +1049,7 @@ export default function Profile() {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600">{t.profile.loadingProfile}</p>
         </div>
       </div>
     );
@@ -1025,7 +1090,7 @@ export default function Profile() {
   const profileDateLocales = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
   const joinDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString(profileDateLocales[currentLanguage] || 'en-US', { month: 'long', year: 'numeric' })
-    : 'Recently';
+    : t.profile.recently;
 
   // Get profile completion from backend (automatically calculated by database trigger)
   // Fallback to frontend calculation if backend values are not available
@@ -1167,7 +1232,7 @@ export default function Profile() {
             />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-            {user?.name || user?.email?.split('@')[0] || "User"} 💕
+            {user?.name || user?.email?.split('@')[0] || t.profile.userFallback} 💕
           </h1>
           <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
           
