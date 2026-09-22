@@ -205,6 +205,11 @@ const translations = {
   }
 };
 
+function localDateInputValue(date = new Date()) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
+
 export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
@@ -284,10 +289,11 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="goal-title" className="block text-sm font-medium text-gray-700 mb-2">
               {t.goalTitle}
             </label>
             <Input
+              id="goal-title"
               placeholder={t.titlePlaceholder}
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -297,10 +303,11 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="goal-description" className="block text-sm font-medium text-gray-700 mb-2">
               {t.description}
             </label>
             <Textarea
+              id="goal-description"
               placeholder={t.descriptionPlaceholder}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -310,14 +317,14 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="goal-category" className="block text-sm font-medium text-gray-700 mb-2">
                 {t.category}
               </label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({ ...formData, category: value })}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger id="goal-category" aria-label={t.category} className="h-12">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -329,14 +336,15 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="goal-target-date" className="block text-sm font-medium text-gray-700 mb-2">
                 {t.targetDate}
               </label>
               <Input
+                id="goal-target-date"
                 type="date"
                 value={formData.target_date}
                 onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
-                min={new Date().toISOString().split('T')[0]}
+                min={localDateInputValue()}
                 required
                 className="h-12"
               />
@@ -344,10 +352,11 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="goal-partner-email" className="block text-sm font-medium text-gray-700 mb-2">
               {t.partnerEmail}
             </label>
             <Input
+              id="goal-partner-email"
               type="email"
               placeholder={t.partnerEmailPlaceholder}
               value={formData.partner_email}
@@ -364,6 +373,7 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
               {formData.action_steps.map((step, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
+                    aria-label={`${t.actionSteps} ${index + 1}`}
                     placeholder={t.stepPlaceholder}
                     value={step}
                     onChange={(e) => handleStepChange(index, e.target.value)}
@@ -420,11 +430,12 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
                   className="space-y-3"
                 >
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="goal-reminder-phone" className="block text-sm font-medium text-gray-700 mb-2">
                       <Phone className="w-4 h-4 inline mr-1" />
                       {t.reminderPhone}
                     </label>
                     <Input
+                      id="goal-reminder-phone"
                       type="tel"
                       placeholder={t.reminderPhonePlaceholder}
                       value={formData.reminder_phone}
@@ -434,14 +445,14 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="goal-reminder-frequency" className="block text-sm font-medium text-gray-700 mb-2">
                       {t.reminderFrequency}
                     </label>
                     <Select
                       value={formData.reminder_frequency}
                       onValueChange={(value) => setFormData({ ...formData, reminder_frequency: value })}
                     >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger id="goal-reminder-frequency" aria-label={t.reminderFrequency} className="h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

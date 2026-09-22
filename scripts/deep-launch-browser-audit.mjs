@@ -690,6 +690,64 @@ try {
   }
 
   {
+    const goalFormCopy = {
+      en:{ add:'Add New Goal', title:'Goal Title', description:'Description', targetDate:'Target Date', partnerEmail:"Partner's Email (Optional)", close:'Close goal form' },
+      es:{ add:'Agregar Nueva Meta', title:'Título de la Meta', description:'Descripción', targetDate:'Fecha Objetivo', partnerEmail:'Email de Pareja (Opcional)', close:'Cerrar formulario de meta' },
+      fr:{ add:'Ajouter Nouvel Objectif', title:"Titre de l'Objectif", description:'Description', targetDate:'Date Cible', partnerEmail:'Email du Partenaire (Optionnel)', close:'Fermer le formulaire d’objectif' },
+      it:{ add:'Aggiungi Nuovo Obiettivo', title:"Titolo dell'Obiettivo", description:'Descrizione', targetDate:'Data Obiettivo', partnerEmail:'Email del Partner (Opzionale)', close:'Chiudi il modulo dell’obiettivo' },
+      de:{ add:'Neues Ziel Hinzufügen', title:'Zieltitel', description:'Beschreibung', targetDate:'Zieldatum', partnerEmail:'Partner E-Mail (Optional)', close:'Zielformular schließen' }
+    };
+    for (const lang of Object.keys(goalFormCopy)) {
+      const copy=goalFormCopy[lang];
+      const context=await browser.newContext({ viewport:{ width:1366, height:900 }, timezoneId:'America/Chicago' });
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/goals**', async function(routeHandler) {
+        if (routeHandler.request().method() === 'GET') {
+          await routeHandler.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ goals:[] }) });
+          return;
+        }
+        await routeHandler.fulfill({ status:403, contentType:'application/json', body:JSON.stringify({ error:{ code:'synthetic_qa_read_only', message:'Synthetic goals QA is read-only.' } }) });
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage', language);}, lang);
+      const page=await context.newPage();
+      try {
+        await page.goto(BASE + '/RelationshipGoals', { waitUntil:'domcontentloaded', timeout:30000 });
+        await page.waitForTimeout(500);
+        const addButton=page.getByRole('button',{ name:copy.add, exact:true }).first();
+        if (!(await addButton.count())) {
+          add('critical','goal-form-open-missing',{ lang:lang });
+        } else {
+          await addButton.click();
+          const dialog=page.getByRole('dialog').last();
+          await dialog.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
+          const titleInput=dialog.getByLabel(copy.title,{ exact:true });
+          const descriptionInput=dialog.getByLabel(copy.description,{ exact:true });
+          const dateInput=dialog.getByLabel(copy.targetDate,{ exact:true });
+          const partnerInput=dialog.getByLabel(copy.partnerEmail,{ exact:true });
+          if (!(await titleInput.count()) || !(await descriptionInput.count()) || !(await dateInput.count()) || !(await partnerInput.count())) {
+            add('critical','goal-form-label-association',{ lang:lang });
+          }
+          if (await dateInput.count()) {
+            const expected=await page.evaluate(function(){
+              const now=new Date();
+              const local=new Date(now.getTime() - now.getTimezoneOffset()*60000);
+              return local.toISOString().slice(0,10);
+            });
+            const actual=await dateInput.getAttribute('min');
+            if (actual !== expected) add('critical','goal-form-local-date-min',{ lang:lang, expected:expected, actual:actual });
+          }
+          const closeButton=dialog.getByRole('button',{ name:copy.close, exact:true }).first();
+          if (!(await closeButton.count())) add('critical','goal-form-close-accessibility',{ lang:lang });
+          else await closeButton.click();
+        }
+      } catch (e) {
+        add('critical','goal-form-interaction-audit',{ lang:lang, message:String(e.message || e), screenshot:await screenshot(page,'goal_form_' + lang) });
+      }
+      await context.close();
+    }
+  }
+
+  {
     const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
     await installAnonymousAuth(context);
     await context.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});
