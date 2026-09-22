@@ -24,7 +24,10 @@ const translations = {
     legal: "Legal & Privacy",
     website: "Website",
     emailNotice: "Submitting this form opens your device's email application with your message prepared. Your message is not sent until you send it from your email application.",
-    safety: "For emergencies or immediate danger, contact local emergency services. One2OneLove is not an emergency or crisis-response service."
+    safety: "For emergencies or immediate danger, contact local emergency services. One2OneLove is not an emergency or crisis-response service.",
+    defaultSubject: "One2OneLove Support Request",
+    bodyName: "Name",
+    bodyEmail: "Email"
   },
   es: {
     title: "Contáctanos",
@@ -40,7 +43,10 @@ const translations = {
     legal: "Legal y Privacidad",
     website: "Sitio Web",
     emailNotice: "Al enviar este formulario se abrirá la aplicación de correo de tu dispositivo con el mensaje preparado. El mensaje no se envía hasta que tú lo envíes desde tu aplicación de correo.",
-    safety: "Para emergencias o peligro inmediato, contacta a los servicios de emergencia locales. One2OneLove no es un servicio de emergencia ni de respuesta a crisis."
+    safety: "Para emergencias o peligro inmediato, contacta a los servicios de emergencia locales. One2OneLove no es un servicio de emergencia ni de respuesta a crisis.",
+    defaultSubject: "Solicitud de Soporte de One2OneLove",
+    bodyName: "Nombre",
+    bodyEmail: "Correo electrónico"
   },
   fr: {
     title: "Nous Contacter",
@@ -56,7 +62,10 @@ const translations = {
     legal: "Juridique et Confidentialité",
     website: "Site Web",
     emailNotice: "L'envoi de ce formulaire ouvre l'application de messagerie de votre appareil avec le message préparé. Le message n'est envoyé que lorsque vous l'envoyez depuis votre application de messagerie.",
-    safety: "En cas d'urgence ou de danger immédiat, contactez les services d'urgence locaux. One2OneLove n'est pas un service d'urgence ou de gestion de crise."
+    safety: "En cas d'urgence ou de danger immédiat, contactez les services d'urgence locaux. One2OneLove n'est pas un service d'urgence ou de gestion de crise.",
+    defaultSubject: "Demande d’Assistance One2OneLove",
+    bodyName: "Nom",
+    bodyEmail: "E-mail"
   },
   it: {
     title: "Contattaci",
@@ -72,7 +81,10 @@ const translations = {
     legal: "Legale e Privacy",
     website: "Sito Web",
     emailNotice: "L'invio di questo modulo apre l'app email del dispositivo con il messaggio già preparato. Il messaggio non viene inviato finché non lo invii dalla tua applicazione email.",
-    safety: "Per emergenze o pericolo immediato, contatta i servizi di emergenza locali. One2OneLove non è un servizio di emergenza o di risposta alle crisi."
+    safety: "Per emergenze o pericolo immediato, contatta i servizi di emergenza locali. One2OneLove non è un servizio di emergenza o di risposta alle crisi.",
+    defaultSubject: "Richiesta di Assistenza One2OneLove",
+    bodyName: "Nome",
+    bodyEmail: "Email"
   },
   de: {
     title: "Kontaktieren Sie Uns",
@@ -88,7 +100,10 @@ const translations = {
     legal: "Recht & Datenschutz",
     website: "Webseite",
     emailNotice: "Beim Absenden dieses Formulars wird die E-Mail-App Ihres Geräts mit einer vorbereiteten Nachricht geöffnet. Die Nachricht wird erst gesendet, wenn Sie sie in Ihrer E-Mail-App absenden.",
-    safety: "Bei Notfällen oder unmittelbarer Gefahr wenden Sie sich an die örtlichen Notdienste. One2OneLove ist kein Notfall- oder Krisendienst."
+    safety: "Bei Notfällen oder unmittelbarer Gefahr wenden Sie sich an die örtlichen Notdienste. One2OneLove ist kein Notfall- oder Krisendienst.",
+    defaultSubject: "One2OneLove Support-Anfrage",
+    bodyName: "Name",
+    bodyEmail: "E-Mail"
   }
 };
 
@@ -99,10 +114,10 @@ export default function ContactUs() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const subject = formData.subject.trim() || "One2OneLove Support Request";
+    const subject = formData.subject.trim() || t.defaultSubject;
     const body = [
-      `Name: ${formData.name}`,
-      `Email: ${formData.email}`,
+      `${t.bodyName}: ${formData.name}`,
+      `${t.bodyEmail}: ${formData.email}`,
       "",
       formData.message
     ].join("\n");
