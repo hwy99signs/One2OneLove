@@ -151,25 +151,25 @@ export default function Suggestions() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.yourName}</label>
-                    <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12" />
+                    <label htmlFor="suggestion-name" className="block text-sm font-medium text-gray-700 mb-2">{t.yourName}</label>
+                    <Input id="suggestion-name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.email}</label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-12" />
+                    <label htmlFor="suggestion-email" className="block text-sm font-medium text-gray-700 mb-2">{t.email}</label>
+                    <Input id="suggestion-email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-12" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.suggestionType}</label>
-                  <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                  <label htmlFor="suggestion-type" className="block text-sm font-medium text-gray-700 mb-2">{t.suggestionType}</label>
+                  <select id="suggestion-type" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     {Object.entries(t.types).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.suggestion}</label>
-                  <Textarea value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={t.placeholder} />
+                  <label htmlFor="suggestion-text" className="block text-sm font-medium text-gray-700 mb-2">{t.suggestion}</label>
+                  <Textarea id="suggestion-text" value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={t.placeholder} />
                 </div>
                 <Button type="submit" disabled={submitting || storageReady !== true} className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">
                   {submitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
