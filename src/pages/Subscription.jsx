@@ -37,17 +37,17 @@ const translations = {
       Basic: {
         displayName: 'Basic',
         description: 'Core tools for couples building and maintaining connection',
-        features: ['Love Notes', 'Relationship Quizzes', 'Date Ideas', 'Anniversary Tracker', 'Memory Lane', 'Relationship Goals', 'Couples Calendar', 'Community & Chat']
+        features: ['Love Notes', 'Relationship Quizzes', 'Love Language Quiz', 'Date Ideas', 'Anniversary Tracker', 'Memory Lane', 'Member Profile', 'Community & Chat']
       },
       Premiere: {
         displayName: 'Premiere',
         description: 'Deeper tools for couples who want to grow together',
-        features: ['Everything in Basic, plus:', 'AI Relationship Coach', 'Shared Journals', 'Relationship Milestones', 'Communication Practice', 'Meditation', 'Couple Activities', 'Cooperative Games', 'Find Friends & Friend Requests']
+        features: ['Everything in Basic, plus:', 'Shared Journals', 'Relationship Milestones', 'Relationship Goals', 'Communication Practice', 'Couple Activities', 'Couples Calendar', 'LGBTQ+ Support', 'Podcasts']
       },
       Exclusive: {
         displayName: 'Exclusive',
         description: 'The broadest One2OneLove relationship experience',
-        features: ['Everything in Premiere, plus:', 'AI Content Creator', 'Couples Dashboard', 'Couples Profile', 'Premium Features Hub', 'Achievements & Leaderboard', 'Counseling Support', 'Articles & Podcast Support', 'Influencer & Community Support', 'LGBTQ Relationship Support']
+        features: ['Everything in Premiere, plus:', 'Couples Dashboard', 'Couples Profile', 'Relationship Support', 'Relationship Articles & Library']
       }
     }
   },
@@ -57,9 +57,9 @@ const translations = {
     currentlyOn: 'Actualmente en', planWord: 'plan', currentSubscription: 'Tu Suscripción Actual', plan: 'Plan', status: 'Estado', renewsOn: 'Se Renueva El', notAvailable: 'N/D', cancelNotice: 'Tu suscripción se cancelará al final del período de facturación actual.', paymentHistory: 'Historial de Pagos', recentTransactions: 'Tus transacciones recientes', date: 'Fecha', amount: 'Monto', questions: '¿Tienes preguntas sobre nuestros planes?', contactSupport: 'Contactar Soporte', loadError: 'No se pudo cargar la información de la suscripción', statuses: { active: 'Activo', succeeded: 'Completado', failed: 'Fallido', pending: 'Pendiente' },
     labels: { mostPopular: 'MÁS POPULAR', free: 'Gratis', month: 'mes', pricingPending: 'Precio por finalizar', pricingPendingButton: 'Precio próximamente', processing: 'Procesando...', selected: 'Seleccionado', choose: 'Elegir', paymentFailed: 'No se pudo procesar el pago', basicSuccess: '¡Te suscribiste correctamente al plan Basic!', redirecting: 'Redirigiendo al pago de Stripe...', genericError: 'Ocurrió un error. Inténtalo de nuevo.' },
     plans: {
-      Basic: { displayName: 'Básico', description: 'Herramientas esenciales para parejas que construyen y mantienen su conexión', features: ['Notas de Amor', 'Cuestionarios de Relación', 'Ideas para Citas', 'Seguimiento de Aniversarios', 'Memory Lane', 'Metas de Relación', 'Calendario de Pareja', 'Comunidad y Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Herramientas más profundas para parejas que quieren crecer juntas', features: ['Todo lo de Básico, más:', 'Coach de Relación con IA', 'Diarios Compartidos', 'Hitos de la Relación', 'Práctica de Comunicación', 'Meditación', 'Actividades en Pareja', 'Juegos Cooperativos', 'Buscar Amigos y Solicitudes de Amistad'] },
-      Exclusive: { displayName: 'Exclusivo', description: 'La experiencia de relación más amplia de One2OneLove', features: ['Todo lo de Premiere, más:', 'Creador de Contenido con IA', 'Panel de Pareja', 'Perfil de Pareja', 'Centro de Funciones Premium', 'Logros y Clasificación', 'Apoyo de Consejería', 'Artículos y Podcasts', 'Apoyo de Influencers y Comunidad', 'Apoyo para Relaciones LGBTQ'] }
+      Basic: { displayName: 'Básico', description: 'Herramientas esenciales para parejas que construyen y mantienen su conexión', features: ['Notas de Amor', 'Cuestionarios de Relación', 'Quiz del Lenguaje del Amor', 'Ideas para Citas', 'Seguimiento de Aniversarios', 'Memory Lane', 'Perfil de Miembro', 'Comunidad y Chat'] },
+      Premiere: { displayName: 'Premiere', description: 'Herramientas más profundas para parejas que quieren crecer juntas', features: ['Todo lo de Básico, más:', 'Diarios Compartidos', 'Hitos de la Relación', 'Metas de Relación', 'Práctica de Comunicación', 'Actividades en Pareja', 'Calendario de Pareja', 'Apoyo LGBTQ+', 'Podcasts'] },
+      Exclusive: { displayName: 'Exclusivo', description: 'La experiencia de relación más amplia de One2OneLove', features: ['Todo lo de Premiere, más:', 'Panel de Pareja', 'Perfil de Pareja', 'Apoyo para la Relación', 'Artículos y Biblioteca de Relaciones'] }
     }
   },
   fr: {
@@ -68,9 +68,9 @@ const translations = {
     currentlyOn: 'Formule actuelle', planWord: '', currentSubscription: 'Votre Abonnement Actuel', plan: 'Formule', status: 'Statut', renewsOn: 'Renouvellement Le', notAvailable: 'N/D', cancelNotice: 'Votre abonnement sera annulé à la fin de la période de facturation en cours.', paymentHistory: 'Historique des Paiements', recentTransactions: 'Vos transactions récentes', date: 'Date', amount: 'Montant', questions: 'Des questions sur nos formules ?', contactSupport: 'Contacter le Support', loadError: 'Impossible de charger les informations d’abonnement', statuses: { active: 'Actif', succeeded: 'Réussi', failed: 'Échoué', pending: 'En attente' },
     labels: { mostPopular: 'LE PLUS POPULAIRE', free: 'Gratuit', month: 'mois', pricingPending: 'Tarification à finaliser', pricingPendingButton: 'Tarification à venir', processing: 'Traitement...', selected: 'Sélectionné', choose: 'Choisir', paymentFailed: 'Échec du traitement du paiement', basicSuccess: 'Abonnement au plan Basic effectué avec succès !', redirecting: 'Redirection vers le paiement Stripe...', genericError: 'Une erreur s’est produite. Veuillez réessayer.' },
     plans: {
-      Basic: { displayName: 'Basique', description: 'Les outils essentiels pour les couples qui construisent et entretiennent leur lien', features: ['Notes d’Amour', 'Quiz Relationnels', 'Idées de Rendez-vous', 'Suivi des Anniversaires', 'Memory Lane', 'Objectifs de Relation', 'Calendrier du Couple', 'Communauté et Chat'] },
-      Premiere: { displayName: 'Première', description: 'Des outils plus approfondis pour les couples qui veulent grandir ensemble', features: ['Tout ce qui est inclus dans Basique, plus :', 'Coach Relationnel IA', 'Journaux Partagés', 'Étapes de la Relation', 'Pratique de la Communication', 'Méditation', 'Activités de Couple', 'Jeux Coopératifs', 'Trouver des Amis et Demandes d’Amitié'] },
-      Exclusive: { displayName: 'Exclusif', description: 'L’expérience relationnelle One2OneLove la plus complète', features: ['Tout ce qui est inclus dans Première, plus :', 'Créateur de Contenu IA', 'Tableau de Bord du Couple', 'Profil du Couple', 'Centre de Fonctions Premium', 'Réussites et Classement', 'Soutien de Conseil', 'Articles et Podcasts', 'Soutien Influenceurs et Communauté', 'Soutien aux Relations LGBTQ'] }
+      Basic: { displayName: 'Basique', description: 'Les outils essentiels pour les couples qui construisent et entretiennent leur lien', features: ['Notes d’Amour', 'Quiz Relationnels', 'Quiz des Langages de l’Amour', 'Idées de Rendez-vous', 'Suivi des Anniversaires', 'Memory Lane', 'Profil Membre', 'Communauté et Chat'] },
+      Premiere: { displayName: 'Première', description: 'Des outils plus approfondis pour les couples qui veulent grandir ensemble', features: ['Tout ce qui est inclus dans Basique, plus :', 'Journaux Partagés', 'Étapes de la Relation', 'Objectifs de Relation', 'Pratique de la Communication', 'Activités de Couple', 'Calendrier du Couple', 'Soutien LGBTQ+', 'Podcasts'] },
+      Exclusive: { displayName: 'Exclusif', description: 'L’expérience relationnelle One2OneLove la plus complète', features: ['Tout ce qui est inclus dans Première, plus :', 'Tableau de Bord du Couple', 'Profil du Couple', 'Soutien Relationnel', 'Articles et Bibliothèque Relationnelle'] }
     }
   },
   it: {
@@ -79,9 +79,9 @@ const translations = {
     currentlyOn: 'Piano attuale', planWord: '', currentSubscription: 'Il Tuo Abbonamento Attuale', plan: 'Piano', status: 'Stato', renewsOn: 'Rinnovo Il', notAvailable: 'N/D', cancelNotice: 'Il tuo abbonamento verrà annullato alla fine del periodo di fatturazione corrente.', paymentHistory: 'Cronologia Pagamenti', recentTransactions: 'Le tue transazioni recenti', date: 'Data', amount: 'Importo', questions: 'Hai domande sui nostri piani?', contactSupport: 'Contatta il Supporto', loadError: 'Impossibile caricare le informazioni sull’abbonamento', statuses: { active: 'Attivo', succeeded: 'Riuscito', failed: 'Fallito', pending: 'In sospeso' },
     labels: { mostPopular: 'PIÙ POPOLARE', free: 'Gratis', month: 'mese', pricingPending: 'Prezzo da definire', pricingPendingButton: 'Prezzo in arrivo', processing: 'Elaborazione...', selected: 'Selezionato', choose: 'Scegli', paymentFailed: 'Impossibile elaborare il pagamento', basicSuccess: 'Abbonamento al piano Basic completato!', redirecting: 'Reindirizzamento al checkout Stripe...', genericError: 'Si è verificato un errore. Riprova.' },
     plans: {
-      Basic: { displayName: 'Base', description: 'Strumenti essenziali per le coppie che costruiscono e mantengono il legame', features: ['Note d’Amore', 'Quiz di Relazione', 'Idee per Appuntamenti', 'Tracker degli Anniversari', 'Memory Lane', 'Obiettivi di Relazione', 'Calendario di Coppia', 'Community e Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Strumenti più approfonditi per le coppie che vogliono crescere insieme', features: ['Tutto del piano Base, più:', 'Coach Relazionale IA', 'Diari Condivisi', 'Traguardi della Relazione', 'Pratica di Comunicazione', 'Meditazione', 'Attività di Coppia', 'Giochi Cooperativi', 'Trova Amici e Richieste di Amicizia'] },
-      Exclusive: { displayName: 'Esclusivo', description: 'L’esperienza One2OneLove più completa', features: ['Tutto del piano Premiere, più:', 'Creatore di Contenuti IA', 'Dashboard di Coppia', 'Profilo di Coppia', 'Hub Funzioni Premium', 'Risultati e Classifica', 'Supporto di Consulenza', 'Articoli e Podcast', 'Supporto Influencer e Community', 'Supporto Relazioni LGBTQ'] }
+      Basic: { displayName: 'Base', description: 'Strumenti essenziali per le coppie che costruiscono e mantengono il legame', features: ['Note d’Amore', 'Quiz di Relazione', 'Quiz dei Linguaggi dell’Amore', 'Idee per Appuntamenti', 'Tracker degli Anniversari', 'Memory Lane', 'Profilo Membro', 'Community e Chat'] },
+      Premiere: { displayName: 'Premiere', description: 'Strumenti più approfonditi per le coppie che vogliono crescere insieme', features: ['Tutto del piano Base, più:', 'Diari Condivisi', 'Traguardi della Relazione', 'Obiettivi di Relazione', 'Pratica di Comunicazione', 'Attività di Coppia', 'Calendario di Coppia', 'Supporto LGBTQ+', 'Podcast'] },
+      Exclusive: { displayName: 'Esclusivo', description: 'L’esperienza One2OneLove più completa', features: ['Tutto del piano Premiere, più:', 'Dashboard di Coppia', 'Profilo di Coppia', 'Supporto per la Relazione', 'Articoli e Biblioteca delle Relazioni'] }
     }
   },
   de: {
@@ -90,9 +90,9 @@ const translations = {
     currentlyOn: 'Aktueller Plan', planWord: '', currentSubscription: 'Dein Aktuelles Abonnement', plan: 'Plan', status: 'Status', renewsOn: 'Verlängert Am', notAvailable: 'k. A.', cancelNotice: 'Dein Abonnement wird am Ende des aktuellen Abrechnungszeitraums gekündigt.', paymentHistory: 'Zahlungsverlauf', recentTransactions: 'Deine letzten Transaktionen', date: 'Datum', amount: 'Betrag', questions: 'Fragen zu unseren Plänen?', contactSupport: 'Support Kontaktieren', loadError: 'Abonnementinformationen konnten nicht geladen werden', statuses: { active: 'Aktiv', succeeded: 'Erfolgreich', failed: 'Fehlgeschlagen', pending: 'Ausstehend' },
     labels: { mostPopular: 'AM BELIEBTESTEN', free: 'Kostenlos', month: 'Monat', pricingPending: 'Preis wird noch festgelegt', pricingPendingButton: 'Preis folgt als Nächstes', processing: 'Verarbeitung...', selected: 'Ausgewählt', choose: 'Wählen', paymentFailed: 'Zahlung konnte nicht verarbeitet werden', basicSuccess: 'Basic-Plan erfolgreich abonniert!', redirecting: 'Weiterleitung zur Stripe-Kasse...', genericError: 'Ein Fehler ist aufgetreten. Bitte erneut versuchen.' },
     plans: {
-      Basic: { displayName: 'Basic', description: 'Grundlegende Tools für Paare, die ihre Verbindung aufbauen und pflegen', features: ['Liebesnotizen', 'Beziehungsquizze', 'Date-Ideen', 'Jahrestags-Tracker', 'Memory Lane', 'Beziehungsziele', 'Paarkalender', 'Community und Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Vertiefende Tools für Paare, die gemeinsam wachsen möchten', features: ['Alles aus Basic, plus:', 'KI-Beziehungscoach', 'Geteilte Tagebücher', 'Beziehungsmeilensteine', 'Kommunikationsübungen', 'Meditation', 'Paaraktivitäten', 'Kooperative Spiele', 'Freunde Finden und Freundschaftsanfragen'] },
-      Exclusive: { displayName: 'Exklusiv', description: 'Das umfassendste One2OneLove-Beziehungserlebnis', features: ['Alles aus Premiere, plus:', 'KI-Content-Creator', 'Paar-Dashboard', 'Paarprofil', 'Premium-Funktionen-Hub', 'Erfolge und Bestenliste', 'Beratungsunterstützung', 'Artikel und Podcasts', 'Influencer- und Community-Support', 'LGBTQ-Beziehungsunterstützung'] }
+      Basic: { displayName: 'Basic', description: 'Grundlegende Tools für Paare, die ihre Verbindung aufbauen und pflegen', features: ['Liebesnotizen', 'Beziehungsquizze', 'Liebessprachen-Quiz', 'Date-Ideen', 'Jahrestags-Tracker', 'Memory Lane', 'Mitgliederprofil', 'Community und Chat'] },
+      Premiere: { displayName: 'Premiere', description: 'Vertiefende Tools für Paare, die gemeinsam wachsen möchten', features: ['Alles aus Basic, plus:', 'Geteilte Tagebücher', 'Beziehungsmeilensteine', 'Beziehungsziele', 'Kommunikationsübungen', 'Paaraktivitäten', 'Paarkalender', 'LGBTQ+ Unterstützung', 'Podcasts'] },
+      Exclusive: { displayName: 'Exklusiv', description: 'Das umfassendste One2OneLove-Beziehungserlebnis', features: ['Alles aus Premiere, plus:', 'Paar-Dashboard', 'Paarprofil', 'Beziehungsunterstützung', 'Beziehungsartikel und Bibliothek'] }
     }
   },
   nl: {
