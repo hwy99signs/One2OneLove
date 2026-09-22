@@ -179,9 +179,12 @@ const deferredNavigationTargets = new Set([
   'Meditation','CooperativeGames','PremiumFeatures','Leaderboard','Achievements',
   'CounselingSupport','InfluencersSupport','InfluencerSignup','ProfessionalSignup','TherapistSignup'
 ]);
-const reachableDeferredNavigation = createPageTargets.filter(function(item){
-  return deferredNavigationTargets.has(item.target);
-});
+const deferredDirectPaths = new Set(Array.from(deferredNavigationTargets).map(function(target){
+  return ('/' + target).toLowerCase();
+}));
+const reachableDeferredNavigation = createPageTargets
+  .filter(function(item){ return deferredNavigationTargets.has(item.target); })
+  .concat(directTargets.filter(function(item){ return deferredDirectPaths.has(item.target.toLowerCase()); }));
 
 const critical = [];
 if (unresolvedImports.length) critical.push({ issue: 'Unresolved local imports', details: unresolvedImports });
