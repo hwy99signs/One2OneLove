@@ -16,11 +16,11 @@ const personalityTraits = [
 
 const COPY = {
   en: {
-    title:"AI-Personalized Love Note", close:"Close", personality:"{t.personality}", traitHelp:"Select 2–5 traits that best describe your partner",
-    noteStyle:"{t.noteStyle}", sharedMemories:"{t.sharedMemories}", sharedPlaceholder:"E.g., our first date at the beach, getting lost in Paris, or stargazing on our anniversary…",
-    sharedHelp:"{t.sharedHelp}", insideJokes:"{t.insideJokes}", insidePlaceholder:"E.g., you always steal my fries, the way you pronounce croissant, or our secret superhero names…",
-    insideHelp:"{t.insideHelp}", how:"{t.how}", steps:["AI analyzes your partner's personality traits","Crafts a unique note in your chosen tone","Weaves in your shared memories naturally","Adds subtle references to your inside jokes"],
-    cancel:"Cancel", generating:"Generating…", generate:"{t.generate}", chooseTrait:"Please select at least one personality trait", success:"Personalized note generated! 💕",
+    title:"AI-Personalized Love Note", close:"Close", personality:"Partner’s Personality Traits *", traitHelp:"Select 2–5 traits that best describe your partner",
+    noteStyle:"Note Style", sharedMemories:"Shared Memories (Optional)", sharedPlaceholder:"E.g., our first date at the beach, getting lost in Paris, or stargazing on our anniversary…",
+    sharedHelp:"The AI will naturally weave these into the note", insideJokes:"Inside Jokes (Optional)", insidePlaceholder:"E.g., you always steal my fries, the way you pronounce croissant, or our secret superhero names…",
+    insideHelp:"Add personal touches only you two understand", how:"✨ How it works:", steps:["AI analyzes your partner's personality traits","Crafts a unique note in your chosen tone","Weaves in your shared memories naturally","Adds subtle references to your inside jokes"],
+    cancel:"Cancel", generating:"Generating…", generate:"Generate Love Note", chooseTrait:"Please select at least one personality trait", success:"Personalized note generated! 💕",
     error:"Failed to generate note. Please try again.", noContent:"AI personalization returned no content.",
     traits:{adventurous:"Adventurous",introverted:"Introverted",extroverted:"Extroverted",sentimental:"Sentimental",humorous:"Humorous",romantic:"Romantic",practical:"Practical",creative:"Creative",analytical:"Analytical",spontaneous:"Spontaneous",thoughtful:"Thoughtful",playful:"Playful",serious:"Serious",passionate:"Passionate",calm:"Calm"},
     styles:{romantic:"Romantic",playful:"Playful",deep:"Deep"}
@@ -141,13 +141,16 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ai-love-note-title"
         className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-t-3xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sparkles className="w-6 h-6" />
-              <h2 className="text-2xl font-bold">{t.title}</h2>
+              <h2 id="ai-love-note-title" className="text-2xl font-bold">{t.title}</h2>
             </div>
             <button type="button" onClick={onClose} aria-label={t.close} className="text-white hover:text-gray-200">
               <X className="w-6 h-6" />
@@ -157,13 +160,13 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
 
         <div className="p-6 space-y-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-3">
-              Partner's Personality Traits *
-            </label>
+            <p className="block text-sm font-bold text-gray-700 mb-3">{t.personality}</p>
             <div className="flex flex-wrap gap-2">
               {personalityTraits.map((trait) => (
                 <button
                   key={trait}
+                  type="button"
+                  aria-pressed={selectedTraits.includes(trait)}
                   onClick={() => toggleTrait(trait)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedTraits.includes(trait)
@@ -179,13 +182,13 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Note Style
-            </label>
+            <p className="block text-sm font-bold text-gray-700 mb-2">{t.noteStyle}</p>
             <div className="grid grid-cols-3 gap-3">
               {["romantic", "playful", "deep"].map((style) => (
                 <button
                   key={style}
+                  type="button"
+                  aria-pressed={noteStyle === style}
                   onClick={() => setNoteStyle(style)}
                   className={`px-4 py-3 rounded-xl text-sm font-medium transition-all capitalize ${
                     noteStyle === style
@@ -200,33 +203,31 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Shared Memories (Optional)
-            </label>
+            <label htmlFor="ai-shared-memories" className="block text-sm font-bold text-gray-700 mb-2">{t.sharedMemories}</label>
             <Textarea
+              id="ai-shared-memories"
               value={sharedMemories}
               onChange={(e) => setSharedMemories(e.target.value)}
               placeholder={t.sharedPlaceholder}
               className="h-24"
             />
-            <p className="text-xs text-gray-500 mt-1">The AI will naturally weave these into the note</p>
+            <p className="text-xs text-gray-500 mt-1">{t.sharedHelp}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Inside Jokes (Optional)
-            </label>
+            <label htmlFor="ai-inside-jokes" className="block text-sm font-bold text-gray-700 mb-2">{t.insideJokes}</label>
             <Textarea
+              id="ai-inside-jokes"
               value={insideJokes}
               onChange={(e) => setInsideJokes(e.target.value)}
               placeholder={t.insidePlaceholder}
               className="h-24"
             />
-            <p className="text-xs text-gray-500 mt-1">Add personal touches only you two understand</p>
+            <p className="text-xs text-gray-500 mt-1">{t.insideHelp}</p>
           </div>
 
           <div className="bg-purple-50 rounded-xl p-4">
-            <h4 className="font-bold text-purple-900 mb-2">✨ How it works:</h4>
+            <h4 className="font-bold text-purple-900 mb-2">{t.how}</h4>
             <ul className="text-sm text-purple-800 space-y-1">
               {t.steps.map((step) => <li key={step}>• {step}</li>)}
             </ul>
@@ -234,14 +235,16 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
 
           <div className="flex gap-3 pt-4">
             <Button
+              type="button"
               variant="outline"
               onClick={onClose}
               className="flex-1"
               disabled={generating}
             >
-              Cancel
+              {t.cancel}
             </Button>
             <Button
+              type="button"
               onClick={generatePersonalizedNote}
               disabled={generating || selectedTraits.length === 0}
               className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
@@ -254,7 +257,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
               ) : (
                 <>
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Love Note
+                  {t.generate}
                 </>
               )}
             </Button>
