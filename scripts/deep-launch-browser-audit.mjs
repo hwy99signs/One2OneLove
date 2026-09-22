@@ -982,6 +982,7 @@ try {
       const page=await context.newPage();
       try{
         await page.goto(BASE+'/Profile',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.locator('#profile-anniversary-label').first().waitFor({state:'visible',timeout:8000}).catch(function(){});
         const expectedDate=await page.evaluate(function(locale){
           return new Intl.DateTimeFormat(locale).format(new Date('2026-09-22T00:00:00'));
         },copy.locale);
