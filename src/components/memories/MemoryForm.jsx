@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon, MapPin, Upload, X, Loader2, Image as ImageIcon, Video } from "lucide-react";
 import { format } from "date-fns";
+import { de, enUS, es, fr, it } from "date-fns/locale";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
 import { uploadMemoryMedia } from "@/lib/memoryService";
@@ -36,7 +37,9 @@ const translations = {
     saveMemory: "Save Memory",
     saving: "Saving...",
     uploadSuccess: "file(s) uploaded successfully!",
-    uploadFailed: "Failed to upload files"
+    uploadFailed: "Failed to upload files",
+    mediaAlt: "Memory media",
+    removeMedia: "Remove media"
   },
   es: {
     editMemory: "Editar Recuerdo",
@@ -62,7 +65,9 @@ const translations = {
     saveMemory: "Guardar Recuerdo",
     saving: "Guardando...",
     uploadSuccess: "archivo(s) subido(s) exitosamente!",
-    uploadFailed: "Error al subir archivos"
+    uploadFailed: "Error al subir archivos",
+    mediaAlt: "Contenido del recuerdo",
+    removeMedia: "Eliminar contenido"
   },
   fr: {
     editMemory: "Modifier le Souvenir",
@@ -88,7 +93,9 @@ const translations = {
     saveMemory: "Enregistrer le Souvenir",
     saving: "Enregistrement...",
     uploadSuccess: "fichier(s) téléchargé(s) avec succès!",
-    uploadFailed: "Échec du téléchargement des fichiers"
+    uploadFailed: "Échec du téléchargement des fichiers",
+    mediaAlt: "Média du souvenir",
+    removeMedia: "Supprimer le média"
   },
   it: {
     editMemory: "Modifica Ricordo",
@@ -114,7 +121,9 @@ const translations = {
     saveMemory: "Salva Ricordo",
     saving: "Salvataggio...",
     uploadSuccess: "file caricato/i con successo!",
-    uploadFailed: "Caricamento dei file non riuscito"
+    uploadFailed: "Caricamento dei file non riuscito",
+    mediaAlt: "Contenuto del ricordo",
+    removeMedia: "Rimuovi contenuto"
   },
   de: {
     editMemory: "Erinnerung Bearbeiten",
@@ -140,7 +149,9 @@ const translations = {
     saveMemory: "Erinnerung Speichern",
     saving: "Speichern...",
     uploadSuccess: "Datei(en) erfolgreich hochgeladen!",
-    uploadFailed: "Hochladen der Dateien fehlgeschlagen"
+    uploadFailed: "Hochladen der Dateien fehlgeschlagen",
+    mediaAlt: "Erinnerungsmedium",
+    removeMedia: "Medium entfernen"
   },
   nl: {
     editMemory: "Herinnering Bewerken",
@@ -195,15 +206,17 @@ const translations = {
     uploadFailed: "Falha ao enviar arquivos"
   }
 };
+const DATE_LOCALES = { en:enUS, es, fr, it, de };
 
 export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const dateLocale = DATE_LOCALES[currentLanguage] || enUS;
 
   const [formData, setFormData] = useState({
     title: memory?.title || '',
     description: memory?.description || '',
-    memory_date: memory?.memory_date ? new Date(memory.memory_date) : new Date(),
+    memory_date: memory?.memory_date ? new Date(`${String(memory.memory_date).slice(0,10)}T00:00:00`) : new Date(),
     location: memory?.location || '',
     tags: memory?.tags?.join(', ') || '',
     media_urls: memory?.media_urls || [],
@@ -239,7 +252,7 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
       toast.success(`${selectedFiles.length} ${t.uploadSuccess}`);
     } catch (error) {
       console.error('Memory media upload failed:', error);
-      toast.error(error?.message || t.uploadFailed);
+      toast.error(t.uploadFailed);
     } finally {
       setUploadingFiles(false);
       setUploadProgress([]);
@@ -323,7 +336,7 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left">
                   <CalendarIcon className="mr-2 h-4 w-4 text-pink-500" />
-                  {formData.memory_date ? format(formData.memory_date, 'PPP') : t.pickDate}
+                  {formData.memory_date ? format(formData.memory_date, 'PPP', { locale: dateLocale }) : t.pickDate}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -331,6 +344,7 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
                   mode="single"
                   selected={formData.memory_date}
                   onSelect={(date) => setFormData({ ...formData, memory_date: date })}
+                  locale={dateLocale}
                   initialFocus
                 />
               </PopoverContent>
@@ -435,13 +449,14 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
                   ) : (
                     <img
                       src={url}
-                      alt={`Memory ${index + 1}`}
+                      alt={`${t.mediaAlt} ${index + 1}`}
                       className="w-full aspect-square object-cover rounded-lg"
                     />
                   )}
                   <button
                     type="button"
                     onClick={() => handleRemoveMedia(index)}
+                    aria-label={`${t.removeMedia} ${index + 1}`}
                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                   >
                     <X className="w-4 h-4" />

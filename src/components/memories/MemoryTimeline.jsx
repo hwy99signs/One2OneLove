@@ -3,21 +3,24 @@ import { motion } from "framer-motion";
 import { Heart, Calendar, MapPin, Edit, Trash2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { de, enUS, es, fr, it } from "date-fns/locale";
 import { useLanguage } from "@/Layout";
 
 const translations = {
-  en: { edit: "Edit", delete: "Delete" },
-  es: { edit: "Editar", delete: "Eliminar" },
-  fr: { edit: "Modifier", delete: "Supprimer" },
-  it: { edit: "Modifica", delete: "Elimina" },
-  de: { edit: "Bearbeiten", delete: "Löschen" },
+  en: { edit: "Edit", delete: "Delete", favorite: "Toggle favorite" },
+  es: { edit: "Editar", delete: "Eliminar", favorite: "Cambiar favorito" },
+  fr: { edit: "Modifier", delete: "Supprimer", favorite: "Changer le favori" },
+  it: { edit: "Modifica", delete: "Elimina", favorite: "Cambia preferito" },
+  de: { edit: "Bearbeiten", delete: "Löschen", favorite: "Favorit ändern" },
   nl: { edit: "Bewerken", delete: "Verwijderen" },
   pt: { edit: "Editar", delete: "Excluir" }
 };
+const DATE_LOCALES = { en:enUS, es, fr, it, de };
 
 export default function MemoryTimeline({ memories, onEdit, onDelete, onToggleFavorite }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const dateLocale = DATE_LOCALES[currentLanguage] || enUS;
   const isVideo = (url) => url?.match(/\.(mp4|webm|ogg|mov)$/i);
 
   return (
@@ -38,22 +41,22 @@ export default function MemoryTimeline({ memories, onEdit, onDelete, onToggleFav
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-2xl font-bold text-gray-900">{memory.title}</h3>
                       {canEdit && (
-                        <button onClick={() => onToggleFavorite(memory)}>
+                        <button type="button" onClick={() => onToggleFavorite(memory)} aria-label={`${t.favorite}: ${memory.title}`}>
                           <Heart className={`w-5 h-5 ${memory.is_favorite ? 'text-red-500 fill-red-500' : 'text-gray-300 hover:text-red-400'}`} />
                         </button>
                       )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                      {memory.memory_date && <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(new Date(memory.memory_date), 'MMMM d, yyyy')}</div>}
+                      {memory.memory_date && <div className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(new Date(`${memory.memory_date}T00:00:00`), 'PPP', { locale: dateLocale })}</div>}
                       {memory.location && <div className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-purple-500" />{memory.location}</div>}
                     </div>
                   </div>
 
                   {canEdit && (
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => onEdit(memory)} className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => onDelete(memory.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(memory)} aria-label={`${t.edit}: ${memory.title}`} className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => onDelete(memory.id)} aria-label={`${t.delete}: ${memory.title}`} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   )}
                 </div>

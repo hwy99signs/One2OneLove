@@ -9,31 +9,36 @@ const translations = {
     searchPlaceholder: "Search memories by title, description, or location...",
     showingFavorites: "Showing Favorites",
     showAll: "Show All",
-    clearFilters: "Clear Filters"
+    clearFilters: "Clear Filters",
+    clearSearch: "Clear memory search"
   },
   es: {
     searchPlaceholder: "Buscar recuerdos por título, descripción o ubicación...",
     showingFavorites: "Mostrando Favoritos",
     showAll: "Mostrar Todos",
-    clearFilters: "Limpiar Filtros"
+    clearFilters: "Limpiar Filtros",
+    clearSearch: "Borrar búsqueda de recuerdos"
   },
   fr: {
     searchPlaceholder: "Rechercher des souvenirs par titre, description ou lieu...",
     showingFavorites: "Affichage des Favoris",
     showAll: "Tout Afficher",
-    clearFilters: "Effacer les Filtres"
+    clearFilters: "Effacer les Filtres",
+    clearSearch: "Effacer la recherche de souvenirs"
   },
   it: {
     searchPlaceholder: "Cerca ricordi per titolo, descrizione o posizione...",
     showingFavorites: "Mostrando Preferiti",
     showAll: "Mostra Tutti",
-    clearFilters: "Cancella Filtri"
+    clearFilters: "Cancella Filtri",
+    clearSearch: "Cancella ricerca dei ricordi"
   },
   de: {
     searchPlaceholder: "Erinnerungen nach Titel, Beschreibung oder Ort suchen...",
     showingFavorites: "Favoriten Anzeigen",
     showAll: "Alle Anzeigen",
-    clearFilters: "Filter Löschen"
+    clearFilters: "Filter Löschen",
+    clearSearch: "Erinnerungssuche löschen"
   },
   nl: {
     searchPlaceholder: "Zoek herinneringen op titel, beschrijving of locatie...",
@@ -68,6 +73,7 @@ export default function MemoryFilters({ filters, setFilters }) {
           {filters.searchQuery && (
             <button
               onClick={() => setFilters({ ...filters, searchQuery: '' })}
+              aria-label={t.clearSearch}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="w-4 h-4" />

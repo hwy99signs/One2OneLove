@@ -4,21 +4,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, Calendar, MapPin, Edit, Trash2, Image as ImageIcon, Video } from "lucide-react";
 import { format } from "date-fns";
+import { de, enUS, es, fr, it } from "date-fns/locale";
 import { useLanguage } from "@/Layout";
 
 const translations = {
-  en: { favorite: "Favorite", edit: "Edit", delete: "Delete", showLess: "Show less", readMore: "Read more" },
-  es: { favorite: "Favorito", edit: "Editar", delete: "Eliminar", showLess: "Mostrar menos", readMore: "Leer más" },
-  fr: { favorite: "Favori", edit: "Modifier", delete: "Supprimer", showLess: "Montrer moins", readMore: "Lire la suite" },
-  it: { favorite: "Preferito", edit: "Modifica", delete: "Elimina", showLess: "Mostra meno", readMore: "Leggi di più" },
-  de: { favorite: "Favorit", edit: "Bearbeiten", delete: "Löschen", showLess: "Weniger anzeigen", readMore: "Mehr lesen" },
+  en: { favorite: "Favorite", edit: "Edit", delete: "Delete", showLess: "Show less", readMore: "Read more", memoryImage: "Memory image", closeImage: "Close memory image" },
+  es: { favorite: "Favorito", edit: "Editar", delete: "Eliminar", showLess: "Mostrar menos", readMore: "Leer más", memoryImage: "Imagen del recuerdo", closeImage: "Cerrar imagen del recuerdo" },
+  fr: { favorite: "Favori", edit: "Modifier", delete: "Supprimer", showLess: "Montrer moins", readMore: "Lire la suite", memoryImage: "Image du souvenir", closeImage: "Fermer l’image du souvenir" },
+  it: { favorite: "Preferito", edit: "Modifica", delete: "Elimina", showLess: "Mostra meno", readMore: "Leggi di più", memoryImage: "Immagine del ricordo", closeImage: "Chiudi immagine del ricordo" },
+  de: { favorite: "Favorit", edit: "Bearbeiten", delete: "Löschen", showLess: "Weniger anzeigen", readMore: "Mehr lesen", memoryImage: "Erinnerungsbild", closeImage: "Erinnerungsbild schließen" },
   nl: { favorite: "Favoriet", edit: "Bewerken", delete: "Verwijderen", showLess: "Minder tonen", readMore: "Lees meer" },
   pt: { favorite: "Favorito", edit: "Editar", delete: "Excluir", showLess: "Mostrar menos", readMore: "Ler mais" }
 };
+const DATE_LOCALES = { en:enUS, es, fr, it, de };
 
 export default function MemoryCard({ memory, onEdit, onDelete, onToggleFavorite }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const dateLocale = DATE_LOCALES[currentLanguage] || enUS;
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const canEdit = memory?.can_edit !== false;
@@ -64,7 +67,7 @@ export default function MemoryCard({ memory, onEdit, onDelete, onToggleFavorite 
             </div>
 
             <div className="space-y-2 mb-4">
-              {memory.memory_date && <div className="flex items-center text-sm text-gray-600"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(new Date(memory.memory_date), 'MMMM d, yyyy')}</div>}
+              {memory.memory_date && <div className="flex items-center text-sm text-gray-600"><Calendar className="w-4 h-4 mr-2 text-pink-500" />{format(new Date(`${memory.memory_date}T00:00:00`), 'PPP', { locale: dateLocale })}</div>}
               {memory.location && <div className="flex items-center text-sm text-gray-600"><MapPin className="w-4 h-4 mr-2 text-purple-500" />{memory.location}</div>}
             </div>
 
@@ -92,9 +95,9 @@ export default function MemoryCard({ memory, onEdit, onDelete, onToggleFavorite 
       </motion.div>
 
       {selectedImage && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
-          <motion.img initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} src={selectedImage} alt="Memory" className="max-w-full max-h-full rounded-lg shadow-2xl" />
-          <button className="absolute top-4 right-4 text-white text-3xl hover:text-pink-300" onClick={() => setSelectedImage(null)}>×</button>
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={t.memoryImage} onClick={() => setSelectedImage(null)}>
+          <motion.img initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} src={selectedImage} alt={`${t.memoryImage}: ${memory.title}`} className="max-w-full max-h-full rounded-lg shadow-2xl" />
+          <button type="button" aria-label={t.closeImage} className="absolute top-4 right-4 text-white text-3xl hover:text-pink-300" onClick={(event) => { event.stopPropagation(); setSelectedImage(null); }}>×</button>
         </div>
       )}
     </>
