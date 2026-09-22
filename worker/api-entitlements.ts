@@ -86,10 +86,7 @@ export async function enforceApiEntitlement(request, env, url) {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
               p.subscription_plan,p.subscription_status,p.stripe_subscription_id,
-              COALESCE((
-                SELECT (pc.plugin_configs->'phoneNumber'->>'enabled')::boolean
-                FROM neon_auth.project_config pc WHERE pc.name='One2OneLove' LIMIT 1
-              ),false) AS phone_verification_required
+              COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
          LEFT JOIN public.users p ON p.id=u.id
         WHERE u.id=$1::uuid`,
@@ -99,8 +96,12 @@ export async function enforceApiEntitlement(request, env, url) {
     if (!row || row.banned) {
       return json({ ok: false, error: { code: 'forbidden', message: 'Account access is unavailable.' } }, 403);
     }
-    const phoneVerified = auth.user.phoneNumberVerified === true;
-    if (row.phone_verification_required === true && !phoneVerified) {
+    const phoneVerificationRequired = Boolean(
+      env.TWILIO_ACCOUNT_SID &&
+      env.TWILIO_AUTH_TOKEN &&
+      env.TWILIO_VERIFY_SERVICE_SID
+    );
+    if (phoneVerificationRequired && row.phone_number_verified !== true) {
       return json({
         ok: false,
         error: { code: 'phone_verification_required', message: 'Phone verification is required.' },
