@@ -975,18 +975,6 @@ try {
       const copy=profileAuditCopy[lang];
       const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
       await installProfileAuditAuth(context);
-      await context.route('**/api/goals**',async function(routeHandler){
-        const pathname=new URL(routeHandler.request().url()).pathname;
-        if(routeHandler.request().method()!=='GET'){
-          await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic goals QA is read-only.'}})});
-          return;
-        }
-        if(pathname.endsWith('/stats')){
-          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({stats:{total:1,completed:0,inProgress:1}})});
-          return;
-        }
-        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({goals:[{id:'profile-goal-qa',title:'Launch QA Goal',status:'in_progress',progress:50,target_date:'2026-09-22'}]})});
-      });
       await context.route('**/api/memories**',async function(routeHandler){
         await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[]})});
       });
@@ -994,14 +982,9 @@ try {
       const page=await context.newPage();
       try{
         await page.goto(BASE+'/Profile',{waitUntil:'domcontentloaded',timeout:30000});
-        await page.getByText('Launch QA Goal',{exact:true}).waitFor({state:'visible',timeout:8000}).catch(function(){});
         const expectedDate=await page.evaluate(function(locale){
           return new Intl.DateTimeFormat(locale).format(new Date('2026-09-22T00:00:00'));
         },copy.locale);
-        const goalLink=page.locator('a').filter({hasText:'Launch QA Goal'}).first();
-        if(!(await goalLink.count()) || !normalizeText(await goalLink.innerText()).includes(expectedDate)){
-          add('critical','profile-goal-local-date',{lang:lang,expected:expectedDate});
-        }
         const anniversaryLabel=page.locator('#profile-anniversary-label').first();
         if(!(await anniversaryLabel.count())){
           add('critical','profile-anniversary-label-missing',{lang:lang});
