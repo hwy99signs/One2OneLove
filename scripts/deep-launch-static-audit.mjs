@@ -107,7 +107,12 @@ for (const file of reachableFiles) {
     activeCritical.push({ file: rp, issue: 'Stale six-language launch copy is reachable.' });
   }
   for (const token of ['TODO','FIXME','coming soon','not implemented','Lorem ipsum']) {
-    if (code.toLowerCase().includes(token.toLowerCase())) activeWarnings.push({ file: rp, issue: 'Reachable source contains ' + token + '.' });
+    const found = token === 'TODO'
+      ? /\bTODO\b/.test(code)
+      : token === 'FIXME'
+        ? /\bFIXME\b/.test(code)
+        : code.toLowerCase().includes(token.toLowerCase());
+    if (found) activeWarnings.push({ file: rp, issue: 'Reachable source contains ' + token + '.' });
   }
 }
 
