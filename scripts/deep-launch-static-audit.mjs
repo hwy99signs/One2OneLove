@@ -174,8 +174,18 @@ for (const lang of EXPECTED_LANGS) {
   if (!existing.has('src/components/lovenotes/additional/LoveNotesAdditional.' + lang + '.js')) localizationGaps.push({ file: 'LoveNotesAdditional', language: lang });
 }
 
+const deferredNavigationTargets = new Set([
+  'AIContentCreator','RelationshipCoach','WinACruise','Developer','FriendRequests',
+  'Meditation','CooperativeGames','PremiumFeatures','Leaderboard','Achievements',
+  'CounselingSupport','InfluencersSupport','InfluencerSignup','ProfessionalSignup','TherapistSignup'
+]);
+const reachableDeferredNavigation = createPageTargets.filter(function(item){
+  return deferredNavigationTargets.has(item.target);
+});
+
 const critical = [];
 if (unresolvedImports.length) critical.push({ issue: 'Unresolved local imports', details: unresolvedImports });
+if (reachableDeferredNavigation.length) critical.push({ issue: 'Launch-reachable navigation points to a deferred feature', details: reachableDeferredNavigation });
 if (routeDuplicates.length) critical.push({ issue: 'Duplicate route declarations', details: routeDuplicates });
 if (missingPublicRoutes.length) critical.push({ issue: 'Missing public launch routes', details: missingPublicRoutes });
 if (missingPageTargets.length) critical.push({ issue: 'Reachable navigation targets have no route', details: missingPageTargets });
