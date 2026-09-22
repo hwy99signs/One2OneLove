@@ -586,7 +586,7 @@ try {
       const copy=milestoneAuditCopy[lang];
       const context=await browser.newContext({ viewport:{ width:1366, height:900 } });
       await installSyntheticMemberAuth(context);
-      await context.route('**/api/milestones**', async function(routeHandler) {
+      await context.route(/\/api\/milestones(?:\?.*)?$/, async function(routeHandler) {
         if (routeHandler.request().method() === 'GET') {
           await routeHandler.fulfill({
             status:200,
