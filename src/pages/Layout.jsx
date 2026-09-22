@@ -335,7 +335,7 @@ function LanguageContent({ children, currentPageName }) {
           
           {/* Mobile menu button */}
           <div className="flex items-center gap-2 lg:hidden">
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <button type="button" aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -356,6 +356,8 @@ function LanguageContent({ children, currentPageName }) {
                 {/* Action Dropdown for Mobile */}
                 <div className="relative">
                   <button
+                    type="button"
+                    aria-expanded={mobileActionOpen}
                     onClick={() => setMobileActionOpen(!mobileActionOpen)}
                     className="flex items-center justify-between w-full text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
                   >
