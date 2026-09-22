@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Heart, Edit, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { useLanguage } from "@/Layout";
 
 const moodEmojis = {
   happy: '😊',
@@ -15,7 +15,13 @@ const moodEmojis = {
   loving: '❤️'
 };
 
+const COPY={en:{edit:"Edit entry",del:"Delete entry"},es:{edit:"Editar entrada",del:"Eliminar entrada"},fr:{edit:"Modifier l’entrée",del:"Supprimer l’entrée"},it:{edit:"Modifica voce",del:"Elimina voce"},de:{edit:"Eintrag bearbeiten",del:"Eintrag löschen"}};
+const LOCALES={en:"en-US",es:"es-ES",fr:"fr-FR",it:"it-IT",de:"de-DE"};
+
 export default function JournalEntry({ entry, onEdit, onDelete }) {
+  const { currentLanguage } = useLanguage();
+  const t=COPY[currentLanguage]||COPY.en;
+  const dateLabel=new Intl.DateTimeFormat(LOCALES[currentLanguage]||LOCALES.en,{year:"numeric",month:"long",day:"numeric"}).format(new Date(entry.entry_date));
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -33,14 +39,14 @@ export default function JournalEntry({ entry, onEdit, onDelete }) {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Calendar className="w-4 h-4" />
-                {format(new Date(entry.entry_date), 'MMMM d, yyyy')}
+                {dateLabel}
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => onEdit(entry)}>
+              <Button variant="ghost" size="icon" onClick={() => onEdit(entry)} aria-label={t.edit}>
                 <Edit className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => onDelete(entry.id)}>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(entry.id)} aria-label={t.del}>
                 <Trash2 className="w-4 h-4 text-red-500" />
               </Button>
             </div>

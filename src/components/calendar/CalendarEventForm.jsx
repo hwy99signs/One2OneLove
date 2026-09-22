@@ -28,6 +28,7 @@ const translations = {
     recurrencePattern: "Repeat",
     cancel: "Cancel",
     save: "Save Event",
+    titleRequired: "Please enter an event title", dateRequired: "Please select a date", submitError: "Form submission error. Please refresh the page.",
     types: {
       date: "Date",
       anniversary: "Anniversary",
@@ -62,7 +63,10 @@ const translations = {
     recurring: "Evento Recurrente",
     recurrencePattern: "Repetir",
     cancel: "Cancelar",
-    save: "Guardar Evento"
+    save: "Guardar Evento",
+    titleRequired: "Ingresa un título para el evento", dateRequired: "Selecciona una fecha", submitError: "Error al enviar el formulario. Actualiza la página.",
+    types:{date:"Cita",anniversary:"Aniversario",milestone:"Hito",reminder:"Recordatorio",appointment:"Cita Programada",activity:"Actividad",other:"Otro"},
+    patterns:{daily:"Diario",weekly:"Semanal",monthly:"Mensual",yearly:"Anual"}
   },
   fr: {
     addEvent: "Ajouter un Nouvel Événement",
@@ -82,7 +86,10 @@ const translations = {
     recurring: "Événement Récurrent",
     recurrencePattern: "Répéter",
     cancel: "Annuler",
-    save: "Enregistrer l'Événement"
+    save: "Enregistrer l'Événement",
+    titleRequired: "Saisissez un titre pour l’événement", dateRequired: "Sélectionnez une date", submitError: "Erreur lors de l’envoi du formulaire. Actualisez la page.",
+    types:{date:"Rendez-vous",anniversary:"Anniversaire",milestone:"Jalon",reminder:"Rappel",appointment:"Rendez-vous Planifié",activity:"Activité",other:"Autre"},
+    patterns:{daily:"Quotidien",weekly:"Hebdomadaire",monthly:"Mensuel",yearly:"Annuel"}
   },
   it: {
     addEvent: "Aggiungi Nuovo Evento",
@@ -102,7 +109,10 @@ const translations = {
     recurring: "Evento Ricorrente",
     recurrencePattern: "Ripeti",
     cancel: "Annulla",
-    save: "Salva Evento"
+    save: "Salva Evento",
+    titleRequired: "Inserisci un titolo per l’evento", dateRequired: "Seleziona una data", submitError: "Errore nell’invio del modulo. Aggiorna la pagina.",
+    types:{date:"Appuntamento",anniversary:"Anniversario",milestone:"Traguardo",reminder:"Promemoria",appointment:"Impegno",activity:"Attività",other:"Altro"},
+    patterns:{daily:"Giornaliero",weekly:"Settimanale",monthly:"Mensile",yearly:"Annuale"}
   },
   de: {
     addEvent: "Neues Ereignis Hinzufügen",
@@ -122,7 +132,10 @@ const translations = {
     recurring: "Wiederkehrendes Ereignis",
     recurrencePattern: "Wiederholen",
     cancel: "Abbrechen",
-    save: "Ereignis Speichern"
+    save: "Ereignis Speichern",
+    titleRequired: "Bitte geben Sie einen Veranstaltungstitel ein", dateRequired: "Bitte wählen Sie ein Datum aus", submitError: "Fehler beim Absenden des Formulars. Bitte laden Sie die Seite neu.",
+    types:{date:"Date",anniversary:"Jahrestag",milestone:"Meilenstein",reminder:"Erinnerung",appointment:"Termin",activity:"Aktivität",other:"Andere"},
+    patterns:{daily:"Täglich",weekly:"Wöchentlich",monthly:"Monatlich",yearly:"Jährlich"}
   }
 };
 
@@ -153,12 +166,12 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
     
     // Validate required fields
     if (!formData.title || !formData.title.trim()) {
-      toast.error('Please enter an event title');
+      toast.error(t.titleRequired);
       return;
     }
     
     if (!formData.event_date) {
-      toast.error('Please select a date');
+      toast.error(t.dateRequired);
       return;
     }
     
@@ -181,7 +194,7 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
       onSubmit(cleanedData);
     } else {
       console.error('❌ onSubmit is not a function:', onSubmit);
-      toast.error('Form submission error. Please refresh the page.');
+      toast.error(t.submitError);
     }
   };
 
@@ -268,13 +281,13 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="date">{t.types?.date || "Date"}</SelectItem>
-                    <SelectItem value="anniversary">{t.types?.anniversary || "Anniversary"}</SelectItem>
-                    <SelectItem value="milestone">{t.types?.milestone || "Milestone"}</SelectItem>
-                    <SelectItem value="reminder">{t.types?.reminder || "Reminder"}</SelectItem>
-                    <SelectItem value="appointment">{t.types?.appointment || "Appointment"}</SelectItem>
-                    <SelectItem value="activity">{t.types?.activity || "Activity"}</SelectItem>
-                    <SelectItem value="other">{t.types?.other || "Other"}</SelectItem>
+                    <SelectItem value="date">{t.types.date}</SelectItem>
+                    <SelectItem value="anniversary">{t.types.anniversary}</SelectItem>
+                    <SelectItem value="milestone">{t.types.milestone}</SelectItem>
+                    <SelectItem value="reminder">{t.types.reminder}</SelectItem>
+                    <SelectItem value="appointment">{t.types.appointment}</SelectItem>
+                    <SelectItem value="activity">{t.types.activity}</SelectItem>
+                    <SelectItem value="other">{t.types.other}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -348,10 +361,10 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="daily">{t.patterns?.daily || "Daily"}</SelectItem>
-                      <SelectItem value="weekly">{t.patterns?.weekly || "Weekly"}</SelectItem>
-                      <SelectItem value="monthly">{t.patterns?.monthly || "Monthly"}</SelectItem>
-                      <SelectItem value="yearly">{t.patterns?.yearly || "Yearly"}</SelectItem>
+                      <SelectItem value="daily">{t.patterns.daily}</SelectItem>
+                      <SelectItem value="weekly">{t.patterns.weekly}</SelectItem>
+                      <SelectItem value="monthly">{t.patterns.monthly}</SelectItem>
+                      <SelectItem value="yearly">{t.patterns.yearly}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

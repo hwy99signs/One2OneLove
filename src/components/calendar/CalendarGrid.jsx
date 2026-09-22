@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek } from "date-fns";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/Layout";
 
 const eventTypeColors = {
   date: "bg-pink-500",
@@ -15,14 +16,26 @@ const eventTypeColors = {
   other: "bg-gray-500"
 };
 
+const COPY={
+ en:{today:"Today",more:"more",previous:"Previous month",next:"Next month"},
+ es:{today:"Hoy",more:"más",previous:"Mes anterior",next:"Mes siguiente"},
+ fr:{today:"Aujourd’hui",more:"de plus",previous:"Mois précédent",next:"Mois suivant"},
+ it:{today:"Oggi",more:"in più",previous:"Mese precedente",next:"Mese successivo"},
+ de:{today:"Heute",more:"weitere",previous:"Vorheriger Monat",next:"Nächster Monat"}
+};
+const LOCALES={en:"en-US",es:"es-ES",fr:"fr-FR",it:"it-IT",de:"de-DE"};
+
 export default function CalendarGrid({ currentMonth, events, onEventClick, onPrevMonth, onNextMonth, onToday }) {
+  const { currentLanguage } = useLanguage();
+  const t=COPY[currentLanguage]||COPY.en;
+  const locale=LOCALES[currentLanguage]||LOCALES.en;
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
   const calendarEnd = endOfWeek(monthEnd);
   
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = Array.from({length:7},(_,i)=>new Intl.DateTimeFormat(locale,{weekday:'short'}).format(new Date(2026,7,2+i)));
 
   const getEventsForDay = (day) => {
     return events.filter(event => isSameDay(new Date(event.event_date), day));
@@ -33,16 +46,16 @@ export default function CalendarGrid({ currentMonth, events, onEventClick, onPre
       <CardHeader>
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
-            {format(currentMonth, 'MMMM yyyy')}
+            {new Intl.DateTimeFormat(locale,{year:'numeric',month:'long'}).format(currentMonth)}
           </h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={onPrevMonth}>
+            <Button variant="outline" size="icon" onClick={onPrevMonth} aria-label={t.previous}>
               <ChevronLeft className="w-5 h-5" />
             </Button>
             <Button variant="outline" onClick={onToday}>
-              Today
+              {t.today}
             </Button>
-            <Button variant="outline" size="icon" onClick={onNextMonth}>
+            <Button variant="outline" size="icon" onClick={onNextMonth} aria-label={t.next}>
               <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
@@ -100,7 +113,7 @@ export default function CalendarGrid({ currentMonth, events, onEventClick, onPre
                   ))}
                   {dayEvents.length > 3 && (
                     <div className="text-xs text-gray-500 font-medium px-2">
-                      +{dayEvents.length - 3} more
+                      +{dayEvents.length - 3} {t.more}
                     </div>
                   )}
                 </div>
