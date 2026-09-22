@@ -477,6 +477,13 @@ try {
       it:'Contenuti di terapia di coppia su tradimento',
       de:'Eine Psychologin und Paartherapeutin bietet praktische Impulse'
     };
+    const expectedPodcastMarket = {
+      en:'United States / English',
+      es:'Hispanohablante / América Latina',
+      fr:'France / Français',
+      it:'Italia / Italiano',
+      de:'Deutschland / Deutsch'
+    };
     for (const lang of Object.keys(expectedPodcastLanguage)) {
       const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
       await installSyntheticMemberAuth(context);
@@ -507,6 +514,16 @@ try {
       }
       const mainText = normalizeText(await page.locator('main').last().innerText());
       if (!mainText.includes(expectedDescriptionAnchor[lang])) add('critical','podcast-card-description-language',{ lang:lang, expectedAnchor:expectedDescriptionAnchor[lang] });
+
+      if (count) {
+        await cards.first().click();
+        const market = page.locator('[data-podcast-market="true"]');
+        await market.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
+        const actualMarket = (await market.count()) ? normalizeText(await market.innerText()) : null;
+        if (actualMarket !== expectedPodcastMarket[lang]) {
+          add('critical','podcast-player-market-language',{ lang:lang, expected:expectedPodcastMarket[lang], actual:actualMarket });
+        }
+      }
       await context.close();
     }
 

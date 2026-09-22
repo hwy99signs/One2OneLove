@@ -84,7 +84,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
           <div className="flex flex-col gap-5 pr-6 sm:flex-row sm:items-center">
             <div className="relative mx-auto shrink-0 pb-4 pr-4 sm:mx-0">
               {displayArtwork ? (
-                <img src={displayArtwork} alt={`${podcast.title} podcast cover`} className="h-32 w-32 rounded-2xl object-cover shadow-lg ring-1 ring-black/5" />
+                <img src={displayArtwork} alt={`${podcast.title} — ${t.podcastCover}`} className="h-32 w-32 rounded-2xl object-cover shadow-lg ring-1 ring-black/5" />
               ) : (
                 <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
                   <Mic className="h-12 w-12 text-white" />
@@ -106,10 +106,10 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
               </div>
               <DialogTitle className="text-2xl leading-tight sm:text-3xl">{podcast.title}</DialogTitle>
               <DialogDescription className="mt-1 text-base">{podcast.host}</DialogDescription>
-              <p className="mt-1 text-xs text-gray-500">{podcast.market}</p>
+              <p data-podcast-market="true" className="mt-1 text-xs text-gray-500">{podcast.market}</p>
               {podcast.hostImageCredit && (
                 <a href={podcast.hostImageCreditUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] text-gray-500 underline-offset-2 hover:underline">
-                  Photo: {podcast.hostImageCredit}
+                  {t.photo}: {podcast.hostImageCredit}
                 </a>
               )}
             </div>
