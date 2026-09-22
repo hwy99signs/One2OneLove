@@ -196,8 +196,9 @@ export default function VerifyPhone() {
           {phase === 'phone' ? (
             <div className="space-y-5">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-700">{t.phone}</label>
+                <label htmlFor="o2ol-phone-number" className="mb-2 block text-sm font-semibold text-gray-700">{t.phone}</label>
                 <Input
+                  id="o2ol-phone-number"
                   value={phone}
                   onChange={event => setPhone(event.target.value)}
                   type="tel"
@@ -219,8 +220,9 @@ export default function VerifyPhone() {
                 <div className="mt-1">{t.codeHint}</div>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-700">{t.code}</label>
+                <label htmlFor="o2ol-phone-code" className="mb-2 block text-sm font-semibold text-gray-700">{t.code}</label>
                 <Input
+                  id="o2ol-phone-code"
                   value={code}
                   onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
                   inputMode="numeric"
