@@ -23,15 +23,21 @@ const copy = {
   de: { title:'Unser Paarprofil', subtitle:'Eure gemeinsame Reise', back:'Zurück', partner1:'Du', partner2:'Partner', memberSince:'Mitglied seit', personalInfo:'Persönliche Informationen', relationshipInfo:'Beziehungsinformationen', email:'E-Mail', location:'Standort', partner:'Partnername', partnerEmail:'Partner-E-Mail', anniversary:'Jahrestag', loveLanguage:'Liebessprache', relationshipStatus:'Beziehungsstatus', editProfile:'Profil Bearbeiten', saveChanges:'Änderungen Speichern', cancel:'Abbrechen', notSet:'Nicht festgelegt', quickActions:'Schnellaktionen Zusammen', recentActivity:'Letzte Erinnerungen', recommendationsTitle:'Ideen für Euch Beide', noActivity:'Noch keine aktuellen Erinnerungen', memoryFallback:'Erinnerung', viewAll:'Alle Anzeigen', loading:'Paarprofil wird geladen…', saved:'Profil erfolgreich aktualisiert.', failed:'Profil kann gerade nicht aktualisiert werden.', actions:{ note:'Liebesnachricht Senden', memory:'Erinnerung Erstellen', date:'Date-Ideen' }, recs:{ quiz:['Liebessprachen-Quiz Machen','Vergleicht, wie ihr Fürsorge am natürlichsten gebt und empfangt.'], date:['Ein Date Planen','Wählt etwas Bedeutungsvolles aus der Date-Ideen-Bibliothek.'], memory:['Eine Erinnerung Erstellen','Haltet einen Moment fest, den ihr gemeinsam bewahren möchtet.'], goals:['Beziehungsziele Setzen','Wählt etwas Bedeutungsvolles, an dem ihr gemeinsam arbeiten möchtet.'] }, statuses:{ single:'Single', dating:'Dating', engaged:'Verlobt', married:'Verheiratet', complicated:'Kompliziert' }, languages:{ words_of_affirmation:'Worte der Anerkennung', quality_time:'Gemeinsame Zeit', receiving_gifts:'Geschenke Erhalten', acts_of_service:'Hilfsbereitschaft', physical_touch:'Körperliche Berührung' } },
 };
 
-function safeDate(value, locale) {
+const COUPLE_PROFILE_LOCALES = { en:'en-US', es:'es-ES', fr:'fr-FR', it:'it-IT', de:'de-DE' };
+
+function safeDate(value, language) {
   if (!value) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toLocaleDateString(locale || undefined);
+  const raw = String(value);
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00` : raw;
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime())
+    ? null
+    : parsed.toLocaleDateString(COUPLE_PROFILE_LOCALES[language] || COUPLE_PROFILE_LOCALES.en);
 }
 
 function PersonCard({ label, person, editable, editData, setEditData, t, language }) {
   const created = person?.created_at || person?.created_date;
-  const joined = created ? new Date(created).toLocaleDateString(language || undefined, { month:'long', year:'numeric' }) : t.notSet;
+  const joined = created ? new Date(created).toLocaleDateString(COUPLE_PROFILE_LOCALES[language] || COUPLE_PROFILE_LOCALES.en, { month:'long', year:'numeric' }) : t.notSet;
   return (
     <Card className="h-full shadow-xl">
       <CardHeader className="text-center">
@@ -44,20 +50,20 @@ function PersonCard({ label, person, editable, editData, setEditData, t, languag
           <h3 className="mb-3 font-black text-gray-900">{t.personalInfo}</h3>
           <div className="space-y-3">
             <Info icon={Mail} label={t.email} value={person?.email || t.notSet}/>
-            {editable ? <EditField icon={MapPin} label={t.location} value={editData.location || ''} onChange={value => setEditData({...editData,location:value})}/> : <Info icon={MapPin} label={t.location} value={person?.location || t.notSet}/>} 
+            {editable ? <EditField id="couples-profile-location" icon={MapPin} label={t.location} value={editData.location || ''} onChange={value => setEditData({...editData,location:value})}/> : <Info icon={MapPin} label={t.location} value={person?.location || t.notSet}/>} 
           </div>
         </section>
         <section>
           <h3 className="mb-3 font-black text-gray-900">{t.relationshipInfo}</h3>
           <div className="space-y-3">
             {editable ? (
-              <div><label className="mb-1 block text-xs font-semibold text-gray-500">{t.relationshipStatus}</label><Select value={editData.relationship_status || ''} onValueChange={value => setEditData({...editData,relationship_status:value})}><SelectTrigger><SelectValue placeholder={t.notSet}/></SelectTrigger><SelectContent>{Object.entries(t.statuses).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+              <div><label htmlFor="couples-profile-relationship-status" className="mb-1 block text-xs font-semibold text-gray-500">{t.relationshipStatus}</label><Select value={editData.relationship_status || ''} onValueChange={value => setEditData({...editData,relationship_status:value})}><SelectTrigger id="couples-profile-relationship-status" aria-label={t.relationshipStatus}><SelectValue placeholder={t.notSet}/></SelectTrigger><SelectContent>{Object.entries(t.statuses).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
             ) : <Info icon={Heart} label={t.relationshipStatus} value={t.statuses[person?.relationship_status] || person?.relationship_status || t.notSet}/>}
-            {editable ? <EditField icon={Heart} label={t.partner} value={editData.partner_name || ''} onChange={value => setEditData({...editData,partner_name:value})}/> : <Info icon={Heart} label={t.partner} value={person?.partner_name || t.notSet}/>} 
-            {editable ? <EditField icon={Mail} label={t.partnerEmail} value={editData.partner_email || ''} onChange={value => setEditData({...editData,partner_email:value})} type="email"/> : null}
-            {editable ? <EditField icon={Calendar} label={t.anniversary} value={editData.anniversary_date || ''} onChange={value => setEditData({...editData,anniversary_date:value})} type="date"/> : <Info icon={Calendar} label={t.anniversary} value={safeDate(person?.anniversary_date, language) || t.notSet}/>} 
+            {editable ? <EditField id="couples-profile-partner-name" icon={Heart} label={t.partner} value={editData.partner_name || ''} onChange={value => setEditData({...editData,partner_name:value})}/> : <Info icon={Heart} label={t.partner} value={person?.partner_name || t.notSet}/>} 
+            {editable ? <EditField id="couples-profile-partner-email" icon={Mail} label={t.partnerEmail} value={editData.partner_email || ''} onChange={value => setEditData({...editData,partner_email:value})} type="email"/> : null}
+            {editable ? <EditField id="couples-profile-anniversary" icon={Calendar} label={t.anniversary} value={editData.anniversary_date || ''} onChange={value => setEditData({...editData,anniversary_date:value})} type="date"/> : <Info icon={Calendar} label={t.anniversary} value={safeDate(person?.anniversary_date, language) || t.notSet}/>} 
             {editable ? (
-              <div><label className="mb-1 block text-xs font-semibold text-gray-500">{t.loveLanguage}</label><Select value={editData.love_language || ''} onValueChange={value => setEditData({...editData,love_language:value})}><SelectTrigger><SelectValue placeholder={t.notSet}/></SelectTrigger><SelectContent>{Object.entries(t.languages).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+              <div><label htmlFor="couples-profile-love-language" className="mb-1 block text-xs font-semibold text-gray-500">{t.loveLanguage}</label><Select value={editData.love_language || ''} onValueChange={value => setEditData({...editData,love_language:value})}><SelectTrigger id="couples-profile-love-language" aria-label={t.loveLanguage}><SelectValue placeholder={t.notSet}/></SelectTrigger><SelectContent>{Object.entries(t.languages).map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
             ) : <Info icon={Heart} label={t.loveLanguage} value={t.languages[person?.love_language] || person?.love_language || t.notSet}/>} 
           </div>
         </section>
@@ -70,8 +76,8 @@ function Info({ icon:Icon, label, value }) {
   return <div className="flex items-start gap-3"><Icon className="mt-0.5 h-4 w-4 shrink-0 text-pink-500"/><div><p className="text-xs text-gray-500">{label}</p><p className="break-words text-sm font-medium text-gray-900">{value}</p></div></div>;
 }
 
-function EditField({ icon:Icon, label, value, onChange, type='text' }) {
-  return <div><label className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500"><Icon size={14} className="text-pink-500"/>{label}</label><Input type={type} value={value} onChange={event => onChange(event.target.value)}/></div>;
+function EditField({ id, icon:Icon, label, value, onChange, type='text' }) {
+  return <div><label htmlFor={id} className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500"><Icon size={14} className="text-pink-500"/>{label}</label><Input id={id} type={type} value={value} onChange={event => onChange(event.target.value)}/></div>;
 }
 
 export default function CouplesProfile() {

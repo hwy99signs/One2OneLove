@@ -799,6 +799,17 @@ const translations = {
   }
 };
 
+const PROFILE_DATE_LOCALES = { en:'en-US', es:'es-ES', fr:'fr-FR', it:'it-IT', de:'de-DE' };
+
+function formatProfileDate(value, language, options) {
+  if (!value) return '';
+  const raw = String(value);
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00` : raw;
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleDateString(PROFILE_DATE_LOCALES[language] || PROFILE_DATE_LOCALES.en, options);
+}
+
 // Active Goals Card Component
 function ActiveGoalsCard() {
   const { user } = useAuth();
@@ -857,7 +868,7 @@ function ActiveGoalsCard() {
               <Target className="w-10 h-10 text-gray-300" />
             </div>
             <p className="text-red-500 mb-4">{t.profile.errorLoadingGoals}</p>
-            <p className="text-sm text-gray-400 mb-4">{error.message}</p>
+            
             <Link to={createPageUrl("RelationshipGoals")}>
               <Button variant="outline" className="rounded-lg">
                 {t.profile.viewGoals}
@@ -890,7 +901,7 @@ function ActiveGoalsCard() {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <span>{t.profile.percentComplete.replace('{percent}', goal.progress)}</span>
                       <span>•</span>
-                      <span>{new Date(goal.target_date).toLocaleDateString()}</span>
+                      <span>{formatProfileDate(goal.target_date, currentLanguage)}</span>
                     </div>
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -955,7 +966,7 @@ export default function Profile() {
       toast.success(t.profile.profileUpdated);
     },
     onError: (error) => {
-      toast.error(error.message || t.profile.profileUpdateFailed);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.profile.profileUpdateFailed) : t.profile.profileUpdateFailed);
     }
   });
 
@@ -1033,7 +1044,7 @@ export default function Profile() {
       setProfileImage(null);
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error(error.message || t.profile.imageUploadFailed);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.profile.imageUploadFailed) : t.profile.imageUploadFailed);
       setImagePreview(null);
       setProfileImage(null);
     } finally {
@@ -1086,9 +1097,8 @@ export default function Profile() {
     );
   }
 
-  const profileDateLocales = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
   const joinDate = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString(profileDateLocales[currentLanguage] || 'en-US', { month: 'long', year: 'numeric' })
+    ? formatProfileDate(user.created_at, currentLanguage, { month:'long', year:'numeric' })
     : t.profile.recently;
 
   // Get profile completion from backend (automatically calculated by database trigger)
@@ -1554,7 +1564,7 @@ export default function Profile() {
                 <CardTitle className="flex items-center justify-between">
                   <span>{t.profile.personalInfo}</span>
                   {!isEditing && (
-                    <Button size="sm" variant="ghost" onClick={handleEdit}>
+                    <Button type="button" size="sm" variant="ghost" onClick={handleEdit} aria-label={t.profile.editProfile}>
                       <Edit className="w-4 h-4" />
                     </Button>
                   )}
@@ -1571,9 +1581,10 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">{t.profile.location}</p>
+                    <p id="profile-location-label" className="text-sm text-gray-500">{t.profile.location}</p>
                     {isEditing ? (
                       <Input
+                        aria-labelledby="profile-location-label"
                         value={editData.location}
                         onChange={(e) => setEditData({...editData, location: e.target.value})}
                         placeholder={t.profile.enterLocation}
@@ -1588,9 +1599,10 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <BookOpen className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">{t.profile.bio}</p>
+                    <p id="profile-bio-label" className="text-sm text-gray-500">{t.profile.bio}</p>
                     {isEditing ? (
                       <Textarea
+                        aria-labelledby="profile-bio-label"
                         value={editData.bio}
                         onChange={(e) => setEditData({...editData, bio: e.target.value})}
                         placeholder={t.profile.tellUsAboutYourself}
@@ -1622,13 +1634,13 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <Heart className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">{t.profile.relationshipStatus}</p>
+                    <p id="profile-relationship-status-label" className="text-sm text-gray-500">{t.profile.relationshipStatus}</p>
                     {isEditing ? (
                       <Select 
                         value={editData.relationship_status} 
                         onValueChange={(value) => setEditData({...editData, relationship_status: value})}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger aria-labelledby="profile-relationship-status-label">
                           <SelectValue placeholder={t.profile.selectStatus} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1647,9 +1659,10 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <Heart className="w-5 h-5 text-pink-500 mt-0.5 fill-current" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">{t.profile.partner}</p>
+                    <p id="profile-partner-label" className="text-sm text-gray-500">{t.profile.partner}</p>
                     {isEditing ? (
                       <Input
+                        aria-labelledby="profile-partner-label"
                         value={editData.partner_email}
                         onChange={(e) => setEditData({...editData, partner_email: e.target.value})}
                         placeholder={t.profile.partnersEmail}
@@ -1663,16 +1676,17 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <CalendarIcon className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">{t.profile.anniversary}</p>
+                    <p id="profile-anniversary-label" className="text-sm text-gray-500">{t.profile.anniversary}</p>
                     {isEditing ? (
                       <Input
+                        aria-labelledby="profile-anniversary-label"
                         type="date"
                         value={editData.anniversary_date}
                         onChange={(e) => setEditData({...editData, anniversary_date: e.target.value})}
                       />
                     ) : (
                       <p className="font-medium text-gray-900">
-                        {user?.anniversary_date ? new Date(user.anniversary_date).toLocaleDateString() : t.profile.notSet}
+                        {user?.anniversary_date ? formatProfileDate(user.anniversary_date, currentLanguage) : t.profile.notSet}
                       </p>
                     )}
                   </div>
@@ -1680,13 +1694,13 @@ export default function Profile() {
                 <div className="flex items-start gap-3">
                   <Heart className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">{t.profile.loveLanguage}</p>
+                    <p id="profile-love-language-label" className="text-sm text-gray-500">{t.profile.loveLanguage}</p>
                     {isEditing ? (
                       <Select 
                         value={editData.love_language} 
                         onValueChange={(value) => setEditData({...editData, love_language: value})}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger aria-labelledby="profile-love-language-label">
                           <SelectValue placeholder={t.profile.selectLoveLanguage} />
                         </SelectTrigger>
                         <SelectContent>

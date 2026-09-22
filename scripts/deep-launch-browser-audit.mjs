@@ -910,6 +910,171 @@ try {
   }
 
 
+
+  {
+    const profileAuditCopy={
+      en:{locale:'en-US',edit:'Edit Profile',location:'Location',bio:'Bio',status:'Relationship Status',partner:'Partner',anniversary:'Anniversary',love:'Love Language'},
+      es:{locale:'es-ES',edit:'Editar Perfil',location:'Ubicación',bio:'Biografía',status:'Estado de Relación',partner:'Pareja',anniversary:'Aniversario',love:'Lenguaje del Amor'},
+      fr:{locale:'fr-FR',edit:'Modifier le Profil',location:'Localisation',bio:'Biographie',status:'Statut de Relation',partner:'Partenaire',anniversary:'Anniversaire',love:"Langage d'Amour"},
+      it:{locale:'it-IT',edit:'Modifica Profilo',location:'Posizione',bio:'Biografia',status:'Stato della Relazione',partner:'Partner',anniversary:'Anniversario',love:"Linguaggio dell'Amore"},
+      de:{locale:'de-DE',edit:'Profil Bearbeiten',location:'Standort',bio:'Biografie',status:'Beziehungsstatus',partner:'Partner',anniversary:'Jubiläum',love:'Liebessprache'}
+    };
+    const couplesProfileAuditCopy={
+      en:{edit:'Edit Profile',location:'Location',status:'Relationship Status',partner:'Partner Name',partnerEmail:'Partner Email',anniversary:'Anniversary',love:'Love Language'},
+      es:{edit:'Editar Perfil',location:'Ubicación',status:'Estado de Relación',partner:'Nombre de la Pareja',partnerEmail:'Correo de la Pareja',anniversary:'Aniversario',love:'Lenguaje del Amor'},
+      fr:{edit:'Modifier le Profil',location:'Localisation',status:'Statut de Relation',partner:'Nom du Partenaire',partnerEmail:'E-mail du Partenaire',anniversary:'Anniversaire',love:"Langage de l’Amour"},
+      it:{edit:'Modifica Profilo',location:'Posizione',status:'Stato della Relazione',partner:'Nome del Partner',partnerEmail:'E-mail del Partner',anniversary:'Anniversario',love:"Linguaggio dell’Amore"},
+      de:{edit:'Profil Bearbeiten',location:'Standort',status:'Beziehungsstatus',partner:'Partnername',partnerEmail:'Partner-E-Mail',anniversary:'Jahrestag',love:'Liebessprache'}
+    };
+
+    async function installProfileAuditAuth(context) {
+      const user={
+        id:'launch-qa-profile-user',
+        email:'profile-qa@example.invalid',
+        emailVerified:true,
+        email_verified:true,
+        name:'Profile QA',
+        role:'user'
+      };
+      const profile={
+        id:user.id,
+        email:user.email,
+        name:user.name,
+        role:'user',
+        subscription_plan:'Exclusive',
+        subscription_status:'active',
+        subscription_price:19.99,
+        stripe_customer_id:'cus_profile_qa',
+        stripe_subscription_id:'sub_profile_qa',
+        phone_number_verified:true,
+        phoneNumberVerified:true,
+        phone_verification_required:true,
+        preferred_language:'en',
+        location:'Houston',
+        partner_name:'Partner QA',
+        partner_email:'',
+        anniversary_date:'2026-09-22',
+        love_language:'quality_time',
+        relationship_status:'married',
+        bio:'Profile QA bio',
+        created_at:'2025-01-15T12:00:00Z'
+      };
+      await context.route('**/api/auth/get-session', async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:user,session:{id:'launch-qa-profile-session',userId:user.id}})});
+      });
+      await context.route('**/api/profile', async function(routeHandler){
+        if(routeHandler.request().method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:profile})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic profile QA is read-only.'}})});
+      });
+    }
+
+    for(const lang of Object.keys(profileAuditCopy)){
+      const copy=profileAuditCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
+      await installProfileAuditAuth(context);
+      await context.route('**/api/goals**',async function(routeHandler){
+        const pathname=new URL(routeHandler.request().url()).pathname;
+        if(routeHandler.request().method()!=='GET'){
+          await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic goals QA is read-only.'}})});
+          return;
+        }
+        if(pathname.endsWith('/stats')){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({stats:{total:1,completed:0,inProgress:1}})});
+          return;
+        }
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({goals:[{id:'profile-goal-qa',title:'Launch QA Goal',status:'in_progress',progress:50,target_date:'2026-09-22'}]})});
+      });
+      await context.route('**/api/memories**',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[]})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/Profile',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.getByText('Launch QA Goal',{exact:true}).waitFor({state:'visible',timeout:8000}).catch(function(){});
+        const expectedDate=await page.evaluate(function(locale){
+          return new Intl.DateTimeFormat(locale).format(new Date('2026-09-22T00:00:00'));
+        },copy.locale);
+        const goalLink=page.locator('a').filter({hasText:'Launch QA Goal'}).first();
+        if(!(await goalLink.count()) || !normalizeText(await goalLink.innerText()).includes(expectedDate)){
+          add('critical','profile-goal-local-date',{lang:lang,expected:expectedDate});
+        }
+        const anniversaryLabel=page.locator('#profile-anniversary-label').first();
+        if(!(await anniversaryLabel.count())){
+          add('critical','profile-anniversary-label-missing',{lang:lang});
+        }else{
+          const anniversaryGroup=anniversaryLabel.locator('..');
+          if(!normalizeText(await anniversaryGroup.innerText()).includes(expectedDate)){
+            add('critical','profile-anniversary-local-date',{lang:lang,expected:expectedDate});
+          }
+        }
+        const editButton=page.getByRole('button',{name:copy.edit,exact:true}).last();
+        if(!(await editButton.count())){
+          add('critical','profile-edit-accessibility',{lang:lang});
+        }else{
+          await editButton.click();
+          const controls=[
+            ['location',copy.location],['bio',copy.bio],['status',copy.status],
+            ['partner',copy.partner],['anniversary',copy.anniversary],['love',copy.love]
+          ];
+          for(const pair of controls){
+            if(!(await page.getByLabel(pair[1],{exact:true}).count())){
+              add('critical','profile-edit-label-association',{lang:lang,field:pair[0]});
+            }
+          }
+        }
+      }catch(e){
+        add('critical','profile-edit-interaction-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'profile_edit_'+lang)});
+      }
+      await context.close();
+    }
+
+    for(const lang of Object.keys(couplesProfileAuditCopy)){
+      const copy=couplesProfileAuditCopy[lang];
+      const locale=profileAuditCopy[lang].locale;
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
+      await installProfileAuditAuth(context);
+      await context.route('**/api/memories**',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[]})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/CouplesProfile',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.waitForTimeout(500);
+        const expectedDate=await page.evaluate(function(targetLocale){
+          return new Intl.DateTimeFormat(targetLocale).format(new Date('2026-09-22T00:00:00'));
+        },locale);
+        const anniversaryText=page.getByText(copy.anniversary,{exact:true}).first();
+        if(!(await anniversaryText.count()) || !normalizeText(await anniversaryText.locator('..').innerText()).includes(expectedDate)){
+          add('critical','couples-profile-anniversary-local-date',{lang:lang,expected:expectedDate});
+        }
+        const editButton=page.getByRole('button',{name:copy.edit,exact:true}).first();
+        if(!(await editButton.count())){
+          add('critical','couples-profile-edit-button-missing',{lang:lang});
+        }else{
+          await editButton.click();
+          const controls=[
+            ['location',copy.location],['status',copy.status],['partner',copy.partner],
+            ['partnerEmail',copy.partnerEmail],['anniversary',copy.anniversary],['love',copy.love]
+          ];
+          for(const pair of controls){
+            if(!(await page.getByLabel(pair[1],{exact:true}).count())){
+              add('critical','couples-profile-label-association',{lang:lang,field:pair[0]});
+            }
+          }
+        }
+      }catch(e){
+        add('critical','couples-profile-interaction-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'couples_profile_'+lang)});
+      }
+      await context.close();
+    }
+  }
+
+
   {
     const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
     await installAnonymousAuth(context);
