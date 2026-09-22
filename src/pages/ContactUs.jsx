@@ -136,20 +136,20 @@ export default function ContactUs() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.name}</label>
-                    <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="h-12" />
+                    <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-2">{t.name}</label>
+                    <Input id="contact-name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="h-12" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.email}</label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="h-12" />
+                    <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-2">{t.email}</label>
+                    <Input id="contact-email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="h-12" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.subject}</label>
-                    <Input value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} required className="h-12" />
+                    <label htmlFor="contact-subject" className="block text-sm font-medium text-gray-700 mb-2">{t.subject}</label>
+                    <Input id="contact-subject" value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} required className="h-12" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.message}</label>
-                    <Textarea value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required className="h-32" />
+                    <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-2">{t.message}</label>
+                    <Textarea id="contact-message" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required className="h-32" />
                   </div>
                   <p className="text-sm text-gray-500 leading-relaxed">{t.emailNotice}</p>
                   <Button type="submit" className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg">
