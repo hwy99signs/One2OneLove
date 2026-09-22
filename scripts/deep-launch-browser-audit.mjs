@@ -336,6 +336,27 @@ try {
         if (dom.brokenImages.length) add('critical','member-broken-images',{ route:route, lang:lang, images:dom.brokenImages });
         if (dom.overflow > 4) add('critical','member-horizontal-overflow',{ route:route, lang:lang, pixels:dom.overflow, screenshot:await screenshot(page, 'member_' + lang + '_' + route + '_overflow') });
         if (dom.suspicious.length) add('critical','member-suspicious-render-text',{ route:route, lang:lang, tokens:dom.suspicious });
+
+        // Safe interaction coverage: exercise visible tab controls without submitting forms
+        // or invoking destructive/business actions.
+        const tabs = page.getByRole('tab');
+        const tabCount = await tabs.count();
+        for (let tabIndex = 0; tabIndex < tabCount; tabIndex += 1) {
+          const tab = tabs.nth(tabIndex);
+          if (!(await tab.isVisible())) continue;
+          const tabName = normalizeText(await tab.innerText());
+          try {
+            await tab.click();
+            await page.waitForTimeout(100);
+            const selected = await tab.getAttribute('aria-selected');
+            if (selected !== null && selected !== 'true') {
+              add('critical','member-tab-not-selected',{ route:route, lang:lang, tab:tabName, ariaSelected:selected });
+            }
+          } catch (e) {
+            add('critical','member-tab-interaction',{ route:route, lang:lang, tab:tabName, message:String(e.message || e) });
+          }
+        }
+
         const normalized=normalizeText(dom.mainText);
         if (lang === 'en') memberRouteEnglish.set(route, normalized);
         else {
@@ -347,6 +368,50 @@ try {
       }
       await context.close();
     }
+  }
+
+  // Full signed-in member mobile layout coverage (English). Five-language member
+  // localization is validated above on desktop; this pass isolates responsive faults
+  // across every member route without multiplying identical viewport checks.
+  for (const route of MEMBER_ROUTES) {
+    const context = await browser.newContext({ viewport:{ width:390, height:844 } });
+    await installSyntheticMemberAuth(context);
+    await context.addInitScript(function(){ localStorage.setItem('preferredLanguage','en'); });
+    const page = await context.newPage();
+    const pageErrors = [];
+    const serverErrors = [];
+    page.on('pageerror', function(err){ pageErrors.push(String(err && err.message || err)); });
+    page.on('response', function(res) {
+      try {
+        const u = new URL(res.url());
+        if (u.origin === BASE && res.status() >= 500) serverErrors.push({ url:u.pathname + u.search, status:res.status() });
+      } catch {}
+    });
+    try {
+      const response = await page.goto(BASE + route, { waitUntil:'domcontentloaded', timeout:30000 });
+      await page.waitForTimeout(550);
+      if (!response || response.status() !== 200) add('critical','member-mobile-status',{ route:route, status:response && response.status() });
+      const finalPath = new URL(page.url()).pathname.toLowerCase();
+      const expectedRedirect = route === '/Dashboard' || route === '/VerifyPhone' ? '/profile' : null;
+      if (expectedRedirect ? finalPath !== expectedRedirect : (route !== '/PaymentSuccess' && finalPath !== route.toLowerCase())) {
+        add('critical','member-mobile-redirect',{ route:route, finalPath:finalPath, expected:expectedRedirect || route.toLowerCase() });
+      }
+      if (pageErrors.length) add('critical','member-mobile-pageerror',{ route:route, errors:pageErrors });
+      if (serverErrors.length) add('critical','member-mobile-5xx',{ route:route, errors:serverErrors });
+      const layout = await page.evaluate(function() {
+        const width=Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth;
+        const text=(document.querySelector('main')?.innerText || '').replace(/\s+/g,' ').trim();
+        const visible=function(el){const s=getComputedStyle(el);const r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;};
+        const broken=Array.from(document.images).filter(function(img){return visible(img)&&img.complete&&img.naturalWidth===0;}).map(function(img){return img.getAttribute('src');});
+        return { overflow:width, textLength:text.length, broken:broken };
+      });
+      if (layout.overflow > 4) add('critical','member-mobile-overflow',{ route:route, pixels:layout.overflow, screenshot:await screenshot(page,'member_mobile_' + route + '_overflow') });
+      if (layout.textLength < 20 && !['/Dashboard','/VerifyPhone'].includes(route)) add('critical','member-mobile-empty',{ route:route, textLength:layout.textLength });
+      if (layout.broken.length) add('critical','member-mobile-broken-images',{ route:route, images:layout.broken });
+    } catch (e) {
+      add('critical','member-mobile-navigation',{ route:route, message:String(e.message || e) });
+    }
+    await context.close();
   }
 
   for (const lang of Object.keys(LANGS)) {
@@ -429,7 +494,7 @@ try {
       publicDesktopLoads: PUBLIC_ROUTES.length * Object.keys(LANGS).length,
       protectedRouteGuardChecks: PROTECTED_ROUTES.length,
       syntheticMemberDesktopLoads: MEMBER_ROUTES.length * Object.keys(LANGS).length,
-      mobileLoads: 5 * Object.keys(LANGS).length,
+      mobileLoads: (5 * Object.keys(LANGS).length) + MEMBER_ROUTES.length,
       languages: Object.keys(LANGS),
       criticalCount: criticalCount,
       warningCount: warningCount,
