@@ -101,7 +101,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
 
             <div className="min-w-0 text-center sm:text-left">
               <div className="mb-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">{podcast.language}</span>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">{t.languageNames?.[podcast.language] || podcast.language}</span>
                 {podcast.lgbtq && <span className="rounded-full bg-fuchsia-50 px-2.5 py-1 text-[11px] font-semibold text-fuchsia-700">{t.lgbtq}</span>}
               </div>
               <DialogTitle className="text-2xl leading-tight sm:text-3xl">{podcast.title}</DialogTitle>

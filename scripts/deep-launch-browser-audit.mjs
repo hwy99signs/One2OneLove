@@ -469,6 +469,78 @@ try {
   }
 
   {
+    const expectedPodcastLanguage = { en:'English', es:'Spanish', fr:'French', it:'Italian', de:'German' };
+    const expectedDescriptionAnchor = {
+      en:'Relationship education focused on marriage',
+      es:'Conversaciones en español sobre patrones de relación',
+      fr:'Une psychologue et thérapeute de couple explore',
+      it:'Contenuti di terapia di coppia su tradimento',
+      de:'Eine Psychologin und Paartherapeutin bietet praktische Impulse'
+    };
+    for (const lang of Object.keys(expectedPodcastLanguage)) {
+      const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/consents/adult-sensitive', async function(routeHandler) {
+        await routeHandler.fulfill({
+          status:200,
+          contentType:'application/json',
+          body:JSON.stringify({ consent:{
+            consent_version:'2026-09-13-v1',
+            age_18_plus:true,
+            sensitive_content_acknowledged:true
+          }})
+        });
+      });
+      await context.addInitScript(function(language){ localStorage.setItem('preferredLanguage', language); }, lang);
+      const page = await context.newPage();
+      await page.goto(BASE + '/PodcastsSupport', { waitUntil:'domcontentloaded', timeout:30000 });
+      await page.waitForTimeout(700);
+      const expected = expectedPodcastLanguage[lang];
+      const selectValue = await page.locator('#podcast-language').inputValue().catch(function(){ return null; });
+      if (selectValue !== expected) add('critical','podcast-header-language-sync',{ lang:lang, expected:expected, actual:selectValue });
+      const cards = page.locator('[data-podcast-card="true"]');
+      const count = await cards.count();
+      if (!count) add('critical','podcast-language-empty',{ lang:lang, expected:expected });
+      for (let i=0;i<count;i+=1) {
+        const actual = await cards.nth(i).getAttribute('data-podcast-language');
+        if (actual !== expected) add('critical','podcast-language-mixed',{ lang:lang, expected:expected, actual:actual, index:i });
+      }
+      const mainText = normalizeText(await page.locator('main').innerText());
+      if (!mainText.includes(expectedDescriptionAnchor[lang])) add('critical','podcast-card-description-language',{ lang:lang, expectedAnchor:expectedDescriptionAnchor[lang] });
+      await context.close();
+    }
+
+    const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
+    await installSyntheticMemberAuth(context);
+    await context.route('**/api/consents/adult-sensitive', async function(routeHandler) {
+      await routeHandler.fulfill({
+        status:200,
+        contentType:'application/json',
+        body:JSON.stringify({ consent:{
+          consent_version:'2026-09-13-v1',
+          age_18_plus:true,
+          sensitive_content_acknowledged:true
+        }})
+      });
+    });
+    await context.addInitScript(function(){ localStorage.setItem('preferredLanguage','en'); });
+    const page = await context.newPage();
+    await page.goto(BASE + '/PodcastsSupport', { waitUntil:'domcontentloaded', timeout:30000 });
+    await page.waitForTimeout(600);
+    await page.locator('#podcast-language').selectOption('Spanish');
+    await page.waitForTimeout(400);
+    const stored = await page.evaluate(function(){ return localStorage.getItem('preferredLanguage'); });
+    const spanishCards = page.locator('[data-podcast-card="true"]');
+    const spanishCount = await spanishCards.count();
+    if (stored !== 'es') add('critical','podcast-selector-header-sync',{ expected:'es', actual:stored });
+    for (let i=0;i<spanishCount;i+=1) {
+      const actual = await spanishCards.nth(i).getAttribute('data-podcast-language');
+      if (actual !== 'Spanish') add('critical','podcast-selector-language-mixed',{ expected:'Spanish', actual:actual, index:i });
+    }
+    await context.close();
+  }
+
+  {
     const context = await browser.newContext({ viewport:{ width:390, height:844 } });
     await installAnonymousAuth(context);
     await context.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});

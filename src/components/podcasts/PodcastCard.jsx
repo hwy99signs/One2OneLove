@@ -9,6 +9,8 @@ export default function PodcastCard({ podcast, t, onOpen }) {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="h-full">
       <Card
+        data-podcast-card="true"
+        data-podcast-language={podcast.language}
         className="group h-full cursor-pointer overflow-hidden border border-purple-100 bg-white transition-all duration-200 hover:-translate-y-1 hover:border-purple-200 hover:shadow-xl"
         onClick={() => onOpen(podcast)}
       >
@@ -22,7 +24,7 @@ export default function PodcastCard({ podcast, t, onOpen }) {
             />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">{podcast.language}</span>
+            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">{t.languageNames?.[podcast.language] || podcast.language}</span>
             {podcast.lgbtq && (
               <span className="rounded-full bg-fuchsia-50 px-2.5 py-1 text-[11px] font-semibold text-fuchsia-700">{t.lgbtq}</span>
             )}

@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Heart, Languages, MessageCircle, Mic, Search, ShieldCheck, Sparkles, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AdultSensitiveContentGate from "@/components/content/AdultSensitiveContentGate";
 import PodcastCard from "@/components/podcasts/PodcastCard";
 import PodcastPlayerDialog from "@/components/podcasts/PodcastPlayerDialog";
-import { podcastLibrary, podcastLanguages } from "@/data/podcastLibrary";
+import { launchPodcastLibrary, podcastLanguages, podcastLanguageByUiLanguage, podcastUiLanguageByPodcastLanguage } from "@/data/podcastLibrary";
 import { podcastCopy, podcastLocaleByLanguage } from "@/data/podcastCopy";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
@@ -22,22 +22,32 @@ const focusDefinitions = (t) => [
 ];
 
 function PodcastLibraryPage() {
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage, changeLanguage } = useLanguage();
   const t = podcastCopy[currentLanguage] || podcastCopy.en;
   const locale = podcastLocaleByLanguage[currentLanguage] || "en-US";
   const [selectedFocus, setSelectedFocus] = useState("all");
-  const [selectedLanguage, setSelectedLanguage] = useState("all");
+  const [selectedLanguage, setSelectedLanguage] = useState(() => podcastLanguageByUiLanguage[currentLanguage] || "English");
   const [searchTerm, setSearchTerm] = useState("");
   const [openPodcast, setOpenPodcast] = useState(null);
 
   const focusOptions = useMemo(() => focusDefinitions(t), [t]);
-  const totalEpisodes = useMemo(() => podcastLibrary.reduce((sum, podcast) => sum + podcast.episodes.length, 0), []);
+
+  useEffect(() => {
+    setSelectedLanguage(podcastLanguageByUiLanguage[currentLanguage] || "English");
+  }, [currentLanguage]);
+
+  const languagePodcasts = useMemo(
+    () => selectedLanguage === "all"
+      ? launchPodcastLibrary
+      : launchPodcastLibrary.filter((podcast) => podcast.language === selectedLanguage),
+    [selectedLanguage],
+  );
+  const totalEpisodes = useMemo(() => languagePodcasts.reduce((sum, podcast) => sum + podcast.episodes.length, 0), [languagePodcasts]);
 
   const filteredPodcasts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    return podcastLibrary.filter((podcast) => {
+    return languagePodcasts.filter((podcast) => {
       const matchesFocus = selectedFocus === "all" || (selectedFocus === "lgbtq" ? podcast.lgbtq : podcast.focus?.includes(selectedFocus));
-      const matchesLanguage = selectedLanguage === "all" || podcast.language === selectedLanguage;
       const haystack = [
         podcast.title,
         podcast.host,
@@ -47,13 +57,13 @@ function PodcastLibraryPage() {
         ...(podcast.focus || []),
         ...podcast.episodes.map((episode) => episode.title),
       ].filter(Boolean).join(" ").toLowerCase();
-      return matchesFocus && matchesLanguage && (!query || haystack.includes(query));
+      return matchesFocus && (!query || haystack.includes(query));
     });
-  }, [searchTerm, selectedFocus, selectedLanguage]);
+  }, [languagePodcasts, searchTerm, selectedFocus]);
 
   const clearFilters = () => {
     setSelectedFocus("all");
-    setSelectedLanguage("all");
+    setSelectedLanguage(podcastLanguageByUiLanguage[currentLanguage] || "English");
     setSearchTerm("");
   };
 
@@ -81,7 +91,7 @@ function PodcastLibraryPage() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{t.library}</h2>
-              <p className="mt-2 text-sm text-gray-600">{podcastLibrary.length} {t.creatorCount} · {totalEpisodes} {t.episodeCount} · {podcastLanguages.length} {t.languageCount}</p>
+              <p className="mt-2 text-sm text-gray-600">{languagePodcasts.length} {t.creatorCount} · {totalEpisodes} {t.episodeCount} · {selectedLanguage === "all" ? podcastLanguages.length : 1} {t.languageCount}</p>
             </div>
             <div className="relative w-full lg:max-w-md">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -120,11 +130,16 @@ function PodcastLibraryPage() {
             <select
               id="podcast-language"
               value={selectedLanguage}
-              onChange={(event) => setSelectedLanguage(event.target.value)}
+              onChange={(event) => {
+                const nextLanguage = event.target.value;
+                setSelectedLanguage(nextLanguage);
+                const nextUiLanguage = podcastUiLanguageByPodcastLanguage[nextLanguage];
+                if (nextUiLanguage && nextUiLanguage !== currentLanguage) changeLanguage(nextUiLanguage);
+              }}
               className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
             >
               <option value="all">{t.allLanguages}</option>
-              {podcastLanguages.map((language) => <option key={language} value={language}>{language}</option>)}
+              {podcastLanguages.map((language) => <option key={language} value={language}>{t.languageNames?.[language] || language}</option>)}
             </select>
           </div>
         </section>
