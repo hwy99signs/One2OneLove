@@ -390,17 +390,6 @@ function LanguageContent({ children, currentPageName }) {
                         {t.actionMenu.lgbtqSupport}
                       </Link>
                       <Link
-                        to={createPageUrl("RelationshipCoach")} style={{ display: 'none' }}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        AI Relationship Coach
-                      </Link>
-                      <Link
                         to={createPageUrl("CoupleSupport")}
                         className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
                         onClick={() => {
@@ -466,28 +455,6 @@ function LanguageContent({ children, currentPageName }) {
                         <Heart className="w-5 h-5" />
                         {t.actionMenu.memoryLane}
                       </Link>
-                      <Link
-                        to={createPageUrl("AIContentCreator")} style={{ display: 'none' }}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        {t.actionMenu.aiCreator}
-                      </Link>
-                      <Link
-                        to={createPageUrl("WinACruise")} style={{ display: 'none' }}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Gift className="w-5 h-5" />
-                        {t.actionMenu.winCruise}
-                      </Link>
                     </div>
                   )}
                 </div>
@@ -518,14 +485,6 @@ function LanguageContent({ children, currentPageName }) {
                     {t.nav.profile}
                   </Link>
                 )}
-                <Link
-                  to={createPageUrl("Developer")} style={{ display: 'none' }}
-                  className="flex items-center gap-2 text-yellow-300 hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Code className="w-5 h-5" />
-                  {t.nav.developer}
-                </Link>
                 <div className="border-t border-white/20 my-2"></div>
                 
 
