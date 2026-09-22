@@ -467,7 +467,7 @@ export default function DateIdeas() {
         </motion.div>
 
         <div className="mb-8 flex flex-wrap gap-4 justify-between items-center">
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button
               onClick={() => setViewMode('all')}
               variant={viewMode === 'all' ? 'default' : 'outline'}
