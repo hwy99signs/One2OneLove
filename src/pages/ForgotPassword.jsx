@@ -403,10 +403,11 @@ export default function ForgotPassword() {
 
         <form onSubmit={handlePasswordReset} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t.newPassword} *</label>
+            <label htmlFor="reset-new-password" className="block text-sm font-medium text-gray-700 mb-2">{t.newPassword} *</label>
             <div className="relative">
               <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <Input
+                id="reset-new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -423,10 +424,11 @@ export default function ForgotPassword() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t.confirmPassword} *</label>
+            <label htmlFor="reset-confirm-password" className="block text-sm font-medium text-gray-700 mb-2">{t.confirmPassword} *</label>
             <div className="relative">
               <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <Input
+                id="reset-confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -521,10 +523,11 @@ export default function ForgotPassword() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+          <label htmlFor="forgot-password-email" className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
           <div className="relative">
             <Mail size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <Input
+              id="forgot-password-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
