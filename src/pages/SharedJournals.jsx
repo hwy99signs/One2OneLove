@@ -32,7 +32,6 @@ export default function SharedJournals() {
   const { data: entries = [] } = useQuery({
     queryKey:['sharedJournals'],
     queryFn:() => journalService.getJournalEntries('-entry_date'),
-    initialData:[],
   });
 
   const createMutation = useMutation({

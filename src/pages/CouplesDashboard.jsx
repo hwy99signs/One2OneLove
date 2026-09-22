@@ -27,11 +27,11 @@ export default function CouplesDashboard() {
   const t = copy[currentLanguage] || copy.en;
   const { user } = useAuth();
 
-  const { data: activityProgress = [] } = useQuery({ queryKey:['activityProgress'], queryFn:async () => user?.id ? getActivityProgress() : [], enabled:!!user?.id, initialData:[] });
-  const { data: goals = [] } = useQuery({ queryKey:['goals'], queryFn:() => goalsService.getGoals('-created_at'), initialData:[] });
-  const { data: milestones = [] } = useQuery({ queryKey:['milestones'], queryFn:() => milestonesService.getMilestones('-created_at'), initialData:[] });
-  const { data: journals = [] } = useQuery({ queryKey:['journals'], queryFn:() => journalService.getJournalEntries('-entry_date'), initialData:[] });
-  const { data: memories = [] } = useQuery({ queryKey:['memories'], queryFn:async () => user?.id ? listMemories(user.id) : [], enabled:!!user?.id, initialData:[] });
+  const { data: activityProgress = [] } = useQuery({ queryKey:['activityProgress'], queryFn:async () => user?.id ? getActivityProgress() : [], enabled:!!user?.id });
+  const { data: goals = [] } = useQuery({ queryKey:['goals'], queryFn:() => goalsService.getGoals('-created_at') });
+  const { data: milestones = [] } = useQuery({ queryKey:['milestones'], queryFn:() => milestonesService.getMilestones('-created_at') });
+  const { data: journals = [] } = useQuery({ queryKey:['journals'], queryFn:() => journalService.getJournalEntries('-entry_date') });
+  const { data: memories = [] } = useQuery({ queryKey:['memories'], queryFn:async () => user?.id ? listMemories(user.id) : [], enabled:!!user?.id });
 
   const allData = useMemo(() => ({ activityProgress, goals, milestones, journals, memories }), [activityProgress, goals, milestones, journals, memories]);
 

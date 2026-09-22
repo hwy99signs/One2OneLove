@@ -191,14 +191,12 @@ export default function CoupleActivities() {
     queryKey: ['activityProgress', user?.id],
     queryFn: async () => user?.id ? getActivityProgress() : [],
     enabled: !!user?.id,
-    initialData: []
   });
 
   const { data: preferences = null } = useQuery({
     queryKey: ['userPreferences', user?.id],
     queryFn: async () => user?.id ? getActivityPreferences() : null,
     enabled: !!user?.id,
-    initialData: null
   });
 
   const activities = [

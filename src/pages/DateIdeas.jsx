@@ -136,7 +136,6 @@ export default function DateIdeas() {
     queryKey: ['customDates', dateIdeasUserKey],
     queryFn: () => listDateIdeas(dateIdeasUserKey),
     enabled: true,
-    initialData: [],
   });
 
 

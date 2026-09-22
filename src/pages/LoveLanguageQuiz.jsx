@@ -24,7 +24,11 @@ const translations = {
       encouragePartner: "Encourage your partner to take the quiz too so you can better understand each other",
       useInsight: "Use this insight to strengthen your relationship and show love in ways that truly matter",
       takeAgain: "Take Quiz Again",
-      shareResults: "Share Results"
+      shareResults: "Share Results",
+      saveAuth: "Please sign in to save your results.",
+      saveSuccess: "Love language saved to your profile!",
+      saveSuccessDesc: "Your profile completion has been updated.",
+      saveFailed: "Failed to save your love language. Please try again."
     },
     loveLanguages: {
       words: { name: "Words of Affirmation", description: "You feel most loved when your partner expresses affection through spoken or written words of appreciation, encouragement, and compliments." },
@@ -65,7 +69,11 @@ const translations = {
       encouragePartner: "Anima a tu pareja a hacer el quiz también para que puedan entenderse mejor",
       useInsight: "Usa esta perspectiva para fortalecer tu relación y mostrar amor de maneras que realmente importan",
       takeAgain: "Hacer el Quiz Otra Vez",
-      shareResults: "Compartir Resultados"
+      shareResults: "Compartir Resultados",
+      saveAuth: "Inicia sesión para guardar tus resultados.",
+      saveSuccess: "¡Tu lenguaje del amor se guardó en tu perfil!",
+      saveSuccessDesc: "Se actualizó el progreso de tu perfil.",
+      saveFailed: "No se pudo guardar tu lenguaje del amor. Inténtalo de nuevo."
     },
     loveLanguages: {
       words: { name: "Palabras de Afirmación", description: "Te sientes más amado/a cuando tu pareja expresa afecto a través de palabras habladas o escritas de apreciación, aliento y cumplidos." },
@@ -106,7 +114,11 @@ const translations = {
       encouragePartner: "Encouragez votre partenaire à faire le quiz aussi pour mieux vous comprendre",
       useInsight: "Utilisez cette perspicacité pour renforcer votre relation et montrer l'amour de manières qui comptent vraiment",
       takeAgain: "Refaire le Quiz",
-      shareResults: "Partager les Résultats"
+      shareResults: "Partager les Résultats",
+      saveAuth: "Connectez-vous pour enregistrer vos résultats.",
+      saveSuccess: "Votre langage de l’amour a été enregistré dans votre profil !",
+      saveSuccessDesc: "La progression de votre profil a été mise à jour.",
+      saveFailed: "Impossible d’enregistrer votre langage de l’amour. Veuillez réessayer."
     },
     loveLanguages: {
       words: { name: "Paroles Valorisantes", description: "Vous vous sentez le plus aimé(e) lorsque votre partenaire exprime son affection par des mots parlés ou écrits d'appréciation, d'encouragement et de compliments." },
@@ -147,7 +159,11 @@ const translations = {
       encouragePartner: "Incoraggia il tuo partner a fare il quiz anche lui/lei per capirvi meglio",
       useInsight: "Usa questa intuizione per rafforzare la tua relazione e mostrare amore in modi che contano davvero",
       takeAgain: "Rifai il Quiz",
-      shareResults: "Condividi Risultati"
+      shareResults: "Condividi Risultati",
+      saveAuth: "Accedi per salvare i tuoi risultati.",
+      saveSuccess: "Il tuo linguaggio dell’amore è stato salvato nel profilo!",
+      saveSuccessDesc: "L’avanzamento del tuo profilo è stato aggiornato.",
+      saveFailed: "Impossibile salvare il tuo linguaggio dell’amore. Riprova."
     },
     loveLanguages: {
       words: { name: "Parole di Affermazione", description: "Ti senti più amato/a quando il tuo partner esprime affetto attraverso parole parlate o scritte di apprezzamento, incoraggiamento e complimenti." },
@@ -188,7 +204,11 @@ const translations = {
       encouragePartner: "Ermutigen Sie Ihren Partner, das Quiz auch zu machen, damit Sie sich besser verstehen können",
       useInsight: "Nutzen Sie diese Einsicht, um Ihre Beziehung zu stärken und Liebe auf Weisen zu zeigen, die wirklich wichtig sind",
       takeAgain: "Quiz Erneut Machen",
-      shareResults: "Ergebnisse Teilen"
+      shareResults: "Ergebnisse Teilen",
+      saveAuth: "Bitte melde dich an, um deine Ergebnisse zu speichern.",
+      saveSuccess: "Deine Liebessprache wurde in deinem Profil gespeichert!",
+      saveSuccessDesc: "Der Fortschritt deines Profils wurde aktualisiert.",
+      saveFailed: "Deine Liebessprache konnte nicht gespeichert werden. Bitte versuche es erneut."
     },
     loveLanguages: {
       words: { name: "Worte der Bestätigung", description: "Sie fühlen sich am meisten geliebt, wenn Ihr Partner Zuneigung durch gesprochene oder geschriebene Worte der Wertschätzung, Ermutigung und Komplimente ausdrückt." },
@@ -387,7 +407,7 @@ export default function LoveLanguageQuiz() {
 
   const handleSaveResult = async () => {
     if (!user) {
-      toast.error('Please log in to save your results');
+      toast.error(t.quiz.saveAuth);
       return;
     }
 
@@ -400,12 +420,12 @@ export default function LoveLanguageQuiz() {
       await refreshUserProfile();
       
       setIsSaved(true);
-      toast.success('Love language saved to your profile!', {
-        description: 'Your profile completion has been updated'
+      toast.success(t.quiz.saveSuccess, {
+        description: t.quiz.saveSuccessDesc
       });
     } catch (error) {
       console.error('Error saving love language:', error);
-      toast.error('Failed to save love language. Please try again.');
+      toast.error(t.quiz.saveFailed);
     } finally {
       setIsSaving(false);
     }

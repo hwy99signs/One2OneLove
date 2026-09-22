@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle2, Clock, Edit, Trash2, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { format } from "date-fns";
 
 const translations = {
   en: {
@@ -19,7 +18,9 @@ const translations = {
     actionSteps: "Action Steps",
     edit: "Edit",
     delete: "Delete",
-    updateProgress: "Update Progress"
+    updateProgress: "Update Progress",
+    daysOverdue: "days overdue",
+    daysLeft: "days left"
   },
   es: {
     progress: "Progreso",
@@ -32,7 +33,9 @@ const translations = {
     actionSteps: "Pasos de Acción",
     edit: "Editar",
     delete: "Eliminar",
-    updateProgress: "Actualizar Progreso"
+    updateProgress: "Actualizar Progreso",
+    daysOverdue: "días de retraso",
+    daysLeft: "días restantes"
   },
   fr: {
     progress: "Progrès",
@@ -45,7 +48,9 @@ const translations = {
     actionSteps: "Étapes d'Action",
     edit: "Modifier",
     delete: "Supprimer",
-    updateProgress: "Mettre à Jour le Progrès"
+    updateProgress: "Mettre à Jour le Progrès",
+    daysOverdue: "jours de retard",
+    daysLeft: "jours restants"
   },
   it: {
     progress: "Progresso",
@@ -58,7 +63,9 @@ const translations = {
     actionSteps: "Passi d'Azione",
     edit: "Modifica",
     delete: "Elimina",
-    updateProgress: "Aggiorna Progresso"
+    updateProgress: "Aggiorna Progresso",
+    daysOverdue: "giorni di ritardo",
+    daysLeft: "giorni rimasti"
   },
   de: {
     progress: "Fortschritt",
@@ -71,7 +78,9 @@ const translations = {
     actionSteps: "Aktionsschritte",
     edit: "Bearbeiten",
     delete: "Löschen",
-    updateProgress: "Fortschritt Aktualisieren"
+    updateProgress: "Fortschritt Aktualisieren",
+    daysOverdue: "Tage überfällig",
+    daysLeft: "Tage übrig"
   }
 };
 
@@ -94,7 +103,7 @@ export default function GoalCard({ goal, onEdit, onDelete, onUpdateProgress }) {
 
   const getDaysRemaining = () => {
     const today = new Date();
-    const target = new Date(goal.target_date);
+    const target = new Date(`${goal.target_date}T00:00:00`);
     const diffTime = target - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -120,6 +129,7 @@ export default function GoalCard({ goal, onEdit, onDelete, onUpdateProgress }) {
                 variant="ghost"
                 size="icon"
                 onClick={() => onEdit(goal)}
+                aria-label={`${t.edit}: ${goal.title}`}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <Edit className="w-4 h-4" />
@@ -128,6 +138,7 @@ export default function GoalCard({ goal, onEdit, onDelete, onUpdateProgress }) {
                 variant="ghost"
                 size="icon"
                 onClick={() => onDelete(goal.id)}
+                aria-label={`${t.delete}: ${goal.title}`}
                 className="text-gray-400 hover:text-red-600"
               >
                 <Trash2 className="w-4 h-4" />
@@ -153,7 +164,7 @@ export default function GoalCard({ goal, onEdit, onDelete, onUpdateProgress }) {
             </Badge>
             <Badge variant="outline" className={isOverdue ? 'text-red-600 border-red-300' : ''}>
               <Calendar className="w-3 h-3 mr-1" />
-              {isOverdue ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d left`}
+              {isOverdue ? `${Math.abs(daysRemaining)} ${t.daysOverdue}` : `${daysRemaining} ${t.daysLeft}`}
             </Badge>
           </div>
 

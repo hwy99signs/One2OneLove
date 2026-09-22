@@ -40,6 +40,13 @@ const translations = {
     eventAdded: "Event added successfully! 💕",
     eventUpdated: "Event updated successfully!",
     eventDeleted: "Event deleted successfully",
+    createFailed: "Could not create the event. Please try again.",
+    updateFailed: "Could not update the event. Please try again.",
+    deleteFailed: "Could not delete the event. Please try again.",
+    titleRequired: "Please enter an event title.",
+    dateRequired: "Please select a date.",
+    authRequired: "Please sign in again to manage calendar events.",
+    deleteConfirm: "Are you sure you want to delete this event?",
     filter: "Filter",
     types: {
       date: "Date",
@@ -67,6 +74,13 @@ const translations = {
     eventAdded: "¡Evento agregado exitosamente! 💕",
     eventUpdated: "¡Evento actualizado exitosamente!",
     eventDeleted: "Evento eliminado exitosamente",
+    createFailed: "No se pudo crear el evento. Inténtalo de nuevo.",
+    updateFailed: "No se pudo actualizar el evento. Inténtalo de nuevo.",
+    deleteFailed: "No se pudo eliminar el evento. Inténtalo de nuevo.",
+    titleRequired: "Ingresa un título para el evento.",
+    dateRequired: "Selecciona una fecha.",
+    authRequired: "Vuelve a iniciar sesión para administrar los eventos del calendario.",
+    deleteConfirm: "¿Seguro que quieres eliminar este evento?",
     filter: "Filtrar",
     types: {
       date: "Cita",
@@ -94,6 +108,13 @@ const translations = {
     eventAdded: "Événement ajouté avec succès! 💕",
     eventUpdated: "Événement mis à jour avec succès!",
     eventDeleted: "Événement supprimé avec succès",
+    createFailed: "Impossible de créer l’événement. Veuillez réessayer.",
+    updateFailed: "Impossible de mettre à jour l’événement. Veuillez réessayer.",
+    deleteFailed: "Impossible de supprimer l’événement. Veuillez réessayer.",
+    titleRequired: "Saisissez un titre pour l’événement.",
+    dateRequired: "Sélectionnez une date.",
+    authRequired: "Reconnectez-vous pour gérer les événements du calendrier.",
+    deleteConfirm: "Voulez-vous vraiment supprimer cet événement ?",
     filter: "Filtrer",
     types: {
       date: "Rendez-vous",
@@ -121,6 +142,13 @@ const translations = {
     eventAdded: "Evento aggiunto con successo! 💕",
     eventUpdated: "Evento aggiornato con successo!",
     eventDeleted: "Evento eliminato con successo",
+    createFailed: "Impossibile creare l’evento. Riprova.",
+    updateFailed: "Impossibile aggiornare l’evento. Riprova.",
+    deleteFailed: "Impossibile eliminare l’evento. Riprova.",
+    titleRequired: "Inserisci un titolo per l’evento.",
+    dateRequired: "Seleziona una data.",
+    authRequired: "Accedi di nuovo per gestire gli eventi del calendario.",
+    deleteConfirm: "Vuoi davvero eliminare questo evento?",
     filter: "Filtra",
     types: {
       date: "Appuntamento",
@@ -148,6 +176,13 @@ const translations = {
     eventAdded: "Ereignis erfolgreich hinzugefügt! 💕",
     eventUpdated: "Ereignis erfolgreich aktualisiert!",
     eventDeleted: "Ereignis erfolgreich gelöscht",
+    createFailed: "Das Ereignis konnte nicht erstellt werden. Bitte versuche es erneut.",
+    updateFailed: "Das Ereignis konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+    deleteFailed: "Das Ereignis konnte nicht gelöscht werden. Bitte versuche es erneut.",
+    titleRequired: "Bitte gib einen Ereignistitel ein.",
+    dateRequired: "Bitte wähle ein Datum aus.",
+    authRequired: "Bitte melde dich erneut an, um Kalenderereignisse zu verwalten.",
+    deleteConfirm: "Möchtest du dieses Ereignis wirklich löschen?",
     filter: "Filtern",
     types: {
       date: "Date",
@@ -197,7 +232,6 @@ export default function CouplesCalendar() {
     enabled: !!user?.id,
     refetchOnWindowFocus: true, // Refetch when window gains focus for live updates
     refetchInterval: 30000, // Refetch every 30 seconds for live data
-    initialData: []
   });
 
   // Create event mutation
@@ -224,8 +258,7 @@ export default function CouplesCalendar() {
         details: error.details,
         hint: error.hint
       });
-      const errorMessage = error.message || 'Failed to create event. Please check the console for details.';
-      toast.error(errorMessage);
+      toast.error(t.createFailed);
     }
   });
 
@@ -242,7 +275,8 @@ export default function CouplesCalendar() {
       toast.success(t.eventUpdated);
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update event');
+      console.error('Error updating event:', error);
+      toast.error(t.updateFailed);
     }
   });
 
@@ -257,7 +291,8 @@ export default function CouplesCalendar() {
       toast.success(t.eventDeleted);
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to delete event');
+      console.error('Error deleting event:', error);
+      toast.error(t.deleteFailed);
     }
   });
 
@@ -267,17 +302,17 @@ export default function CouplesCalendar() {
     
     // Validate required fields
     if (!eventData.title || !eventData.title.trim()) {
-      toast.error('Please enter an event title');
+      toast.error(t.titleRequired);
       return;
     }
     
     if (!eventData.event_date) {
-      toast.error('Please select a date');
+      toast.error(t.dateRequired);
       return;
     }
     
     if (!user?.id) {
-      toast.error('You must be logged in to create events');
+      toast.error(t.authRequired);
       console.error('❌ No user ID available');
       return;
     }
@@ -297,7 +332,7 @@ export default function CouplesCalendar() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
+    if (window.confirm(t.deleteConfirm)) {
       deleteMutation.mutate(id);
     }
   };

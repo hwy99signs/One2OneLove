@@ -831,7 +831,6 @@ export default function LoveNotes() {
       return await listSentLoveNotes();
     },
     enabled: !!currentUser?.id,
-    initialData: [],
     staleTime: 60 * 1000,
   });
 

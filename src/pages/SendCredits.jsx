@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, AlertCircle, CheckCircle2, CreditCard, Heart, Loader2, PlusCircle, ShieldCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useLanguage } from '@/Layout';
 
 const COPY = {
   en: {
@@ -22,20 +23,26 @@ const COPY = {
     none: 'No extra-send purchases yet.',
     purchased: 'sends purchased',
     unavailable: 'Your balance could not be loaded right now. The purchase options are still available; sign in again if checkout asks you to.',
+    loadFailed: 'Unable to load your send balance right now.',
+    signInAgain: 'Please sign in again before purchasing extra sends.',
+    checkoutFailed: 'Unable to open secure checkout. Please try again.',
+    rateInfo: '2 sends per $1 · credits do not expire while your account remains active.',
   },
   es: {
-    title: 'Obtén Más Envíos de Notas de Amor', subtitle: 'Recarga envíos SMS extra cuando quieras. Permanecen en tu cuenta hasta que los uses.', balance: 'Envíos extra disponibles', choose: 'Elige un monto', custom: 'Otro monto', customHint: 'Ingresa un monto entero entre $5 y $100.', sends: 'envíos extra', buy: 'Continuar al pago seguro', processing: 'Abriendo pago seguro…', success: 'Pago confirmado. Tus envíos extra fueron añadidos.', canceled: 'Pago cancelado. No se realizó ningún cargo.', secure: 'El pago se completa de forma segura en Stripe. Comprar envíos extra no cambia tu plan mensual.', back: 'Volver a Notas de Amor', recent: 'Recargas recientes', none: 'Aún no hay compras de envíos extra.', purchased: 'envíos comprados', unavailable: 'No se pudo cargar tu saldo en este momento. Las opciones de compra siguen disponibles; vuelve a iniciar sesión si el pago te lo solicita.'
+    title: 'Obtén Más Envíos de Notas de Amor', subtitle: 'Recarga envíos SMS extra cuando quieras. Permanecen en tu cuenta hasta que los uses.', balance: 'Envíos extra disponibles', choose: 'Elige un monto', custom: 'Otro monto', customHint: 'Ingresa un monto entero entre $5 y $100.', sends: 'envíos extra', buy: 'Continuar al pago seguro', processing: 'Abriendo pago seguro…', success: 'Pago confirmado. Tus envíos extra fueron añadidos.', canceled: 'Pago cancelado. No se realizó ningún cargo.', secure: 'El pago se completa de forma segura en Stripe. Comprar envíos extra no cambia tu plan mensual.', back: 'Volver a Notas de Amor', recent: 'Recargas recientes', none: 'Aún no hay compras de envíos extra.', purchased: 'envíos comprados', unavailable: 'No se pudo cargar tu saldo en este momento. Las opciones de compra siguen disponibles; vuelve a iniciar sesión si el pago te lo solicita.', loadFailed: 'No se pudo cargar tu saldo de envíos en este momento.', signInAgain: 'Vuelve a iniciar sesión antes de comprar envíos extra.', checkoutFailed: 'No se pudo abrir el pago seguro. Inténtalo de nuevo.', rateInfo: '2 envíos por $1 · los créditos no vencen mientras tu cuenta permanezca activa.'
   },
   fr: {
-    title: 'Obtenir Plus d’Envois de Notes d’Amour', subtitle: 'Rechargez des envois SMS supplémentaires à tout moment. Ils restent sur votre compte jusqu’à utilisation.', balance: 'Envois supplémentaires disponibles', choose: 'Choisissez un montant', custom: 'Autre montant', customHint: 'Saisissez un montant entier de 5 $ à 100 $.', sends: 'envois supplémentaires', buy: 'Continuer vers le paiement sécurisé', processing: 'Ouverture du paiement sécurisé…', success: 'Paiement confirmé. Vos envois supplémentaires ont été ajoutés.', canceled: 'Paiement annulé. Aucun débit n’a été effectué.', secure: 'Le paiement est effectué en toute sécurité sur Stripe. L’achat d’envois supplémentaires ne modifie pas votre forfait mensuel.', back: 'Retour aux Notes d’Amour', recent: 'Recharges récentes', none: 'Aucun achat d’envois supplémentaires pour le moment.', purchased: 'envois achetés', unavailable: 'Votre solde ne peut pas être chargé pour le moment. Les options d’achat restent disponibles; reconnectez-vous si le paiement le demande.'
+    title: 'Obtenir Plus d’Envois de Notes d’Amour', subtitle: 'Rechargez des envois SMS supplémentaires à tout moment. Ils restent sur votre compte jusqu’à utilisation.', balance: 'Envois supplémentaires disponibles', choose: 'Choisissez un montant', custom: 'Autre montant', customHint: 'Saisissez un montant entier de 5 $ à 100 $.', sends: 'envois supplémentaires', buy: 'Continuer vers le paiement sécurisé', processing: 'Ouverture du paiement sécurisé…', success: 'Paiement confirmé. Vos envois supplémentaires ont été ajoutés.', canceled: 'Paiement annulé. Aucun débit n’a été effectué.', secure: 'Le paiement est effectué en toute sécurité sur Stripe. L’achat d’envois supplémentaires ne modifie pas votre forfait mensuel.', back: 'Retour aux Notes d’Amour', recent: 'Recharges récentes', none: 'Aucun achat d’envois supplémentaires pour le moment.', purchased: 'envois achetés', unavailable: 'Votre solde ne peut pas être chargé pour le moment. Les options d’achat restent disponibles; reconnectez-vous si le paiement le demande.', loadFailed: 'Impossible de charger votre solde d’envois pour le moment.', signInAgain: 'Reconnectez-vous avant d’acheter des envois supplémentaires.', checkoutFailed: 'Impossible d’ouvrir le paiement sécurisé. Veuillez réessayer.', rateInfo: '2 envois pour 1 $ · les crédits n’expirent pas tant que votre compte reste actif.'
   },
   it: {
-    title: 'Ottieni Più Invii di Note d’Amore', subtitle: 'Ricarica invii SMS extra in qualsiasi momento. Restano nel tuo account finché non li usi.', balance: 'Invii extra disponibili', choose: 'Scegli un importo', custom: 'Altro importo', customHint: 'Inserisci un importo intero da $5 a $100.', sends: 'invii extra', buy: 'Continua al pagamento sicuro', processing: 'Apertura pagamento sicuro…', success: 'Pagamento confermato. Gli invii extra sono stati aggiunti.', canceled: 'Pagamento annullato. Non è stato effettuato alcun addebito.', secure: 'Il pagamento viene completato in modo sicuro su Stripe. L’acquisto di invii extra non modifica il tuo piano mensile.', back: 'Torna alle Note d’Amore', recent: 'Ricariche recenti', none: 'Nessun acquisto di invii extra.', purchased: 'invii acquistati', unavailable: 'Il saldo non può essere caricato in questo momento. Le opzioni di acquisto restano disponibili; accedi di nuovo se il checkout lo richiede.'
+    title: 'Ottieni Più Invii di Note d’Amore', subtitle: 'Ricarica invii SMS extra in qualsiasi momento. Restano nel tuo account finché non li usi.', balance: 'Invii extra disponibili', choose: 'Scegli un importo', custom: 'Altro importo', customHint: 'Inserisci un importo intero da $5 a $100.', sends: 'invii extra', buy: 'Continua al pagamento sicuro', processing: 'Apertura pagamento sicuro…', success: 'Pagamento confermato. Gli invii extra sono stati aggiunti.', canceled: 'Pagamento annullato. Non è stato effettuato alcun addebito.', secure: 'Il pagamento viene completato in modo sicuro su Stripe. L’acquisto di invii extra non modifica il tuo piano mensile.', back: 'Torna alle Note d’Amore', recent: 'Ricariche recenti', none: 'Nessun acquisto di invii extra.', purchased: 'invii acquistati', unavailable: 'Il saldo non può essere caricato in questo momento. Le opzioni di acquisto restano disponibili; accedi di nuovo se il checkout lo richiede.', loadFailed: 'Impossibile caricare il saldo degli invii in questo momento.', signInAgain: 'Accedi di nuovo prima di acquistare invii extra.', checkoutFailed: 'Impossibile aprire il pagamento sicuro. Riprova.', rateInfo: '2 invii per $1 · i crediti non scadono finché il tuo account rimane attivo.'
   },
   de: {
-    title: 'Mehr Liebesnachrichten-Sendungen', subtitle: 'Lade zusätzliche SMS-Sendungen jederzeit auf. Sie bleiben in deinem Konto, bis du sie nutzt.', balance: 'Zusätzliche Sendungen verfügbar', choose: 'Betrag auswählen', custom: 'Anderer Betrag', customHint: 'Gib einen vollen Dollarbetrag zwischen $5 und $100 ein.', sends: 'zusätzliche Sendungen', buy: 'Weiter zur sicheren Zahlung', processing: 'Sichere Zahlung wird geöffnet…', success: 'Zahlung bestätigt. Deine zusätzlichen Sendungen wurden hinzugefügt.', canceled: 'Zahlung abgebrochen. Es wurde nichts berechnet.', secure: 'Die Zahlung erfolgt sicher über Stripe. Zusätzliche Sendungen ändern deinen monatlichen Tarif nicht.', back: 'Zurück zu Liebesnachrichten', recent: 'Letzte Aufladungen', none: 'Noch keine Käufe zusätzlicher Sendungen.', purchased: 'Sendungen gekauft', unavailable: 'Dein Guthaben kann gerade nicht geladen werden. Die Kaufoptionen bleiben verfügbar; melde dich erneut an, falls der Checkout dies verlangt.'
+    title: 'Mehr Liebesnachrichten-Sendungen', subtitle: 'Lade zusätzliche SMS-Sendungen jederzeit auf. Sie bleiben in deinem Konto, bis du sie nutzt.', balance: 'Zusätzliche Sendungen verfügbar', choose: 'Betrag auswählen', custom: 'Anderer Betrag', customHint: 'Gib einen vollen Dollarbetrag zwischen $5 und $100 ein.', sends: 'zusätzliche Sendungen', buy: 'Weiter zur sicheren Zahlung', processing: 'Sichere Zahlung wird geöffnet…', success: 'Zahlung bestätigt. Deine zusätzlichen Sendungen wurden hinzugefügt.', canceled: 'Zahlung abgebrochen. Es wurde nichts berechnet.', secure: 'Die Zahlung erfolgt sicher über Stripe. Zusätzliche Sendungen ändern deinen monatlichen Tarif nicht.', back: 'Zurück zu Liebesnachrichten', recent: 'Letzte Aufladungen', none: 'Noch keine Käufe zusätzlicher Sendungen.', purchased: 'Sendungen gekauft', unavailable: 'Dein Guthaben kann gerade nicht geladen werden. Die Kaufoptionen bleiben verfügbar; melde dich erneut an, falls der Checkout dies verlangt.', loadFailed: 'Dein Sendeguthaben kann derzeit nicht geladen werden.', signInAgain: 'Bitte melde dich erneut an, bevor du zusätzliche Sendungen kaufst.', checkoutFailed: 'Die sichere Zahlung konnte nicht geöffnet werden. Bitte versuche es erneut.', rateInfo: '2 Sendungen pro $1 · Guthaben verfällt nicht, solange dein Konto aktiv bleibt.'
   },
 };
+
+const LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', de: 'de-DE' };
 
 async function parse(response) {
   const payload = await response.json().catch(() => null);
@@ -63,9 +70,7 @@ async function confirmCheckout(sessionId) {
 export default function SendCredits() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [currentLanguage] = useState(() => {
-    try { return window.localStorage.getItem('preferredLanguage') || 'en'; } catch (_) { return 'en'; }
-  });
+  const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
   const [wallet, setWallet] = useState(null);
   const [selected, setSelected] = useState(500);
@@ -117,7 +122,8 @@ export default function SendCredits() {
       } catch (error) {
         if (active) {
           setLoadError(true);
-          toast.error(error.message || 'Unable to load your send balance.');
+          console.error('Unable to load send balance:', error);
+          toast.error(t.loadFailed);
         }
       } finally {
         if (active) setLoading(false);
@@ -134,13 +140,14 @@ export default function SendCredits() {
     setWorking(true);
     try {
       const result = await startCheckout(chosenAmount);
-      if (!result?.url) throw new Error('Stripe checkout could not be opened.');
+      if (!result?.url) throw new Error(t.checkoutFailed);
       window.location.assign(result.url);
     } catch (error) {
       if (error.status === 401) {
-        toast.error('Please sign in again before purchasing extra sends.');
+        toast.error(t.signInAgain);
       } else {
-        toast.error(error.message || 'Unable to open checkout.');
+        console.error('Unable to open checkout:', error);
+        toast.error(t.checkoutFailed);
       }
       setWorking(false);
     }
@@ -201,7 +208,7 @@ export default function SendCredits() {
             <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2 font-bold text-emerald-900"><CheckCircle2 size={18}/>{chosenAmount ? `$${(chosenAmount/100).toFixed(0)} = ${chosenSends} ${t.sends}` : t.customHint}</div>
-                <p className="mt-1 text-xs text-emerald-800">2 sends per $1 · credits do not expire while your account remains active.</p>
+                <p className="mt-1 text-xs text-emerald-800">{t.rateInfo}</p>
               </div>
               <button onClick={checkout} disabled={!chosenAmount || working} className="inline-flex min-w-64 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-3 font-bold text-white shadow-sm transition hover:from-pink-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
                 {working ? <Loader2 size={18} className="animate-spin"/> : <CreditCard size={18}/>} {working ? t.processing : t.buy}
@@ -219,7 +226,7 @@ export default function SendCredits() {
           <div className="mt-4 space-y-2">
             {(wallet?.purchases || []).length ? wallet.purchases.map((item,index) => (
               <div key={`${item.created_at}-${index}`} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                <div><div className="font-semibold text-slate-800">+{item.sends_purchased} {t.purchased}</div><div className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</div></div>
+                <div><div className="font-semibold text-slate-800">+{item.sends_purchased} {t.purchased}</div><div className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString(LOCALES[currentLanguage] || LOCALES.en)}</div></div>
                 <div className="font-bold text-slate-900">${(Number(item.amount_cents||0)/100).toFixed(2)}</div>
               </div>
             )) : <p className="text-sm text-slate-500">{t.none}</p>}

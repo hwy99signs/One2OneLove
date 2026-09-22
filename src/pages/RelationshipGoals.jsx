@@ -28,6 +28,10 @@ const translations = {
     goalAdded: "Goal added successfully! 💕",
     goalUpdated: "Goal updated successfully! ✨",
     goalDeleted: "Goal deleted",
+    goalCreateFailed: "Couldn\'t create the goal. Please try again.",
+    goalUpdateFailed: "Couldn\'t update the goal. Please try again.",
+    goalDeleteFailed: "Couldn\'t delete the goal. Please try again.",
+    deleteConfirm: "Are you sure you want to delete this goal?",
     backToSupport: "Back to Support",
     stats: {
       totalGoals: "Total Goals",
@@ -48,6 +52,10 @@ const translations = {
     goalAdded: "¡Meta agregada exitosamente! 💕",
     goalUpdated: "¡Meta actualizada exitosamente! ✨",
     goalDeleted: "Meta eliminada",
+    goalCreateFailed: "No se pudo crear la meta. Inténtalo de nuevo.",
+    goalUpdateFailed: "No se pudo actualizar la meta. Inténtalo de nuevo.",
+    goalDeleteFailed: "No se pudo eliminar la meta. Inténtalo de nuevo.",
+    deleteConfirm: "¿Seguro que quieres eliminar esta meta?",
     backToSupport: "Volver al Soporte",
     stats: {
       totalGoals: "Metas Totales",
@@ -68,6 +76,10 @@ const translations = {
     goalAdded: "Objectif ajouté avec succès! 💕",
     goalUpdated: "Objectif mis à jour avec succès! ✨",
     goalDeleted: "Objectif supprimé",
+    goalCreateFailed: "Impossible de créer l’objectif. Veuillez réessayer.",
+    goalUpdateFailed: "Impossible de mettre à jour l’objectif. Veuillez réessayer.",
+    goalDeleteFailed: "Impossible de supprimer l’objectif. Veuillez réessayer.",
+    deleteConfirm: "Voulez-vous vraiment supprimer cet objectif ?",
     backToSupport: "Retour au Support",
     stats: {
       totalGoals: "Objectifs Totaux",
@@ -88,6 +100,10 @@ const translations = {
     goalAdded: "Obiettivo aggiunto con successo! 💕",
     goalUpdated: "Obiettivo aggiornato con successo! ✨",
     goalDeleted: "Obiettivo eliminato",
+    goalCreateFailed: "Impossibile creare l’obiettivo. Riprova.",
+    goalUpdateFailed: "Impossibile aggiornare l’obiettivo. Riprova.",
+    goalDeleteFailed: "Impossibile eliminare l’obiettivo. Riprova.",
+    deleteConfirm: "Vuoi davvero eliminare questo obiettivo?",
     backToSupport: "Torna al Supporto",
     stats: {
       totalGoals: "Obiettivi Totali",
@@ -108,6 +124,10 @@ const translations = {
     goalAdded: "Ziel erfolgreich hinzugefügt! 💕",
     goalUpdated: "Ziel erfolgreich aktualisiert! ✨",
     goalDeleted: "Ziel gelöscht",
+    goalCreateFailed: "Das Ziel konnte nicht erstellt werden. Bitte versuche es erneut.",
+    goalUpdateFailed: "Das Ziel konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+    goalDeleteFailed: "Das Ziel konnte nicht gelöscht werden. Bitte versuche es erneut.",
+    deleteConfirm: "Möchtest du dieses Ziel wirklich löschen?",
     backToSupport: "Zurück zum Support",
     stats: {
       totalGoals: "Ziele Gesamt",
@@ -129,7 +149,6 @@ export default function RelationshipGoals() {
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['relationship-goals'],
     queryFn: () => goalsService.getGoals('-created_at'),
-    initialData: [],
   });
 
   const createMutation = useMutation({
@@ -141,7 +160,8 @@ export default function RelationshipGoals() {
       toast.success(t.goalAdded);
     },
     onError: (error) => {
-      toast.error('Failed to create goal: ' + error.message);
+      console.error('Failed to create goal:', error);
+      toast.error(t.goalCreateFailed);
     }
   });
 
@@ -155,7 +175,8 @@ export default function RelationshipGoals() {
       toast.success(t.goalUpdated);
     },
     onError: (error) => {
-      toast.error('Failed to update goal: ' + error.message);
+      console.error('Failed to update goal:', error);
+      toast.error(t.goalUpdateFailed);
     }
   });
 
@@ -166,7 +187,8 @@ export default function RelationshipGoals() {
       toast.success(t.goalDeleted);
     },
     onError: (error) => {
-      toast.error('Failed to delete goal: ' + error.message);
+      console.error('Failed to delete goal:', error);
+      toast.error(t.goalDeleteFailed);
     }
   });
 
@@ -184,7 +206,7 @@ export default function RelationshipGoals() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this goal?')) {
+    if (window.confirm(t.deleteConfirm)) {
       deleteMutation.mutate(id);
     }
   };

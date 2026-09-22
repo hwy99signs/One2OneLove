@@ -14,7 +14,8 @@ const translations = {
     notesPlaceholder: "Add any updates or reflections...",
     markComplete: "Mark as Complete",
     cancel: "Cancel",
-    update: "Update"
+    update: "Update",
+    close: "Close progress update"
   },
   es: {
     updateProgress: "Actualizar Progreso",
@@ -24,7 +25,8 @@ const translations = {
     notesPlaceholder: "Agrega actualizaciones o reflexiones...",
     markComplete: "Marcar como Completado",
     cancel: "Cancelar",
-    update: "Actualizar"
+    update: "Actualizar",
+    close: "Cerrar actualización de progreso"
   },
   fr: {
     updateProgress: "Mettre à Jour le Progrès",
@@ -34,7 +36,8 @@ const translations = {
     notesPlaceholder: "Ajoutez des mises à jour ou réflexions...",
     markComplete: "Marquer comme Terminé",
     cancel: "Annuler",
-    update: "Mettre à Jour"
+    update: "Mettre à Jour",
+    close: "Fermer la mise à jour du progrès"
   },
   it: {
     updateProgress: "Aggiorna Progresso",
@@ -44,7 +47,8 @@ const translations = {
     notesPlaceholder: "Aggiungi aggiornamenti o riflessioni...",
     markComplete: "Segna come Completato",
     cancel: "Annulla",
-    update: "Aggiorna"
+    update: "Aggiorna",
+    close: "Chiudi aggiornamento progresso"
   },
   de: {
     updateProgress: "Fortschritt Aktualisieren",
@@ -54,7 +58,8 @@ const translations = {
     notesPlaceholder: "Fügen Sie Updates oder Reflexionen hinzu...",
     markComplete: "Als Abgeschlossen Markieren",
     cancel: "Abbrechen",
-    update: "Aktualisieren"
+    update: "Aktualisieren",
+    close: "Fortschrittsaktualisierung schließen"
   }
 };
 
@@ -87,11 +92,14 @@ export default function ProgressUpdateModal({ goal, onUpdate, onCancel, isLoadin
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="progress-update-title"
         className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">{t.updateProgress}</h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+          <h2 id="progress-update-title" className="text-xl font-bold text-gray-900">{t.updateProgress}</h2>
+          <button type="button" onClick={onCancel} aria-label={t.close} className="text-gray-400 hover:text-gray-600">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -107,6 +115,7 @@ export default function ProgressUpdateModal({ goal, onUpdate, onCancel, isLoadin
               max="100"
               value={progress}
               onChange={(e) => setProgress(parseInt(e.target.value))}
+              aria-label={t.newProgress}
               className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer"
               style={{
                 background: `linear-gradient(to right, rgb(236, 72, 153) 0%, rgb(147, 51, 234) ${progress}%, rgb(229, 231, 235) ${progress}%, rgb(229, 231, 235) 100%)`

@@ -32,6 +32,8 @@ const translations = {
     biweekly: "Every 2 Weeks",
     cancel: "Cancel",
     save: "Save Goal",
+    close: "Close goal form",
+    removeStep: "Remove action step",
     categories: {
       communication: "Communication",
       quality_time: "Quality Time",
@@ -69,6 +71,8 @@ const translations = {
     biweekly: "Cada 2 Semanas",
     cancel: "Cancelar",
     save: "Guardar Meta",
+    close: "Cerrar formulario de meta",
+    removeStep: "Eliminar paso de acción",
     categories: {
       communication: "Comunicación",
       quality_time: "Tiempo de Calidad",
@@ -106,6 +110,8 @@ const translations = {
     biweekly: "Toutes les 2 Semaines",
     cancel: "Annuler",
     save: "Sauvegarder Objectif",
+    close: "Fermer le formulaire d’objectif",
+    removeStep: "Supprimer l’étape d’action",
     categories: {
       communication: "Communication",
       quality_time: "Temps de Qualité",
@@ -143,6 +149,8 @@ const translations = {
     biweekly: "Ogni 2 Settimane",
     cancel: "Annulla",
     save: "Salva Obiettivo",
+    close: "Chiudi il modulo dell’obiettivo",
+    removeStep: "Rimuovi passaggio d’azione",
     categories: {
       communication: "Comunicazione",
       quality_time: "Tempo di Qualità",
@@ -180,6 +188,8 @@ const translations = {
     biweekly: "Alle 2 Wochen",
     cancel: "Abbrechen",
     save: "Ziel Speichern",
+    close: "Zielformular schließen",
+    removeStep: "Aktionsschritt entfernen",
     categories: {
       communication: "Kommunikation",
       quality_time: "Qualitätszeit",
@@ -251,15 +261,20 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
         initial={{ y: 20 }}
         animate={{ y: 0 }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="goal-form-title"
         className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-3xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 id="goal-form-title" className="text-2xl font-bold text-gray-900">
               {goal ? t.editGoal : t.addGoal}
             </h2>
             <button
+              type="button"
               onClick={onCancel}
+              aria-label={t.close}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-6 h-6" />
@@ -360,6 +375,7 @@ export default function GoalForm({ goal, onSubmit, onCancel, isLoading }) {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveStep(index)}
+                      aria-label={`${t.removeStep} ${index + 1}`}
                       className="text-red-600 hover:text-red-700"
                     >
                       <Trash2 className="w-4 h-4" />

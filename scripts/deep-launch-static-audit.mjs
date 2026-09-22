@@ -88,6 +88,7 @@ const unsafeHits = [];
 const hrefHashHits = [];
 const httpHits = [];
 const importMetaEnv = new Set();
+const queryInitialDataHits = [];
 
 for (const file of reachableFiles) {
   const code = read(file);
@@ -103,6 +104,7 @@ for (const file of reachableFiles) {
   if (/\b123456\b/.test(code) && /verif|code|otp/i.test(code)) testCodeHits.push(rp);
   if (/href\s*=\s*["']#["']/.test(code)) hrefHashHits.push(rp);
   if (/http:\/\//i.test(code)) httpHits.push(rp);
+  if (/\binitialData\s*:/.test(code) && /\buseQuery\s*\(/.test(code)) queryInitialDataHits.push(rp);
   if (/Available in 6 Languages|Disponible en 6 idiomas|Disponible en 6 langues|Disponibile in 6 lingue|Verfügbar in 6 Sprachen/i.test(code) && !rp.endsWith('i18nFallbackLocalization.js')) {
     activeCritical.push({ file: rp, issue: 'Stale six-language launch copy is reachable.' });
   }
@@ -199,6 +201,7 @@ if (localizationGaps.length) critical.push({ issue: 'Core launch localization ma
 if (staleStack.length) critical.push({ issue: 'Reachable launch code contains legacy stack references', details: Array.from(new Set(staleStack)) });
 if (testCodeHits.length) critical.push({ issue: 'Reachable launch code contains a hard-coded verification/test code', details: Array.from(new Set(testCodeHits)) });
 if (unsafeHits.length) critical.push({ issue: 'Reachable launch code contains unsafe dynamic execution/HTML primitive', details: Array.from(new Set(unsafeHits)) });
+if (queryInitialDataHits.length) critical.push({ issue: 'Reachable server queries seed initialData and can suppress first-load fetching under the launch cache policy', details: Array.from(new Set(queryInitialDataHits)) });
 critical.push(...activeCritical);
 
 const report = {
@@ -212,6 +215,7 @@ const report = {
     literalApiCalls: literalApiCalls.length,
     activeLanguages: uniqueActiveLangs,
     importMetaEnv: Array.from(importMetaEnv).sort(),
+    queryInitialDataFiles: Array.from(new Set(queryInitialDataHits)).sort(),
     criticalCount: critical.length,
     warningCount: activeWarnings.length + hrefHashHits.length + httpHits.length
   },

@@ -814,7 +814,6 @@ function ActiveGoalsCard() {
     },
     enabled: !!user?.id,
     refetchOnWindowFocus: true,
-    initialData: []
   });
 
   // Filter for active goals (in_progress status)

@@ -169,7 +169,6 @@ export default function RelationshipMilestones() {
   const { data: milestones = [], isLoading } = useQuery({
     queryKey: ['milestones'],
     queryFn: () => getMilestones('-date'),
-    initialData: [],
   });
 
   const createMutation = useMutation({
@@ -234,7 +233,7 @@ export default function RelationshipMilestones() {
   const getDaysUntil = (date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const milestoneDate = new Date(date);
+    const milestoneDate = new Date(`${date}T00:00:00`);
     milestoneDate.setHours(0, 0, 0, 0);
     const diffTime = milestoneDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -243,7 +242,7 @@ export default function RelationshipMilestones() {
 
   const getNextAnniversary = (originalDate) => {
     const today = new Date();
-    const original = new Date(originalDate);
+    const original = new Date(`${originalDate}T00:00:00`);
     const thisYear = new Date(today.getFullYear(), original.getMonth(), original.getDate());
     
     if (thisYear < today) {
@@ -268,7 +267,7 @@ export default function RelationshipMilestones() {
 
   const pastMilestones = milestones
     .filter(m => !m.is_recurring && getDaysUntil(m.date) < 0)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => new Date(`${b.date}T00:00:00`) - new Date(`${a.date}T00:00:00`));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">

@@ -156,7 +156,6 @@ export default function MemoryLane() {
     queryKey: ['memories', memoryUserKey],
     queryFn: () => listMemories(memoryUserKey),
     enabled: true,
-    initialData: [],
   });
 
   const createMemoryMutation = useMutation({
