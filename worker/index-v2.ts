@@ -34,6 +34,7 @@ import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
+import { handlePhoneVerificationRequest } from './phone-verification';
 
 export default {
   async fetch(request, env, ctx) {
@@ -46,6 +47,11 @@ export default {
 
     if (url.pathname === '/api/launch-readiness') {
       const response = await handleLaunchReadinessRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/phone-verification')) {
+      const response = await handlePhoneVerificationRequest(request, env, url);
       if (response) return response;
     }
 

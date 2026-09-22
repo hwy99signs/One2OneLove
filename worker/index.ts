@@ -8,6 +8,10 @@ const JSON_HEADERS = {
   'x-content-type-options': 'nosniff',
 };
 
+function phoneProviderConfigured(env) {
+  return Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_VERIFY_SERVICE_SID);
+}
+
 const PROFILE_FIELDS = new Set([
   'name', 'relationship_status', 'anniversary_date', 'partner_email', 'avatar_url',
   'bio', 'location', 'interests', 'love_language', 'date_frequency',
@@ -144,27 +148,21 @@ async function profileRoute(request, env, auth) {
   if (request.method === 'GET') {
     return withDb(env, async (db) => {
       const result = await db.query(
-        `SELECT id,email,name,user_type,relationship_status,anniversary_date,partner_email,
-                avatar_url,bio,is_verified,is_active,location,interests,love_language,
-                date_frequency,communication_style,conflict_resolution,partner_name,
-                profile_completion_percentage,profile_completed_fields,profile_total_fields,
-                subscription_plan,subscription_price,subscription_status,stripe_subscription_id,
-                subscription_current_period_start,subscription_current_period_end,
-                cancel_at_period_end,created_at,updated_at,
-                COALESCE((
-                  SELECT (to_jsonb(au)->>'phoneNumberVerified')::boolean
-                  FROM neon_auth."user" au WHERE au.id=$1::uuid
-                ),false) AS phone_number_verified,
-                (
-                  SELECT NULLIF(to_jsonb(au)->>'phoneNumber','')
-                  FROM neon_auth."user" au WHERE au.id=$1::uuid
-                ) AS phone_number,
-                COALESCE((
-                  SELECT (pc.plugin_configs->'phoneNumber'->>'enabled')::boolean
-                  FROM neon_auth.project_config pc WHERE pc.name='One2OneLove' LIMIT 1
-                ),false) AS phone_verification_required
-         FROM public.users WHERE id=$1::uuid`,
-        [auth.user.id],
+        `SELECT u.id,u.email,u.name,u.user_type,u.relationship_status,u.anniversary_date,u.partner_email,
+                u.avatar_url,u.bio,u.is_verified,u.is_active,u.location,u.interests,u.love_language,
+                u.date_frequency,u.communication_style,u.conflict_resolution,u.partner_name,
+                u.profile_completion_percentage,u.profile_completed_fields,u.profile_total_fields,
+                u.subscription_plan,u.subscription_price,u.subscription_status,u.stripe_subscription_id,
+                u.subscription_current_period_start,u.subscription_current_period_end,
+                u.cancel_at_period_end,u.created_at,u.updated_at,
+                COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_number_verified,
+                NULLIF(to_jsonb(u)->>'phone_number','') AS phone_number,
+                ($2::boolean AND
+                  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number') AND
+                  EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number_verified')
+                ) AS phone_verification_required
+         FROM public.users u WHERE u.id=$1::uuid`,
+        [auth.user.id, phoneProviderConfigured(env)],
       );
       return json({ ok: true, profile: result.rows[0] || null });
     });

@@ -31,7 +31,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         COALESCE((pc.email_and_password->>'sendVerificationEmailOnSignUp')::boolean,false) AS email_on_signup,
         COALESCE(pc.email_and_password->>'emailVerificationMethod','') AS email_method,
         COALESCE(pc.email_provider->>'type','') AS email_provider_type,
-        COALESCE((pc.plugin_configs->'phoneNumber'->>'enabled')::boolean,false) AS phone_enabled,
+        (
+          EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number') AND
+          EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number_verified')
+        ) AS phone_schema_ready,
         (
           SELECT count(*)::int FROM public.users
           WHERE stripe_subscription_id IS NULL
@@ -60,7 +63,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
 
     const emailVerificationReady = Boolean(row.consents_ready && row.email_required && row.email_on_signup && row.email_method);
     const emailDeliveryReady = Boolean(row.email_provider_type && row.email_provider_type !== 'shared');
-    const phoneVerificationReady = row.phone_enabled === true;
+    const phoneVerificationProviderConfigured = Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_VERIFY_SERVICE_SID);
+    const phoneVerificationSchemaReady = row.phone_schema_ready === true;
+    const phoneVerificationReady = phoneVerificationProviderConfigured && phoneVerificationSchemaReady;
     const identityReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
 
     const billingDefaultsReady = Boolean(row.basic_default_ready && row.price_default_ready && row.status_default_ready);
@@ -103,6 +108,8 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           emailDeliveryReady,
           emailProviderMode: row.email_provider_type || null,
           phoneVerificationReady,
+          phoneVerificationProviderConfigured,
+          phoneVerificationSchemaReady,
           requiredIdentityReady: identityReady,
         },
         billing: {
