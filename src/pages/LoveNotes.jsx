@@ -775,6 +775,11 @@ export default function LoveNotes() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+  const todayLocalDate = useMemo(() => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 10);
+  }, []);
   const [showScheduledNotes, setShowScheduledNotes] = useState(false);
   const [showAIPersonalization, setShowAIPersonalization] = useState(false);
   const [showRandomCategoryPicker, setShowRandomCategoryPicker] = useState(false);
@@ -1792,7 +1797,7 @@ export default function LoveNotes() {
                             type="date"
                             value={scheduleDate}
                             onChange={(e) => setScheduleDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
+                            min={todayLocalDate}
                             className="h-10"
                           />
                         </div>
