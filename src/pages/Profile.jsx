@@ -76,8 +76,8 @@ const translations = {
         engaged: "Engaged",
         married: "Married"
       },
-      profileComingSoon: "Profile coming soon",
-      profileComingSoonDesc: "Profile management is currently available for regular members only. Please use your dedicated portal to update your professional details.",
+      profileComingSoon: "Professional Profile",
+      profileComingSoonDesc: "Professional profile details are managed through your dedicated professional portal.",
       backToHome: "Back to Home",
       pleaseSignIn: "Please sign in to view your profile",
       signIn: "Sign In",
@@ -178,7 +178,7 @@ const translations = {
         engaged: "Comprometido/a",
         married: "Casado/a"
       },
-      profileComingSoon: "Perfil próximamente",
+      profileComingSoon: "Perfil Profesional",
       profileComingSoonDesc: "La gestión de perfiles está disponible actualmente solo para miembros regulares. Por favor, use su portal dedicado para actualizar sus detalles profesionales.",
       backToHome: "Volver al Inicio",
       pleaseSignIn: "Por favor, inicie sesión para ver su perfil",
@@ -382,7 +382,7 @@ const translations = {
         engaged: "Fidanzato/a",
         married: "Sposato/a"
       },
-      profileComingSoon: "Profilo in arrivo",
+      profileComingSoon: "Profilo Professionale",
       profileComingSoonDesc: "La gestione del profilo è attualmente disponibile solo per i membri regolari. Si prega di utilizzare il portale dedicato per aggiornare i dettagli professionali.",
       backToHome: "Torna alla Home",
       pleaseSignIn: "Accedi per visualizzare il tuo profilo",
@@ -484,7 +484,7 @@ const translations = {
         engaged: "Verlobt",
         married: "Verheiratet"
       },
-      profileComingSoon: "Profil kommt bald",
+      profileComingSoon: "Professionelles Profil",
       profileComingSoonDesc: "Die Profilverwaltung ist derzeit nur für reguläre Mitglieder verfügbar. Bitte verwenden Sie Ihr dediziertes Portal, um Ihre beruflichen Details zu aktualisieren.",
       backToHome: "Zurück zur Startseite",
       pleaseSignIn: "Bitte melden Sie sich an, um Ihr Profil anzuzeigen",
