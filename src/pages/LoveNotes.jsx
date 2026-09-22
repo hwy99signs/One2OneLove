@@ -25,6 +25,10 @@ const translations = {
     subtitle: "Choose from heartfelt love notes to express your feelings perfectly",
     back: "Back",
     searchPlaceholder: "Search love notes by title, content, or tags...",
+    clearSearch: "Clear search",
+    closePersonalization: "Close personalization",
+    closeNotePreview: "Close note preview",
+    closeSendDialog: "Close send love note",
     randomNote: "Random Note",
     chooseNoteCategory: "Choose a Note Category",
     chooseNoteCategoryDesc: "Select a category first. A random note will then be generated from that category.",
@@ -128,6 +132,10 @@ const translations = {
     subtitle: "Elige entre sinceras notas de amor para expresar tus sentimientos perfectamente",
     back: "Volver",
     searchPlaceholder: "Buscar notas de amor por título, contenido o etiquetas...",
+    clearSearch: "Borrar búsqueda",
+    closePersonalization: "Cerrar personalización",
+    closeNotePreview: "Cerrar vista previa de la nota",
+    closeSendDialog: "Cerrar envío de nota de amor",
     randomNote: "Nota Aleatoria",
     chooseNoteCategory: "Elige una Categoría de Nota",
     chooseNoteCategoryDesc: "Primero selecciona una categoría. Luego se generará una nota aleatoria de esa categoría.",
@@ -231,6 +239,10 @@ const translations = {
     subtitle: "Choisissez parmi des notes d'amour sincères pour exprimer vos sentiments parfaitement",
     back: "Retour",
     searchPlaceholder: "Rechercher des notes d'amour par titre, contenu ou tags...",
+    clearSearch: "Effacer la recherche",
+    closePersonalization: "Fermer la personnalisation",
+    closeNotePreview: "Fermer l’aperçu de la note",
+    closeSendDialog: "Fermer l’envoi de la note d’amour",
     randomNote: "Note Aléatoire",
     chooseNoteCategory: "Choisissez une Catégorie de Note",
     chooseNoteCategoryDesc: "Sélectionnez d'abord une catégorie. Une note aléatoire sera ensuite générée à partir de cette catégorie.",
@@ -334,6 +346,10 @@ const translations = {
     subtitle: "Scegli tra sincere note d'amore per esprimere i tuoi sentimenti perfettamente",
     back: "Indietro",
     searchPlaceholder: "Cerca note d'amore per titolo, contenuto o tag...",
+    clearSearch: "Cancella ricerca",
+    closePersonalization: "Chiudi personalizzazione",
+    closeNotePreview: "Chiudi anteprima della nota",
+    closeSendDialog: "Chiudi invio della nota d’amore",
     randomNote: "Nota Casuale",
     chooseNoteCategory: "Scegli una Categoria di Nota",
     chooseNoteCategoryDesc: "Seleziona prima una categoria. Verrà quindi generata una nota casuale da quella categoria.",
@@ -437,6 +453,10 @@ const translations = {
     subtitle: "Wählen Sie aus herzlichen Liebesbotschaften, um Ihre Gefühle perfekt auszudrücken",
     back: "Zurück",
     searchPlaceholder: "Liebesbotschaften nach Titel, Inhalt oder Tags suchen...",
+    clearSearch: "Suche löschen",
+    closePersonalization: "Personalisierung schließen",
+    closeNotePreview: "Vorschau der Liebesbotschaft schließen",
+    closeSendDialog: "Versand der Liebesbotschaft schließen",
     randomNote: "Zufällige Botschaft",
     chooseNoteCategory: "Wähle eine Nachrichtenkategorie",
     chooseNoteCategoryDesc: "Wähle zuerst eine Kategorie. Danach wird eine zufällige Nachricht aus dieser Kategorie erstellt.",
@@ -1187,7 +1207,9 @@ export default function LoveNotes() {
                 {t.title}
               </h1>
               <Button
+                type="button"
                 onClick={() => setShowPersonalization(true)}
+                aria-label={t.personalizeNotes}
                 variant="outline"
                 size="icon"
                 className="border-pink-300 hover:bg-pink-50"
@@ -1255,7 +1277,9 @@ export default function LoveNotes() {
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
+                aria-label={t.clearSearch}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-5 h-5" />
@@ -1547,17 +1571,22 @@ export default function LoveNotes() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="love-notes-personalization-title"
               className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
             >
               <button
+                type="button"
                 onClick={() => setShowPersonalization(false)}
+                aria-label={t.closePersonalization}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-6 h-6" />
               </button>
 
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 mb-2 font-dancing">
+                <h2 id="love-notes-personalization-title" className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 mb-2 font-dancing">
                   {t.personalizeNotes}
                 </h2>
                 <p className="text-gray-600">
@@ -1640,17 +1669,22 @@ export default function LoveNotes() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="love-note-preview-title"
               className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative"
             >
               <button
+                type="button"
                 onClick={() => setSelectedNote(null)}
+                aria-label={t.closeNotePreview}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-6 h-6" />
               </button>
 
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 mb-4 font-dancing">
+                <h2 id="love-note-preview-title" className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 mb-4 font-dancing">
                   {selectedNote.title}
                 </h2>
                 <p className="text-lg text-gray-700 leading-relaxed">
@@ -1704,16 +1738,21 @@ export default function LoveNotes() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="love-note-send-dialog-title"
               className="bg-white rounded-3xl shadow-2xl max-w-md w-full relative overflow-hidden"
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex items-center gap-3">
                   <Heart className="w-6 h-6 text-pink-500" />
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 id="love-note-send-dialog-title" className="text-xl font-bold text-gray-900">
                     {t.sendLoveNote}
                   </h2>
                 </div>
                 <button
+                  type="button"
+                  aria-label={t.closeSendDialog}
                   onClick={() => {
                     setSendModalNote(null);
                     setRecipientPhone('');
@@ -1740,11 +1779,12 @@ export default function LoveNotes() {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="love-note-recipient-phone" className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                     <Phone className="w-4 h-4" />
                     {t.recipientPhone}
                   </label>
                   <Input
+                    id="love-note-recipient-phone"
                     type="tel"
                     placeholder={t.recipientPhonePlaceholder}
                     value={recipientPhone}
@@ -1790,10 +1830,11 @@ export default function LoveNotes() {
                         className="space-y-3"
                       >
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label htmlFor="love-note-schedule-date" className="block text-xs font-medium text-gray-700 mb-1">
                             {t.scheduleDate}
                           </label>
                           <Input
+                            id="love-note-schedule-date"
                             type="date"
                             value={scheduleDate}
                             onChange={(e) => setScheduleDate(e.target.value)}
@@ -1802,10 +1843,11 @@ export default function LoveNotes() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label htmlFor="love-note-schedule-time" className="block text-xs font-medium text-gray-700 mb-1">
                             {t.scheduleTime}
                           </label>
                           <Input
+                            id="love-note-schedule-time"
                             type="time"
                             value={scheduleTime}
                             onChange={(e) => setScheduleTime(e.target.value)}
@@ -1831,9 +1873,9 @@ export default function LoveNotes() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <p className="block text-sm font-semibold text-gray-700 mb-3">
                     {t.shareViaSocial}
-                  </label>
+                  </p>
                   <div className="grid grid-cols-3 gap-3">
                     <button
                       onClick={() => handleSendVia(sendModalNote, 'facebook')}

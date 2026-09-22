@@ -196,10 +196,10 @@ export default function SendCredits() {
 
             {selected === 'other' && (
               <div className="mt-4 max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <label className="text-sm font-semibold text-slate-700">{t.custom}</label>
+                <label htmlFor="send-credits-custom-amount" className="text-sm font-semibold text-slate-700">{t.custom}</label>
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-xl font-bold text-slate-500">$</span>
-                  <input type="number" min="5" max="100" step="1" value={other} onChange={e=>setOther(e.target.value)} placeholder="20" className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100"/>
+                  <input id="send-credits-custom-amount" type="number" min="5" max="100" step="1" value={other} onChange={e=>setOther(e.target.value)} placeholder="20" className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100"/>
                 </div>
                 <p className="mt-2 text-xs text-slate-500">{t.customHint}</p>
               </div>
@@ -210,7 +210,7 @@ export default function SendCredits() {
                 <div className="flex items-center gap-2 font-bold text-emerald-900"><CheckCircle2 size={18}/>{chosenAmount ? `$${(chosenAmount/100).toFixed(0)} = ${chosenSends} ${t.sends}` : t.customHint}</div>
                 <p className="mt-1 text-xs text-emerald-800">{t.rateInfo}</p>
               </div>
-              <button onClick={checkout} disabled={!chosenAmount || working} className="inline-flex min-w-64 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-3 font-bold text-white shadow-sm transition hover:from-pink-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={checkout} disabled={!chosenAmount || working} className="inline-flex min-w-64 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-3 font-bold text-white shadow-sm transition hover:from-pink-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
                 {working ? <Loader2 size={18} className="animate-spin"/> : <CreditCard size={18}/>} {working ? t.processing : t.buy}
               </button>
             </div>

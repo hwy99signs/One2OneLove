@@ -747,6 +747,169 @@ try {
     }
   }
 
+
+  {
+    const loveNotesAuditCopy = {
+      en:{send:'Send',sendLoveNote:'Send Love Note',phone:"Recipient's Phone Number",scheduleLater:'Schedule for Later',date:'Schedule Date',time:'Schedule Time',close:'Close send love note',personalize:'Personalize Your Notes',closePersonalization:'Close personalization',closePreview:'Close note preview',search:'Search love notes by title, content, or tags...',clear:'Clear search'},
+      es:{send:'Enviar',sendLoveNote:'Enviar Nota de Amor',phone:'Número de Teléfono del Destinatario',scheduleLater:'Programar para Después',date:'Fecha de Programación',time:'Hora de Programación',close:'Cerrar envío de nota de amor',personalize:'Personaliza Tus Notas',closePersonalization:'Cerrar personalización',closePreview:'Cerrar vista previa de la nota',search:'Buscar notas de amor por título, contenido o etiquetas...',clear:'Borrar búsqueda'},
+      fr:{send:'Envoyer',sendLoveNote:"Envoyer Note d'Amour",phone:'Numéro de Téléphone du Destinataire',scheduleLater:'Programmer pour Plus Tard',date:'Date de Programmation',time:'Heure de Programmation',close:"Fermer l’envoi de la note d’amour",personalize:'Personnalisez Vos Notes',closePersonalization:'Fermer la personnalisation',closePreview:"Fermer l’aperçu de la note",search:"Rechercher des notes d'amour par titre, contenu ou tags...",clear:'Effacer la recherche'},
+      it:{send:'Invia',sendLoveNote:"Invia Nota d'Amore",phone:'Numero di Telefono del Destinatario',scheduleLater:'Programma per Dopo',date:'Data di Programmazione',time:'Ora di Programmazione',close:"Chiudi invio della nota d’amore",personalize:'Personalizza le Tue Note',closePersonalization:'Chiudi personalizzazione',closePreview:'Chiudi anteprima della nota',search:"Cerca note d'amore per titolo, contenuto o tag...",clear:'Cancella ricerca'},
+      de:{send:'Senden',sendLoveNote:'Liebesbotschaft Senden',phone:'Telefonnummer des Empfängers',scheduleLater:'Für Später Planen',date:'Planungsdatum',time:'Planungszeit',close:'Versand der Liebesbotschaft schließen',personalize:'Personalisiere Deine Botschaften',closePersonalization:'Personalisierung schließen',closePreview:'Vorschau der Liebesbotschaft schließen',search:'Liebesbotschaften nach Titel, Inhalt oder Tags suchen...',clear:'Suche löschen'}
+    };
+
+    for (const lang of Object.keys(loveNotesAuditCopy)) {
+      const copy=loveNotesAuditCopy[lang];
+      const context=await browser.newContext({ viewport:{ width:1366, height:900 }, timezoneId:'America/Chicago' });
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/love-notes/**', async function(routeHandler) {
+        const request=routeHandler.request();
+        const pathname=new URL(request.url()).pathname;
+        if (request.method() !== 'GET') {
+          await routeHandler.fulfill({ status:403, contentType:'application/json', body:JSON.stringify({ error:{ code:'synthetic_qa_read_only', message:'Synthetic Love Notes QA is read-only.' } }) });
+          return;
+        }
+        if (pathname.endsWith('/delivery-readiness')) {
+          await routeHandler.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ delivery:{ scheduledSmsReady:true } }) });
+          return;
+        }
+        if (pathname.endsWith('/usage')) {
+          await routeHandler.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ usage:{ includedRemaining:20, monthlyLimit:20 } }) });
+          return;
+        }
+        if (pathname.endsWith('/categories')) {
+          await routeHandler.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ preference:null }) });
+          return;
+        }
+        await routeHandler.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ notes:[] }) });
+      });
+      await context.route('**/api/ai/config', async function(routeHandler) {
+        await routeHandler.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ configured:false, creator:{ allowed:false } }) });
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage', language);}, lang);
+      const page=await context.newPage();
+      const pageErrors=[];
+      page.on('pageerror', function(err){pageErrors.push(String(err && err.message || err));});
+      try {
+        await page.goto(BASE + '/LoveNotes', { waitUntil:'domcontentloaded', timeout:30000 });
+        await page.waitForTimeout(700);
+
+        const searchInput=page.getByPlaceholder(copy.search,{ exact:true });
+        if (!(await searchInput.count())) {
+          add('critical','love-notes-search-input-missing',{lang:lang});
+        } else {
+          await searchInput.fill('launchqa');
+          const clearButton=page.getByRole('button',{name:copy.clear,exact:true});
+          if (!(await clearButton.count())) add('critical','love-notes-clear-search-accessibility',{lang:lang});
+          else await clearButton.click();
+        }
+
+        const personalizeButton=page.getByRole('button',{name:copy.personalize,exact:true}).first();
+        if (!(await personalizeButton.count())) {
+          add('critical','love-notes-personalization-button-accessibility',{lang:lang});
+        } else {
+          await personalizeButton.click();
+          const personalizeDialog=page.getByRole('dialog',{name:copy.personalize,exact:true});
+          await personalizeDialog.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if (!(await personalizeDialog.count())) add('critical','love-notes-personalization-dialog-semantics',{lang:lang});
+          else {
+            const closePersonalize=personalizeDialog.getByRole('button',{name:copy.closePersonalization,exact:true});
+            if (!(await closePersonalize.count())) add('critical','love-notes-personalization-close-accessibility',{lang:lang});
+            else await closePersonalize.click();
+          }
+        }
+
+        const sendButton=page.getByRole('button',{name:copy.send,exact:true}).first();
+        if (!(await sendButton.count())) {
+          add('critical','love-notes-send-button-missing',{lang:lang});
+        } else {
+          await sendButton.click();
+          const sendDialog=page.getByRole('dialog',{name:copy.sendLoveNote,exact:true});
+          await sendDialog.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if (!(await sendDialog.count())) {
+            add('critical','love-notes-send-dialog-semantics',{lang:lang});
+          } else {
+            const phoneInput=sendDialog.getByLabel(copy.phone,{exact:true});
+            if (!(await phoneInput.count())) add('critical','love-notes-phone-label-association',{lang:lang});
+            const scheduleButton=sendDialog.getByRole('button',{name:copy.scheduleLater,exact:true});
+            if (!(await scheduleButton.count())) {
+              add('critical','love-notes-schedule-toggle-missing',{lang:lang});
+            } else {
+              await scheduleButton.click();
+              const dateInput=sendDialog.getByLabel(copy.date,{exact:true});
+              const timeInput=sendDialog.getByLabel(copy.time,{exact:true});
+              if (!(await dateInput.count()) || !(await timeInput.count())) {
+                add('critical','love-notes-schedule-label-association',{lang:lang});
+              }
+              if (await dateInput.count()) {
+                const expected=await page.evaluate(function(){
+                  const now=new Date();
+                  const local=new Date(now.getTime() - now.getTimezoneOffset()*60000);
+                  return local.toISOString().slice(0,10);
+                });
+                const actual=await dateInput.getAttribute('min');
+                if (actual !== expected) add('critical','love-notes-schedule-local-date-min',{lang:lang,expected:expected,actual:actual});
+              }
+            }
+            const closeSend=sendDialog.getByRole('button',{name:copy.close,exact:true});
+            if (!(await closeSend.count())) add('critical','love-notes-send-close-accessibility',{lang:lang});
+            else await closeSend.click();
+          }
+        }
+
+        if (lang === 'en') {
+          const noteTitle=page.locator('.font-kalam').first();
+          if (await noteTitle.count()) {
+            const expectedTitle=normalizeText(await noteTitle.innerText());
+            await noteTitle.click();
+            const previewDialog=page.getByRole('dialog',{name:expectedTitle,exact:true});
+            await previewDialog.waitFor({state:'visible',timeout:5000}).catch(function(){});
+            if (!(await previewDialog.count())) {
+              add('critical','love-notes-preview-dialog-semantics',{lang:lang});
+            } else {
+              const closePreview=previewDialog.getByRole('button',{name:copy.closePreview,exact:true});
+              if (!(await closePreview.count())) add('critical','love-notes-preview-close-accessibility',{lang:lang});
+              else await closePreview.click();
+            }
+          }
+        }
+
+        if (pageErrors.length) add('critical','love-notes-interaction-pageerror',{lang:lang,errors:pageErrors});
+      } catch (e) {
+        add('critical','love-notes-interaction-audit',{lang:lang,message:String(e.message || e),screenshot:await screenshot(page,'love_notes_' + lang + '_interaction')});
+      }
+      await context.close();
+    }
+  }
+
+  {
+    const sendCreditsCustomCopy={en:'Other amount',es:'Otro monto',fr:'Autre montant',it:'Altro importo',de:'Anderer Betrag'};
+    for (const lang of Object.keys(sendCreditsCustomCopy)) {
+      const context=await browser.newContext({viewport:{width:1366,height:900}});
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/send-credits/balance', async function(routeHandler) {
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({wallet:{availableSends:0,purchases:[]}})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage', language);}, lang);
+      const page=await context.newPage();
+      try {
+        await page.goto(BASE + '/SendCredits',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.waitForTimeout(400);
+        const customButton=page.getByRole('button',{name:new RegExp('^' + sendCreditsCustomCopy[lang])}).first();
+        if (!(await customButton.count())) {
+          add('critical','send-credits-custom-option-missing',{lang:lang});
+        } else {
+          await customButton.click();
+          const amountInput=page.getByLabel(sendCreditsCustomCopy[lang],{exact:true});
+          if (!(await amountInput.count())) add('critical','send-credits-custom-label-association',{lang:lang});
+        }
+      } catch (e) {
+        add('critical','send-credits-interaction-audit',{lang:lang,message:String(e.message || e),screenshot:await screenshot(page,'send_credits_' + lang + '_interaction')});
+      }
+      await context.close();
+    }
+  }
+
+
   {
     const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
     await installAnonymousAuth(context);
