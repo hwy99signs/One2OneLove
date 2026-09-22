@@ -29,6 +29,10 @@ const PROTECTED_ROUTES = [
   '/PaymentSuccess','/Subscription','/VerifyPhone','/AdminAccess','/Admin','/Analytics'
 ];
 
+const MEMBER_ROUTES = PROTECTED_ROUTES.filter(function(route) {
+  return !['/AdminAccess','/Admin','/Analytics'].includes(route);
+});
+
 const findings = [];
 const observations = [];
 function add(severity, kind, detail) {
@@ -41,6 +45,64 @@ async function screenshot(page, label) {
   const safe = label.replace(/[^a-z0-9_-]+/gi, '_').slice(0,120);
   const file = path.join(OUT, safe + '.png');
   try { await page.screenshot({ path: file, fullPage: true }); return path.basename(file); } catch { return null; }
+}
+
+async function installAnonymousAuth(context) {
+  await context.route('**/api/auth/get-session', async function(routeHandler) {
+    await routeHandler.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ user:null, session:null })
+    });
+  });
+}
+
+async function installSyntheticMemberAuth(context) {
+  const user = {
+    id:'launch-qa-synthetic-user',
+    email:'launch-qa@example.invalid',
+    emailVerified:true,
+    email_verified:true,
+    name:'Launch QA',
+    role:'user'
+  };
+  const profile = {
+    id:user.id,
+    email:user.email,
+    name:user.name,
+    role:'user',
+    subscription_plan:'Exclusive',
+    subscription_status:'active',
+    subscription_price:19.99,
+    stripe_customer_id:'cus_launch_qa_synthetic',
+    stripe_subscription_id:'sub_launch_qa_synthetic',
+    phone_number_verified:true,
+    phoneNumberVerified:true,
+    phone_verification_required:true,
+    preferred_language:'en'
+  };
+  await context.route('**/api/auth/get-session', async function(routeHandler) {
+    await routeHandler.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ user:user, session:{ id:'launch-qa-synthetic-session', userId:user.id } })
+    });
+  });
+  await context.route('**/api/profile', async function(routeHandler) {
+    if (routeHandler.request().method() === 'GET') {
+      await routeHandler.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ profile:profile })
+      });
+      return;
+    }
+    await routeHandler.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({ error:{ code:'synthetic_qa_read_only', message:'Synthetic launch QA is read-only.' } })
+    });
+  });
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -98,6 +160,7 @@ try {
 
   async function auditPage(route, lang, viewport, labelSuffix) {
     const context = await browser.newContext({ viewport: viewport });
+    await installAnonymousAuth(context);
     await context.addInitScript(function(language) {
       try { localStorage.setItem('preferredLanguage', language); } catch {}
     }, lang);
@@ -190,6 +253,7 @@ try {
 
   for (const lang of Object.keys(LANGS)) {
     const context = await browser.newContext({ viewport:{ width:1440, height:1000 } });
+    await installAnonymousAuth(context);
     await context.addInitScript(function(language){ localStorage.setItem('preferredLanguage', language); }, lang);
     const page = await context.newPage();
     await page.goto(BASE + '/Home', { waitUntil:'domcontentloaded', timeout:30000 });
@@ -206,13 +270,7 @@ try {
   for (const route of PROTECTED_ROUTES) {
     const context = await browser.newContext({ viewport:{ width:1280, height:900 } });
     await context.addInitScript(function(){ localStorage.setItem('preferredLanguage','en'); });
-    await context.route('**/api/auth/get-session', async function(routeHandler) {
-      await routeHandler.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ user:null, session:null })
-      });
-    });
+    await installAnonymousAuth(context);
     const page = await context.newPage();
     try {
       const res = await page.goto(BASE + route, { waitUntil:'domcontentloaded', timeout:30000 });
@@ -228,6 +286,63 @@ try {
     await context.close();
   }
 
+
+  const memberRouteEnglish = new Map();
+  for (const lang of Object.keys(LANGS)) {
+    for (const route of MEMBER_ROUTES) {
+      const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
+      await installSyntheticMemberAuth(context);
+      await context.addInitScript(function(language){ localStorage.setItem('preferredLanguage', language); }, lang);
+      const page = await context.newPage();
+      const pageErrors = [];
+      const serverErrors = [];
+      page.on('pageerror', function(err){ pageErrors.push(String(err && err.message || err)); });
+      page.on('response', function(res) {
+        try {
+          const u = new URL(res.url());
+          if (u.origin === BASE && res.status() >= 500) serverErrors.push({ url:u.pathname, status:res.status() });
+        } catch {}
+      });
+      try {
+        const response = await page.goto(BASE + route, { waitUntil:'domcontentloaded', timeout:30000 });
+        await page.waitForTimeout(800);
+        if (!response || response.status() !== 200) add('critical','member-page-status',{ route:route, lang:lang, status:response && response.status() });
+        const finalPath = new URL(page.url()).pathname.toLowerCase();
+        if (route !== '/PaymentSuccess' && finalPath !== route.toLowerCase()) {
+          add('critical','member-route-unexpected-redirect',{ route:route, lang:lang, finalPath:finalPath });
+        }
+        if (pageErrors.length) add('critical','member-pageerror',{ route:route, lang:lang, errors:pageErrors, screenshot:await screenshot(page, 'member_' + lang + '_' + route + '_pageerror') });
+        if (serverErrors.length) add('critical','member-same-origin-5xx',{ route:route, lang:lang, errors:serverErrors });
+        const dom = await page.evaluate(function() {
+          const visible = function(el) {
+            const s=getComputedStyle(el); const r=el.getBoundingClientRect();
+            return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity || 1) !== 0 && r.width > 0 && r.height > 0;
+          };
+          const main=document.querySelector('main');
+          const mainText=(main && main.innerText || '').replace(/\s+/g,' ').trim();
+          const brokenImages=Array.from(document.images).filter(function(img){return visible(img) && img.complete && img.naturalWidth===0;}).map(function(img){return img.getAttribute('src');});
+          const overflow=Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth;
+          const suspicious=['undefined','[object Object]','NaN'].filter(function(x){return mainText.includes(x);});
+          return {mainText:mainText,brokenImages:brokenImages,overflow:overflow,suspicious:suspicious};
+        });
+        if (dom.mainText.length < 20) add('critical','member-empty-page',{ route:route, lang:lang, textLength:dom.mainText.length });
+        if (/Loading your One2OneLove access/i.test(dom.mainText)) add('critical','member-auth-loading-stuck',{ route:route, lang:lang });
+        if (dom.brokenImages.length) add('critical','member-broken-images',{ route:route, lang:lang, images:dom.brokenImages });
+        if (dom.overflow > 4) add('critical','member-horizontal-overflow',{ route:route, lang:lang, pixels:dom.overflow, screenshot:await screenshot(page, 'member_' + lang + '_' + route + '_overflow') });
+        if (dom.suspicious.length) add('critical','member-suspicious-render-text',{ route:route, lang:lang, tokens:dom.suspicious });
+        const normalized=normalizeText(dom.mainText);
+        if (lang === 'en') memberRouteEnglish.set(route, normalized);
+        else {
+          const english=memberRouteEnglish.get(route) || '';
+          if (english.length > 80 && normalized === english) add('critical','member-untranslated-main-content',{ route:route, lang:lang });
+        }
+      } catch (e) {
+        add('critical','member-navigation',{ route:route, lang:lang, message:String(e.message || e) });
+      }
+      await context.close();
+    }
+  }
+
   for (const lang of Object.keys(LANGS)) {
     for (const route of ['/', '/SignIn', '/SignUp', '/HelpCenter', '/TermsOfService']) {
       await auditPage(route, lang, { width: 390, height: 844 }, 'mobile');
@@ -236,6 +351,7 @@ try {
 
   {
     const context = await browser.newContext({ viewport:{ width:1440, height:1000 } });
+    await installAnonymousAuth(context);
     const page = await context.newPage();
     await page.goto(BASE + '/Home', { waitUntil:'domcontentloaded', timeout:30000 });
     await page.waitForTimeout(300);
@@ -258,6 +374,24 @@ try {
         await page.waitForTimeout(250);
         const after = normalizeText(await page.locator('main').innerText());
         if (!after.includes(LANGS.es.home)) add('critical','language-picker-reload',{ message:'Spanish selection did not persist through reload.' });
+
+        for (const code of ['fr','it','de','en','es']) {
+          const languageNames = { fr:/French|Français/i, it:/Italian|Italiano/i, de:/German|Deutsch/i, en:/English/i, es:/Spanish|Español/i };
+          const cycleCombo = page.getByRole('combobox').first();
+          await cycleCombo.click();
+          const option = page.getByRole('option', { name:languageNames[code] }).first();
+          if (!(await option.count())) {
+            add('critical','language-picker-cycle',{ code:code, message:'Language option missing during same-session cycle.' });
+            continue;
+          }
+          await option.click();
+          await page.waitForTimeout(250);
+          const cycleStored = await page.evaluate(function(){ return localStorage.getItem('preferredLanguage'); });
+          const cycleMain = normalizeText(await page.locator('main').innerText());
+          if (cycleStored !== code || !cycleMain.includes(LANGS[code].home)) {
+            add('critical','language-picker-cycle',{ code:code, stored:cycleStored, message:'Language did not switch correctly in the active session.' });
+          }
+        }
       } else add('critical','language-picker-option',{ message:'Spanish option was not selectable.' });
     } else add('critical','language-picker-missing',{ message:'No language combobox was found on Home.' });
     await context.close();
@@ -265,6 +399,7 @@ try {
 
   {
     const context = await browser.newContext({ viewport:{ width:390, height:844 } });
+    await installAnonymousAuth(context);
     await context.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});
     const page = await context.newPage();
     await page.goto(BASE + '/Home', { waitUntil:'domcontentloaded', timeout:30000 });
@@ -287,6 +422,7 @@ try {
     summary: {
       publicDesktopLoads: PUBLIC_ROUTES.length * Object.keys(LANGS).length,
       protectedRouteGuardChecks: PROTECTED_ROUTES.length,
+      syntheticMemberDesktopLoads: MEMBER_ROUTES.length * Object.keys(LANGS).length,
       mobileLoads: 5 * Object.keys(LANGS).length,
       languages: Object.keys(LANGS),
       criticalCount: criticalCount,
