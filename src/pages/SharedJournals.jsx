@@ -12,11 +12,11 @@ import JournalEntry from '../components/activities/JournalEntry';
 import * as journalService from '@/lib/journalService';
 
 const translations = {
-  en: { title:'Shared Journals', subtitle:'Write together, share thoughts, and document your relationship journey', back:'Back to Activities', addEntry:'Add Entry', all:'All', noEntries:'No journal entries yet', startWriting:'Start writing your first entry together', saved:'Journal entry saved.', updated:'Journal entry updated.', deleted:'Journal entry deleted.', error:'Unable to update the journal right now.', moods:{ happy:'Happy', grateful:'Grateful', reflective:'Reflective', excited:'Excited', peaceful:'Peaceful', challenged:'Challenged', loving:'Loving' } },
-  es: { title:'Diarios Compartidos', subtitle:'Escriban juntos, compartan pensamientos y documenten el viaje de su relación', back:'Volver a Actividades', addEntry:'Agregar Entrada', all:'Todos', noEntries:'Aún no hay entradas de diario', startWriting:'Comiencen a escribir su primera entrada juntos', saved:'Entrada guardada.', updated:'Entrada actualizada.', deleted:'Entrada eliminada.', error:'No se pudo actualizar el diario en este momento.', moods:{ happy:'Feliz', grateful:'Agradecido', reflective:'Reflexivo', excited:'Emocionado', peaceful:'En Paz', challenged:'Con Desafíos', loving:'Cariñoso' } },
-  fr: { title:'Journaux Partagés', subtitle:'Écrivez ensemble, partagez vos pensées et gardez une trace de votre parcours relationnel', back:'Retour aux Activités', addEntry:'Ajouter une Entrée', all:'Tous', noEntries:'Aucune entrée pour le moment', startWriting:'Commencez votre première entrée ensemble', saved:'Entrée enregistrée.', updated:'Entrée mise à jour.', deleted:'Entrée supprimée.', error:'Impossible de mettre à jour le journal pour le moment.', moods:{ happy:'Heureux', grateful:'Reconnaissant', reflective:'Réfléchi', excited:'Enthousiaste', peaceful:'Paisible', challenged:'Mis au Défi', loving:'Aimant' } },
-  it: { title:'Diari Condivisi', subtitle:'Scrivete insieme, condividete pensieri e documentate il vostro percorso di coppia', back:'Torna alle Attività', addEntry:'Aggiungi Voce', all:'Tutti', noEntries:'Ancora nessuna voce nel diario', startWriting:'Iniziate a scrivere insieme la prima voce', saved:'Voce del diario salvata.', updated:'Voce del diario aggiornata.', deleted:'Voce del diario eliminata.', error:'Impossibile aggiornare il diario in questo momento.', moods:{ happy:'Felice', grateful:'Grato', reflective:'Riflessivo', excited:'Entusiasta', peaceful:'Sereno', challenged:'In Difficoltà', loving:'Affettuoso' } },
-  de: { title:'Geteilte Tagebücher', subtitle:'Schreibt gemeinsam, teilt Gedanken und haltet eure Beziehungsreise fest', back:'Zurück zu Aktivitäten', addEntry:'Eintrag Hinzufügen', all:'Alle', noEntries:'Noch keine Tagebucheinträge', startWriting:'Beginnt gemeinsam mit eurem ersten Eintrag', saved:'Tagebucheintrag gespeichert.', updated:'Tagebucheintrag aktualisiert.', deleted:'Tagebucheintrag gelöscht.', error:'Das Tagebuch kann gerade nicht aktualisiert werden.', moods:{ happy:'Glücklich', grateful:'Dankbar', reflective:'Nachdenklich', excited:'Aufgeregt', peaceful:'Gelassen', challenged:'Herausgefordert', loving:'Liebevoll' } },
+  en: { title:'Shared Journals', subtitle:'Write together, share thoughts, and document your relationship journey', back:'Back to Activities', addEntry:'Add Entry', all:'All', noEntries:'No journal entries yet', startWriting:'Start writing your first entry together', saved:'Journal entry saved.', updated:'Journal entry updated.', deleted:'Journal entry deleted.', error:'Unable to update the journal right now.', deleteConfirm:'Are you sure you want to delete this journal entry?', moods:{ happy:'Happy', grateful:'Grateful', reflective:'Reflective', excited:'Excited', peaceful:'Peaceful', challenged:'Challenged', loving:'Loving' } },
+  es: { title:'Diarios Compartidos', subtitle:'Escriban juntos, compartan pensamientos y documenten el viaje de su relación', back:'Volver a Actividades', addEntry:'Agregar Entrada', all:'Todos', noEntries:'Aún no hay entradas de diario', startWriting:'Comiencen a escribir su primera entrada juntos', saved:'Entrada guardada.', updated:'Entrada actualizada.', deleted:'Entrada eliminada.', error:'No se pudo actualizar el diario en este momento.', deleteConfirm:'¿Seguro que quieres eliminar esta entrada del diario?', moods:{ happy:'Feliz', grateful:'Agradecido', reflective:'Reflexivo', excited:'Emocionado', peaceful:'En Paz', challenged:'Con Desafíos', loving:'Cariñoso' } },
+  fr: { title:'Journaux Partagés', subtitle:'Écrivez ensemble, partagez vos pensées et gardez une trace de votre parcours relationnel', back:'Retour aux Activités', addEntry:'Ajouter une Entrée', all:'Tous', noEntries:'Aucune entrée pour le moment', startWriting:'Commencez votre première entrée ensemble', saved:'Entrée enregistrée.', updated:'Entrée mise à jour.', deleted:'Entrée supprimée.', error:'Impossible de mettre à jour le journal pour le moment.', deleteConfirm:'Voulez-vous vraiment supprimer cette entrée du journal ?', moods:{ happy:'Heureux', grateful:'Reconnaissant', reflective:'Réfléchi', excited:'Enthousiaste', peaceful:'Paisible', challenged:'Mis au Défi', loving:'Aimant' } },
+  it: { title:'Diari Condivisi', subtitle:'Scrivete insieme, condividete pensieri e documentate il vostro percorso di coppia', back:'Torna alle Attività', addEntry:'Aggiungi Voce', all:'Tutti', noEntries:'Ancora nessuna voce nel diario', startWriting:'Iniziate a scrivere insieme la prima voce', saved:'Voce del diario salvata.', updated:'Voce del diario aggiornata.', deleted:'Voce del diario eliminata.', error:'Impossibile aggiornare il diario in questo momento.', deleteConfirm:'Vuoi davvero eliminare questa voce del diario?', moods:{ happy:'Felice', grateful:'Grato', reflective:'Riflessivo', excited:'Entusiasta', peaceful:'Sereno', challenged:'In Difficoltà', loving:'Affettuoso' } },
+  de: { title:'Geteilte Tagebücher', subtitle:'Schreibt gemeinsam, teilt Gedanken und haltet eure Beziehungsreise fest', back:'Zurück zu Aktivitäten', addEntry:'Eintrag Hinzufügen', all:'Alle', noEntries:'Noch keine Tagebucheinträge', startWriting:'Beginnt gemeinsam mit eurem ersten Eintrag', saved:'Tagebucheintrag gespeichert.', updated:'Tagebucheintrag aktualisiert.', deleted:'Tagebucheintrag gelöscht.', error:'Das Tagebuch kann gerade nicht aktualisiert werden.', deleteConfirm:'Möchten Sie diesen Tagebucheintrag wirklich löschen?', moods:{ happy:'Glücklich', grateful:'Dankbar', reflective:'Nachdenklich', excited:'Aufgeregt', peaceful:'Gelassen', challenged:'Herausgefordert', loving:'Liebevoll' } },
 };
 
 const moodKeys = ['happy','grateful','reflective','excited','peaceful','challenged','loving'];
@@ -42,7 +42,7 @@ export default function SharedJournals() {
       setShowForm(false);
       toast.success(t.saved);
     },
-    onError:error => toast.error(error?.message || t.error),
+    onError:error => toast.error(currentLanguage === 'en' ? (error?.message || t.error) : t.error),
   });
 
   const updateMutation = useMutation({
@@ -53,7 +53,7 @@ export default function SharedJournals() {
       setShowForm(false);
       toast.success(t.updated);
     },
-    onError:error => toast.error(error?.message || t.error),
+    onError:error => toast.error(currentLanguage === 'en' ? (error?.message || t.error) : t.error),
   });
 
   const deleteMutation = useMutation({
@@ -62,8 +62,12 @@ export default function SharedJournals() {
       queryClient.invalidateQueries({ queryKey:['sharedJournals'] });
       toast.success(t.deleted);
     },
-    onError:error => toast.error(error?.message || t.error),
+    onError:error => toast.error(currentLanguage === 'en' ? (error?.message || t.error) : t.error),
   });
+
+  const handleDelete = (id) => {
+    if (window.confirm(t.deleteConfirm)) deleteMutation.mutate(id);
+  };
 
   const filteredEntries = moodFilter === 'all' ? entries : entries.filter(entry => entry.mood === moodFilter);
 
@@ -90,7 +94,7 @@ export default function SharedJournals() {
           {showForm && <JournalForm entry={editingEntry} onSubmit={data => editingEntry ? updateMutation.mutate({ id:editingEntry.id, data }) : createMutation.mutate(data)} onCancel={() => { setShowForm(false); setEditingEntry(null); }}/>} 
         </AnimatePresence>
 
-        <div className="space-y-6"><AnimatePresence>{filteredEntries.map(entry => <JournalEntry key={entry.id} entry={entry} onEdit={item => { setEditingEntry(item); setShowForm(true); }} onDelete={id => deleteMutation.mutate(id)}/>)}</AnimatePresence></div>
+        <div className="space-y-6"><AnimatePresence>{filteredEntries.map(entry => <JournalEntry key={entry.id} entry={entry} onEdit={item => { setEditingEntry(item); setShowForm(true); }} onDelete={handleDelete}/>)}</AnimatePresence></div>
 
         {filteredEntries.length === 0 && (
           <div className="py-16 text-center"><BookOpen className="mx-auto mb-4 h-16 w-16 text-gray-300"/><h3 className="mb-2 text-xl font-semibold text-gray-600">{t.noEntries}</h3><p className="mb-6 text-gray-500">{t.startWriting}</p><Button onClick={() => setShowForm(true)} className="bg-gradient-to-r from-blue-500 to-cyan-600"><Plus className="mr-2 h-4 w-4"/>{t.addEntry}</Button></div>

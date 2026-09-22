@@ -162,8 +162,6 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('📝 Form submit triggered with data:', formData);
-    
     // Validate required fields
     if (!formData.title || !formData.title.trim()) {
       toast.error(t.titleRequired);
@@ -186,14 +184,10 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
       recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : null,
     };
     
-    console.log('📝 Cleaned form data being submitted:', cleanedData);
-    console.log('📝 onSubmit function:', onSubmit);
-    
     // Submit the cleaned form data
     if (onSubmit && typeof onSubmit === 'function') {
       onSubmit(cleanedData);
     } else {
-      console.error('❌ onSubmit is not a function:', onSubmit);
       toast.error(t.submitError);
     }
   };
@@ -211,15 +205,20 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-event-form-title"
         className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-3xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+            <h2 id="calendar-event-form-title" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
               {event ? t.editEvent : t.addEvent}
             </h2>
             <button
+              type="button"
               onClick={onCancel}
+              aria-label={t.cancel}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-6 h-6" />
@@ -230,10 +229,11 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="calendar-event-title" className="block text-sm font-medium text-gray-700 mb-2">
                   {t.title} *
                 </label>
                 <Input
+                  id="calendar-event-title"
                   placeholder={t.titlePlaceholder}
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -243,11 +243,12 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="calendar-event-date" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="w-4 h-4" />
                   {t.date} *
                 </label>
                 <Input
+                  id="calendar-event-date"
                   type="date"
                   value={formData.event_date}
                   onChange={(e) => setFormData({...formData, event_date: e.target.value})}
@@ -257,11 +258,12 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="calendar-event-time" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <Clock className="w-4 h-4" />
                   {t.time}
                 </label>
                 <Input
+                  id="calendar-event-time"
                   type="time"
                   value={formData.event_time}
                   onChange={(e) => setFormData({...formData, event_time: e.target.value})}
@@ -270,14 +272,14 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="calendar-event-type" className="block text-sm font-medium text-gray-700 mb-2">
                   {t.type} *
                 </label>
                 <Select
                   value={formData.event_type}
                   onValueChange={(value) => setFormData({...formData, event_type: value})}
                 >
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger id="calendar-event-type" className="h-12">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -293,11 +295,12 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="calendar-event-location" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4" />
                   {t.location}
                 </label>
                 <Input
+                  id="calendar-event-location"
                   placeholder={t.locationPlaceholder}
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -306,10 +309,11 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="calendar-event-description" className="block text-sm font-medium text-gray-700 mb-2">
                   {t.description}
                 </label>
                 <Textarea
+                  id="calendar-event-description"
                   placeholder={t.descriptionPlaceholder}
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -333,6 +337,7 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
                   <Input
                     type="number"
                     min="1"
+                    aria-label={t.reminderDays}
                     value={formData.reminder_days_before}
                     onChange={(e) => setFormData({...formData, reminder_days_before: parseInt(e.target.value)})}
                     className="w-20 h-10"
@@ -357,7 +362,7 @@ export default function CalendarEventForm({ event, onSubmit, onCancel, milestone
                     value={formData.recurrence_pattern}
                     onValueChange={(value) => setFormData({...formData, recurrence_pattern: value})}
                   >
-                    <SelectTrigger className="w-32 h-10">
+                    <SelectTrigger className="w-32 h-10" aria-label={t.recurrencePattern}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

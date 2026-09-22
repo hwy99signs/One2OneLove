@@ -237,27 +237,18 @@ export default function CouplesCalendar() {
   // Create event mutation
   const createMutation = useMutation({
     mutationFn: (data) => {
-      console.log('🔄 Mutation function called with:', { userId: user?.id, data });
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
       return createCalendarEvent(user.id, data);
     },
     onSuccess: (data) => {
-      console.log('✅ Event created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setShowForm(false);
       setEditingEvent(null);
       toast.success(t.eventAdded);
     },
     onError: (error) => {
-      console.error('❌ Error creating event:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
       toast.error(t.createFailed);
     }
   });
@@ -275,7 +266,6 @@ export default function CouplesCalendar() {
       toast.success(t.eventUpdated);
     },
     onError: (error) => {
-      console.error('Error updating event:', error);
       toast.error(t.updateFailed);
     }
   });
@@ -291,14 +281,11 @@ export default function CouplesCalendar() {
       toast.success(t.eventDeleted);
     },
     onError: (error) => {
-      console.error('Error deleting event:', error);
       toast.error(t.deleteFailed);
     }
   });
 
   const handleSubmit = (eventData) => {
-    console.log('📅 Submitting event data:', eventData);
-    console.log('👤 Current user:', user);
     
     // Validate required fields
     if (!eventData.title || !eventData.title.trim()) {
@@ -313,15 +300,12 @@ export default function CouplesCalendar() {
     
     if (!user?.id) {
       toast.error(t.authRequired);
-      console.error('❌ No user ID available');
       return;
     }
     
     if (editingEvent) {
-      console.log('✏️ Updating event:', editingEvent.id);
       updateMutation.mutate({ id: editingEvent.id, data: eventData });
     } else {
-      console.log('➕ Creating new event with user ID:', user.id);
       createMutation.mutate(eventData);
     }
   };
@@ -403,6 +387,8 @@ export default function CouplesCalendar() {
               onClick={() => setViewMode('list')}
               variant={viewMode === 'list' ? 'default' : 'outline'}
               size="icon"
+              aria-label={t.listView}
+              title={t.listView}
             >
               <List className="w-5 h-5" />
             </Button>
@@ -410,6 +396,8 @@ export default function CouplesCalendar() {
               onClick={() => setViewMode('calendar')}
               variant={viewMode === 'calendar' ? 'default' : 'outline'}
               size="icon"
+              aria-label={t.calendarView}
+              title={t.calendarView}
             >
               <Grid3x3 className="w-5 h-5" />
             </Button>
