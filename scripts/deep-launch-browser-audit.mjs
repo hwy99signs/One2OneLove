@@ -586,20 +586,29 @@ try {
       const copy=milestoneAuditCopy[lang];
       const context=await browser.newContext({ viewport:{ width:1366, height:900 } });
       await installSyntheticMemberAuth(context);
-      await context.route(/\/api\/milestones(?:\?.*)?$/, async function(routeHandler) {
-        if (routeHandler.request().method() === 'GET') {
+      const milestoneRequestUrls=[];
+      await context.route('**/*', async function(routeHandler) {
+        const request=routeHandler.request();
+        const requestUrl=new URL(request.url());
+        const isMilestoneCollection=requestUrl.pathname === '/api/milestones' || requestUrl.pathname === '/api/milestones/';
+        if (isMilestoneCollection) {
+          milestoneRequestUrls.push(request.method() + ' ' + requestUrl.pathname + requestUrl.search);
+          if (request.method() === 'GET') {
+            await routeHandler.fulfill({
+              status:200,
+              contentType:'application/json',
+              body:JSON.stringify({ milestones:syntheticMilestones })
+            });
+            return;
+          }
           await routeHandler.fulfill({
-            status:200,
+            status:403,
             contentType:'application/json',
-            body:JSON.stringify({ milestones:syntheticMilestones })
+            body:JSON.stringify({ error:{ code:'synthetic_qa_read_only', message:'Synthetic milestone QA is read-only.' } })
           });
           return;
         }
-        await routeHandler.fulfill({
-          status:403,
-          contentType:'application/json',
-          body:JSON.stringify({ error:{ code:'synthetic_qa_read_only', message:'Synthetic milestone QA is read-only.' } })
-        });
+        await routeHandler.fallback();
       });
       await context.addInitScript(function(language){ localStorage.setItem('preferredLanguage', language); }, lang);
       const page=await context.newPage();
@@ -610,7 +619,7 @@ try {
         await page.getByText('Launch QA first_date', { exact:true }).waitFor({ state:'visible', timeout:8000 }).catch(function(){});
         const syntheticVisible = await page.getByText('Launch QA first_date', { exact:true }).count();
         if (!syntheticVisible) {
-          add('critical','milestone-test-data-not-loaded',{ lang:lang, finalPath:new URL(page.url()).pathname });
+          add('critical','milestone-test-data-not-loaded',{ lang:lang, finalPath:new URL(page.url()).pathname, milestoneRequestUrls:milestoneRequestUrls });
         }
 
         const ideaButtons=page.getByRole('button',{ name:copy.ideas, exact:true });
