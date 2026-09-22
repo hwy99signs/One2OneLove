@@ -295,9 +295,6 @@ function LanguageContent({ children, currentPageName }) {
 
             {isAuthenticated ? (
               <>
-                <Link to={createPageUrl("FriendRequests")} className="hover:text-yellow-200 relative">
-                  🔔 {t.nav.requests}
-                </Link>
                 <Link to={createPageUrl("Chat")} className="hover:text-yellow-200 relative">
                   💬 {t.nav.chat}
                   {totalUnreadCount > 0 && (
@@ -531,17 +528,6 @@ function LanguageContent({ children, currentPageName }) {
                 </Link>
                 <div className="border-t border-white/20 my-2"></div>
                 
-                {/* Friend Requests - Only show when authenticated */}
-                {isAuthenticated && (
-                  <Link
-                    to={createPageUrl("FriendRequests")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Bell className="w-5 h-5" />
-                    {t.nav.requests}
-                  </Link>
-                )}
 
                 {/* Chat - Only show when authenticated */}
                 {isAuthenticated && (
