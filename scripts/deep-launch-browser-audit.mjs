@@ -628,39 +628,41 @@ try {
           add('critical','milestone-celebration-button-count',{ lang:lang, expected:milestoneTypes.length, actual:ideaCount });
         }
 
-        for (let i=0;i<Math.min(ideaCount,milestoneTypes.length);i+=1) {
-          await ideaButtons.nth(i).click();
+        for (let i=0;i<milestoneTypes.length;i+=1) {
+          const milestoneType=milestoneTypes[i];
+          const card=page.locator('[data-milestone-type="' + milestoneType + '"]').first();
+          if (!(await card.count())) {
+            add('critical','milestone-card-missing',{ lang:lang, milestoneType:milestoneType });
+            continue;
+          }
+          const ideaButton=card.getByRole('button',{ name:copy.ideas, exact:true }).first();
+          if (!(await ideaButton.count())) {
+            add('critical','milestone-celebration-button-missing',{ lang:lang, milestoneType:milestoneType });
+            continue;
+          }
+          await ideaButton.click();
           const dialog=page.getByRole('dialog').last();
           await dialog.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
           const dialogText=(await dialog.count()) ? normalizeText(await dialog.innerText()) : '';
           if (!dialogText) {
-            add('critical','milestone-celebration-dialog-missing',{ lang:lang, milestoneType:milestoneTypes[i] });
-            break;
+            add('critical','milestone-celebration-dialog-missing',{ lang:lang, milestoneType:milestoneType });
+            continue;
           }
           if (copy.fallback && i >= copy.fallbackStart && !dialogText.includes(copy.fallback)) {
-            add('critical','milestone-celebration-fallback-language',{ lang:lang, milestoneType:milestoneTypes[i], expectedAnchor:copy.fallback });
+            add('critical','milestone-celebration-fallback-language',{ lang:lang, milestoneType:milestoneType, expectedAnchor:copy.fallback });
           }
           const closeButton=dialog.getByRole('button',{ name:copy.close, exact:true }).last();
           if (!(await closeButton.count())) {
-            add('critical','milestone-celebration-close-missing',{ lang:lang, milestoneType:milestoneTypes[i] });
+            add('critical','milestone-celebration-close-missing',{ lang:lang, milestoneType:milestoneType });
             break;
           }
           await closeButton.click();
           await dialog.waitFor({ state:'hidden', timeout:3000 }).catch(function(){});
         }
 
-        const giftButton=page.getByRole('button').filter({ hasText:copy.gift }).first();
-        if (!(await giftButton.count())) {
-          add('critical','milestone-gift-quick-action-missing',{ lang:lang });
-        } else {
-          await giftButton.click();
-          const dialog=page.getByRole('dialog').last();
-          await dialog.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
-          if (!(await dialog.count())) add('critical','milestone-gift-quick-action-inert',{ lang:lang });
-          else {
-            const closeButton=dialog.getByRole('button',{ name:copy.close, exact:true }).last();
-            if (await closeButton.count()) await closeButton.click();
-          }
+        const visibleGiftButton=page.getByRole('button').filter({ hasText:copy.gift });
+        if (await visibleGiftButton.count()) {
+          add('critical','milestone-deferred-gift-visible',{ lang:lang });
         }
 
         const addButton=page.getByRole('button',{ name:copy.add, exact:true }).first();
