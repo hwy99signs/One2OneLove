@@ -14,12 +14,67 @@ const personalityTraits = [
   "thoughtful", "playful", "serious", "passionate", "calm"
 ];
 
+const COPY = {
+  en: {
+    title:"AI-Personalized Love Note", close:"Close", personality:"{t.personality}", traitHelp:"Select 2–5 traits that best describe your partner",
+    noteStyle:"{t.noteStyle}", sharedMemories:"{t.sharedMemories}", sharedPlaceholder:"E.g., our first date at the beach, getting lost in Paris, or stargazing on our anniversary…",
+    sharedHelp:"{t.sharedHelp}", insideJokes:"{t.insideJokes}", insidePlaceholder:"E.g., you always steal my fries, the way you pronounce croissant, or our secret superhero names…",
+    insideHelp:"{t.insideHelp}", how:"{t.how}", steps:["AI analyzes your partner's personality traits","Crafts a unique note in your chosen tone","Weaves in your shared memories naturally","Adds subtle references to your inside jokes"],
+    cancel:"Cancel", generating:"Generating…", generate:"{t.generate}", chooseTrait:"Please select at least one personality trait", success:"Personalized note generated! 💕",
+    error:"Failed to generate note. Please try again.", noContent:"AI personalization returned no content.",
+    traits:{adventurous:"Adventurous",introverted:"Introverted",extroverted:"Extroverted",sentimental:"Sentimental",humorous:"Humorous",romantic:"Romantic",practical:"Practical",creative:"Creative",analytical:"Analytical",spontaneous:"Spontaneous",thoughtful:"Thoughtful",playful:"Playful",serious:"Serious",passionate:"Passionate",calm:"Calm"},
+    styles:{romantic:"Romantic",playful:"Playful",deep:"Deep"}
+  },
+  es: {
+    title:"Nota de Amor Personalizada con IA", close:"Cerrar", personality:"Rasgos de Personalidad de tu Pareja *", traitHelp:"Selecciona de 2 a 5 rasgos que describan mejor a tu pareja",
+    noteStyle:"Estilo de la Nota", sharedMemories:"Recuerdos Compartidos (Opcional)", sharedPlaceholder:"Ej.: nuestra primera cita en la playa, cuando nos perdimos en París o mirar las estrellas en nuestro aniversario…",
+    sharedHelp:"La IA incorporará estos recuerdos de forma natural", insideJokes:"Bromas Internas (Opcional)", insidePlaceholder:"Ej.: siempre me robas las papas fritas, cómo pronuncias croissant o nuestros nombres secretos de superhéroes…",
+    insideHelp:"Añade detalles personales que solo ustedes dos entienden", how:"✨ Cómo funciona:", steps:["La IA analiza los rasgos de personalidad de tu pareja","Crea una nota única con el tono que elijas","Integra naturalmente sus recuerdos compartidos","Añade referencias sutiles a sus bromas internas"],
+    cancel:"Cancelar", generating:"Generando…", generate:"Generar Nota de Amor", chooseTrait:"Selecciona al menos un rasgo de personalidad", success:"¡Nota personalizada generada! 💕",
+    error:"No se pudo generar la nota. Inténtalo de nuevo.", noContent:"La personalización con IA no devolvió contenido.",
+    traits:{adventurous:"Aventurero/a",introverted:"Introvertido/a",extroverted:"Extrovertido/a",sentimental:"Sentimental",humorous:"Con sentido del humor",romantic:"Romántico/a",practical:"Práctico/a",creative:"Creativo/a",analytical:"Analítico/a",spontaneous:"Espontáneo/a",thoughtful:"Atento/a",playful:"Juguetón/a",serious:"Serio/a",passionate:"Apasionado/a",calm:"Tranquilo/a"},
+    styles:{romantic:"Romántica",playful:"Juguetona",deep:"Profunda"}
+  },
+  fr: {
+    title:"Note d’Amour Personnalisée par IA", close:"Fermer", personality:"Traits de Personnalité de Votre Partenaire *", traitHelp:"Sélectionnez 2 à 5 traits qui décrivent le mieux votre partenaire",
+    noteStyle:"Style de la Note", sharedMemories:"Souvenirs Partagés (Facultatif)", sharedPlaceholder:"Ex. : notre premier rendez-vous à la plage, quand nous nous sommes perdus à Paris ou les étoiles lors de notre anniversaire…",
+    sharedHelp:"L’IA intégrera naturellement ces souvenirs dans la note", insideJokes:"Blagues Entre Vous (Facultatif)", insidePlaceholder:"Ex. : tu me voles toujours mes frites, ta façon de prononcer croissant ou nos noms secrets de super-héros…",
+    insideHelp:"Ajoutez des détails personnels que vous seuls comprenez", how:"✨ Comment ça marche :", steps:["L’IA analyse les traits de personnalité de votre partenaire","Crée une note unique dans le ton choisi","Intègre naturellement vos souvenirs partagés","Ajoute des références subtiles à vos blagues privées"],
+    cancel:"Annuler", generating:"Génération…", generate:"Générer une Note d’Amour", chooseTrait:"Sélectionnez au moins un trait de personnalité", success:"Note personnalisée générée ! 💕",
+    error:"Impossible de générer la note. Veuillez réessayer.", noContent:"La personnalisation par IA n’a renvoyé aucun contenu.",
+    traits:{adventurous:"Aventureux/se",introverted:"Introverti/e",extroverted:"Extraverti/e",sentimental:"Sentimental/e",humorous:"Avec de l’humour",romantic:"Romantique",practical:"Pratique",creative:"Créatif/ve",analytical:"Analytique",spontaneous:"Spontané/e",thoughtful:"Attentionné/e",playful:"Joueur/se",serious:"Sérieux/se",passionate:"Passionné/e",calm:"Calme"},
+    styles:{romantic:"Romantique",playful:"Joueuse",deep:"Profonde"}
+  },
+  it: {
+    title:"Nota d’Amore Personalizzata con IA", close:"Chiudi", personality:"Tratti della Personalità del Partner *", traitHelp:"Seleziona da 2 a 5 tratti che descrivono meglio il tuo partner",
+    noteStyle:"Stile della Nota", sharedMemories:"Ricordi Condivisi (Facoltativo)", sharedPlaceholder:"Es.: il nostro primo appuntamento in spiaggia, quando ci siamo persi a Parigi o le stelle durante il nostro anniversario…",
+    sharedHelp:"L’IA integrerà naturalmente questi ricordi nella nota", insideJokes:"Battute tra Voi (Facoltativo)", insidePlaceholder:"Es.: mi rubi sempre le patatine, come pronunci croissant o i nostri nomi segreti da supereroi…",
+    insideHelp:"Aggiungi dettagli personali che capite solo voi due", how:"✨ Come funziona:", steps:["L’IA analizza i tratti della personalità del tuo partner","Crea una nota unica con il tono scelto","Integra naturalmente i vostri ricordi condivisi","Aggiunge riferimenti discreti alle vostre battute private"],
+    cancel:"Annulla", generating:"Generazione…", generate:"Genera Nota d’Amore", chooseTrait:"Seleziona almeno un tratto della personalità", success:"Nota personalizzata generata! 💕",
+    error:"Impossibile generare la nota. Riprova.", noContent:"La personalizzazione con IA non ha restituito contenuti.",
+    traits:{adventurous:"Avventuroso/a",introverted:"Introverso/a",extroverted:"Estroverso/a",sentimental:"Sentimentale",humorous:"Spiritoso/a",romantic:"Romantico/a",practical:"Pratico/a",creative:"Creativo/a",analytical:"Analitico/a",spontaneous:"Spontaneo/a",thoughtful:"Premuroso/a",playful:"Giocoso/a",serious:"Serio/a",passionate:"Appassionato/a",calm:"Calmo/a"},
+    styles:{romantic:"Romantica",playful:"Giocosa",deep:"Profonda"}
+  },
+  de: {
+    title:"KI-Personalisierte Liebesnachricht", close:"Schließen", personality:"Persönlichkeitsmerkmale Ihres Partners *", traitHelp:"Wählen Sie 2–5 Merkmale, die Ihren Partner am besten beschreiben",
+    noteStyle:"Stil der Nachricht", sharedMemories:"Gemeinsame Erinnerungen (Optional)", sharedPlaceholder:"Z. B. unser erstes Date am Strand, als wir uns in Paris verliefen, oder Sterne an unserem Jahrestag…",
+    sharedHelp:"Die KI baut diese Erinnerungen natürlich in die Nachricht ein", insideJokes:"Insiderwitze (Optional)", insidePlaceholder:"Z. B. du klaust immer meine Pommes, wie du Croissant aussprichst, oder unsere geheimen Superheldennamen…",
+    insideHelp:"Fügen Sie persönliche Details hinzu, die nur Sie beide verstehen", how:"✨ So funktioniert es:", steps:["Die KI analysiert die Persönlichkeitsmerkmale Ihres Partners","Erstellt eine einzigartige Nachricht im gewählten Ton","Verwebt gemeinsame Erinnerungen natürlich","Fügt dezente Hinweise auf Ihre Insiderwitze ein"],
+    cancel:"Abbrechen", generating:"Wird erstellt…", generate:"Liebesnachricht Erstellen", chooseTrait:"Wählen Sie mindestens ein Persönlichkeitsmerkmal", success:"Personalisierte Nachricht erstellt! 💕",
+    error:"Die Nachricht konnte nicht erstellt werden. Bitte versuchen Sie es erneut.", noContent:"Die KI-Personalisierung hat keinen Inhalt zurückgegeben.",
+    traits:{adventurous:"Abenteuerlustig",introverted:"Introvertiert",extroverted:"Extrovertiert",sentimental:"Sentimental",humorous:"Humorvoll",romantic:"Romantisch",practical:"Praktisch",creative:"Kreativ",analytical:"Analytisch",spontaneous:"Spontan",thoughtful:"Aufmerksam",playful:"Verspielt",serious:"Ernst",passionate:"Leidenschaftlich",calm:"Ruhig"},
+    styles:{romantic:"Romantisch",playful:"Verspielt",deep:"Tiefgründig"}
+  }
+};
+
 export default function AIPersonalizationModal({ onClose, onNoteGenerated, currentLanguage }) {
   const [selectedTraits, setSelectedTraits] = useState([]);
   const [sharedMemories, setSharedMemories] = useState("");
   const [insideJokes, setInsideJokes] = useState("");
   const [noteStyle, setNoteStyle] = useState("romantic");
   const [generating, setGenerating] = useState(false);
+  const language = ["en","es","fr","it","de"].includes(currentLanguage) ? currentLanguage : "en";
+  const t = COPY[language];
 
   const toggleTrait = (trait) => {
     if (selectedTraits.includes(trait)) {
@@ -31,7 +86,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
 
   const generatePersonalizedNote = async () => {
     if (selectedTraits.length === 0) {
-      toast.error("Please select at least one personality trait");
+      toast.error(t.chooseTrait);
       return;
     }
 
@@ -53,20 +108,20 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
         language: currentLanguage,
       });
 
-      if (!response) throw new Error("AI personalization returned no content.");
+      if (!response) throw new Error(t.noContent);
       onNoteGenerated({
-        title: "AI-Personalized Love Note",
+        title: t.title,
         content: response,
         category: noteStyle,
         budget: "free",
         tags: ["ai-generated", "personalized", ...selectedTraits.slice(0, 3)],
         isAIGenerated: true
       });
-      toast.success("Personalized note generated! 💕");
+      toast.success(t.success);
       onClose();
     } catch (error) {
       console.error("Error generating note:", error);
-      toast.error(error?.message || "Failed to generate note. Please try again.");
+      toast.error(language === "en" ? (error?.message || t.error) : t.error);
     } finally {
       setGenerating(false);
     }
@@ -92,9 +147,9 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sparkles className="w-6 h-6" />
-              <h2 className="text-2xl font-bold">AI-Personalized Love Note</h2>
+              <h2 className="text-2xl font-bold">{t.title}</h2>
             </div>
-            <button onClick={onClose} className="text-white hover:text-gray-200">
+            <button type="button" onClick={onClose} aria-label={t.close} className="text-white hover:text-gray-200">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -116,11 +171,11 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {trait}
+                  {t.traits[trait] || trait}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">Select 2-5 traits that best describe your partner</p>
+            <p className="text-xs text-gray-500 mt-2">{t.traitHelp}</p>
           </div>
 
           <div>
@@ -138,7 +193,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {style}
+                  {t.styles[style] || style}
                 </button>
               ))}
             </div>
@@ -151,7 +206,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
             <Textarea
               value={sharedMemories}
               onChange={(e) => setSharedMemories(e.target.value)}
-              placeholder="E.g., 'Our first date at the beach, the time we got lost in Paris, stargazing on our anniversary...'"
+              placeholder={t.sharedPlaceholder}
               className="h-24"
             />
             <p className="text-xs text-gray-500 mt-1">The AI will naturally weave these into the note</p>
@@ -164,7 +219,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
             <Textarea
               value={insideJokes}
               onChange={(e) => setInsideJokes(e.target.value)}
-              placeholder="E.g., 'You always steal my fries, the way you pronounce croissant, our secret superhero names...'"
+              placeholder={t.insidePlaceholder}
               className="h-24"
             />
             <p className="text-xs text-gray-500 mt-1">Add personal touches only you two understand</p>
@@ -173,10 +228,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
           <div className="bg-purple-50 rounded-xl p-4">
             <h4 className="font-bold text-purple-900 mb-2">✨ How it works:</h4>
             <ul className="text-sm text-purple-800 space-y-1">
-              <li>• AI analyzes your partner's personality traits</li>
-              <li>• Crafts a unique note in their preferred tone</li>
-              <li>• Weaves in your shared memories naturally</li>
-              <li>• Adds subtle references to your inside jokes</li>
+              {t.steps.map((step) => <li key={step}>• {step}</li>)}
             </ul>
           </div>
 
@@ -197,7 +249,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
               {generating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Generating...
+                  {t.generating}
                 </>
               ) : (
                 <>

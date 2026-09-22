@@ -20,7 +20,7 @@ const copy = {
     empty: 'No messages yet. Be the first to start the conversation.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
     signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
-    prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh',
+    prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
       'general-connection': ['O2OL', 'What is one small thing that makes you feel genuinely connected to someone?'],
       'dating-new-relationships': ['Amora', 'What should two people talk about early so expectations do not become assumptions?'],
@@ -36,7 +36,7 @@ const copy = {
     empty: 'Aún no hay mensajes. Sé la primera persona en iniciar la conversación.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
     signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
-    prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar',
+    prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
       'general-connection': ['O2OL', '¿Qué pequeño detalle te hace sentir realmente conectado con alguien?'],
       'dating-new-relationships': ['Amora', '¿De qué deberían hablar dos personas al principio para que las expectativas no se conviertan en suposiciones?'],
@@ -52,7 +52,7 @@ const copy = {
     empty: 'Aucun message pour le moment. Lancez la conversation.', placeholder: 'Partagez vos pensées avec respect…', send: 'Envoyer',
     signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.',
     guidelines: 'Respectez le salon', guidelinesBody: 'Soyez bienveillant. Pas de harcèlement, menaces, haine, contenu sexuel explicite, attaques personnelles ou partage d’informations privées d’autrui.',
-    prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser',
+    prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
       'general-connection': ['O2OL', 'Quel petit geste vous fait vous sentir réellement connecté à quelqu’un ?'],
       'dating-new-relationships': ['Amora', 'De quoi deux personnes devraient-elles parler tôt pour éviter que les attentes deviennent des suppositions ?'],
@@ -68,7 +68,7 @@ const copy = {
     empty: 'Ancora nessun messaggio. Inizia tu la conversazione.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
     signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.',
     guidelines: 'Rispetta la stanza', guidelinesBody: 'Sii gentile. Niente molestie, minacce, odio, contenuti sessuali espliciti, attacchi personali o condivisione di informazioni private altrui.',
-    prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna',
+    prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
       'general-connection': ['O2OL', 'Qual è una piccola cosa che ti fa sentire davvero connesso a qualcuno?'],
       'dating-new-relationships': ['Amora', 'Di cosa dovrebbero parlare due persone all’inizio per evitare che le aspettative diventino supposizioni?'],
@@ -84,7 +84,7 @@ const copy = {
     empty: 'Noch keine Nachrichten. Starte das Gespräch.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
     signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.',
     guidelines: 'Respektiere den Raum', guidelinesBody: 'Sei freundlich. Keine Belästigung, Drohungen, Hassrede, explizit sexuelle Inhalte, persönlichen Angriffe oder Weitergabe privater Informationen anderer.',
-    prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren',
+    prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
       'general-connection': ['O2OL', 'Welche kleine Sache lässt dich echte Verbundenheit mit jemandem spüren?'],
       'dating-new-relationships': ['Amora', 'Worüber sollten zwei Menschen früh sprechen, damit Erwartungen nicht zu Annahmen werden?'],
@@ -155,7 +155,7 @@ export default function Chat() {
 
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || rooms[0] || null, [rooms, selectedRoomId]);
   const roomLabel = selectedRoom ? (labels[selectedRoom.slug] || [selectedRoom.name, selectedRoom.description]) : null;
-  const prompt = selectedRoom ? (t.prompts[selectedRoom.slug] || ['O2OL', 'What is on your mind today?']) : null;
+  const prompt = selectedRoom ? (t.prompts[selectedRoom.slug] || ['O2OL', t.defaultPrompt]) : null;
 
   const loadRooms = async () => {
     try {
@@ -163,7 +163,8 @@ export default function Chat() {
       setRooms(data);
       setSelectedRoomId(current => current || data[0]?.id || null);
     } catch (error) {
-      toast.error(error?.message || 'Unable to load chat rooms.');
+      console.error('Unable to load chat rooms:', error);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.loadRoomsError) : t.loadRoomsError);
     } finally {
       setLoadingRooms(false);
     }
@@ -176,7 +177,10 @@ export default function Chat() {
       const data = await getCommunityChatMessages(roomId);
       setMessages(data);
     } catch (error) {
-      if (!quiet) toast.error(error?.message || 'Unable to load messages.');
+      if (!quiet) {
+        console.error('Unable to load messages:', error);
+        toast.error(currentLanguage === 'en' ? (error?.message || t.loadMessagesError) : t.loadMessagesError);
+      }
     } finally {
       if (!quiet) setLoadingMessages(false);
     }
@@ -216,7 +220,8 @@ export default function Chat() {
       setMessage('');
       await Promise.all([loadMessages(selectedRoomId, true), loadRooms()]);
     } catch (error) {
-      toast.error(error?.message || 'Unable to send message.');
+      console.error('Unable to send message:', error);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.sendError) : t.sendError);
     } finally {
       setSending(false);
     }
@@ -227,7 +232,8 @@ export default function Chat() {
       await deleteCommunityChatMessage(messageId);
       await loadMessages(selectedRoomId, true);
     } catch (error) {
-      toast.error(error?.message || 'Unable to delete message.');
+      console.error('Unable to delete message:', error);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.deleteError) : t.deleteError);
     }
   };
 

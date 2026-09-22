@@ -5,11 +5,11 @@ import { toast } from 'sonner';
 import { getLoveNoteUsage } from '@/lib/loveNotesService';
 
 const COPY = {
-  en: { plan: 'Your Plan', sms: 'SMS Love Notes', included: 'included remaining', extra: 'Extra Sends', extraHint: 'purchased balance', social: 'Social Media', socialHint: '1 per platform', topup: 'Get More Sends', topupHint: 'Buy extra sends', add: '+ Add Sends', loading: 'Loading…', today: 'today' },
-  es: { plan: 'Tu Plan', sms: 'Notas de Amor SMS', included: 'incluidos restantes', extra: 'Envíos Extra', extraHint: 'saldo comprado', social: 'Redes Sociales', socialHint: '1 por plataforma', topup: 'Obtener Más Envíos', topupHint: 'Comprar envíos extra', add: '+ Añadir Envíos', loading: 'Cargando…', today: 'hoy' },
-  fr: { plan: 'Votre Forfait', sms: 'Notes d’Amour SMS', included: 'inclus restants', extra: 'Envois Supplémentaires', extraHint: 'solde acheté', social: 'Réseaux Sociaux', socialHint: '1 par plateforme', topup: 'Obtenir Plus d’Envois', topupHint: 'Acheter des envois supplémentaires', add: '+ Ajouter des Envois', loading: 'Chargement…', today: 'aujourd’hui' },
-  it: { plan: 'Il Tuo Piano', sms: 'Note d’Amore SMS', included: 'inclusi rimanenti', extra: 'Invii Extra', extraHint: 'saldo acquistato', social: 'Social Media', socialHint: '1 per piattaforma', topup: 'Ottieni Più Invii', topupHint: 'Acquista invii extra', add: '+ Aggiungi Invii', loading: 'Caricamento…', today: 'oggi' },
-  de: { plan: 'Dein Tarif', sms: 'SMS-Liebesnachrichten', included: 'inklusive übrig', extra: 'Zusätzliche Sendungen', extraHint: 'gekauftes Guthaben', social: 'Soziale Medien', socialHint: '1 pro Plattform', topup: 'Mehr Sendungen', topupHint: 'Zusätzliche Sendungen kaufen', add: '+ Sendungen Hinzufügen', loading: 'Wird geladen…', today: 'heute' },
+  en: { includedUsed: 'Your included sends are used.', allowanceReached: 'Your Love Note sending allowance has been reached.', plan: 'Your Plan', sms: 'SMS Love Notes', included: 'included remaining', extra: 'Extra Sends', extraHint: 'purchased balance', social: 'Social Media', socialHint: '1 per platform', topup: 'Get More Sends', topupHint: 'Buy extra sends', add: '+ Add Sends', loading: 'Loading…', today: 'today' },
+  es: { includedUsed: 'Tus envíos incluidos se han agotado.', allowanceReached: 'Has alcanzado tu límite de envío de Notas de Amor.', plan: 'Tu Plan', sms: 'Notas de Amor SMS', included: 'incluidos restantes', extra: 'Envíos Extra', extraHint: 'saldo comprado', social: 'Redes Sociales', socialHint: '1 por plataforma', topup: 'Obtener Más Envíos', topupHint: 'Comprar envíos extra', add: '+ Añadir Envíos', loading: 'Cargando…', today: 'hoy' },
+  fr: { includedUsed: 'Vos envois inclus sont épuisés.', allowanceReached: 'Vous avez atteint votre limite d’envoi de Notes d’Amour.', plan: 'Votre Forfait', sms: 'Notes d’Amour SMS', included: 'inclus restants', extra: 'Envois Supplémentaires', extraHint: 'solde acheté', social: 'Réseaux Sociaux', socialHint: '1 par plateforme', topup: 'Obtenir Plus d’Envois', topupHint: 'Acheter des envois supplémentaires', add: '+ Ajouter des Envois', loading: 'Chargement…', today: 'aujourd’hui' },
+  it: { includedUsed: 'Hai utilizzato tutti gli invii inclusi.', allowanceReached: 'Hai raggiunto il limite di invio delle Note d’Amore.', plan: 'Il Tuo Piano', sms: 'Note d’Amore SMS', included: 'inclusi rimanenti', extra: 'Invii Extra', extraHint: 'saldo acquistato', social: 'Social Media', socialHint: '1 per piattaforma', topup: 'Ottieni Più Invii', topupHint: 'Acquista invii extra', add: '+ Aggiungi Invii', loading: 'Caricamento…', today: 'oggi' },
+  de: { includedUsed: 'Ihre enthaltenen Sendungen sind aufgebraucht.', allowanceReached: 'Sie haben Ihr Sendelimit für Liebesnachrichten erreicht.', plan: 'Dein Tarif', sms: 'SMS-Liebesnachrichten', included: 'inklusive übrig', extra: 'Zusätzliche Sendungen', extraHint: 'gekauftes Guthaben', social: 'Soziale Medien', socialHint: '1 pro Plattform', topup: 'Mehr Sendungen', topupHint: 'Zusätzliche Sendungen kaufen', add: '+ Sendungen Hinzufügen', loading: 'Wird geladen…', today: 'heute' },
 };
 
 const LIMIT_HEADINGS = [
@@ -117,13 +117,14 @@ export default function LoveNotesLimitAddSends() {
     const onQuotaError = event => {
       const detail = event?.detail || {};
       const preferred = (() => { try { return localStorage.getItem('preferredLanguage') || 'en'; } catch (_) { return 'en'; } })();
-      const actionLabel = (COPY[preferred] || COPY.en).topup;
+      const preferredCopy = COPY[preferred] || COPY.en;
+      const actionLabel = preferredCopy.topup;
       if (detail.code === 'send_limit_reached' && detail.topUpUrl) {
-        toast.error(detail.message || 'Your included sends are used.', {
+        toast.error(detail.message || preferredCopy.includedUsed, {
           action: { label: actionLabel, onClick: goToTopUp },
         });
       } else {
-        toast.error(detail.message || 'Your Love Note sending allowance has been reached.');
+        toast.error(detail.message || preferredCopy.allowanceReached);
       }
       refreshUsage();
     };
