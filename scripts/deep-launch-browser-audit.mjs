@@ -557,6 +557,123 @@ try {
     await context.close();
   }
 
+
+  {
+    const milestoneAuditCopy = {
+      en:{ add:'Add a Milestone', selectDate:'Select date', upload:'Click to upload photos', ideas:'Get Celebration Ideas', close:'Close', closeForm:'Close milestone form', gift:'Gift Suggestions', fallback:null, fallbackStart:10 },
+      es:{ add:'Agregar un Hito', selectDate:'Seleccionar fecha', upload:'Haz clic para subir fotos', ideas:'Obtener Ideas de Celebración', close:'Cerrar', closeForm:'Cerrar formulario de hito', gift:'Sugerencias de Regalos', fallback:'Celebrar este hito', fallbackStart:2 },
+      fr:{ add:'Ajouter un Jalon', selectDate:'Sélectionner une date', upload:'Cliquez pour téléverser des photos', ideas:'Obtenir des Idées de Célébration', close:'Fermer', closeForm:'Fermer le formulaire du jalon', gift:'Suggestions de Cadeaux', fallback:'Célébrer ce jalon', fallbackStart:1 },
+      it:{ add:'Aggiungi un Traguardo', selectDate:'Seleziona una data', upload:'Fai clic per caricare le foto', ideas:'Ottieni Idee per la Celebrazione', close:'Chiudi', closeForm:'Chiudi il modulo del traguardo', gift:'Suggerimenti per Regali', fallback:'Celebrare questo traguardo', fallbackStart:1 },
+      de:{ add:'Einen Meilenstein Hinzufügen', selectDate:'Datum auswählen', upload:'Klicken, um Fotos hochzuladen', ideas:'Feier-Ideen Erhalten', close:'Schließen', closeForm:'Meilensteinformular schließen', gift:'Geschenkvorschläge', fallback:'Diesen Meilenstein', fallbackStart:1 }
+    };
+    const milestoneTypes=['first_date','first_kiss','first_love','moving_in','engagement','wedding','anniversary','first_vacation','met_family','custom'];
+    const syntheticMilestones=milestoneTypes.map(function(type,index){
+      return {
+        id:'launch-qa-milestone-' + index,
+        milestone_type:type,
+        title:'Launch QA ' + type,
+        date:'2025-01-' + String(index + 1).padStart(2,'0'),
+        description:'Launch QA milestone',
+        location:'',
+        partner_email:'',
+        is_recurring:false,
+        reminder_enabled:true,
+        media_urls:[]
+      };
+    });
+
+    for (const lang of Object.keys(milestoneAuditCopy)) {
+      const copy=milestoneAuditCopy[lang];
+      const context=await browser.newContext({ viewport:{ width:1366, height:900 } });
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/milestones**', async function(routeHandler) {
+        if (routeHandler.request().method() === 'GET') {
+          await routeHandler.fulfill({
+            status:200,
+            contentType:'application/json',
+            body:JSON.stringify({ milestones:syntheticMilestones })
+          });
+          return;
+        }
+        await routeHandler.fulfill({
+          status:403,
+          contentType:'application/json',
+          body:JSON.stringify({ error:{ code:'synthetic_qa_read_only', message:'Synthetic milestone QA is read-only.' } })
+        });
+      });
+      await context.addInitScript(function(language){ localStorage.setItem('preferredLanguage', language); }, lang);
+      const page=await context.newPage();
+      const pageErrors=[];
+      page.on('pageerror', function(err){ pageErrors.push(String(err && err.message || err)); });
+      try {
+        await page.goto(BASE + '/RelationshipMilestones', { waitUntil:'domcontentloaded', timeout:30000 });
+        await page.waitForTimeout(700);
+
+        const ideaButtons=page.getByRole('button',{ name:copy.ideas, exact:true });
+        const ideaCount=await ideaButtons.count();
+        if (ideaCount !== milestoneTypes.length) {
+          add('critical','milestone-celebration-button-count',{ lang:lang, expected:milestoneTypes.length, actual:ideaCount });
+        }
+
+        for (let i=0;i<Math.min(ideaCount,milestoneTypes.length);i+=1) {
+          await ideaButtons.nth(i).click();
+          const dialog=page.getByRole('dialog').last();
+          await dialog.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
+          const dialogText=(await dialog.count()) ? normalizeText(await dialog.innerText()) : '';
+          if (!dialogText) {
+            add('critical','milestone-celebration-dialog-missing',{ lang:lang, milestoneType:milestoneTypes[i] });
+            break;
+          }
+          if (copy.fallback && i >= copy.fallbackStart && !dialogText.includes(copy.fallback)) {
+            add('critical','milestone-celebration-fallback-language',{ lang:lang, milestoneType:milestoneTypes[i], expectedAnchor:copy.fallback });
+          }
+          const closeButton=dialog.getByRole('button',{ name:copy.close, exact:true }).last();
+          if (!(await closeButton.count())) {
+            add('critical','milestone-celebration-close-missing',{ lang:lang, milestoneType:milestoneTypes[i] });
+            break;
+          }
+          await closeButton.click();
+          await dialog.waitFor({ state:'hidden', timeout:3000 }).catch(function(){});
+        }
+
+        const giftButton=page.getByRole('button').filter({ hasText:copy.gift }).first();
+        if (!(await giftButton.count())) {
+          add('critical','milestone-gift-quick-action-missing',{ lang:lang });
+        } else {
+          await giftButton.click();
+          const dialog=page.getByRole('dialog').last();
+          await dialog.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
+          if (!(await dialog.count())) add('critical','milestone-gift-quick-action-inert',{ lang:lang });
+          else {
+            const closeButton=dialog.getByRole('button',{ name:copy.close, exact:true }).last();
+            if (await closeButton.count()) await closeButton.click();
+          }
+        }
+
+        const addButton=page.getByRole('button',{ name:copy.add, exact:true }).first();
+        if (!(await addButton.count())) {
+          add('critical','milestone-form-open-missing',{ lang:lang });
+        } else {
+          await addButton.click();
+          const formDialog=page.getByRole('dialog').last();
+          await formDialog.waitFor({ state:'visible', timeout:5000 }).catch(function(){});
+          const formText=(await formDialog.count()) ? normalizeText(await formDialog.innerText()) : '';
+          if (!formText.includes(copy.selectDate) || !formText.includes(copy.upload)) {
+            add('critical','milestone-form-localization',{ lang:lang, selectDate:copy.selectDate, upload:copy.upload });
+          }
+          const closeForm=formDialog.getByRole('button',{ name:copy.closeForm, exact:true }).first();
+          if (!(await closeForm.count())) add('critical','milestone-form-close-accessibility',{ lang:lang });
+          else await closeForm.click();
+        }
+
+        if (pageErrors.length) add('critical','milestone-interaction-pageerror',{ lang:lang, errors:pageErrors });
+      } catch (e) {
+        add('critical','milestone-interaction-audit',{ lang:lang, message:String(e.message || e), screenshot:await screenshot(page,'milestone_' + lang + '_interaction') });
+      }
+      await context.close();
+    }
+  }
+
   {
     const context = await browser.newContext({ viewport:{ width:390, height:844 } });
     await installAnonymousAuth(context);

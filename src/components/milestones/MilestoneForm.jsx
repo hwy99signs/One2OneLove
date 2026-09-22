@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Calendar as CalendarIcon, X, Upload, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { de, enUS, es, fr, it } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { uploadMilestonePhotos } from "@/lib/milestonesService";
@@ -29,6 +30,13 @@ const translations = {
     uploadPhotos: "Upload Photos",
     cancel: "Cancel",
     save: "Save Your Milestone",
+    selectDate: "Select date",
+    uploading: "Uploading...",
+    clickUploadPhotos: "Click to upload photos",
+    uploadFailed: "Failed to upload photos. Please try again.",
+    close: "Close milestone form",
+    removePhoto: "Remove photo",
+    photo: "Milestone photo",
     types: {
       first_date: "First Date",
       first_kiss: "First Kiss",
@@ -62,6 +70,13 @@ const translations = {
     uploadPhotos: "Subir Fotos",
     cancel: "Cancelar",
     save: "Guardar Tu Hito",
+    selectDate: "Seleccionar fecha",
+    uploading: "Subiendo...",
+    clickUploadPhotos: "Haz clic para subir fotos",
+    uploadFailed: "No se pudieron subir las fotos. Inténtalo de nuevo.",
+    close: "Cerrar formulario de hito",
+    removePhoto: "Eliminar foto",
+    photo: "Foto del hito",
     types: {
       first_date: "Primera Cita",
       first_kiss: "Primer Beso",
@@ -95,6 +110,13 @@ const translations = {
     uploadPhotos: "Télécharger des Photos",
     cancel: "Annuler",
     save: "Enregistrer Votre Jalon",
+    selectDate: "Sélectionner une date",
+    uploading: "Téléversement...",
+    clickUploadPhotos: "Cliquez pour téléverser des photos",
+    uploadFailed: "Impossible de téléverser les photos. Veuillez réessayer.",
+    close: "Fermer le formulaire du jalon",
+    removePhoto: "Supprimer la photo",
+    photo: "Photo du jalon",
     types: {
       first_date: "Premier Rendez-vous",
       first_kiss: "Premier Baiser",
@@ -128,6 +150,13 @@ const translations = {
     uploadPhotos: "Carica Foto",
     cancel: "Annulla",
     save: "Salva il Tuo Traguardo",
+    selectDate: "Seleziona una data",
+    uploading: "Caricamento...",
+    clickUploadPhotos: "Fai clic per caricare le foto",
+    uploadFailed: "Impossibile caricare le foto. Riprova.",
+    close: "Chiudi il modulo del traguardo",
+    removePhoto: "Rimuovi foto",
+    photo: "Foto del traguardo",
     types: {
       first_date: "Primo Appuntamento",
       first_kiss: "Primo Bacio",
@@ -161,6 +190,13 @@ const translations = {
     uploadPhotos: "Fotos Hochladen",
     cancel: "Abbrechen",
     save: "Deinen Meilenstein Speichern",
+    selectDate: "Datum auswählen",
+    uploading: "Wird hochgeladen...",
+    clickUploadPhotos: "Klicken, um Fotos hochzuladen",
+    uploadFailed: "Fotos konnten nicht hochgeladen werden. Bitte versuche es erneut.",
+    close: "Meilensteinformular schließen",
+    removePhoto: "Foto entfernen",
+    photo: "Meilensteinfoto",
     types: {
       first_date: "Erstes Date",
       first_kiss: "Erster Kuss",
@@ -182,9 +218,12 @@ const translations = {
   }
 };
 
+const DATE_LOCALES = { en: enUS, es, fr, it, de };
+
 export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const dateLocale = DATE_LOCALES[currentLanguage] || enUS;
 
   const [formData, setFormData] = useState({
     milestone_type: milestone?.milestone_type || 'first_date',
@@ -215,7 +254,7 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
       }));
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload photos. Please try again.');
+      alert(t.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -246,15 +285,18 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="milestone-form-title"
         className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         <Card className="border-0">
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl">
+              <CardTitle id="milestone-form-title" className="text-2xl">
                 {milestone ? t.editTitle : t.title}
               </CardTitle>
-              <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={onCancel} aria-label={t.close} className="text-gray-400 hover:text-gray-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -262,12 +304,12 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label>{t.milestoneType}</Label>
+                <Label htmlFor="milestone-type">{t.milestoneType}</Label>
                 <Select
                   value={formData.milestone_type}
                   onValueChange={(value) => setFormData({ ...formData, milestone_type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="milestone-type" aria-label={t.milestoneType}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,8 +321,9 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
               </div>
 
               <div>
-                <Label>{t.milestoneTitle} *</Label>
+                <Label htmlFor="milestone-title">{t.milestoneTitle} *</Label>
                 <Input
+                  id="milestone-title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder={t.placeholders.title}
@@ -289,12 +332,12 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
               </div>
 
               <div>
-                <Label>{t.date} *</Label>
+                <Label htmlFor="milestone-date">{t.date} *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left">
+                    <Button id="milestone-date" type="button" variant="outline" aria-label={t.date} className="w-full justify-start text-left">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.date ? format(new Date(formData.date), 'PPP') : 'Select date'}
+                      {formData.date ? format(new Date(`${formData.date}T00:00:00`), 'PPP', { locale: dateLocale }) : t.selectDate}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -302,14 +345,16 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
                       mode="single"
                       selected={formData.date ? new Date(formData.date) : undefined}
                       onSelect={(date) => setFormData({ ...formData, date: date ? format(date, 'yyyy-MM-dd') : '' })}
+                      locale={dateLocale}
                     />
                   </PopoverContent>
                 </Popover>
               </div>
 
               <div>
-                <Label>{t.description}</Label>
+                <Label htmlFor="milestone-description">{t.description}</Label>
                 <Textarea
+                  id="milestone-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder={t.placeholders.description}
@@ -318,8 +363,9 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
               </div>
 
               <div>
-                <Label>{t.location}</Label>
+                <Label htmlFor="milestone-location">{t.location}</Label>
                 <Input
+                  id="milestone-location"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder={t.placeholders.location}
@@ -327,8 +373,9 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
               </div>
 
               <div>
-                <Label>{t.partnerEmail}</Label>
+                <Label htmlFor="milestone-partner-email">{t.partnerEmail}</Label>
                 <Input
+                  id="milestone-partner-email"
                   type="email"
                   value={formData.partner_email}
                   onChange={(e) => setFormData({ ...formData, partner_email: e.target.value })}
@@ -355,12 +402,12 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
                     {uploading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Uploading...
+                        {t.uploading}
                       </>
                     ) : (
                       <>
                         <Upload className="w-5 h-5" />
-                        Click to upload photos
+                        {t.clickUploadPhotos}
                       </>
                     )}
                   </label>
@@ -369,11 +416,12 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
                   <div className="grid grid-cols-4 gap-2 mt-3">
                     {formData.media_urls.map((url, idx) => (
                       <div key={idx} className="relative group">
-                        <img src={url} alt="" className="w-full h-20 object-cover rounded-lg" />
+                        <img src={url} alt={`${t.photo} ${idx + 1}`} className="w-full h-20 object-cover rounded-lg" />
                         <button
                           type="button"
                           onClick={() => removePhoto(url)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label={`${t.removePhoto} ${idx + 1}`}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -386,17 +434,19 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Switch
+                    id="milestone-recurring"
                     checked={formData.is_recurring}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
                   />
-                  <Label>{t.recurAnnually}</Label>
+                  <Label htmlFor="milestone-recurring">{t.recurAnnually}</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch
+                    id="milestone-reminder"
                     checked={formData.reminder_enabled}
                     onCheckedChange={(checked) => setFormData({ ...formData, reminder_enabled: checked })}
                   />
-                  <Label>{t.enableReminder}</Label>
+                  <Label htmlFor="milestone-reminder">{t.enableReminder}</Label>
                 </div>
               </div>
 

@@ -32,6 +32,7 @@ const translations = {
     errorAdding: "Couldn't add your milestone. Please try again with love.",
     errorUpdating: "Couldn't update your milestone. Please try again.",
     errorDeleting: "Couldn't delete milestone. Please try again.",
+    deleteConfirm: "Are you sure you want to delete this milestone?",
     quickActions: "Quick Celebration Actions",
     quickActionsSubtitle: "Make your special days absolutely unforgettable",
     sendLoveNote: "Send a Love Note",
@@ -59,6 +60,7 @@ const translations = {
     errorAdding: "No se pudo agregar tu hito. Por favor, inténtalo de nuevo con amor.",
     errorUpdating: "No se pudo actualizar tu hito. Por favor, inténtalo de nuevo.",
     errorDeleting: "No se pudo eliminar el hito. Por favor, inténtalo de nuevo.",
+    deleteConfirm: "¿Seguro que quieres eliminar este hito?",
     quickActions: "Acciones Rápidas de Celebración",
     quickActionsSubtitle: "Haz tus días especiales absolutamente inolvidables",
     sendLoveNote: "Enviar una Nota de Amor",
@@ -86,6 +88,7 @@ const translations = {
     errorAdding: "Impossible d'ajouter votre jalon. Veuillez réessayer avec amour.",
     errorUpdating: "Impossible de mettre à jour votre jalon. Veuillez réessayer.",
     errorDeleting: "Impossible de supprimer le jalon. Veuillez réessayer.",
+    deleteConfirm: "Voulez-vous vraiment supprimer ce jalon ?",
     quickActions: "Actions Rapides de Célébration",
     quickActionsSubtitle: "Rendez vos jours spéciaux absolument inoubliables",
     sendLoveNote: "Envoyer une Note d'Amour",
@@ -113,6 +116,7 @@ const translations = {
     errorAdding: "Impossibile aggiungere il tuo traguardo. Per favore, riprova con amore.",
     errorUpdating: "Impossibile aggiornare il tuo traguardo. Per favore, riprova.",
     errorDeleting: "Impossibile eliminare il traguardo. Per favore, riprova.",
+    deleteConfirm: "Vuoi davvero eliminare questo traguardo?",
     quickActions: "Azioni Rapide per la Celebrazione",
     quickActionsSubtitle: "Rendi i tuoi giorni speciali assolutamente indimenticabili",
     sendLoveNote: "Invia una Nota d'Amore",
@@ -140,6 +144,7 @@ const translations = {
     errorAdding: "Meilenstein konnte nicht hinzugefügt werden. Bitte versuche es mit Liebe erneut.",
     errorUpdating: "Meilenstein konnte nicht aktualisiert werden. Bitte versuche es erneut.",
     errorDeleting: "Meilenstein konnte nicht gelöscht werden. Bitte versuche es erneut.",
+    deleteConfirm: "Möchtest du diesen Meilenstein wirklich löschen?",
     quickActions: "Schnelle Feier-Aktionen",
     quickActionsSubtitle: "Mach deine besonderen Tage absolut unvergesslich",
     sendLoveNote: "Eine Liebesbotschaft Senden",
@@ -221,7 +226,7 @@ export default function RelationshipMilestones() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this milestone?')) {
+    if (window.confirm(t.deleteConfirm)) {
       deleteMutation.mutate(id);
     }
   };
@@ -441,12 +446,15 @@ export default function RelationshipMilestones() {
                   <p className="text-sm opacity-90">{t.browseDateIdeasDesc}</p>
                 </div>
               </Link>
-              <div className="bg-white/20 rounded-xl p-6 backdrop-blur-sm hover:bg-white/30 transition-all cursor-pointer"
-                   onClick={() => selectedMilestone && setSelectedMilestone(upcomingMilestones[0] || milestones[0])}>
+              <button
+                type="button"
+                className="w-full bg-white/20 rounded-xl p-6 backdrop-blur-sm hover:bg-white/30 focus:bg-white/30 transition-all cursor-pointer text-left"
+                onClick={() => setSelectedMilestone(upcomingMilestones[0] || milestones[0])}
+              >
                 <Gift className="w-8 h-8 mb-3" />
                 <h3 className="font-bold text-lg mb-2">{t.shopGifts}</h3>
                 <p className="text-sm opacity-90">{t.shopGiftsDesc}</p>
-              </div>
+              </button>
             </div>
           </motion.div>
         )}

@@ -16,6 +16,7 @@ const translations = {
     surpriseIdeas: "Surprise Ideas",
     copy: "Copy",
     copied: "Copied!",
+    copyFailed: "Could not copy this suggestion.",
     close: "Close",
     milestones: {
       first_date: {
@@ -199,6 +200,7 @@ const translations = {
     surpriseIdeas: "Ideas de Sorpresas",
     copy: "Copiar",
     copied: "¡Copiado!",
+    copyFailed: "No se pudo copiar esta sugerencia.",
     close: "Cerrar",
     milestones: {
       first_date: {
@@ -246,6 +248,7 @@ const translations = {
     surpriseIdeas: "Idées de Surprises",
     copy: "Copier",
     copied: "Copié!",
+    copyFailed: "Impossible de copier cette suggestion.",
     close: "Fermer",
     milestones: {
       first_date: {
@@ -276,6 +279,7 @@ const translations = {
     surpriseIdeas: "Idee per Sorprese",
     copy: "Copia",
     copied: "Copiato!",
+    copyFailed: "Impossibile copiare questo suggerimento.",
     close: "Chiudi",
     milestones: {
       first_date: {
@@ -306,6 +310,7 @@ const translations = {
     surpriseIdeas: "Überraschungs-Ideen",
     copy: "Kopieren",
     copied: "Kopiert!",
+    copyFailed: "Dieser Vorschlag konnte nicht kopiert werden.",
     close: "Schließen",
     milestones: {
       first_date: {
@@ -329,18 +334,142 @@ const translations = {
   }
 };
 
+
+const MILESTONE_TYPES = [
+  "first_date", "first_kiss", "first_love", "moving_in", "engagement",
+  "wedding", "anniversary", "first_vacation", "met_family", "custom"
+];
+
+const MILESTONE_LABELS = {
+  en: { first_date:"First Date", first_kiss:"First Kiss", first_love:"First 'I Love You'", moving_in:"Moving In Together", engagement:"Engagement", wedding:"Wedding", anniversary:"Anniversary", first_vacation:"First Vacation Together", met_family:"Meeting the Family", custom:"Special Milestone" },
+  es: { first_date:"Primera Cita", first_kiss:"Primer Beso", first_love:"Primer 'Te Amo'", moving_in:"Mudarse Juntos", engagement:"Compromiso", wedding:"Boda", anniversary:"Aniversario", first_vacation:"Primeras Vacaciones Juntos", met_family:"Conocer a la Familia", custom:"Hito Especial" },
+  fr: { first_date:"Premier Rendez-vous", first_kiss:"Premier Baiser", first_love:"Premier 'Je t'aime'", moving_in:"Emménagement Ensemble", engagement:"Fiançailles", wedding:"Mariage", anniversary:"Anniversaire", first_vacation:"Premières Vacances Ensemble", met_family:"Rencontre avec la Famille", custom:"Jalon Spécial" },
+  it: { first_date:"Primo Appuntamento", first_kiss:"Primo Bacio", first_love:"Primo 'Ti Amo'", moving_in:"Andare a Vivere Insieme", engagement:"Fidanzamento", wedding:"Matrimonio", anniversary:"Anniversario", first_vacation:"Prima Vacanza Insieme", met_family:"Conoscere la Famiglia", custom:"Traguardo Speciale" },
+  de: { first_date:"Erstes Date", first_kiss:"Erster Kuss", first_love:"Erstes 'Ich liebe dich'", moving_in:"Zusammenziehen", engagement:"Verlobung", wedding:"Hochzeit", anniversary:"Jahrestag", first_vacation:"Erster Gemeinsamer Urlaub", met_family:"Die Familie Kennenlernen", custom:"Besonderer Meilenstein" }
+};
+
+const FALLBACK_IDEAS = {
+  en: {
+    loveNotes: label => [
+      `Celebrating this milestone — ${label} — reminds me how much our journey together means to me.`,
+      `${label} is part of our story, and I am grateful I get to share it with you.`,
+      `Thank you for turning ${label} into a memory I will always treasure.`
+    ],
+    dates: label => [
+      `Recreate a favorite moment connected to ${label} and talk about what you remember most.`,
+      `Plan a special date inspired by ${label}.`,
+      `Create a new tradition for celebrating ${label} together.`
+    ],
+    gifts: label => [
+      `A personalized keepsake that represents ${label}.`,
+      `A framed photo or custom artwork connected to ${label}.`,
+      `A memory book with photos and notes about ${label} and your journey since.`
+    ]
+  },
+  es: {
+    loveNotes: label => [
+      `Celebrar este hito — ${label} — me recuerda cuánto significa para mí nuestro camino juntos.`,
+      `${label} forma parte de nuestra historia y agradezco poder compartirla contigo.`,
+      `Gracias por convertir ${label} en un recuerdo que siempre atesoraré.`
+    ],
+    dates: label => [
+      `Recreen un momento favorito relacionado con ${label} y hablen de lo que más recuerdan.`,
+      `Planeen una cita especial inspirada en ${label}.`,
+      `Creen una nueva tradición para celebrar juntos ${label}.`
+    ],
+    gifts: label => [
+      `Un recuerdo personalizado que represente ${label}.`,
+      `Una foto enmarcada o una obra personalizada relacionada con ${label}.`,
+      `Un libro de recuerdos con fotos y notas sobre ${label} y todo lo vivido desde entonces.`
+    ]
+  },
+  fr: {
+    loveNotes: label => [
+      `Célébrer ce jalon — ${label} — me rappelle à quel point notre parcours ensemble compte pour moi.`,
+      `${label} fait partie de notre histoire, et je suis reconnaissant(e) de la partager avec toi.`,
+      `Merci d’avoir transformé ${label} en un souvenir que je chérirai toujours.`
+    ],
+    dates: label => [
+      `Recréez un moment préféré lié à ${label} et partagez ce dont vous vous souvenez le plus.`,
+      `Organisez un rendez-vous spécial inspiré par ${label}.`,
+      `Créez une nouvelle tradition pour célébrer ${label} ensemble.`
+    ],
+    gifts: label => [
+      `Un souvenir personnalisé qui représente ${label}.`,
+      `Une photo encadrée ou une œuvre personnalisée liée à ${label}.`,
+      `Un livre de souvenirs avec des photos et des mots sur ${label} et votre parcours depuis.`
+    ]
+  },
+  it: {
+    loveNotes: label => [
+      `Celebrare questo traguardo — ${label} — mi ricorda quanto significhi per me il nostro cammino insieme.`,
+      `${label} fa parte della nostra storia e sono grato/a di poterla condividere con te.`,
+      `Grazie per aver trasformato ${label} in un ricordo che conserverò per sempre.`
+    ],
+    dates: label => [
+      `Ricreate un momento speciale legato a ${label} e raccontatevi ciò che ricordate di più.`,
+      `Organizzate un appuntamento speciale ispirato a ${label}.`,
+      `Create una nuova tradizione per celebrare insieme ${label}.`
+    ],
+    gifts: label => [
+      `Un ricordo personalizzato che rappresenti ${label}.`,
+      `Una foto incorniciata o un’opera personalizzata legata a ${label}.`,
+      `Un album dei ricordi con foto e messaggi su ${label} e sul vostro percorso da allora.`
+    ]
+  },
+  de: {
+    loveNotes: label => [
+      `Diesen Meilenstein – ${label} – zu feiern erinnert mich daran, wie viel mir unser gemeinsamer Weg bedeutet.`,
+      `${label} ist ein Teil unserer Geschichte, und ich bin dankbar, sie mit dir teilen zu dürfen.`,
+      `Danke, dass ${label} zu einer Erinnerung geworden ist, die ich immer in Ehren halten werde.`
+    ],
+    dates: label => [
+      `Erlebt einen Lieblingsmoment rund um ${label} noch einmal und erzählt euch, woran ihr euch am liebsten erinnert.`,
+      `Plant ein besonderes Date, das von ${label} inspiriert ist.`,
+      `Schafft eine neue Tradition, um ${label} gemeinsam zu feiern.`
+    ],
+    gifts: label => [
+      `Ein personalisiertes Erinnerungsstück, das ${label} symbolisiert.`,
+      `Ein gerahmtes Foto oder individuelles Kunstwerk zu ${label}.`,
+      `Ein Erinnerungsbuch mit Fotos und Notizen über ${label} und euren gemeinsamen Weg seitdem.`
+    ]
+  }
+};
+
+function localizedFallbackIdeas(language, milestoneType) {
+  const safeLanguage = MILESTONE_LABELS[language] ? language : "en";
+  const safeType = MILESTONE_TYPES.includes(milestoneType) ? milestoneType : "custom";
+  const label = MILESTONE_LABELS[safeLanguage][safeType];
+  const template = FALLBACK_IDEAS[safeLanguage];
+  return {
+    loveNotes: template.loveNotes(label),
+    dates: template.dates(label),
+    gifts: template.gifts(label)
+  };
+}
+
+function getMilestoneIdeas(language, milestoneType) {
+  const safeLanguage = translations[language] ? language : "en";
+  const safeType = MILESTONE_TYPES.includes(milestoneType) ? milestoneType : "custom";
+  return translations[safeLanguage].milestones[safeType] || localizedFallbackIdeas(safeLanguage, safeType);
+}
+
 export default function CelebrationIdeas({ milestone, onClose }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const [copiedIndex, setCopiedIndex] = useState(null);
 
-  const ideas = t.milestones[milestone.milestone_type] || t.milestones.custom;
+  const ideas = getMilestoneIdeas(currentLanguage, milestone?.milestone_type);
 
-  const copyToClipboard = (text, index) => {
-    navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    toast.success(t.copied);
-    setTimeout(() => setCopiedIndex(null), 2000);
+  const copyToClipboard = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      toast.success(t.copied);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch {
+      toast.error(t.copyFailed);
+    }
   };
 
   return (
@@ -356,15 +485,18 @@ export default function CelebrationIdeas({ milestone, onClose }) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="celebration-ideas-title"
         className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
       >
         <div className="sticky top-0 bg-gradient-to-r from-pink-500 to-purple-600 text-white p-6 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold mb-2">{t.title}</h2>
+              <h2 id="celebration-ideas-title" className="text-3xl font-bold mb-2">{t.title}</h2>
               <p className="text-white/90">{t.subtitle}</p>
             </div>
-            <button onClick={onClose} className="text-white hover:bg-white/20 p-2 rounded-full transition-colors">
+            <button type="button" onClick={onClose} aria-label={t.close} className="text-white hover:bg-white/20 p-2 rounded-full transition-colors">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -387,6 +519,7 @@ export default function CelebrationIdeas({ milestone, onClose }) {
                         variant="ghost"
                         size="sm"
                         onClick={() => copyToClipboard(note, `note-${idx}`)}
+                        aria-label={t.copy}
                         className="flex-shrink-0"
                       >
                         {copiedIndex === `note-${idx}` ? (

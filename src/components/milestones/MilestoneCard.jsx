@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Pencil, Trash2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
 import { useLanguage } from "@/Layout";
 
 const translations = {
@@ -11,37 +10,45 @@ const translations = {
     edit: "Edit",
     delete: "Delete",
     celebrate: "Get Celebration Ideas",
-    recurringBadge: "Annual Celebration"
+    recurringBadge: "Annual Celebration",
+    photo: "Milestone photo"
   },
   es: {
     edit: "Editar",
     delete: "Eliminar",
     celebrate: "Obtener Ideas de Celebración",
-    recurringBadge: "Celebración Anual"
+    recurringBadge: "Celebración Anual",
+    photo: "Foto del hito"
   },
   fr: {
     edit: "Modifier",
     delete: "Supprimer",
     celebrate: "Obtenir des Idées de Célébration",
-    recurringBadge: "Célébration Annuelle"
+    recurringBadge: "Célébration Annuelle",
+    photo: "Photo du jalon"
   },
   it: {
     edit: "Modifica",
     delete: "Elimina",
     celebrate: "Ottieni Idee per la Celebrazione",
-    recurringBadge: "Celebrazione Annuale"
+    recurringBadge: "Celebrazione Annuale",
+    photo: "Foto del traguardo"
   },
   de: {
     edit: "Bearbeiten",
     delete: "Löschen",
     celebrate: "Feier-Ideen Erhalten",
-    recurringBadge: "Jährliche Feier"
+    recurringBadge: "Jährliche Feier",
+    photo: "Meilensteinfoto"
   }
 };
+
+const LOCALES = { en: "en-US", es: "es-ES", fr: "fr-FR", it: "it-IT", de: "de-DE" };
 
 export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate }) {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const dateLabel = new Intl.DateTimeFormat(LOCALES[currentLanguage] || LOCALES.en, { year: "numeric", month: "long", day: "numeric" }).format(new Date(`${milestone.date}T00:00:00`));
 
   return (
     <motion.div
@@ -63,7 +70,7 @@ export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate
           </CardTitle>
           <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
             <Calendar className="w-4 h-4" />
-            {format(new Date(milestone.date), 'PPP')}
+            {dateLabel}
           </div>
           {milestone.location && (
             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
@@ -84,7 +91,7 @@ export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate
                 <img
                   key={idx}
                   src={url}
-                  alt=""
+                  alt={`${t.photo} ${idx + 1}`}
                   className="w-full h-20 object-cover rounded-lg"
                 />
               ))}
@@ -95,6 +102,7 @@ export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate
               variant="outline"
               size="sm"
               onClick={() => onEdit(milestone)}
+              aria-label={`${t.edit}: ${milestone.title}`}
               className="flex-1"
             >
               <Pencil className="w-4 h-4 mr-1" />
@@ -104,6 +112,7 @@ export default function MilestoneCard({ milestone, onEdit, onDelete, onCelebrate
               variant="outline"
               size="sm"
               onClick={() => onDelete(milestone.id)}
+              aria-label={`${t.delete}: ${milestone.title}`}
               className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4 mr-1" />
