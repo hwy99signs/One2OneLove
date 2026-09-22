@@ -308,7 +308,10 @@ try {
         await page.waitForTimeout(800);
         if (!response || response.status() !== 200) add('critical','member-page-status',{ route:route, lang:lang, status:response && response.status() });
         const finalPath = new URL(page.url()).pathname.toLowerCase();
-        if (route !== '/PaymentSuccess' && finalPath !== route.toLowerCase()) {
+        const expectedRedirect = route === '/Dashboard' || route === '/VerifyPhone' ? '/profile' : null;
+        if (expectedRedirect) {
+          if (finalPath !== expectedRedirect) add('critical','member-route-unexpected-redirect',{ route:route, lang:lang, finalPath:finalPath, expected:expectedRedirect });
+        } else if (route !== '/PaymentSuccess' && finalPath !== route.toLowerCase()) {
           add('critical','member-route-unexpected-redirect',{ route:route, lang:lang, finalPath:finalPath });
         }
         if (pageErrors.length) add('critical','member-pageerror',{ route:route, lang:lang, errors:pageErrors, screenshot:await screenshot(page, 'member_' + lang + '_' + route + '_pageerror') });
