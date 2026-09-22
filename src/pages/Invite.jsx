@@ -7,23 +7,23 @@ import { useLanguage } from '@/Layout';
 const copy = {
   en: {
     title:'Invite Friends & Family', subtitle:'Share One2OneLove with people you care about.', message:"I found One2OneLove, a relationship platform with practical tools, conversations and resources for healthier connection. Take a look 💕",
-    textTitle:'Invite by Text Message', emailTitle:'Invite by Email', linkTitle:'Share Your Invite Link', socialTitle:'Share Via', phone:'Enter phone number', email:'Enter email address', send:'Send', copy:'Copy', copied:'Invite link copied!', needPhone:'Enter a phone number first.', needEmail:'Enter an email address first.', openingText:'Opening your text message app…', openingEmail:'Opening your email app…', copiedPost:'Invite text copied. Paste it into the app you want to use.', why:'Why share One2OneLove?', reasons:['Help people you care about discover practical relationship tools.','Bring more thoughtful voices into the One2OneLove community.','Give friends and family an easy way to explore healthier communication and connection.']
+    textTitle:'Invite by Text Message', emailTitle:'Invite by Email', linkTitle:'Share Your Invite Link', socialTitle:'Share Via', phone:'Enter phone number', email:'Enter email address', send:'Send', copy:'Copy', copied:'Invite link copied!', needPhone:'Enter a phone number first.', needEmail:'Enter an email address first.', openingText:'Opening your text message app…', openingEmail:'Opening your email app…', copiedPost:'Invite text copied. Paste it into the app you want to use.', copyLinkError:'Unable to copy the link.', copyTextError:'Unable to copy the invite text.', why:'Why share One2OneLove?', reasons:['Help people you care about discover practical relationship tools.','Bring more thoughtful voices into the One2OneLove community.','Give friends and family an easy way to explore healthier communication and connection.']
   },
   es: {
     title:'Invitar a Amigos y Familia', subtitle:'Comparte One2OneLove con las personas que te importan.', message:'Encontré One2OneLove, una plataforma de relaciones con herramientas prácticas, conversaciones y recursos para conexiones más saludables. Échale un vistazo 💕',
-    textTitle:'Invitar por Mensaje de Texto', emailTitle:'Invitar por Correo', linkTitle:'Comparte Tu Enlace de Invitación', socialTitle:'Compartir Vía', phone:'Ingresa el número de teléfono', email:'Ingresa el correo electrónico', send:'Enviar', copy:'Copiar', copied:'¡Enlace copiado!', needPhone:'Primero ingresa un número de teléfono.', needEmail:'Primero ingresa un correo electrónico.', openingText:'Abriendo tu aplicación de mensajes…', openingEmail:'Abriendo tu aplicación de correo…', copiedPost:'Texto de invitación copiado. Pégalo en la aplicación que quieras usar.', why:'¿Por qué compartir One2OneLove?', reasons:['Ayuda a las personas que quieres a descubrir herramientas prácticas para sus relaciones.','Trae más voces reflexivas a la comunidad One2OneLove.','Da a amigos y familia una forma sencilla de explorar una comunicación y conexión más saludables.']
+    textTitle:'Invitar por Mensaje de Texto', emailTitle:'Invitar por Correo', linkTitle:'Comparte Tu Enlace de Invitación', socialTitle:'Compartir Vía', phone:'Ingresa el número de teléfono', email:'Ingresa el correo electrónico', send:'Enviar', copy:'Copiar', copied:'¡Enlace copiado!', needPhone:'Primero ingresa un número de teléfono.', needEmail:'Primero ingresa un correo electrónico.', openingText:'Abriendo tu aplicación de mensajes…', openingEmail:'Abriendo tu aplicación de correo…', copiedPost:'Texto de invitación copiado. Pégalo en la aplicación que quieras usar.', copyLinkError:'No se pudo copiar el enlace.', copyTextError:'No se pudo copiar el texto de invitación.', why:'¿Por qué compartir One2OneLove?', reasons:['Ayuda a las personas que quieres a descubrir herramientas prácticas para sus relaciones.','Trae más voces reflexivas a la comunidad One2OneLove.','Da a amigos y familia una forma sencilla de explorar una comunicación y conexión más saludables.']
   },
   fr: {
     title:'Inviter Amis et Famille', subtitle:'Partagez One2OneLove avec les personnes qui comptent pour vous.', message:'J’ai découvert One2OneLove, une plateforme relationnelle avec des outils pratiques, des conversations et des ressources pour des liens plus sains. Jetez-y un œil 💕',
-    textTitle:'Inviter par SMS', emailTitle:'Inviter par E-mail', linkTitle:'Partager Votre Lien d’Invitation', socialTitle:'Partager Via', phone:'Entrez le numéro de téléphone', email:'Entrez l’adresse e-mail', send:'Envoyer', copy:'Copier', copied:'Lien d’invitation copié !', needPhone:'Entrez d’abord un numéro de téléphone.', needEmail:'Entrez d’abord une adresse e-mail.', openingText:'Ouverture de votre application de messages…', openingEmail:'Ouverture de votre application e-mail…', copiedPost:'Texte d’invitation copié. Collez-le dans l’application de votre choix.', why:'Pourquoi partager One2OneLove ?', reasons:['Aidez vos proches à découvrir des outils relationnels pratiques.','Apportez davantage de voix réfléchies à la communauté One2OneLove.','Offrez à vos proches un moyen simple d’explorer une communication et une connexion plus saines.']
+    textTitle:'Inviter par SMS', emailTitle:'Inviter par E-mail', linkTitle:'Partager Votre Lien d’Invitation', socialTitle:'Partager Via', phone:'Entrez le numéro de téléphone', email:'Entrez l’adresse e-mail', send:'Envoyer', copy:'Copier', copied:'Lien d’invitation copié !', needPhone:'Entrez d’abord un numéro de téléphone.', needEmail:'Entrez d’abord une adresse e-mail.', openingText:'Ouverture de votre application de messages…', openingEmail:'Ouverture de votre application e-mail…', copiedPost:'Texte d’invitation copié. Collez-le dans l’application de votre choix.', copyLinkError:'Impossible de copier le lien.', copyTextError:'Impossible de copier le texte d’invitation.', why:'Pourquoi partager One2OneLove ?', reasons:['Aidez vos proches à découvrir des outils relationnels pratiques.','Apportez davantage de voix réfléchies à la communauté One2OneLove.','Offrez à vos proches un moyen simple d’explorer une communication et une connexion plus saines.']
   },
   it: {
     title:'Invita Amici e Famiglia', subtitle:'Condividi One2OneLove con le persone a cui tieni.', message:'Ho trovato One2OneLove, una piattaforma per le relazioni con strumenti pratici, conversazioni e risorse per connessioni più sane. Dagli un’occhiata 💕',
-    textTitle:'Invita via Messaggio', emailTitle:'Invita via Email', linkTitle:'Condividi il Tuo Link di Invito', socialTitle:'Condividi Tramite', phone:'Inserisci il numero di telefono', email:'Inserisci l’indirizzo email', send:'Invia', copy:'Copia', copied:'Link di invito copiato!', needPhone:'Inserisci prima un numero di telefono.', needEmail:'Inserisci prima un indirizzo email.', openingText:'Apertura dell’app messaggi…', openingEmail:'Apertura dell’app email…', copiedPost:'Testo dell’invito copiato. Incollalo nell’app che vuoi usare.', why:'Perché condividere One2OneLove?', reasons:['Aiuta le persone a cui tieni a scoprire strumenti pratici per le relazioni.','Porta più voci attente nella comunità One2OneLove.','Offri ad amici e familiari un modo semplice per esplorare una comunicazione e una connessione più sane.']
+    textTitle:'Invita via Messaggio', emailTitle:'Invita via Email', linkTitle:'Condividi il Tuo Link di Invito', socialTitle:'Condividi Tramite', phone:'Inserisci il numero di telefono', email:'Inserisci l’indirizzo email', send:'Invia', copy:'Copia', copied:'Link di invito copiato!', needPhone:'Inserisci prima un numero di telefono.', needEmail:'Inserisci prima un indirizzo email.', openingText:'Apertura dell’app messaggi…', openingEmail:'Apertura dell’app email…', copiedPost:'Testo dell’invito copiato. Incollalo nell’app che vuoi usare.', copyLinkError:'Impossibile copiare il link.', copyTextError:'Impossibile copiare il testo dell’invito.', why:'Perché condividere One2OneLove?', reasons:['Aiuta le persone a cui tieni a scoprire strumenti pratici per le relazioni.','Porta più voci attente nella comunità One2OneLove.','Offri ad amici e familiari un modo semplice per esplorare una comunicazione e una connessione più sane.']
   },
   de: {
     title:'Freunde & Familie Einladen', subtitle:'Teile One2OneLove mit Menschen, die dir wichtig sind.', message:'Ich habe One2OneLove entdeckt – eine Beziehungsplattform mit praktischen Werkzeugen, Gesprächen und Ressourcen für gesündere Verbindung. Schau es dir an 💕',
-    textTitle:'Per Textnachricht Einladen', emailTitle:'Per E-Mail Einladen', linkTitle:'Deinen Einladungslink Teilen', socialTitle:'Teilen Über', phone:'Telefonnummer eingeben', email:'E-Mail-Adresse eingeben', send:'Senden', copy:'Kopieren', copied:'Einladungslink kopiert!', needPhone:'Gib zuerst eine Telefonnummer ein.', needEmail:'Gib zuerst eine E-Mail-Adresse ein.', openingText:'Nachrichten-App wird geöffnet…', openingEmail:'E-Mail-App wird geöffnet…', copiedPost:'Einladungstext kopiert. Füge ihn in die gewünschte App ein.', why:'Warum One2OneLove teilen?', reasons:['Hilf Menschen, die dir wichtig sind, praktische Beziehungswerkzeuge zu entdecken.','Bring weitere nachdenkliche Stimmen in die One2OneLove Community.','Gib Freunden und Familie einen einfachen Weg zu gesünderer Kommunikation und Verbindung.']
+    textTitle:'Per Textnachricht Einladen', emailTitle:'Per E-Mail Einladen', linkTitle:'Deinen Einladungslink Teilen', socialTitle:'Teilen Über', phone:'Telefonnummer eingeben', email:'E-Mail-Adresse eingeben', send:'Senden', copy:'Kopieren', copied:'Einladungslink kopiert!', needPhone:'Gib zuerst eine Telefonnummer ein.', needEmail:'Gib zuerst eine E-Mail-Adresse ein.', openingText:'Nachrichten-App wird geöffnet…', openingEmail:'E-Mail-App wird geöffnet…', copiedPost:'Einladungstext kopiert. Füge ihn in die gewünschte App ein.', copyLinkError:'Der Link konnte nicht kopiert werden.', copyTextError:'Der Einladungstext konnte nicht kopiert werden.', why:'Warum One2OneLove teilen?', reasons:['Hilf Menschen, die dir wichtig sind, praktische Beziehungswerkzeuge zu entdecken.','Bring weitere nachdenkliche Stimmen in die One2OneLove Community.','Gib Freunden und Familie einen einfachen Weg zu gesünderer Kommunikation und Verbindung.']
   }
 };
 
@@ -35,8 +35,9 @@ async function copyToClipboard(text) {
   area.style.opacity = '0';
   document.body.appendChild(area);
   area.select();
-  document.execCommand('copy');
+  const copied = document.execCommand('copy');
   area.remove();
+  if (!copied) throw new Error('clipboard_copy_failed');
 }
 
 export default function Invite() {
@@ -49,7 +50,7 @@ export default function Invite() {
 
   const handleCopyLink = async () => {
     try { await copyToClipboard(inviteLink); toast.success(t.copied); }
-    catch { toast.error('Unable to copy the link.'); }
+    catch { toast.error(t.copyLinkError); }
   };
 
   const handleEmailInvite = event => {
@@ -77,7 +78,7 @@ export default function Invite() {
     else if (platform === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
     else {
       try { await copyToClipboard(shareText); toast.success(t.copiedPost); }
-      catch { toast.error('Unable to copy the invite text.'); }
+      catch { toast.error(t.copyTextError); }
     }
   };
 

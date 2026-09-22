@@ -32,6 +32,7 @@ const translations = {
     milestoneAdded: "Milestone added! 🎉",
     milestoneUpdated: "Milestone updated! 💕",
     milestoneDeleted: "Milestone deleted",
+    loadError: "Unable to load milestones.", saveError: "Unable to save milestone.", deleteError: "Unable to delete milestone.", deleteConfirm: "Are you sure you want to delete this milestone?", editAction: "Edit milestone", deleteAction: "Delete milestone",
     fillRequired: "Please fill in all required fields",
     passed: "Passed",
     today: "Today!",
@@ -76,6 +77,7 @@ const translations = {
     milestoneAdded: "¡Hito agregado! 🎉",
     milestoneUpdated: "¡Hito actualizado! 💕",
     milestoneDeleted: "Hito eliminado",
+    loadError: "No se pudieron cargar los hitos.", saveError: "No se pudo guardar el hito.", deleteError: "No se pudo eliminar el hito.", deleteConfirm: "¿Seguro que quieres eliminar este hito?", editAction: "Editar hito", deleteAction: "Eliminar hito",
     fillRequired: "Por favor completa todos los campos requeridos",
     passed: "Pasado",
     today: "¡Hoy!",
@@ -120,6 +122,7 @@ const translations = {
     milestoneAdded: "Jalon ajouté! 🎉",
     milestoneUpdated: "Jalon mis à jour! 💕",
     milestoneDeleted: "Jalon supprimé",
+    loadError: "Impossible de charger les jalons.", saveError: "Impossible d’enregistrer le jalon.", deleteError: "Impossible de supprimer le jalon.", deleteConfirm: "Voulez-vous vraiment supprimer ce jalon ?", editAction: "Modifier le jalon", deleteAction: "Supprimer le jalon",
     fillRequired: "Veuillez remplir tous les champs obligatoires",
     passed: "Passé",
     today: "Aujourd'hui!",
@@ -164,6 +167,7 @@ const translations = {
     milestoneAdded: "Traguardo aggiunto! 🎉",
     milestoneUpdated: "Traguardo aggiornato! 💕",
     milestoneDeleted: "Traguardo eliminato",
+    loadError: "Impossibile caricare i traguardi.", saveError: "Impossibile salvare il traguardo.", deleteError: "Impossibile eliminare il traguardo.", deleteConfirm: "Vuoi davvero eliminare questo traguardo?", editAction: "Modifica traguardo", deleteAction: "Elimina traguardo",
     fillRequired: "Per favore compila tutti i campi obbligatori",
     passed: "Passato",
     today: "Oggi!",
@@ -208,6 +212,7 @@ const translations = {
     milestoneAdded: "Meilenstein hinzugefügt! 🎉",
     milestoneUpdated: "Meilenstein aktualisiert! 💕",
     milestoneDeleted: "Meilenstein gelöscht",
+    loadError: "Meilensteine konnten nicht geladen werden.", saveError: "Meilenstein konnte nicht gespeichert werden.", deleteError: "Meilenstein konnte nicht gelöscht werden.", deleteConfirm: "Möchten Sie diesen Meilenstein wirklich löschen?", editAction: "Meilenstein bearbeiten", deleteAction: "Meilenstein löschen",
     fillRequired: "Bitte füllen Sie alle erforderlichen Felder aus",
     passed: "Vergangen",
     today: "Heute!",
@@ -328,6 +333,8 @@ export default function AnniversaryTracker() {
   const [milestones, setMilestones] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const localDate = (value) => new Date(`${String(value || '').slice(0, 10)}T00:00:00`);
+
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -352,7 +359,7 @@ export default function AnniversaryTracker() {
         })));
       })
       .catch((error) => {
-        if (!cancelled) toast.error(error?.message || 'Unable to load milestones.');
+        if (!cancelled) toast.error(currentLanguage === 'en' ? (error?.message || t.loadError) : t.loadError);
       });
 
     return () => { cancelled = true; };
@@ -368,7 +375,7 @@ export default function AnniversaryTracker() {
 
   const calculateTimeUntil = (date) => {
     const now = new Date();
-    const target = new Date(date);
+    const target = localDate(date);
     const diff = target - now;
 
     if (diff < 0) {
@@ -424,7 +431,7 @@ export default function AnniversaryTracker() {
       setShowAddForm(false);
       setEditingId(null);
     } catch (error) {
-      toast.error(error?.message || 'Unable to save milestone.');
+      toast.error(currentLanguage === 'en' ? (error?.message || t.saveError) : t.saveError);
     }
   };
 
@@ -440,16 +447,17 @@ export default function AnniversaryTracker() {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm(t.deleteConfirm || translations.en.deleteConfirm)) return;
     try {
       await deleteMilestone(id);
       setMilestones((current) => current.filter((m) => m.id !== id));
       toast.success(t.milestoneDeleted);
     } catch (error) {
-      toast.error(error?.message || 'Unable to delete milestone.');
+      toast.error(currentLanguage === 'en' ? (error?.message || t.deleteError) : t.deleteError);
     }
   };
 
-  const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sortedMilestones = [...milestones].sort((a, b) => localDate(a.date) - localDate(b.date));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
@@ -641,7 +649,7 @@ export default function AnniversaryTracker() {
                               {milestone.title}
                             </h3>
                             <p className="text-sm text-gray-600 mb-2">
-                              {new Date(milestone.date).toLocaleDateString(currentLanguage === 'en' ? 'en-US' : currentLanguage === 'es' ? 'es-ES' : currentLanguage === 'fr' ? 'fr-FR' : currentLanguage === 'it' ? 'it-IT' : currentLanguage === 'de' ? 'de-DE' : currentLanguage === 'nl' ? 'nl-NL' : 'pt-PT', {
+                              {localDate(milestone.date).toLocaleDateString(currentLanguage === 'en' ? 'en-US' : currentLanguage === 'es' ? 'es-ES' : currentLanguage === 'fr' ? 'fr-FR' : currentLanguage === 'it' ? 'it-IT' : currentLanguage === 'de' ? 'de-DE' : currentLanguage === 'nl' ? 'nl-NL' : 'pt-PT', {
                                 weekday: 'long',
                                 year: 'numeric',
                                 month: 'long',
@@ -676,6 +684,7 @@ export default function AnniversaryTracker() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(milestone)}
+                            aria-label={t.editAction || translations.en.editAction}
                             className="text-gray-400 hover:text-gray-600"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -684,6 +693,7 @@ export default function AnniversaryTracker() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(milestone.id)}
+                            aria-label={t.deleteAction || translations.en.deleteAction}
                             className="text-gray-400 hover:text-red-600"
                           >
                             <Trash2 className="w-4 h-4" />
