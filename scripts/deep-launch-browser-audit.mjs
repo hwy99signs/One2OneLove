@@ -690,6 +690,42 @@ try {
   }
 
   {
+    const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
+    await installAnonymousAuth(context);
+    await context.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});
+    const page = await context.newPage();
+    await page.goto(BASE + '/Home', { waitUntil:'domcontentloaded', timeout:30000 });
+    await page.waitForTimeout(250);
+    const actionButton = page.locator('button[aria-controls="desktop-action-menu"]').first();
+    if (!(await actionButton.count())) {
+      add('critical','desktop-action-menu-missing',{ message:'Desktop Action menu disclosure button not found.' });
+    } else {
+      await actionButton.focus();
+      if ((await actionButton.getAttribute('aria-expanded')) !== 'false') {
+        add('critical','desktop-action-menu-initial-state',{ message:'Desktop Action menu did not start collapsed.' });
+      }
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(100);
+      const menu = page.locator('#desktop-action-menu');
+      if (!(await menu.count()) || !(await menu.isVisible())) {
+        add('critical','desktop-action-menu-keyboard-open',{ message:'Desktop Action menu did not open from keyboard activation.' });
+      } else if ((await actionButton.getAttribute('aria-expanded')) !== 'true') {
+        add('critical','desktop-action-menu-expanded-state',{ message:'Desktop Action menu did not expose aria-expanded=true after opening.' });
+      } else {
+        await page.keyboard.press('Tab');
+        const firstLinkFocused = await page.evaluate(function(){
+          const menuNode=document.querySelector('#desktop-action-menu');
+          return !!menuNode && menuNode.querySelector('a') === document.activeElement;
+        });
+        if (!firstLinkFocused) {
+          add('critical','desktop-action-menu-focus-order',{ message:'Keyboard focus did not move from the Action disclosure into the first menu link.' });
+        }
+      }
+    }
+    await context.close();
+  }
+
+  {
     const context = await browser.newContext({ viewport:{ width:390, height:844 } });
     await installAnonymousAuth(context);
     await context.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});

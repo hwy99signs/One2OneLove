@@ -278,10 +278,26 @@ function LanguageContent({ children, currentPageName }) {
           <nav className="hidden lg:flex items-center gap-6 font-bold text-lg shrink-0">
             <Link to={createPageUrl("Home")} className="hover:text-yellow-200">⌂ {t.nav.home}</Link>
             
-            <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-              <button className="hover:text-yellow-200">♡ {t.nav.action} ▾</button>
+            <div
+              className="relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) setActionOpen(false);
+              }}
+            >
+              <button
+                type="button"
+                aria-haspopup="true"
+                aria-expanded={actionOpen}
+                aria-controls="desktop-action-menu"
+                onClick={() => setActionOpen((open) => !open)}
+                className="hover:text-yellow-200"
+              >
+                ♡ {t.nav.action} ▾
+              </button>
               {actionOpen && (
-                <div className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
+                <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
                   <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
                   <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
                   <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
