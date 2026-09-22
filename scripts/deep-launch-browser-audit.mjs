@@ -167,13 +167,15 @@ try {
     const page = await context.newPage();
     const pageErrors = [];
     const consoleErrors = [];
+    const clientErrors = [];
     const serverErrors = [];
     page.on('pageerror', function(err){ pageErrors.push(String(err && err.message || err)); });
     page.on('console', function(msg){ if (msg.type() === 'error') consoleErrors.push(msg.text()); });
     page.on('response', function(res) {
       try {
         const u = new URL(res.url());
-        if (u.origin === BASE && res.status() >= 500) serverErrors.push({ url: u.pathname, status: res.status() });
+        if (u.origin === BASE && res.status() >= 400 && res.status() < 500) clientErrors.push({ url: u.pathname + u.search, status: res.status() });
+        if (u.origin === BASE && res.status() >= 500) serverErrors.push({ url: u.pathname + u.search, status: res.status() });
       } catch {}
     });
 
@@ -190,6 +192,7 @@ try {
 
     if (!response || response.status() !== 200) add('critical','page-status',{ route: route, lang: lang, viewport: labelSuffix, status: response && response.status() });
     if (pageErrors.length) add('critical','pageerror',{ route: route, lang: lang, viewport: labelSuffix, errors: pageErrors, screenshot: await screenshot(page, lang + '_' + route + '_' + labelSuffix + '_pageerror') });
+    if (clientErrors.length) add('critical','same-origin-4xx',{ route: route, lang: lang, viewport: labelSuffix, errors: clientErrors });
     if (serverErrors.length) add('critical','same-origin-5xx',{ route: route, lang: lang, viewport: labelSuffix, errors: serverErrors });
     if (consoleErrors.length) observations.push({ kind:'console-error', route:route, lang:lang, viewport:labelSuffix, messages:consoleErrors });
 
