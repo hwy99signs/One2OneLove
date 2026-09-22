@@ -40,6 +40,7 @@ import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
 import VerifyPhone from './VerifyPhone';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
+import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -87,9 +88,9 @@ function _getCurrentPage(url) {
   return pageName || 'Home';
 }
 
-function trackFeatureView(pathname) {
+function trackFeatureView(pathname, isAuthenticated) {
   const feature = FEATURE_BY_ROUTE[String(pathname || '').toLowerCase()];
-  if (!feature) return;
+  if (!feature || !isAuthenticated) return;
   fetch('/api/feature-usage', {
     method: 'POST',
     credentials: 'include',
@@ -100,6 +101,7 @@ function trackFeatureView(pathname) {
 
 function PagesContent() {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const currentPage = _getCurrentPage(location.pathname);
 
   useEffect(() => {
@@ -109,10 +111,10 @@ function PagesContent() {
       document.body.scrollTop = 0;
     };
     scrollToTop();
-    trackFeatureView(location.pathname);
+    trackFeatureView(location.pathname, isAuthenticated);
     const frame = window.requestAnimationFrame(scrollToTop);
     return () => window.cancelAnimationFrame(frame);
-  }, [location.pathname, location.search, location.key]);
+  }, [location.pathname, location.search, location.key, isAuthenticated]);
 
   return (
     <Layout currentPageName={currentPage}>
