@@ -179,8 +179,8 @@ export default function TermsOfService() {
   const t = translations[currentLanguage] || translations.en;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <div className="max-w-5xl mx-auto px-4 py-12">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="mx-auto min-w-0 max-w-5xl px-4 py-12">
         <div className="mb-6">
           <Link to={createPageUrl("Home")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
             <ArrowLeft size={20} className="mr-2" />
@@ -192,7 +192,7 @@ export default function TermsOfService() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-xl">
             <FileText className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
+          <h1 className="mb-4 break-words text-4xl font-bold text-gray-900 [overflow-wrap:anywhere] sm:text-5xl">{t.title}</h1>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto">{t.subtitle}</p>
           <p className="text-sm text-gray-500 mt-4">{t.lastUpdated}</p>
           {currentLanguage !== "en" && <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 mt-5 max-w-3xl mx-auto">{t.translationNotice}</p>}
@@ -200,9 +200,9 @@ export default function TermsOfService() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="shadow-2xl">
-            <CardContent className="p-8 md:p-10">
-              <div className="prose prose-lg max-w-none">
+          <Card className="min-w-0 overflow-hidden shadow-2xl">
+            <CardContent className="min-w-0 p-6 sm:p-8 md:p-10">
+              <div className="prose prose-lg min-w-0 max-w-none break-words [overflow-wrap:anywhere]">
                 {t.sections.map((section, index) => (
                   <div key={index} className="mb-9">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">{section.title}</h2>
