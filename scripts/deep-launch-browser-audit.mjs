@@ -206,15 +206,24 @@ try {
   for (const route of PROTECTED_ROUTES) {
     const context = await browser.newContext({ viewport:{ width:1280, height:900 } });
     await context.addInitScript(function(){ localStorage.setItem('preferredLanguage','en'); });
+    await context.route('**/api/auth/get-session', async function(routeHandler) {
+      await routeHandler.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user:null, session:null })
+      });
+    });
     const page = await context.newPage();
     try {
       const res = await page.goto(BASE + route, { waitUntil:'domcontentloaded', timeout:30000 });
-      await page.waitForTimeout(300);
       if (!res || res.status() !== 200) add('critical','protected-route-status',{ route:route, status:res && res.status() });
+      await page.waitForURL(function(url) {
+        return ['/signin','/login'].includes(url.pathname.toLowerCase());
+      }, { timeout:8000 });
       const finalPath = new URL(page.url()).pathname.toLowerCase();
       if (!['/signin','/login'].includes(finalPath)) add('critical','protected-route-guard',{ route:route, finalPath:finalPath });
     } catch (e) {
-      add('critical','protected-route-navigation',{ route:route, message:String(e.message || e) });
+      add('critical','protected-route-navigation',{ route:route, finalPath:new URL(page.url()).pathname.toLowerCase(), message:String(e.message || e) });
     }
     await context.close();
   }
