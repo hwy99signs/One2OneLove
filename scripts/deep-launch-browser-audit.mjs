@@ -607,7 +607,11 @@ try {
       page.on('pageerror', function(err){ pageErrors.push(String(err && err.message || err)); });
       try {
         await page.goto(BASE + '/RelationshipMilestones', { waitUntil:'domcontentloaded', timeout:30000 });
-        await page.waitForTimeout(700);
+        await page.getByText('Launch QA first_date', { exact:true }).waitFor({ state:'visible', timeout:8000 }).catch(function(){});
+        const syntheticVisible = await page.getByText('Launch QA first_date', { exact:true }).count();
+        if (!syntheticVisible) {
+          add('critical','milestone-test-data-not-loaded',{ lang:lang, finalPath:new URL(page.url()).pathname });
+        }
 
         const ideaButtons=page.getByRole('button',{ name:copy.ideas, exact:true });
         const ideaCount=await ideaButtons.count();
