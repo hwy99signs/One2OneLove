@@ -505,7 +505,7 @@ try {
         const actual = await cards.nth(i).getAttribute('data-podcast-language');
         if (actual !== expected) add('critical','podcast-language-mixed',{ lang:lang, expected:expected, actual:actual, index:i });
       }
-      const mainText = normalizeText(await page.locator('main').innerText());
+      const mainText = normalizeText(await page.locator('main').last().innerText());
       if (!mainText.includes(expectedDescriptionAnchor[lang])) add('critical','podcast-card-description-language',{ lang:lang, expectedAnchor:expectedDescriptionAnchor[lang] });
       await context.close();
     }
