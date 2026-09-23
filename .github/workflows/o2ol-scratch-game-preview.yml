@@ -1,0 +1,55 @@
+name: O2OL Scratch Game Cloudflare Preview
+
+on:
+  push:
+    branches:
+      - o2ol-scratch-game-pwa
+    paths:
+      - "scratch-game/**"
+      - ".github/workflows/o2ol-scratch-game-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-scratch-game-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-scratch-game-preview.hwy99signs.workers.dev
+    defaults:
+      run:
+        working-directory: scratch-game
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+      - name: Verify browser has no embedded bank
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RIn "const questionBank" public worker 2>/dev/null
+      - name: Wrangler dry run
+        run: npx --yes wrangler@latest deploy --dry-run --config wrangler.toml
+      - name: Deploy Cloudflare preview
+        run: npx --yes wrangler@latest deploy --config wrangler.toml
+      - name: Verify preview health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 24); do
+            code=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$PREVIEW_URL/api/health" || true)
+            if [ "$code" = "200" ]; then
+              cat /tmp/health.json
+              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive"' /tmp/health.json >/dev/null
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
