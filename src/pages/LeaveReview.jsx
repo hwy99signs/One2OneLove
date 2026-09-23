@@ -188,7 +188,8 @@ export default function LeaveReview() {
       toast({ title: t.success });
       navigate(createPageUrl("Reviews"));
     } catch (error) {
-      notifyError(error?.message || t.submitError);
+      console.error('Review submission failed:', error);
+      notifyError(t.submitError);
     } finally {
       setSubmitting(false);
     }

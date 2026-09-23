@@ -113,7 +113,8 @@ export default function Suggestions() {
       toast.success(t.successMessage);
       setFormData({ name: "", email: "", type: "feature", suggestion: "" });
     } catch (error) {
-      toast.error(error?.message || t.errorMessage);
+      console.error('Suggestion submission failed:', error);
+      toast.error(t.errorMessage);
     } finally {
       setSubmitting(false);
     }

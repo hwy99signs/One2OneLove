@@ -1063,6 +1063,105 @@ try {
   }
 
 
+
+  {
+    const suggestionErrorCopy={
+      en:{placeholder:'Tell us your idea in detail...',submit:'Submit Suggestion',error:'Your suggestion could not be submitted. Please try again.'},
+      es:{placeholder:'Cuéntanos tu idea en detalle...',submit:'Enviar Sugerencia',error:'No se pudo enviar tu sugerencia. Inténtalo de nuevo.'},
+      fr:{placeholder:'Parlez-nous de votre idée en détail...',submit:'Soumettre la Suggestion',error:'Votre suggestion n’a pas pu être envoyée. Veuillez réessayer.'},
+      it:{placeholder:'Raccontaci la tua idea in dettaglio...',submit:'Invia Suggerimento',error:'Impossibile inviare il suggerimento. Riprova.'},
+      de:{placeholder:'Erzählen Sie uns im Detail von Ihrer Idee...',submit:'Vorschlag Einreichen',error:'Ihr Vorschlag konnte nicht gesendet werden. Bitte versuchen Sie es erneut.'}
+    };
+    for(const lang of Object.keys(suggestionErrorCopy)){
+      const copy=suggestionErrorCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900}});
+      await installAnonymousAuth(context);
+      await context.route('**/api/suggestions/readiness',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ready:true})});
+      });
+      await context.route('**/api/suggestions',async function(routeHandler){
+        if(routeHandler.request().method()==='POST'){
+          await routeHandler.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:{message:'Synthetic English server failure.'}})});
+          return;
+        }
+        await routeHandler.fallback();
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/Suggestions',{waitUntil:'domcontentloaded',timeout:30000});
+        const textarea=page.getByPlaceholder(copy.placeholder,{exact:true});
+        await textarea.waitFor({state:'visible',timeout:5000}).catch(function(){});
+        if(!(await textarea.count())){
+          add('critical','suggestions-error-audit-form-missing',{lang:lang});
+        }else{
+          await textarea.fill('Launch QA suggestion content');
+          await page.getByRole('button',{name:copy.submit,exact:true}).click();
+          const localizedError=page.getByText(copy.error,{exact:true}).last();
+          await localizedError.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if(!(await localizedError.count())) add('critical','suggestions-error-not-localized',{lang:lang});
+          if(await page.getByText('Synthetic English server failure.',{exact:true}).count()) add('critical','suggestions-raw-server-error-visible',{lang:lang});
+        }
+      }catch(e){
+        add('critical','suggestions-error-interaction-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'suggestions_error_'+lang)});
+      }
+      await context.close();
+    }
+  }
+
+  {
+    const reviewErrorCopy={
+      en:{placeholder:'Tell others about your experience with One2OneLove...',submit:'Submit Review',error:'Unable to submit your review.',star:'5 stars'},
+      es:{placeholder:'Cuéntales a otros sobre tu experiencia con One2OneLove...',submit:'Enviar Reseña',error:'No se pudo enviar tu reseña.',star:'5 estrellas'},
+      fr:{placeholder:'Parlez aux autres de votre expérience avec One2OneLove...',submit:"Envoyer l'Avis",error:'Impossible d’envoyer votre avis.',star:'5 étoiles'},
+      it:{placeholder:'Racconta agli altri la tua esperienza con One2OneLove...',submit:'Invia Recensione',error:'Impossibile inviare la recensione.',star:'5 stelle'},
+      de:{placeholder:'Erzählen Sie anderen von Ihrer Erfahrung mit One2OneLove...',submit:'Bewertung Senden',error:'Ihre Bewertung konnte nicht gesendet werden.',star:'5 Sterne'}
+    };
+    for(const lang of Object.keys(reviewErrorCopy)){
+      const copy=reviewErrorCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900}});
+      const user={id:'launch-qa-review-user',email:'review-qa@example.invalid',emailVerified:true,email_verified:true,name:'Review QA',role:'user'};
+      const profile={
+        id:user.id,email:user.email,name:user.name,role:'user',location:'Houston',city:'Houston',country:'US',
+        subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true
+      };
+      await context.route('**/api/auth/get-session',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:user,session:{id:'launch-qa-review-session',userId:user.id}})});
+      });
+      await context.route('**/api/profile',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:profile})});
+      });
+      await context.route('**/api/reviews',async function(routeHandler){
+        if(routeHandler.request().method()==='POST'){
+          await routeHandler.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:{message:'Synthetic English review failure.'}})});
+          return;
+        }
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({reviews:[]})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/LeaveReview',{waitUntil:'domcontentloaded',timeout:30000});
+        const textarea=page.getByPlaceholder(copy.placeholder,{exact:true});
+        await textarea.waitFor({state:'visible',timeout:8000}).catch(function(){});
+        if(!(await textarea.count())){
+          add('critical','review-error-audit-form-missing',{lang:lang});
+        }else{
+          await page.getByRole('radio',{name:copy.star,exact:true}).click();
+          await textarea.fill('Launch QA review text long enough.');
+          await page.getByRole('button',{name:copy.submit,exact:true}).click();
+          const localizedError=page.getByText(copy.error,{exact:true}).last();
+          await localizedError.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if(!(await localizedError.count())) add('critical','review-error-not-localized',{lang:lang});
+          if(await page.getByText('Synthetic English review failure.',{exact:true}).count()) add('critical','review-raw-server-error-visible',{lang:lang});
+        }
+      }catch(e){
+        add('critical','review-error-interaction-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'review_error_'+lang)});
+      }
+      await context.close();
+    }
+  }
+
   {
     const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
     await installAnonymousAuth(context);
