@@ -1201,7 +1201,7 @@ try {
             add('critical','date-ideas-custom-title-localization',{lang:lang});
           }else{
             const fields=[
-              ['title',copy.title],['description',copy.description],['category',copy.category],['budget',copy.budget],
+              ['title',copy.title + ' *'],['description',copy.description + ' *'],['category',copy.category],['budget',copy.budget],
               ['location',copy.location],['occasion',copy.occasion],['stage',copy.stage],['difficulty',copy.difficulty],['duration',copy.duration]
             ];
             for(const pair of fields){
