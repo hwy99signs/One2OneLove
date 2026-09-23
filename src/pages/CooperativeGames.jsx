@@ -52,6 +52,15 @@ export default function CooperativeGames() {
 
   const availableGames = [
     {
+      id: 'o2ol_scratch',
+      name: 'One2OneLove Scratch Game',
+      description: 'Scratch, reveal, and talk through meaningful questions together.',
+      type: 'conversation',
+      difficulty: 'easy',
+      icon: '💗',
+      link: 'ScratchGame'
+    },
+    {
       id: 'trivia',
       name: 'Couple Trivia',
       description: 'Test how well you know each other with fun trivia questions',
