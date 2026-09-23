@@ -1162,6 +1162,99 @@ try {
     }
   }
 
+
+  {
+    const dateIdeasAuditCopy={
+      en:{create:'Create Custom Date',customTitle:'Create Custom Date Idea',title:'Date Title',description:'Description',category:'Category',budget:'Budget',location:'Location Type',occasion:'Occasion',stage:'Relationship Stage',difficulty:'Difficulty',duration:'Duration (hours)',cancel:'Cancel',firstIdea:'Stargazing Picnic',schedule:'Schedule',scheduleDate:'Date',scheduleTime:'Time'},
+      es:{create:'Crear Cita Personalizada',customTitle:'Crear Idea de Cita Personalizada',title:'Título de la Cita',description:'Descripción',category:'Categoría',budget:'Presupuesto',location:'Tipo de Lugar',occasion:'Ocasión',stage:'Etapa de la Relación',difficulty:'Dificultad',duration:'Duración (horas)',cancel:'Cancelar',firstIdea:'Picnic bajo las estrellas',schedule:'Programar',scheduleDate:'Fecha',scheduleTime:'Hora'},
+      fr:{create:'Créer un Rendez-vous',customTitle:'Créer une Idée de Rendez-vous Personnalisée',title:'Titre du Rendez-vous',description:'Description',category:'Catégorie',budget:'Budget',location:'Type de Lieu',occasion:'Occasion',stage:'Étape de la Relation',difficulty:'Difficulté',duration:'Durée (heures)',cancel:'Annuler',firstIdea:'Pique-nique sous les étoiles',schedule:'Planifier',scheduleDate:'Date',scheduleTime:'Heure'},
+      it:{create:'Crea Appuntamento',customTitle:'Crea Idea per Appuntamento Personalizzata',title:'Titolo dell’Appuntamento',description:'Descrizione',category:'Categoria',budget:'Budget',location:'Tipo di Luogo',occasion:'Occasione',stage:'Fase della Relazione',difficulty:'Difficoltà',duration:'Durata (ore)',cancel:'Annulla',firstIdea:'Picnic sotto le stelle',schedule:'Programma',scheduleDate:'Data',scheduleTime:'Ora'},
+      de:{create:'Eigenes Date Erstellen',customTitle:'Eigene Date-Idee Erstellen',title:'Date-Titel',description:'Beschreibung',category:'Kategorie',budget:'Budget',location:'Ortstyp',occasion:'Anlass',stage:'Beziehungsphase',difficulty:'Schwierigkeit',duration:'Dauer (Stunden)',cancel:'Abbrechen',firstIdea:'Sternen-Picknick',schedule:'Planen',scheduleDate:'Datum',scheduleTime:'Uhrzeit'}
+    };
+    for(const lang of Object.keys(dateIdeasAuditCopy)){
+      const copy=dateIdeasAuditCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/date-ideas**',async function(routeHandler){
+        if(routeHandler.request().method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ideas:[]})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic Date Ideas QA is read-only.'}})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      const pageErrors=[];
+      page.on('pageerror',function(err){pageErrors.push(String(err&&err.message||err));});
+      try{
+        await page.goto(BASE+'/DateIdeas',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.waitForTimeout(500);
+
+        const createButton=page.getByRole('button',{name:copy.create,exact:true}).first();
+        if(!(await createButton.count())){
+          add('critical','date-ideas-custom-open-missing',{lang:lang});
+        }else{
+          await createButton.click();
+          const customHeading=page.getByText(copy.customTitle,{exact:true}).first();
+          await customHeading.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if(!(await customHeading.count())){
+            add('critical','date-ideas-custom-title-localization',{lang:lang});
+          }else{
+            const fields=[
+              ['title',copy.title],['description',copy.description],['category',copy.category],['budget',copy.budget],
+              ['location',copy.location],['occasion',copy.occasion],['stage',copy.stage],['difficulty',copy.difficulty],['duration',copy.duration]
+            ];
+            for(const pair of fields){
+              if(!(await page.getByLabel(pair[1],{exact:true}).count())){
+                add('critical','date-ideas-custom-label-association',{lang:lang,field:pair[0],label:pair[1]});
+              }
+            }
+            const cancelButtons=page.getByRole('button',{name:copy.cancel,exact:true});
+            if(!(await cancelButtons.count())) add('critical','date-ideas-custom-close-accessibility',{lang:lang});
+            else await cancelButtons.last().click();
+          }
+        }
+
+        const firstIdeaButton=page.getByRole('button',{name:copy.firstIdea,exact:true}).first();
+        if(!(await firstIdeaButton.count())){
+          add('critical','date-ideas-first-card-missing',{lang:lang,expected:copy.firstIdea});
+        }else{
+          await firstIdeaButton.click();
+          const dialog=page.getByRole('dialog',{name:copy.firstIdea,exact:true});
+          await dialog.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if(!(await dialog.count())){
+            add('critical','date-ideas-detail-dialog-semantics',{lang:lang});
+          }else{
+            const scheduleButton=dialog.getByRole('button',{name:copy.schedule,exact:true}).first();
+            if(!(await scheduleButton.count())){
+              add('critical','date-ideas-schedule-open-missing',{lang:lang});
+            }else{
+              await scheduleButton.click();
+              const dateInput=dialog.getByLabel(copy.scheduleDate,{exact:true});
+              const timeInput=dialog.getByLabel(copy.scheduleTime,{exact:true});
+              if(!(await dateInput.count()) || !(await timeInput.count())){
+                add('critical','date-ideas-schedule-label-association',{lang:lang});
+              }
+              if(await dateInput.count()){
+                const expected=await page.evaluate(function(){
+                  const now=new Date();
+                  const local=new Date(now.getTime()-now.getTimezoneOffset()*60000);
+                  return local.toISOString().slice(0,10);
+                });
+                const actual=await dateInput.getAttribute('min');
+                if(actual!==expected) add('critical','date-ideas-schedule-local-date-min',{lang:lang,expected:expected,actual:actual});
+              }
+            }
+          }
+        }
+        if(pageErrors.length) add('critical','date-ideas-interaction-pageerror',{lang:lang,errors:pageErrors});
+      }catch(e){
+        add('critical','date-ideas-interaction-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'date_ideas_'+lang+'_interaction')});
+      }
+      await context.close();
+    }
+  }
+
   {
     const context = await browser.newContext({ viewport:{ width:1366, height:900 } });
     await installAnonymousAuth(context);

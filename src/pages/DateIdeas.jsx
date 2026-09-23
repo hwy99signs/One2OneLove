@@ -152,7 +152,7 @@ export default function DateIdeas() {
     },
     onError: (error) => {
       console.error('Error creating custom date:', error);
-      toast.error(error?.message || t.actionFailed);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.actionFailed) : t.actionFailed);
     }
   });
 
@@ -385,7 +385,7 @@ export default function DateIdeas() {
       toast.success(t.dateScheduled);
     } catch (error) {
       console.error('Error scheduling date idea:', error);
-      toast.error(error?.message || t.actionFailed);
+      toast.error(currentLanguage === 'en' ? (error?.message || t.actionFailed) : t.actionFailed);
     } finally {
       setIsScheduling(false);
     }
@@ -614,6 +614,9 @@ export default function DateIdeas() {
                 className="w-full max-w-2xl"
                 onClick={(event) => event.stopPropagation()}
                 onMouseLeave={() => { if (!showScheduleForm) setSelectedIdea(null); }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="date-idea-detail-title"
               >
                 <Card className="bg-white shadow-2xl border-2 border-pink-100 max-h-[85vh] overflow-y-auto">
                   <CardHeader className="relative pr-14">
@@ -637,7 +640,7 @@ export default function DateIdeas() {
                         );
                       })()}
                       <div>
-                        <CardTitle className="text-2xl font-bold text-gray-900">{selectedIdea.title}</CardTitle>
+                        <CardTitle id="date-idea-detail-title" className="text-2xl font-bold text-gray-900">{selectedIdea.title}</CardTitle>
                       </div>
                     </div>
                   </CardHeader>
@@ -699,8 +702,9 @@ export default function DateIdeas() {
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleDate}</label>
+                                  <label htmlFor="date-idea-schedule-date" className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleDate}</label>
                                   <Input
+                                    id="date-idea-schedule-date"
                                     type="date"
                                     min={localToday}
                                     value={scheduleDate}
@@ -708,10 +712,11 @@ export default function DateIdeas() {
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleTime}</label>
+                                  <label htmlFor="date-idea-schedule-time" className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleTime}</label>
                                   <div className="relative">
                                     <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     <Input
+                                      id="date-idea-schedule-time"
                                       type="time"
                                       value={scheduleTime}
                                       onChange={(event) => setScheduleTime(event.target.value)}
