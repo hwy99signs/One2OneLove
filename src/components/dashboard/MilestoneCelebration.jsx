@@ -6,6 +6,7 @@ import { createPageUrl } from "@/utils";
 import { PartyPopper, Gift, Calendar, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from '@/Layout';
+import { calendarDayDifference, parseLocalDate } from '@/utils/localDate';
 
 const copy = {
   en:{ today:'🎉 TODAY!', tomorrow:'Tomorrow', inDays:n=>`In ${n} days`, celebrate:'Celebrate Now! 🎊', plan:'Plan Celebration' },
@@ -23,21 +24,19 @@ export default function MilestoneCelebration({ milestones }) {
   const locale = localeByLanguage[currentLanguage] || localeByLanguage.en;
 
   const upcomingMilestone = useMemo(() => {
-    const today = new Date();
     const upcoming = milestones
       .filter(m => {
-        const date = new Date(m.date);
-        const diff = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
-        return diff >= 0 && diff <= 7;
+        const diff = calendarDayDifference(m.date);
+        return diff !== null && diff >= 0 && diff <= 7;
       })
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      .sort((a, b) => (parseLocalDate(a.date)?.getTime() || 0) - (parseLocalDate(b.date)?.getTime() || 0));
     return upcoming[0] || null;
   }, [milestones]);
 
   if (!upcomingMilestone) return null;
 
-  const milestoneDate = new Date(upcomingMilestone.date);
-  const daysUntil = Math.ceil((milestoneDate - new Date()) / (1000 * 60 * 60 * 24));
+  const milestoneDate = parseLocalDate(upcomingMilestone.date);
+  const daysUntil = calendarDayDifference(upcomingMilestone.date);
   const isToday = daysUntil === 0;
   const isTomorrow = daysUntil === 1;
   const whenLabel = isToday ? t.today : isTomorrow ? t.tomorrow : t.inDays(daysUntil);
@@ -58,7 +57,7 @@ export default function MilestoneCelebration({ milestones }) {
                 <div>
                   <div className="mb-2 flex items-center gap-2"><Calendar className="h-5 w-5"/><span className="text-sm font-semibold opacity-90">{whenLabel}</span></div>
                   <h3 className="mb-2 text-2xl font-bold md:text-3xl">{upcomingMilestone.title}</h3>
-                  <p className="mb-1 text-white/90">{formattedDate}</p>
+                  <p data-dashboard-milestone-date={upcomingMilestone.date} className="mb-1 text-white/90">{formattedDate}</p>
                   {upcomingMilestone.description && <p className="max-w-2xl text-sm text-white/80">{upcomingMilestone.description}</p>}
                 </div>
               </div>

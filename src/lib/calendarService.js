@@ -1,3 +1,4 @@
+import { formatLocalDateInput } from '@/utils/localDate';
 import { apiRequest } from '@/lib/apiClient';
 
 export const getCalendarEvents = async (_userId, options = {}) => {
@@ -61,7 +62,7 @@ export const deleteCalendarEvent = async (eventId, _userId) => {
 };
 
 export const getUpcomingEvents = async (userId, limit = 10) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateInput();
   return getCalendarEvents(userId, {
     startDate: today,
     sortBy: 'event_date',
@@ -74,8 +75,8 @@ export const getEventsForMonth = async (userId, month) => {
   const start = new Date(month.getFullYear(), month.getMonth(), 1);
   const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   return getCalendarEvents(userId, {
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0],
+    startDate: formatLocalDateInput(start),
+    endDate: formatLocalDateInput(end),
     sortBy: 'event_date',
     sortOrder: 'asc',
   });
@@ -88,7 +89,7 @@ export const getEventsByType = async (userId, eventType) => getCalendarEvents(us
 });
 
 export const getTodayEvents = async (userId) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateInput();
   return getCalendarEvents(userId, {
     startDate: today,
     endDate: today,
@@ -104,8 +105,8 @@ export const getThisWeekEvents = async (userId) => {
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   return getCalendarEvents(userId, {
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0],
+    startDate: formatLocalDateInput(start),
+    endDate: formatLocalDateInput(end),
     sortBy: 'event_date',
     sortOrder: 'asc',
   });
@@ -114,7 +115,7 @@ export const getThisWeekEvents = async (userId) => {
 export const getThisMonthEvents = async (userId) => getEventsForMonth(userId, new Date());
 
 export const getUpcomingEventsFilter = async (userId) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateInput();
   return getCalendarEvents(userId, {
     startDate: today,
     sortBy: 'event_date',

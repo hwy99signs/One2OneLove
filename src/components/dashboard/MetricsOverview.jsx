@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Flame, Heart, BookOpen, Target, Calendar, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
+import { calendarDayDifference } from '@/utils/localDate';
 
 const copy = {
   en:{ streak:'Current Streak', days:'days', activities:'Activities Done', total:'total', goals:'Active Goals', goalsSuffix:'goals', memories:'Memories', saved:'saved', journals:'Journal Entries', entries:'entries', milestones:'Upcoming Milestones', next30:'next 30 days' },
@@ -23,10 +24,8 @@ export default function MetricsOverview({ data }) {
     const activeGoals = (data.goals || []).filter(g => g.status === 'in_progress' || g.status === 'in progress').length;
     const upcomingMilestones = (data.milestones || []).filter(m => {
       const rawDate = m.date || m.milestone_date;
-      const date = new Date(rawDate);
-      if (Number.isNaN(date.getTime())) return false;
-      const diff = Math.ceil((date - new Date()) / (1000 * 60 * 60 * 24));
-      return diff > 0 && diff <= 30;
+      const diff = calendarDayDifference(rawDate);
+      return diff !== null && diff > 0 && diff <= 30;
     }).length;
     return {
       maxStreak,

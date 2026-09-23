@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
+import { formatLocalDateInput } from "@/utils/localDate";
 
 const COPY = {
   en:{newEntry:"New Journal Entry",editEntry:"Edit Entry",title:"Title",titlePlaceholder:"What's on your mind?",date:"Date",mood:"Mood",thoughts:"Your Thoughts",thoughtsPlaceholder:"Write your thoughts here…",tags:"Tags",tagsPlaceholder:"Add tags…",add:"Add",cancel:"Cancel",save:"Save Entry",close:"Close",removeTag:"Remove tag",moods:{happy:"Happy",grateful:"Grateful",reflective:"Reflective",excited:"Excited",peaceful:"Peaceful",challenged:"Challenged",loving:"Loving"}},
@@ -20,7 +21,7 @@ export default function JournalForm({ entry, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(entry || {
     title: '',
     content: '',
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: formatLocalDateInput(),
     mood: 'happy',
     tags: [],
     is_favorite: false
@@ -93,12 +94,12 @@ export default function JournalForm({ entry, onSubmit, onCancel }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">{t.mood}</label>
+              <label htmlFor="journal-mood" className="block text-sm font-medium mb-2">{t.mood}</label>
               <Select
                 value={formData.mood}
                 onValueChange={(value) => setFormData({ ...formData, mood: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="journal-mood" aria-label={t.mood}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

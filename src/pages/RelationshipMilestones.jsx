@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, Sparkles, Gift, Link as LinkIcon, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
+import { calendarDayDifference, formatLocalDateInput, parseLocalDate } from "@/utils/localDate";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -230,15 +231,7 @@ export default function RelationshipMilestones() {
     }
   };
 
-  const getDaysUntil = (date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const milestoneDate = new Date(`${date}T00:00:00`);
-    milestoneDate.setHours(0, 0, 0, 0);
-    const diffTime = milestoneDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
+  const getDaysUntil = (date) => calendarDayDifference(date) ?? Infinity;
 
   const getNextAnniversary = (originalDate) => {
     const today = new Date();
@@ -255,7 +248,7 @@ export default function RelationshipMilestones() {
     .map(m => {
       if (m.is_recurring) {
         const nextDate = getNextAnniversary(m.date);
-        return { ...m, displayDate: nextDate.toISOString().split('T')[0] };
+        return { ...m, displayDate: formatLocalDateInput(nextDate) };
       }
       return { ...m, displayDate: m.date };
     })
@@ -267,7 +260,7 @@ export default function RelationshipMilestones() {
 
   const pastMilestones = milestones
     .filter(m => !m.is_recurring && getDaysUntil(m.date) < 0)
-    .sort((a, b) => new Date(`${b.date}T00:00:00`) - new Date(`${a.date}T00:00:00`));
+    .sort((a, b) => (parseLocalDate(b.date)?.getTime() || 0) - (parseLocalDate(a.date)?.getTime() || 0));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">

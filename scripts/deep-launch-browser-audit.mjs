@@ -560,11 +560,11 @@ try {
 
   {
     const milestoneAuditCopy = {
-      en:{ add:'Add a Milestone', selectDate:'Select date', upload:'Click to upload photos', ideas:'Get Celebration Ideas', close:'Close', closeForm:'Close milestone form', gift:'Gift Suggestions', fallback:null, fallbackStart:10 },
-      es:{ add:'Agregar un Hito', selectDate:'Seleccionar fecha', upload:'Haz clic para subir fotos', ideas:'Obtener Ideas de Celebración', close:'Cerrar', closeForm:'Cerrar formulario de hito', gift:'Sugerencias de Regalos', fallback:'Celebrar este hito', fallbackStart:2 },
-      fr:{ add:'Ajouter un Jalon', selectDate:'Sélectionner une date', upload:'Cliquez pour téléverser des photos', ideas:'Obtenir des Idées de Célébration', close:'Fermer', closeForm:'Fermer le formulaire du jalon', gift:'Suggestions de Cadeaux', fallback:'Célébrer ce jalon', fallbackStart:1 },
-      it:{ add:'Aggiungi un Traguardo', selectDate:'Seleziona una data', upload:'Fai clic per caricare le foto', ideas:'Ottieni Idee per la Celebrazione', close:'Chiudi', closeForm:'Chiudi il modulo del traguardo', gift:'Suggerimenti per Regali', fallback:'Celebrare questo traguardo', fallbackStart:1 },
-      de:{ add:'Einen Meilenstein Hinzufügen', selectDate:'Datum auswählen', upload:'Klicken, um Fotos hochzuladen', ideas:'Feier-Ideen Erhalten', close:'Schließen', closeForm:'Meilensteinformular schließen', gift:'Geschenkvorschläge', fallback:'Diesen Meilenstein', fallbackStart:1 }
+      en:{ add:'Add a Milestone', edit:'Edit', date:'Date', selectDate:'Select date', upload:'Click to upload photos', ideas:'Get Celebration Ideas', close:'Close', closeForm:'Close milestone form', gift:'Gift Suggestions', fallback:null, fallbackStart:10 },
+      es:{ add:'Agregar un Hito', edit:'Editar', date:'Fecha', selectDate:'Seleccionar fecha', upload:'Haz clic para subir fotos', ideas:'Obtener Ideas de Celebración', close:'Cerrar', closeForm:'Cerrar formulario de hito', gift:'Sugerencias de Regalos', fallback:'Celebrar este hito', fallbackStart:2 },
+      fr:{ add:'Ajouter un Jalon', edit:'Modifier', date:'Date', selectDate:'Sélectionner une date', upload:'Cliquez pour téléverser des photos', ideas:'Obtenir des Idées de Célébration', close:'Fermer', closeForm:'Fermer le formulaire du jalon', gift:'Suggestions de Cadeaux', fallback:'Célébrer ce jalon', fallbackStart:1 },
+      it:{ add:'Aggiungi un Traguardo', edit:'Modifica', date:'Data', selectDate:'Seleziona una data', upload:'Fai clic per caricare le foto', ideas:'Ottieni Idee per la Celebrazione', close:'Chiudi', closeForm:'Chiudi il modulo del traguardo', gift:'Suggerimenti per Regali', fallback:'Celebrare questo traguardo', fallbackStart:1 },
+      de:{ add:'Einen Meilenstein Hinzufügen', edit:'Bearbeiten', date:'Datum', selectDate:'Datum auswählen', upload:'Klicken, um Fotos hochzuladen', ideas:'Feier-Ideen Erhalten', close:'Schließen', closeForm:'Meilensteinformular schließen', gift:'Geschenkvorschläge', fallback:'Diesen Meilenstein', fallbackStart:1 }
     };
     const milestoneTypes=['first_date','first_kiss','first_love','moving_in','engagement','wedding','anniversary','first_vacation','met_family','custom'];
     const syntheticMilestones=milestoneTypes.map(function(type,index){
@@ -584,7 +584,7 @@ try {
 
     for (const lang of Object.keys(milestoneAuditCopy)) {
       const copy=milestoneAuditCopy[lang];
-      const context=await browser.newContext({ viewport:{ width:1366, height:900 } });
+      const context=await browser.newContext({ viewport:{ width:1366, height:900 }, timezoneId:'America/Chicago' });
       await installSyntheticMemberAuth(context);
       const milestoneRequestUrls=[];
       await context.route('**/*', async function(routeHandler) {
@@ -663,6 +663,30 @@ try {
         const visibleGiftButton=page.getByRole('button').filter({ hasText:copy.gift });
         if (await visibleGiftButton.count()) {
           add('critical','milestone-deferred-gift-visible',{ lang:lang });
+        }
+
+        const firstMilestoneCard=page.locator('[data-milestone-type="first_date"]').first();
+        const firstEditButton=firstMilestoneCard.getByRole('button').filter({hasText:copy.edit}).first();
+        if(!(await firstEditButton.count())){
+          add('critical','milestone-edit-button-missing',{lang:lang});
+        }else{
+          await firstEditButton.click();
+          const editDialog=page.getByRole('dialog').last();
+          await editDialog.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          const dateButton=editDialog.getByRole('button',{name:copy.date,exact:true}).first();
+          if(!(await dateButton.count())){
+            add('critical','milestone-edit-date-control-missing',{lang:lang});
+          }else{
+            await dateButton.click();
+            const selectedDay=editDialog.locator('button[aria-selected="true"]').first();
+            await selectedDay.waitFor({state:'visible',timeout:3000}).catch(function(){});
+            const selectedText=(await selectedDay.count()) ? normalizeText(await selectedDay.innerText()) : '';
+            if(selectedText !== '1'){
+              add('critical','milestone-edit-local-date-selection',{lang:lang,expected:'1',actual:selectedText});
+            }
+          }
+          const closeEdit=editDialog.getByRole('button',{name:copy.closeForm,exact:true}).first();
+          if(await closeEdit.count()) await closeEdit.click();
         }
 
         const addButton=page.getByRole('button',{ name:copy.add, exact:true }).first();
@@ -1250,6 +1274,290 @@ try {
         if(pageErrors.length) add('critical','date-ideas-interaction-pageerror',{lang:lang,errors:pageErrors});
       }catch(e){
         add('critical','date-ideas-interaction-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'date_ideas_'+lang+'_interaction')});
+      }
+      await context.close();
+    }
+  }
+
+
+  {
+    const dashboardDateCopy={
+      en:{locale:'en-US'},
+      es:{locale:'es-ES'},
+      fr:{locale:'fr-FR'},
+      it:{locale:'it-IT'},
+      de:{locale:'de-DE'}
+    };
+    for(const lang of Object.keys(dashboardDateCopy)){
+      const copy=dashboardDateCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
+      await installSyntheticMemberAuth(context);
+      const syntheticMilestone={
+        id:'launch-qa-dashboard-milestone',
+        title:'Launch QA Anniversary',
+        description:'Synthetic dashboard date-only milestone',
+        date:'2026-09-23',
+        milestone_type:'anniversary',
+        is_recurring:false,
+        celebration_completed:false
+      };
+      await context.route('**/api/milestones**',async function(routeHandler){
+        if(routeHandler.request().method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({milestones:[syntheticMilestone]})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic dashboard QA is read-only.'}})});
+      });
+      await context.route('**/api/journals**',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({entries:[]})});
+      });
+      await context.route('**/api/goals**',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({goals:[]})});
+      });
+      await context.route('**/api/memories**',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[]})});
+      });
+      await context.route('**/api/engagement/points',async function(routeHandler){
+        await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({points:[]})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      const pageErrors=[];
+      page.on('pageerror',function(err){pageErrors.push(String(err&&err.message||err));});
+      try{
+        await page.goto(BASE+'/CouplesDashboard',{waitUntil:'domcontentloaded',timeout:30000});
+        const dateNode=page.locator('[data-dashboard-milestone-date="2026-09-23"]').first();
+        await dateNode.waitFor({state:'visible',timeout:8000}).catch(function(){});
+        if(!(await dateNode.count())){
+          add('critical','couples-dashboard-milestone-date-missing',{lang:lang});
+        }else{
+          const expected=await page.evaluate(function(locale){
+            return new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',day:'numeric'}).format(new Date('2026-09-23T00:00:00'));
+          },copy.locale);
+          const actual=normalizeText(await dateNode.innerText());
+          if(actual!==normalizeText(expected)){
+            add('critical','couples-dashboard-milestone-local-date',{lang:lang,expected:expected,actual:actual});
+          }
+        }
+        if(pageErrors.length) add('critical','couples-dashboard-date-pageerror',{lang:lang,errors:pageErrors});
+      }catch(e){
+        add('critical','couples-dashboard-date-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'couples_dashboard_date_'+lang)});
+      }
+      await context.close();
+    }
+  }
+
+
+  {
+    const journalDateCopy={
+      en:{add:'Add Entry',date:'Date',mood:'Mood'},
+      es:{add:'Agregar Entrada',date:'Fecha',mood:'Estado de Ánimo'},
+      fr:{add:'Ajouter une Entrée',date:'Date',mood:'Humeur'},
+      it:{add:'Aggiungi Voce',date:'Data',mood:'Umore'},
+      de:{add:'Eintrag Hinzufügen',date:'Datum',mood:'Stimmung'}
+    };
+    for(const lang of Object.keys(journalDateCopy)){
+      const copy=journalDateCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
+      await installSyntheticMemberAuth(context);
+      await context.route('**/api/journals**',async function(routeHandler){
+        if(routeHandler.request().method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({entries:[]})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic journal QA is read-only.'}})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/SharedJournals',{waitUntil:'domcontentloaded',timeout:30000});
+        const addButton=page.getByRole('button',{name:copy.add,exact:true}).first();
+        if(!(await addButton.count())){
+          add('critical','journal-add-entry-missing',{lang:lang});
+        }else{
+          await addButton.click();
+          const dateInput=page.getByLabel(copy.date,{exact:true});
+          const moodControl=page.getByLabel(copy.mood,{exact:true});
+          if(!(await dateInput.count())) add('critical','journal-date-label-association',{lang:lang});
+          if(!(await moodControl.count())) add('critical','journal-mood-label-association',{lang:lang});
+          if(await dateInput.count()){
+            const expected=await page.evaluate(function(){
+              const now=new Date();
+              return String(now.getFullYear())+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+            });
+            const actual=await dateInput.inputValue();
+            if(actual!==expected) add('critical','journal-default-local-date',{lang:lang,expected:expected,actual:actual});
+          }
+        }
+      }catch(e){
+        add('critical','journal-date-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'journal_date_'+lang)});
+      }
+      await context.close();
+    }
+  }
+
+  {
+    const memoryDateCopy={
+      en:{edit:'Edit',title:'Memory Title',date:'Date',location:'Location',tags:'Tags (comma-separated)',share:'Share with Partner (Optional)',save:'Save Memory'},
+      es:{edit:'Editar',title:'Título del Recuerdo',date:'Fecha',location:'Ubicación',tags:'Etiquetas (separadas por comas)',share:'Compartir con Pareja (Opcional)',save:'Guardar Recuerdo'},
+      fr:{edit:'Modifier',title:'Titre du Souvenir',date:'Date',location:'Lieu',tags:'Étiquettes (séparées par des virgules)',share:'Partager avec Partenaire (Facultatif)',save:'Enregistrer le Souvenir'},
+      it:{edit:'Modifica',title:'Titolo del Ricordo',date:'Data',location:'Posizione',tags:'Tag (separati da virgole)',share:'Condividi con Partner (Facoltativo)',save:'Salva Ricordo'},
+      de:{edit:'Bearbeiten',title:'Erinnerungstitel',date:'Datum',location:'Ort',tags:'Tags (durch Kommas getrennt)',share:'Mit Partner Teilen (Optional)',save:'Erinnerung Speichern'}
+    };
+    for(const lang of Object.keys(memoryDateCopy)){
+      const copy=memoryDateCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'Europe/Paris'});
+      await installSyntheticMemberAuth(context);
+      let submittedDate=null;
+      const syntheticMemory={
+        id:'launch-qa-memory-date',
+        title:'Launch QA Memory',
+        description:'Synthetic memory for local date preservation.',
+        memory_date:'2026-09-23',
+        location:'Paris',
+        tags:['qa'],
+        media_urls:[],
+        is_favorite:false,
+        partner_email:'',
+        can_edit:true
+      };
+      await context.route('**/api/memories**',async function(routeHandler){
+        const request=routeHandler.request();
+        if(request.method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[syntheticMemory]})});
+          return;
+        }
+        if(request.method()==='PATCH'){
+          const payload=request.postDataJSON();
+          submittedDate=payload && payload.memory_date;
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memory:{...syntheticMemory,...payload}})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic memory QA permits only the controlled PATCH.'}})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/MemoryLane',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.getByText('Launch QA Memory',{exact:true}).waitFor({state:'visible',timeout:8000}).catch(function(){});
+        const editButton=page.getByRole('button',{name:copy.edit,exact:true}).first();
+        if(!(await editButton.count())){
+          add('critical','memory-edit-button-missing',{lang:lang});
+        }else{
+          await editButton.click();
+          const controls=[
+            ['title',copy.title],['date',copy.date],['location',copy.location],['tags',copy.tags],['share',copy.share]
+          ];
+          for(const pair of controls){
+            if(!(await page.getByLabel(pair[1],{exact:true}).count())){
+              add('critical','memory-form-label-association',{lang:lang,field:pair[0],label:pair[1]});
+            }
+          }
+          const saveButton=page.getByRole('button',{name:copy.save,exact:true}).first();
+          if(!(await saveButton.count())){
+            add('critical','memory-save-button-missing',{lang:lang});
+          }else{
+            await saveButton.click();
+            await page.waitForTimeout(300);
+            if(submittedDate!=='2026-09-23'){
+              add('critical','memory-local-date-serialization',{lang:lang,expected:'2026-09-23',actual:submittedDate});
+            }
+          }
+        }
+      }catch(e){
+        add('critical','memory-date-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'memory_date_'+lang)});
+      }
+      await context.close();
+    }
+  }
+
+
+  {
+    const calendarDateCopy={
+      en:{locale:'en-US',today:'Today',list:'List View'},
+      es:{locale:'es-ES',today:'Hoy',list:'Vista de Lista'},
+      fr:{locale:'fr-FR',today:"Aujourd'hui",list:'Vue Liste'},
+      it:{locale:'it-IT',today:'Oggi',list:'Vista Elenco'},
+      de:{locale:'de-DE',today:'Heute',list:'Listenansicht'}
+    };
+    for(const lang of Object.keys(calendarDateCopy)){
+      const copy=calendarDateCopy[lang];
+      const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
+      await installSyntheticMemberAuth(context);
+      const requestUrls=[];
+      const syntheticEvent={
+        id:'launch-qa-calendar-event',
+        title:'Launch QA Calendar Event',
+        description:'',
+        event_date:'2026-09-22',
+        event_time:'19:00',
+        event_type:'date',
+        location:'',
+        reminder_enabled:false,
+        reminder_days_before:1,
+        is_recurring:false,
+        recurrence_pattern:null,
+        notes:'',
+        color:'pink'
+      };
+      await context.route('**/api/calendar-events**',async function(routeHandler){
+        const request=routeHandler.request();
+        const url=new URL(request.url());
+        requestUrls.push(url.pathname+url.search);
+        if(request.method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({events:[syntheticEvent]})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic calendar QA is read-only.'}})});
+      });
+      await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
+      const page=await context.newPage();
+      try{
+        await page.goto(BASE+'/CouplesCalendar',{waitUntil:'domcontentloaded',timeout:30000});
+        await page.waitForTimeout(500);
+
+        const todayButton=page.getByRole('button',{name:copy.today,exact:true}).first();
+        if(!(await todayButton.count())){
+          add('critical','calendar-today-filter-missing',{lang:lang});
+        }else{
+          requestUrls.length=0;
+          await todayButton.click();
+          await page.waitForTimeout(500);
+          const expectedLocal=await page.evaluate(function(){
+            const now=new Date();
+            return String(now.getFullYear())+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+          });
+          const todayRequest=requestUrls.map(function(value){return new URL(value,'https://qa.invalid');}).find(function(url){
+            return url.pathname==='/api/calendar-events' && url.searchParams.get('startDate');
+          });
+          const actualStart=todayRequest ? todayRequest.searchParams.get('startDate') : null;
+          const actualEnd=todayRequest ? todayRequest.searchParams.get('endDate') : null;
+          if(actualStart!==expectedLocal || actualEnd!==expectedLocal){
+            add('critical','calendar-today-local-query-date',{lang:lang,expected:expectedLocal,startDate:actualStart,endDate:actualEnd,requests:requestUrls});
+          }
+        }
+
+        const listButton=page.getByRole('button',{name:copy.list,exact:true}).first();
+        if(!(await listButton.count())){
+          add('critical','calendar-list-view-missing',{lang:lang});
+        }else{
+          await listButton.click();
+          const dateNode=page.locator('[data-calendar-event-date="2026-09-22"]').first();
+          await dateNode.waitFor({state:'visible',timeout:5000}).catch(function(){});
+          if(!(await dateNode.count())){
+            add('critical','calendar-event-date-node-missing',{lang:lang});
+          }else{
+            const expected=await page.evaluate(function(locale){
+              return new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',day:'numeric'}).format(new Date('2026-09-22T00:00:00'));
+            },copy.locale);
+            const actual=normalizeText(await dateNode.innerText());
+            if(actual!==normalizeText(expected)){
+              add('critical','calendar-event-local-date-display',{lang:lang,expected:expected,actual:actual});
+            }
+          }
+        }
+      }catch(e){
+        add('critical','calendar-date-audit',{lang:lang,message:String(e.message||e),screenshot:await screenshot(page,'calendar_date_'+lang)});
       }
       await context.close();
     }

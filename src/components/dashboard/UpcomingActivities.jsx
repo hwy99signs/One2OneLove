@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
 import { createPageUrl } from '@/utils';
+import { calendarDayDifference, parseLocalDate } from '@/utils/localDate';
 
 const copy = {
   en: { journal:'Write Together', journalDesc:'Add a shared journal entry and capture what is on your minds.', goals:'Update a Goal', goalsDesc:'Choose one active relationship goal and move it forward together.', milestone:'Plan for a Milestone', milestoneDesc:'A special date is coming up. Decide how you want to mark it.', memory:'Capture a Memory', memoryDesc:'Save a meaningful moment from your relationship story.', quiz:'Take a Reflection Quiz', quizDesc:'Use a short relationship reflection to start a useful conversation.', communication:'Practice Communication', communicationDesc:'Work through a realistic scenario and compare how you would respond.', start:'Start', recommended:'Recommended', newLabel:'Try This' },
@@ -28,14 +29,13 @@ export default function UpcomingActivities({ data }) {
     if (activeGoals.length) list.push({ name:t.goals, description:t.goalsDesc, icon:Target, link:'RelationshipGoals', gradient:'from-orange-500 to-red-500', badge:t.recommended, priority:10 });
 
     const upcoming = milestones.some(item => {
-      const date = new Date(item.date || item.milestone_date);
-      if (Number.isNaN(date.getTime())) return false;
-      const days = Math.ceil((date - new Date()) / 86400000);
-      return days > 0 && days <= 30;
+      const days = calendarDayDifference(item.date || item.milestone_date);
+      return days !== null && days > 0 && days <= 30;
     });
     if (upcoming) list.push({ name:t.milestone, description:t.milestoneDesc, icon:Calendar, link:'RelationshipMilestones', gradient:'from-pink-500 to-purple-500', badge:t.recommended, priority:9 });
 
-    if (journals.length === 0 || Date.now() - new Date(journals[0]?.entry_date || 0).getTime() > 7 * 86400000) list.push({ name:t.journal, description:t.journalDesc, icon:BookOpen, link:'SharedJournals', gradient:'from-blue-500 to-cyan-500', badge:t.newLabel, priority:8 });
+    const latestJournalDate = parseLocalDate(journals[0]?.entry_date);
+    if (journals.length === 0 || !latestJournalDate || Date.now() - latestJournalDate.getTime() > 7 * 86400000) list.push({ name:t.journal, description:t.journalDesc, icon:BookOpen, link:'SharedJournals', gradient:'from-blue-500 to-cyan-500', badge:t.newLabel, priority:8 });
     if (memories.length < 3) list.push({ name:t.memory, description:t.memoryDesc, icon:Heart, link:'MemoryLane', gradient:'from-pink-500 to-rose-500', badge:t.newLabel, priority:7 });
 
     list.push({ name:t.communication, description:t.communicationDesc, icon:MessageCircle, link:'CommunicationPractice', gradient:'from-cyan-500 to-blue-600', badge:t.newLabel, priority:6 });

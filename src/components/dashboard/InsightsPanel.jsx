@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, Heart, Brain, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
+import { parseLocalDate } from '@/utils/localDate';
 
 const copy = {
   en:{ title:'Relationship Insights', positive:'Your recent reflections show a lot of positive connection. Keep naming what is working so it does not become invisible.', strain:'Your recent reflections show some strain. Communication Practice or Relationship Goals may give you a constructive place to start.', streak:n=>`You have a ${n}-day activity streak. Consistency matters more than perfection.`, goals:(a,b)=>`You're making progress on ${a} of ${b} active relationship goals.`, memories:n=>`You've captured ${n} memories this month. Your relationship story is growing.` },
@@ -36,8 +37,8 @@ export default function InsightsPanel({ data }) {
 
     const recentMemories = (data.memories || []).filter(m => {
       const raw = m.created_date || m.created_at || m.memory_date;
-      const date = new Date(raw);
-      return !Number.isNaN(date.getTime()) && Math.floor((Date.now() - date.getTime()) / 86400000) <= 30;
+      const date = parseLocalDate(raw);
+      return Boolean(date) && Math.floor((Date.now() - date.getTime()) / 86400000) <= 30;
     });
     if (recentMemories.length >= 3) result.push({ icon:Heart, color:'text-rose-600', bgColor:'bg-rose-50', insight:t.memories(recentMemories.length), type:'positive' });
 

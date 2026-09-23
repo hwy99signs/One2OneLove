@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Bell, Repeat, Pencil, Trash2 } from "lucide-react";
 import { useLanguage } from "@/Layout";
+import { parseLocalDate } from "@/utils/localDate";
 
 const eventTypeColors = {
   date: "from-pink-500 to-rose-500",
@@ -39,6 +40,7 @@ export default function CalendarEventCard({ event, onEdit, onDelete, index }) {
   const t=COPY[currentLanguage]||COPY.en;
   const colorClass = eventTypeColors[event.event_type] || eventTypeColors.other;
   const icon = eventTypeIcons[event.event_type] || eventTypeIcons.other;
+  const eventDate = parseLocalDate(event.event_date);
 
   return (
     <motion.div
@@ -64,7 +66,7 @@ export default function CalendarEventCard({ event, onEdit, onDelete, index }) {
                   <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-3">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Intl.DateTimeFormat(LOCALES[currentLanguage]||LOCALES.en,{year:'numeric',month:'long',day:'numeric'}).format(new Date(event.event_date))}
+                      <span data-calendar-event-date={event.event_date}>{eventDate ? new Intl.DateTimeFormat(LOCALES[currentLanguage]||LOCALES.en,{year:'numeric',month:'long',day:'numeric'}).format(eventDate) : event.event_date}</span>
                     </div>
                     {event.event_time && (
                       <div className="flex items-center gap-1">

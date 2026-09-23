@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { de, enUS, es, fr, it } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
+import { parseLocalDate } from "@/utils/localDate";
 import { uploadMilestonePhotos } from "@/lib/milestonesService";
 
 const translations = {
@@ -343,7 +344,7 @@ export default function MilestoneForm({ milestone, onSubmit, onCancel, isLoading
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={formData.date ? new Date(formData.date) : undefined}
+                      selected={formData.date ? parseLocalDate(formData.date) || undefined : undefined}
                       onSelect={(date) => setFormData({ ...formData, date: date ? format(date, 'yyyy-MM-dd') : '' })}
                       locale={dateLocale}
                     />

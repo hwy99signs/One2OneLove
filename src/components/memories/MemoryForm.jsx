@@ -11,6 +11,7 @@ import { de, enUS, es, fr, it } from "date-fns/locale";
 import { toast } from "sonner";
 import { useLanguage } from "@/Layout";
 import { uploadMemoryMedia } from "@/lib/memoryService";
+import { formatLocalDateInput } from "@/utils/localDate";
 
 const translations = {
   en: {
@@ -277,8 +278,8 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
     onSubmit({
       ...formData,
       tags: tagsArray,
-      memory_date: formData.memory_date instanceof Date 
-        ? formData.memory_date.toISOString().split('T')[0]
+      memory_date: formData.memory_date instanceof Date
+        ? formatLocalDateInput(formData.memory_date)
         : formData.memory_date
     });
   };
@@ -301,10 +302,11 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Title */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="memory-title" className="block text-sm font-semibold text-gray-700 mb-2">
             {t.memoryTitle} *
           </label>
           <Input
+            id="memory-title"
             placeholder={t.titlePlaceholder}
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -315,10 +317,11 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="memory-description" className="block text-sm font-semibold text-gray-700 mb-2">
             {t.description}
           </label>
           <Textarea
+            id="memory-description"
             placeholder={t.descriptionPlaceholder}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -329,12 +332,12 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
         {/* Date and Location */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="memory-date" className="block text-sm font-semibold text-gray-700 mb-2">
               {t.date} *
             </label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left">
+                <Button id="memory-date" type="button" variant="outline" aria-label={t.date} className="w-full justify-start text-left">
                   <CalendarIcon className="mr-2 h-4 w-4 text-pink-500" />
                   {formData.memory_date ? format(formData.memory_date, 'PPP', { locale: dateLocale }) : t.pickDate}
                 </Button>
@@ -352,12 +355,13 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="memory-location" className="block text-sm font-semibold text-gray-700 mb-2">
               {t.location}
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 w-4 h-4" />
               <Input
+                id="memory-location"
                 placeholder={t.locationPlaceholder}
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -369,10 +373,11 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
 
         {/* Tags */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="memory-tags" className="block text-sm font-semibold text-gray-700 mb-2">
             {t.tags}
           </label>
           <Input
+            id="memory-tags"
             placeholder={t.tagsPlaceholder}
             value={formData.tags}
             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
@@ -381,10 +386,11 @@ export default function MemoryForm({ memory, onSubmit, onCancel, isLoading }) {
 
         {/* Partner Email */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="memory-partner-email" className="block text-sm font-semibold text-gray-700 mb-2">
             {t.shareWith}
           </label>
           <Input
+            id="memory-partner-email"
             type="email"
             placeholder={t.partnerEmailPlaceholder}
             value={formData.partner_email}

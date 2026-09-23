@@ -1,3 +1,4 @@
+import { calendarDayDifference, formatLocalDateInput, parseLocalDate } from '@/utils/localDate';
 import { apiRequest } from './apiClient';
 
 function fileIdFromUrl(photoUrl) {
@@ -61,8 +62,8 @@ export async function getUpcomingMilestones(daysAhead = 60) {
   const future = new Date(today);
   future.setDate(today.getDate() + daysAhead);
   const params = new URLSearchParams({
-    startDate: today.toISOString().split('T')[0],
-    endDate: future.toISOString().split('T')[0],
+    startDate: formatLocalDateInput(today),
+    endDate: formatLocalDateInput(future),
     order: 'date',
   });
   const payload = await apiRequest(`/api/milestones?${params}`);
@@ -70,9 +71,9 @@ export async function getUpcomingMilestones(daysAhead = 60) {
   const all = await getMilestones('date');
   const recurring = all.filter((m) => m.is_recurring).map((m) => {
     const next = getNextAnniversary(m.date);
-    const daysUntil = Math.ceil((next - today) / 86400000);
+    const daysUntil = calendarDayDifference(next, today);
     return daysUntil >= 0 && daysUntil <= daysAhead
-      ? { ...m, displayDate: next.toISOString().split('T')[0], daysUntil }
+      ? { ...m, displayDate: formatLocalDateInput(next), daysUntil }
       : null;
   }).filter(Boolean);
   const seen = new Set();
@@ -81,12 +82,12 @@ export async function getUpcomingMilestones(daysAhead = 60) {
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).sort((a, b) => new Date(a.displayDate || a.date) - new Date(b.displayDate || b.date));
+  }).sort((a, b) => (parseLocalDate(a.displayDate || a.date)?.getTime() || 0) - (parseLocalDate(b.displayDate || b.date)?.getTime() || 0));
 }
 
 export async function getPastMilestones() {
   const all = await getMilestones('-date');
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateInput();
   return all.filter((m) => !m.is_recurring && String(m.date) < today);
 }
 
@@ -115,11 +116,7 @@ function getNextAnniversary(originalDate) {
 }
 
 export function getDaysUntil(date) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const milestoneDate = new Date(`${date}T00:00:00`);
-  milestoneDate.setHours(0, 0, 0, 0);
-  return Math.ceil((milestoneDate - today) / 86400000);
+  return calendarDayDifference(date) ?? Infinity;
 }
 
 export function needsReminder(milestone) {

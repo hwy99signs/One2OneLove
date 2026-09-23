@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek } from "date-fns";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
+import { parseLocalDate } from "@/utils/localDate";
 
 const eventTypeColors = {
   date: "bg-pink-500",
@@ -38,7 +39,10 @@ export default function CalendarGrid({ currentMonth, events, onEventClick, onPre
   const weekDays = Array.from({length:7},(_,i)=>new Intl.DateTimeFormat(locale,{weekday:'short'}).format(new Date(2026,7,2+i)));
 
   const getEventsForDay = (day) => {
-    return events.filter(event => isSameDay(new Date(event.event_date), day));
+    return events.filter(event => {
+      const eventDate = parseLocalDate(event.event_date);
+      return Boolean(eventDate) && isSameDay(eventDate, day);
+    });
   };
 
   return (
