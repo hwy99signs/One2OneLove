@@ -913,11 +913,11 @@ try {
 
   {
     const profileAuditCopy={
-      en:{locale:'en-US',edit:'Edit Profile',location:'Location',bio:'Bio',status:'Relationship Status',partner:'Partner',anniversary:'Anniversary',love:'Love Language'},
-      es:{locale:'es-ES',edit:'Editar Perfil',location:'Ubicación',bio:'Biografía',status:'Estado de Relación',partner:'Pareja',anniversary:'Aniversario',love:'Lenguaje del Amor'},
-      fr:{locale:'fr-FR',edit:'Modifier le Profil',location:'Localisation',bio:'Biographie',status:'Statut de Relation',partner:'Partenaire',anniversary:'Anniversaire',love:"Langage d'Amour"},
-      it:{locale:'it-IT',edit:'Modifica Profilo',location:'Posizione',bio:'Biografia',status:'Stato della Relazione',partner:'Partner',anniversary:'Anniversario',love:"Linguaggio dell'Amore"},
-      de:{locale:'de-DE',edit:'Profil Bearbeiten',location:'Standort',bio:'Biografie',status:'Beziehungsstatus',partner:'Partner',anniversary:'Jubiläum',love:'Liebessprache'}
+      en:{locale:'en-US',edit:'Edit Profile',location:'Location',bio:'Bio',status:'Relationship Status',partner:'Partner',anniversary:'Anniversary',love:'Love Language',image:'Change profile picture'},
+      es:{locale:'es-ES',edit:'Editar Perfil',location:'Ubicación',bio:'Biografía',status:'Estado de Relación',partner:'Pareja',anniversary:'Aniversario',love:'Lenguaje del Amor',image:'Cambiar foto de perfil'},
+      fr:{locale:'fr-FR',edit:'Modifier le Profil',location:'Localisation',bio:'Biographie',status:'Statut de Relation',partner:'Partenaire',anniversary:'Anniversaire',love:"Langage d'Amour",image:'Changer la photo de profil'},
+      it:{locale:'it-IT',edit:'Modifica Profilo',location:'Posizione',bio:'Biografia',status:'Stato della Relazione',partner:'Partner',anniversary:'Anniversario',love:"Linguaggio dell'Amore",image:'Cambia foto del profilo'},
+      de:{locale:'de-DE',edit:'Profil Bearbeiten',location:'Standort',bio:'Biografie',status:'Beziehungsstatus',partner:'Partner',anniversary:'Jubiläum',love:'Liebessprache',image:'Profilbild ändern'}
     };
     const couplesProfileAuditCopy={
       en:{edit:'Edit Profile',location:'Location',status:'Relationship Status',partner:'Partner Name',partnerEmail:'Partner Email',anniversary:'Anniversary',love:'Love Language'},
@@ -978,6 +978,19 @@ try {
       await context.route('**/api/memories**',async function(routeHandler){
         await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[]})});
       });
+      await context.route('**/api/goals**',async function(routeHandler){
+        if(routeHandler.request().method()==='GET'){
+          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({goals:[{
+            id:'launch-qa-profile-goal',
+            title:'Launch QA Goal',
+            target_date:'2026-09-22',
+            progress:40,
+            status:'in_progress'
+          }]})});
+          return;
+        }
+        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic profile goal QA is read-only.'}})});
+      });
       await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
       const page=await context.newPage();
       try{
@@ -994,6 +1007,22 @@ try {
           if(!normalizeText(await anniversaryGroup.innerText()).includes(expectedDate)){
             add('critical','profile-anniversary-local-date',{lang:lang,expected:expectedDate});
           }
+        }
+        const goalDate=page.locator('[data-profile-goal-date="2026-09-22"]').first();
+        if(!(await goalDate.count())){
+          add('critical','profile-active-goal-date-missing',{lang:lang});
+        }else{
+          const expectedGoalDate=await page.evaluate(function(locale){
+            return new Intl.DateTimeFormat(locale).format(new Date('2026-09-22T00:00:00'));
+          },copy.locale);
+          const actualGoalDate=normalizeText(await goalDate.innerText());
+          if(actualGoalDate !== expectedGoalDate){
+            add('critical','profile-active-goal-local-date',{lang:lang,expected:expectedGoalDate,actual:actualGoalDate});
+          }
+        }
+        const profileImageButton=page.getByRole('button',{name:copy.image,exact:true}).first();
+        if(!(await profileImageButton.count())){
+          add('critical','profile-image-control-accessibility',{lang:lang});
         }
         const editButton=page.getByRole('button',{name:copy.edit,exact:true}).last();
         if(!(await editButton.count())){
