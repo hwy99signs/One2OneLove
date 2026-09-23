@@ -24,6 +24,8 @@ import RelationshipGoals from './RelationshipGoals';
 import CommunicationPractice from './CommunicationPractice';
 import CouplesProfile from './CouplesProfile';
 import CoupleActivities from './CoupleActivities';
+import CooperativeGames from './CooperativeGames';
+import ScratchGame from './ScratchGame';
 import SharedJournals from './SharedJournals';
 import CouplesDashboard from './CouplesDashboard';
 import CouplesCalendar from './CouplesCalendar';
@@ -47,7 +49,7 @@ const PAGES = {
   Home, AboutUs, SignIn, SignUp, AdminAccess, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
-  CommunicationPractice, CouplesProfile, CoupleActivities, SharedJournals, CouplesDashboard,
+  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, ScratchGame, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
 };
@@ -72,6 +74,8 @@ const FEATURE_BY_ROUTE = {
   '/communicationpractice': 'Communication Practice',
   '/couplesprofile': 'Couples Profile',
   '/coupleactivities': 'Couple Activities',
+  '/cooperativegames': 'Cooperative Games',
+  '/scratchgame': 'Scratch Game',
   '/sharedjournals': 'Shared Journals',
   '/couplesdashboard': 'Couples Dashboard',
   '/couplescalendar': 'Couples Calendar',
@@ -148,6 +152,8 @@ function PagesContent() {
           <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
+          <Route path="/CooperativeGames" element={<CooperativeGames />} />
+          <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/SharedJournals" element={<SharedJournals />} />
           <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
           <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
@@ -176,7 +182,6 @@ function PagesContent() {
           <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/Developer" element={<Navigate to="/Home" replace />} />
-          <Route path="/CooperativeGames" element={<Navigate to="/CoupleActivities" replace />} />
           <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
           <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
           <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
