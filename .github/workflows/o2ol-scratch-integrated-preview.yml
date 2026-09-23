@@ -1,0 +1,51 @@
+name: O2OL Scratch Integrated Preview
+
+on:
+  push:
+    branches:
+      - o2ol-scratch-game-pwa
+    paths:
+      - "src/**"
+      - "cloudflare/wrangler.scratch-preview.jsonc"
+      - ".github/workflows/o2ol-scratch-integrated-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-scratch-integrated-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-scratch-integrated-preview.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install frontend
+        run: npm ci
+      - name: Build frontend
+        run: npm run build
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+      - name: Dry run
+        run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.scratch-preview.jsonc
+      - name: Deploy isolated integrated preview
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.scratch-preview.jsonc
+      - name: Verify Games and Scratch routes render
+        shell: bash
+        run: |
+          set -euo pipefail
+          for page in /CoupleActivities /CooperativeGames /ScratchGame; do
+            ok=no
+            for attempt in $(seq 1 20); do
+              code=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$PREVIEW_URL$page" || true)
+              if [ "$code" = "200" ]; then ok=yes; break; fi
+              sleep 4
+            done
+            test "$ok" = yes
+          done
