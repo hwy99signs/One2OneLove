@@ -837,6 +837,15 @@ function ActiveGoalsCard() {
     return filtered.slice(0, 3); // Show up to 3 active goals
   }, [allGoals]);
 
+  // Debug logging (remove in production)
+  useEffect(() => {
+    if (allGoals && allGoals.length > 0) {
+      console.log('All goals:', allGoals);
+      console.log('Active goals filtered:', activeGoals);
+      console.log('Goal statuses:', allGoals.map(g => ({ title: g.title, status: g.status })));
+    }
+  }, [allGoals, activeGoals]);
+
   return (
     <Card className="shadow-lg h-full">
       <CardHeader>
@@ -859,6 +868,7 @@ function ActiveGoalsCard() {
               <Target className="w-10 h-10 text-gray-300" />
             </div>
             <p className="text-red-500 mb-4">{t.profile.errorLoadingGoals}</p>
+            <p className="text-sm text-gray-400 mb-4">{error.message}</p>
             <Link to={createPageUrl("RelationshipGoals")}>
               <Button variant="outline" className="rounded-lg">
                 {t.profile.viewGoals}
@@ -891,7 +901,7 @@ function ActiveGoalsCard() {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <span>{t.profile.percentComplete.replace('{percent}', goal.progress)}</span>
                       <span>•</span>
-                      <span data-profile-goal-date={goal.target_date}>{formatProfileDate(goal.target_date, currentLanguage)}</span>
+                      <span>{new Date(goal.target_date).toLocaleDateString()}</span>
                     </div>
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                       <div

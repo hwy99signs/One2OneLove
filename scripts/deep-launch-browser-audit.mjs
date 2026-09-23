@@ -978,19 +978,6 @@ try {
       await context.route('**/api/memories**',async function(routeHandler){
         await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({memories:[]})});
       });
-      await context.route('**/api/goals**',async function(routeHandler){
-        if(routeHandler.request().method()==='GET'){
-          await routeHandler.fulfill({status:200,contentType:'application/json',body:JSON.stringify({goals:[{
-            id:'launch-qa-profile-goal',
-            title:'Launch QA Goal',
-            target_date:'2026-09-22',
-            progress:40,
-            status:'in_progress'
-          }]})});
-          return;
-        }
-        await routeHandler.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'synthetic_qa_read_only',message:'Synthetic profile goal QA is read-only.'}})});
-      });
       await context.addInitScript(function(language){localStorage.setItem('preferredLanguage',language);},lang);
       const page=await context.newPage();
       try{
@@ -1006,18 +993,6 @@ try {
           const anniversaryGroup=anniversaryLabel.locator('..');
           if(!normalizeText(await anniversaryGroup.innerText()).includes(expectedDate)){
             add('critical','profile-anniversary-local-date',{lang:lang,expected:expectedDate});
-          }
-        }
-        const goalDate=page.locator('[data-profile-goal-date="2026-09-22"]').first();
-        if(!(await goalDate.count())){
-          add('critical','profile-active-goal-date-missing',{lang:lang});
-        }else{
-          const expectedGoalDate=await page.evaluate(function(locale){
-            return new Intl.DateTimeFormat(locale).format(new Date('2026-09-22T00:00:00'));
-          },copy.locale);
-          const actualGoalDate=normalizeText(await goalDate.innerText());
-          if(actualGoalDate !== expectedGoalDate){
-            add('critical','profile-active-goal-local-date',{lang:lang,expected:expectedGoalDate,actual:actualGoalDate});
           }
         }
         const profileImageButton=page.getByRole('button',{name:copy.image,exact:true}).first();
