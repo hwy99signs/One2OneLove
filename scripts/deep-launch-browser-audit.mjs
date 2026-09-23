@@ -677,12 +677,12 @@ try {
           if(!(await dateButton.count())){
             add('critical','milestone-edit-date-control-missing',{lang:lang});
           }else{
-            await dateButton.click();
-            const selectedDay=editDialog.locator('button[aria-selected="true"]').first();
-            await selectedDay.waitFor({state:'visible',timeout:3000}).catch(function(){});
-            const selectedText=(await selectedDay.count()) ? normalizeText(await selectedDay.innerText()) : '';
-            if(selectedText !== '1'){
-              add('critical','milestone-edit-local-date-selection',{lang:lang,expected:'1',actual:selectedText});
+            const dateLabel=normalizeText(await dateButton.innerText());
+            const hasExpectedYear=dateLabel.includes('2025');
+            const hasExpectedDay=/(^|\D)1(?:st|er|º|\.)?(?=\D|$)/i.test(dateLabel);
+            const looksShifted=dateLabel.includes('2024') || /(^|\D)31(?=\D|$)/.test(dateLabel);
+            if(!hasExpectedYear || !hasExpectedDay || looksShifted){
+              add('critical','milestone-edit-local-date-label',{lang:lang,expectedDate:'2025-01-01',actual:dateLabel});
             }
           }
           const closeEdit=editDialog.getByRole('button',{name:copy.closeForm,exact:true}).first();
@@ -1372,8 +1372,13 @@ try {
       try{
         await page.goto(BASE+'/SharedJournals',{waitUntil:'domcontentloaded',timeout:30000});
         const addButton=page.getByRole('button',{name:copy.add,exact:true}).first();
+        await addButton.waitFor({state:'visible',timeout:8000}).catch(function(){});
         if(!(await addButton.count())){
-          add('critical','journal-add-entry-missing',{lang:lang});
+          add('critical','journal-add-entry-missing',{
+            lang:lang,
+            finalPath:new URL(page.url()).pathname,
+            mainText:normalizeText(await page.locator('main').innerText().catch(function(){return '';})).slice(0,300)
+          });
         }else{
           await addButton.click();
           const dateInput=page.getByLabel(copy.date,{exact:true});
@@ -1446,7 +1451,7 @@ try {
         }else{
           await editButton.click();
           const controls=[
-            ['title',copy.title],['date',copy.date],['location',copy.location],['tags',copy.tags],['share',copy.share]
+            ['title',copy.title + ' *'],['date',copy.date],['location',copy.location],['tags',copy.tags],['share',copy.share]
           ];
           for(const pair of controls){
             if(!(await page.getByLabel(pair[1],{exact:true}).count())){
