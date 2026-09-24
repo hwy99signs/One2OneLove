@@ -16,7 +16,7 @@ command = "npm --prefix worker install --no-audit --no-fund"
 directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*", "/Games", "/Games/*"]
+run_worker_first = ["/api/*", "/Games", "/Games/"]
 
 [vars]
 NEON_AUTH_BASE_URL = "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth"
