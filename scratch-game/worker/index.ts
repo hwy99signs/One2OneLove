@@ -4,6 +4,7 @@ interface Env {
   ASSETS: Fetcher;
   HYPERDRIVE: Hyperdrive;
   ADMIN_KEY_HASH?: string;
+  DEBUG_ERRORS?: string;
 }
 
 const RELATIONSHIPS = new Set([
@@ -42,7 +43,7 @@ const EVENT_TYPES = new Set([
 
 const SESSION_COOKIE = "o2ol_session";
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
-const PASSWORD_ITERATIONS = 120000;
+const PASSWORD_ITERATIONS = 60000;
 
 function json(data: unknown, status = 200, extraHeaders: Record<string,string> = {}) {
   return new Response(JSON.stringify(data), {
@@ -381,7 +382,8 @@ async function signup(req: Request, env: Env) {
   if (password.length < 8 || password.length > 128) return json({ error: "Password must be at least 8 characters." }, 400);
   if (!acceptTerms) return json({ error: "You must agree to the Terms and Privacy Policy." }, 400);
 
-  return withDb(env, async client => {
+  try {
+    return await withDb(env, async client => {
     await ensureSchema(client);
     const rateOk = await enforceRateLimit(client, req, "signup", email, 6, 60);
     if (!rateOk) return json({ error: "Too many signup attempts. Please try again later." }, 429);
@@ -415,7 +417,11 @@ async function signup(req: Request, env: Env) {
       ok: true,
       user: { id: userId, email, username, marketingOptIn }
     }, 201, { "set-cookie": sessionCookie(token) });
-  });
+    });
+  } catch (error: any) {
+    console.error("signup error", error);
+    return json({ error: "Could not create account.", ...(env.DEBUG_ERRORS === "true" ? { detail: String(error?.message || error) } : {}) }, 500);
+  }
 }
 
 async function login(req: Request, env: Env) {
@@ -426,7 +432,8 @@ async function login(req: Request, env: Env) {
   const password = String(body?.password || "");
   if (!validEmail(email) || !password) return json({ error: "Email and password are required." }, 400);
 
-  return withDb(env, async client => {
+  try {
+    return await withDb(env, async client => {
     await ensureSchema(client);
     const rateOk = await enforceRateLimit(client, req, "login", email, 12, 15);
     if (!rateOk) return json({ error: "Too many login attempts. Please try again later." }, 429);
@@ -455,7 +462,11 @@ async function login(req: Request, env: Env) {
         marketingOptIn: row.marketing_opt_in
       }
     }, 200, { "set-cookie": sessionCookie(token) });
-  });
+    });
+  } catch (error: any) {
+    console.error("login error", error);
+    return json({ error: "Could not sign in.", ...(env.DEBUG_ERRORS === "true" ? { detail: String(error?.message || error) } : {}) }, 500);
+  }
 }
 
 async function logout(req: Request, env: Env) {
