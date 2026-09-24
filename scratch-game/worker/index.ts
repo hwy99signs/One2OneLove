@@ -380,7 +380,7 @@ async function signup(req: Request, env: Env) {
 
   if (!validEmail(email)) return json({ error: "Enter a valid email address." }, 400);
   if (!validUsername(username)) return json({ error: "Username must be 3–24 characters using letters, numbers, dots, underscores, or hyphens." }, 400);
-  if (password.length < 8 || password.length > 128) return json({ error: "Password must be at least 8 characters." }, 400);
+  if (password.length < 8 || password.length > 128) return json({ error: "Password must be 8–128 characters." }, 400);
   if (!acceptTerms) return json({ error: "You must agree to the Terms and Privacy Policy." }, 400);
 
   try {
@@ -389,10 +389,13 @@ async function signup(req: Request, env: Env) {
     const rateOk = await enforceRateLimit(client, req, "signup", email, 6, 60);
     if (!rateOk) return json({ error: "Too many signup attempts. Please try again later." }, 429);
 
-    const hashResult = await client.query("SELECT crypt($1, gen_salt('bf', 10)) AS hash", [password]);
+    const hashResult = await client.query(
+      "SELECT crypt(encode(digest($1, 'sha256'), 'hex'), gen_salt('bf', 10)) AS hash",
+      [password]
+    );
     const passwordHash = String(hashResult.rows[0]?.hash || "");
     if (!passwordHash) throw new Error("Password hashing unavailable");
-    const salt = "pgcrypto-bf10";
+    const salt = "pgcrypto-bf10-sha256-v1";
     const userId = crypto.randomUUID();
     const isTest = email.endsWith("@example.invalid");
 
@@ -440,8 +443,12 @@ async function login(req: Request, env: Env) {
     if (!rateOk) return json({ error: "Too many login attempts. Please try again later." }, 429);
 
     const result = await client.query(
-      `SELECT id,email,username,password_hash,marketing_opt_in,
-              (password_hash = crypt($2, password_hash)) AS password_ok
+      `SELECT id,email,username,password_hash,password_salt,marketing_opt_in,
+              CASE
+                WHEN password_salt = 'pgcrypto-bf10-sha256-v1'
+                  THEN (password_hash = crypt(encode(digest($2, 'sha256'), 'hex'), password_hash))
+                ELSE (password_hash = crypt($2, password_hash))
+              END AS password_ok
          FROM public.o2ol_scratch_users WHERE email=$1 LIMIT 1`,
       [email, password]
     );
