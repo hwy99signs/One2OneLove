@@ -1,0 +1,111 @@
+name: Generate What Should They Do Translations
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - ".github/workflows/o2ol-generate-voting-game-translations.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - name: Generate complete localized question banks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, time, random, urllib.parse, urllib.request, concurrent.futures
+          from pathlib import Path
+
+          src=Path("src/data/whatShouldTheyDoQuestions.json")
+          rows=json.loads(src.read_text(encoding="utf-8"))
+          assert len(rows)==150
+          assert all(isinstance(r,list) and len(r)==3 and len(r[2])==4 for r in rows)
+
+          targets={"es":"es","fr":"fr","it":"it","de":"de"}
+          sep="\n§§O2OLSEG§§\n"
+
+          def google_translate(text, tl, attempt=0):
+              params={"client":"gtx","sl":"en","tl":tl,"dt":"t","q":text}
+              data=urllib.parse.urlencode(params).encode("utf-8")
+              req=urllib.request.Request(
+                  "https://translate.googleapis.com/translate_a/single",
+                  data=data,
+                  headers={
+                    "User-Agent":"Mozilla/5.0 O2OL-translation-build",
+                    "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
+                  },
+                  method="POST"
+              )
+              try:
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      payload=json.loads(r.read().decode("utf-8"))
+                  translated="".join(part[0] for part in payload[0] if part and part[0] is not None)
+                  return translated.strip()
+              except Exception:
+                  if attempt>=6: raise
+                  time.sleep((2**attempt)*0.8+random.random())
+                  return google_translate(text,tl,attempt+1)
+
+          def translate_row(args):
+              idx,row,tl=args
+              category,scenario,answers=row
+              block=sep.join([scenario,*answers])
+              translated=google_translate(block,tl)
+              parts=[p.strip() for p in translated.split("§§O2OLSEG§§")]
+              if len(parts)!=5:
+                  # Separator preservation failed: translate each segment independently.
+                  parts=[google_translate(x,tl) for x in [scenario,*answers]]
+              if len(parts)!=5 or any(not p for p in parts):
+                  raise RuntimeError(f"Translation structure failed for {tl} row {idx}")
+              return idx,[category,parts[0],parts[1:]]
+
+          for code,tl in targets.items():
+              translated=[None]*len(rows)
+              jobs=[(i,row,tl) for i,row in enumerate(rows)]
+              with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+                  for i,result in pool.map(translate_row,jobs):
+                      translated[i]=result
+                      if (i+1)%25==0:
+                          print(f"{code}: translated {i+1}/150")
+              assert all(translated)
+              assert len(translated)==150
+              assert all(len(r)==3 and len(r[2])==4 for r in translated)
+              out=Path(f"src/data/whatShouldTheyDoQuestions.{code}.json")
+              out.write_text(json.dumps(translated,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+              print(f"Wrote {out}")
+
+          # Structural and anti-English checks for the exact known first row.
+          english_first=rows[0][1]
+          english_answer=rows[0][2][0]
+          for code in targets:
+              data=json.loads(Path(f"src/data/whatShouldTheyDoQuestions.{code}.json").read_text(encoding="utf-8"))
+              assert len(data)==150
+              assert [r[0] for r in data]==[r[0] for r in rows]
+              assert all(len(r[2])==4 for r in data)
+              assert data[0][1]!=english_first
+              assert data[0][2][0]!=english_answer
+          PY
+
+      - name: Commit localized banks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/whatShouldTheyDoQuestions.es.json \
+                  src/data/whatShouldTheyDoQuestions.fr.json \
+                  src/data/whatShouldTheyDoQuestions.it.json \
+                  src/data/whatShouldTheyDoQuestions.de.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add complete five-language voting question banks"
+          git push origin HEAD:o2ol-password-reset-preview
