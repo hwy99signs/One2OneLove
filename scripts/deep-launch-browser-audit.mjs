@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from 'playwright-core';
 
 const BASE = (process.env.PREVIEW_URL || 'https://one2onelove-prelaunch.hwy99signs.workers.dev').replace(/\/$/, '');
 const OUT = path.join(process.cwd(), 'audit-artifacts');
@@ -107,7 +107,7 @@ async function installSyntheticMemberAuth(context, plan='Exclusive') {
   });
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox'] });
 try {
   const api = await browser.newContext();
   const request = api.request;
