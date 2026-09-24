@@ -49,9 +49,14 @@ jobs:
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
           function assert(ok,msg){ if(!ok) throw new Error(msg); }
 
-          async function installMember(context){
-            const user={id:'game-smoke-user',email:'game-smoke@example.invalid',emailVerified:true,email_verified:true,name:'Game Smoke',role:'user'};
-            const profile={id:user.id,email:user.email,name:user.name,role:'user',subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true,preferred_language:'en'};
+          async function installMember(context, plan='Exclusive'){
+            const user={
+              id:'game-smoke-user',email:'game-smoke@example.invalid',emailVerified:true,email_verified:true,name:'Game Smoke',role:'user',
+              subscription_plan:plan,subscription_status:'active',subscription_price:19.99,
+              stripe_customer_id:'cus_game_smoke',stripe_subscription_id:'sub_game_smoke',
+              phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true,preferred_language:'en'
+            };
+            const profile={...user};
             await context.route('**/api/auth/get-session', r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user,session:{id:'game-smoke-session',userId:user.id}})}));
             await context.route('**/api/profile', async r=>{
               if(r.request().method()==='GET') return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile})});
@@ -116,6 +121,20 @@ jobs:
             const overflow=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth);
             assert(overflow<=4,'mobile horizontal overflow '+overflow);
             await context.close();
+
+            for (const route of ['/WhatShouldTheyDo','/Games']) {
+              const basicContext=await browser.newContext({viewport:{width:390,height:844}});
+              await installMember(basicContext,'Basic');
+              await basicContext.addInitScript(()=>localStorage.setItem('preferredLanguage','en'));
+              const basicPage=await basicContext.newPage();
+              await basicPage.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+              await basicPage.waitForTimeout(700);
+              const u=new URL(basicPage.url());
+              assert(u.pathname.toLowerCase()==='/subscription',route+' did not enforce Premier access for Basic member: '+basicPage.url());
+              assert(u.searchParams.get('required')==='Premier',route+' did not identify Premier as required plan');
+              await basicContext.close();
+            }
+
             console.log('MIGRATED_GAMES_SMOKE=PASS');
           } finally {
             await browser.close();
