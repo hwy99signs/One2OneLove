@@ -119,12 +119,17 @@ jobs:
         run: |
           set -euo pipefail
           SECRETS_OUT=$(npx --yes wrangler@latest secret list --name one2onelove-launch 2>&1)
-          for REQUIRED in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET OPENAI_API_KEY; do
+          for REQUIRED in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
             if ! printf '%s\n' "$SECRETS_OUT" | grep -F "$REQUIRED" >/dev/null; then
               echo "Missing required production Worker secret: $REQUIRED" >&2
               exit 1
             fi
           done
+          if printf '%s\n' "$SECRETS_OUT" | grep -F 'OPENAI_API_KEY' >/dev/null; then
+            echo "Optional AI provider: configured"
+          else
+            echo "Optional AI provider: not configured; AI Coach/Content Creator will remain unavailable until OPENAI_API_KEY is added."
+          fi
 
       - name: Verify Cloudflare O2OL zone and routes access
         shell: bash
