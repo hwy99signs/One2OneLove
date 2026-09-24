@@ -1,0 +1,219 @@
+name: O2OL Five Language Certification
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - ".github/workflows/o2ol-five-language-certification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    env:
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - name: Prepare Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Audit all five languages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit-artifacts
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import { chromium } from 'playwright-core';
+
+          const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
+          const LANGS=['en','es','fr','it','de'];
+          const PUBLIC=[
+            '/','/Home','/AboutUs','/SignIn','/login','/SignUp','/signup','/ForgotPassword',
+            '/Invite','/HelpCenter','/ContactUs','/PrivacyPolicy','/TermsOfService','/Reviews',
+            '/LeaveReview','/Suggestions'
+          ];
+          const MEMBER=[
+            '/MemoryLane','/LoveNotes','/SendCredits','/CoupleSupport','/LoveLanguageQuiz',
+            '/DateIdeas','/Profile','/PodcastsSupport','/ArticlesSupport','/RelationshipQuizzes',
+            '/AnniversaryTracker','/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice',
+            '/CouplesProfile','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/Games',
+            '/ScratchGame','/SharedJournals','/CouplesDashboard','/CouplesCalendar','/LGBTQSupport',
+            '/Chat','/PaymentSuccess','/Subscription','/VerifyPhone'
+          ];
+          const ROUTES=[...PUBLIC,...MEMBER];
+
+          const ignorePatterns=[
+            /^one2onelove$/i,/^erant property services llc$/i,/^lgbtq\+$/i,/^sms$/i,/^ai$/i,
+            /^tiktok$/i,/^facebook$/i,/^instagram$/i,/^threads$/i,/^pinterest$/i,/^x \(twitter\)$/i,
+            /@one2onelove/i,/^launch qa/i,/example\.invalid/i,/https?:\/\//i,
+            /^apple podcasts$/i,/^youtube$/i,/^spotify$/i
+          ];
+
+          function norm(s){return String(s||'').replace(/\s+/g,' ').trim();}
+          function likelyLeak(s){
+            s=norm(s);
+            if(!s || ignorePatterns.some(r=>r.test(s))) return false;
+            if(!/[A-Za-z]/.test(s)) return false;
+            const words=s.match(/[A-Za-zÀ-ÿ0-9’'-]+/g)||[];
+            if(words.length<4 || s.length<24) return false;
+            if(/^[A-Z0-9 &+./:'’,-]+$/.test(s) && words.length<6) return false;
+            return true;
+          }
+
+          async function installAuth(context, member){
+            await context.route('**/api/auth/get-session', async r=>{
+              if(!member) return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:null,session:null})});
+              const user={
+                id:'five-lang-qa',email:'five-lang-qa@example.invalid',emailVerified:true,email_verified:true,
+                name:'Launch QA',role:'user',subscription_plan:'Exclusive',subscription_status:'active',
+                phoneNumberVerified:true
+              };
+              return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user,session:{id:'five-lang-session',userId:user.id}})});
+            });
+            if(member){
+              await context.route('**/api/profile',async r=>{
+                if(r.request().method()==='GET'){
+                  return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{
+                    id:'five-lang-qa',email:'five-lang-qa@example.invalid',name:'Launch QA',role:'user',
+                    subscription_plan:'Exclusive',subscription_status:'active',subscription_price:19.99,
+                    stripe_customer_id:'cus_five_lang',stripe_subscription_id:'sub_five_lang',
+                    phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true,
+                    preferred_language:'en'
+                  }})});
+                }
+                return r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'qa_read_only'}})});
+              });
+            }
+          }
+
+          async function snapshot(browser,route,lang,member){
+            const context=await browser.newContext({viewport:{width:1366,height:900}});
+            await installAuth(context,member);
+            await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
+            const page=await context.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e.message||e)));
+            let status=null;
+            try{
+              const res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+              status=res?.status()??null;
+              await page.waitForTimeout(650);
+            }catch(e){errors.push('NAV '+String(e.message||e));}
+            const finalUrl=page.url();
+            const snap=await page.evaluate(()=>{
+              const visible=el=>{
+                const s=getComputedStyle(el), r=el.getBoundingClientRect();
+                return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)!==0&&r.width>0&&r.height>0;
+              };
+              const main=document.querySelector('main')||document.body;
+              const selector='h1,h2,h3,h4,p,button,label,[role="tab"],[role="dialog"] li,main li';
+              const segments=[];
+              for(const el of main.querySelectorAll(selector)){
+                if(!visible(el)) continue;
+                const text=(el.innerText||'').replace(/\s+/g,' ').trim();
+                if(text && text.length<=500) segments.push(text);
+              }
+              for(const el of main.querySelectorAll('input,textarea')){
+                if(!visible(el)) continue;
+                const p=(el.getAttribute('placeholder')||'').trim();
+                const a=(el.getAttribute('aria-label')||'').trim();
+                if(p) segments.push(p);
+                if(a) segments.push(a);
+              }
+              for(const el of main.querySelectorAll('[aria-label]')){
+                if(!visible(el)) continue;
+                const a=(el.getAttribute('aria-label')||'').trim();
+                if(a) segments.push(a);
+              }
+              return {
+                body:(document.body?.innerText||'').replace(/\s+/g,' ').trim(),
+                main:(main?.innerText||'').replace(/\s+/g,' ').trim(),
+                segments:[...new Set(segments)],
+                stored:localStorage.getItem('preferredLanguage')
+              };
+            }).catch(()=>({body:'',main:'',segments:[],stored:null}));
+            await context.close();
+            return {route,lang,status,finalUrl,errors,...snap};
+          }
+
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
+          const report={generatedAt:new Date().toISOString(),routes:ROUTES,languages:LANGS,critical:[],unchangedSegments:[],snapshots:{},scratchStandalone:null};
+          try{
+            for(const route of ROUTES){
+              const member=MEMBER.includes(route);
+              const en=await snapshot(browser,route,'en',member);
+              report.snapshots[route]={en:{status:en.status,finalUrl:en.finalUrl,stored:en.stored,errors:en.errors,main:en.main.slice(0,1200)}};
+              const englishCandidates=en.segments.filter(likelyLeak);
+              for(const lang of LANGS.slice(1)){
+                const loc=await snapshot(browser,route,lang,member);
+                report.snapshots[route][lang]={status:loc.status,finalUrl:loc.finalUrl,stored:loc.stored,errors:loc.errors,main:loc.main.slice(0,1200)};
+                if(loc.stored!==lang) report.critical.push({kind:'language-not-persisted',route,lang,actual:loc.stored});
+                if(loc.errors.length) report.critical.push({kind:'page-errors',route,lang,errors:loc.errors});
+                const locSet=new Set(loc.segments.map(norm));
+                const unchanged=englishCandidates.filter(s=>locSet.has(norm(s)));
+                if(unchanged.length){
+                  report.unchangedSegments.push({route,lang,segments:unchanged.slice(0,40)});
+                }
+                if(en.main.length>80 && norm(en.main)===norm(loc.main)){
+                  report.critical.push({kind:'whole-main-unchanged',route,lang});
+                }
+              }
+            }
+
+            // Explicit certification for the migrated voting game: content must localize, not just shell chrome.
+            const qEnglish='One partner wants daily reassurance that the relationship is secure. The other feels pressured by having to constantly prove their commitment. What should they do?';
+            const aEnglish='Agree on healthy ways to provide reassurance without making it constant';
+            for(const lang of LANGS.slice(1)){
+              const s=report.snapshots['/WhatShouldTheyDo']?.[lang];
+              if(s && (s.main.includes(qEnglish)||s.main.includes(aEnglish))){
+                report.critical.push({kind:'what-should-they-do-content-english',route:'/WhatShouldTheyDo',lang});
+              }
+            }
+
+            // Inspect the standalone scratch game because it is embedded inside O2OL.
+            const context=await browser.newContext({viewport:{width:390,height:844}});
+            const page=await context.newPage();
+            try{
+              const res=await page.goto('https://play.one2onelove.com/',{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(1000);
+              report.scratchStandalone={
+                status:res?.status()??null,
+                finalUrl:page.url(),
+                body:(await page.locator('body').innerText().catch(()=>'' )).replace(/\s+/g,' ').trim().slice(0,5000),
+                selects:await page.locator('select').count(),
+                comboboxes:await page.getByRole('combobox').count()
+              };
+            }catch(e){report.scratchStandalone={error:String(e.message||e),finalUrl:page.url()};}
+            await context.close();
+          }finally{
+            await browser.close();
+          }
+
+          fs.writeFileSync('audit-artifacts/five-language-certification.json',JSON.stringify(report,null,2));
+          console.log('FIVE_LANGUAGE_CRITICAL='+report.critical.length);
+          console.log('FIVE_LANGUAGE_UNCHANGED_GROUPS='+report.unchangedSegments.length);
+          for(const x of report.critical.slice(0,100)) console.log('CRITICAL '+JSON.stringify(x));
+          for(const x of report.unchangedSegments.slice(0,100)) console.log('UNCHANGED '+JSON.stringify(x));
+          console.log('SCRATCH '+JSON.stringify(report.scratchStandalone));
+          NODE
+
+      - name: Upload certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-five-language-certification
+          path: audit-artifacts/five-language-certification.json
+          if-no-files-found: error
