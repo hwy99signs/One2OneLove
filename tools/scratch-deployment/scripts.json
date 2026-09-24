@@ -1,0 +1,449 @@
+{
+  "result": [
+    {
+      "created_on": "2026-09-17T00:32:40.583134Z",
+      "modified_on": "2026-09-18T23:03:15.244093Z",
+      "id": "epscie-core",
+      "tag": "23e7e23a3dbf4aa291fcbe9d8ec43463",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": false,
+      "has_modules": true,
+      "etag": "8c7cdcedd38962cd46ed3204302bdbf65610e13a3ee546a21edc4781c8b467e4",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-16",
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-06T02:50:58.707749Z",
+      "modified_on": "2026-09-13T21:10:18.797405Z",
+      "id": "one2onelove-api-migration",
+      "tag": "1766ab223bc54b7d91caedd98175c06f",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": false,
+      "has_modules": true,
+      "etag": "05962393d333edf92899911dd11f841947f5e1359195586369b3f0aa74161878",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-05",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-06T02:08:23.272097Z",
+      "modified_on": "2026-09-06T02:08:24.04076Z",
+      "id": "one2onelove-hyperdrive-smoke",
+      "tag": "94738ca3a346499189f2c6e2ed0ec416",
+      "tags": null,
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": false,
+      "has_modules": true,
+      "etag": "45c0fa45a36bdd6a452cd401bf604352c6da70bddfd7d5e6a1c2d29184feeb7d",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-05",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-12T03:56:42.359348Z",
+      "modified_on": "2026-09-24T13:51:56.363591Z",
+      "id": "one2onelove-launch",
+      "tag": "f063c33a9b3f4ac69bc6a835eb969a98",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "redact_query_string": false,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": false,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      },
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "06e2508e239f770656a5b51166726d8ffc9efe518dc3538195bb41dfb78a83d5",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-11",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-24T01:41:21.886758Z",
+      "modified_on": "2026-09-24T01:41:23.807277Z",
+      "id": "one2onelove-library-expansion-20260923",
+      "tag": "513f5ec440bb4b1588997f62e377aaf1",
+      "tags": null,
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": false,
+      "has_modules": true,
+      "etag": "9037517b507841db2e35ddfb66517cd4f8eba53ef01f364d7600595d669f82f2",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-23",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-06T01:39:52.522995Z",
+      "modified_on": "2026-09-06T02:08:03.060974Z",
+      "id": "one2onelove-migration-smoke",
+      "tag": "1e5c9cd28b0b4ef8921e0f51bf9dbb02",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": false,
+      "has_modules": true,
+      "etag": "dcd20fd18762d30240ac84d32fe6890c86acb07806852f8618d564dfe7ea0a50",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-05",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-18T04:06:03.437167Z",
+      "modified_on": "2026-09-24T13:52:06.655737Z",
+      "id": "one2onelove-prelaunch",
+      "tag": "3e03735cfeda4be68d8412fc9a1738ac",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "redact_query_string": false,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": false,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      },
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "06e2508e239f770656a5b51166726d8ffc9efe518dc3538195bb41dfb78a83d5",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-11",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-06T04:21:11.35362Z",
+      "modified_on": "2026-09-13T21:10:38.889635Z",
+      "id": "one2onelove-preview-migration",
+      "tag": "6e61ac9f7c2043ae817090f730c72e57",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "05962393d333edf92899911dd11f841947f5e1359195586369b3f0aa74161878",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-05",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-24T00:05:16.41245Z",
+      "modified_on": "2026-09-24T03:26:01.412028Z",
+      "id": "one2onelove-scratch-game",
+      "tag": "469bb0ed3f5240f29d3d922ab2c299d0",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "redact_query_string": false,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": false,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      },
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "4a9d6b600de4cd1537851f2cdcf586a35548b1b682374e8a58cdf80ef9fd3cda",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-23",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-24T02:09:03.338916Z",
+      "modified_on": "2026-09-24T03:25:08.02195Z",
+      "id": "one2onelove-scratch-game-launch-preview",
+      "tag": "431206ab388e4f2daa944f29749ed55f",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "redact_query_string": false,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": false,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      },
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "4a9d6b600de4cd1537851f2cdcf586a35548b1b682374e8a58cdf80ef9fd3cda",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-23",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-23T23:54:51.553257Z",
+      "modified_on": "2026-09-24T01:36:14.987913Z",
+      "id": "one2onelove-scratch-game-preview",
+      "tag": "29df3bfb40ef478fb33857bef56e4c94",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "redact_query_string": false,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": false,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      },
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "f03303492b69e9fda06973d4076cdb2b5c79a809348e1918975fcd28867b0b2a",
+      "handlers": [
+        "fetch"
+      ],
+      "named_handlers": [
+        {
+          "name": "RemoteGameRoom",
+          "handlers": [
+            "class"
+          ]
+        }
+      ],
+      "last_deployed_from": "wrangler",
+      "migration_tag": "v1-remote-rooms",
+      "compatibility_date": "2026-09-23",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-23T23:56:56.226284Z",
+      "modified_on": "2026-09-23T23:57:01.586801Z",
+      "id": "one2onelove-scratch-integrated-preview",
+      "tag": "252463e371d8433da6c17ae4e5d26e60",
+      "tags": null,
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "d9b3db7b097279bf0c134311875f34cfc53b74ca585c1861ac224977e05d884b",
+      "handlers": [
+        "fetch",
+        "scheduled"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-23",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-24T02:21:00.393433Z",
+      "modified_on": "2026-09-24T02:21:05.492676Z",
+      "id": "one2onelove-scratch-remote-auth-preview",
+      "tag": "c28919caeea14834996ef442dc4fcff1",
+      "tags": null,
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "redact_query_string": false,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": false,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      },
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "2c8a91c60274c45979234b070e10cc1e078e590d6e7682b4319406d9b69c57c7",
+      "handlers": [
+        "fetch"
+      ],
+      "named_handlers": [
+        {
+          "name": "RemoteGameRoom",
+          "handlers": [
+            "class"
+          ]
+        }
+      ],
+      "last_deployed_from": "wrangler",
+      "migration_tag": "remote-v1",
+      "compatibility_date": "2026-09-23",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "routes": null
+    },
+    {
+      "created_on": "2026-09-02T17:19:24.949888Z",
+      "modified_on": "2026-09-04T15:17:37.120313Z",
+      "id": "sm-command",
+      "tag": "98d6132f2796472e8938618fe7239f62",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "has_assets": true,
+      "has_modules": true,
+      "etag": "0829828223138579febf91764f53b2fe397d584afbb713447e9f0580a20eb16b",
+      "handlers": [
+        "fetch"
+      ],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2026-09-02",
+      "compatibility_flags": [
+        "nodejs_compat"
+      ],
+      "usage_model": "standard",
+      "cache_options": {
+        "enabled": true,
+        "cross_version_cache": false
+      },
+      "routes": null
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "messages": []
+}

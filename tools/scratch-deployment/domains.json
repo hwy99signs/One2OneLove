@@ -1,0 +1,24 @@
+{
+  "result": [
+    {
+      "id": "64ed3719812ee9a4268bbf4c7a088f62344ef313",
+      "zone_id": "449881ec0e315b87e822418a09714875",
+      "zone_name": "one2onelove.com",
+      "hostname": "play.one2onelove.com",
+      "service": "one2onelove-scratch-game",
+      "environment": "production",
+      "cert_id": "56ef1973-5480-43a0-a58d-63294088b644",
+      "previews_enabled": false,
+      "enabled": true
+    }
+  ],
+  "success": true,
+  "errors": null,
+  "messages": null,
+  "result_info": {
+    "page": 1,
+    "per_page": 1,
+    "count": 1,
+    "total_count": 1
+  }
+}
