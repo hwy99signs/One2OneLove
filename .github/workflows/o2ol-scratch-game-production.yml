@@ -39,12 +39,37 @@ jobs:
           set -euo pipefail
           for attempt in $(seq 1 30); do
             code=$(curl -sS --max-time 20 -o /tmp/live-health.json -w '%{http_code}' "$LIVE_URL/api/health" || true)
-            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 3200' /tmp/live-health.json >/dev/null 2>&1; then
+            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 4800' /tmp/live-health.json >/dev/null 2>&1; then
               break
             fi
             sleep 5
           done
-          jq -e '.ok == true and .questionCount == 3200' /tmp/live-health.json >/dev/null
-          code=$(curl -sS --max-time 30 -o /tmp/live-card.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
+          jq -e '.ok == true and .questionCount == 4800' /tmp/live-health.json >/dev/null
+          categories=(
+            "Communication"
+            "Trust"
+            "Fun"
+            "Intimacy"
+            "Money"
+            "Future"
+            "Conflict"
+            "Deep Questions"
+            "Digital Communication"
+            "Electronic Devices"
+            "Social Media"
+            "AI Bot Relationships"
+          )
+
+          for category in "${categories[@]}"; do
+            payload=$(jq -nc --arg relationship "Married" --arg category "$category"               '{relationship:$relationship,category:$category,exclude:[],avoidId:null}')
+            code=$(curl -sS --max-time 30 -o /tmp/live-card.json -w '%{http_code}'               -X POST "$LIVE_URL/api/draw-question"               -H 'content-type: application/json'               --data "$payload")
+            cat /tmp/live-card.json
+            test "$code" = "200"
+            jq -e --arg category "$category"               '.card.id and .card.question and .card.category == $category'               /tmp/live-card.json >/dev/null
+          done
+
+          shuffle_payload='{"relationship":"Married","category":"Shuffle All","exclude":[],"avoidId":null}'
+          code=$(curl -sS --max-time 30 -o /tmp/live-shuffle.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data "$shuffle_payload")
+          cat /tmp/live-shuffle.json
           test "$code" = "200"
-          jq -e '.card.id and .card.question and .card.category == "Communication"' /tmp/live-card.json >/dev/null
+          jq -e '.card.id and .card.question' /tmp/live-shuffle.json >/dev/null
