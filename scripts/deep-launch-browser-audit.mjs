@@ -1338,16 +1338,13 @@ try {
         if(!(await dateNode.count())){
           add('critical','couples-dashboard-milestone-date-missing',{lang:lang});
         }else{
-          const expected=await page.evaluate(function(locale){
-            return new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',day:'numeric'}).format(new Date(dateValue+'T00:00:00'));
+          const expected=await page.evaluate(function(args){
+            return new Intl.DateTimeFormat(args.locale,{year:'numeric',month:'long',day:'numeric'}).format(new Date(args.dateValue+'T00:00:00'));
           },{locale:copy.locale,dateValue:syntheticDashboardDate});
           const actual=normalizeText(await dateNode.innerText());
           if(actual!==normalizeText(expected)){
             add('critical','couples-dashboard-milestone-local-date',{lang:lang,expected:expected,actual:actual,date:syntheticDashboardDate});
           }
-          /*
-          legacy single-argument evaluation retained below only as a historical marker
-          */
         }
         if(pageErrors.length) add('critical','couples-dashboard-date-pageerror',{lang:lang,errors:pageErrors});
       }catch(e){
