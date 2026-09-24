@@ -38,7 +38,14 @@ const BASE_VOTES = [
 ];
 
 const REGION_SHIFT = { WORLD: 0, US: 1, GB: 2, CA: 3, AU: 4 };
-const REGION_LABEL = { WORLD: "Worldwide", US: "United States", GB: "United Kingdom", CA: "Canada", AU: "Australia" };
+const COUNTRY_MINIMUM_VOTES = 5;
+const REGION_META = {
+  WORLD: { label: "Worldwide", resultTitle: "The World Voted", short: "World", flag: "🌍" },
+  US: { label: "United States", resultTitle: "By Country", short: "US", flag: "🇺🇸" },
+  GB: { label: "United Kingdom", resultTitle: "By Country", short: "GB", flag: "🇬🇧" },
+  CA: { label: "Canada", resultTitle: "By Country", short: "CA", flag: "🇨🇦" },
+  AU: { label: "Australia", resultTitle: "By Country", short: "AU", flag: "🇦🇺" },
+};
 
 function visualTypeFor(index) {
   const slot = index % 20;
@@ -213,6 +220,9 @@ export default function WhatShouldTheyDo() {
   const selected = question.options.find(o => o.id === selectedOptionId);
   const top = submitted ? [...results].sort((a, b) => b.percentage - a.percentage)[0] : null;
   const userResult = submitted ? results.find(r => r.id === selectedOptionId) : null;
+  const regionMeta = REGION_META[region] || REGION_META.WORLD;
+  const regionTotalVotes = results.reduce((sum, row) => sum + row.votes, 0);
+  const regionMeetsMinimum = region === "WORLD" || regionTotalVotes >= COUNTRY_MINIMUM_VOTES;
 
   function openQuestion(id) {
     const next = QUESTIONS.findIndex(q => q.id === id);
@@ -349,20 +359,31 @@ export default function WhatShouldTheyDo() {
             <section className="rounded-3xl bg-white p-5 shadow-lg sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-slate-400"><Globe2 className="h-4 w-4" /> Community Results</div>
-                  <h3 className="mt-1 text-2xl font-black text-[#102f60]">{REGION_LABEL[region]}</h3>
+                  <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-slate-400"><Globe2 className="h-4 w-4" /> {regionMeta.resultTitle}</div>
+                  <h3 className="mt-1 text-2xl font-black text-[#102f60]">{regionMeta.label}</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {Object.keys(REGION_LABEL).map(code => (
+                  {Object.entries(REGION_META).map(([code, meta]) => (
                     <button key={code} type="button" onClick={() => setRegion(code)} className={`rounded-full px-3 py-2 text-xs font-black ${region === code ? "bg-[#102f60] text-white" : "bg-slate-100 text-slate-600"}`}>
-                      {code === "WORLD" ? "World" : code}
+                      <span aria-hidden="true">{meta.flag}</span> {meta.short}
                     </button>
                   ))}
                 </div>
               </div>
 
+              {region !== "WORLD" && (
+                <div className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                  Country results appear after at least {COUNTRY_MINIMUM_VOTES} votes in a country.
+                </div>
+              )}
+
               <div className="mt-6 space-y-4">
-                {results.map((row, idx) => {
+                {!regionMeetsMinimum ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                    <div className="font-black text-[#17345f]">Not enough country votes yet</div>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">Check back after at least {COUNTRY_MINIMUM_VOTES} votes are recorded for this country.</p>
+                  </div>
+                ) : results.map((row, idx) => {
                   const isMine = row.id === selectedOptionId;
                   return (
                     <div key={row.id}>
@@ -393,8 +414,13 @@ export default function WhatShouldTheyDo() {
         {!submitted && (
           <section className="mt-6 rounded-3xl bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Another Question</div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Another Question</div>
+                  <button type="button" onClick={() => setBrowserOpen(true)} className="inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-xs font-black text-[#17345f] hover:bg-slate-100">
+                    See All <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className="mt-1 max-w-4xl font-black text-[#17345f]">{QUESTIONS[(questionIndex + 1) % QUESTIONS.length].scenario}</p>
               </div>
               <button type="button" onClick={nextQuestion} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-black text-[#17345f]">
