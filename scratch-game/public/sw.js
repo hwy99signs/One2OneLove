@@ -1,4 +1,4 @@
-const CACHE_NAME="o2ol-scratch-shell-v6-auth-toggle-fix";
+const CACHE_NAME="o2ol-scratch-shell-v7-solo-password";
 const APP_SHELL=["/","/index.html","/manifest.webmanifest","/auth-gate.js","/assets/icons/icon-192.png","/assets/icons/icon-512.png","/assets/icons/icon-maskable-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)));self.skipWaiting();});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim();});
