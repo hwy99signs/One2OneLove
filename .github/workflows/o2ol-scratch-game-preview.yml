@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - o2ol-scratch-game-pwa
+      - o2ol-scratch-remote-link-beta-20260923
     paths:
       - "scratch-game/**"
       - ".github/workflows/o2ol-scratch-game-preview.yml"
@@ -39,6 +40,14 @@ jobs:
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.toml
       - name: Deploy Cloudflare preview
         run: npx --yes wrangler@latest deploy --config wrangler.toml
+      - name: Expand Neon library to 4,800 questions
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS --max-time 180 -o /tmp/expand.json -w '%{http_code}' "$PREVIEW_URL/api/internal-expand-digital-age")
+          cat /tmp/expand.json
+          test "$code" = "200"
+          jq -e '.ok == true and .count == 4800' /tmp/expand.json >/dev/null
       - name: Verify preview health
         shell: bash
         run: |
@@ -48,18 +57,33 @@ jobs:
             echo "health attempt $attempt -> HTTP $code"
             cat /tmp/health.json || true
             if [ "$code" = "200" ]; then
-              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive" and .questionCount == 3200' /tmp/health.json >/dev/null
-              exit 0
+              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive" and .questionCount == 4800' /tmp/health.json >/dev/null
+              break
             fi
             sleep 5
           done
-          exit 1
-
+          test "$code" = "200"
       - name: Verify real card draw from Neon
         shell: bash
         run: |
           set -euo pipefail
-          code=$(curl -sS --max-time 30 -o /tmp/card.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
+          code=$(curl -sS --max-time 30 -o /tmp/card.json -w '%{http_code}' -X POST "$PREVIEW_URL/api/draw-question" -H 'content-type: application/json' --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
           cat /tmp/card.json
           test "$code" = "200"
           jq -e '.card.id and .card.question and .card.category == "Communication"' /tmp/card.json >/dev/null
+      - name: Verify remote room creation and join state
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS --max-time 30 -o /tmp/room.json -w '%{http_code}' -X POST "$PREVIEW_URL/api/room/create" -H 'content-type: application/json' --data '{"playerCount":4}')
+          cat /tmp/room.json
+          test "$code" = "200"
+          room=$(jq -r '.code' /tmp/room.json)
+          test -n "$room"
+          curl -fsS "$PREVIEW_URL/api/room/$room" | jq -e '.playerCount == 4 and .turn == 1' >/dev/null
+      - name: Verify remote client injection
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS "$PREVIEW_URL/" | grep -q '/remote-play.js'
+          curl -fsS "$PREVIEW_URL/remote-play.js" | grep -q 'Play Together by Phone'
