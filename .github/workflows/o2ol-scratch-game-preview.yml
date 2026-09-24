@@ -22,7 +22,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      PREVIEW_URL: https://one2onelove-scratch-game-preview.hwy99signs.workers.dev
+      PREVIEW_URL: https://one2onelove-scratch-game-launch-preview.hwy99signs.workers.dev
     defaults:
       run:
         working-directory: scratch-game
@@ -55,11 +55,46 @@ jobs:
           done
           exit 1
 
-      - name: Verify real card draw from Neon
+      - name: Verify account gate, analytics, and 12-category card draw
         shell: bash
         run: |
           set -euo pipefail
-          code=$(curl -sS --max-time 30 -o /tmp/card.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
-          cat /tmp/card.json
+
+          unauth=$(curl -sS --max-time 20 -o /tmp/unauth.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
+          test "$unauth" = "401"
+
+          stamp=$(date +%s)-$RANDOM
+          email="preview-check-$stamp@example.invalid"
+          username="preview$RANDOM"
+          password="PreviewCheck-$stamp!"
+          signup=$(jq -nc --arg username "$username" --arg email "$email" --arg password "$password"             '{username:$username,email:$email,password:$password,marketingOptIn:false,acceptTerms:true}')
+          code=$(curl -sS --max-time 45 -c /tmp/cookie.txt -o /tmp/signup.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/auth/signup"             -H 'content-type: application/json'             --data "$signup")
+          cat /tmp/signup.json
+          test "$code" = "201"
+
+          categories=(
+            "Communication"
+            "Trust"
+            "Fun"
+            "Intimacy"
+            "Money"
+            "Future"
+            "Conflict"
+            "Deep Questions"
+            "Digital Communication"
+            "Electronic Devices"
+            "Social Media"
+            "AI Bot Relationships"
+          )
+          for category in "${categories[@]}"; do
+            payload=$(jq -nc --arg relationship "Married" --arg category "$category"               '{relationship:$relationship,category:$category,exclude:[],avoidId:null}')
+            code=$(curl -sS --max-time 30 -b /tmp/cookie.txt -o /tmp/card.json -w '%{http_code}'               -X POST "$PREVIEW_URL/api/draw-question"               -H 'content-type: application/json'               --data "$payload")
+            cat /tmp/card.json
+            test "$code" = "200"
+            jq -e --arg category "$category" '.card.id and .card.question and .card.category == $category' /tmp/card.json >/dev/null
+          done
+
+          event='{"eventType":"game_started","gameSessionId":"preview-check","playerCount":2,"relationship":"Married","category":"AI Bot Relationships"}'
+          code=$(curl -sS --max-time 20 -b /tmp/cookie.txt -o /tmp/event.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/analytics/event"             -H 'content-type: application/json'             --data "$event")
           test "$code" = "200"
-          jq -e '.card.id and .card.question and .card.category == "Communication"' /tmp/card.json >/dev/null
+          jq -e '.ok == true' /tmp/event.json >/dev/null
