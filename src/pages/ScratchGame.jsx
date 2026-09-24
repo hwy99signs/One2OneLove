@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
 
-const GAME_URL = "https://one2onelove-scratch-game-launch-preview.hwy99signs.workers.dev/";
+const GAME_URL = "https://play.one2onelove.com/";
 
 const copy = {
   en: { back: "Back to Games", full: "Open Full Screen" },
