@@ -20,6 +20,30 @@ jobs:
         with:
           ref: o2ol-password-reset-preview
 
+      - name: Verify all 150 voting questions are localized in every language
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          base=json.loads(Path('src/data/whatShouldTheyDoQuestions.json').read_text(encoding='utf-8'))
+          assert len(base)==150
+          for lang in ['es','fr','it','de']:
+              path=Path(f'src/data/whatShouldTheyDoQuestions.{lang}.json')
+              rows=json.loads(path.read_text(encoding='utf-8'))
+              assert len(rows)==150, (lang,len(rows))
+              for i,(eng,loc) in enumerate(zip(base,rows),start=1):
+                  assert loc[0]==eng[0], (lang,i,'category')
+                  assert isinstance(loc[1],str) and loc[1].strip(), (lang,i,'scenario-empty')
+                  assert loc[1].strip()!=eng[1].strip(), (lang,i,'scenario-english')
+                  assert len(loc[2])==4, (lang,i,'option-count')
+                  for j,(ea,la) in enumerate(zip(eng[2],loc[2]),start=1):
+                      assert isinstance(la,str) and la.strip(), (lang,i,j,'answer-empty')
+                      assert la.strip()!=ea.strip(), (lang,i,j,'answer-english')
+              print(lang,'150 scenarios + 600 answers verified localized')
+          PY
+
       - name: Prepare Chrome
         shell: bash
         run: |
