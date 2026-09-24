@@ -1,0 +1,42 @@
+name: Diagnose Scratch Production 1101
+
+on:
+  push:
+    branches:
+      - o2ol-scratch-game-pwa
+    paths:
+      - ".github/workflows/o2ol-scratch-production-diagnose.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-scratch-game-pwa
+      - name: Capture live production exception
+        working-directory: scratch-game
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f /tmp/tail.log /tmp/health.out
+          timeout 25s npx --yes wrangler@latest tail one2onelove-scratch-game --format pretty > /tmp/tail.log 2>&1 &
+          TAIL_PID=$!
+          sleep 6
+          curl -sS -D /tmp/health.headers https://play.one2onelove.com/api/health -o /tmp/health.out || true
+          sleep 6
+          kill "$TAIL_PID" 2>/dev/null || true
+          wait "$TAIL_PID" 2>/dev/null || true
+          echo "=== HEALTH HEADERS ==="
+          cat /tmp/health.headers || true
+          echo "=== HEALTH BODY ==="
+          cat /tmp/health.out || true
+          echo
+          echo "=== WORKER TAIL ==="
+          cat /tmp/tail.log || true
