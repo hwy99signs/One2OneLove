@@ -26,11 +26,11 @@ jobs:
         run: |
           set -euo pipefail
           rm -f /tmp/tail.log /tmp/health.out
-          timeout 25s npx --yes wrangler@latest tail one2onelove-scratch-game --format pretty > /tmp/tail.log 2>&1 &
+          timeout 50s npx --yes wrangler@latest tail one2onelove-scratch-game --format pretty > /tmp/tail.log 2>&1 &
           TAIL_PID=$!
-          sleep 6
+          sleep 15
           curl -sS -D /tmp/health.headers https://play.one2onelove.com/api/health -o /tmp/health.out || true
-          sleep 6
+          sleep 12
           kill "$TAIL_PID" 2>/dev/null || true
           wait "$TAIL_PID" 2>/dev/null || true
           echo "=== HEALTH HEADERS ==="
