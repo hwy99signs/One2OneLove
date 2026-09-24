@@ -37,16 +37,21 @@ jobs:
           NODE
 
       - name: Install focused browser runner
+        shell: bash
         run: |
-          npm install --no-save --package-lock=false playwright
-          npx playwright install --with-deps chromium
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+          "$CHROME_BIN" --version
 
       - name: Verify migrated game live
         shell: bash
         run: |
           set -euo pipefail
           node --input-type=module - <<'NODE'
-          import { chromium } from 'playwright';
+          import { chromium } from 'playwright-core';
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
           function assert(ok,msg){ if(!ok) throw new Error(msg); }
 
@@ -80,12 +85,14 @@ jobs:
             return {context,page};
           }
 
-          const browser=await chromium.launch({headless:true});
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           try{
             for(const route of ['/WhatShouldTheyDo','/Games']){
               const {context,page}=await openMember(browser,route,{width:1366,height:900});
+              await page.waitForFunction(() => !document.body.innerText.includes('Loading your One2OneLove access'), { timeout: 5000 }).catch(()=>{});
               const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-              assert(body.includes('What Should They Do?'), route+' missing game title');
+              console.log('MIGRATED_GAME_BODY', route, body.slice(0,1800));
+              assert(body.includes('What Should They Do?'), route+' missing game title; body='+body.slice(0,500));
               assert(body.includes('150 recovered launch questions'), route+' missing 150-question marker');
               const overflow=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth);
               assert(overflow<=4, route+' desktop horizontal overflow '+overflow);
@@ -93,8 +100,10 @@ jobs:
             }
 
             const {context,page}=await openMember(browser,'/WhatShouldTheyDo',{width:390,height:844});
+            await page.waitForFunction(() => !document.body.innerText.includes('Loading your One2OneLove access'), { timeout: 5000 }).catch(()=>{});
             let body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-            assert(body.includes('What Should They Do?'),'mobile missing game title');
+            console.log('MIGRATED_GAME_MOBILE_BODY', body.slice(0,1800));
+            assert(body.includes('What Should They Do?'),'mobile missing game title; body='+body.slice(0,500));
 
             await page.getByRole('button',{name:/Agree on healthy ways to provide reassurance/i}).click();
             await page.getByRole('button',{name:/Cast Your Vote/i}).click();
