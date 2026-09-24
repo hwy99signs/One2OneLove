@@ -380,7 +380,7 @@ async function signup(req: Request, env: Env) {
 
   if (!validEmail(email)) return json({ error: "Enter a valid email address." }, 400);
   if (!validUsername(username)) return json({ error: "Username must be 3–24 characters using letters, numbers, dots, underscores, or hyphens." }, 400);
-  if (password.length < 8 || password.length > 128) return json({ error: "Password must be 8–128 characters." }, 400);
+  if (password.length < 8 || password.length > 12) return json({ error: "Password must be 8–12 characters." }, 400);
   if (!acceptTerms) return json({ error: "You must agree to the Terms and Privacy Policy." }, 400);
 
   try {
