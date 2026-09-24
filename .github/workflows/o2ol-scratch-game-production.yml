@@ -2,6 +2,11 @@ name: O2OL Scratch Game Production
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - o2ol-scratch-game-pwa
+    paths:
+      - ".github/workflows/o2ol-scratch-game-production.yml"
 
 permissions:
   contents: read
