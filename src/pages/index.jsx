@@ -25,6 +25,7 @@ import CommunicationPractice from './CommunicationPractice';
 import CouplesProfile from './CouplesProfile';
 import CoupleActivities from './CoupleActivities';
 import CooperativeGames from './CooperativeGames';
+import WhatShouldTheyDo from './WhatShouldTheyDo';
 import ScratchGame from './ScratchGame';
 import SharedJournals from './SharedJournals';
 import CouplesDashboard from './CouplesDashboard';
@@ -49,7 +50,7 @@ const PAGES = {
   Home, AboutUs, SignIn, SignUp, AdminAccess, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
-  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, ScratchGame, SharedJournals, CouplesDashboard,
+  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
 };
@@ -75,6 +76,8 @@ const FEATURE_BY_ROUTE = {
   '/couplesprofile': 'Couples Profile',
   '/coupleactivities': 'Couple Activities',
   '/cooperativegames': 'Relationship Games',
+  '/whatshouldtheydo': 'What Should They Do?',
+  '/games': 'What Should They Do?',
   '/scratchgame': 'Scratch Game',
   '/sharedjournals': 'Shared Journals',
   '/couplesdashboard': 'Couples Dashboard',
@@ -153,6 +156,8 @@ function PagesContent() {
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
           <Route path="/CooperativeGames" element={<CooperativeGames />} />
+          <Route path="/WhatShouldTheyDo" element={<WhatShouldTheyDo />} />
+          <Route path="/Games" element={<WhatShouldTheyDo />} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/SharedJournals" element={<SharedJournals />} />
           <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
