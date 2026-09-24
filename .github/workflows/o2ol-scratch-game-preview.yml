@@ -39,6 +39,10 @@ jobs:
           grep -Fq 'data-players="1"' public/index.html
           grep -Fq 'Self Evaluation' public/index.html
           grep -Fq 'maxlength="12"' public/auth-gate.js
+          grep -Fq '<script defer src="/i18n.js"></script>' public/index.html
+          grep -Fq "const SUPPORTED = ['en','es','fr','it','de']" public/i18n.js
+          grep -Fq 'AI: any' worker/index.ts
+          grep -Fq 'o2ol_scratch_question_translations' worker/index.ts
       - name: Wrangler dry run
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.toml
       - name: Deploy Cloudflare preview
@@ -100,11 +104,19 @@ jobs:
             "AI Bot Relationships"
           )
           for category in "${categories[@]}"; do
-            payload=$(jq -nc --arg relationship "Married" --arg category "$category"               '{relationship:$relationship,category:$category,exclude:[],avoidId:null}')
+            payload=$(jq -nc --arg relationship "Married" --arg category "$category"               '{relationship:$relationship,category:$category,exclude:[],avoidId:null,language:"en"}')
             code=$(curl -sS --max-time 30 -b /tmp/cookie.txt -o /tmp/card.json -w '%{http_code}'               -X POST "$PREVIEW_URL/api/draw-question"               -H 'content-type: application/json'               --data "$payload")
             cat /tmp/card.json
             test "$code" = "200"
-            jq -e --arg category "$category" '.card.id and .card.question and .card.category == $category' /tmp/card.json >/dev/null
+            jq -e --arg category "$category" '.card.id and .card.question and .card.category == $category and .card.language == "en"' /tmp/card.json >/dev/null
+          done
+
+          for lang in es fr it de; do
+            payload=$(jq -nc --arg lang "$lang" '{relationship:"Married",category:"Communication",exclude:[],avoidId:null,language:$lang}')
+            code=$(curl -sS --max-time 45 -b /tmp/cookie.txt -o "/tmp/card-$lang.json" -w '%{http_code}'               -X POST "$PREVIEW_URL/api/draw-question"               -H 'content-type: application/json'               --data "$payload")
+            cat "/tmp/card-$lang.json"
+            test "$code" = "200"
+            jq -e --arg lang "$lang" '.card.id and (.card.question|length>10) and .card.language == $lang' "/tmp/card-$lang.json" >/dev/null
           done
 
           event='{"eventType":"game_started","gameSessionId":"preview-check","playerCount":1,"relationship":"Married","category":"AI Bot Relationships"}'
