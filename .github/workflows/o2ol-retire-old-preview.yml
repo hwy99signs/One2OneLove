@@ -1,0 +1,82 @@
+name: Retire Old O2OL Preview
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - ".github/workflows/o2ol-retire-old-preview.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-retire-old-preview
+  cancel-in-progress: false
+
+jobs:
+  retire:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+      OLD_URL: https://one2onelove-preview.hwy99signs.workers.dev/Games
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - name: Build native consolidated Prelaunch
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          grep -RIl "What Should They Do" dist >/dev/null
+          grep -RIl "Question Browser" dist >/dev/null
+          test "$(node -e "const q=require('./src/data/whatShouldTheyDoQuestions.json'); process.stdout.write(String(q.length))")" = "150"
+
+      - name: Deploy current Prelaunch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest deploy --config wrangler.toml
+
+      - name: Verify native game on current Prelaunch
+        shell: bash
+        run: |
+          set -euo pipefail
+          READY=no
+          for attempt in $(seq 1 24); do
+            code=$(curl -sS -L --connect-timeout 10 --max-time 20 -o /tmp/games.html -w '%{http_code}' "$PREVIEW_URL/Games" || true)
+            echo "Games attempt $attempt -> $code"
+            if [ "$code" = "200" ]; then
+              script=$(grep -o '/assets/[^"]*\.js' /tmp/games.html | head -1 || true)
+              if [ -n "$script" ]; then
+                if curl -fsS --connect-timeout 10 --max-time 20 "$PREVIEW_URL$script" -o /tmp/app.js; then
+                  if grep -q "What Should They Do" /tmp/app.js && grep -q "Question Browser" /tmp/app.js; then
+                    READY=yes
+                    break
+                  fi
+                fi
+              fi
+            fi
+            sleep 5
+          done
+          test "$READY" = yes
+
+      - name: Delete obsolete old preview Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest delete one2onelove-preview --force
+
+      - name: Confirm obsolete preview is gone
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 5
+          code=$(curl -sS -L --connect-timeout 10 --max-time 20 -o /tmp/old.html -w '%{http_code}' "$OLD_URL" || true)
+          echo "old preview -> $code"
+          test "$code" != "200"
