@@ -1,4 +1,4 @@
-name: Diagnose Scratch Production 1101
+name: Diagnose Scratch Production Hyperdrive
 
 on:
   push:
@@ -13,30 +13,25 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: o2ol-scratch-game-pwa
-      - name: Capture live production exception
-        working-directory: scratch-game
+      - name: Compare production and preview health
         shell: bash
         run: |
           set -euo pipefail
-          rm -f /tmp/tail.log /tmp/health.out
-          timeout 50s npx --yes wrangler@latest tail one2onelove-scratch-game --format pretty > /tmp/tail.log 2>&1 &
-          TAIL_PID=$!
-          sleep 15
-          curl -sS -D /tmp/health.headers https://play.one2onelove.com/api/health -o /tmp/health.out || true
-          sleep 12
-          kill "$TAIL_PID" 2>/dev/null || true
-          wait "$TAIL_PID" 2>/dev/null || true
-          echo "=== HEALTH HEADERS ==="
-          cat /tmp/health.headers || true
-          echo "=== HEALTH BODY ==="
-          cat /tmp/health.out || true
-          echo
-          echo "=== WORKER TAIL ==="
-          cat /tmp/tail.log || true
+          targets=(
+            "https://play.one2onelove.com/api/health"
+            "https://one2onelove-scratch-game.hwy99signs.workers.dev/api/health"
+            "https://one2onelove-scratch-game-launch-preview.hwy99signs.workers.dev/api/health"
+          )
+          for attempt in $(seq 1 8); do
+            echo "=== attempt $attempt ==="
+            for url in "${targets[@]}"; do
+              code=$(curl -sS --max-time 20 -o /tmp/health.txt -w '%{http_code}' "$url" || true)
+              body=$(cat /tmp/health.txt 2>/dev/null || true)
+              echo "$url -> $code $body"
+            done
+            sleep 5
+          done
