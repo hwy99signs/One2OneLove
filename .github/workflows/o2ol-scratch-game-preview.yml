@@ -123,3 +123,82 @@ jobs:
           code=$(curl -sS --max-time 20 -b /tmp/cookie.txt -o /tmp/event.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/analytics/event"             -H 'content-type: application/json'             --data "$event")
           test "$code" = "200"
           jq -e '.ok == true' /tmp/event.json >/dev/null
+
+      - name: Install five-language browser verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Verify five-language Scratch UI and card flow
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import { chromium } from 'playwright-core';
+          const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
+          const copy={
+            en:{home:'Scratch. Share. Grow Closer.',how:'How to Play',players:'How many players?',relationship:'Choose Your Relationship',deck:'Choose a Deck',draw:'Draw'},
+            es:{home:'Rasca. Comparte. Acérquense.',how:'Cómo Jugar',players:'¿Cuántos jugadores?',relationship:'Elige Tu Relación',deck:'Elige un Mazo',draw:'Sacar'},
+            fr:{home:'Grattez. Partagez. Rapprochez-vous.',how:'Comment Jouer',players:'Combien de joueurs ?',relationship:'Choisissez Votre Relation',deck:'Choisissez un Paquet',draw:'Pioche'},
+            it:{home:'Gratta. Condividi. Avvicinatevi.',how:'Come si Gioca',players:'Quanti giocatori?',relationship:'Scegli il Tipo di Relazione',deck:'Scegli un Mazzo',draw:'Pesca'},
+            de:{home:'Rubbeln. Teilen. Näher zusammenwachsen.',how:'Spielanleitung',players:'Wie viele Spieler?',relationship:'Wählt Eure Beziehungsform',deck:'Wählt einen Stapel',draw:'Ziehen'}
+          };
+          function assert(ok,msg){if(!ok) throw new Error(msg);}
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
+          try{
+            for(const lang of Object.keys(copy)){
+              const context=await browser.newContext({viewport:{width:390,height:844}});
+              const stamp=Date.now()+'-'+lang+'-'+Math.random().toString(36).slice(2,8);
+              const email='scratch-lang-'+stamp+'@example.invalid';
+              const username=('lang'+lang+Date.now().toString().slice(-8)).slice(0,24);
+              const signup=await context.request.post(BASE+'/api/auth/signup',{data:{username,email,password:'Beta9!Pass12',marketingOptIn:false,acceptTerms:true}});
+              assert(signup.status()===201,lang+' signup failed '+signup.status()+' '+await signup.text());
+              const page=await context.newPage();
+              const errors=[];
+              page.on('pageerror',e=>errors.push(String(e.message||e)));
+              const res=await page.goto(BASE+'/?lang='+lang,{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(800);
+              assert(res?.status()===200,lang+' page status '+res?.status());
+              assert(errors.length===0,lang+' page errors '+errors.join(' | '));
+              assert(await page.locator('#o2olAuthOverlay').count()===0,lang+' auth overlay remained after authenticated signup');
+              assert(await page.locator('#o2olLanguagePicker select').inputValue()===lang,lang+' picker did not persist');
+              assert((await page.locator('#home').innerText()).includes(copy[lang].home),lang+' home copy not translated');
+              await page.locator('#howBtn').click();
+              await page.waitForTimeout(100);
+              assert((await page.locator('#how').innerText()).includes(copy[lang].how),lang+' how-to copy not translated');
+              await page.locator('#closeHow').click();
+              await page.locator('#startBtn').click();
+              await page.waitForTimeout(100);
+              assert((await page.locator('#players').innerText()).includes(copy[lang].players),lang+' player screen not translated');
+              await page.locator('[data-players="1"]').click();
+              await page.waitForTimeout(100);
+              assert((await page.locator('#relationshipTypes').innerText()).includes(copy[lang].relationship),lang+' relationship screen not translated');
+              await page.locator('[data-relationship="Married"]').click();
+              await page.waitForTimeout(150);
+              assert((await page.locator('#categories').innerText()).includes(copy[lang].deck),lang+' deck screen not translated');
+              await page.locator('#catGrid .cat').first().click();
+              await page.waitForTimeout(150);
+              assert((await page.locator('#tableScreen').innerText()).includes(copy[lang].draw),lang+' table labels not translated');
+              const cardResponse=page.waitForResponse(r=>r.url().includes('/api/draw-question')&&r.request().method()==='POST',{timeout:45000});
+              await page.locator('#deck').click();
+              const cardRes=await cardResponse;
+              assert(cardRes.status()===200,lang+' card draw failed '+cardRes.status());
+              const payload=await cardRes.json();
+              assert(payload?.card?.language===lang,lang+' card language '+payload?.card?.language);
+              assert(String(payload?.card?.question||'').length>10,lang+' translated question missing');
+              await page.waitForFunction(()=>String(document.querySelector('#question')?.textContent||'').trim().length>10,null,{timeout:5000});
+              const visibleQuestion=(await page.locator('#question').innerText()).trim();
+              assert(visibleQuestion===String(payload.card.question).trim(),lang+' visible question differs from translated server card');
+              if(lang!=='en'){
+                const activeText=(await page.locator('#tableScreen').innerText()).replace(/\s+/g,' ');
+                assert(!activeText.includes('Tap the deck to draw.'),lang+' English draw prompt leaked');
+              }
+              await context.close();
+            }
+            console.log('SCRATCH_FIVE_LANGUAGE_FLOW=PASS');
+          }finally{await browser.close();}
+          NODE
