@@ -62,9 +62,9 @@
             <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
           </label>
           <label>Password
-            <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="8–128 characters" aria-describedby="o2olPasswordHelp">
+            <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="12" required placeholder="8–12 characters" aria-describedby="o2olPasswordHelp">
           </label>
-          <div id="o2olPasswordHelp" class="o2ol-password-help">Use 8–128 characters. Long passwords, spaces, and symbols are supported.</div>
+          <div id="o2olPasswordHelp" class="o2ol-password-help">Use 8–12 characters.</div>
           <label class="o2ol-check"><input name="marketing" type="checkbox"> <span>Send me One2OneLove updates, new games, and special offers. I can unsubscribe later.</span></label>
           <label class="o2ol-check"><input name="terms" type="checkbox" required> <span>I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
           <div id="o2olCreateError" class="o2ol-auth-error"></div>
