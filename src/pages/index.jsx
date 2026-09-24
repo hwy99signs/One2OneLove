@@ -74,7 +74,7 @@ const FEATURE_BY_ROUTE = {
   '/communicationpractice': 'Communication Practice',
   '/couplesprofile': 'Couples Profile',
   '/coupleactivities': 'Couple Activities',
-  '/cooperativegames': 'Cooperative Games',
+  '/cooperativegames': 'Relationship Games',
   '/scratchgame': 'Scratch Game',
   '/sharedjournals': 'Shared Journals',
   '/couplesdashboard': 'Couples Dashboard',

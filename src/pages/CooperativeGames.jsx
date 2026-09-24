@@ -13,7 +13,7 @@ import { getCooperativeGameHistory } from "@/lib/activityService";
 
 const translations = {
   en: {
-    title: "Cooperative Games",
+    title: "Relationship Games",
     subtitle: "Play together, laugh together, grow together",
     back: "Back to Activities",
     gamesPlayed: "Games Played",
@@ -26,7 +26,7 @@ const translations = {
     scratchDesc: "Scratch, reveal, and talk through meaningful questions together."
   },
   es: {
-    title: "Juegos Cooperativos",
+    title: "Juegos de Relaciones",
     subtitle: "Jueguen juntos, rían juntos, crezcan juntos",
     back: "Volver a Actividades",
     gamesPlayed: "Juegos Jugados",
@@ -39,7 +39,7 @@ const translations = {
     scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas."
   },
   fr: {
-    title: "Jeux Coopératifs",
+    title: "Jeux Relationnels",
     subtitle: "Jouez ensemble, riez ensemble, grandissez ensemble",
     back: "Retour aux Activités",
     gamesPlayed: "Parties Jouées",
@@ -52,7 +52,7 @@ const translations = {
     scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives."
   },
   it: {
-    title: "Giochi Cooperativi",
+    title: "Giochi Relazionali",
     subtitle: "Giocate insieme, ridete insieme, crescete insieme",
     back: "Torna alle Attività",
     gamesPlayed: "Partite Giocate",
@@ -65,7 +65,7 @@ const translations = {
     scratchDesc: "Grattate, scoprite e parlate insieme di domande significative."
   },
   de: {
-    title: "Kooperative Spiele",
+    title: "Beziehungsspiele",
     subtitle: "Spielt zusammen, lacht zusammen, wachst zusammen",
     back: "Zurück zu Aktivitäten",
     gamesPlayed: "Gespielte Spiele",
