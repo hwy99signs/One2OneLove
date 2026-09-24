@@ -204,7 +204,7 @@ jobs:
                   try{ drawRequestBody=JSON.parse(req.postData()||'{}'); }catch{}
                 }
               });
-              await page.locator('#deck').click();
+              await page.locator('#deck').evaluate(el=>el.click());
               await page.waitForFunction(()=>String(document.querySelector('#question')?.textContent||'').trim().length>10,null,{timeout:45000});
               assert(drawRequestBody?.language===lang,lang+' browser draw request language '+drawRequestBody?.language);
               const visibleQuestion=String(await page.locator('#question').textContent()||'').trim();
