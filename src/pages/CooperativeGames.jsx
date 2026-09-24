@@ -23,7 +23,9 @@ const translations = {
     allGames: "All Games",
     startGame: "Start Game",
     scratchName: "One2OneLove Scratch Game",
-    scratchDesc: "Scratch, reveal, and talk through meaningful questions together."
+    scratchDesc: "Scratch, reveal, and talk through meaningful questions together.",
+    whatShouldName: "What Should They Do?",
+    whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered."
   },
   es: {
     title: "Juegos de Relaciones",
@@ -36,7 +38,9 @@ const translations = {
     allGames: "Todos los Juegos",
     startGame: "Iniciar Juego",
     scratchName: "Juego de Rasca One2OneLove",
-    scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas."
+    scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas.",
+    whatShouldName: "¿Qué Deberían Hacer?",
+    whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas."
   },
   fr: {
     title: "Jeux Relationnels",
@@ -49,7 +53,9 @@ const translations = {
     allGames: "Tous les Jeux",
     startGame: "Commencer",
     scratchName: "Jeu à Gratter One2OneLove",
-    scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives."
+    scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives.",
+    whatShouldName: "Que Devraient-Ils Faire ?",
+    whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres."
   },
   it: {
     title: "Giochi Relazionali",
@@ -62,7 +68,9 @@ const translations = {
     allGames: "Tutti i Giochi",
     startGame: "Inizia Gioco",
     scratchName: "Gioco Gratta e Scopri One2OneLove",
-    scratchDesc: "Grattate, scoprite e parlate insieme di domande significative."
+    scratchDesc: "Grattate, scoprite e parlate insieme di domande significative.",
+    whatShouldName: "Cosa Dovrebbero Fare?",
+    whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri."
   },
   de: {
     title: "Beziehungsspiele",
@@ -75,7 +83,9 @@ const translations = {
     allGames: "Alle Spiele",
     startGame: "Spiel Starten",
     scratchName: "One2OneLove Rubbelspiel",
-    scratchDesc: "Rubbeln, aufdecken und gemeinsam über bedeutungsvolle Fragen sprechen."
+    scratchDesc: "Rubbeln, aufdecken und gemeinsam über bedeutungsvolle Fragen sprechen.",
+    whatShouldName: "Was Sollten Sie Tun?",
+    whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben."
   }
 };
 
@@ -101,6 +111,16 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '💗',
       link: 'ScratchGame',
+      playLabel: t.startGame
+    },
+    {
+      id: 'what_should_they_do',
+      name: t.whatShouldName,
+      description: t.whatShouldDesc,
+      type: 'social-voting',
+      difficulty: 'easy',
+      icon: '🗳️',
+      href: '/Games',
       playLabel: t.startGame
     }
   ];
