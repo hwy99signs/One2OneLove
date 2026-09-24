@@ -105,7 +105,7 @@ jobs:
               return None
 
           candidates=[]
-          for m in re.finditer(r"const\s+([A-Za-z_$][\w$]*)=(\[\[)",old_js_text):
+          for m in re.finditer(r"(?<![\w$])([A-Za-z_$][\w$]*)=(\[\[)",old_js_text):
               name=m.group(1); start=m.start(2)
               raw=balanced_array(old_js_text,start)
               if not raw: continue
