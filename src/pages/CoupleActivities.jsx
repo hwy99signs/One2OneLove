@@ -219,6 +219,15 @@ export default function CoupleActivities() {
       category: 'learning'
     },
     {
+      id: 'game',
+      name: t.activities_types.game,
+      description: t.activities_types.game_desc,
+      icon: Gamepad2,
+      color: 'from-green-500 to-emerald-600',
+      link: 'CooperativeGames',
+      category: 'play'
+    },
+    {
       id: 'goal',
       name: t.activities_types.goal,
       description: t.activities_types.goal_desc,
