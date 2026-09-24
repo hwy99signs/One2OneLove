@@ -63,3 +63,32 @@ jobs:
           cat /tmp/card.json
           test "$code" = "200"
           jq -e '.card.id and .card.question and .card.category == "Communication"' /tmp/card.json >/dev/null
+
+      - name: Dry run production custom domain
+        run: npx --yes wrangler@latest deploy --dry-run --config wrangler.production.toml
+
+      - name: Deploy production custom domain
+        run: npx --yes wrangler@latest deploy --config wrangler.production.toml
+
+      - name: Verify play.one2onelove.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIVE_URL="https://play.one2onelove.com"
+          ready=no
+          for attempt in $(seq 1 30); do
+            code=$(curl -sS --max-time 20 -o /tmp/live-health.json -w '%{http_code}' "$LIVE_URL/api/health" || true)
+            echo "live health attempt $attempt -> HTTP $code"
+            cat /tmp/live-health.json || true
+            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 3200' /tmp/live-health.json >/dev/null 2>&1; then
+              ready=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$ready" = yes
+
+          code=$(curl -sS --max-time 30 -o /tmp/live-card.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Dating","category":"Trust","exclude":[],"avoidId":null}')
+          cat /tmp/live-card.json
+          test "$code" = "200"
+          jq -e '.card.id and .card.question and .card.category == "Trust"' /tmp/live-card.json >/dev/null
