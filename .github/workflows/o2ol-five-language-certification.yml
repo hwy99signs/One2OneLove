@@ -183,21 +183,41 @@ jobs:
               }
             }
 
-            // Inspect the standalone scratch game because it is embedded inside O2OL.
-            const context=await browser.newContext({viewport:{width:390,height:844}});
-            const page=await context.newPage();
-            try{
-              const res=await page.goto('https://play.one2onelove.com/',{waitUntil:'domcontentloaded',timeout:30000});
-              await page.waitForTimeout(1000);
-              report.scratchStandalone={
-                status:res?.status()??null,
-                finalUrl:page.url(),
-                body:(await page.locator('body').innerText().catch(()=>'' )).replace(/\s+/g,' ').trim().slice(0,5000),
-                selects:await page.locator('select').count(),
-                comboboxes:await page.getByRole('combobox').count()
-              };
-            }catch(e){report.scratchStandalone={error:String(e.message||e),finalUrl:page.url()};}
-            await context.close();
+            // Inspect the translated Scratch Game preview embedded by O2OL Prelaunch.
+            const scratchBase='https://one2onelove-scratch-game-launch-preview.hwy99signs.workers.dev/';
+            const scratchExpected={
+              en:'Create Account',
+              es:'Crear Cuenta',
+              fr:'Créer un Compte',
+              it:'Crea Account',
+              de:'Konto Erstellen'
+            };
+            report.scratchStandalone={};
+            for(const lang of LANGS){
+              const context=await browser.newContext({viewport:{width:390,height:844}});
+              const page=await context.newPage();
+              try{
+                const res=await page.goto(scratchBase+'?lang='+lang,{waitUntil:'domcontentloaded',timeout:30000});
+                await page.waitForTimeout(1000);
+                const body=(await page.locator('body').innerText().catch(()=>'' )).replace(/\s+/g,' ').trim();
+                const picker=page.locator('#o2olLanguagePicker select');
+                const pickerValue=(await picker.count())?await picker.inputValue():null;
+                report.scratchStandalone[lang]={
+                  status:res?.status()??null,
+                  finalUrl:page.url(),
+                  body:body.slice(0,5000),
+                  pickerValue
+                };
+                if(res?.status()!==200) report.critical.push({kind:'scratch-preview-status',lang,status:res?.status()??null});
+                if(pickerValue!==lang) report.critical.push({kind:'scratch-language-picker',lang,actual:pickerValue});
+                if(!body.includes(scratchExpected[lang])) report.critical.push({kind:'scratch-ui-language',lang,expected:scratchExpected[lang]});
+                if(lang!=='en' && body.includes('Public Beta — Free for a Limited Time')) report.critical.push({kind:'scratch-english-auth-leak',lang});
+              }catch(e){
+                report.scratchStandalone[lang]={error:String(e.message||e),finalUrl:page.url()};
+                report.critical.push({kind:'scratch-preview-navigation',lang,message:String(e.message||e)});
+              }
+              await context.close();
+            }
           }finally{
             await browser.close();
           }
