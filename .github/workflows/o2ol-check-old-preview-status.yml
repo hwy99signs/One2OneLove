@@ -1,0 +1,27 @@
+name: Check Old O2OL Preview Status
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - ".github/workflows/o2ol-check-old-preview-status.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check obsolete URL
+        shell: bash
+        run: |
+          set -u
+          url="https://one2onelove-preview.hwy99signs.workers.dev/Games"
+          code=$(curl -sS -L --connect-timeout 10 --max-time 20 -o /tmp/old.html -w '%{http_code}' "$url" || true)
+          echo "OLD_PREVIEW_HTTP=$code"
+          if [ -f /tmp/old.html ]; then
+            if grep -q "What Should They Do" /tmp/old.html; then echo "OLD_PREVIEW_GAME_MARKER=yes"; else echo "OLD_PREVIEW_GAME_MARKER=no"; fi
+            head -c 300 /tmp/old.html | tr '\n' ' '; echo
+          fi
