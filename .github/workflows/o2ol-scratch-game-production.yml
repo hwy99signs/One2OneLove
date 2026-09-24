@@ -1,0 +1,50 @@
+name: O2OL Scratch Game Production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-scratch-game-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LIVE_URL: https://play.one2onelove.com
+    defaults:
+      run:
+        working-directory: scratch-game
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+      - name: Verify player bundle does not contain question bank
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RIn "const questionBank" public worker 2>/dev/null
+      - name: Dry run production custom domain
+        run: npx --yes wrangler@latest deploy --dry-run --config wrangler.production.toml
+      - name: Deploy production custom domain
+        run: npx --yes wrangler@latest deploy --config wrangler.production.toml
+      - name: Verify production database and card draw
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            code=$(curl -sS --max-time 20 -o /tmp/live-health.json -w '%{http_code}' "$LIVE_URL/api/health" || true)
+            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 3200' /tmp/live-health.json >/dev/null 2>&1; then
+              break
+            fi
+            sleep 5
+          done
+          jq -e '.ok == true and .questionCount == 3200' /tmp/live-health.json >/dev/null
+          code=$(curl -sS --max-time 30 -o /tmp/live-card.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
+          test "$code" = "200"
+          jq -e '.card.id and .card.question and .card.category == "Communication"' /tmp/live-card.json >/dev/null
