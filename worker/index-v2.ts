@@ -40,6 +40,16 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    // Consolidated Relationship Game: serve the preserved What Should They Do?
+    // build from this Prelaunch Worker so there is only one One2OneLove preview.
+    if (url.pathname === '/Games' || url.pathname === '/Games/') {
+      const gameUrl = new URL('/Games/index.html', url.origin);
+      return env.ASSETS.fetch(new Request(gameUrl.toString(), request));
+    }
+    if (url.pathname.startsWith('/Games/')) {
+      return env.ASSETS.fetch(request);
+    }
+
     if (url.pathname === '/api/billing/webhook') {
       const sendCreditResponse = await handleSendCreditWebhook(request.clone(), env, url);
       if (sendCreditResponse) return sendCreditResponse;
