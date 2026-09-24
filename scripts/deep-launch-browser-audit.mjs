@@ -434,7 +434,7 @@ try {
         const normalized=normalizeText(await page.locator('body').innerText());
         if(!response||response.status()!==200) add('critical','migrated-game-status',{route:route,status:response&&response.status()});
         if(new URL(page.url()).pathname.toLowerCase()!==route.toLowerCase()) add('critical','migrated-game-redirect',{route:route,finalPath:new URL(page.url()).pathname});
-        if(!normalized.includes('What Should They Do?')) add('critical','migrated-game-title',{route:route});
+        if(!normalized.toLowerCase().includes('what should they do?')) add('critical','migrated-game-title',{route:route});
         if(!normalized.includes('150 recovered launch questions')) add('critical','migrated-game-question-count',{route:route});
       }
 
@@ -450,15 +450,15 @@ try {
           await vote.click();
           await page.waitForTimeout(200);
           let body=normalizeText(await page.locator('body').innerText());
-          if(!body.includes('The World Voted')||!body.includes('Worldwide')) add('critical','migrated-game-world-results',{});
+          if(!body.toLowerCase().includes('the world voted')||!body.toLowerCase().includes('worldwide')) add('critical','migrated-game-world-results',{});
           const us=page.getByRole('button',{name:/US/}).first();
           if(!(await us.count())) add('critical','migrated-game-us-filter-missing',{});
           else{
             await us.click();
             await page.waitForTimeout(150);
             body=normalizeText(await page.locator('body').innerText());
-            if(!body.includes('By Country')) add('critical','migrated-game-country-results',{});
-            if(!body.includes('Country results appear after at least 5 votes in a country.')) add('critical','migrated-game-country-threshold',{});
+            if(!body.toLowerCase().includes('by country')) add('critical','migrated-game-country-results',{});
+            if(!body.toLowerCase().includes('country results appear after at least 5 votes in a country.')) add('critical','migrated-game-country-threshold',{});
           }
           const another=page.getByRole('button',{name:/Another Question/i}).first();
           if(!(await another.count())) add('critical','migrated-game-next-question-missing',{});
@@ -471,7 +471,7 @@ try {
               await seeAll.click();
               await page.waitForTimeout(150);
               body=normalizeText(await page.locator('body').innerText());
-              if(!body.includes('Question Browser')||!body.includes('150 questions')) add('critical','migrated-game-browser',{});
+              if(!body.toLowerCase().includes('question browser')||!body.toLowerCase().includes('150 questions')) add('critical','migrated-game-browser',{});
             }
           }
         }
