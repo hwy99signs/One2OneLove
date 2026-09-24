@@ -123,6 +123,13 @@ jobs:
           if candidates:
               best=candidates[0]
               (out/"what-should-they-do-questions.json").write_text(json.dumps(best["data"],indent=2,ensure_ascii=False),encoding="utf-8")
+          marker_chunks=[]
+          for key in ["const Ehe=","const Mhe=","D1=[...Ehe,...Mhe]","function PW()","function Qhe"]:
+              p=old_js_text.find(key)
+              marker_chunks.append("\\n===== "+key+" @ "+str(p)+" =====\\n")
+              if p>=0:
+                  marker_chunks.append(old_js_text[max(0,p-2500):min(len(old_js_text),p+10000)])
+          (out/"bundle-markers.txt").write_text("".join(marker_chunks),encoding="utf-8")
           (out/"report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
           PY
 
