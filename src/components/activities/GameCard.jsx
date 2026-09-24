@@ -35,12 +35,12 @@ export default function GameCard({ game, index }) {
             <Link to={createPageUrl(game.link)}>
               <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
                 <Play className="w-4 h-4 mr-2" />
-                Play Now
+                {game.playLabel || 'Play Now'}
               </Button>
             </Link>
           ) : (
             <Button disabled className="w-full bg-slate-300 text-slate-600">
-              Coming Soon
+              Planned
             </Button>
           )}
         </CardContent>
