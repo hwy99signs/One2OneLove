@@ -12,11 +12,19 @@ command = "npm --prefix worker install --no-audit --no-fund"
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/api/*"]
+run_worker_first = true
 
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "ef44564dbfca4e1bb13176ee568aaddf"
+
+[[durable_objects.bindings]]
+name = "REMOTE_ROOMS"
+class_name = "RemoteGameRoom"
+
+[[migrations]]
+tag = "v1-remote-rooms"
+new_sqlite_classes = ["RemoteGameRoom"]
 
 [[routes]]
 pattern = "play.one2onelove.com"
