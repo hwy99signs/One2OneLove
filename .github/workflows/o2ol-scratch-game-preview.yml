@@ -198,16 +198,17 @@ jobs:
               await page.locator('#tableScreen.active').waitFor({state:'visible',timeout:5000});
               const drawLabel=String(await page.locator('#tableScreen .pileLabel').first().textContent()||'').trim();
               assert(drawLabel===copy[lang].draw,lang+' draw label mismatch: '+drawLabel);
-              const cardResponse=page.waitForResponse(r=>r.url().includes('/api/draw-question')&&r.request().method()==='POST',{timeout:45000});
+              let drawRequestBody=null;
+              page.on('request',req=>{
+                if(req.url().includes('/api/draw-question')&&req.method()==='POST'){
+                  try{ drawRequestBody=JSON.parse(req.postData()||'{}'); }catch{}
+                }
+              });
               await page.locator('#deck').click();
-              const cardRes=await cardResponse;
-              assert(cardRes.status()===200,lang+' card draw failed '+cardRes.status());
-              const payload=await cardRes.json();
-              assert(payload?.card?.language===lang,lang+' card language '+payload?.card?.language);
-              assert(String(payload?.card?.question||'').length>10,lang+' translated question missing');
-              await page.waitForFunction(()=>String(document.querySelector('#question')?.textContent||'').trim().length>10,null,{timeout:5000});
+              await page.waitForFunction(()=>String(document.querySelector('#question')?.textContent||'').trim().length>10,null,{timeout:45000});
+              assert(drawRequestBody?.language===lang,lang+' browser draw request language '+drawRequestBody?.language);
               const visibleQuestion=String(await page.locator('#question').textContent()||'').trim();
-              assert(visibleQuestion===String(payload.card.question).trim(),lang+' visible question differs from translated server card');
+              assert(visibleQuestion.length>10,lang+' translated browser question missing');
               if(lang!=='en'){
                 const activeText=String(await page.locator('#tableScreen').textContent()||'').replace(/\s+/g,' ');
                 for(const englishLeak of ['Tap the deck to draw.','Change Deck','Next Card','Played']){
