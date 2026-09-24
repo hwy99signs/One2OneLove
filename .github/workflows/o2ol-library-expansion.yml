@@ -1,0 +1,57 @@
+name: O2OL Question Library Expansion
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - "tools/library-expansion/**"
+      - ".github/workflows/o2ol-library-expansion.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-library-expansion
+  cancel-in-progress: true
+
+jobs:
+  expand:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      URL: https://one2onelove-library-expansion-20260923.hwy99signs.workers.dev
+    defaults:
+      run:
+        working-directory: tools/library-expansion
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+      - name: Deploy isolated migration worker
+        run: npx --yes wrangler@latest deploy --config wrangler.toml
+      - name: Expand Neon library
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=no
+          for attempt in $(seq 1 24); do
+            code=$(curl -sS --max-time 180 -o /tmp/migrate.json -w '%{http_code}' "$URL/migrate" || true)
+            echo "attempt $attempt -> HTTP $code"
+            cat /tmp/migrate.json || true
+            if [ "$code" = "200" ] && jq -e '.ok == true and .count == 4800' /tmp/migrate.json >/dev/null 2>&1; then
+              ready=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$ready" = yes
+      - name: Verify 4,800 active questions
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS "$URL/health" -o /tmp/health.json
+          cat /tmp/health.json
+          jq -e '.ok == true and .count == 4800' /tmp/health.json >/dev/null
