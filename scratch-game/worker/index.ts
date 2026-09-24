@@ -105,10 +105,15 @@ async function ensureSchema(client: Client) {
       card_id text NOT NULL,
       language text NOT NULL,
       question text NOT NULL,
+      footer text NOT NULL DEFAULT '',
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now(),
       PRIMARY KEY (card_id, language)
     )
+  `);
+  await client.query(`
+    ALTER TABLE public.o2ol_scratch_question_translations
+      ADD COLUMN IF NOT EXISTS footer text NOT NULL DEFAULT ''
   `);
   await client.query(`
     CREATE INDEX IF NOT EXISTS idx_o2ol_scratch_question_translations_language
@@ -521,37 +526,54 @@ async function me(req: Request, env: Env) {
   });
 }
 
-async function localizeQuestion(client: Client, env: Env, cardId: string, question: string, language: string) {
-  if (language === "en") return question;
+async function translateText(env: Env, text: string, language: string) {
+  if (!text || language === "en") return text;
+  const response: any = await env.AI.run("@cf/meta/m2m100-1.2b", {
+    text,
+    source_lang: "en",
+    target_lang: language
+  });
+  const translated = String(response?.translated_text || "").trim();
+  if (!translated || translated === text) {
+    throw new Error(`Translation unavailable for ${language}`);
+  }
+  return translated;
+}
+
+async function localizeCardText(
+  client: Client,
+  env: Env,
+  cardId: string,
+  question: string,
+  footer: string,
+  language: string
+) {
+  if (language === "en") return { question, footer };
 
   const cached = await client.query(
-    `SELECT question FROM public.o2ol_scratch_question_translations
+    `SELECT question, footer FROM public.o2ol_scratch_question_translations
       WHERE card_id = $1 AND language = $2
       LIMIT 1`,
     [cardId, language]
   );
   const cachedQuestion = String(cached.rows[0]?.question || "").trim();
-  if (cachedQuestion) return cachedQuestion;
-
-  const response: any = await env.AI.run("@cf/meta/m2m100-1.2b", {
-    text: question,
-    source_lang: "en",
-    target_lang: language
-  });
-  const translated = String(response?.translated_text || "").trim();
-  if (!translated || translated === question) {
-    throw new Error(`Translation unavailable for ${language} card ${cardId}`);
+  const cachedFooter = String(cached.rows[0]?.footer || "").trim();
+  if (cachedQuestion && (!footer || cachedFooter)) {
+    return { question: cachedQuestion, footer: footer ? cachedFooter : "" };
   }
+
+  const translatedQuestion = cachedQuestion || await translateText(env, question, language);
+  const translatedFooter = footer ? (cachedFooter || await translateText(env, footer, language)) : "";
 
   await client.query(
     `INSERT INTO public.o2ol_scratch_question_translations
-      (card_id, language, question)
-     VALUES ($1, $2, $3)
+      (card_id, language, question, footer)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (card_id, language)
-     DO UPDATE SET question = EXCLUDED.question, updated_at = now()`,
-    [cardId, language, translated]
+     DO UPDATE SET question = EXCLUDED.question, footer = EXCLUDED.footer, updated_at = now()`,
+    [cardId, language, translatedQuestion, translatedFooter]
   );
-  return translated;
+  return { question: translatedQuestion, footer: translatedFooter };
 }
 
 async function drawQuestion(req: Request, env: Env) {
@@ -600,14 +622,21 @@ async function drawQuestion(req: Request, env: Env) {
 
       if (!result.rows.length) return json({ deckComplete: true }, 409);
       const row = result.rows[0];
-      const localizedQuestion = await localizeQuestion(client, env, String(row.id), String(row.question), language);
+      const localized = await localizeCardText(
+        client,
+        env,
+        String(row.id),
+        String(row.question),
+        String(row.footer || ""),
+        language
+      );
       return json({
         card: {
           id: row.id,
-          question: localizedQuestion,
+          question: localized.question,
           category: row.category,
           depth: row.depth,
-          footer: row.footer || "",
+          footer: localized.footer,
           language
         }
       });
