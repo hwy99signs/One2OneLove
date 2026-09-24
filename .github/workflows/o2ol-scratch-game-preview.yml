@@ -67,11 +67,20 @@ jobs:
           stamp=$(date +%s)-$RANDOM
           email="preview-check-$stamp@example.invalid"
           username="preview$RANDOM"
-          password="PreviewCheck-$stamp!"
+          password="PreviewLong-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-Aa9!"
           signup=$(jq -nc --arg username "$username" --arg email "$email" --arg password "$password"             '{username:$username,email:$email,password:$password,marketingOptIn:false,acceptTerms:true}')
           code=$(curl -sS --max-time 45 -c /tmp/cookie.txt -o /tmp/signup.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/auth/signup"             -H 'content-type: application/json'             --data "$signup")
           cat /tmp/signup.json
           test "$code" = "201"
+
+          logout_code=$(curl -sS --max-time 20 -b /tmp/cookie.txt -o /tmp/logout.json -w '%{http_code}' -X POST "$PREVIEW_URL/api/auth/logout")
+          test "$logout_code" = "200"
+
+          login_payload=$(jq -nc --arg email "$email" --arg password "$password" '{email:$email,password:$password}')
+          login_code=$(curl -sS --max-time 45 -c /tmp/cookie.txt -o /tmp/login.json -w '%{http_code}' -X POST "$PREVIEW_URL/api/auth/login" -H 'content-type: application/json' --data "$login_payload")
+          cat /tmp/login.json
+          test "$login_code" = "200"
+          jq -e '.ok == true and .user.email' /tmp/login.json >/dev/null
 
           categories=(
             "Communication"
