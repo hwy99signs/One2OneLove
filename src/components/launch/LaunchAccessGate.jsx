@@ -34,6 +34,8 @@ const REQUIRED_PLAN = {
   '/communicationpractice': 'Premier',
   '/coupleactivities': 'Premier',
   '/cooperativegames': 'Premier',
+  '/whatshouldtheydo': 'Premier',
+  '/games': 'Premier',
   '/scratchgame': 'Premier',
   '/sharedjournals': 'Premier',
   '/couplescalendar': 'Premier',
