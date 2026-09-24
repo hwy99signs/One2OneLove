@@ -6,6 +6,7 @@ on:
       - o2ol-password-reset-preview
     paths:
       - ".github/workflows/o2ol-five-language-certification.yml"
+      - "src/**"
 
 permissions:
   contents: read
