@@ -1,0 +1,7 @@
+{
+  "name":"o2ol-library-expansion",
+  "private":true,
+  "type":"module",
+  "dependencies":{"pg":"8.16.3"},
+  "devDependencies":{"@cloudflare/workers-types":"latest"}
+}
