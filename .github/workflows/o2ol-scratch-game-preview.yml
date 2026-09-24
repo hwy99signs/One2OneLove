@@ -177,17 +177,17 @@ jobs:
               }
               await page.locator('#closeHow').click();
               await page.locator('#startBtn').click();
-              await page.waitForTimeout(100);
+              await page.locator('#players.active').waitFor({state:'visible',timeout:5000});
               const playersText=await page.locator('#players').innerText();
               assert(playersText.includes(copy[lang].players),lang+' player screen not translated');
               if(lang!=='en') assert(!playersText.includes('Play solo for self-evaluation'),lang+' English player instructions leaked');
               await page.locator('[data-players="1"]').click();
-              await page.waitForTimeout(100);
+              await page.locator('#relationshipTypes.active').waitFor({state:'visible',timeout:5000});
               const relationshipText=await page.locator('#relationshipTypes').innerText();
               assert(relationshipText.includes(copy[lang].relationship),lang+' relationship screen not translated');
               if(lang!=='en') assert(!relationshipText.includes('This tailors the questions to where you are together.'),lang+' English relationship instructions leaked');
               await page.locator('[data-relationship="Married"]').click();
-              await page.waitForTimeout(150);
+              await page.locator('#categories.active').waitFor({state:'visible',timeout:5000});
               const deckText=await page.locator('#categories').innerText();
               assert(deckText.includes(copy[lang].deck),lang+' deck screen not translated');
               if(lang!=='en') {
@@ -196,8 +196,8 @@ jobs:
               }
               await page.locator('#catGrid .cat').first().click();
               await page.locator('#tableScreen.active').waitFor({state:'visible',timeout:5000});
-              const tableText=await page.locator('#tableScreen').innerText();
-              assert(tableText.includes(copy[lang].draw),lang+' table labels not translated');
+              const drawLabel=String(await page.locator('#tableScreen .pileLabel').first().textContent()||'').trim();
+              assert(drawLabel===copy[lang].draw,lang+' draw label mismatch: '+drawLabel);
               const cardResponse=page.waitForResponse(r=>r.url().includes('/api/draw-question')&&r.request().method()==='POST',{timeout:45000});
               await page.locator('#deck').click();
               const cardRes=await cardResponse;
@@ -206,10 +206,10 @@ jobs:
               assert(payload?.card?.language===lang,lang+' card language '+payload?.card?.language);
               assert(String(payload?.card?.question||'').length>10,lang+' translated question missing');
               await page.waitForFunction(()=>String(document.querySelector('#question')?.textContent||'').trim().length>10,null,{timeout:5000});
-              const visibleQuestion=(await page.locator('#question').innerText()).trim();
+              const visibleQuestion=String(await page.locator('#question').textContent()||'').trim();
               assert(visibleQuestion===String(payload.card.question).trim(),lang+' visible question differs from translated server card');
               if(lang!=='en'){
-                const activeText=(await page.locator('#tableScreen').innerText()).replace(/\s+/g,' ');
+                const activeText=String(await page.locator('#tableScreen').textContent()||'').replace(/\s+/g,' ');
                 for(const englishLeak of ['Tap the deck to draw.','Change Deck','Next Card','Played']){
                   assert(!activeText.includes(englishLeak),lang+' English table copy leaked: '+englishLeak);
                 }
