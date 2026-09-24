@@ -39,6 +39,15 @@ jobs:
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.toml
       - name: Deploy Cloudflare preview
         run: npx --yes wrangler@latest deploy --config wrangler.toml
+      - name: Expand Neon library to 4,800 questions
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS --max-time 180 -o /tmp/expand.json -w '%{http_code}' "$PREVIEW_URL/api/internal-expand-digital-age")
+          cat /tmp/expand.json
+          test "$code" = "200"
+          jq -e '.ok == true and .count == 4800' /tmp/expand.json >/dev/null
+
       - name: Verify preview health
         shell: bash
         run: |
@@ -48,7 +57,7 @@ jobs:
             echo "health attempt $attempt -> HTTP $code"
             cat /tmp/health.json || true
             if [ "$code" = "200" ]; then
-              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive" and .questionCount == 3200' /tmp/health.json >/dev/null
+              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive" and .questionCount == 4800' /tmp/health.json >/dev/null
               exit 0
             fi
             sleep 5
