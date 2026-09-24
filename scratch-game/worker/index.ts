@@ -3,6 +3,7 @@ import { Client } from "pg";
 interface Env {
   ASSETS: Fetcher;
   HYPERDRIVE: Hyperdrive;
+  AI: any;
   ADMIN_KEY_HASH?: string;
   DEBUG_ERRORS?: string;
 }
@@ -44,6 +45,7 @@ const EVENT_TYPES = new Set([
 const SESSION_COOKIE = "o2ol_session";
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
 const PASSWORD_ITERATIONS = 60000;
+const SUPPORTED_LANGUAGES = new Set(["en", "es", "fr", "it", "de"]);
 
 function json(data: unknown, status = 200, extraHeaders: Record<string,string> = {}) {
   return new Response(JSON.stringify(data), {
@@ -97,6 +99,20 @@ async function ensureSchema(client: Client) {
   await client.query(`
     CREATE INDEX IF NOT EXISTS idx_o2ol_scratch_questions_draw
       ON public.o2ol_scratch_questions (relationship_type, category, active)
+  `);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS public.o2ol_scratch_question_translations (
+      card_id text NOT NULL,
+      language text NOT NULL,
+      question text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (card_id, language)
+    )
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_o2ol_scratch_question_translations_language
+      ON public.o2ol_scratch_question_translations (language, card_id)
   `);
 
   await client.query(`
@@ -505,6 +521,39 @@ async function me(req: Request, env: Env) {
   });
 }
 
+async function localizeQuestion(client: Client, env: Env, cardId: string, question: string, language: string) {
+  if (language === "en") return question;
+
+  const cached = await client.query(
+    `SELECT question FROM public.o2ol_scratch_question_translations
+      WHERE card_id = $1 AND language = $2
+      LIMIT 1`,
+    [cardId, language]
+  );
+  const cachedQuestion = String(cached.rows[0]?.question || "").trim();
+  if (cachedQuestion) return cachedQuestion;
+
+  const response: any = await env.AI.run("@cf/meta/m2m100-1.2b", {
+    text: question,
+    source_lang: "en",
+    target_lang: language
+  });
+  const translated = String(response?.translated_text || "").trim();
+  if (!translated || translated === question) {
+    throw new Error(`Translation unavailable for ${language} card ${cardId}`);
+  }
+
+  await client.query(
+    `INSERT INTO public.o2ol_scratch_question_translations
+      (card_id, language, question)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (card_id, language)
+     DO UPDATE SET question = EXCLUDED.question, updated_at = now()`,
+    [cardId, language, translated]
+  );
+  return translated;
+}
+
 async function drawQuestion(req: Request, env: Env) {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -513,9 +562,11 @@ async function drawQuestion(req: Request, env: Env) {
 
   const relationship = String(body?.relationship || "");
   const category = String(body?.category || "");
+  const language = String(body?.language || req.headers.get("accept-language") || "en").slice(0, 2).toLowerCase();
   const exclude = Array.isArray(body?.exclude) ? body.exclude.slice(-1200).map(String) : [];
   const avoidId = body?.avoidId ? String(body.avoidId) : null;
 
+  if (!SUPPORTED_LANGUAGES.has(language)) return json({ error: "Invalid language" }, 400);
   if (!RELATIONSHIPS.has(relationship)) return json({ error: "Invalid relationship type" }, 400);
   if (!(CATEGORIES.has(category) || category === "Shuffle All")) return json({ error: "Invalid category" }, 400);
 
@@ -549,13 +600,15 @@ async function drawQuestion(req: Request, env: Env) {
 
       if (!result.rows.length) return json({ deckComplete: true }, 409);
       const row = result.rows[0];
+      const localizedQuestion = await localizeQuestion(client, env, String(row.id), String(row.question), language);
       return json({
         card: {
           id: row.id,
-          question: row.question,
+          question: localizedQuestion,
           category: row.category,
           depth: row.depth,
-          footer: row.footer || ""
+          footer: row.footer || "",
+          language
         }
       });
     });
