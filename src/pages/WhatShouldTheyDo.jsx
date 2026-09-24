@@ -67,7 +67,7 @@ const COPY = {
     unitedKingdom:"United Kingdom", canada:"Canada", australia:"Australia",
     countryThreshold:n=>`Country results appear after at least ${n} votes in a country.`,
     notEnough:"Not enough country votes yet", checkBack:n=>`Check back after at least ${n} votes are recorded for this country.`,
-    votes:"votes", locked:"{t.locked}",
+    votes:"votes", locked:"Results are shown only after your answer is locked in.",
     browser:"Question Browser", questionCount:(a,b)=>`${a} of ${b} questions`, closeBrowser:"Close question browser",
     search:"Search dilemmas...", all:"All", footer:(a,b)=>`${a} recovered launch questions • ${b} relationship categories • dynamic visual rotation`
   },
@@ -460,7 +460,7 @@ export default function WhatShouldTheyDo() {
           <div className="grid gap-5 lg:grid-cols-[.78fr_1.22fr]">
             <section className="rounded-3xl bg-white p-5 shadow-lg sm:p-7">
               <div className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black uppercase tracking-wide text-white" style={{ background: theme.a }}>
-                {theme.icon} {theme.label}
+                {theme.icon} {categoryLabels[question.category] || theme.label}
               </div>
               <h2 className="mt-5 text-2xl font-black leading-tight text-[#102f60]">{question.scenario}</h2>
               <div className="mt-6 rounded-2xl bg-pink-50 p-4">
@@ -532,7 +532,7 @@ export default function WhatShouldTheyDo() {
 
               <div className="mt-7 flex items-center gap-3 rounded-2xl bg-blue-50 p-4 text-sm font-semibold text-[#17345f]">
                 <Users className="h-5 w-5 shrink-0 text-blue-600" />
-                Results are shown only after your answer is locked in.
+                {t.locked}
               </div>
             </section>
           </div>
