@@ -11,6 +11,7 @@
   .o2ol-auth-tabs button{border:0;border-radius:999px;padding:10px;font-weight:800;background:transparent;color:#4f6472;cursor:pointer}
   .o2ol-auth-tabs button.active{background:#0a3f72;color:#fff}
   .o2ol-auth-form{display:grid;gap:12px}
+  .o2ol-auth-form[hidden]{display:none!important}
   .o2ol-auth-form label{font-weight:800;font-size:13px;color:#304b5e}
   .o2ol-auth-form input[type=email],.o2ol-auth-form input[type=text],.o2ol-auth-form input[type=password]{width:100%;margin-top:5px;border:1px solid #cbd6dc;border-radius:14px;padding:13px 14px;font-size:16px;outline:none}
   .o2ol-auth-form input:focus{border-color:#3a86c8;box-shadow:0 0 0 3px rgba(58,134,200,.14)}
@@ -88,14 +89,21 @@
     const createForm=wrap.querySelector("#o2olCreateForm");
     const loginForm=wrap.querySelector("#o2olLoginForm");
 
-    createTab.onclick=()=>{
-      createTab.classList.add("active"); loginTab.classList.remove("active");
-      createForm.hidden=false; loginForm.hidden=true;
-    };
-    loginTab.onclick=()=>{
-      loginTab.classList.add("active"); createTab.classList.remove("active");
-      loginForm.hidden=false; createForm.hidden=true;
-    };
+    function setAuthMode(mode){
+      const creating=mode==="create";
+      createTab.classList.toggle("active",creating);
+      loginTab.classList.toggle("active",!creating);
+      createTab.setAttribute("aria-selected",creating?"true":"false");
+      loginTab.setAttribute("aria-selected",creating?"false":"true");
+      createForm.hidden=!creating;
+      loginForm.hidden=creating;
+      createForm.style.display=creating?"grid":"none";
+      loginForm.style.display=creating?"none":"grid";
+    }
+
+    createTab.onclick=()=>setAuthMode("create");
+    loginTab.onclick=()=>setAuthMode("login");
+    setAuthMode("create");
 
     createForm.addEventListener("submit",async e=>{
       e.preventDefault();
