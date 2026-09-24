@@ -1,0 +1,55 @@
+name: Delete Old O2OL Preview via API
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - ".github/workflows/o2ol-delete-old-preview-api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  delete-old-preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+      OLD_URL: https://one2onelove-preview.hwy99signs.workers.dev/Games
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - name: Reconfirm current Prelaunch game
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS -L --connect-timeout 10 --max-time 20 "$PREVIEW_URL/Games" -o /tmp/games.html
+          script=$(grep -o '/assets/[^"]*\.js' /tmp/games.html | head -1)
+          test -n "$script"
+          curl -fsS --connect-timeout 10 --max-time 20 "$PREVIEW_URL$script" -o /tmp/app.js
+          grep -q "What Should They Do" /tmp/app.js
+          grep -q "Question Browser" /tmp/app.js
+
+      - name: Delete obsolete Worker with Cloudflare API
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS --connect-timeout 10 --max-time 30             -X DELETE             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             -o /tmp/delete.json             -w '%{http_code}'             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/one2onelove-preview?force=true")
+          echo "delete status -> $code"
+          case "$code" in
+            200|204) ;;
+            *) cat /tmp/delete.json || true; exit 1 ;;
+          esac
+
+      - name: Confirm old preview no longer serves
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 5
+          code=$(curl -sS -L --connect-timeout 10 --max-time 20 -o /tmp/old.html -w '%{http_code}' "$OLD_URL" || true)
+          echo "old preview -> $code"
+          test "$code" != "200"
