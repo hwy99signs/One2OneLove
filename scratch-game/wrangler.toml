@@ -6,6 +6,9 @@ workers_dev = true
 preview_urls = true
 [build]
 command = "npm --prefix worker install --no-audit --no-fund"
+[ai]
+binding = "AI"
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
