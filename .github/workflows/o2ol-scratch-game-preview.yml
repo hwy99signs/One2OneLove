@@ -169,17 +169,31 @@ jobs:
               assert((await page.locator('#home').innerText()).includes(copy[lang].home),lang+' home copy not translated');
               await page.locator('#howBtn').click();
               await page.waitForTimeout(100);
-              assert((await page.locator('#how').innerText()).includes(copy[lang].how),lang+' how-to copy not translated');
+              const howText=await page.locator('#how').innerText();
+              assert(howText.includes(copy[lang].how),lang+' how-to copy not translated');
+              if(lang!=='en') {
+                assert(!howText.includes('The active player taps the deck'),lang+' English how-to instructions leaked');
+                assert(!howText.includes('Play as if your partner is sitting across from you'),lang+' English solo instructions leaked');
+              }
               await page.locator('#closeHow').click();
               await page.locator('#startBtn').click();
               await page.waitForTimeout(100);
-              assert((await page.locator('#players').innerText()).includes(copy[lang].players),lang+' player screen not translated');
+              const playersText=await page.locator('#players').innerText();
+              assert(playersText.includes(copy[lang].players),lang+' player screen not translated');
+              if(lang!=='en') assert(!playersText.includes('Play solo for self-evaluation'),lang+' English player instructions leaked');
               await page.locator('[data-players="1"]').click();
               await page.waitForTimeout(100);
-              assert((await page.locator('#relationshipTypes').innerText()).includes(copy[lang].relationship),lang+' relationship screen not translated');
+              const relationshipText=await page.locator('#relationshipTypes').innerText();
+              assert(relationshipText.includes(copy[lang].relationship),lang+' relationship screen not translated');
+              if(lang!=='en') assert(!relationshipText.includes('This tailors the questions to where you are together.'),lang+' English relationship instructions leaked');
               await page.locator('[data-relationship="Married"]').click();
               await page.waitForTimeout(150);
-              assert((await page.locator('#categories').innerText()).includes(copy[lang].deck),lang+' deck screen not translated');
+              const deckText=await page.locator('#categories').innerText();
+              assert(deckText.includes(copy[lang].deck),lang+' deck screen not translated');
+              if(lang!=='en') {
+                assert(!deckText.includes('Each category has its own colored card back.'),lang+' English deck instructions leaked');
+                assert(!deckText.includes('Tap to open deck'),lang+' English category action leaked');
+              }
               await page.locator('#catGrid .cat').first().click();
               await page.waitForTimeout(150);
               assert((await page.locator('#tableScreen').innerText()).includes(copy[lang].draw),lang+' table labels not translated');
@@ -195,7 +209,9 @@ jobs:
               assert(visibleQuestion===String(payload.card.question).trim(),lang+' visible question differs from translated server card');
               if(lang!=='en'){
                 const activeText=(await page.locator('#tableScreen').innerText()).replace(/\s+/g,' ');
-                assert(!activeText.includes('Tap the deck to draw.'),lang+' English draw prompt leaked');
+                for(const englishLeak of ['Tap the deck to draw.','Change Deck','Next Card','Played']){
+                  assert(!activeText.includes(englishLeak),lang+' English table copy leaked: '+englishLeak);
+                }
               }
               await context.close();
             }
