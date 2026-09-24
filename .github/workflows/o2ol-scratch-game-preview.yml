@@ -1,4 +1,5 @@
 name: O2OL Scratch Game Cloudflare Preview
+# Public launch auth/analytics verification
 
 on:
   push:
