@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Re-run after enabling Worker-first routing for /Games.
   consolidate:
     runs-on: ubuntu-latest
     env:
