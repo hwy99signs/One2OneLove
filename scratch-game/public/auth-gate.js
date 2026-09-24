@@ -19,7 +19,7 @@
   .o2ol-auth-submit{border:0;border-radius:999px;padding:14px 18px;font-weight:900;font-size:16px;background:#0a3f72;color:white;cursor:pointer}
   .o2ol-auth-submit:disabled{opacity:.55;cursor:wait}
   .o2ol-auth-error{min-height:20px;color:#b4232d;font-size:13px;font-weight:700;text-align:center}
-  .o2ol-auth-foot{text-align:center;margin-top:12px;font-size:12px;color:#6d7c87}
+  .o2ol-password-help{font-size:12px;color:#6d7c87;margin-top:-7px;line-height:1.35}.o2ol-auth-foot{text-align:center;margin-top:12px;font-size:12px;color:#6d7c87}
   .o2ol-auth-foot a{color:#0a3f72}
   .o2ol-account-pill{position:fixed;right:12px;top:12px;z-index:9500;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.95);box-shadow:0 5px 18px #0002;border-radius:999px;padding:7px 8px 7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#0a3f72}
   .o2ol-account-pill strong{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -61,8 +61,9 @@
             <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
           </label>
           <label>Password
-            <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="At least 8 characters">
+            <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="8–128 characters" aria-describedby="o2olPasswordHelp">
           </label>
+          <div id="o2olPasswordHelp" class="o2ol-password-help">Use 8–128 characters. Long passwords, spaces, and symbols are supported.</div>
           <label class="o2ol-check"><input name="marketing" type="checkbox"> <span>Send me One2OneLove updates, new games, and special offers. I can unsubscribe later.</span></label>
           <label class="o2ol-check"><input name="terms" type="checkbox" required> <span>I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
           <div id="o2olCreateError" class="o2ol-auth-error"></div>
