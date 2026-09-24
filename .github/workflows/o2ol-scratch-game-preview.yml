@@ -195,8 +195,9 @@ jobs:
                 assert(!deckText.includes('Tap to open deck'),lang+' English category action leaked');
               }
               await page.locator('#catGrid .cat').first().click();
-              await page.waitForTimeout(150);
-              assert((await page.locator('#tableScreen').innerText()).includes(copy[lang].draw),lang+' table labels not translated');
+              await page.locator('#tableScreen.active').waitFor({state:'visible',timeout:5000});
+              const tableText=await page.locator('#tableScreen').innerText();
+              assert(tableText.includes(copy[lang].draw),lang+' table labels not translated');
               const cardResponse=page.waitForResponse(r=>r.url().includes('/api/draw-question')&&r.request().method()==='POST',{timeout:45000});
               await page.locator('#deck').click();
               const cardRes=await cardResponse;
