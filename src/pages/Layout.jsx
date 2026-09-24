@@ -2,7 +2,7 @@
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Heart, Home, ChevronDown, User, LogIn, LogOut, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell } from "lucide-react";
+import { Heart, Home, ChevronDown, User, LogIn, LogOut, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -18,37 +18,37 @@ import {
 const translations = {
   en: {
     nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", language:"Language", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
-    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
+    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
     announcement: { label: "O2OL Announcement Scroll", text: "Be informed as soon as One2OneLove launches." }
   },
   es: {
     nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", language:"Idioma", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
-    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
+    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
     announcement: { label: "Anuncios O2OL", text: "Recibe aviso tan pronto como One2OneLove se lance." }
   },
   fr: {
     nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", language:"Langue", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
-    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
+    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
     announcement: { label: "Annonces O2OL", text: "Soyez informé dès le lancement de One2OneLove." }
   },
   it: {
     nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", language:"Lingua", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
-    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
+    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
     announcement: { label: "Annunci O2OL", text: "Ricevi una notifica appena One2OneLove sarà lanciato." }
   },
   de: {
     nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", language:"Sprache", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
-    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
+    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
     announcement: { label: "O2OL Ankündigungen", text: "Erfahren Sie sofort, wenn One2OneLove startet." }
   },
   nl: {
     nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
-    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", aiCreator: "AI Content Maker", winCruise: "Win Prijzen!" },
+    actionMenu: { sendLoveNote: "Stuur een Liefdebriefje", coupleSupport: "Relatie Ondersteuning", lgbtqSupport: "LGBTQ+ Ondersteuning", relationshipQuizzes: "Relatie Quizzen", relationshipMilestones: "Mijlpalen & Jubilea", relationshipGoals: "Relatie Doelen", dateIdeas: "Date Ideeën", memoryLane: "Herinnerings Laan", games: "Spellen", aiCreator: "AI Content Maker", winCruise: "Win Prijzen!" },
     announcement: { label: "O2OL Aankondigingen", text: "Blijf op de hoogte zodra One2OneLove wordt gelanceerd." }
   },
   pt: {
     nav: { home: "Início", action: "Ação", profile: "Perfil", signIn: "Entrar", signUp: "Inscrever-se", invite: "Convidar", community: "Comunidade", aiCreator: "Criador de Conteúdo IA", lgbtq: "Apoio LGBTQ+", developer: "Dev", requests: "Solicitações", chat: "Chat", signOut: "Sair" },
-    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", aiCreator: "Criador de Conteúdo IA", winCruise: "Ganhe Prêmios!" },
+    actionMenu: { sendLoveNote: "Enviar uma Nota de Amor", coupleSupport: "Apoio para Relacionamentos", lgbtqSupport: "Apoio LGBTQ+", relationshipQuizzes: "Questionários de Relacionamento", relationshipMilestones: "Marcos e Aniversários", relationshipGoals: "Metas de Relacionamento", dateIdeas: "Ideas de Encontros", memoryLane: "Alameda das Memórias", games: "Jogos", aiCreator: "Criador de Conteúdo IA", winCruise: "Ganhe Prêmios!" },
     announcement: { label: "Anúncios O2OL", text: "Seja informado assim que o One2OneLove for lançado." }
   }
 };
@@ -301,6 +301,7 @@ function LanguageContent({ children, currentPageName }) {
                   <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
                   <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
                   <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
+                  <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🎮 {t.actionMenu.games}</Link>
                   <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
                   <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}</Link>
                   <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>📷 {t.actionMenu.memoryLane}</Link>
@@ -426,6 +427,17 @@ function LanguageContent({ children, currentPageName }) {
                       >
                         <Heart className="w-5 h-5" />
                         {t.actionMenu.relationshipQuizzes}
+                      </Link>
+                      <Link
+                        to={createPageUrl("CooperativeGames")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Gamepad2 className="w-5 h-5" />
+                        {t.actionMenu.games}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipMilestones")}
