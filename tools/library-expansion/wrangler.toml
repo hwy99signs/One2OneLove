@@ -1,0 +1,10 @@
+name = "one2onelove-library-expansion-20260923"
+main = "./worker/index.ts"
+compatibility_date = "2026-09-23"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "ef44564dbfca4e1bb13176ee568aaddf"
