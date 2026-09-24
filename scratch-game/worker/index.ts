@@ -1,12 +1,160 @@
 import { Client } from "pg";
-interface Env { ASSETS: Fetcher; HYPERDRIVE: Hyperdrive; }
-const RELATIONSHIPS=new Set(["Dating","Engaged","Married","Committed / Unmarried"]);
-const CATEGORIES=new Set(["Communication","Trust","Fun","Intimacy","Money","Future","Conflict","Deep Questions"]);
-function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store, max-age=0","x-content-type-options":"nosniff"}});}
-async function withDb(env:Env,fn:any){const c=new Client({connectionString:env.HYPERDRIVE.connectionString});try{await c.connect();return await fn(c);}finally{try{await c.end();}catch{}}}
-async function ensureSchema(c:Client){await c.query(`CREATE TABLE IF NOT EXISTS public.o2ol_scratch_questions (id text PRIMARY KEY,relationship_type text NOT NULL,category text NOT NULL,depth text NOT NULL,question text NOT NULL,footer text NOT NULL DEFAULT '',active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now())`);await c.query(`CREATE INDEX IF NOT EXISTS idx_o2ol_scratch_questions_draw ON public.o2ol_scratch_questions (relationship_type,category,active)`);}
-function decode64(b64:string){const binary=atob(b64.replace(/\s/g,""));return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)));}
-async function blobText(sha:string){const r=await fetch(`https://api.github.com/repos/hwy99signs/One2OneLove/git/blobs/${sha}`,{headers:{accept:"application/vnd.github+json","user-agent":"o2ol-scratch-seeder"}});if(!r.ok)throw new Error("Seed blob unavailable");const p:any=await r.json();return decode64(p.content);}
-async function seedOnce(url:URL,env:Env){const sha=url.searchParams.get("blob")||"";if(!/^[0-9a-f]{40}$/.test(sha))return json({error:"Invalid seed reference"},400);try{return await withDb(env,async(c:Client)=>{await ensureSchema(c);const count=Number((await c.query("SELECT count(*)::int AS count FROM public.o2ol_scratch_questions")).rows[0]?.count||0);if(count>0)return json({ok:true,alreadySeeded:true,count});const rows:any[]=JSON.parse(await blobText(sha));if(!Array.isArray(rows)||rows.length!==3200)throw new Error("Seed must contain 3200 questions");await c.query("BEGIN");try{for(let start=0;start<rows.length;start+=100){const batch=rows.slice(start,start+100);const params:any[]=[];const vals=batch.map((row:any,i:number)=>{const b=i*7;params.push(row.id,row.relationship_type,row.category,row.depth,row.question,row.footer||"",true);return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7})`;}).join(",");await c.query(`INSERT INTO public.o2ol_scratch_questions (id,relationship_type,category,depth,question,footer,active) VALUES ${vals} ON CONFLICT (id) DO NOTHING`,params);}await c.query("COMMIT");}catch(e){await c.query("ROLLBACK");throw e;}const final=Number((await c.query("SELECT count(*)::int AS count FROM public.o2ol_scratch_questions")).rows[0]?.count||0);return json({ok:final===3200,count:final});});}catch(e:any){return json({error:"Seed failed",detail:String(e?.message||e)},500);}}
-async function draw(req:Request,env:Env){if(req.method!=="POST")return json({error:"Method not allowed"},405);let b:any;try{b=await req.json();}catch{return json({error:"Invalid JSON"},400);}const relationship=String(b?.relationship||""),category=String(b?.category||""),exclude=Array.isArray(b?.exclude)?b.exclude.slice(-800).map(String):[],avoidId=b?.avoidId?String(b.avoidId):null;if(!RELATIONSHIPS.has(relationship))return json({error:"Invalid relationship type"},400);if(!(CATEGORIES.has(category)||category==="Shuffle All"))return json({error:"Invalid category"},400);try{return await withDb(env,async(c:Client)=>{await ensureSchema(c);const params:any[]=[relationship,exclude,avoidId];let clause="";if(category!=="Shuffle All"){params.push(category);clause="AND category = $4";}const r=await c.query(`SELECT id,category,depth,question,footer FROM public.o2ol_scratch_questions WHERE active=TRUE AND relationship_type=$1 ${clause} AND NOT (id=ANY($2::text[])) AND ($3::text IS NULL OR id<>$3) ORDER BY random() LIMIT 1`,params);if(!r.rows.length)return json({deckComplete:true},409);const row=r.rows[0];return json({card:{id:row.id,question:row.question,category:row.category,depth:row.depth,footer:row.footer||""}});});}catch{return json({error:"Card unavailable"},503);}}
-export default {async fetch(req:Request,env:Env){const u=new URL(req.url);if(u.pathname==="/api/health")return json({ok:true,service:"one2onelove-scratch-game",stack:"cloudflare-worker-neon-hyperdrive"});if(u.pathname==="/api/internal-seed")return seedOnce(u,env);if(u.pathname==="/api/draw-question")return draw(req,env);return env.ASSETS.fetch(req);}};
+
+interface Env {
+  ASSETS: Fetcher;
+  HYPERDRIVE: Hyperdrive;
+}
+
+const RELATIONSHIPS = new Set([
+  "Dating",
+  "Engaged",
+  "Married",
+  "Committed / Unmarried"
+]);
+
+const CATEGORIES = new Set([
+  "Communication",
+  "Trust",
+  "Fun",
+  "Intimacy",
+  "Money",
+  "Future",
+  "Conflict",
+  "Deep Questions"
+]);
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store, max-age=0",
+      "x-content-type-options": "nosniff"
+    }
+  });
+}
+
+async function withDb(env: Env, fn: (client: Client) => Promise<Response>) {
+  const client = new Client({ connectionString: env.HYPERDRIVE.connectionString });
+  try {
+    await client.connect();
+    return await fn(client);
+  } finally {
+    try { await client.end(); } catch {}
+  }
+}
+
+async function ensureSchema(client: Client) {
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS public.o2ol_scratch_questions (
+      id text PRIMARY KEY,
+      relationship_type text NOT NULL,
+      category text NOT NULL,
+      depth text NOT NULL,
+      question text NOT NULL,
+      footer text NOT NULL DEFAULT '',
+      active boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_o2ol_scratch_questions_draw
+      ON public.o2ol_scratch_questions (relationship_type, category, active)
+  `);
+}
+
+async function health(env: Env) {
+  try {
+    return await withDb(env, async client => {
+      await ensureSchema(client);
+      const result = await client.query(
+        "SELECT count(*)::int AS count FROM public.o2ol_scratch_questions WHERE active = TRUE"
+      );
+      const count = Number(result.rows[0]?.count || 0);
+      return json({
+        ok: count === 3200,
+        service: "one2onelove-scratch-game",
+        stack: "cloudflare-worker-neon-hyperdrive",
+        questionCount: count
+      }, count === 3200 ? 200 : 503);
+    });
+  } catch (error) {
+    console.error("health error", error);
+    return json({ ok: false, service: "one2onelove-scratch-game" }, 503);
+  }
+}
+
+async function drawQuestion(req: Request, env: Env) {
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const relationship = String(body?.relationship || "");
+  const category = String(body?.category || "");
+  const exclude = Array.isArray(body?.exclude) ? body.exclude.slice(-800).map(String) : [];
+  const avoidId = body?.avoidId ? String(body.avoidId) : null;
+
+  if (!RELATIONSHIPS.has(relationship)) return json({ error: "Invalid relationship type" }, 400);
+  if (!(CATEGORIES.has(category) || category === "Shuffle All")) return json({ error: "Invalid category" }, 400);
+
+  try {
+    return await withDb(env, async client => {
+      await ensureSchema(client);
+
+      const params: any[] = [relationship, exclude, avoidId];
+      let categoryClause = "";
+      if (category !== "Shuffle All") {
+        params.push(category);
+        categoryClause = "AND category = $4";
+      }
+
+      const result = await client.query(
+        `
+          SELECT id, category, depth, question, footer
+          FROM public.o2ol_scratch_questions
+          WHERE active = TRUE
+            AND relationship_type = $1
+            ${categoryClause}
+            AND NOT (id = ANY($2::text[]))
+            AND ($3::text IS NULL OR id <> $3)
+          ORDER BY random()
+          LIMIT 1
+        `,
+        params
+      );
+
+      if (!result.rows.length) return json({ deckComplete: true }, 409);
+
+      const row = result.rows[0];
+      return json({
+        card: {
+          id: row.id,
+          question: row.question,
+          category: row.category,
+          depth: row.depth,
+          footer: row.footer || ""
+        }
+      });
+    });
+  } catch (error) {
+    console.error("draw error", error);
+    return json({ error: "Card unavailable" }, 503);
+  }
+}
+
+export default {
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url);
+
+    if (url.pathname === "/api/health") return health(env);
+    if (url.pathname === "/api/draw-question") return drawQuestion(req, env);
+
+    return env.ASSETS.fetch(req);
+  }
+};
