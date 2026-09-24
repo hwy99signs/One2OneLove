@@ -120,7 +120,7 @@ export default function CooperativeGames() {
       type: 'social-voting',
       difficulty: 'easy',
       icon: '🗳️',
-      href: '/Games',
+      link: 'WhatShouldTheyDo',
       playLabel: t.startGame
     }
   ];
