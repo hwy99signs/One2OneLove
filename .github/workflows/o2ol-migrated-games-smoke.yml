@@ -1,4 +1,5 @@
 name: O2OL Migrated Games Smoke
+# rerun after synchronized preview deploy
 
 on:
   push:
