@@ -41,13 +41,28 @@ export default {
     const url = new URL(request.url);
 
     // Consolidated Relationship Game: serve the preserved What Should They Do?
-    // build from this Prelaunch Worker so there is only one One2OneLove preview.
+    // shell directly from this Prelaunch Worker so Cloudflare's HTML canonical
+    // redirects cannot loop between /Games and /Games/index.html.
     if (url.pathname === '/Games' || url.pathname === '/Games/') {
-      const gameUrl = new URL('/Games/index.html', url.origin);
-      return env.ASSETS.fetch(new Request(gameUrl.toString(), request));
-    }
-    if (url.pathname.startsWith('/Games/')) {
-      return env.ASSETS.fetch(request);
+      return new Response(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/Games/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>What Should They Do? | One2OneLove</title>
+    <script type="module" crossorigin src="/Games/assets/index-ulfuWNhj.js"></script>
+    <link rel="stylesheet" crossorigin href="/Games/assets/index-Du4W04xP.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Cache-Control': 'no-store'
+        }
+      });
     }
 
     if (url.pathname === '/api/billing/webhook') {
