@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const difficultyColors = {
   easy: 'bg-green-100 text-green-700',
@@ -29,10 +31,18 @@ export default function GameCard({ game, index }) {
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 mb-4">{game.description}</p>
-          <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
-            <Play className="w-4 h-4 mr-2" />
-            Play Now
-          </Button>
+          {game.link ? (
+            <Link to={createPageUrl(game.link)}>
+              <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+                <Play className="w-4 h-4 mr-2" />
+                Play Now
+              </Button>
+            </Link>
+          ) : (
+            <Button disabled className="w-full bg-slate-300 text-slate-600">
+              Coming Soon
+            </Button>
+          )}
         </CardContent>
       </Card>
     </motion.div>
