@@ -57,21 +57,23 @@ async function installAnonymousAuth(context) {
   });
 }
 
-async function installSyntheticMemberAuth(context) {
+async function installSyntheticMemberAuth(context, plan='Exclusive') {
   const user = {
     id:'launch-qa-synthetic-user',
     email:'launch-qa@example.invalid',
     emailVerified:true,
     email_verified:true,
     name:'Launch QA',
-    role:'user'
+    role:'user',
+    subscription_plan:plan,
+    subscription_status:'active'
   };
   const profile = {
     id:user.id,
     email:user.email,
     name:user.name,
     role:'user',
-    subscription_plan:'Exclusive',
+    subscription_plan:plan,
     subscription_status:'active',
     subscription_price:19.99,
     stripe_customer_id:'cus_launch_qa_synthetic',
@@ -417,6 +419,86 @@ try {
   for (const lang of Object.keys(LANGS)) {
     for (const route of ['/', '/SignIn', '/SignUp', '/HelpCenter', '/TermsOfService']) {
       await auditPage(route, lang, { width: 390, height: 844 }, 'mobile');
+    }
+  }
+
+  {
+    const context=await browser.newContext({viewport:{width:390,height:844}});
+    await installSyntheticMemberAuth(context,'Exclusive');
+    await context.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});
+    const page=await context.newPage();
+    try{
+      for(const route of ['/WhatShouldTheyDo','/Games']){
+        const response=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+        await page.waitForTimeout(700);
+        const normalized=normalizeText(await page.locator('body').innerText());
+        if(!response||response.status()!==200) add('critical','migrated-game-status',{route:route,status:response&&response.status()});
+        if(new URL(page.url()).pathname.toLowerCase()!==route.toLowerCase()) add('critical','migrated-game-redirect',{route:route,finalPath:new URL(page.url()).pathname});
+        if(!normalized.includes('What Should They Do?')) add('critical','migrated-game-title',{route:route});
+        if(!normalized.includes('150 recovered launch questions')) add('critical','migrated-game-question-count',{route:route});
+      }
+
+      await page.goto(BASE+'/WhatShouldTheyDo',{waitUntil:'domcontentloaded',timeout:30000});
+      await page.waitForTimeout(500);
+      const firstAnswer=page.getByRole('button',{name:/Agree on healthy ways to provide reassurance/i}).first();
+      if(!(await firstAnswer.count())) add('critical','migrated-game-first-answer-missing',{});
+      else{
+        await firstAnswer.click();
+        const vote=page.getByRole('button',{name:/Cast Your Vote/i}).first();
+        if(!(await vote.count())) add('critical','migrated-game-vote-button-missing',{});
+        else{
+          await vote.click();
+          await page.waitForTimeout(200);
+          let body=normalizeText(await page.locator('body').innerText());
+          if(!body.includes('The World Voted')||!body.includes('Worldwide')) add('critical','migrated-game-world-results',{});
+          const us=page.getByRole('button',{name:/US/}).first();
+          if(!(await us.count())) add('critical','migrated-game-us-filter-missing',{});
+          else{
+            await us.click();
+            await page.waitForTimeout(150);
+            body=normalizeText(await page.locator('body').innerText());
+            if(!body.includes('By Country')) add('critical','migrated-game-country-results',{});
+            if(!body.includes('Country results appear after at least 5 votes in a country.')) add('critical','migrated-game-country-threshold',{});
+          }
+          const another=page.getByRole('button',{name:/Another Question/i}).first();
+          if(!(await another.count())) add('critical','migrated-game-next-question-missing',{});
+          else{
+            await another.click();
+            await page.waitForTimeout(150);
+            const seeAll=page.getByRole('button',{name:/See All/i}).first();
+            if(!(await seeAll.count())) add('critical','migrated-game-see-all-missing',{});
+            else{
+              await seeAll.click();
+              await page.waitForTimeout(150);
+              body=normalizeText(await page.locator('body').innerText());
+              if(!body.includes('Question Browser')||!body.includes('150 questions')) add('critical','migrated-game-browser',{});
+            }
+          }
+        }
+      }
+      const overflow=await page.evaluate(function(){return Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth;});
+      if(overflow>4) add('critical','migrated-game-mobile-overflow',{pixels:overflow});
+    }catch(e){
+      add('critical','migrated-game-live-flow',{message:String(e.message||e),screenshot:await screenshot(page,'migrated_game_live_flow')});
+    }
+    await context.close();
+
+    for(const route of ['/WhatShouldTheyDo','/Games']){
+      const basicContext=await browser.newContext({viewport:{width:390,height:844}});
+      await installSyntheticMemberAuth(basicContext,'Basic');
+      await basicContext.addInitScript(function(){localStorage.setItem('preferredLanguage','en');});
+      const basicPage=await basicContext.newPage();
+      try{
+        await basicPage.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+        await basicPage.waitForTimeout(700);
+        const u=new URL(basicPage.url());
+        if(u.pathname.toLowerCase()!=='/subscription'||u.searchParams.get('required')!=='Premier'){
+          add('critical','migrated-game-premier-gate',{route:route,finalUrl:basicPage.url()});
+        }
+      }catch(e){
+        add('critical','migrated-game-premier-gate-navigation',{route:route,message:String(e.message||e)});
+      }
+      await basicContext.close();
     }
   }
 
