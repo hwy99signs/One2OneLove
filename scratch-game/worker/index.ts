@@ -1,160 +1,17 @@
 import { Client } from "pg";
-
-interface Env {
-  ASSETS: Fetcher;
-  HYPERDRIVE: Hyperdrive;
-}
-
-const RELATIONSHIPS = new Set([
-  "Dating",
-  "Engaged",
-  "Married",
-  "Committed / Unmarried"
-]);
-
-const CATEGORIES = new Set([
-  "Communication",
-  "Trust",
-  "Fun",
-  "Intimacy",
-  "Money",
-  "Future",
-  "Conflict",
-  "Deep Questions"
-]);
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store, max-age=0",
-      "x-content-type-options": "nosniff"
-    }
-  });
-}
-
-async function withDb(env: Env, fn: (client: Client) => Promise<Response>) {
-  const client = new Client({ connectionString: env.HYPERDRIVE.connectionString });
-  try {
-    await client.connect();
-    return await fn(client);
-  } finally {
-    try { await client.end(); } catch {}
-  }
-}
-
-async function ensureSchema(client: Client) {
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS public.o2ol_scratch_questions (
-      id text PRIMARY KEY,
-      relationship_type text NOT NULL,
-      category text NOT NULL,
-      depth text NOT NULL,
-      question text NOT NULL,
-      footer text NOT NULL DEFAULT '',
-      active boolean NOT NULL DEFAULT true,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )
-  `);
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_o2ol_scratch_questions_draw
-      ON public.o2ol_scratch_questions (relationship_type, category, active)
-  `);
-}
-
-async function health(env: Env) {
-  try {
-    return await withDb(env, async client => {
-      await ensureSchema(client);
-      const result = await client.query(
-        "SELECT count(*)::int AS count FROM public.o2ol_scratch_questions WHERE active = TRUE"
-      );
-      const count = Number(result.rows[0]?.count || 0);
-      return json({
-        ok: count === 3200,
-        service: "one2onelove-scratch-game",
-        stack: "cloudflare-worker-neon-hyperdrive",
-        questionCount: count
-      }, count === 3200 ? 200 : 503);
-    });
-  } catch (error) {
-    console.error("health error", error);
-    return json({ ok: false, service: "one2onelove-scratch-game" }, 503);
-  }
-}
-
-async function drawQuestion(req: Request, env: Env) {
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
-
-  let body: any;
-  try {
-    body = await req.json();
-  } catch {
-    return json({ error: "Invalid JSON" }, 400);
-  }
-
-  const relationship = String(body?.relationship || "");
-  const category = String(body?.category || "");
-  const exclude = Array.isArray(body?.exclude) ? body.exclude.slice(-800).map(String) : [];
-  const avoidId = body?.avoidId ? String(body.avoidId) : null;
-
-  if (!RELATIONSHIPS.has(relationship)) return json({ error: "Invalid relationship type" }, 400);
-  if (!(CATEGORIES.has(category) || category === "Shuffle All")) return json({ error: "Invalid category" }, 400);
-
-  try {
-    return await withDb(env, async client => {
-      await ensureSchema(client);
-
-      const params: any[] = [relationship, exclude, avoidId];
-      let categoryClause = "";
-      if (category !== "Shuffle All") {
-        params.push(category);
-        categoryClause = "AND category = $4";
-      }
-
-      const result = await client.query(
-        `
-          SELECT id, category, depth, question, footer
-          FROM public.o2ol_scratch_questions
-          WHERE active = TRUE
-            AND relationship_type = $1
-            ${categoryClause}
-            AND NOT (id = ANY($2::text[]))
-            AND ($3::text IS NULL OR id <> $3)
-          ORDER BY random()
-          LIMIT 1
-        `,
-        params
-      );
-
-      if (!result.rows.length) return json({ deckComplete: true }, 409);
-
-      const row = result.rows[0];
-      return json({
-        card: {
-          id: row.id,
-          question: row.question,
-          category: row.category,
-          depth: row.depth,
-          footer: row.footer || ""
-        }
-      });
-    });
-  } catch (error) {
-    console.error("draw error", error);
-    return json({ error: "Card unavailable" }, 503);
-  }
-}
-
-export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
-    const url = new URL(req.url);
-
-    if (url.pathname === "/api/health") return health(env);
-    if (url.pathname === "/api/draw-question") return drawQuestion(req, env);
-
-    return env.ASSETS.fetch(req);
-  }
-};
+interface Env { ASSETS: Fetcher; HYPERDRIVE: Hyperdrive; REMOTE_ROOMS: DurableObjectNamespace; }
+const RELATIONSHIP_TYPES=new Set(["Dating","Engaged","Married","Committed / Unmarried"]);
+const CATEGORIES=new Set(["Communication","Trust","Conflict Resolution","Emotional Intimacy","Physical Intimacy","Money & Finances","Future & Goals","Family & Boundaries"]); const DEPTHS=new Set(["Light","Medium","Deep"]);
+function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}})}
+function cleanCode(s:string){return s.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)}
+function newCode(){const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";crypto.getRandomValues(new Uint8Array(6)).forEach(n=>s+=chars[n%chars.length]);return s}
+async function withDb<T>(env:Env,fn:(c:Client)=>Promise<T>){const c=new Client({connectionString:env.HYPERDRIVE.connectionString});await c.connect();try{return await fn(c)}finally{await c.end()}}
+export class RemoteGameRoom { state:DurableObjectState; env:Env; constructor(state:DurableObjectState,env:Env){this.state=state;this.env=env} async get(){return(await this.state.storage.get<any>("game"))||null} async save(s:any){s.updatedAt=Date.now();await this.state.storage.put("game",s);return s} broadcast(m:any){const t=JSON.stringify(m);for(const w of this.state.getWebSockets())try{w.send(t)}catch{}}
+async fetch(req:Request){const u=new URL(req.url);if(req.method==="POST"&&u.pathname.endsWith("/init")){const b:any=await req.json().catch(()=>({}));let s=await this.get();if(!s)s=await this.save({playerCount:Math.max(2,Math.min(4,Number(b.playerCount)||2)),turn:1,card:null,claimed:{},createdAt:Date.now(),updatedAt:Date.now()});return json(s)}let s=await this.get();if(!s)return json({error:"Game room not found or expired"},404);if(Date.now()-s.updatedAt>28800000){await this.state.storage.deleteAll();return json({error:"Game room expired"},410)}if(req.headers.get("Upgrade")==="websocket"){const pair=new WebSocketPair();const client=pair[0],server=pair[1];this.state.acceptWebSocket(server);const p=Math.max(1,Math.min(s.playerCount,Number(u.searchParams.get("player"))||1));server.serializeAttachment({player:p});server.send(JSON.stringify({type:"state",state:{...s,connected:this.state.getWebSockets().length}}));this.broadcast({type:"state",state:{...s,connected:this.state.getWebSockets().length}});return new Response(null,{status:101,webSocket:client})}return json({...s,connected:this.state.getWebSockets().length})}
+async webSocketMessage(ws:WebSocket,message:string|ArrayBuffer){let m:any;try{m=JSON.parse(typeof message==="string"?message:new TextDecoder().decode(message))}catch{return}let s=await this.get();if(!s)return;const a:any=ws.deserializeAttachment()||{};const p=Math.max(1,Math.min(s.playerCount,Number(m.player)||a.player||1));if(m.type==="claim")s.claimed[String(p)]=true;if(m.type==="card"&&p===s.turn&&m.card&&typeof m.card.question==="string")s.card=m.card;if(m.type==="request-card"&&s.card){try{ws.send(JSON.stringify({type:"state",state:{...s,connected:this.state.getWebSockets().length}}))}catch{}return}if(m.type==="advance"&&p===s.turn){s.turn=(s.turn%s.playerCount)+1;s.card=null;await this.save(s);this.broadcast({type:"advance",by:p})}else await this.save(s);this.broadcast({type:"state",state:{...s,connected:this.state.getWebSockets().length}})} async webSocketClose(){const s=await this.get();if(s)this.broadcast({type:"state",state:{...s,connected:this.state.getWebSockets().length}})} async webSocketError(){const s=await this.get();if(s)this.broadcast({type:"state",state:{...s,connected:this.state.getWebSockets().length}})} }
+export default{async fetch(request:Request,env:Env):Promise<Response>{const url=new URL(request.url);
+if(url.pathname==="/api/health"){try{return await withDb(env,async c=>{const r=await c.query("SELECT count(*)::int AS count FROM public.o2ol_scratch_questions WHERE active=true");const count=Number(r.rows[0]?.count||0);return json({ok:count>=3200,service:"one2onelove-scratch-game",database:"neon",questionCount:count},count>=3200?200:503)})}catch(e){return json({ok:false,error:e instanceof Error?e.message:"Database unavailable"},503)}}
+if(url.pathname==="/api/room/create"&&request.method==="POST"){const b:any=await request.json().catch(()=>({}));const playerCount=Math.max(2,Math.min(4,Number(b.playerCount)||2));const code=newCode();const stub=env.REMOTE_ROOMS.get(env.REMOTE_ROOMS.idFromName(code));const r=await stub.fetch(new Request("https://room/init",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({playerCount})}));if(!r.ok)return r;return json({ok:true,code,playerCount})}
+const rm=url.pathname.match(/^\/api\/room\/([A-Za-z0-9]{4,8})(\/ws)?$/);if(rm){const code=cleanCode(rm[1]);const stub=env.REMOTE_ROOMS.get(env.REMOTE_ROOMS.idFromName(code));const target=new URL(request.url);target.hostname="room";return stub.fetch(new Request(target.toString(),request))}
+if(url.pathname==="/api/draw"&&request.method==="POST"){let b:any;try{b=await request.json()}catch{return json({error:"Invalid JSON body"},400)}const rt=String(b?.relationshipType||""),cat=String(b?.category||""),depth=String(b?.depth||"");const exclude=Array.isArray(b?.exclude)?b.exclude.map(Number).filter(Number.isInteger).slice(0,250):[];if(!RELATIONSHIP_TYPES.has(rt))return json({error:"Invalid relationship type"},400);if(!(CATEGORIES.has(cat)||cat==="Shuffle All"))return json({error:"Invalid category"},400);if(!DEPTHS.has(depth))return json({error:"Invalid depth"},400);try{return await withDb(env,async c=>{const vals:any[]=[rt,depth];let cc="";if(cat!=="Shuffle All"){vals.push(cat);cc=`AND category=$${vals.length}`}let ec="";if(exclude.length){vals.push(exclude);ec=`AND NOT (id=ANY($${vals.length}::int[]))`}let r=await c.query(`SELECT id,category,depth,question,footer FROM public.o2ol_scratch_questions WHERE active=true AND relationship_type=$1 AND depth=$2 ${cc} ${ec} ORDER BY random() LIMIT 1`,vals);if(!r.rows.length&&exclude.length){const retry=vals.slice(0,cat==="Shuffle All"?2:3);r=await c.query(`SELECT id,category,depth,question,footer FROM public.o2ol_scratch_questions WHERE active=true AND relationship_type=$1 AND depth=$2 ${cc} ORDER BY random() LIMIT 1`,retry)}if(!r.rows.length)return json({error:"No matching question found"},404);const x=r.rows[0];return json({id:Number(x.id),category:x.category,depth:x.depth,question:x.question,footer:x.footer})})}catch(e){return json({error:e instanceof Error?e.message:"Question draw failed"},500)}}
+let asset=await env.ASSETS.fetch(request);if(request.method==="GET"&&(url.pathname==="/"||url.pathname.endsWith(".html"))&&(asset.headers.get("content-type")||"").includes("text/html")){let html=await asset.text();if(!html.includes("/remote-play.js"))html=html.replace("</head>",'<script src="/remote-play.js"></script></head>');const h=new Headers(asset.headers);h.delete("content-length");h.set("cache-control","no-store");return new Response(html,{status:asset.status,headers:h})}return asset}};
