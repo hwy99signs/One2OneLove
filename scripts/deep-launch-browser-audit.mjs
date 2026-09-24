@@ -25,7 +25,7 @@ const PROTECTED_ROUTES = [
   '/DateIdeas','/Profile','/PodcastsSupport','/ArticlesSupport','/RelationshipQuizzes',
   '/AnniversaryTracker','/Dashboard','/Community','/RelationshipMilestones',
   '/RelationshipGoals','/CommunicationPractice','/CouplesProfile','/CoupleActivities',
-  '/SharedJournals','/CouplesDashboard','/CouplesCalendar','/LGBTQSupport','/Chat',
+  '/CooperativeGames','/ScratchGame','/SharedJournals','/CouplesDashboard','/CouplesCalendar','/LGBTQSupport','/Chat',
   '/PaymentSuccess','/Subscription','/VerifyPhone','/AdminAccess','/Admin','/Analytics'
 ];
 
