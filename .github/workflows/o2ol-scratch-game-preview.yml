@@ -39,6 +39,14 @@ jobs:
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.toml
       - name: Deploy Cloudflare preview
         run: npx --yes wrangler@latest deploy --config wrangler.toml
+      - name: Seed Neon question library once
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 180 "$PREVIEW_URL/api/internal-seed?blob=5f840f8c90991d7c47258a29cba006a1470242bb" -o /tmp/seed.json
+          cat /tmp/seed.json
+          jq -e '.ok == true and .count == 3200' /tmp/seed.json >/dev/null
+
       - name: Verify preview health
         shell: bash
         run: |
