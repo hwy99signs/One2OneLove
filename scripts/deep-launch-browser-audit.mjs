@@ -1288,6 +1288,13 @@ try {
       it:{locale:'it-IT'},
       de:{locale:'de-DE'}
     };
+    const chicagoDateParts=Object.fromEntries(
+      new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'})
+        .formatToParts(new Date()).filter(function(part){return part.type!=='literal';}).map(function(part){return [part.type,part.value];})
+    );
+    const chicagoTomorrow=new Date(Date.UTC(Number(chicagoDateParts.year),Number(chicagoDateParts.month)-1,Number(chicagoDateParts.day),12,0,0));
+    chicagoTomorrow.setUTCDate(chicagoTomorrow.getUTCDate()+1);
+    const syntheticDashboardDate=chicagoTomorrow.toISOString().slice(0,10);
     for(const lang of Object.keys(dashboardDateCopy)){
       const copy=dashboardDateCopy[lang];
       const context=await browser.newContext({viewport:{width:1366,height:900},timezoneId:'America/Chicago'});
@@ -1296,7 +1303,7 @@ try {
         id:'launch-qa-dashboard-milestone',
         title:'Launch QA Anniversary',
         description:'Synthetic dashboard date-only milestone',
-        date:'2026-09-23',
+        date:syntheticDashboardDate,
         milestone_type:'anniversary',
         is_recurring:false,
         celebration_completed:false
@@ -1326,18 +1333,21 @@ try {
       page.on('pageerror',function(err){pageErrors.push(String(err&&err.message||err));});
       try{
         await page.goto(BASE+'/CouplesDashboard',{waitUntil:'domcontentloaded',timeout:30000});
-        const dateNode=page.locator('[data-dashboard-milestone-date="2026-09-23"]').first();
+        const dateNode=page.locator(`[data-dashboard-milestone-date="${syntheticDashboardDate}"]`).first();
         await dateNode.waitFor({state:'visible',timeout:8000}).catch(function(){});
         if(!(await dateNode.count())){
           add('critical','couples-dashboard-milestone-date-missing',{lang:lang});
         }else{
           const expected=await page.evaluate(function(locale){
-            return new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',day:'numeric'}).format(new Date('2026-09-23T00:00:00'));
-          },copy.locale);
+            return new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',day:'numeric'}).format(new Date(dateValue+'T00:00:00'));
+          },{locale:copy.locale,dateValue:syntheticDashboardDate});
           const actual=normalizeText(await dateNode.innerText());
           if(actual!==normalizeText(expected)){
-            add('critical','couples-dashboard-milestone-local-date',{lang:lang,expected:expected,actual:actual});
+            add('critical','couples-dashboard-milestone-local-date',{lang:lang,expected:expected,actual:actual,date:syntheticDashboardDate});
           }
+          /*
+          legacy single-argument evaluation retained below only as a historical marker
+          */
         }
         if(pageErrors.length) add('critical','couples-dashboard-date-pageerror',{lang:lang,errors:pageErrors});
       }catch(e){
