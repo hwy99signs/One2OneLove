@@ -5,6 +5,10 @@ import {
   MessageCircleQuestion, Search, Send, Sparkles, Users, X
 } from "lucide-react";
 import rawQuestions from "@/data/whatShouldTheyDoQuestions.json";
+import rawQuestionsEs from "@/data/whatShouldTheyDoQuestions.es.json";
+import rawQuestionsFr from "@/data/whatShouldTheyDoQuestions.fr.json";
+import rawQuestionsIt from "@/data/whatShouldTheyDoQuestions.it.json";
+import rawQuestionsDe from "@/data/whatShouldTheyDoQuestions.de.json";
 import { useLanguage } from "@/Layout";
 
 const CATEGORY = {
@@ -141,16 +145,26 @@ const COPY = {
   }
 };
 
-const QUESTIONS = rawQuestions.map(([category, scenario, options], index) => ({
-  id: index + 1,
-  category,
-  scenario,
-  options: options.map((label, optionIndex) => ({
-    id: (index + 1) * 10 + optionIndex + 1,
-    key: String.fromCharCode(65 + optionIndex),
-    label,
-  })),
-}));
+function normalizeQuestionBank(bank) {
+  return bank.map(([category, scenario, options], index) => ({
+    id: index + 1,
+    category,
+    scenario,
+    options: options.map((label, optionIndex) => ({
+      id: (index + 1) * 10 + optionIndex + 1,
+      key: String.fromCharCode(65 + optionIndex),
+      label,
+    })),
+  }));
+}
+
+const QUESTION_BANKS = {
+  en: normalizeQuestionBank(rawQuestions),
+  es: normalizeQuestionBank(rawQuestionsEs),
+  fr: normalizeQuestionBank(rawQuestionsFr),
+  it: normalizeQuestionBank(rawQuestionsIt),
+  de: normalizeQuestionBank(rawQuestionsDe),
+};
 
 const BASE_VOTES = [
   [612, 389, 233, 142],
@@ -329,6 +343,7 @@ export default function WhatShouldTheyDo() {
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
   const categoryLabels = CATEGORY_LABELS[currentLanguage] || CATEGORY_LABELS.en;
+  const QUESTIONS = QUESTION_BANKS[currentLanguage] || QUESTION_BANKS.en;
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [submitted, setSubmitted] = useState(false);
