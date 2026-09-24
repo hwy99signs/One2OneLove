@@ -118,10 +118,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SECRETS_JSON=$(npx --yes wrangler@latest secret list --name one2onelove-launch --format json)
-          printf '%s' "$SECRETS_JSON" > /tmp/o2ol-secrets.json
+          SECRETS_OUT=$(npx --yes wrangler@latest secret list --name one2onelove-launch 2>&1)
           for REQUIRED in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET OPENAI_API_KEY; do
-            jq -e --arg name "$REQUIRED" '.[] | select(.name == $name)' /tmp/o2ol-secrets.json >/dev/null
+            if ! printf '%s\n' "$SECRETS_OUT" | grep -F "$REQUIRED" >/dev/null; then
+              echo "Missing required production Worker secret: $REQUIRED" >&2
+              exit 1
+            fi
           done
 
       - name: Verify Cloudflare O2OL zone and routes access
