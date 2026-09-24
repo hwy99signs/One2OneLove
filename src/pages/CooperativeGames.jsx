@@ -21,7 +21,9 @@ const translations = {
     avgTime: "Avg Time",
     featured: "Featured Games",
     allGames: "All Games",
-    startGame: "Start Game"
+    startGame: "Start Game",
+    scratchName: "One2OneLove Scratch Game",
+    scratchDesc: "Scratch, reveal, and talk through meaningful questions together."
   },
   es: {
     title: "Juegos Cooperativos",
@@ -32,7 +34,48 @@ const translations = {
     avgTime: "Tiempo Promedio",
     featured: "Juegos Destacados",
     allGames: "Todos los Juegos",
-    startGame: "Iniciar Juego"
+    startGame: "Iniciar Juego",
+    scratchName: "Juego de Rasca One2OneLove",
+    scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas."
+  },
+  fr: {
+    title: "Jeux Coopératifs",
+    subtitle: "Jouez ensemble, riez ensemble, grandissez ensemble",
+    back: "Retour aux Activités",
+    gamesPlayed: "Parties Jouées",
+    totalScore: "Score Total",
+    avgTime: "Temps Moyen",
+    featured: "Jeux en Vedette",
+    allGames: "Tous les Jeux",
+    startGame: "Commencer",
+    scratchName: "Jeu à Gratter One2OneLove",
+    scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives."
+  },
+  it: {
+    title: "Giochi Cooperativi",
+    subtitle: "Giocate insieme, ridete insieme, crescete insieme",
+    back: "Torna alle Attività",
+    gamesPlayed: "Partite Giocate",
+    totalScore: "Punteggio Totale",
+    avgTime: "Tempo Medio",
+    featured: "Giochi in Evidenza",
+    allGames: "Tutti i Giochi",
+    startGame: "Inizia Gioco",
+    scratchName: "Gioco Gratta e Scopri One2OneLove",
+    scratchDesc: "Grattate, scoprite e parlate insieme di domande significative."
+  },
+  de: {
+    title: "Kooperative Spiele",
+    subtitle: "Spielt zusammen, lacht zusammen, wachst zusammen",
+    back: "Zurück zu Aktivitäten",
+    gamesPlayed: "Gespielte Spiele",
+    totalScore: "Gesamtpunktzahl",
+    avgTime: "Ø Zeit",
+    featured: "Empfohlene Spiele",
+    allGames: "Alle Spiele",
+    startGame: "Spiel Starten",
+    scratchName: "One2OneLove Rubbelspiel",
+    scratchDesc: "Rubbeln, aufdecken und gemeinsam über bedeutungsvolle Fragen sprechen."
   }
 };
 
@@ -46,67 +89,19 @@ export default function CooperativeGames() {
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
     queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
-    enabled: !!user?.id,
-    initialData: []
+    enabled: !!user?.id
   });
 
   const availableGames = [
     {
       id: 'o2ol_scratch',
-      name: 'One2OneLove Scratch Game',
-      description: 'Scratch, reveal, and talk through meaningful questions together.',
+      name: t.scratchName,
+      description: t.scratchDesc,
       type: 'conversation',
       difficulty: 'easy',
       icon: '💗',
-      link: 'ScratchGame'
-    },
-    {
-      id: 'trivia',
-      name: 'Couple Trivia',
-      description: 'Test how well you know each other with fun trivia questions',
-      type: 'trivia',
-      difficulty: 'easy',
-      icon: '🎯'
-    },
-    {
-      id: 'word_builder',
-      name: 'Word Builder',
-      description: 'Create words together and build your vocabulary as a team',
-      type: 'word_game',
-      difficulty: 'medium',
-      icon: '📝'
-    },
-    {
-      id: 'memory_match',
-      name: 'Memory Match',
-      description: 'Find matching pairs together and improve your memory',
-      type: 'puzzle',
-      difficulty: 'easy',
-      icon: '🧩'
-    },
-    {
-      id: 'story_creator',
-      name: 'Story Creator',
-      description: 'Create a story together by taking turns adding sentences',
-      type: 'creative',
-      difficulty: 'easy',
-      icon: '📖'
-    },
-    {
-      id: 'challenge_quest',
-      name: 'Challenge Quest',
-      description: 'Complete fun challenges together and earn points',
-      type: 'challenge',
-      difficulty: 'hard',
-      icon: '🏆'
-    },
-    {
-      id: 'conversation_cards',
-      name: 'Conversation Cards',
-      description: 'Deep and meaningful conversation prompts for couples',
-      type: 'conversation',
-      difficulty: 'medium',
-      icon: '💬'
+      link: 'ScratchGame',
+      playLabel: t.startGame
     }
   ];
 
