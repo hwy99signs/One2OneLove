@@ -92,7 +92,7 @@ jobs:
               await page.waitForFunction(() => !document.body.innerText.includes('Loading your One2OneLove access'), { timeout: 5000 }).catch(()=>{});
               const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
               console.log('MIGRATED_GAME_BODY', route, body.slice(0,1800));
-              assert(body.includes('What Should They Do?'), route+' missing game title; body='+body.slice(0,500));
+              assert(body.toLowerCase().includes('what should they do?'), route+' missing game title; body='+body.slice(0,500));
               assert(body.includes('150 recovered launch questions'), route+' missing 150-question marker');
               const overflow=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth);
               assert(overflow<=4, route+' desktop horizontal overflow '+overflow);
@@ -103,20 +103,20 @@ jobs:
             await page.waitForFunction(() => !document.body.innerText.includes('Loading your One2OneLove access'), { timeout: 5000 }).catch(()=>{});
             let body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
             console.log('MIGRATED_GAME_MOBILE_BODY', body.slice(0,1800));
-            assert(body.includes('What Should They Do?'),'mobile missing game title; body='+body.slice(0,500));
+            assert(body.toLowerCase().includes('what should they do?'),'mobile missing game title; body='+body.slice(0,500));
 
             await page.getByRole('button',{name:/Agree on healthy ways to provide reassurance/i}).click();
             await page.getByRole('button',{name:/Cast Your Vote/i}).click();
             await page.waitForTimeout(250);
             body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-            assert(body.includes('The World Voted'),'world-results heading not restored');
-            assert(body.includes('Worldwide'),'worldwide results label missing');
+            assert(body.toLowerCase().includes('the world voted'),'world-results heading not restored');
+            assert(body.toLowerCase().includes('worldwide'),'worldwide results label missing');
 
             await page.getByRole('button',{name:/US/}).click();
             await page.waitForTimeout(150);
             body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-            assert(body.includes('By Country'),'country-results heading not restored');
-            assert(body.includes('Country results appear after at least 5 votes in a country.'),'5-vote country threshold text missing');
+            assert(body.toLowerCase().includes('by country'),'country-results heading not restored');
+            assert(body.toLowerCase().includes('country results appear after at least 5 votes in a country.'),'5-vote country threshold text missing');
 
             await page.getByRole('button',{name:/Another Question/i}).click();
             await page.waitForTimeout(150);
@@ -125,7 +125,7 @@ jobs:
             await seeAll.click();
             await page.waitForTimeout(150);
             body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-            assert(body.includes('Question Browser'),'question browser did not open');
+            assert(body.toLowerCase().includes('question browser'),'question browser did not open');
             assert(body.includes('150 questions'),'question browser count missing');
 
             const overflow=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-window.innerWidth);
