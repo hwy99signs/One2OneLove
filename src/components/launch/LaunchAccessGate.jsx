@@ -33,6 +33,8 @@ const REQUIRED_PLAN = {
   '/relationshipgoals': 'Premier',
   '/communicationpractice': 'Premier',
   '/coupleactivities': 'Premier',
+  '/cooperativegames': 'Premier',
+  '/scratchgame': 'Premier',
   '/sharedjournals': 'Premier',
   '/couplescalendar': 'Premier',
   '/lgbtqsupport': 'Premier',
