@@ -31,7 +31,14 @@ export default function GameCard({ game, index }) {
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 mb-4">{game.description}</p>
-          {game.link ? (
+          {game.href ? (
+            <a href={game.href}>
+              <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+                <Play className="w-4 h-4 mr-2" />
+                {game.playLabel || 'Play Now'}
+              </Button>
+            </a>
+          ) : game.link ? (
             <Link to={createPageUrl(game.link)}>
               <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
                 <Play className="w-4 h-4 mr-2" />
