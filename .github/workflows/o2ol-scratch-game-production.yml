@@ -53,7 +53,7 @@ jobs:
           stamp=$(date +%s)-$RANDOM
           test_email="launch-check-$stamp@example.invalid"
           test_user="launchcheck$RANDOM"
-          test_pass="LaunchCheck-$stamp!"
+          test_pass="LaunchLong-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-Aa9!"
           signup_payload=$(jq -nc --arg username "$test_user" --arg email "$test_email" --arg password "$test_pass"             '{username:$username,email:$email,password:$password,marketingOptIn:false,acceptTerms:true}')
           signup_code=$(curl -sS --max-time 45 -c /tmp/o2ol-cookie.txt -o /tmp/signup.json -w '%{http_code}'             -X POST "$LIVE_URL/api/auth/signup"             -H 'content-type: application/json'             --data "$signup_payload")
           cat /tmp/signup.json
@@ -63,6 +63,15 @@ jobs:
           me_code=$(curl -sS --max-time 20 -b /tmp/o2ol-cookie.txt -o /tmp/me.json -w '%{http_code}' "$LIVE_URL/api/auth/me")
           test "$me_code" = "200"
           jq -e '.authenticated == true and .user.email' /tmp/me.json >/dev/null
+
+          logout_before_login=$(curl -sS --max-time 20 -b /tmp/o2ol-cookie.txt -o /tmp/logout-before-login.json -w '%{http_code}' -X POST "$LIVE_URL/api/auth/logout")
+          test "$logout_before_login" = "200"
+
+          login_payload=$(jq -nc --arg email "$test_email" --arg password "$test_pass" '{email:$email,password:$password}')
+          login_code=$(curl -sS --max-time 45 -c /tmp/o2ol-cookie.txt -o /tmp/login.json -w '%{http_code}' -X POST "$LIVE_URL/api/auth/login" -H 'content-type: application/json' --data "$login_payload")
+          cat /tmp/login.json
+          test "$login_code" = "200"
+          jq -e '.ok == true and .user.email' /tmp/login.json >/dev/null
 
           categories=(
             "Communication"
