@@ -1,0 +1,152 @@
+name: Consolidate O2OL Prelaunch Game
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - ".github/workflows/o2ol-consolidate-prelaunch-game.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: o2ol-consolidate-prelaunch-game
+  cancel-in-progress: false
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      OLD_URL: https://one2onelove-preview.hwy99signs.workers.dev/Games
+      NEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev/Games
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+          fetch-depth: 0
+
+      - name: Import old What Should They Do build
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf public/Games
+          mkdir -p public/Games/assets
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from urllib.parse import urljoin, urlparse
+          from urllib.request import Request, urlopen
+          from pathlib import Path
+          import re
+
+          source = "https://one2onelove-preview.hwy99signs.workers.dev/Games"
+          out = Path("public/Games")
+          assets = out / "assets"
+
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.scripts=[]; self.styles=[]
+              def handle_starttag(self, tag, attrs):
+                  d=dict(attrs)
+                  if tag.lower()=="script" and d.get("src"): self.scripts.append(d["src"])
+                  if tag.lower()=="link" and d.get("rel")=="stylesheet" and d.get("href"): self.styles.append(d["href"])
+
+          def get(url):
+              req=Request(url,headers={"User-Agent":"Mozilla/5.0"})
+              with urlopen(req,timeout=90) as r:
+                  return r.read(), r.geturl()
+
+          html_bytes, final_url = get(source)
+          html = html_bytes.decode("utf-8","ignore")
+          p=Parser(); p.feed(html)
+
+          for src in p.scripts:
+              url=urljoin(final_url,src); body,_=get(url)
+              name=Path(urlparse(url).path).name
+              (assets/name).write_bytes(body)
+              html=html.replace(src, f"/Games/assets/{name}")
+
+          for href in p.styles:
+              url=urljoin(final_url,href); body,_=get(url)
+              name=Path(urlparse(url).path).name
+              (assets/name).write_bytes(body)
+              html=html.replace(href, f"/Games/assets/{name}")
+
+          try:
+              logo,_=get(urljoin(final_url,"/logo.svg"))
+              (out/"logo.svg").write_bytes(logo)
+              html=html.replace('href="/logo.svg"', 'href="/Games/logo.svg"')
+          except Exception:
+              pass
+
+          if "What Should They Do" not in b"".join(x.read_bytes() for x in assets.glob("*.js")).decode("utf-8","ignore"):
+              raise SystemExit("Recovered bundle is missing What Should They Do marker")
+
+          (out/"index.html").write_text(html,encoding="utf-8")
+          (out/"SOURCE.txt").write_text(
+              "Recovered from the retired one2onelove-preview Worker and consolidated into one2onelove-prelaunch on 2026-09-23.\n",
+              encoding="utf-8"
+          )
+          PY
+
+      - name: Commit preserved game into Prelaunch branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/Games
+          if ! git diff --cached --quiet; then
+            git commit -m "Consolidate What Should They Do into O2OL Prelaunch"
+            git push origin HEAD:o2ol-password-reset-preview
+          fi
+
+      - name: Install and build current Prelaunch
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Deploy only the current Prelaunch Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest deploy --config wrangler.toml
+
+      - name: Verify consolidated game and Relationship Games entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 24); do
+            code=$(curl -sS -o /tmp/game.html -w '%{http_code}' "$NEW_URL" || true)
+            if [ "$code" = "200" ] && grep -q '/Games/assets/' /tmp/game.html; then
+              script=$(grep -o '/Games/assets/[^"]*\.js' /tmp/game.html | head -1)
+              curl -fsS "https://one2onelove-prelaunch.hwy99signs.workers.dev$script" -o /tmp/game.js
+              if grep -q "What Should They Do" /tmp/game.js; then
+                break
+              fi
+            fi
+            sleep 5
+          done
+          test -s /tmp/game.js
+          grep -q "What Should They Do" /tmp/game.js
+          curl -fsS https://one2onelove-prelaunch.hwy99signs.workers.dev/ -o /tmp/root.html
+          root_script=$(grep -o '/assets/[^"]*\.js' /tmp/root.html | head -1)
+          curl -fsS "https://one2onelove-prelaunch.hwy99signs.workers.dev$root_script" -o /tmp/root.js
+          grep -q "What Should They Do" /tmp/root.js
+          grep -q "Relationship Games" /tmp/root.js
+
+      - name: Retire obsolete preview Worker after verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest delete one2onelove-preview --force
+          sleep 5
+          code=$(curl -sS -o /tmp/old.html -w '%{http_code}' "$OLD_URL" || true)
+          if [ "$code" = "200" ]; then
+            echo "Old preview still responds with HTTP 200; refusing to report consolidation complete."
+            exit 1
+          fi
