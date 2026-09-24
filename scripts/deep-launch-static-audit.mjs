@@ -178,7 +178,7 @@ for (const lang of EXPECTED_LANGS) {
 
 const deferredNavigationTargets = new Set([
   'AIContentCreator','RelationshipCoach','WinACruise','Developer','FriendRequests',
-  'Meditation','CooperativeGames','PremiumFeatures','Leaderboard','Achievements',
+  'Meditation','PremiumFeatures','Leaderboard','Achievements',
   'CounselingSupport','InfluencersSupport','InfluencerSignup','ProfessionalSignup','TherapistSignup'
 ]);
 const deferredDirectPaths = new Set(Array.from(deferredNavigationTargets).map(function(target){
