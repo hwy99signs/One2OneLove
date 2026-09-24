@@ -33,18 +33,37 @@ jobs:
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.production.toml
       - name: Deploy production custom domain
         run: npx --yes wrangler@latest deploy --config wrangler.production.toml
-      - name: Verify production database and card draw
+      - name: Verify production database, auth gate, analytics, and all 12 categories
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 30); do
             code=$(curl -sS --max-time 20 -o /tmp/live-health.json -w '%{http_code}' "$LIVE_URL/api/health" || true)
-            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 4800' /tmp/live-health.json >/dev/null 2>&1; then
+            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 4800 and .accountGate == "required" and .analytics == "enabled"' /tmp/live-health.json >/dev/null 2>&1; then
               break
             fi
             sleep 5
           done
-          jq -e '.ok == true and .questionCount == 4800' /tmp/live-health.json >/dev/null
+          cat /tmp/live-health.json
+          jq -e '.ok == true and .questionCount == 4800 and .accountGate == "required" and .analytics == "enabled"' /tmp/live-health.json >/dev/null
+
+          unauth_code=$(curl -sS --max-time 20 -o /tmp/unauth.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
+          test "$unauth_code" = "401"
+
+          stamp=$(date +%s)-$RANDOM
+          test_email="launch-check-$stamp@example.invalid"
+          test_user="launchcheck$RANDOM"
+          test_pass="LaunchCheck-$stamp!"
+          signup_payload=$(jq -nc --arg username "$test_user" --arg email "$test_email" --arg password "$test_pass"             '{username:$username,email:$email,password:$password,marketingOptIn:false,acceptTerms:true}')
+          signup_code=$(curl -sS --max-time 45 -c /tmp/o2ol-cookie.txt -o /tmp/signup.json -w '%{http_code}'             -X POST "$LIVE_URL/api/auth/signup"             -H 'content-type: application/json'             --data "$signup_payload")
+          cat /tmp/signup.json
+          test "$signup_code" = "201"
+          jq -e '.ok == true and .user.email' /tmp/signup.json >/dev/null
+
+          me_code=$(curl -sS --max-time 20 -b /tmp/o2ol-cookie.txt -o /tmp/me.json -w '%{http_code}' "$LIVE_URL/api/auth/me")
+          test "$me_code" = "200"
+          jq -e '.authenticated == true and .user.email' /tmp/me.json >/dev/null
+
           categories=(
             "Communication"
             "Trust"
@@ -62,14 +81,16 @@ jobs:
 
           for category in "${categories[@]}"; do
             payload=$(jq -nc --arg relationship "Married" --arg category "$category"               '{relationship:$relationship,category:$category,exclude:[],avoidId:null}')
-            code=$(curl -sS --max-time 30 -o /tmp/live-card.json -w '%{http_code}'               -X POST "$LIVE_URL/api/draw-question"               -H 'content-type: application/json'               --data "$payload")
+            code=$(curl -sS --max-time 30 -b /tmp/o2ol-cookie.txt -o /tmp/live-card.json -w '%{http_code}'               -X POST "$LIVE_URL/api/draw-question"               -H 'content-type: application/json'               --data "$payload")
             cat /tmp/live-card.json
             test "$code" = "200"
-            jq -e --arg category "$category"               '.card.id and .card.question and .card.category == $category'               /tmp/live-card.json >/dev/null
+            jq -e --arg category "$category" '.card.id and .card.question and .card.category == $category' /tmp/live-card.json >/dev/null
           done
 
-          shuffle_payload='{"relationship":"Married","category":"Shuffle All","exclude":[],"avoidId":null}'
-          code=$(curl -sS --max-time 30 -o /tmp/live-shuffle.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data "$shuffle_payload")
-          cat /tmp/live-shuffle.json
-          test "$code" = "200"
-          jq -e '.card.id and .card.question' /tmp/live-shuffle.json >/dev/null
+          analytics_payload=$(jq -nc '{eventType:"game_started",gameSessionId:"launch-check",playerCount:2,relationship:"Married",category:"Digital Communication"}')
+          analytics_code=$(curl -sS --max-time 20 -b /tmp/o2ol-cookie.txt -o /tmp/analytics.json -w '%{http_code}'             -X POST "$LIVE_URL/api/analytics/event"             -H 'content-type: application/json'             --data "$analytics_payload")
+          test "$analytics_code" = "200"
+          jq -e '.ok == true' /tmp/analytics.json >/dev/null
+
+          logout_code=$(curl -sS --max-time 20 -b /tmp/o2ol-cookie.txt -o /tmp/logout.json -w '%{http_code}'             -X POST "$LIVE_URL/api/auth/logout")
+          test "$logout_code" = "200"

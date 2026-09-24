@@ -211,7 +211,7 @@ h2{text-align:center;font-size:clamp(24px,5vw,34px);margin-bottom:10px}
   #drawPrompt{top:84%}
 }
 </style>
-</head>
+<script defer src="/auth-gate.js"></script>\n</head>
 <body>
 
 <section id="home" class="screen active">
@@ -419,6 +419,7 @@ function deckSize(name){
   }
   function startDeck(name){
     category=name;prepareDeckHistory(name);queue=[];turn=0;usedPile.innerHTML="";currentQuestion="";cardState="idle";
+    window.O2OLAnalytics?.startGame({playerCount,relationship:selectedRelationship,category:name});
     document.getElementById("tableTitle").textContent=selectedRelationship+" • "+name+" Deck";
     deck.style.setProperty("--deckColor",cats[name].color);
     buildPlayers();
@@ -505,6 +506,7 @@ function deckSize(name){
     };
 
     queue=[item];
+    window.O2OLAnalytics?.track("card_drawn",{playerCount,relationship:selectedRelationship,category:item.cat,cardId:item.id});
     cardState="dealing";
     drawPrompt.style.display="none";
 
@@ -593,7 +595,10 @@ function deckSize(name){
     if(cardState!=="scratching")return;
     cardState="revealed";
     const revealedItem=queue[0];
-    if(revealedItem) markSeen(selectedRelationship,category,revealedItem.id);
+    if(revealedItem){
+      markSeen(selectedRelationship,category,revealedItem.id);
+      window.O2OLAnalytics?.track("card_revealed",{playerCount,relationship:selectedRelationship,category:revealedItem.cat,cardId:revealedItem.id});
+    }
     scratchCtx.clearRect(0,0,scratchZone.clientWidth,scratchZone.clientHeight);
 
     // Once revealed, the scratch canvas must stop intercepting finger movement.
@@ -634,10 +639,12 @@ function deckSize(name){
     activeCard.style.left=(up.x-cw/2)+"px";activeCard.style.top=(up.y-ch/2)+"px";activeCard.style.transform="scale(.48) rotate(5deg)";
     setTimeout(()=>{
       const played=queue.shift();addUsedMini(played.q,played.cat);
+      if(played) window.O2OLAnalytics?.track("next_card",{playerCount,relationship:selectedRelationship,category:played.cat,cardId:played.id});
       activeCard.classList.remove("show");activeCard.style.transform="scale(1)";cardState="idle";
 
       const playedCount=getDeckHistory(selectedRelationship,category).record.seen.length;
       if(playedCount >= deckSize(category)){
+        window.O2OLAnalytics?.track("deck_completed",{playerCount,relationship:selectedRelationship,category});
         document.getElementById("doneBox").classList.add("show");
         return;
       }
@@ -667,7 +674,7 @@ function deckSize(name){
   document.querySelectorAll(".playerChoice").forEach(b=>b.onclick=()=>{playerCount=+b.dataset.players;show("relationshipTypes")});
   document.querySelectorAll(".relationshipChoice").forEach(b=>b.onclick=()=>{selectedRelationship=b.dataset.relationship;show("categories")});
   document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>show(b.dataset.back));
-  document.getElementById("homeBtn").onclick=()=>show("home");
+  document.getElementById("homeBtn").onclick=()=>{window.O2OLAnalytics?.track("game_home",{playerCount,relationship:selectedRelationship,category});show("home")};
   document.getElementById("changeDeckBtn").onclick=()=>show("categories");
   document.getElementById("anotherDeckBtn").onclick=()=>show("categories");
 

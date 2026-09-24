@@ -22,7 +22,7 @@ id = "ef44564dbfca4e1bb13176ee568aaddf"
 pattern = "play.one2onelove.com"
 custom_domain = true
 
-[observability]
+[vars]\nADMIN_KEY_HASH = "fafcddf7fa329b3b863cffe1b4a8fbbb73571aa0b57f4d95fe4d0d090faf6fc7"\n\n[observability]
 enabled = true
 
 [observability.logs]
