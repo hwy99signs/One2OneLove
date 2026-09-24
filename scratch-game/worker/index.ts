@@ -80,6 +80,7 @@ async function withDb(env: Env, fn: (client: Client) => Promise<Response>) {
 }
 
 async function ensureSchema(client: Client) {
+  await client.query("CREATE EXTENSION IF NOT EXISTS pgcrypto");
   await client.query(`
     CREATE TABLE IF NOT EXISTS public.o2ol_scratch_questions (
       id text PRIMARY KEY,
@@ -388,10 +389,10 @@ async function signup(req: Request, env: Env) {
     const rateOk = await enforceRateLimit(client, req, "signup", email, 6, 60);
     if (!rateOk) return json({ error: "Too many signup attempts. Please try again later." }, 429);
 
-    const saltBytes = new Uint8Array(16);
-    crypto.getRandomValues(saltBytes);
-    const salt = bytesToBase64(saltBytes);
-    const passwordHash = await derivePassword(password, salt);
+    const hashResult = await client.query("SELECT crypt($1, gen_salt('bf', 10)) AS hash", [password]);
+    const passwordHash = String(hashResult.rows[0]?.hash || "");
+    if (!passwordHash) throw new Error("Password hashing unavailable");
+    const salt = "pgcrypto-bf10";
     const userId = crypto.randomUUID();
     const isTest = email.endsWith("@example.invalid");
 
@@ -439,15 +440,13 @@ async function login(req: Request, env: Env) {
     if (!rateOk) return json({ error: "Too many login attempts. Please try again later." }, 429);
 
     const result = await client.query(
-      `SELECT id,email,username,password_salt,password_hash,marketing_opt_in
+      `SELECT id,email,username,password_hash,marketing_opt_in,
+              (password_hash = crypt($2, password_hash)) AS password_ok
          FROM public.o2ol_scratch_users WHERE email=$1 LIMIT 1`,
-      [email]
+      [email, password]
     );
     const row = result.rows[0];
-    if (!row) return json({ error: "Email or password is incorrect." }, 401);
-
-    const candidate = await derivePassword(password, row.password_salt);
-    if (!safeEqual(candidate, row.password_hash)) return json({ error: "Email or password is incorrect." }, 401);
+    if (!row || row.password_ok !== true) return json({ error: "Email or password is incorrect." }, 401);
 
     await client.query("UPDATE public.o2ol_scratch_users SET last_login_at=now() WHERE id=$1", [row.id]);
     await recordEvent(client, row.id, "login");
