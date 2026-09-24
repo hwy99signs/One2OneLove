@@ -212,6 +212,7 @@
       const url=typeof input==='string'?input:input?.url||'';
       if(url.includes('/api/draw-question') && init?.body && typeof init.body==='string'){
         const body=JSON.parse(init.body); body.language=current;
+        window.__o2olLastDrawLanguage=current;
         init={...init,body:JSON.stringify(body),headers:{...(init.headers||{}),'Accept-Language':current}};
       }
     }catch{}
