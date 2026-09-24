@@ -39,14 +39,6 @@ jobs:
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.toml
       - name: Deploy Cloudflare preview
         run: npx --yes wrangler@latest deploy --config wrangler.toml
-      - name: Seed Neon question library once
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsS --max-time 180 "$PREVIEW_URL/api/internal-seed?blob=5f840f8c90991d7c47258a29cba006a1470242bb" -o /tmp/seed.json
-          cat /tmp/seed.json
-          jq -e '.ok == true and .count == 3200' /tmp/seed.json >/dev/null
-
       - name: Verify preview health
         shell: bash
         run: |
@@ -55,9 +47,18 @@ jobs:
             code=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$PREVIEW_URL/api/health" || true)
             if [ "$code" = "200" ]; then
               cat /tmp/health.json
-              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive"' /tmp/health.json >/dev/null
+              jq -e '.ok == true and .stack == "cloudflare-worker-neon-hyperdrive" and .questionCount == 3200' /tmp/health.json >/dev/null
               exit 0
             fi
             sleep 5
           done
           exit 1
+
+      - name: Verify real card draw from Neon
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS --max-time 30 -o /tmp/card.json -w '%{http_code}'             -X POST "$PREVIEW_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
+          cat /tmp/card.json
+          test "$code" = "200"
+          jq -e '.card.id and .card.question and .card.category == "Communication"' /tmp/card.json >/dev/null
