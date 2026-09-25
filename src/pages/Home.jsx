@@ -6,13 +6,13 @@ import { useLanguage } from './Layout';
 const LOGO = '/assets/o2ol-logo.png';
 const HERO = '/assets/o2ol-hero.png';
 const HERO_SLIDES = [
-  '/assets/hero-slideshow/hero-01.webp',
-  '/assets/hero-slideshow/hero-02.webp',
-  '/assets/hero-slideshow/hero-03.webp',
-  '/assets/hero-slideshow/hero-04.webp',
-  '/assets/hero-slideshow/hero-05.webp',
-  '/assets/hero-slideshow/hero-06.webp',
-  '/assets/hero-slideshow/hero-07.webp',
+  '/assets/hero-slideshow/hero-01.webp?v=hd-20260925',
+  '/assets/hero-slideshow/hero-02.webp?v=hd-20260925',
+  '/assets/hero-slideshow/hero-03.webp?v=hd-20260925',
+  '/assets/hero-slideshow/hero-04.webp?v=hd-20260925',
+  '/assets/hero-slideshow/hero-05.webp?v=hd-20260925',
+  '/assets/hero-slideshow/hero-06.webp?v=hd-20260925',
+  '/assets/hero-slideshow/hero-07.webp?v=hd-20260925',
 ];
 
 const COPY = {
