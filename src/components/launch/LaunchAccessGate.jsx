@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isGuestPreviewActive } from '@/lib/guestPreview';
 
 const PUBLIC_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
@@ -46,6 +47,15 @@ const REQUIRED_PLAN = {
   '/couplesprofile': 'Exclusive',
   '/couplesdashboard': 'Exclusive',
 };
+
+const GUEST_PREVIEW_ROUTES = new Set([
+  '/memorylane','/lovenotes','/sendcredits','/lovelanguagequiz','/dateideas','/profile',
+  '/relationshipquizzes','/anniversarytracker','/dashboard','/community','/chat',
+  '/podcastssupport','/relationshipmilestones','/relationshipgoals','/communicationpractice',
+  '/coupleactivities','/cooperativegames','/whatshouldtheydo','/games','/scratchgame',
+  '/sharedjournals','/couplescalendar','/lgbtqsupport','/couplesupport','/articlessupport',
+  '/couplesprofile','/couplesdashboard','/subscription'
+]);
 
 const LOADING_COPY = {
   en: 'Loading your One2OneLove access…',
@@ -93,6 +103,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if (!isAuthenticated || !user) {
+    if (isGuestPreviewActive() && GUEST_PREVIEW_ROUTES.has(route)) return children;
     return <Navigate to="/SignIn" replace />;
   }
 
