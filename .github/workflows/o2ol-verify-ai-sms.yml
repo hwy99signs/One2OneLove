@@ -94,10 +94,12 @@ jobs:
           }
           trap cleanup EXIT
 
-          npx --yes wrangler@latest deploy --config wrangler.jsonc >/tmp/deploy.txt
-          cat /tmp/deploy.txt
+          npx --yes wrangler@latest deploy --config wrangler.jsonc 2>&1 | tee /tmp/deploy.txt
+          AUDIT_URL=$(grep -oE 'https://[^[:space:]]+workers.dev' /tmp/deploy.txt | head -1 || true)
+          test -n "$AUDIT_URL"
+          echo "AUDIT_URL=$AUDIT_URL"
           sleep 3
 
-          curl -fsS --max-time 20 'https://o2ol-sms-queue-audit.hwy99signs.workers.dev/' -o /tmp/smsqueue.json
+          curl -fsS --max-time 20 "$AUDIT_URL/" -o /tmp/smsqueue.json
           cat /tmp/smsqueue.json
           jq -e '.ok == true and (.overdue_sms|type=="number") and (.future_sms|type=="number")' /tmp/smsqueue.json >/dev/null
