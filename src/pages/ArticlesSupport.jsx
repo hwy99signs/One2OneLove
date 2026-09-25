@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BookOpen, Clock, Heart, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
 import { createPageUrl } from '@/utils';
@@ -29,6 +29,24 @@ export default function ArticlesSupport() {
   const articles = relationshipArticleLibrary[currentLanguage] || relationshipArticleLibrary.en;
   const [category, setCategory] = useState('all');
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.relationshipSubview !== 'article') setSelectedArticle(null);
+  }, [location.key]);
+
+  const openArticle = (article) => {
+    navigate(location.pathname + location.search, {
+      state: { ...(location.state || {}), relationshipSubview: 'article' },
+    });
+    setSelectedArticle(article);
+  };
+
+  const backToArticles = () => {
+    if (location.state?.relationshipSubview === 'article') navigate(-1);
+    else setSelectedArticle(null);
+  };
 
   const filtered = useMemo(() => category === 'all' ? articles : articles.filter(article => article.category === category), [articles, category]);
   const categories = [
@@ -48,7 +66,7 @@ export default function ArticlesSupport() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-8">
         <article className="mx-auto max-w-4xl rounded-3xl border border-purple-100 bg-white p-6 shadow-sm sm:p-10">
-          <button type="button" onClick={() => setSelectedArticle(null)} className="mb-6 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-purple-50 hover:text-purple-700">
+          <button type="button" onClick={backToArticles} className="mb-6 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-purple-50 hover:text-purple-700">
             <ArrowLeft size={18}/>{t.close}
           </button>
           <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-sm"><Icon size={28}/></div>
@@ -111,7 +129,7 @@ export default function ArticlesSupport() {
               <motion.article key={article.id} initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:index * 0.04 }} className="flex h-full flex-col rounded-3xl border border-purple-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-700"><Icon size={24}/></div>
                 <div className="mt-5 flex-1"><p className="text-xs font-black uppercase tracking-wide text-purple-600">{categories.find(([id]) => id === article.category)?.[1]}</p><h2 className="mt-2 text-xl font-black leading-7 text-slate-900">{article.title}</h2><p className="mt-3 leading-6 text-slate-600">{article.summary}</p></div>
-                <div className="mt-6 flex items-center justify-between gap-4"><span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><Clock size={14}/>{article.readTime} {t.minutes}</span><button type="button" onClick={() => setSelectedArticle(article)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2.5 text-sm font-black text-white shadow-sm">{t.read}</button></div>
+                <div className="mt-6 flex items-center justify-between gap-4"><span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"><Clock size={14}/>{article.readTime} {t.minutes}</span><button type="button" onClick={() => openArticle(article)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2.5 text-sm font-black text-white shadow-sm">{t.read}</button></div>
               </motion.article>
             );
           })}
