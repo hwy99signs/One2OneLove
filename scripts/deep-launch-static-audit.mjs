@@ -11,7 +11,8 @@ const EXPECTED_LANGS = ['en','es','fr','it','de'];
 const PUBLIC_ROUTES = [
   '/', '/Home', '/AboutUs', '/SignIn', '/login', '/SignUp', '/signup',
   '/ForgotPassword', '/Invite', '/HelpCenter', '/ContactUs', '/PrivacyPolicy',
-  '/TermsOfService', '/Reviews', '/LeaveReview', '/Suggestions'
+  '/TermsOfService', '/Reviews', '/LeaveReview', '/Suggestions', '/Subscription',
+  '/ProfessionalSignup', '/TherapistSignup', '/InfluencerSignup'
 ];
 
 function walk(dir) {
@@ -161,6 +162,8 @@ const requiredLocalized = [
   'src/pages/ForgotPassword.jsx',
   'src/pages/VerifyPhone.jsx',
   'src/pages/Subscription.jsx',
+  'src/pages/SignUp.jsx',
+  'src/pages/ProfessionalSignup.jsx',
   'src/components/signup/LaunchRegularUserForm.jsx'
 ];
 const localizationGaps = [];
@@ -179,7 +182,7 @@ for (const lang of EXPECTED_LANGS) {
 const deferredNavigationTargets = new Set([
   'AIContentCreator','RelationshipCoach','WinACruise','Developer','FriendRequests',
   'Meditation','PremiumFeatures','Leaderboard','Achievements',
-  'CounselingSupport','InfluencersSupport','InfluencerSignup','ProfessionalSignup','TherapistSignup'
+  'CounselingSupport','InfluencersSupport'
 ]);
 const deferredDirectPaths = new Set(Array.from(deferredNavigationTargets).map(function(target){
   return ('/' + target).toLowerCase();
