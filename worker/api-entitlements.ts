@@ -7,8 +7,7 @@ const HEADERS = {
   'x-content-type-options': 'nosniff',
 };
 
-const BASIC_PREFIXES = [
-  '/api/send-credits',
+const PREMIERE_PREFIXES = [
   '/api/love-notes',
   '/api/community-chat',
   '/api/chat',
@@ -21,9 +20,6 @@ const BASIC_PREFIXES = [
   '/api/profile/photo',
   '/api/media/profile/',
   '/api/engagement',
-];
-
-const PREMIER_PREFIXES = [
   '/api/ai',
   '/api/milestones',
   '/api/media/milestones/',
@@ -40,8 +36,7 @@ function requiredPlan(pathname) {
   if (pathname === '/api/engagement/waitlist') return null;
   if (pathname === '/api/engagement/contests/leaderboard' || pathname === '/api/engagement/contests/winner') return null;
   if (pathname.startsWith('/api/ai/content')) return 'Exclusive';
-  if (PREMIER_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Premier';
-  if (BASIC_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Basic';
+  if (PREMIERE_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Premiere';
   return null;
 }
 
@@ -51,9 +46,8 @@ export function requiresApiEntitlement(pathname) {
 
 function planLevel(value) {
   const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'exclusive') return 3;
-  if (raw === 'premier' || raw === 'premiere') return 2;
-  if (raw === 'basic') return 1;
+  if (raw === 'exclusive') return 2;
+  if (raw === 'premier' || raw === 'premiere') return 1;
   return 0;
 }
 
@@ -71,6 +65,12 @@ async function authSession(request, env) {
   return { user, session };
 }
 
+function guestPreviewActive(row) {
+  if (row?.stripe_subscription_id) return false;
+  const created = row?.created_at ? new Date(row.created_at) : null;
+  return Boolean(created && !Number.isNaN(created.getTime()) && Date.now() - created.getTime() < 24 * 60 * 60 * 1000);
+}
+
 export async function enforceApiEntitlement(request, env, url) {
   const required = requiredPlan(url.pathname);
   if (!required) return null;
@@ -85,7 +85,7 @@ export async function enforceApiEntitlement(request, env, url) {
   try {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
-              p.subscription_plan,p.subscription_status,p.stripe_subscription_id,
+              p.subscription_plan,p.subscription_status,p.stripe_subscription_id,p.created_at,
               COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
          LEFT JOIN public.users p ON p.id=u.id
@@ -96,35 +96,32 @@ export async function enforceApiEntitlement(request, env, url) {
     if (!row || row.banned) {
       return json({ ok: false, error: { code: 'forbidden', message: 'Account access is unavailable.' } }, 403);
     }
+
     const phoneVerificationRequired = Boolean(
       env.TWILIO_ACCOUNT_SID &&
       env.TWILIO_AUTH_TOKEN &&
       env.TWILIO_VERIFY_SERVICE_SID
     );
     if (phoneVerificationRequired && row.phone_number_verified !== true) {
-      return json({
-        ok: false,
-        error: { code: 'phone_verification_required', message: 'Phone verification is required.' },
-      }, 428);
+      return json({ ok: false, error: { code: 'phone_verification_required', message: 'Phone verification is required.' } }, 428);
     }
 
     if (row.role === 'admin') return null;
 
     const status = String(row.subscription_status || '').toLowerCase();
+    const guestPreview = guestPreviewActive(row);
     const active = ['active', 'trial', 'trialing'].includes(status);
-    if (!active || !row.stripe_subscription_id) {
-      return json({
-        ok: false,
-        error: { code: 'billing_required', message: 'An active One2OneLove membership is required.' },
-      }, 402);
+
+    if (!guestPreview && (!active || !row.stripe_subscription_id)) {
+      return json({ ok: false, error: { code: 'billing_required', message: 'Your 24-hour Guest Preview has ended. Start the 7-day Full Access trial or subscribe to continue.' } }, 402);
     }
 
-    const effectiveLevel = ['trial', 'trialing'].includes(status) ? 3 : planLevel(row.subscription_plan);
+    const effectiveLevel = guestPreview || ['trial', 'trialing'].includes(status)
+      ? 2
+      : planLevel(row.subscription_plan);
+
     if (effectiveLevel < planLevel(required)) {
-      return json({
-        ok: false,
-        error: { code: 'plan_upgrade_required', message: `${required} membership or higher is required.` },
-      }, 403);
+      return json({ ok: false, error: { code: 'plan_upgrade_required', message: `${required} membership or higher is required.` } }, 403);
     }
 
     return null;
