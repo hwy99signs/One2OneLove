@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Brain, Heart, MessageCircle, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
 import { createPageUrl } from '@/utils';
@@ -23,6 +23,17 @@ export default function RelationshipQuizzes() {
   const library = relationshipQuizLibrary[currentLanguage] || relationshipQuizLibrary.en;
   const [activeQuizId, setActiveQuizId] = useState(null);
   const [questionIndex, setQuestionIndex] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.relationshipSubview !== 'quiz') {
+      setActiveQuizId(null);
+      setQuestionIndex(0);
+      setScores([]);
+      setComplete(false);
+    }
+  }, [location.key]);
   const [scores, setScores] = useState([]);
   const [complete, setComplete] = useState(false);
 
@@ -34,6 +45,11 @@ export default function RelationshipQuizzes() {
   }, [activeQuiz, complete, score]);
 
   const startQuiz = (id) => {
+    if (location.state?.relationshipSubview !== 'quiz') {
+      navigate(location.pathname + location.search, {
+        state: { ...(location.state || {}), relationshipSubview: 'quiz' },
+      });
+    }
     setActiveQuizId(id);
     setQuestionIndex(0);
     setScores([]);
@@ -50,6 +66,10 @@ export default function RelationshipQuizzes() {
   };
 
   const backToLibrary = () => {
+    if (location.state?.relationshipSubview === 'quiz') {
+      navigate(-1);
+      return;
+    }
     setActiveQuizId(null);
     setQuestionIndex(0);
     setScores([]);
