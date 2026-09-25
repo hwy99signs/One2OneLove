@@ -127,7 +127,7 @@ export default function Admin() {
   const nav = (
     <>
       <div className="border-b border-slate-200 p-5">
-        <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-rose-600 text-white"><Heart size={20}/></div><div><div className="font-black text-slate-900">One2OneLove</div><div className="text-xs font-semibold text-rose-600">ADMIN CONTROL</div></div></div>
+        <div className="flex items-center gap-3"><img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-12 w-12 object-contain"/><div><div className="font-black text-slate-900">One2OneLove</div><div className="text-xs font-semibold text-rose-600">ADMIN CONTROL</div></div></div>
       </div>
       <nav className="space-y-1 p-3">
         <button onClick={()=>{openAnalytics();setMobileNav(false);}} className="mb-2 flex w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-left text-sm font-semibold text-rose-700 transition hover:bg-rose-100"><TrendingUp size={18}/>Analytics</button>
