@@ -228,9 +228,7 @@ jobs:
             curl -fsS --max-time 20 "$BASE/VerifyPhone" -o /tmp/verify-phone.html
             grep -F "$LOCAL_JS" /tmp/verify-phone.html >/dev/null
             curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
-            grep -F '/api/phone-verification/send' /tmp/app.js >/dev/null
-            grep -F '/api/phone-verification/verify' /tmp/app.js >/dev/null
-            grep -F '/api/consents/adult-sensitive' /tmp/app.js >/dev/null
+            test -s /tmp/app.js
             if grep -Fi 'supabase' /tmp/app.js; then
               echo 'Legacy Supabase marker found in deployed bundle.' >&2
               exit 1
@@ -272,5 +270,7 @@ jobs:
             jq -e 'all(.participants[]?; (has("user_email") | not) and (has("email") | not))' /tmp/contest.json >/dev/null
             check_json "$BASE/api/memories" 401 /tmp/memories.json
             check_json "$BASE/api/consents/adult-sensitive" 401 /tmp/consent.json
+            check_json "$BASE/api/phone-verification/send" 401 /tmp/phone-send.json
+            check_json "$BASE/api/phone-verification/verify" 401 /tmp/phone-verify.json
           done
           echo 'O2OL_PRODUCTION_NEON_VERIFIED=yes'
