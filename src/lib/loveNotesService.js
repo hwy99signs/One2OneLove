@@ -12,7 +12,6 @@ function notifyQuotaError(error) {
       detail: {
         message: error?.message || 'Love Note SMS delivery is unavailable.',
         code: error?.payload?.error?.code || null,
-        topUpUrl: error?.payload?.error?.topUpUrl || null,
       },
     }));
   }
