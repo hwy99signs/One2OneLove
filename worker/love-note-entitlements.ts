@@ -4,9 +4,8 @@ import { scheduledSmsReadiness, scheduledSmsReady } from './scheduled-love-notes
 import {
   CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
   LOVE_NOTE_SEND_PRICE_CENTS,
+  loveNoteSendAccess,
   loveNoteUsageSummary,
-  releaseLoveNoteReservation,
-  reserveLoveNoteSend,
 } from './love-note-billing';
 
 const HEADERS = {
@@ -245,21 +244,21 @@ async function postScheduled(db, env, auth, body) {
       [auth.user.id, title, content, scheduledDate, scheduledTime, scheduledTimezone,
        recipientPhone, deliveryMethod, language],
     );
-    const billing = await reserveLoveNoteSend(
-      db,
-      auth.user.id,
-      'scheduled',
-      result.rows[0].id,
-      scheduledDate,
-      'reserved',
-    );
+    const access = await loveNoteSendAccess(db, auth.user.id);
+    if (!access.allowed) {
+      throw Object.assign(new Error(access.message || 'Love Note SMS delivery is unavailable.'), {
+        status: access.code === 'trial_sms_locked' ? 403 : 402,
+        code: access.code || 'love_note_sms_unavailable',
+        usage: access,
+      });
+    }
     await db.query('COMMIT');
     return json({
       ok: true,
       note: result.rows[0],
       billing: {
-        free: billing.free,
-        amountCents: billing.amountCents,
+        free: access.firstFreeAvailable,
+        amountCents: access.firstFreeAvailable ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
         firstPaidSendFree: true,
         additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
       },
@@ -282,7 +281,12 @@ async function cancelScheduled(db, auth, noteId) {
       return fail('Scheduled note not found or cannot be cancelled.', 404, 'not_found');
     }
 
-    await releaseLoveNoteReservation(db, auth.user.id, noteId);
+    await db.query(
+      `UPDATE public.love_note_send_entitlements
+          SET status='released',updated_at=now()
+        WHERE user_id=$1::uuid AND source_type='scheduled' AND source_id=$2::uuid AND status='reserved'`,
+      [auth.user.id, noteId],
+    );
     const updated = await db.query(
       `UPDATE public.scheduled_love_notes SET status='cancelled',updated_at=now()
         WHERE id=$1::uuid AND user_id=$2::uuid RETURNING id,status,updated_at`,
