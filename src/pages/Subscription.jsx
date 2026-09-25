@@ -63,11 +63,11 @@ const translations = {
 };
 
 const TRIAL_COPY = {
-  en: { title: '7 Days of Full One2OneLove Access', body: 'Add a credit or debit card to start. You will not be charged today. For 7 days you receive Exclusive-level access. Love Note SMS sending is not available during the trial. After 7 days, your membership continues on Premiere at $9.99/month unless you choose Exclusive or cancel before the trial ends.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active. Love Note SMS sending unlocks after your first successful paid subscription payment.' },
-  es: { title: '7 Días de Acceso Completo a One2OneLove', body: 'Agrega una tarjeta de crédito o débito para comenzar. No se te cobrará hoy. Durante 7 días tendrás acceso de nivel Exclusive. El envío de Notas de Amor por SMS no está disponible durante la prueba. Después de 7 días, tu membresía continúa en Premiere por $9.99/mes, a menos que elijas Exclusive o canceles antes de que termine la prueba.', start: 'Comenzar 7 Días de Acceso Completo', starting: 'Abriendo pago seguro...', active: 'Tu prueba de Acceso Completo de 7 días está activa. Los envíos SMS de Notas de Amor se habilitan después del primer pago exitoso de la suscripción.' },
-  fr: { title: '7 Jours d’Accès Complet à One2OneLove', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Aucun prélèvement aujourd’hui. Pendant 7 jours, vous bénéficiez d’un accès de niveau Exclusive. L’envoi de Notes d’Amour par SMS n’est pas disponible pendant l’essai. Après 7 jours, votre abonnement continue avec Premiere à 9,99 $/mois, sauf si vous choisissez Exclusive ou annulez avant la fin de l’essai.', start: 'Commencer 7 Jours d’Accès Complet', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai de 7 jours avec Accès Complet est actif. L’envoi de Notes d’Amour par SMS se débloque après le premier paiement réussi de l’abonnement.' },
-  it: { title: '7 Giorni di Accesso Completo a One2OneLove', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non verrà addebitato nulla. Per 7 giorni avrai accesso di livello Exclusive. L’invio di Note d’Amore via SMS non è disponibile durante la prova. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.', start: 'Inizia 7 Giorni di Accesso Completo', starting: 'Apertura del pagamento sicuro...', active: 'La prova di 7 giorni con Accesso Completo è attiva. Gli invii SMS delle Note d’Amore si sbloccano dopo il primo pagamento riuscito dell’abbonamento.' },
-  de: { title: '7 Tage Vollzugriff auf One2OneLove', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Heute erfolgt keine Belastung. Sie erhalten 7 Tage Zugang auf Exclusive-Niveau. Das Senden von Liebesnachrichten per SMS ist während des Tests nicht verfügbar. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Premiere für 9,99 $/Monat weiter, sofern Sie nicht Exclusive wählen oder vor Ende des Tests kündigen.', start: '7 Tage Vollzugriff Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr 7-Tage-Vollzugriff-Test ist aktiv. SMS-Liebesnachrichten werden nach der ersten erfolgreichen Abonnementzahlung freigeschaltet.' },
+  en: { title: '7 Days of Full One2OneLove Access', previewTitle: '24-Hour Guest Preview', timeRemaining: 'Time remaining', body: 'Add a credit or debit card to start. You will not be charged today. For 7 days you receive Exclusive-level access. Love Note SMS sending is not available during the trial. After 7 days, your membership continues on Premiere at $9.99/month unless you choose Exclusive or cancel before the trial ends.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active. Love Note SMS sending unlocks after your first successful paid subscription payment.' },
+  es: { title: '7 Días de Acceso Completo a One2OneLove', previewTitle: 'Vista Previa de Invitado de 24 Horas', timeRemaining: 'Tiempo restante', body: 'Agrega una tarjeta de crédito o débito para comenzar. No se te cobrará hoy. Durante 7 días tendrás acceso de nivel Exclusive. El envío de Notas de Amor por SMS no está disponible durante la prueba. Después de 7 días, tu membresía continúa en Premiere por $9.99/mes, a menos que elijas Exclusive o canceles antes de que termine la prueba.', start: 'Comenzar 7 Días de Acceso Completo', starting: 'Abriendo pago seguro...', active: 'Tu prueba de Acceso Completo de 7 días está activa. Los envíos SMS de Notas de Amor se habilitan después del primer pago exitoso de la suscripción.' },
+  fr: { title: '7 Jours d’Accès Complet à One2OneLove', previewTitle: 'Aperçu Invité de 24 Heures', timeRemaining: 'Temps restant', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Aucun prélèvement aujourd’hui. Pendant 7 jours, vous bénéficiez d’un accès de niveau Exclusive. L’envoi de Notes d’Amour par SMS n’est pas disponible pendant l’essai. Après 7 jours, votre abonnement continue avec Premiere à 9,99 $/mois, sauf si vous choisissez Exclusive ou annulez avant la fin de l’essai.', start: 'Commencer 7 Jours d’Accès Complet', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai de 7 jours avec Accès Complet est actif. L’envoi de Notes d’Amour par SMS se débloque après le premier paiement réussi de l’abonnement.' },
+  it: { title: '7 Giorni di Accesso Completo a One2OneLove', previewTitle: 'Anteprima Ospite di 24 Ore', timeRemaining: 'Tempo rimanente', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non verrà addebitato nulla. Per 7 giorni avrai accesso di livello Exclusive. L’invio di Note d’Amore via SMS non è disponibile durante la prova. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.', start: 'Inizia 7 Giorni di Accesso Completo', starting: 'Apertura del pagamento sicuro...', active: 'La prova di 7 giorni con Accesso Completo è attiva. Gli invii SMS delle Note d’Amore si sbloccano dopo il primo pagamento riuscito dell’abbonamento.' },
+  de: { title: '7 Tage Vollzugriff auf One2OneLove', previewTitle: '24-Stunden-Gastvorschau', timeRemaining: 'Verbleibende Zeit', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Heute erfolgt keine Belastung. Sie erhalten 7 Tage Zugang auf Exclusive-Niveau. Das Senden von Liebesnachrichten per SMS ist während des Tests nicht verfügbar. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Premiere für 9,99 $/Monat weiter, sofern Sie nicht Exclusive wählen oder vor Ende des Tests kündigen.', start: '7 Tage Vollzugriff Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr 7-Tage-Vollzugriff-Test ist aktiv. SMS-Liebesnachrichten werden nach der ersten erfolgreichen Abonnementzahlung freigeschaltet.' },
 };
 
 const PREVIEW_COPY = {
@@ -113,6 +113,7 @@ export default function Subscription() {
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [trialLoading, setTrialLoading] = useState(false);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [previewRemainingMs, setPreviewRemainingMs] = useState(0);
 
   useEffect(() => {
@@ -128,6 +129,11 @@ export default function Subscription() {
     };
     if (user) loadSubscriptionData();
   }, [user, t.loadError]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const currentPlanRaw = currentSubscription?.effective_plan || user?.subscription_plan || 'Premiere';
   const currentPlan = currentPlanRaw;
@@ -183,8 +189,13 @@ export default function Subscription() {
             <CardContent className="p-6 md:p-8">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900 mb-2">{trialCopy.title}</h2>
+                  <h2 className="text-2xl font-black text-gray-900 mb-2">{guestPreviewActive ? trialCopy.previewTitle : trialCopy.title}</h2>
                   <p className="text-gray-700 max-w-3xl">{trialActive ? trialCopy.active : guestPreviewActive ? t.terms.guest : trialCopy.body}</p>
+                  {guestPreviewActive && (
+                    <div className="mt-4 inline-flex items-center rounded-xl bg-purple-900 px-4 py-2 font-mono text-xl font-black tracking-wider text-white shadow-sm">
+                      {trialCopy.timeRemaining}: {guestPreviewCountdown}
+                    </div>
+                  )}
                   {guestPreviewActive && (
                     <AccessCountdown expiresAt={guestPreviewExpiresAt} serverNow={serverNow} label={t.guestTimer} expiredLabel={t.timerExpired} />
                   )}
@@ -572,7 +583,17 @@ export default function Subscription() {
   const statusLabel = (status) => t.statuses[status] || status;
   const needsBillingSetup = Boolean(user && currentSubscription && !currentSubscription.stripe_subscription_id);
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
-  const guestPreviewActive = Boolean(needsBillingSetup && createdAt && !Number.isNaN(createdAt.getTime()) && (Date.now() - createdAt.getTime()) < 24 * 60 * 60 * 1000);
+  const guestPreviewRemainingMs = needsBillingSetup && createdAt && !Number.isNaN(createdAt.getTime())
+    ? Math.max(0, createdAt.getTime() + 24 * 60 * 60 * 1000 - clockNow)
+    : 0;
+  const guestPreviewActive = guestPreviewRemainingMs > 0;
+  const guestPreviewCountdown = (() => {
+    const total = Math.max(0, Math.ceil(guestPreviewRemainingMs / 1000));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    return [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+  })();
   const trialActive = currentSubscription?.subscription_status === 'trial';
 
   const handleStartTrial = async () => {
