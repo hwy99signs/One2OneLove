@@ -94,5 +94,9 @@ export default [
   [
     "24. Contact",
     "Questions about these Terms or the platform may be sent to support@one2onelove.com."
+  ],
+  [
+    "25. Guest Preview, Free Trial, Subscriptions, Love Note Charges, Cancellation, and Refunds",
+    "New members may receive a 24-hour Guest Preview without providing a payment card. The Guest Preview provides temporary platform access but does not include One2OneLove SMS Love Note sending. A 7-day Full Access trial requires a valid payment method. No subscription charge is made when the trial begins. The trial provides Exclusive-level feature access, but One2OneLove SMS Love Note sending is not available during the trial. Unless you cancel or select Exclusive before the trial ends, the subscription automatically continues on Premiere at $9.99 USD per month. Exclusive is $19.99 USD per month. After the first successful paid subscription payment, the first One2OneLove SMS Love Note send is complimentary; each additional One2OneLove SMS Love Note send costs $0.29 USD. Love Note usage charges may be grouped and charged to the payment method on file. Custom Love Note bodies are limited to 171 characters and user-added emojis are not supported in the SMS note body; the One2OneLove system footer may include a branded heart emoji. You may cancel a subscription at any time, with cancellation taking effect at the end of the current billing period unless otherwise required by law. Charges for Love Notes already sent remain due after cancellation. Fees already incurred for delivered Love Notes are non-refundable except where a refund is required by applicable law. Subscription prices, usage charges, taxes, and features may change prospectively with notice where required by law."
   ]
 ];
