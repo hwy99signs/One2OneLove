@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import {
+  LOVE_NOTE_SEND_PRICE_CENTS,
   billReservedLoveNoteSend,
   consumeLoveNoteReservation,
   releaseLoveNoteReservation,
@@ -8,7 +9,7 @@ import {
 
 const MAX_BATCH = 20;
 const MAX_ATTEMPTS = 3;
-const SMS_PRICE_CENTS = 29;
+const SMS_PRICE_CENTS = LOVE_NOTE_SEND_PRICE_CENTS;
 
 function cleanPhone(value) {
   const compact = String(value || '').trim().replace(/[\s().-]/g, '');
@@ -202,7 +203,6 @@ async function finalizeDeliveredBilling(db, env, note) {
       `SELECT id,quota_source,status
          FROM public.love_note_send_entitlements
         WHERE user_id=$1::uuid
-          AND source_type='scheduled'
           AND source_id=$2::uuid
         LIMIT 1
         FOR UPDATE`,
@@ -260,6 +260,33 @@ async function reconcileUnbilledSent(db, env) {
   return { reconciled, pending };
 }
 
+async function reconcileUnbilledImmediate(db, env) {
+  const result = await db.query(
+    `SELECT n.id,n.user_id,1::int AS attempts
+       FROM public.sent_love_notes n
+       JOIN public.love_note_send_entitlements e
+         ON e.user_id=n.user_id
+        AND e.source_type='direct'
+        AND e.source_id=n.id
+      WHERE n.recipient_type='sms'
+        AND e.status='reserved'
+      ORDER BY n.created_at
+      LIMIT 50`,
+  );
+  let reconciled = 0;
+  let pending = 0;
+  for (const note of result.rows) {
+    try {
+      await finalizeDeliveredBilling(db, env, note);
+      reconciled += 1;
+    } catch (error) {
+      pending += 1;
+      console.error('Immediate Love Note billing reconciliation pending', { id: note.id, message: error?.message });
+    }
+  }
+  return { reconciled, pending };
+}
+
 async function markFailed(db, note, error) {
   const retryable = error?.retryable !== false;
   const retry = retryable && Number(note.attempts || 0) < MAX_ATTEMPTS;
@@ -289,13 +316,14 @@ export async function dispatchDueScheduledLoveNotes(env) {
 
   return withDb(env, async db => {
     const cancelled = await cancelIneligibleDue(db);
-    const reconciliation = await reconcileUnbilledSent(db, env);
+    const scheduledReconciliation = await reconcileUnbilledSent(db, env);
+    const immediateReconciliation = await reconcileUnbilledImmediate(db, env);
     const claimed = await claimDue(db);
 
     let sent = 0;
     let failed = 0;
     let retried = 0;
-    let billingPending = reconciliation.pending;
+    let billingPending = scheduledReconciliation.pending + immediateReconciliation.pending;
 
     for (const note of claimed) {
       try {
@@ -325,7 +353,7 @@ export async function dispatchDueScheduledLoveNotes(env) {
       sent,
       failed,
       retried,
-      billingReconciled: reconciliation.reconciled,
+      billingReconciled: scheduledReconciliation.reconciled + immediateReconciliation.reconciled,
       billingPending,
     };
   });
