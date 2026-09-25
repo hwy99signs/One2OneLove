@@ -205,15 +205,6 @@ jobs:
       - name: Deploy Cloudflare Worker to production domains
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
 
-      - name: Execute one-time O2OL launch zero reset
-        shell: bash
-        run: |
-          set -euo pipefail
-          CODE=$(curl -sS -X POST --max-time 45 -o /tmp/launch-zero-reset.json -w '%{http_code}' "$APEX_URL/api/internal/launch-zero-reset-20260925-c2a8f49e7d6b4a1f")
-          cat /tmp/launch-zero-reset.json
-          test "$CODE" = "200"
-          jq -e '.ok == true and (.reset == true or .alreadyReset == true)' /tmp/launch-zero-reset.json >/dev/null
-
       - name: Verify production frontend on custom domains
         shell: bash
         run: |
