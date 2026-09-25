@@ -80,19 +80,31 @@ export default [
     "You are responsible for your decisions, communications, conduct, and use of information obtained through One2OneLove. Relationship decisions remain yours. Use reasonable judgment before sharing personal information, meeting someone, acting on advice, or sending generated content."
   ],
   [
-    "21. Changes to These Terms",
+    "21. Membership Plans, Guest Preview, and Trial",
+    "One2OneLove offers a 24-hour Guest Preview without a payment card, followed by an optional 7-day Full Access trial that requires a valid credit or debit card. No subscription charge is made when the 7-day trial begins. The trial includes Exclusive-level feature access but does not include One2OneLove-delivered SMS Love Note sending. Unless you select Exclusive or cancel before the trial ends, the trial automatically continues as a Premiere membership at $9.99 per month. Exclusive is $19.99 per month. Subscription prices are stated in U.S. dollars unless otherwise shown."
+  ],
+  [
+    "22. Love Note SMS Charges",
+    "One2OneLove-delivered SMS Love Note sending is unavailable during the Guest Preview and 7-day trial. After the first successful paid subscription payment, the first One2OneLove-delivered SMS Love Note send is complimentary. Each additional One2OneLove-delivered SMS Love Note send costs $0.29. Usage charges may be grouped and billed to the payment method on file. Custom Love Note bodies are limited to 171 characters. User-added emojis are not supported in custom Love Note bodies; the One2OneLove branded SMS footer may include the ❤️ symbol. Charges already incurred for sent Love Notes remain due, except where applicable law requires otherwise."
+  ],
+  [
+    "23. Cancellation and Billing",
+    "You may cancel a paid membership at any time. Unless otherwise required by law or expressly stated at checkout, cancellation takes effect at the end of the current billing period and prevents the next recurring subscription charge. Cancellation does not reverse Love Note usage charges already incurred or other charges for services already provided."
+  ],
+  [
+    "24. Changes to These Terms",
     "We may update these Terms as the platform changes or as legal, operational, or security requirements evolve. The current version will be posted within One2OneLove. Continued use after an updated version becomes effective constitutes acceptance of the updated Terms where permitted by law."
   ],
   [
-    "22. Governing Law",
+    "25. Governing Law",
     "These Terms are governed by applicable United States law and, where applicable, the laws of the State of Texas, without regard to conflict-of-law principles, except where another law is required to apply."
   ],
   [
-    "23. Severability",
+    "26. Severability",
     "If a provision of these Terms is found unenforceable, the remaining provisions will remain in effect to the fullest extent permitted by law."
   ],
   [
-    "24. Contact",
+    "27. Contact",
     "Questions about these Terms or the platform may be sent to support@one2onelove.com."
   ],
   [
