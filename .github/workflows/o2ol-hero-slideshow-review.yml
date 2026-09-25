@@ -1,0 +1,59 @@
+name: O2OL Hero Slideshow Review
+
+on:
+  push:
+    branches:
+      - o2ol-hero-slideshow-preview
+    paths:
+      - "src/pages/Home.jsx"
+      - "public/assets/hero-slideshow/**"
+      - "cloudflare/wrangler.hero-slideshow-review.toml"
+      - ".github/workflows/o2ol-hero-slideshow-review.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: o2ol-hero-slideshow-review
+  cancel-in-progress: true
+
+jobs:
+  deploy-review:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      REVIEW_URL: https://one2onelove-hero-slideshow-review.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build review frontend
+        run: npm run build
+
+      - name: Verify review is isolated
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^name = "one2onelove-hero-slideshow-review"$' cloudflare/wrangler.hero-slideshow-review.toml
+          ! grep -q "one2onelove-launch" cloudflare/wrangler.hero-slideshow-review.toml
+          ! grep -q "one2onelove-prelaunch" cloudflare/wrangler.hero-slideshow-review.toml
+
+      - name: Deploy static review Worker
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.hero-slideshow-review.toml
+
+      - name: Verify review page responds
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            code=$(curl -sS -o /tmp/review.html -w '%{http_code}' "$REVIEW_URL/" || true)
+            if [ "$code" = "200" ]; then
+              grep -qi "<html" /tmp/review.html
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1

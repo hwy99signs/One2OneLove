@@ -1,0 +1,10 @@
+name = "one2onelove-hero-slideshow-review"
+compatibility_date = "2026-09-11"
+workers_dev = true
+preview_urls = true
+
+# Static-only visual review. No Production or Prelaunch Worker code, routes,
+# database bindings, secrets, scheduled jobs, or custom domains are attached.
+[assets]
+directory = "../dist"
+not_found_handling = "single-page-application"
