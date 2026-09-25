@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Heart, Languages, MessageCircle, Mic, Search, ShieldCheck, Sparkles, TrendingUp, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AdultSensitiveContentGate from "@/components/content/AdultSensitiveContentGate";
 import PodcastCard from "@/components/podcasts/PodcastCard";
@@ -29,6 +29,24 @@ function PodcastLibraryPage() {
   const [selectedLanguage, setSelectedLanguage] = useState(() => podcastLanguageByUiLanguage[currentLanguage] || "English");
   const [searchTerm, setSearchTerm] = useState("");
   const [openPodcast, setOpenPodcast] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.relationshipSubview !== 'podcast') setOpenPodcast(null);
+  }, [location.key]);
+
+  const openPodcastDetail = (podcast) => {
+    navigate(location.pathname + location.search, {
+      state: { ...(location.state || {}), relationshipSubview: 'podcast' },
+    });
+    setOpenPodcast(podcast);
+  };
+
+  const closePodcastDetail = () => {
+    if (location.state?.relationshipSubview === 'podcast') navigate(-1);
+    else setOpenPodcast(null);
+  };
 
   const focusOptions = useMemo(() => focusDefinitions(t), [t]);
 
@@ -146,7 +164,7 @@ function PodcastLibraryPage() {
 
         {filteredPodcasts.length ? (
           <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredPodcasts.map((podcast) => <PodcastCard key={podcast.id} podcast={podcast} t={t} onOpen={setOpenPodcast} />)}
+            {filteredPodcasts.map((podcast) => <PodcastCard key={podcast.id} podcast={podcast} t={t} onOpen={openPodcastDetail} />)}
           </section>
         ) : (
           <section className="rounded-3xl border border-purple-100 bg-white p-10 text-center shadow-sm">
@@ -168,7 +186,7 @@ function PodcastLibraryPage() {
         </section>
       </main>
 
-      <PodcastPlayerDialog podcast={openPodcast} onClose={() => setOpenPodcast(null)} t={t} locale={locale} />
+      <PodcastPlayerDialog podcast={openPodcast} onClose={closePodcastDetail} t={t} locale={locale} />
     </div>
   );
 }
