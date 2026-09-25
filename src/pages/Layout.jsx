@@ -182,7 +182,7 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignUp = () => {
-    navigate(createPageUrl("SignUp"));
+    navigate("/Subscription?signup=1");
   };
 
   const handleSignOut = async (e) => {
