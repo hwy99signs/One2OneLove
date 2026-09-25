@@ -37,8 +37,9 @@ jobs:
           set -euo pipefail
           ! grep -RIn "const questionBank" public worker 2>/dev/null
           grep -Fq 'data-players="1"' public/index.html
-          grep -Fq 'Self Evaluation' public/index.html
-          grep -Fq 'maxlength="12"' public/auth-gate.js
+          grep -Fq 'SOLO PLAYER' public/index.html
+          grep -Fq '/api/o2ol/launch' public/auth-gate.js
+          ! grep -Fq 'Create Free Account & Play' public/auth-gate.js
           grep -Fq '<script defer src="/i18n.js"></script>' public/index.html
           grep -Fq "const SUPPORTED = ['en','es','fr','it','de']" public/i18n.js
           grep -Fq 'AI: any' worker/index.ts
@@ -63,7 +64,7 @@ jobs:
           done
           exit 1
 
-      - name: Verify account gate, analytics, and 12-category card draw
+      - name: Verify O2OL SSO gate, analytics, and 12-category card draw
         shell: bash
         run: |
           set -euo pipefail
@@ -161,10 +162,10 @@ jobs:
               const errors=[];
               page.on('pageerror',e=>errors.push(String(e.message||e)));
               const res=await page.goto(BASE+'/?lang='+lang,{waitUntil:'domcontentloaded',timeout:30000});
-              await page.locator('#o2olAccountPill').waitFor({state:'visible',timeout:10000});
+              await page.locator('#home.active').waitFor({state:'visible',timeout:10000});
               assert(res?.status()===200,lang+' page status '+res?.status());
               assert(errors.length===0,lang+' page errors '+errors.join(' | '));
-              assert(await page.locator('#o2olAuthOverlay').count()===0,lang+' auth overlay remained after authenticated signup');
+              assert(await page.locator('#o2olAccessOverlay').count()===0,lang+' O2OL access overlay remained after authenticated session');
               assert(await page.locator('#o2olLanguagePicker select').inputValue()===lang,lang+' picker did not persist');
               assert((await page.locator('#home').innerText()).includes(copy[lang].home),lang+' home copy not translated');
               await page.locator('#howBtn').click();
