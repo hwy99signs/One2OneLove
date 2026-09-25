@@ -53,7 +53,6 @@ const UI = {
   "You don't have any buddies yet": tr('Aún no tienes amigos', 'Vous n’avez pas encore d’amis', 'Non hai ancora amici', 'Sie haben noch keine Freunde'),
   'Find Your First Buddy': tr('Encuentra a tu primer amigo', 'Trouvez votre premier ami', 'Trova il tuo primo amico', 'Finden Sie Ihren ersten Freund'),
   'Loading users...': tr('Cargando usuarios...', 'Chargement des utilisateurs...', 'Caricamento utenti...', 'Benutzer werden geladen...'),
-  '2 sends per $1 · credits do not expire while your account remains active.': tr('2 envíos por $1 · los créditos no vencen mientras tu cuenta permanezca activa.', '2 envois par 1 $ · les crédits n’expirent pas tant que votre compte reste actif.', '2 invii per 1 $ · i crediti non scadono finché il tuo account resta attivo.', '2 Sendungen pro 1 $ · Guthaben verfällt nicht, solange Ihr Konto aktiv bleibt.'),
   'Monthly Winner': tr('Ganador mensual', 'Gagnant mensuel', 'Vincitore mensile', 'Monatlicher Gewinner'),
   'Grand Prize Winner': tr('Ganador del gran premio', 'Gagnant du grand prix', 'Vincitore del gran premio', 'Hauptpreisgewinner'),
   'Additional Rewards': tr('Recompensas adicionales', 'Récompenses supplémentaires', 'Premi aggiuntivi', 'Zusätzliche Belohnungen'),
