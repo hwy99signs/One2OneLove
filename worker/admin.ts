@@ -45,6 +45,57 @@ function fail(message, status = 400, code = 'bad_request') {
   return json({ ok: false, error: { code, message } }, status);
 }
 
+function cleanReason(value) {
+  const reason = String(value || '').trim();
+  if (reason.length < 5) throw Object.assign(new Error('A reason of at least 5 characters is required.'), { status: 400, code: 'reason_required' });
+  if (reason.length > 1000) throw Object.assign(new Error('Reason must be 1000 characters or less.'), { status: 400, code: 'reason_too_long' });
+  return reason;
+}
+
+function canonicalAdminPlan(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'basic') return { stored: 'Basic', display: 'Basic', price: 4.99 };
+  if (raw === 'premier' || raw === 'premiere') return { stored: 'Premiere', display: 'Premier', price: 9.99 };
+  if (raw === 'exclusive') return { stored: 'Exclusive', display: 'Exclusive', price: 19.99 };
+  return null;
+}
+
+function stripePriceId(env, storedPlan) {
+  if (storedPlan === 'Basic') return env.STRIPE_PRICE_BASIC || null;
+  if (storedPlan === 'Premiere') return env.STRIPE_PRICE_PREMIERE || null;
+  if (storedPlan === 'Exclusive') return env.STRIPE_PRICE_EXCLUSIVE || null;
+  return null;
+}
+
+async function stripeRequest(env, method, path, params = null) {
+  if (!env.STRIPE_SECRET_KEY) throw Object.assign(new Error('Stripe is not configured for admin tier changes.'), { status: 503, code: 'billing_not_configured' });
+  const headers = { authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, accept: 'application/json' };
+  let body;
+  if (params) {
+    headers['content-type'] = 'application/x-www-form-urlencoded';
+    body = params instanceof URLSearchParams ? params : new URLSearchParams(params);
+  }
+  const response = await fetch(`https://api.stripe.com/v1${path}`, { method, headers, body });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw Object.assign(new Error(payload?.error?.message || 'Stripe request failed.'), { status: 502, code: payload?.error?.code || 'stripe_error' });
+  return payload;
+}
+
+async function ensureAdminActionAudit(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.admin_account_actions (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      admin_user_id uuid NOT NULL,
+      target_user_id uuid NOT NULL,
+      action text NOT NULL,
+      reason text NOT NULL,
+      from_value text,
+      to_value text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )`
+  );
+}
+
 async function session(request, env) {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
@@ -329,7 +380,6 @@ async function dashboard(db) {
 
 export async function handleAdminRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/admin')) return null;
-  if (request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
 
   const auth = await session(request, env);
   if (!auth) return fail('Authentication required.',401,'unauthorized');
@@ -342,10 +392,116 @@ export async function handleAdminRequest(request, env, url) {
       if (url.pathname === '/api/admin/me') {
         return json({ ok:true, admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role } });
       }
-      if (url.pathname === '/api/admin/dashboard') {
+      if (url.pathname === '/api/admin/dashboard' && request.method === 'GET') {
         const data = await dashboard(db);
-        return json({ ok:true,recovered:true,mode:'read_only_recovery',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
+        return json({ ok:true,recovered:true,mode:'admin_control',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
       }
+
+      const memberActionMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/action$/i);
+      if (memberActionMatch && request.method === 'POST') {
+        const targetUserId = memberActionMatch[1];
+        if (targetUserId === admin.id) return fail('You cannot change your own administrator account from this control.', 409, 'self_admin_change_blocked');
+
+        const body = await request.json().catch(() => null);
+        const action = String(body?.action || '').trim().toLowerCase();
+        const reason = cleanReason(body?.reason);
+        const allowed = new Set(['activate','deactivate','suspend','change_tier']);
+        if (!allowed.has(action)) return fail('Choose Activate, Deactivate, Suspend, or Change Tier.', 400, 'invalid_action');
+
+        await ensureAdminActionAudit(db);
+        const targetResult = await db.query(
+          `SELECT p.id,p.email,p.name,p.is_active,p.subscription_plan,p.subscription_price,p.subscription_status,p.stripe_subscription_id,
+                  COALESCE(a.role,'user') AS auth_role,COALESCE(a.banned,false) AS banned
+             FROM public.users p
+             LEFT JOIN neon_auth."user" a ON a.id=p.id
+            WHERE p.id=$1::uuid
+            LIMIT 1`,
+          [targetUserId],
+        );
+        const target = targetResult.rows[0];
+        if (!target) return fail('Member account not found.', 404, 'member_not_found');
+        if (target.auth_role === 'admin') return fail('Administrator accounts cannot be changed from Member controls.', 409, 'admin_target_blocked');
+
+        if (action === 'change_tier') {
+          const plan = canonicalAdminPlan(body?.tier);
+          if (!plan) return fail('Choose Basic, Premier, or Exclusive.', 400, 'invalid_plan');
+          const currentDisplay = canonicalAdminPlan(target.subscription_plan)?.display || String(target.subscription_plan || 'Basic');
+
+          if (target.stripe_subscription_id) {
+            const priceId = stripePriceId(env, plan.stored);
+            if (!priceId) return fail(`Stripe price is not configured for ${plan.display}.`, 503, 'billing_not_configured');
+            const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(target.stripe_subscription_id)}`);
+            const item = subscription?.items?.data?.[0];
+            if (!item?.id) return fail('Stripe subscription item could not be found.', 502, 'stripe_subscription_item_missing');
+            const params = new URLSearchParams();
+            params.set('items[0][id]', item.id);
+            params.set('items[0][price]', priceId);
+            params.set('proration_behavior', 'none');
+            params.set('metadata[user_id]', targetUserId);
+            params.set('metadata[plan_name]', plan.stored);
+            params.set('metadata[admin_change_reason]', reason.slice(0, 500));
+            await stripeRequest(env, 'POST', `/subscriptions/${encodeURIComponent(target.stripe_subscription_id)}`, params);
+          }
+
+          await db.query('BEGIN');
+          try {
+            await db.query(
+              `UPDATE public.users
+                  SET subscription_plan=$1,subscription_price=$2,updated_at=now()
+                WHERE id=$3::uuid`,
+              [plan.stored, plan.price, targetUserId],
+            );
+            if (currentDisplay !== plan.display) {
+              await db.query(
+                `INSERT INTO public.subscription_changes(user_id,from_plan,to_plan,change_type,effective_date)
+                 VALUES($1::uuid,$2,$3,'admin_change',now())`,
+                [targetUserId, currentDisplay, plan.display],
+              );
+            }
+            await db.query(
+              `INSERT INTO public.admin_account_actions(admin_user_id,target_user_id,action,reason,from_value,to_value)
+               VALUES($1::uuid,$2::uuid,'change_tier',$3,$4,$5)`,
+              [admin.id, targetUserId, reason, currentDisplay, plan.display],
+            );
+            await db.query('COMMIT');
+          } catch (error) {
+            await db.query('ROLLBACK');
+            throw error;
+          }
+          return json({ ok:true, action, memberId:targetUserId, tier:plan.display, stripeSynchronized:Boolean(target.stripe_subscription_id) });
+        }
+
+        const fromStatus = target.banned ? 'Suspended' : (target.is_active ? 'Active' : 'Deactivated');
+        let toStatus = fromStatus;
+        await db.query('BEGIN');
+        try {
+          if (action === 'activate') {
+            await db.query(`UPDATE public.users SET is_active=true,updated_at=now() WHERE id=$1::uuid`, [targetUserId]);
+            await db.query(`UPDATE neon_auth."user" SET banned=false,"banReason"=NULL WHERE id=$1::uuid`, [targetUserId]);
+            toStatus = 'Active';
+          } else if (action === 'deactivate') {
+            await db.query(`UPDATE public.users SET is_active=false,updated_at=now() WHERE id=$1::uuid`, [targetUserId]);
+            await db.query(`UPDATE neon_auth."user" SET banned=false,"banReason"=NULL WHERE id=$1::uuid`, [targetUserId]);
+            toStatus = 'Deactivated';
+          } else if (action === 'suspend') {
+            await db.query(`UPDATE public.users SET is_active=false,updated_at=now() WHERE id=$1::uuid`, [targetUserId]);
+            await db.query(`UPDATE neon_auth."user" SET banned=true,"banReason"=$2 WHERE id=$1::uuid`, [targetUserId, reason]);
+            toStatus = 'Suspended';
+          }
+          await db.query(
+            `INSERT INTO public.admin_account_actions(admin_user_id,target_user_id,action,reason,from_value,to_value)
+             VALUES($1::uuid,$2::uuid,$3,$4,$5,$6)`,
+            [admin.id, targetUserId, action, reason, fromStatus, toStatus],
+          );
+          await db.query('COMMIT');
+        } catch (error) {
+          await db.query('ROLLBACK');
+          throw error;
+        }
+        return json({ ok:true, action, memberId:targetUserId, status:toStatus });
+      }
+
+      if (url.pathname.startsWith('/api/admin/') && request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
       return fail('Admin route not found.',404,'not_found');
     });
   } catch (error) {
