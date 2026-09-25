@@ -1246,7 +1246,7 @@ export default function LoveNotes() {
         <div className="text-center mb-12">
           <div className="flex flex-col items-center mb-6">
             <img 
-              src="/assets/o2ol-logo.png" 
+              src="/assets/o2ol-approved-logo.png" 
               alt="One2One Love Logo" 
               className="h-24 w-auto mb-4"
             />
