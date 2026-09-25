@@ -99,8 +99,11 @@ jobs:
           set -euo pipefail
           grep -F "/api/love-notes/categories" worker/love-note-entitlements.ts >/dev/null
           grep -F "function categoryLimit(plan)" worker/love-note-entitlements.ts >/dev/null
-          grep -F "return 6;" worker/love-note-entitlements.ts >/dev/null
           grep -F "return 18;" worker/love-note-entitlements.ts >/dev/null
+          grep -F "LOVE_NOTE_SEND_PRICE_CENTS" worker/love-note-entitlements.ts >/dev/null
+          grep -F "CUSTOM_LOVE_NOTE_MAX_CHARACTERS" worker/love-note-entitlements.ts >/dev/null
+          grep -F "trialSendsAllowed: false" worker/love-note-entitlements.ts >/dev/null
+          grep -F "firstPaidSendFree: true" worker/love-note-entitlements.ts >/dev/null
           grep -F "aiPersonalizationReady" src/pages/LoveNotes.jsx >/dev/null
           grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
           grep -F "['trial', 'trialing'].includes(status) ? 'Exclusive'" worker/ai.ts >/dev/null
