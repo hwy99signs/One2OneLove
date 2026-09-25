@@ -2,6 +2,13 @@ import { apiRequest } from './apiClient';
 
 const MODES = new Set(['licensed', 'coach', 'contributor', 'organization']);
 
+function selectedSignupPlan(explicitPlan) {
+  const raw = String(explicitPlan || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('plan') : '') || '').trim().toLowerCase();
+  if (raw === 'exclusive') return 'Exclusive';
+  if (raw === 'premiere' || raw === 'premier') return 'Premiere';
+  return null;
+}
+
 export async function uploadProfessionalProfilePhoto(file, mode) {
   if (!file) return null;
   if (!MODES.has(mode)) throw new Error('Invalid professional application type');
@@ -19,12 +26,14 @@ export async function uploadProfessionalProfilePhoto(file, mode) {
   return payload?.avatar_url || null;
 }
 
-export async function submitProfessionalApplication(mode, account, application) {
+export async function submitProfessionalApplication(mode, account, application, selectedPlan = null) {
   if (!MODES.has(mode)) return { success: false, error: 'Invalid professional application type' };
+  const plan = selectedSignupPlan(selectedPlan);
+  if (!plan) return { success: false, error: 'Choose Premiere or Exclusive before applying.' };
   try {
     const payload = await apiRequest('/api/professional-signup', {
       method: 'POST',
-      body: { mode, account, application },
+      body: { mode, account, application, selectedPlan: plan },
     });
     return {
       success: true,
