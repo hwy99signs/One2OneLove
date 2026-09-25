@@ -74,8 +74,6 @@ export default function Home() {
       <section className="relative flex min-h-[900px] items-center justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
         <div className="absolute inset-0 bg-black/10"/>
         <div className="relative z-10 mx-auto max-w-5xl px-6 pb-8 pt-8 text-center text-white">
-          <img src={LOGO} alt="One2OneLove" className="mx-auto mb-1 h-44 w-auto drop-shadow-xl md:h-52"/>
-          <h1 className="text-6xl font-black tracking-tight drop-shadow-xl md:text-8xl">One2OneLove</h1>
           <div className="mt-2 text-3xl font-black italic text-yellow-300 drop-shadow md:text-4xl">{t.slogan}</div>
           <p className="mx-auto mt-8 max-w-5xl text-xl font-extrabold leading-snug drop-shadow md:text-2xl">{t.mission}</p>
           <p className="mx-auto mt-5 max-w-5xl text-lg leading-relaxed drop-shadow md:text-xl">{t.support}</p>
