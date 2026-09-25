@@ -16,7 +16,7 @@ const translations = {
     cancelNotice: 'Your subscription will end at the close of the current billing period. Love Note charges already incurred remain due.',
     paymentHistory: 'Payment History', recentTransactions: 'Your recent transactions', date: 'Date', amount: 'Amount',
     questions: 'Have questions about our plans or billing?', contactSupport: 'Contact Support', loadError: 'Failed to load subscription information',
-    trialStartError: 'Unable to start the 7-day Full Access trial.',
+    trialStartError: 'Unable to start the 7-day Full Access trial.', guestTimer: 'Guest Preview time remaining', trialTimer: '7-Day Full Access time remaining', timerExpired: 'Access period ended',
     statuses: { active: 'Active', trial: 'Trial', trialing: 'Trial', succeeded: 'Succeeded', failed: 'Failed', pending: 'Pending', cancelled: 'Cancelled', inactive: 'Inactive' },
     labels: { mostPopular: 'MOST POPULAR', month: 'month', pricingPending: 'Pricing unavailable', pricingPendingButton: 'Unavailable', processing: 'Processing...', selected: 'Selected', choose: 'Choose', paymentFailed: 'Failed to process payment', redirecting: 'Redirecting to Stripe checkout...', planUpdated: 'Plan updated. Your 7-day Full Access trial continues.', genericError: 'An error occurred. Please try again.' }
   },
@@ -26,7 +26,7 @@ const translations = {
     cancelNotice: 'Tu suscripción terminará al final del período de facturación actual. Los cargos por Notas de Amor ya realizados siguen siendo pagaderos.',
     paymentHistory: 'Historial de Pagos', recentTransactions: 'Tus transacciones recientes', date: 'Fecha', amount: 'Monto',
     questions: '¿Tienes preguntas sobre nuestros planes o facturación?', contactSupport: 'Contactar Soporte', loadError: 'No se pudo cargar la información de la suscripción',
-    trialStartError: 'No se pudo iniciar la prueba de Acceso Completo de 7 días.',
+    trialStartError: 'No se pudo iniciar la prueba de Acceso Completo de 7 días.', guestTimer: 'Tiempo restante de Vista Previa', trialTimer: 'Tiempo restante de Acceso Completo de 7 días', timerExpired: 'El período de acceso terminó',
     statuses: { active: 'Activo', trial: 'Prueba', trialing: 'Prueba', succeeded: 'Completado', failed: 'Fallido', pending: 'Pendiente', cancelled: 'Cancelado', inactive: 'Inactivo' },
     labels: { mostPopular: 'MÁS POPULAR', month: 'mes', pricingPending: 'Precio no disponible', pricingPendingButton: 'No disponible', processing: 'Procesando...', selected: 'Seleccionado', choose: 'Elegir', paymentFailed: 'No se pudo procesar el pago', redirecting: 'Redirigiendo al pago de Stripe...', planUpdated: 'Plan actualizado. Tu prueba de Acceso Completo de 7 días continúa.', genericError: 'Ocurrió un error. Inténtalo de nuevo.' }
   },
@@ -36,7 +36,7 @@ const translations = {
     cancelNotice: 'Votre abonnement prendra fin à la fin de la période de facturation en cours. Les frais de Notes d’Amour déjà engagés restent dus.',
     paymentHistory: 'Historique des Paiements', recentTransactions: 'Vos transactions récentes', date: 'Date', amount: 'Montant',
     questions: 'Des questions sur nos formules ou la facturation ?', contactSupport: 'Contacter le Support', loadError: 'Impossible de charger les informations d’abonnement',
-    trialStartError: 'Impossible de démarrer l’essai Accès Complet de 7 jours.',
+    trialStartError: 'Impossible de démarrer l’essai Accès Complet de 7 jours.', guestTimer: 'Temps restant de l’Aperçu Invité', trialTimer: 'Temps restant de l’Accès Complet de 7 jours', timerExpired: 'La période d’accès est terminée',
     statuses: { active: 'Actif', trial: 'Essai', trialing: 'Essai', succeeded: 'Réussi', failed: 'Échoué', pending: 'En attente', cancelled: 'Résilié', inactive: 'Inactif' },
     labels: { mostPopular: 'LE PLUS POPULAIRE', month: 'mois', pricingPending: 'Tarif indisponible', pricingPendingButton: 'Indisponible', processing: 'Traitement...', selected: 'Sélectionné', choose: 'Choisir', paymentFailed: 'Échec du traitement du paiement', redirecting: 'Redirection vers Stripe...', planUpdated: 'Formule mise à jour. Votre essai Accès Complet de 7 jours continue.', genericError: 'Une erreur s’est produite. Veuillez réessayer.' }
   },
@@ -46,7 +46,7 @@ const translations = {
     cancelNotice: 'L’abbonamento terminerà alla fine del periodo di fatturazione corrente. Gli addebiti per Note d’Amore già effettuati restano dovuti.',
     paymentHistory: 'Cronologia Pagamenti', recentTransactions: 'Le tue transazioni recenti', date: 'Data', amount: 'Importo',
     questions: 'Hai domande sui piani o sulla fatturazione?', contactSupport: 'Contatta il Supporto', loadError: 'Impossibile caricare le informazioni sull’abbonamento',
-    trialStartError: 'Impossibile avviare la prova di Accesso Completo di 7 giorni.',
+    trialStartError: 'Impossibile avviare la prova di Accesso Completo di 7 giorni.', guestTimer: 'Tempo rimanente dell’Anteprima Ospite', trialTimer: 'Tempo rimanente dell’Accesso Completo di 7 giorni', timerExpired: 'Il periodo di accesso è terminato',
     statuses: { active: 'Attivo', trial: 'Prova', trialing: 'Prova', succeeded: 'Riuscito', failed: 'Fallito', pending: 'In sospeso', cancelled: 'Annullato', inactive: 'Inattivo' },
     labels: { mostPopular: 'PIÙ POPOLARE', month: 'mese', pricingPending: 'Prezzo non disponibile', pricingPendingButton: 'Non disponibile', processing: 'Elaborazione...', selected: 'Selezionato', choose: 'Scegli', paymentFailed: 'Impossibile elaborare il pagamento', redirecting: 'Reindirizzamento a Stripe...', planUpdated: 'Piano aggiornato. La prova di Accesso Completo di 7 giorni continua.', genericError: 'Si è verificato un errore. Riprova.' }
   },
@@ -56,7 +56,7 @@ const translations = {
     cancelNotice: 'Ihr Abonnement endet zum Ende des laufenden Abrechnungszeitraums. Bereits entstandene Gebühren für Liebesnachrichten bleiben fällig.',
     paymentHistory: 'Zahlungsverlauf', recentTransactions: 'Ihre letzten Transaktionen', date: 'Datum', amount: 'Betrag',
     questions: 'Fragen zu unseren Plänen oder zur Abrechnung?', contactSupport: 'Support Kontaktieren', loadError: 'Abonnementinformationen konnten nicht geladen werden',
-    trialStartError: 'Der 7-Tage-Vollzugriff-Test konnte nicht gestartet werden.',
+    trialStartError: 'Der 7-Tage-Vollzugriff-Test konnte nicht gestartet werden.', guestTimer: 'Verbleibende Zeit der Gastvorschau', trialTimer: 'Verbleibende Zeit des 7-Tage-Vollzugriffs', timerExpired: 'Zugangszeitraum beendet',
     statuses: { active: 'Aktiv', trial: 'Test', trialing: 'Test', succeeded: 'Erfolgreich', failed: 'Fehlgeschlagen', pending: 'Ausstehend', cancelled: 'Gekündigt', inactive: 'Inaktiv' },
     labels: { mostPopular: 'AM BELIEBTESTEN', month: 'Monat', pricingPending: 'Preis nicht verfügbar', pricingPendingButton: 'Nicht verfügbar', processing: 'Verarbeitung...', selected: 'Ausgewählt', choose: 'Wählen', paymentFailed: 'Zahlung konnte nicht verarbeitet werden', redirecting: 'Weiterleitung zu Stripe...', planUpdated: 'Plan aktualisiert. Ihr 7-Tage-Vollzugriff-Test läuft weiter.', genericError: 'Ein Fehler ist aufgetreten. Bitte erneut versuchen.' }
   },
@@ -185,6 +185,12 @@ export default function Subscription() {
                 <div>
                   <h2 className="text-2xl font-black text-gray-900 mb-2">{trialCopy.title}</h2>
                   <p className="text-gray-700 max-w-3xl">{trialActive ? trialCopy.active : guestPreviewActive ? t.terms.guest : trialCopy.body}</p>
+                  {guestPreviewActive && (
+                    <AccessCountdown expiresAt={guestPreviewExpiresAt} serverNow={serverNow} label={t.guestTimer} expiredLabel={t.timerExpired} />
+                  )}
+                  {trialActive && (
+                    <AccessCountdown expiresAt={trialExpiresAt} serverNow={serverNow} label={t.trialTimer} expiredLabel={t.timerExpired} />
+                  )}
                 </div>
                 {needsBillingSetup && <Button onClick={handleStartTrial} disabled={trialLoading} className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold px-7 py-6 whitespace-nowrap">{trialLoading ? trialCopy.starting : trialCopy.start}</Button>}
               </div>
@@ -362,8 +368,12 @@ export default function Subscription() {
   const statusLabel = (status) => t.statuses[status] || status;
   const needsBillingSetup = Boolean(user && currentSubscription && !currentSubscription.stripe_subscription_id);
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
-  const guestPreviewActive = Boolean(needsBillingSetup && createdAt && !Number.isNaN(createdAt.getTime()) && (Date.now() - createdAt.getTime()) < 24 * 60 * 60 * 1000);
-  const trialActive = currentSubscription?.subscription_status === 'trial';
+  const fallbackGuestExpiry = createdAt && !Number.isNaN(createdAt.getTime()) ? new Date(createdAt.getTime() + 24 * 60 * 60 * 1000).toISOString() : null;
+  const guestPreviewExpiresAt = currentSubscription?.guest_preview_expires_at || fallbackGuestExpiry;
+  const trialExpiresAt = currentSubscription?.trial_expires_at || currentSubscription?.trial_end_date || user?.trial_end_date || null;
+  const serverNow = currentSubscription?.server_now || null;
+  const guestPreviewActive = Boolean(needsBillingSetup && guestPreviewExpiresAt && new Date(guestPreviewExpiresAt).getTime() > Date.now());
+  const trialActive = ['trial', 'trialing'].includes(String(currentSubscription?.subscription_status || '').toLowerCase());
 
   const handleStartTrial = async () => {
     setTrialLoading(true);
@@ -486,6 +496,42 @@ function formatPreviewTime(milliseconds) {
   const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   return `${hours}:${minutes}:${seconds}`;
+}
+
+function formatCountdown(milliseconds) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const clock = [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+  return days > 0 ? `${days}d ${clock}` : clock;
+}
+
+function AccessCountdown({ expiresAt, serverNow, label, expiredLabel }) {
+  const [clientNow, setClientNow] = useState(Date.now());
+  const offset = useMemo(() => {
+    const parsed = serverNow ? new Date(serverNow).getTime() : NaN;
+    return Number.isFinite(parsed) ? Date.now() - parsed : 0;
+  }, [serverNow]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClientNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const expiry = expiresAt ? new Date(expiresAt).getTime() : NaN;
+  if (!Number.isFinite(expiry)) return null;
+  const remaining = expiry - (clientNow - offset);
+  return (
+    <div className="mt-4 inline-flex items-center gap-3 rounded-xl border border-purple-200 bg-white px-4 py-3 shadow-sm">
+      <Clock3 className="h-5 w-5 text-purple-600" />
+      <div className="text-left">
+        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</div>
+        <div className="font-mono text-xl font-black text-purple-700">{remaining > 0 ? formatCountdown(remaining) : expiredLabel}</div>
+      </div>
+    </div>
+  );
 }
 
 const tierBase = {
