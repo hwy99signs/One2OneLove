@@ -78,7 +78,7 @@ jobs:
             "compatibility_flags": ["nodejs_compat"],
             "workers_dev": false,
             "routes": [
-              { "pattern": "one2onelove.com/__o2ol_sms_queue_audit__", "zone_name": "one2onelove.com" }
+              { "pattern": "one2onelove.com/__o2ol_sms_queue_audit__/*", "zone_name": "one2onelove.com" }
             ],
             "hyperdrive": [
               {
@@ -97,6 +97,6 @@ jobs:
           npx --yes wrangler@latest deploy --config wrangler.jsonc >/tmp/audit-deploy.txt
           cat /tmp/audit-deploy.txt
           sleep 3
-          curl -fsS --max-time 20 'https://one2onelove.com/__o2ol_sms_queue_audit__' -o /tmp/smsqueue.json
+          curl -fsS --max-time 20 'https://one2onelove.com/__o2ol_sms_queue_audit__/check' -o /tmp/smsqueue.json
           cat /tmp/smsqueue.json
           jq -e '.ok == true and (.overdue_sms|type=="number") and (.future_sms|type=="number")' /tmp/smsqueue.json >/dev/null
