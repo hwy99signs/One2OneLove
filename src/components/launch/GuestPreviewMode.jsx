@@ -1,25 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Eye, LockKeyhole } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { getGuestPreview, guestPreviewRemainingLabel } from '@/lib/guestPreview';
 import { useAuth } from '@/contexts/AuthContext';
-
-const MUTATING_METHODS = new Set(['POST','PUT','PATCH','DELETE']);
-const ACTION_WORDS = /\b(send|save|submit|create|schedule|post|publish|upload|add|delete|remove|cancel|join|leave|request|accept|decline|start game|play|match|message|invite|update|change|complete|finish)\b/i;
-
-function isApiMutation(input, init = {}) {
-  const method = String(init?.method || (input instanceof Request ? input.method : 'GET') || 'GET').toUpperCase();
-  if (!MUTATING_METHODS.has(method)) return false;
-  const raw = typeof input === 'string' ? input : input?.url;
-  if (!raw) return false;
-  try {
-    const url = new URL(raw, window.location.origin);
-    return url.origin === window.location.origin && url.pathname.startsWith('/api/');
-  } catch {
-    return false;
-  }
-}
 
 export default function GuestPreviewMode() {
   const location = useLocation();
@@ -40,53 +23,7 @@ export default function GuestPreviewMode() {
     };
   }, [location.pathname, user?.created_at, user?.stripe_subscription_id, user?.subscription_status]);
 
-  useEffect(() => {
-    if (!preview.active) return undefined;
 
-    const originalFetch = window.fetch.bind(window);
-    window.fetch = async (input, init = {}) => {
-      if (isApiMutation(input, init)) {
-        const error = new Error('Guest Preview is view-only. Subscribe to use this feature.');
-        error.status = 403;
-        error.code = 'guest_preview_view_only';
-        window.dispatchEvent(new CustomEvent('o2ol:guest-preview-blocked'));
-        throw error;
-      }
-      return originalFetch(input, init);
-    };
-
-    const blockSubmit = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      toast('Guest Preview is view-only. Subscribe to use this feature.');
-    };
-
-    const blockActionClick = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const control = target?.closest('button, [role="button"]');
-      if (!control) return;
-      if (control.closest('[data-guest-preview-allow="true"]')) return;
-      const text = [control.textContent, control.getAttribute('aria-label'), control.getAttribute('title')]
-        .filter(Boolean).join(' ').trim();
-      if (!ACTION_WORDS.test(text)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      toast('Guest Preview is view-only. Subscribe to use this feature.');
-    };
-
-    const onBlocked = () => toast('Guest Preview is view-only. Subscribe to use this feature.');
-
-    document.addEventListener('submit', blockSubmit, true);
-    document.addEventListener('click', blockActionClick, true);
-    window.addEventListener('o2ol:guest-preview-blocked', onBlocked);
-
-    return () => {
-      window.fetch = originalFetch;
-      document.removeEventListener('submit', blockSubmit, true);
-      document.removeEventListener('click', blockActionClick, true);
-      window.removeEventListener('o2ol:guest-preview-blocked', onBlocked);
-    };
-  }, [preview.active]);
 
   if (!isAuthenticated || !preview.active) return null;
 
