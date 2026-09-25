@@ -3,7 +3,6 @@ import Pages from "@/pages/index.jsx"
 import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
 import DateIdeasPlanAccess from "@/components/dateideas/DateIdeasPlanAccess.jsx"
-import SubscriptionLaunchNotice from "@/components/subscriptions/SubscriptionLaunchNotice.jsx"
 import AccessCountdownBanner from "@/components/subscriptions/AccessCountdownBanner.jsx"
 import ProfileLaunchFixes from "@/components/profile/ProfileLaunchFixes.jsx"
 import LaunchSurfaceCleanup from "@/components/launch/LaunchSurfaceCleanup.jsx"
@@ -53,7 +52,6 @@ function App() {
         <AdminEntryTab />
         <AdminUserModeToggle />
         <DateIdeasPlanAccess />
-        <SubscriptionLaunchNotice />
         <ProfileLaunchFixes />
         <LaunchSurfaceCleanup />
         <AdminFeatureHeaderLock />
