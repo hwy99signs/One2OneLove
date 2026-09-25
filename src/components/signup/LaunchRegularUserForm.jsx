@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere' }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
@@ -108,6 +108,7 @@ export default function LaunchRegularUserForm({ onBack }) {
         termsVersion:TERMS_VERSION,
         privacyPolicyAcknowledged:true,
         age18Confirmed:true,
+        selectedPlan,
       });
       if (result?.success && result.emailVerificationRequired) {
         setSuccessEmail(formData.email.trim().toLowerCase());
