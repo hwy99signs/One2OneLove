@@ -2,7 +2,6 @@ import './App.css'
 import Pages from "@/pages/index.jsx"
 import Admin from "@/pages/Admin.jsx"
 import Analytics from "@/pages/Analytics.jsx"
-import LoveNotesLimitAddSends from "@/components/lovenotes/LoveNotesLimitAddSends.jsx"
 import DateIdeasPlanAccess from "@/components/dateideas/DateIdeasPlanAccess.jsx"
 import SubscriptionLaunchNotice from "@/components/subscriptions/SubscriptionLaunchNotice.jsx"
 import ProfileLaunchFixes from "@/components/profile/ProfileLaunchFixes.jsx"
@@ -51,7 +50,6 @@ function App() {
         )}
         <AdminEntryTab />
         <AdminUserModeToggle />
-        <LoveNotesLimitAddSends />
         <DateIdeasPlanAccess />
         <SubscriptionLaunchNotice />
         <ProfileLaunchFixes />
