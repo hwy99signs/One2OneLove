@@ -7,6 +7,7 @@ import { useLanguage } from '@/Layout';
 import { toast } from 'sonner';
 import { verifiedEmailLogin } from '@/lib/verifiedLoginService';
 import { readableApiError, sendEmailVerificationOtp, verifyEmailOtp } from '@/lib/apiClient';
+import { isGuestPreviewActive } from '@/lib/guestPreview';
 
 const translations = {
   en: { signIn: { title:'Sign In', subtitle:'Sign in to access your One2OneLove relationship tools.', email:'Email Address', password:'Password', emailPlaceholder:'Enter your email', passwordPlaceholder:'Enter your password', showPassword:'Show password', hidePassword:'Hide password', close:'Close', signInButton:'Sign In', signingIn:'Signing in…', forgotPassword:'Forgot Password?', invite:'Invite Friends', verifyTitle:'Verify Your Email', verifySubtitle:'We sent a 6-digit verification code to', codeLabel:'Verification Code', codePlaceholder:'Enter 6-digit code', verifyButton:'Verify Email', verifying:'Verifying…', resendCode:'Resend Code', resendSent:'A new verification code was sent.', codeHelp:'The code expires in about 5 minutes.', invalidCode:'Enter the 6-digit code from your email.', backToSignIn:'Back to Sign In', required:'Please enter both email and password.', success:'Successfully signed in!', rateLimited:'Your sign-in was accepted, but too many requests were sent too quickly. Wait a few seconds and try once more if you are not redirected.', emailVerificationRequired:'Email verification required.', invalidCredentials:'Invalid email or password. Please try again.', genericError:'An error occurred. Please try again.', resendError:'Could not resend the verification code.', timeout:'Sign-in took too long. Please try again.' } },
@@ -50,7 +51,9 @@ export default function SignIn() {
           ? '/Admin'
           : ['active','trial','trialing'].includes(status) && result?.user?.stripe_subscription_id
             ? createPageUrl('Profile')
-            : createPageUrl('Subscription');
+            : isGuestPreviewActive(result?.user)
+              ? createPageUrl('DateIdeas')
+              : createPageUrl('Subscription');
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
     }
