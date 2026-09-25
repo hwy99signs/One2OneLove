@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
-import { scheduledSmsReadiness, scheduledSmsReady } from './scheduled-love-notes';
+import { scheduledSmsReadiness, scheduledSmsReady, sendTwilioLoveNoteSms } from './scheduled-love-notes';
 import {
   CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
   LOVE_NOTE_SEND_PRICE_CENTS,
@@ -200,8 +200,10 @@ async function postSent(db, auth, body) {
   const title = cleanText(body.note_title, 250, true);
   const content = validateLoveNoteBody(body.note_content);
   const recipientType = cleanText(body.recipient_type, 50, true);
-  const allowedTypes = new Set(['partner', 'sms', 'social_media', 'other']);
-  if (!allowedTypes.has(recipientType)) return fail('Invalid recipient_type.');
+  const allowedTypes = new Set(['social_media', 'other']);
+  if (!allowedTypes.has(recipientType)) {
+    return fail('SMS Love Notes must use One2OneLove managed SMS delivery.', 400, 'managed_sms_required');
+  }
   const recipient = cleanText(body.recipient_identifier, 500, false);
   const platform = cleanText(body.social_platform, 100, false);
 
@@ -213,6 +215,91 @@ async function postSent(db, auth, body) {
     [auth.user.id, title, content, recipientType, recipient, platform],
   );
   return json({ ok: true, note: result.rows[0], one2OneLoveSmsChargeCents: 0 }, 201);
+}
+
+async function postImmediateSms(db, env, auth, body) {
+  if (!scheduledSmsReady(env)) {
+    return fail('One2OneLove SMS delivery is not available yet.', 503, 'sms_delivery_not_ready');
+  }
+
+  const title = cleanText(body.note_title, 250, true);
+  const content = validateLoveNoteBody(body.note_content);
+  if (/\p{Extended_Pictographic}/u.test(title)) {
+    return fail('User-added emojis are not supported in Love Note SMS text. One2OneLove adds the ❤️ footer automatically.', 400, 'emoji_not_allowed');
+  }
+  const rawPhone = cleanText(body.recipient_phone || body.recipient_identifier, 100, true);
+  const recipientPhone = String(rawPhone || '').replace(/[\s().-]/g, '');
+  if (!/^\+[1-9]\d{7,14}$/.test(recipientPhone)) {
+    return fail('Enter a valid phone number with country code.', 400, 'invalid_phone');
+  }
+  const quotaDate = dateForTimezone(cleanText(body.timezone || body.client_timezone || 'UTC', 100, false) || 'UTC');
+  const sourceId = crypto.randomUUID();
+
+  await db.query('BEGIN');
+  try {
+    await db.query(
+      `INSERT INTO public.sent_love_notes
+        (id,user_id,note_title,note_content,recipient_type,recipient_identifier,social_platform,created_by)
+       VALUES($1::uuid,$2::uuid,$3,$4,'sms',$5,NULL,$2::uuid)`,
+      [sourceId, auth.user.id, title, content, recipientPhone],
+    );
+
+    const reservation = await reserveLoveNoteSend(
+      db,
+      auth.user.id,
+      'direct',
+      sourceId,
+      quotaDate,
+      'reserved',
+    );
+
+    await sendTwilioLoveNoteSms(env, {
+      recipient_phone: recipientPhone,
+      note_title: title,
+      note_content: content,
+    });
+
+    let billingPending = false;
+    let invoiceItemId = null;
+    if (!reservation.free) {
+      try {
+        const billed = await billReservedLoveNoteSend(env, db, auth.user.id, sourceId, 1);
+        invoiceItemId = billed?.invoiceItemId || null;
+      } catch (billingError) {
+        // Delivery already succeeded. Never resend the SMS just because Stripe had a transient error.
+        billingPending = true;
+        console.error('Delivered immediate Love Note billing pending', {
+          sourceId,
+          userId: auth.user.id,
+          message: billingError?.message,
+        });
+      }
+    }
+
+    await consumeLoveNoteReservation(db, auth.user.id, sourceId);
+    await db.query('COMMIT');
+
+    return json({
+      ok: true,
+      note: {
+        id: sourceId,
+        note_title: title,
+        note_content: content,
+        recipient_type: 'sms',
+        recipient_identifier: recipientPhone,
+      },
+      billing: {
+        free: reservation.free === true,
+        amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
+        invoiceItemId,
+        billingPending,
+      },
+      usage: await usageForDate(db, auth.user.id, quotaDate),
+    }, 201);
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => null);
+    throw error;
+  }
 }
 
 async function postScheduled(db, env, auth, body) {
@@ -307,6 +394,7 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
     url.pathname === '/api/love-notes/categories' ||
     (url.pathname === '/api/love-notes/delivery-readiness' && request.method === 'GET') ||
     (url.pathname === '/api/love-notes/sent' && request.method === 'POST') ||
+    (url.pathname === '/api/love-notes/send-sms' && request.method === 'POST') ||
     (url.pathname === '/api/love-notes/scheduled' && request.method === 'POST') ||
     /^\/api\/love-notes\/scheduled\/[0-9a-f-]{36}\/cancel$/i.test(url.pathname);
   if (!supported) return null;
@@ -346,6 +434,9 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
       }
       if (url.pathname === '/api/love-notes/sent' && request.method === 'POST') {
         return postSent(db, auth, await readJson(request));
+      }
+      if (url.pathname === '/api/love-notes/send-sms' && request.method === 'POST') {
+        return postImmediateSms(db, env, auth, await readJson(request));
       }
       if (url.pathname === '/api/love-notes/scheduled' && request.method === 'POST') {
         return postScheduled(db, env, auth, await readJson(request));
