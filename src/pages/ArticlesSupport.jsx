@@ -5,13 +5,14 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
 import { createPageUrl } from '@/utils';
 import { relationshipArticleLibrary } from '@/data/relationshipArticleLibrary';
+import { relationshipArticleBodies } from '@/data/relationshipArticleBodies';
 
 const copy = {
-  en: { title:'Relationship Library', subtitle:'Practical, plain-language guidance for healthier relationships.', back:'Back to Support', all:'All', communication:'Communication', trust:'Trust & Boundaries', conflict:'Conflict & Repair', marriage:'Marriage', dating:'Dating', read:'Read Guide', minutes:'min read', takeaways:'Key ideas to take with you', close:'Back to Library', editorial:'One2OneLove Relationship Library', disclaimer:'Educational guidance only. It is not a substitute for individualized medical, mental-health, legal, or safety advice.' },
-  es: { title:'Biblioteca de Relaciones', subtitle:'Orientación práctica y clara para relaciones más saludables.', back:'Volver al Apoyo', all:'Todos', communication:'Comunicación', trust:'Confianza y Límites', conflict:'Conflicto y Reparación', marriage:'Matrimonio', dating:'Citas', read:'Leer Guía', minutes:'min de lectura', takeaways:'Ideas clave para llevar contigo', close:'Volver a la Biblioteca', editorial:'Biblioteca de Relaciones One2OneLove', disclaimer:'Contenido educativo solamente. No sustituye asesoramiento médico, de salud mental, legal o de seguridad individualizado.' },
-  fr: { title:'Bibliothèque des Relations', subtitle:'Des conseils pratiques et accessibles pour des relations plus saines.', back:'Retour au Soutien', all:'Tous', communication:'Communication', trust:'Confiance et Limites', conflict:'Conflit et Réparation', marriage:'Mariage', dating:'Rencontres', read:'Lire le Guide', minutes:'min de lecture', takeaways:'Idées clés à retenir', close:'Retour à la Bibliothèque', editorial:'Bibliothèque Relationnelle One2OneLove', disclaimer:'Contenu éducatif uniquement. Il ne remplace pas un avis médical, psychologique, juridique ou de sécurité personnalisé.' },
-  it: { title:'Biblioteca delle Relazioni', subtitle:'Indicazioni pratiche e chiare per relazioni più sane.', back:'Torna al Supporto', all:'Tutti', communication:'Comunicazione', trust:'Fiducia e Confini', conflict:'Conflitto e Riparazione', marriage:'Matrimonio', dating:'Incontri', read:'Leggi la Guida', minutes:'min di lettura', takeaways:'Idee chiave da portare con te', close:'Torna alla Biblioteca', editorial:'Biblioteca Relazionale One2OneLove', disclaimer:'Contenuto esclusivamente educativo. Non sostituisce consulenza medica, psicologica, legale o di sicurezza personalizzata.' },
-  de: { title:'Beziehungsbibliothek', subtitle:'Praktische, verständliche Orientierung für gesündere Beziehungen.', back:'Zurück zur Unterstützung', all:'Alle', communication:'Kommunikation', trust:'Vertrauen und Grenzen', conflict:'Konflikt und Reparatur', marriage:'Ehe', dating:'Dating', read:'Leitfaden Lesen', minutes:'Min. Lesezeit', takeaways:'Wichtige Gedanken zum Mitnehmen', close:'Zurück zur Bibliothek', editorial:'One2OneLove Beziehungsbibliothek', disclaimer:'Nur zu Bildungszwecken. Kein Ersatz für individuelle medizinische, psychologische, rechtliche oder sicherheitsbezogene Beratung.' },
+  en: { title:'Relationship Library', subtitle:'Practical, plain-language articles for healthier relationships.', back:'Back to Support', all:'All', communication:'Communication', trust:'Trust & Boundaries', conflict:'Conflict & Repair', marriage:'Marriage', dating:'Dating', read:'Read Article', minutes:'min read', article:'Article', takeaways:'Key Takeaways', close:'Back to Library', editorial:'One2OneLove Relationship Library', disclaimer:'Educational guidance only. It is not a substitute for individualized medical, mental-health, legal, or safety advice.' },
+  es: { title:'Biblioteca de Relaciones', subtitle:'Artículos prácticos y claros para relaciones más saludables.', back:'Volver al Apoyo', all:'Todos', communication:'Comunicación', trust:'Confianza y Límites', conflict:'Conflicto y Reparación', marriage:'Matrimonio', dating:'Citas', read:'Leer Artículo', minutes:'min de lectura', article:'Artículo', takeaways:'Puntos Clave', close:'Volver a la Biblioteca', editorial:'Biblioteca de Relaciones One2OneLove', disclaimer:'Contenido educativo solamente. No sustituye asesoramiento médico, de salud mental, legal o de seguridad individualizado.' },
+  fr: { title:'Bibliothèque des Relations', subtitle:'Des articles pratiques et accessibles pour des relations plus saines.', back:'Retour au Soutien', all:'Tous', communication:'Communication', trust:'Confiance et Limites', conflict:'Conflit et Réparation', marriage:'Mariage', dating:'Rencontres', read:'Lire l’Article', minutes:'min de lecture', article:'Article', takeaways:'Points Clés', close:'Retour à la Bibliothèque', editorial:'Bibliothèque Relationnelle One2OneLove', disclaimer:'Contenu éducatif uniquement. Il ne remplace pas un avis médical, psychologique, juridique ou de sécurité personnalisé.' },
+  it: { title:'Biblioteca delle Relazioni', subtitle:'Articoli pratici e chiari per relazioni più sane.', back:'Torna al Supporto', all:'Tutti', communication:'Comunicazione', trust:'Fiducia e Confini', conflict:'Conflitto e Riparazione', marriage:'Matrimonio', dating:'Incontri', read:'Leggi Articolo', minutes:'min di lettura', article:'Articolo', takeaways:'Punti Chiave', close:'Torna alla Biblioteca', editorial:'Biblioteca Relazionale One2OneLove', disclaimer:'Contenuto esclusivamente educativo. Non sostituisce consulenza medica, psicologica, legale o di sicurezza personalizzata.' },
+  de: { title:'Beziehungsbibliothek', subtitle:'Praktische, verständliche Artikel für gesündere Beziehungen.', back:'Zurück zur Unterstützung', all:'Alle', communication:'Kommunikation', trust:'Vertrauen und Grenzen', conflict:'Konflikt und Reparatur', marriage:'Ehe', dating:'Dating', read:'Artikel Lesen', minutes:'Min. Lesezeit', article:'Artikel', takeaways:'Wichtige Erkenntnisse', close:'Zurück zur Bibliothek', editorial:'One2OneLove Beziehungsbibliothek', disclaimer:'Nur zu Bildungszwecken. Kein Ersatz für individuelle medizinische, psychologische, rechtliche oder sicherheitsbezogene Beratung.' },
 };
 
 const categoryIcons = {
@@ -41,6 +42,9 @@ export default function ArticlesSupport() {
 
   if (selectedArticle) {
     const Icon = categoryIcons[selectedArticle.category] || BookOpen;
+    const articleBody = relationshipArticleBodies[currentLanguage]?.[selectedArticle.id]
+      || relationshipArticleBodies.en?.[selectedArticle.id]
+      || [];
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-8">
         <article className="mx-auto max-w-4xl rounded-3xl border border-purple-100 bg-white p-6 shadow-sm sm:p-10">
@@ -53,7 +57,16 @@ export default function ArticlesSupport() {
           <p className="mt-4 text-lg leading-8 text-slate-600">{selectedArticle.summary}</p>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600"><Clock size={15}/>{selectedArticle.readTime} {t.minutes}</div>
 
-          <div className="mt-8 rounded-3xl border border-purple-100 bg-purple-50/60 p-5 sm:p-7">
+          <section className="mt-8 border-t border-slate-100 pt-8">
+            <h2 className="text-2xl font-black text-slate-900">{t.article}</h2>
+            <div className="mt-5 space-y-5">
+              {articleBody.map((paragraph, index) => (
+                <p key={index} className="text-[17px] leading-8 text-slate-700">{paragraph}</p>
+              ))}
+            </div>
+          </section>
+
+          <div className="mt-10 rounded-3xl border border-purple-100 bg-purple-50/60 p-5 sm:p-7">
             <h2 className="text-xl font-black text-slate-900">{t.takeaways}</h2>
             <div className="mt-5 space-y-5">
               {selectedArticle.takeaways.map((item, index) => (
