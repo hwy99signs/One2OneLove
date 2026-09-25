@@ -112,15 +112,17 @@ jobs:
           grep -F "export const LOVE_NOTE_SEND_PRICE_CENTS = 29;" worker/love-note-billing.ts >/dev/null
           grep -F "export const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;" worker/love-note-billing.ts >/dev/null
           grep -F "Love Note SMS sending is not available during the 7-day trial." worker/love-note-billing.ts >/dev/null
-          grep -F "trialSendsAllowed: false" worker/love-note-entitlements.ts >/dev/null
-          grep -F "firstPaidSendFree: true" worker/love-note-entitlements.ts >/dev/null
+          grep -F "trialSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
+          grep -F "firstTrialSendFree: true" worker/love-note-entitlements.ts >/dev/null
           grep -F "sendLoveNoteSms" src/pages/LoveNotes.jsx >/dev/null
           grep -F "aiPersonalizationReady" src/pages/LoveNotes.jsx >/dev/null
           grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
           grep -F "const plan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;" worker/ai.ts >/dev/null
           grep -F "guest_preview_expires_at" worker/billing.ts >/dev/null
           grep -F "formatPreviewTime" src/pages/Subscription.jsx >/dev/null
-          grep -F "guestPreviewRemainingMs" src/pages/Subscription.jsx >/dev/null
+          grep -F "GuestPreviewTimer" src/pages/Subscription.jsx >/dev/null
+          grep -F "guest_preview_read_only" worker/api-entitlements.ts >/dev/null
+          grep -F "PreviewReadOnly" src/components/launch/LaunchAccessGate.jsx >/dev/null
 
       - name: Verify production deployment isolation
         shell: bash
