@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLoveNoteCategoryPreference, getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, saveLoveNoteCategoryPreference, scheduleLoveNote } from "@/lib/loveNotesService";
+import { getLoveNoteCategoryPreference, getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, sendLoveNoteSms, saveLoveNoteCategoryPreference, scheduleLoveNote } from "@/lib/loveNotesService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -771,10 +771,10 @@ function effectiveLoveNotesPlan(user) {
   if (String(user?.role || '').toLowerCase() === 'admin') return 'Exclusive';
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
-  const raw = String(user?.subscription_plan || 'Basic').toLowerCase();
+  const raw = String(user?.subscription_plan || 'Premiere').toLowerCase();
   if (raw === 'exclusive') return 'Exclusive';
-  if (raw === 'premier' || raw === 'premiere') return 'Premier';
-  return 'Basic';
+  if (raw === 'premier' || raw === 'premiere') return 'Premiere';
+  return 'Premiere';
 }
 
 export default function LoveNotes() {
@@ -857,7 +857,7 @@ export default function LoveNotes() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const categoryLimit = Number(categoryPreference?.limit || (effectivePlan === 'Exclusive' ? 29 : effectivePlan === 'Premier' ? 18 : 6));
+  const categoryLimit = Number(categoryPreference?.limit || (effectivePlan === 'Exclusive' ? 29 : effectivePlan === 'Premiere' ? 18 : 18));
   const allowedCategoryIds = useMemo(
     () => new Set(categoryPreference?.categories || (effectivePlan === 'Exclusive' ? allCategories.filter(item => item.id !== 'all').map(item => item.id) : [])),
     [categoryPreference?.categories, effectivePlan, allCategories],
@@ -1128,45 +1128,54 @@ export default function LoveNotes() {
   };
 
   const handleSendVia = async (note, method) => {
-    const text = `${note.title}\n\n${note.content}\n\n❤️ From One 2 One Love`;
-    let currentRecipientPhoneInput = ''; // Used for text/whatsapp
-    let targetPlatformIdentifier = method; // Used for social media methods
+    const text = `${note.title}\n\n${note.content}\n\n❤️ One2OneLove`;
 
-    if (method === 'text' || (method === 'whatsapp' && recipientPhone.trim())) {
-      if (method === 'text' && !recipientPhone.trim()) {
+    if (method === 'text') {
+      if (!recipientPhone.trim()) {
         toast.error(t.pleaseEnterPhone);
         return;
       }
-      currentRecipientPhoneInput = recipientPhone;
+      if (!scheduledSmsReady) {
+        toast.error(loveNoteUsage?.smsSendingMessage || t.limitSMS);
+        return;
+      }
+      try {
+        const result = await sendLoveNoteSms({
+          note_title: note.title,
+          note_content: note.content,
+          recipient_phone: recipientPhone,
+        });
+        toast.success(result?.billing?.free ? t.freeFirstSend : t.openingText);
+        setSendModalNote(null);
+        setRecipientPhone('');
+        queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
+        queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
+      } catch (error) {
+        toast.error(error?.message || t.limitSMS);
+      }
+      return;
     }
+
+    let currentRecipientPhoneInput = '';
+    const targetPlatformIdentifier = method;
+    if (method === 'whatsapp' && recipientPhone.trim()) currentRecipientPhoneInput = recipientPhone;
 
     const limitCheckResult = checkLimitBeforeSend(method, currentRecipientPhoneInput, targetPlatformIdentifier);
+    if (limitCheckResult === null) return;
 
-    if (limitCheckResult === null) {
-      return; // Limit reached, do not proceed
-    }
-
-    // Record the sent note if user is logged in and not a guest send
     if (currentUser && limitCheckResult.type !== 'guest') {
       await sendNoteMutation.mutateAsync({
         note_title: note.title,
         note_content: note.content,
         recipient_type: limitCheckResult.type,
         recipient_identifier: limitCheckResult.identifier,
-        social_platform: limitCheckResult.social_platform, // Will be undefined if not social_media type
+        social_platform: limitCheckResult.social_platform,
         sent_date: new Date().toISOString(),
         created_by: currentUser.id,
       });
     }
 
-    // Proceed with sending
     switch(method) {
-      case 'text':
-        window.open(`sms:${recipientPhone}?body=${encodeURIComponent(text)}`);
-        toast.success(t.openingText);
-        setSendModalNote(null);
-        setRecipientPhone('');
-        break;
       case 'whatsapp':
         window.open(`https://wa.me/${recipientPhone ? recipientPhone : ''}?text=${encodeURIComponent(text)}`);
         toast.success(t.openingWhatsApp);
