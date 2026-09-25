@@ -97,11 +97,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Column 1: Logo & Tagline */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
-              </div>
-              <span className="text-xl font-bold">One 2 One Love</span>
+            <div className="mb-4">
+              <img
+                src="/assets/o2ol-approved-logo.png"
+                alt="One2OneLove"
+                className="h-24 w-auto max-w-full object-contain"
+              />
             </div>
             <p className="text-white/90 text-sm mb-6">
               {t.tagline}
