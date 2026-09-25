@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
 
-const LOGO = '/assets/o2ol-logo.png';
+const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
 
 const COPY = {
