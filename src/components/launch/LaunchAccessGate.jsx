@@ -9,38 +9,34 @@ const PUBLIC_ROUTES = new Set([
 ]);
 
 const PLAN_LEVEL = {
-  Basic: 1,
-  Premiere: 2,
-  Premier: 2,
-  Exclusive: 3,
+  Premiere: 1,
+  Premier: 1,
+  Exclusive: 2,
 };
 
 const REQUIRED_PLAN = {
-  '/memorylane': 'Basic',
-  '/lovenotes': 'Basic',
-  '/sendcredits': 'Basic',
-  '/lovelanguagequiz': 'Basic',
-  '/dateideas': 'Basic',
-  '/profile': 'Basic',
-  '/relationshipquizzes': 'Basic',
-  '/anniversarytracker': 'Basic',
-  '/dashboard': 'Basic',
-  '/community': 'Basic',
-  '/chat': 'Basic',
-
-  '/podcastssupport': 'Premier',
-  '/relationshipmilestones': 'Premier',
-  '/relationshipgoals': 'Premier',
-  '/communicationpractice': 'Premier',
-  '/coupleactivities': 'Premier',
-  '/cooperativegames': 'Premier',
-  '/whatshouldtheydo': 'Premier',
-  '/games': 'Premier',
-  '/scratchgame': 'Premier',
-  '/sharedjournals': 'Premier',
-  '/couplescalendar': 'Premier',
-  '/lgbtqsupport': 'Premier',
-
+  '/memorylane': 'Premiere',
+  '/lovenotes': 'Premiere',
+  '/lovelanguagequiz': 'Premiere',
+  '/dateideas': 'Premiere',
+  '/profile': 'Premiere',
+  '/relationshipquizzes': 'Premiere',
+  '/anniversarytracker': 'Premiere',
+  '/dashboard': 'Premiere',
+  '/community': 'Premiere',
+  '/chat': 'Premiere',
+  '/podcastssupport': 'Premiere',
+  '/relationshipmilestones': 'Premiere',
+  '/relationshipgoals': 'Premiere',
+  '/communicationpractice': 'Premiere',
+  '/coupleactivities': 'Premiere',
+  '/cooperativegames': 'Premiere',
+  '/whatshouldtheydo': 'Premiere',
+  '/games': 'Premiere',
+  '/scratchgame': 'Premiere',
+  '/sharedjournals': 'Premiere',
+  '/couplescalendar': 'Premiere',
+  '/lgbtqsupport': 'Premiere',
   '/couplesupport': 'Exclusive',
   '/articlessupport': 'Exclusive',
   '/couplesprofile': 'Exclusive',
@@ -55,14 +51,18 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
+function previewActive(user) {
+  if (user?.stripe_subscription_id) return false;
+  const created = user?.created_at ? new Date(user.created_at) : null;
+  return Boolean(created && !Number.isNaN(created.getTime()) && Date.now() - created.getTime() < 24 * 60 * 60 * 1000);
+}
+
 function currentPlanFor(user) {
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
-  const stored = String(user?.subscription_plan || 'Basic');
-  if (stored.toLowerCase() === 'basic') return 'Basic';
-  if (stored.toLowerCase() === 'premier' || stored.toLowerCase() === 'premiere') return 'Premier';
+  const stored = String(user?.subscription_plan || 'Premiere');
   if (stored.toLowerCase() === 'exclusive') return 'Exclusive';
-  return 'Basic';
+  return 'Premiere';
 }
 
 function preferredLanguage() {
@@ -92,28 +92,30 @@ export default function LaunchAccessGate({ pathname, children }) {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/SignIn" replace />;
-  }
-
+  if (!isAuthenticated || !user) return <Navigate to="/SignIn" replace />;
   if (route === '/verifyphone') return children;
 
   const phoneRequired = user.phone_verification_required === true;
   const phoneVerified = user.phoneNumberVerified === true || user.phone_number_verified === true;
-  if (phoneRequired && !phoneVerified) {
-    return <Navigate to="/VerifyPhone" replace />;
-  }
+  if (phoneRequired && !phoneVerified) return <Navigate to="/VerifyPhone" replace />;
 
   const role = String(user.role || '').toLowerCase();
   if (role === 'admin') return children;
 
   if (route === '/subscription' || route === '/payment-success') return children;
+  if (route === '/sendcredits') return <Navigate to="/Subscription" replace />;
 
   const status = String(user.subscription_status || '').toLowerCase();
   const hasStripeSubscription = Boolean(user.stripe_subscription_id);
-  if (!['active', 'trial', 'trialing'].includes(status) || !hasStripeSubscription) {
+  const guestPreview = previewActive(user);
+
+  if (!guestPreview && (!['active', 'trial', 'trialing'].includes(status) || !hasStripeSubscription)) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
+
+  // The 24-hour Guest Preview and the 7-day trial can explore all plan surfaces.
+  // SMS Love Note sending is separately blocked server-side until the first paid invoice succeeds.
+  if (guestPreview || status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
   if (!required) return children;
