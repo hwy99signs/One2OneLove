@@ -3,7 +3,7 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { endAdminMfa, getAdminMfaStatus, touchAdminMfa } from '@/lib/adminMfaService';
 
-const ADMIN_IDLE_MS = 5 * 60 * 1000;
+const ADMIN_IDLE_MS = 30 * 60 * 1000;
 const SERVER_TOUCH_THROTTLE_MS = 30 * 1000;
 
 export default function AdminMfaGate({ children }) {
@@ -75,15 +75,21 @@ export default function AdminMfaGate({ children }) {
       idleTimer = window.setTimeout(finishAdminSession, ADMIN_IDLE_MS);
     };
 
+    let touchRetryTimer = null;
+
     const renewServerSession = async () => {
       const now = Date.now();
       if (now - lastServerTouch < SERVER_TOUCH_THROTTLE_MS || ending) return;
-      lastServerTouch = now;
       try {
         await touchAdminMfa();
+        lastServerTouch = Date.now();
       } catch (error) {
-        if ([401, 403, 428].includes(error?.status)) {
-          finishAdminSession();
+        console.warn('Admin MFA renewal failed; preserving active dashboard session:', error);
+        if (!touchRetryTimer && !ending) {
+          touchRetryTimer = window.setTimeout(() => {
+            touchRetryTimer = null;
+            renewServerSession();
+          }, 5000);
         }
       }
     };
@@ -108,6 +114,7 @@ export default function AdminMfaGate({ children }) {
 
     return () => {
       if (idleTimer) window.clearTimeout(idleTimer);
+      if (touchRetryTimer) window.clearTimeout(touchRetryTimer);
       window.removeEventListener('pointerdown', registerActivity);
       window.removeEventListener('keydown', registerActivity);
       window.removeEventListener('scroll', registerActivity);
