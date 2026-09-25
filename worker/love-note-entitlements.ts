@@ -240,7 +240,7 @@ async function postImmediateSms(db, env, auth, body) {
   const sourceId = crypto.randomUUID();
   let reservation = null;
 
-  // Phase 1: reserve the first-free/29-cent entitlement and deliver the SMS.
+  // Phase 1: reserve the trial/first-free or 29-cent entitlement and deliver the SMS.
   // If Twilio fails, the DB transaction rolls back so no send is billed.
   await db.query('BEGIN');
   try {
@@ -273,7 +273,7 @@ async function postImmediateSms(db, env, auth, body) {
   }
 
   // Phase 2: after successful delivery, add the 29-cent Stripe invoice item
-  // (unless this is the complimentary first paid-member send) and consume the
+  // (unless this is the complimentary first send) and consume the
   // reservation. A transient Stripe error must never resend the SMS.
   let billingPending = false;
   let invoiceItemId = null;
@@ -357,7 +357,8 @@ async function postScheduled(db, env, auth, body) {
       billing: {
         free: reservation.free === true,
         amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
-        firstPaidSendFree: true,
+        firstTrialSendFree: true,
+        firstSendFree: true,
         additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
       },
     }, 201);
@@ -431,10 +432,11 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
           ok: true,
           delivery: {
             ...scheduledSmsReadiness(env),
-            firstPaidSendFree: true,
+            firstTrialSendFree: true,
+            firstSendFree: true,
             additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
             customNoteMaxCharacters: CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
-            trialSendsAllowed: false,
+            trialSendsAllowed: true,
           },
         });
       }
