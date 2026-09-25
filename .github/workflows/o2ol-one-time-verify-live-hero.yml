@@ -1,0 +1,75 @@
+name: One-time verify live O2OL hero asset
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/o2ol-one-time-verify-live-hero.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  verify-live-hero:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out deployed source
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Verify both live domains serve the exact corrected hero bytes
+        run: |
+          set -euo pipefail
+          expected="public/assets/o2ol-hero-v2.png"
+          test -f "$expected"
+          sha256sum "$expected"
+
+          for base in "https://one2onelove.com" "https://www.one2onelove.com"; do
+            out="/tmp/$(echo "$base" | tr -cd '[:alnum:]').png"
+            matched=0
+            for n in 1 2 3 4 5 6; do
+              curl -fsSL --retry 2 -H 'Cache-Control: no-cache' "$base/assets/o2ol-hero-v2.png?verify=${GITHUB_SHA}-${n}" -o "$out" || true
+              if test -s "$out" && cmp -s "$expected" "$out"; then
+                matched=1
+                echo "$base serves exact corrected hero asset"
+                sha256sum "$out"
+                break
+              fi
+              sleep 10
+            done
+            test "$matched" -eq 1
+          done
+
+      - name: Verify live application bundle references the cache-busted hero filename
+        run: |
+          set -euo pipefail
+          found=0
+          for base in "https://one2onelove.com" "https://www.one2onelove.com"; do
+            curl -fsSL --retry 3 -H 'Cache-Control: no-cache' "$base/?verify=${GITHUB_SHA}" -o /tmp/home.html
+            grep -oE 'src="[^"]+\.js"' /tmp/home.html | sed -E 's/^src="//;s/"$//' > /tmp/scripts.txt || true
+            while IFS= read -r src; do
+              test -n "$src" || continue
+              case "$src" in
+                http*) url="$src" ;;
+                /*) url="$base$src" ;;
+                *) url="$base/$src" ;;
+              esac
+              curl -fsSL --retry 2 -H 'Cache-Control: no-cache' "$url?verify=${GITHUB_SHA}" -o /tmp/app.js || continue
+              if grep -Fq "/assets/o2ol-hero-v2.png" /tmp/app.js; then
+                echo "$base live bundle references /assets/o2ol-hero-v2.png"
+                found=$((found+1))
+                break
+              fi
+            done < /tmp/scripts.txt
+          done
+          test "$found" -eq 2
+
+      - name: Remove one-time verification workflow after success
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/o2ol-one-time-verify-live-hero.yml
+          git commit -m "Remove one-time live hero verification workflow"
+          git push origin HEAD:master
