@@ -616,7 +616,7 @@ function LanguageContent({ children, currentPageName }) {
       <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
         <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
           <div>
-            <img src="/assets/o2ol-logo.png" alt="One2OneLove" className="h-28 w-auto" />
+            <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-28 w-auto" />
             <div className="text-lg mt-2">{fT.loveGrow}</div>
             <div className="flex gap-4 mt-5 text-2xl">
               <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
