@@ -3,6 +3,7 @@ import {
   apiRequest,
   getAuthSessionWithRetry,
   getProfile,
+  getGuestPreviewStatus,
   signInWithEmail,
   signOutAuth,
 } from '@/lib/apiClient';
@@ -40,13 +41,22 @@ export function AuthProvider({ children }) {
       }
 
       let profile = null;
+      let guestPreview = null;
       try {
-        profile = await getProfile();
+        [profile, guestPreview] = await Promise.all([
+          getProfile(),
+          getGuestPreviewStatus().catch(() => null),
+        ]);
       } catch (error) {
         if (error?.status !== 401) console.warn('Profile refresh failed:', error);
       }
 
-      const merged = mergeUser(auth.user, profile);
+      const merged = mergeUser(auth.user, {
+        ...(profile || {}),
+        guest_preview_active: guestPreview?.active === true,
+        guest_preview_started_at: guestPreview?.startedAt || null,
+        guest_preview_expires_at: guestPreview?.expiresAt || null,
+      });
       setUser(merged);
       return merged;
     } catch (error) {
@@ -97,8 +107,16 @@ export function AuthProvider({ children }) {
     try {
       const auth = await signInWithEmail(email, password);
       if (!auth?.user) return { success: false, error: 'Sign in failed. Please try again.' };
-      const profile = await getProfile().catch(() => null);
-      const merged = mergeUser(auth.user, profile);
+      const [profile, guestPreview] = await Promise.all([
+        getProfile().catch(() => null),
+        getGuestPreviewStatus().catch(() => null),
+      ]);
+      const merged = mergeUser(auth.user, {
+        ...(profile || {}),
+        guest_preview_active: guestPreview?.active === true,
+        guest_preview_started_at: guestPreview?.startedAt || null,
+        guest_preview_expires_at: guestPreview?.expiresAt || null,
+      });
       setUser(merged);
       return { success: true, user: merged };
     } catch (error) {
