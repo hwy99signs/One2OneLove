@@ -69,15 +69,17 @@ function serviceDescription(application = {}) {
 }
 
 async function saveProfile(db, mode, user, account, application) {
+  const selectedPlan = account.selectedPlan === 'Exclusive' ? 'Exclusive' : 'Premiere';
+  const selectedPrice = selectedPlan === 'Exclusive' ? 19.99 : 9.99;
   const firstName = clean(account.firstName, 120, true);
   const lastName = clean(account.lastName, 120, true);
   const fullName = `${firstName} ${lastName}`.trim();
   const type = mode === 'licensed' ? 'therapist' : mode === 'contributor' ? 'influencer' : 'professional';
   await db.query(
     `INSERT INTO public.users(id,email,name,user_type,location,is_active,subscription_plan,subscription_status,subscription_price)
-     VALUES($1::uuid,$2,$3,$4,$5,true,'Premiere','inactive',9.99)
-     ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email,name=EXCLUDED.name,user_type=EXCLUDED.user_type,location=EXCLUDED.location,updated_at=now()`,
-    [user.id, account.email, fullName, type, locationLabel(application)],
+     VALUES($1::uuid,$2,$3,$4,$5,true,$6,'inactive',$7)
+     ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email,name=EXCLUDED.name,user_type=EXCLUDED.user_type,location=EXCLUDED.location,subscription_plan=EXCLUDED.subscription_plan,subscription_price=EXCLUDED.subscription_price,updated_at=now()`,
+    [user.id, account.email, fullName, type, locationLabel(application), selectedPlan, selectedPrice],
   );
 
   if (mode === 'licensed') {
