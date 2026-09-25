@@ -118,11 +118,25 @@ async function requireUser(request, env) {
        VALUES ($1::uuid, $2, $3, 'regular', true, 'Basic', 4.99, 'inactive')
        ON CONFLICT (id) DO UPDATE SET
          email = EXCLUDED.email,
-         name = COALESCE(NULLIF(public.users.name, ''), EXCLUDED.name),
-         is_active = true`,
+         name = COALESCE(NULLIF(public.users.name, ''), EXCLUDED.name)`,
       [auth.user.id, auth.user.email, auth.user.name || auth.user.email?.split('@')[0] || 'Member'],
     );
   });
+
+  const access = await withDb(env, async (db) => {
+    const result = await db.query(
+      `SELECT COALESCE(p.is_active,true) AS is_active,COALESCE(a.banned,false) AS banned
+         FROM public.users p
+         LEFT JOIN neon_auth."user" a ON a.id=p.id
+        WHERE p.id=$1::uuid
+        LIMIT 1`,
+      [auth.user.id],
+    );
+    return result.rows[0] || null;
+  });
+  if (!access || access.banned || access.is_active === false) {
+    return { response: error('Account access is unavailable.', 403, 'account_inactive') };
+  }
 
   return { auth };
 }
