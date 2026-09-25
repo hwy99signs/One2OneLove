@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { isGuestPreviewActive } from './guestPreview';
 
 export const isStripeConfigured = async () => {
   try {
@@ -127,6 +128,7 @@ export const reactivateSubscription = async () => {
 
 export const hasFeatureAccess = (feature, user) => {
   if (String(user?.role || '').toLowerCase() === 'admin') return true;
+  if (isGuestPreviewActive(user)) return true;
   if (!user?.subscription_plan || !user?.stripe_subscription_id) return false;
   const status = String(user?.subscription_status || '').toLowerCase();
   if (!['active', 'trial', 'trialing'].includes(status)) return false;
