@@ -80,7 +80,19 @@ function planUsage(plan) {
 function decorateSubscription(user) {
   const storedPlan = canonicalPlan(user?.subscription_plan) || 'Premiere';
   const effectivePlan = user?.subscription_status === 'trial' ? 'Exclusive' : storedPlan;
-  return { ...user, effective_plan: effectivePlan, trial_entitlement: user?.subscription_status === 'trial' ? 'Exclusive' : null, usage_limits: planUsage(effectivePlan) };
+  const created = user?.created_at ? new Date(user.created_at) : null;
+  const guestPreviewExpiresAt = created && !Number.isNaN(created.getTime())
+    ? new Date(created.getTime() + 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  return {
+    ...user,
+    effective_plan: effectivePlan,
+    trial_entitlement: user?.subscription_status === 'trial' ? 'Exclusive' : null,
+    usage_limits: planUsage(effectivePlan),
+    server_now: new Date().toISOString(),
+    guest_preview_expires_at: guestPreviewExpiresAt,
+    trial_expires_at: user?.trial_end_date || null,
+  };
 }
 async function stripeRequest(env, method, path, params = null) {
   if (!stripeConfigured(env)) {
@@ -108,7 +120,7 @@ async function getBillingUser(db, userId) {
     `SELECT id,email,subscription_plan,subscription_status,subscription_price,
             subscription_start_date,subscription_end_date,stripe_customer_id,stripe_subscription_id,
             payment_method,subscription_current_period_start,subscription_current_period_end,
-            trial_end_date,cancel_at_period_end,canceled_at
+            trial_end_date,cancel_at_period_end,canceled_at,created_at
        FROM public.users WHERE id=$1::uuid`,
     [userId],
   );
