@@ -372,7 +372,7 @@ function LanguageContent({ children, currentPageName }) {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-white/20 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto">
               <nav className="flex flex-col gap-2">
                 <Link
                   to={createPageUrl("Home")}
