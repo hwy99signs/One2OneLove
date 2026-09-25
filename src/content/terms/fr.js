@@ -80,19 +80,31 @@ export default [
     "Vous êtes responsable de vos décisions, communications, comportements et de l’utilisation des informations obtenues par l’intermédiaire de One2OneLove. Les décisions concernant vos relations vous appartiennent. Faites preuve de discernement avant de partager des informations personnelles, de rencontrer quelqu’un, d’agir sur la base d’un conseil ou d’envoyer du contenu généré."
   ],
   [
-    "21. Modifications des présentes Conditions",
+    "21. Formules d’Abonnement, Aperçu Invité et Essai",
+    "One2OneLove propose un Aperçu Invité de 24 heures sans carte de paiement, suivi d’un essai facultatif de 7 jours avec Accès Complet nécessitant une carte de crédit ou de débit valide. Aucun frais d’abonnement n’est prélevé au début de l’essai. L’essai comprend l’accès aux fonctionnalités de niveau Exclusive mais n’inclut pas l’envoi de Notes d’Amour par SMS délivrées par One2OneLove. Sauf si vous choisissez Exclusive ou annulez avant la fin de l’essai, celui-ci se poursuit automatiquement avec un abonnement Premiere à 9,99 $ par mois. Exclusive coûte 19,99 $ par mois. Les prix d’abonnement sont indiqués en dollars américains sauf indication contraire."
+  ],
+  [
+    "22. Frais des Notes d’Amour par SMS",
+    "L’envoi de Notes d’Amour par SMS délivrées par One2OneLove n’est pas disponible pendant l’Aperçu Invité ni pendant l’essai de 7 jours. Après le premier paiement réussi de l’abonnement, le premier envoi de Note d’Amour par SMS délivré par One2OneLove est gratuit. Chaque envoi supplémentaire coûte 0,29 $. Les frais d’utilisation peuvent être regroupés et facturés au moyen de paiement enregistré. Le corps d’une Note d’Amour personnalisée est limité à 171 caractères. Les emojis ajoutés par l’utilisateur ne sont pas pris en charge dans le texte personnalisé ; le pied de marque SMS One2OneLove peut inclure le symbole ❤️. Les frais déjà engagés pour les Notes d’Amour envoyées restent dus, sauf disposition contraire de la loi applicable."
+  ],
+  [
+    "23. Annulation et Facturation",
+    "Vous pouvez annuler un abonnement payant à tout moment. Sauf obligation légale contraire ou indication expresse au paiement, l’annulation prend effet à la fin de la période de facturation en cours et empêche le prochain prélèvement récurrent. L’annulation n’annule pas les frais d’utilisation des Notes d’Amour déjà engagés ni les autres frais relatifs à des services déjà fournis."
+  ],
+  [
+    "24. Modifications des présentes Conditions",
     "Nous pouvons mettre à jour les présentes Conditions lorsque la plateforme évolue ou lorsque les exigences juridiques, opérationnelles ou de sécurité changent. La version en vigueur sera publiée dans One2OneLove. L’utilisation continue après l’entrée en vigueur d’une version mise à jour vaut acceptation des Conditions mises à jour lorsque la loi le permet."
   ],
   [
-    "22. Droit applicable",
+    "25. Droit applicable",
     "Les présentes Conditions sont régies par le droit applicable des États-Unis et, le cas échéant, par les lois de l’État du Texas, sans tenir compte des principes de conflit de lois, sauf lorsqu’une autre loi doit obligatoirement s’appliquer."
   ],
   [
-    "23. Divisibilité",
+    "26. Divisibilité",
     "Si une disposition des présentes Conditions est jugée inapplicable, les autres dispositions restent en vigueur dans toute la mesure permise par la loi."
   ],
   [
-    "24. Contact",
+    "27. Contact",
     "Les questions concernant les présentes Conditions ou la plateforme peuvent être envoyées à support@one2onelove.com."
   ],
   [
