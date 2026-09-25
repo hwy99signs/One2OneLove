@@ -142,6 +142,19 @@ export async function reserveLoveNoteSend(db, userId, sourceType, sourceId, quot
   };
 }
 
+export async function consumeLoveNoteReservation(db, userId, sourceId) {
+  const result = await db.query(
+    `UPDATE public.love_note_send_entitlements
+        SET status='consumed',updated_at=now()
+      WHERE source_id=$1::uuid
+        AND user_id=$2::uuid
+        AND status='reserved'
+      RETURNING id,quota_source,status`,
+    [sourceId, userId],
+  );
+  return result.rows[0] || null;
+}
+
 export async function releaseLoveNoteReservation(db, userId, sourceId) {
   await db.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`o2ol-love-notes:${userId}`]);
   const entitlement = await db.query(
@@ -230,7 +243,7 @@ export async function billReservedLoveNoteSend(env, db, userId, sourceId, attemp
     'POST',
     '/invoiceitems',
     params,
-    `o2ol-love-note-${sourceId}-attempt-${attempt}`,
+    `o2ol-love-note-${sourceId}`,
   );
 
   return {
