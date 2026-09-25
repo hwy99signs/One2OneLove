@@ -130,20 +130,19 @@ export const hasFeatureAccess = (feature, user) => {
   if (!user?.subscription_plan || !user?.stripe_subscription_id) return false;
   const status = String(user?.subscription_status || '').toLowerCase();
   if (!['active', 'trial', 'trialing'].includes(status)) return false;
-  const storedPlan = user.subscription_plan;
+  const stored = String(user.subscription_plan || '').toLowerCase();
+  const storedPlan = stored === 'exclusive' ? 'Exclusive' : 'Premiere';
   const effectivePlan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
   return featureAccess[effectivePlan]?.includes(feature) || false;
 };
 
-const basic = [
-  'love_notes_limited', 'basic_quizzes', 'date_ideas_limited',
-  'anniversary_reminders', 'memory_timeline', 'mobile_app', 'email_support',
-];
 const premiere = [
-  ...basic, 'love_notes_extended', 'ai_coach_limited', 'unlimited_date_ideas',
-  'goals_tracker', 'advanced_quizzes', 'surprise_messages', 'ad_free',
-  'priority_support', 'early_access',
+  'love_notes_limited', 'love_notes_extended', 'basic_quizzes', 'advanced_quizzes',
+  'date_ideas_limited', 'unlimited_date_ideas', 'anniversary_reminders', 'memory_timeline',
+  'mobile_app', 'email_support', 'ai_coach_limited', 'goals_tracker',
+  'surprise_messages', 'ad_free', 'priority_support', 'early_access',
 ];
+
 const exclusive = [
   ...premiere, 'unlimited_love_notes', 'unlimited_ai_coach', 'ai_content_creator',
   'personalized_reports', 'exclusive_community', 'expert_consultation',
@@ -151,7 +150,6 @@ const exclusive = [
 ];
 
 const featureAccess = {
-  Basic: basic,
   Premiere: premiere,
   Premier: premiere,
   Exclusive: exclusive,
