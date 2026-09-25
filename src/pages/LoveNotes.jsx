@@ -19,6 +19,9 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getAiConfig } from "@/lib/aiService";
 
+const LOVE_NOTE_MAX_CHARACTERS = 171;
+const clampLoveNote = (value) => Array.from(String(value || '')).slice(0, LOVE_NOTE_MAX_CHARACTERS).join('');
+
 const translations = {
   en: {
     title: "Love Notes Collection",
@@ -59,7 +62,7 @@ const translations = {
     personalizedFor: "Personalized for",
     recipientPhone: "Recipient's Phone Number",
     recipientPhonePlaceholder: "(555) 123-4567",
-    recipientPhoneDesc: "Standard messaging rates may apply",
+    recipientPhoneDesc: "One2OneLove SMS delivery: first send after your first paid subscription payment is FREE; each additional send is $0.29. Recipient carrier rates may apply.",
     schedulingOptions: "📅 Scheduling Options",
     sendNow: "Send Now",
     scheduleLater: "Schedule for Later",
@@ -75,7 +78,8 @@ const translations = {
     shareViaSocial: "📱 Or Share Via Social Media",
     pleaseEnterPhone: "Please enter recipient phone number",
     pleaseSelectDateTime: "Please select date and time for scheduling",
-    openingText: "Opening text message...",
+    openingText: "Love Note sent by One2OneLove.",
+    smsBillingPending: "Love Note delivered. The 29¢ usage charge is still being finalized.",
     openingWhatsApp: "Opening WhatsApp...",
     openingFacebook: "Opening Facebook...",
     copiedInstagram: "Copied! Paste in Instagram",
@@ -183,7 +187,8 @@ const translations = {
     howItWorksItem3: "• Recibirá un enlace para crear su propia cuenta",
     howItWorksItem4: "• ¡Perfecto para sorprender a tu pareja!",
     shareViaSocial: "📱 O Comparte por Redes Sociales",
-    openingText: "Abriendo mensaje de texto...",
+    openingText: "Nota de Amor enviada por One2OneLove.",
+    smsBillingPending: "Nota de Amor entregada. El cargo de uso de 29¢ aún se está finalizando.",
     openingWhatsApp: "Abriendo WhatsApp...",
     openingFacebook: "Abriendo Facebook...",
     copiedInstagram: "¡Copiado! Pega en Instagram",
@@ -191,7 +196,7 @@ const translations = {
     copiedTikTok: "¡Copiado! Pega en TikTok",
     openingLinkedIn: "Abriendo LinkedIn...",
     openingEmail: "Abriendo email...",
-    recipientPhoneDesc: "Pueden aplicarse tarifas de mensajería estándar",
+    recipientPhoneDesc: "Entrega SMS de One2OneLove: el primer envío después del primer pago de suscripción es GRATIS; cada envío adicional cuesta $0.29. Pueden aplicarse tarifas del operador del destinatario.",
     partnerNameDesc: 'Reemplaza "tú" y "tu" en las notas.',
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
@@ -295,7 +300,8 @@ const translations = {
     howItWorksItem3: "• Il recevra un lien pour créer son propre compte",
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
-    openingText: "Ouverture du message texte...",
+    openingText: "Note d’Amour envoyée par One2OneLove.",
+    smsBillingPending: "Note d’Amour livrée. Les frais d’utilisation de 0,29 $ sont encore en cours de finalisation.",
     openingWhatsApp: "Ouverture de WhatsApp...",
     openingFacebook: "Ouverture de Facebook...",
     copiedInstagram: "Copié! Coller dans Instagram",
@@ -303,7 +309,7 @@ const translations = {
     copiedTikTok: "Copié! Coller dans TikTok",
     openingLinkedIn: "Ouverture de LinkedIn...",
     openingEmail: "Ouverture de l'email...",
-    recipientPhoneDesc: "Des frais de messagerie standards peuvent s'appliquer",
+    recipientPhoneDesc: "Livraison SMS One2OneLove : le premier envoi après le premier paiement d’abonnement est GRATUIT ; chaque envoi supplémentaire coûte 0,29 $. Des frais opérateur peuvent s’appliquer au destinataire.",
     partnerNameDesc: 'Remplace "tu" et "ton" dans les notes.',
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
@@ -407,7 +413,8 @@ const translations = {
     howItWorksItem3: "• Riceverà un link per creare il proprio account",
     howItWorksItem4: "• Perfetto per sorprendere il tuo partner!",
     shareViaSocial: "📱 O Condividi Tramite Social Media",
-    openingText: "Apertura messaggio di testo...",
+    openingText: "Nota d’Amore inviata da One2OneLove.",
+    smsBillingPending: "Nota d’Amore consegnata. L’addebito di utilizzo di $0.29 è ancora in fase di finalizzazione.",
     openingWhatsApp: "Apertura WhatsApp...",
     openingFacebook: "Apertura Facebook...",
     copiedInstagram: "Copiato! Incolla su Instagram",
@@ -415,7 +422,7 @@ const translations = {
     copiedTikTok: "Copiato! Incolla su TikTok",
     openingLinkedIn: "Apertura LinkedIn...",
     openingEmail: "Apertura email...",
-    recipientPhoneDesc: "Potrebbero essere applicate tariffe di messaggistica standard",
+    recipientPhoneDesc: "Consegna SMS One2OneLove: il primo invio dopo il primo pagamento dell’abbonamento è GRATIS; ogni invio successivo costa $0.29. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
     partnerNameDesc: 'Sostituisce "tu" e "tuo" nelle note.',
     petNameDesc: 'Aggiunto alle note contenenti "amore".',
     specialPlaceDesc: "Aggiunto alle note di 'Ricordi'.",
@@ -519,7 +526,8 @@ const translations = {
     howItWorksItem3: "• Er erhält einen Link, um sein eigenes Konto zu erstellen",
     howItWorksItem4: "• Perfekt, um deinen Partner zu überraschen!",
     shareViaSocial: "📱 Oder Teilen über Social Media",
-    openingText: "Öffne SMS...",
+    openingText: "Liebesnachricht von One2OneLove gesendet.",
+    smsBillingPending: "Liebesnachricht zugestellt. Die Nutzungsgebühr von 0,29 $ wird noch abgeschlossen.",
     openingWhatsApp: "Öffne WhatsApp...",
     openingFacebook: "Öffne Facebook...",
     copiedInstagram: "Kopiert! In Instagram einfügen",
@@ -527,7 +535,7 @@ const translations = {
     copiedTikTok: "Kopiert! In TikTok einfügen",
     openingLinkedIn: "Öffne LinkedIn...",
     openingEmail: "Öffne E-Mail...",
-    recipientPhoneDesc: "Es können Standard-Nachrichtengebühren anfallen",
+    recipientPhoneDesc: "One2OneLove-SMS-Zustellung: Die erste Sendung nach der ersten erfolgreichen Abonnementzahlung ist KOSTENLOS; jede weitere Sendung kostet 0,29 $. Beim Empfänger können Mobilfunkgebühren anfallen.",
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
@@ -1001,14 +1009,14 @@ export default function LoveNotes() {
     }
 
     if (petName && personalizedContent.toLowerCase().includes('love')) {
-      personalizedContent += ` ${petName} 💕`;
+      personalizedContent += ` ${petName}.`;
     }
 
     if (specialPlace && note.category === 'memories') {
-      personalizedContent += ` Remember our time at ${specialPlace}? ✨`;
+      personalizedContent += ` Remember our time at ${specialPlace}?`;
     }
 
-    return { ...note, title: personalizedTitle, content: personalizedContent };
+    return { ...note, title: personalizedTitle, content: clampLoveNote(personalizedContent) };
   };
 
   const displayedNotes = useMemo(() => {
@@ -1058,12 +1066,13 @@ export default function LoveNotes() {
   };
 
   const handleAIGeneratedNote = (generatedNote) => {
-    // Add a unique ID and category for the AI-generated note
+    const rawContent = typeof generatedNote === 'string' ? generatedNote : generatedNote?.content || '';
+    const sanitizedContent = clampLoveNote(rawContent.replace(/\p{Extended_Pictographic}/gu, '').trim());
     const aiNote = {
       id: `ai-${Date.now()}`,
       title: t.aiGeneratedNote,
-      content: generatedNote,
-      category: 'special', // Or a new 'ai' category if desired
+      content: sanitizedContent,
+      category: 'special',
       tags: ['AI', 'Generated'],
     };
     setSelectedNote(aiNote);
@@ -1128,40 +1137,39 @@ export default function LoveNotes() {
   };
 
   const handleSendVia = async (note, method) => {
-    const text = `${note.title}\n\n${note.content}\n\n❤️ One2OneLove`;
+    const text = `${note.title}\n\n${note.content}\n\n❤️ From One 2 One Love`;
+    let currentRecipientPhoneInput = '';
+    const targetPlatformIdentifier = method;
 
-    if (method === 'text') {
-      if (!recipientPhone.trim()) {
+    if (method === 'text' || (method === 'whatsapp' && recipientPhone.trim())) {
+      if (method === 'text' && !recipientPhone.trim()) {
         toast.error(t.pleaseEnterPhone);
         return;
       }
-      if (!scheduledSmsReady) {
-        toast.error(loveNoteUsage?.smsSendingMessage || t.limitSMS);
-        return;
-      }
+      currentRecipientPhoneInput = recipientPhone;
+    }
+
+    const limitCheckResult = checkLimitBeforeSend(method, currentRecipientPhoneInput, targetPlatformIdentifier);
+    if (limitCheckResult === null) return;
+
+    if (method === 'text') {
       try {
         const result = await sendLoveNoteSms({
           note_title: note.title,
           note_content: note.content,
           recipient_phone: recipientPhone,
         });
-        toast.success(result?.billing?.free ? t.freeFirstSend : t.openingText);
-        setSendModalNote(null);
-        setRecipientPhone('');
         queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
         queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
+        toast.success(t.openingText);
+        if (result?.billing?.billingPending) toast.message(t.smsBillingPending);
+        setSendModalNote(null);
+        setRecipientPhone('');
       } catch (error) {
         toast.error(error?.message || t.limitSMS);
       }
       return;
     }
-
-    let currentRecipientPhoneInput = '';
-    const targetPlatformIdentifier = method;
-    if (method === 'whatsapp' && recipientPhone.trim()) currentRecipientPhoneInput = recipientPhone;
-
-    const limitCheckResult = checkLimitBeforeSend(method, currentRecipientPhoneInput, targetPlatformIdentifier);
-    if (limitCheckResult === null) return;
 
     if (currentUser && limitCheckResult.type !== 'guest') {
       await sendNoteMutation.mutateAsync({
@@ -1810,6 +1818,9 @@ export default function LoveNotes() {
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {sendModalNote.content}
                   </p>
+                  <div className="mt-2 text-right text-xs text-gray-500">
+                    {Array.from(sendModalNote.content || '').length}/{LOVE_NOTE_MAX_CHARACTERS}
+                  </div>
                 </div>
 
                 <div>
