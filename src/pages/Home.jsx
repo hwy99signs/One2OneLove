@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
@@ -49,8 +49,6 @@ export default function Home() {
   const t = COPY[currentLanguage] || COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
   const [publicStats, setPublicStats] = useState(null);
-  const heroRef = useRef(null);
-  const [glarePatch, setGlarePatch] = useState({ x: 0, y: 0, radius: 0 });
   const go = page => navigate(createPageUrl(page));
 
   useEffect(() => {
@@ -60,39 +58,6 @@ export default function Home() {
       .then(payload => { if (active && payload?.ok) setPublicStats(payload); })
       .catch(() => {});
     return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return undefined;
-
-    const syncGlarePatch = () => {
-      const width = hero.clientWidth || 1;
-      const height = hero.clientHeight || 1;
-      const renderedSize = Math.max(width, height);
-      const scale = renderedSize / 512;
-      const offsetX = (renderedSize - width) / 2;
-      const offsetY = (renderedSize - height) / 2;
-
-      // Source-image coordinates for the sun hotspot beside the woman's upper right arm.
-      setGlarePatch({
-        x: (248 * scale) - offsetX,
-        y: (218 * scale) - offsetY,
-        radius: 34 * scale,
-      });
-    };
-
-    syncGlarePatch();
-    const resizeObserver = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(syncGlarePatch)
-      : null;
-    resizeObserver?.observe(hero);
-    window.addEventListener('resize', syncGlarePatch);
-
-    return () => {
-      resizeObserver?.disconnect();
-      window.removeEventListener('resize', syncGlarePatch);
-    };
   }, []);
 
   const heroStats = [
@@ -106,22 +71,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
-      <section ref={heroRef} className="relative flex min-h-[900px] items-end justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
-        {glarePatch.radius > 0 && (() => {
-          const mask = `radial-gradient(circle ${glarePatch.radius}px at ${glarePatch.x}px ${glarePatch.y}px, #000 0%, rgba(0,0,0,0.96) 38%, rgba(0,0,0,0.60) 68%, transparent 100%)`;
-          return (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${HERO})`,
-                filter: 'brightness(0.58) saturate(1.16) sepia(0.10)',
-                WebkitMaskImage: mask,
-                maskImage: mask,
-              }}
-            />
-          );
-        })()}
+      <section className="relative flex min-h-[900px] items-end justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
         <div className="absolute inset-0 bg-black/10"/>
         <div className="relative z-10 mx-auto max-w-5xl px-6 pb-8 pt-8 text-center text-white">
           <div className="mt-2 text-3xl font-black italic text-yellow-300 drop-shadow md:text-4xl">{t.slogan}</div>
