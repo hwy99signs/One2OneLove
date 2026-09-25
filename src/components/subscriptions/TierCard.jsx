@@ -31,12 +31,14 @@ function preferredLanguage() {
   try {
     const value = localStorage.getItem('preferredLanguage') || 'en';
     return ACTIVE_CHANGE_COPY[value] ? value : 'en';
-  } catch (_) { return 'en'; }
+  } catch (_) {
+    return 'en';
+  }
 }
 
 const TIER_SELECTED_EVENT = 'o2ol-tier-selected';
 
-export default function TierCard({ tier, index, onSelect, isSelected, showPayment = false, labels = {} }) {
+export default function TierCard({ tier, onSelect, isSelected, showPayment = false, labels = {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isHighlighted, setIsHighlighted] = useState(Boolean(isSelected));
   const copy = { ...defaultLabels, ...labels };
@@ -48,45 +50,36 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
   }, [isSelected]);
 
   useEffect(() => {
-    const handleTierSelected = (event) => {
-      setIsHighlighted(event.detail === tier.name);
-    };
-
+    const handleTierSelected = (event) => setIsHighlighted(event.detail === tier.name);
     window.addEventListener(TIER_SELECTED_EVENT, handleTierSelected);
     return () => window.removeEventListener(TIER_SELECTED_EVENT, handleTierSelected);
   }, [tier.name]);
 
   const selectThisTier = () => {
     window.dispatchEvent(new CustomEvent(TIER_SELECTED_EVENT, { detail: tier.name }));
-    if (onSelect) onSelect(tier);
+    onSelect?.(tier);
   };
 
   const handleChoosePlan = async () => {
     selectThisTier();
-
     if (tier.checkoutDisabled || pricingPending) return;
-
-    if (onSelect && !showPayment) {
-      return;
-    }
+    if (onSelect && !showPayment) return;
 
     if (showPayment) {
       setIsProcessing(true);
       try {
-        const planData = {
+        const result = await handleSubscriptionCheckout({
           name: tier.name,
           price: tier.price || 0,
           priceId: tier.priceId || `price_${tier.name.toLowerCase()}`,
-        };
+        });
 
-        const result = await handleSubscriptionCheckout(planData);
         if (!result.success) {
           if (result.code === 'active_plan_change_policy_pending') {
             toast.info(ACTIVE_CHANGE_COPY[preferredLanguage()] || ACTIVE_CHANGE_COPY.en, { duration: 7000 });
           } else {
             toast.error(result.error || copy.paymentFailed);
           }
-          setIsProcessing(false);
           return;
         }
 
@@ -110,9 +103,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
     <div className="h-full">
       <Card
         onClick={selectThisTier}
-        className={`relative h-full flex flex-col cursor-pointer border-2 transition-all duration-300 hover:shadow-2xl hover:border-purple-200 ${
-          isHighlighted ? 'ring-4 ring-purple-500 ring-offset-2' : ''
-        }`}
+        className={`relative h-full flex flex-col cursor-pointer border-2 transition-all duration-300 hover:shadow-2xl hover:border-purple-200 ${isHighlighted ? 'ring-4 ring-purple-500 ring-offset-2' : ''}`}
       >
         {tier.popular && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
@@ -140,7 +131,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
                 <span className="text-5xl font-bold text-green-600">{copy.free}</span>
               ) : (
                 <>
-                  <span className="text-5xl font-bold text-gray-900">{'US
+                  <span className="text-5xl font-bold text-gray-900">USundefined</span>
                   <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
                 </>
               )}
@@ -164,59 +155,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
               handleChoosePlan();
             }}
             disabled={isProcessing}
-            className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${
-              tier.popular
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
-                : 'bg-gray-800 hover:bg-gray-900 text-white'
-            }`}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                {copy.processing}
-              </>
-            ) : isHighlighted ? (
-              `✓ ${copy.selected}`
-            ) : pricingPending || tier.checkoutDisabled ? (
-              copy.pricingPendingButton
-            ) : (
-              `${copy.choose} ${displayName}`
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
- + tier.price}</span>
-                  <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
-                </>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="flex-grow flex flex-col">
-          <ul className="space-y-3 mb-6 flex-grow">
-            {tier.features.map((feature, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700 text-sm">{feature}</span>
-              </li>
-            ))}
-          </ul>
-
-          <Button
-            onClick={(event) => {
-              event.stopPropagation();
-              handleChoosePlan();
-            }}
-            disabled={isProcessing}
-            className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${
-              tier.popular
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
-                : 'bg-gray-800 hover:bg-gray-900 text-white'
-            }`}
+            className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${tier.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg' : 'bg-gray-800 hover:bg-gray-900 text-white'}`}
           >
             {isProcessing ? (
               <>
