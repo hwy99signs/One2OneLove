@@ -13,11 +13,11 @@ const planMeta = {
 };
 
 const translations = {
-  en: { currentPlan: 'Current Plan', guest: 'Guest Preview', trial: 'Full Access Trial', viewPlans: 'View Plans & Billing Terms', planFeatures: 'Plan Features', perMonth: 'per month', moreFeatures: 'more features' },
-  es: { currentPlan: 'Plan Actual', guest: 'Vista Previa de Invitado', trial: 'Prueba de Acceso Completo', viewPlans: 'Ver Planes y Condiciones de Facturación', planFeatures: 'Características del Plan', perMonth: 'por mes', moreFeatures: 'funciones más' },
-  fr: { currentPlan: 'Plan Actuel', guest: 'Aperçu Invité', trial: 'Essai Accès Complet', viewPlans: 'Voir les Formules et Conditions de Facturation', planFeatures: 'Fonctionnalités du Plan', perMonth: 'par mois', moreFeatures: 'fonctionnalités supplémentaires' },
-  it: { currentPlan: 'Piano Attuale', guest: 'Anteprima Ospite', trial: 'Prova Accesso Completo', viewPlans: 'Vedi Piani e Condizioni di Fatturazione', planFeatures: 'Caratteristiche del Piano', perMonth: 'al mese', moreFeatures: 'altre funzionalità' },
-  de: { currentPlan: 'Aktueller Plan', guest: 'Gastvorschau', trial: 'Vollzugriff-Test', viewPlans: 'Tarife & Abrechnungsbedingungen Anzeigen', planFeatures: 'Plan-Funktionen', perMonth: 'pro Monat', moreFeatures: 'weitere Funktionen' },
+  en: { currentPlan: 'Current Plan', guest: 'Guest Preview — View Only', trial: 'Full Access Trial', viewPlans: 'View Plans & Billing Terms', planFeatures: 'Plan Features', perMonth: 'per month', moreFeatures: 'more features' },
+  es: { currentPlan: 'Plan Actual', guest: 'Vista Previa — Solo Ver', trial: 'Prueba de Acceso Completo', viewPlans: 'Ver Planes y Condiciones de Facturación', planFeatures: 'Características del Plan', perMonth: 'por mes', moreFeatures: 'funciones más' },
+  fr: { currentPlan: 'Plan Actuel', guest: 'Aperçu Invité — Consultation Uniquement', trial: 'Essai Accès Complet', viewPlans: 'Voir les Formules et Conditions de Facturation', planFeatures: 'Fonctionnalités du Plan', perMonth: 'par mois', moreFeatures: 'fonctionnalités supplémentaires' },
+  it: { currentPlan: 'Piano Attuale', guest: 'Anteprima Ospite — Solo Visualizzazione', trial: 'Prova Accesso Completo', viewPlans: 'Vedi Piani e Condizioni di Fatturazione', planFeatures: 'Caratteristiche del Piano', perMonth: 'al mese', moreFeatures: 'altre funzionalità' },
+  de: { currentPlan: 'Aktueller Plan', guest: 'Gastvorschau — Nur Ansehen', trial: 'Vollzugriff-Test', viewPlans: 'Tarife & Abrechnungsbedingungen Anzeigen', planFeatures: 'Plan-Funktionen', perMonth: 'pro Monat', moreFeatures: 'weitere Funktionen' },
 };
 
 function previewActive(user) {
@@ -39,7 +39,7 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
 
   const heading = isGuest ? t.guest : isTrial ? t.trial : planCopy.displayName;
   const priceLabel = isGuest ? '24 hours' : isTrial ? '7 days' : `$${planInfo.price}`;
-  const priceSub = isGuest ? 'no card required' : isTrial ? 'no charge today' : t.perMonth;
+  const priceSub = isGuest ? 'view only · no card required' : isTrial ? 'subscription price not charged today' : t.perMonth;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
