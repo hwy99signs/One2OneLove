@@ -45,11 +45,12 @@ export const subscriptionPlanCopy = {
           'Couples Profile',
           'Couples Dashboard',
           'Full Relationship Support Hub',
-          'First paid-member SMS Love Note send FREE; additional sends $0.29 each'
+          'First SMS Love Note send FREE during the trial; additional sends $0.29 each'
         ]
       }
     }
   },
+
   es: {
     subtitle: 'Comienza con una Vista Previa de Invitado de 24 horas solo para ver y luego obtén 7 días de Acceso Completo antes de iniciar el plan de pago.',
     terms: {
@@ -67,10 +68,11 @@ export const subscriptionPlanCopy = {
       Exclusive: {
         displayName: 'Exclusive',
         description: 'La experiencia de relación One2OneLove más completa',
-        features: ['Todas las categorías de Notas de Amor','Ideas de Cita ilimitadas','Todo lo de Premiere, más:','Coach de Relación con IA ilimitado','Creador de Contenido con IA','Biblioteca completa de Relaciones','Perfil de Pareja','Panel de Pareja','Centro completo de Apoyo para Relaciones','Primer envío SMS de Nota de Amor para miembros de pago GRATIS; envíos adicionales $0.29 cada uno']
+        features: ['Todas las categorías de Notas de Amor','Ideas de Cita ilimitadas','Todo lo de Premiere, más:','Coach de Relación con IA ilimitado','Creador de Contenido con IA','Biblioteca completa de Relaciones','Perfil de Pareja','Panel de Pareja','Centro completo de Apoyo para Relaciones','Primer envío SMS de Nota de Amor GRATIS durante la prueba; envíos adicionales $0.29 cada uno']
       }
     }
   },
+
   fr: {
     subtitle: 'Commencez par un Aperçu Invité de 24 heures en consultation uniquement, puis profitez de 7 jours d’Accès Complet avant le début du forfait payant.',
     terms: {
@@ -88,15 +90,16 @@ export const subscriptionPlanCopy = {
       Exclusive: {
         displayName: 'Exclusive',
         description: 'L’expérience relationnelle One2OneLove la plus complète',
-        features: ['Toutes les catégories de Notes d’Amour','Idées de Rendez-vous illimitées','Tout ce qui est inclus dans Premiere, plus :','Coach Relationnel IA illimité','Créateur de Contenu IA','Bibliothèque Relationnelle complète','Profil du Couple','Tableau de Bord du Couple','Centre complet de Soutien Relationnel','Premier envoi SMS de Note d’Amour pour membre payant GRATUIT ; envois supplémentaires 0,29 $ chacun']
+        features: ['Toutes les catégories de Notes d’Amour','Idées de Rendez-vous illimitées','Tout ce qui est inclus dans Premiere, plus :','Coach Relationnel IA illimité','Créateur de Contenu IA','Bibliothèque Relationnelle complète','Profil du Couple','Tableau de Bord du Couple','Centre complet de Soutien Relationnel','Premier envoi SMS de Note d’Amour GRATUIT pendant l’essai ; envois supplémentaires 0,29 $ chacun']
       }
     }
   },
+
   it: {
     subtitle: 'Inizia con un’Anteprima Ospite di 24 ore solo visualizzazione, poi ottieni 7 giorni di Accesso Completo prima dell’inizio del piano a pagamento.',
     terms: {
       guest: 'Anteprima Ospite di 24 ore — nessuna carta richiesta. Questo periodo è SOLO VISUALIZZAZIONE: puoi vedere schermate e contenuti One2OneLove, ma non puoi usare le funzioni. Crea un account per avviare il timer di 24 ore.',
-      trial: 'Prova di 7 giorni con Accesso Completo — carta richiesta. Oggi non viene addebitato il prezzo dell’abbonamento. La prova include accesso completo di livello Exclusive. Il primo invio SMS di una Nota d’Amore One2OneLove è GRATIS; ogni invio successivo costa $0.29 e viene addebitato al metodo di pagamento registrato. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese, salvo scelta di Exclusive o annullamento prima della fine della prova.',
+      trial: 'Prova di 7 giorni con Accesso Completo — carta richiesta. Oggi non viene addebitato il prezzo dell’abbonamento. La prova include accesso completo di livello Exclusive. Il primo invio SMS di una Nota d’Amore One2OneLove è GRATIS; ogni invio successivo costa $0.29 e viene addebitato al metodo di pagamento registrato. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.',
       loveNotes: 'Durante la prova di Accesso Completo di 7 giorni, il primo invio SMS di una Nota d’Amore One2OneLove è GRATIS. Ogni invio successivo costa $0.29 e viene addebitato al metodo di pagamento registrato. Gli addebiti di utilizzo possono essere raggruppati. Il corpo di una Nota d’Amore personalizzata è limitato a 171 caratteri. Gli emoji aggiunti dall’utente non sono supportati; il footer brandizzato One2OneLove include ❤️.',
       cancel: 'Puoi annullare in qualsiasi momento. L’annullamento ha effetto alla fine del periodo di fatturazione corrente. Gli addebiti per Note d’Amore già inviate restano dovuti.'
     },
@@ -109,10 +112,11 @@ export const subscriptionPlanCopy = {
       Exclusive: {
         displayName: 'Exclusive',
         description: 'L’esperienza relazionale One2OneLove più completa',
-        features: ['Tutte le categorie di Note d’Amore','Idee per Appuntamenti illimitate','Tutto di Premiere, più:','Coach Relazionale IA illimitato','Creatore di Contenuti IA','Biblioteca Relazionale completa','Profilo di Coppia','Dashboard di Coppia','Centro completo di Supporto Relazionale','Primo invio SMS di Nota d’Amore per membro pagante GRATIS; invii aggiuntivi $0.29 ciascuno']
+        features: ['Tutte le categorie di Note d’Amore','Idee per Appuntamenti illimitate','Tutto di Premiere, più:','Coach Relazionale IA illimitato','Creatore di Contenuti IA','Biblioteca Relazionale completa','Profilo di Coppia','Dashboard di Coppia','Centro completo di Supporto Relazionale','Primo invio SMS di Nota d’Amore GRATIS durante la prova; invii aggiuntivi $0.29 ciascuno']
       }
     }
   },
+
   de: {
     subtitle: 'Starten Sie mit einer 24-stündigen Gastvorschau nur zum Ansehen und erhalten Sie danach 7 Tage Vollzugriff, bevor der kostenpflichtige Tarif beginnt.',
     terms: {
@@ -125,22 +129,12 @@ export const subscriptionPlanCopy = {
       Premiere: {
         displayName: 'Premiere',
         description: 'Das vollständige Toolkit für den Beziehungsalltag',
-        features: ['Wähle 18 Liebesnachrichten-Kategorien','8 Date-Ideen pro Monat','Beziehungsquiz','Liebessprachen-Quiz','Jahrestags-Tracker','Memory Lane','Community Chat','Einladen & Teilen','Beziehungsziele','Paarkalender','Geteilte Tagebücher','Beziehungsmeilensteine','Kommunikationsübungen','Paaraktivitäten','Beziehungs-Podcast-Bibliothek','LGBTQ+ Beziehungsunterstützung','KI-Beziehungscoach — bis zu 50 Fragen pro Monat','Erste SMS-Liebesnachricht während des Tests KOSTENLOS; weitere Sendungen je 0,29 ]
+        features: ['Wähle 18 Liebesnachrichten-Kategorien','8 Date-Ideen pro Monat','Beziehungsquiz','Liebessprachen-Quiz','Jahrestags-Tracker','Memory Lane','Community Chat','Einladen & Teilen','Beziehungsziele','Paarkalender','Geteilte Tagebücher','Beziehungsmeilensteine','Kommunikationsübungen','Paaraktivitäten','Beziehungs-Podcast-Bibliothek','LGBTQ+ Beziehungsunterstützung','KI-Beziehungscoach — bis zu 50 Fragen pro Monat','Erste SMS-Liebesnachricht während des Tests KOSTENLOS; weitere Sendungen je 0,29 $']
       },
       Exclusive: {
         displayName: 'Exclusive',
         description: 'Das umfassendste One2OneLove-Beziehungserlebnis',
-        features: ['Alle Liebesnachrichten-Kategorien','Unbegrenzte Date-Ideen','Alles aus Premiere, plus:','Unbegrenzter KI-Beziehungscoach','KI-Content Creator','Vollständige Beziehungsbibliothek','Paarprofil','Paar-Dashboard','Vollständiger Beziehungs-Support-Hub','Erste SMS-Liebesnachricht für zahlende Mitglieder GRATIS; weitere Sendungen je 0,29 $']
-      }
-    }
-  }
-};
-]
-      },
-      Exclusive: {
-        displayName: 'Exclusive',
-        description: 'Das umfassendste One2OneLove-Beziehungserlebnis',
-        features: ['Alle Liebesnachrichten-Kategorien','Unbegrenzte Date-Ideen','Alles aus Premiere, plus:','Unbegrenzter KI-Beziehungscoach','KI-Content Creator','Vollständige Beziehungsbibliothek','Paarprofil','Paar-Dashboard','Vollständiger Beziehungs-Support-Hub','Erste SMS-Liebesnachricht für zahlende Mitglieder GRATIS; weitere Sendungen je 0,29 $']
+        features: ['Alle Liebesnachrichten-Kategorien','Unbegrenzte Date-Ideen','Alles aus Premiere, plus:','Unbegrenzter KI-Beziehungscoach','KI-Content Creator','Vollständige Beziehungsbibliothek','Paarprofil','Paar-Dashboard','Vollständiger Beziehungs-Support-Hub','Erste SMS-Liebesnachricht während des Tests KOSTENLOS; weitere Sendungen je 0,29 $']
       }
     }
   }
