@@ -35,7 +35,7 @@ import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
-import { enforceGuestPreviewReadOnly } from './guest-preview';
+import { enforceGuestPreviewReadOnly, handleGuestPreviewStatusRequest } from './guest-preview';
 
 export default {
   async fetch(request, env, ctx) {
@@ -53,6 +53,11 @@ export default {
 
     if (url.pathname.startsWith('/api/phone-verification')) {
       const response = await handlePhoneVerificationRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/guest-preview/status') {
+      const response = await handleGuestPreviewStatusRequest(request, env, url);
       if (response) return response;
     }
 
