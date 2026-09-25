@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { accountGuestPreviewStatus } from './guest-preview';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -113,13 +114,9 @@ export async function enforceApiEntitlement(request, env, url) {
     if (row.role === 'admin') return null;
 
     const status = String(row.subscription_status || '').toLowerCase();
-    const createdAt = row.created_at ? new Date(row.created_at).getTime() : NaN;
-    const guestPreviewActive = !row.stripe_subscription_id &&
-      Number.isFinite(createdAt) &&
-      createdAt > 0 &&
-      Date.now() < createdAt + 24 * 60 * 60 * 1000;
+    const guestPreview = await accountGuestPreviewStatus(request, env, { startIfEligible:true });
 
-    if (guestPreviewActive) {
+    if (guestPreview.active) {
       if (['GET','HEAD'].includes(request.method.toUpperCase())) return null;
       return json({
         ok: false,
