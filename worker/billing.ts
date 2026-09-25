@@ -180,7 +180,7 @@ async function updateFromSubscription(db, userId, subscription, planOverride = n
 async function checkout(db, env, request, auth, input) {
   const startTrial = Boolean(input?.startTrial || input?.start_trial);
   const requestedPlan = canonicalPlan(input?.planName || input?.plan_name || input?.plan);
-  const plan = startTrial ? 'Premiere' : requestedPlan;
+  const plan = startTrial ? (requestedPlan || 'Premiere') : requestedPlan;
   if (!PAID_PLANS.has(plan)) return fail('Choose Premiere or Exclusive for paid checkout.');
   const priceId = stripePriceForPlan(env, plan);
   if (!priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
@@ -390,7 +390,8 @@ export async function handleBillingRequest(request, env, url) {
         return json({ ok: true, payments: result.rows });
       }
       if (url.pathname === '/api/billing/trial' && request.method === 'POST') {
-        return checkout(db, env, request, auth, { planName: 'Premiere', startTrial: true });
+        const billingUser = await getBillingUser(db, auth.user.id);
+        return checkout(db, env, request, auth, { planName: canonicalPlan(billingUser.subscription_plan) || 'Premiere', startTrial: true });
       }
       if (url.pathname === '/api/billing/checkout' && request.method === 'POST') {
         return checkout(db, env, request, auth, await readJson(request));
