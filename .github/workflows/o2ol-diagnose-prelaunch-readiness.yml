@@ -17,27 +17,29 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - name: Capture Worker exception and readiness responses
+      - name: Capture Worker exception and endpoint responses
         shell: bash
         run: |
           set -u
-          rm -f /tmp/tail.log /tmp/health.txt /tmp/readiness.txt /tmp/launchreadiness.txt
-          timeout 25s npx --yes wrangler@latest tail one2onelove-prelaunch --format=json > /tmp/tail.log 2>&1 &
+          rm -f ./tail.log
+          timeout 40s npx --yes wrangler@latest tail one2onelove-prelaunch --format=json > ./tail.log 2>&1 &
           TAIL_PID=$!
-          sleep 6
+          sleep 12
 
-          for path in /api/health /api/launch-signup/readiness /api/launch-readiness; do
-            safe=$(printf '%s' "$path" | tr '/' '_')
-            code=$(curl -sS --max-time 20 -o "/tmp${safe}.txt" -w '%{http_code}' "https://one2onelove-prelaunch.hwy99signs.workers.dev$path" || true)
-            echo "=== $path HTTP=$code ==="
-            cat "/tmp${safe}.txt" || true
-            echo
-          done
+          echo "=== HEALTH ==="
+          curl -sS -i --max-time 20 "https://one2onelove-prelaunch.hwy99signs.workers.dev/api/health" || true
+          echo
+          echo "=== SIGNUP READINESS ==="
+          curl -sS -i --max-time 20 "https://one2onelove-prelaunch.hwy99signs.workers.dev/api/launch-signup/readiness" || true
+          echo
+          echo "=== CANONICAL READINESS ==="
+          curl -sS -i --max-time 20 "https://one2onelove-prelaunch.hwy99signs.workers.dev/api/launch-readiness" || true
+          echo
 
-          sleep 5
+          sleep 8
           kill "$TAIL_PID" 2>/dev/null || true
           wait "$TAIL_PID" 2>/dev/null || true
 
           echo "=== WORKER TAIL ==="
-          cat /tmp/tail.log || true
+          cat ./tail.log || true
           exit 0
