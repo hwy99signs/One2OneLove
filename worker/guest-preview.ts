@@ -20,6 +20,7 @@ function bypassPath(url) {
   if (path.startsWith('/api/launch-signup')) return true;
   if (path.startsWith('/api/admin')) return true;
   if (path === '/api/feature-usage') return true;
+  if (path === '/api/guest-preview/status') return true;
   if (path === '/api/billing/webhook') return true;
   if (path === '/api/billing/checkout') return true;
   if (path === '/api/billing/trial') return true;
@@ -40,15 +41,28 @@ async function session(request, env) {
   return user?.id && user?.emailVerified === true && active ? { user, session: active } : null;
 }
 
-export async function accountGuestPreviewStatus(request, env) {
+async function ensurePreviewTable(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.guest_preview_sessions (
+      user_id uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+      started_at timestamptz NOT NULL DEFAULT now(),
+      expires_at timestamptz NOT NULL DEFAULT (now() + interval '24 hours'),
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+}
+
+export async function accountGuestPreviewStatus(request, env, { startIfEligible = true } = {}) {
   const auth = await session(request, env);
-  if (!auth) return { active:false, auth:null, profile:null };
+  if (!auth) return { active:false, auth:null, profile:null, startedAt:null, expiresAt:null };
 
   const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
   await db.connect();
   try {
+    await ensurePreviewTable(db);
+
     const result = await db.query(
-      `SELECT p.created_at,p.subscription_status,p.stripe_subscription_id,
+      `SELECT p.subscription_status,p.stripe_subscription_id,
               COALESCE(p.is_active,true) AS is_active,
               COALESCE(a.banned,false) AS banned
          FROM public.users p
@@ -58,16 +72,59 @@ export async function accountGuestPreviewStatus(request, env) {
       [auth.user.id],
     );
     const profile = result.rows[0] || null;
-    if (!profile || profile.banned || profile.is_active === false) return { active:false, auth, profile };
+    if (!profile || profile.banned || profile.is_active === false) {
+      return { active:false, auth, profile, startedAt:null, expiresAt:null };
+    }
 
-    const status = String(profile.subscription_status || '').toLowerCase();
-    const paid = Boolean(profile.stripe_subscription_id && ['active','trial','trialing'].includes(status));
-    const createdAt = profile.created_at ? new Date(profile.created_at).getTime() : NaN;
-    const active = !paid && Number.isFinite(createdAt) && createdAt > 0 && Date.now() < createdAt + 24 * 60 * 60 * 1000;
-    return { active, auth, profile };
+    const subscriptionStatus = String(profile.subscription_status || '').toLowerCase();
+    const paid = Boolean(profile.stripe_subscription_id && ['active','trial','trialing'].includes(subscriptionStatus));
+    if (paid) return { active:false, auth, profile, startedAt:null, expiresAt:null };
+
+    if (startIfEligible) {
+      await db.query(
+        `INSERT INTO public.guest_preview_sessions(user_id)
+         VALUES($1::uuid)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [auth.user.id],
+      );
+    }
+
+    const previewResult = await db.query(
+      `SELECT started_at,expires_at,(expires_at > now()) AS active
+         FROM public.guest_preview_sessions
+        WHERE user_id=$1::uuid
+        LIMIT 1`,
+      [auth.user.id],
+    );
+    const preview = previewResult.rows[0] || null;
+    return {
+      active: preview?.active === true,
+      auth,
+      profile,
+      startedAt: preview?.started_at || null,
+      expiresAt: preview?.expires_at || null,
+    };
   } finally {
     await db.end();
   }
+}
+
+export async function handleGuestPreviewStatusRequest(request, env, url) {
+  if (url.pathname !== '/api/guest-preview/status') return null;
+  if (request.method !== 'GET') return json({ ok:false, error:{ code:'method_not_allowed', message:'Method not allowed.' } }, 405);
+
+  const status = await accountGuestPreviewStatus(request, env, { startIfEligible:true });
+  if (!status.auth) return json({ ok:false, error:{ code:'unauthorized', message:'Sign in required.' } }, 401);
+
+  return json({
+    ok:true,
+    guestPreview:{
+      active:status.active,
+      startedAt:status.startedAt,
+      expiresAt:status.expiresAt,
+      mode:'view_only',
+    },
+  });
 }
 
 export async function enforceGuestPreviewReadOnly(request, env, url) {
@@ -75,7 +132,7 @@ export async function enforceGuestPreviewReadOnly(request, env, url) {
   if (!WRITE_METHODS.has(request.method.toUpperCase())) return null;
   if (bypassPath(url)) return null;
 
-  const status = await accountGuestPreviewStatus(request, env);
+  const status = await accountGuestPreviewStatus(request, env, { startIfEligible:true });
   if (!status.active) return null;
 
   return json({
