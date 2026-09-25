@@ -75,7 +75,7 @@ function PreviewReadOnly({ children }) {
           </a>
         </div>
       </div>
-      <div className="pointer-events-none select-text" aria-label={copy.title}>
+      <div className="pointer-events-none select-text" aria-label={copy.title} inert="">
         {children}
       </div>
     </div>
