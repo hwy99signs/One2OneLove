@@ -116,6 +116,16 @@ export async function enforceApiEntitlement(request, env, url) {
       return json({ ok: false, error: { code: 'billing_required', message: 'Your 24-hour Guest Preview has ended. Start the 7-day Full Access trial or subscribe to continue.' } }, 402);
     }
 
+    if (guestPreview && !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())) {
+      return json({
+        ok: false,
+        error: {
+          code: 'guest_preview_read_only',
+          message: 'The 24-hour Guest Preview is view-only. Start the 7-day Full Access trial to use One2OneLove features.',
+        },
+      }, 403);
+    }
+
     const effectiveLevel = guestPreview || ['trial', 'trialing'].includes(status)
       ? 2
       : planLevel(row.subscription_plan);
