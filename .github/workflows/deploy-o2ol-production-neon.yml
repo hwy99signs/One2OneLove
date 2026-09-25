@@ -119,7 +119,8 @@ jobs:
           grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
           grep -F "const plan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;" worker/ai.ts >/dev/null
           grep -F "guest_preview_expires_at" worker/billing.ts >/dev/null
-          grep -F "AccessCountdown" src/pages/Subscription.jsx >/dev/null
+          grep -F "formatPreviewTime" src/pages/Subscription.jsx >/dev/null
+          grep -F "guestPreviewRemainingMs" src/pages/Subscription.jsx >/dev/null
 
       - name: Verify production deployment isolation
         shell: bash
