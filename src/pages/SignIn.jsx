@@ -31,16 +31,13 @@ export default function SignIn() {
     if (result?.success) {
       toast.success(t.signIn.success);
       const role = String(result?.user?.role || '').toLowerCase();
-      const status = String(result?.user?.subscription_status || '').toLowerCase();
       const phoneRequired = result?.user?.phone_verification_required === true;
       const phoneVerified = result?.user?.phoneNumberVerified === true || result?.user?.phone_number_verified === true;
       const target = phoneRequired && !phoneVerified
         ? '/VerifyPhone'
         : role === 'admin'
           ? '/Admin'
-          : ['active','trial','trialing'].includes(status) && result?.user?.stripe_subscription_id
-            ? createPageUrl('Profile')
-            : createPageUrl('Subscription');
+          : createPageUrl('Home');
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
     }
