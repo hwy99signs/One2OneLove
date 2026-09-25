@@ -94,5 +94,9 @@ export default [
   [
     "24. Contacto",
     "Las preguntas sobre estos Términos o la plataforma pueden enviarse a support@one2onelove.com."
+  ],
+  [
+    "25. Vista Previa, Prueba Gratuita, Suscripciones, Cargos por Notas de Amor, Cancelación y Reembolsos",
+    "Los nuevos miembros pueden recibir una Vista Previa de Invitado de 24 horas sin proporcionar una tarjeta de pago. La Vista Previa ofrece acceso temporal a la plataforma, pero no incluye el envío de Notas de Amor por SMS de One2OneLove. La prueba de Acceso Completo de 7 días requiere un método de pago válido. No se realiza ningún cargo de suscripción al comenzar la prueba. La prueba ofrece acceso a funciones de nivel Exclusive, pero el envío de Notas de Amor por SMS de One2OneLove no está disponible durante la prueba. A menos que canceles o elijas Exclusive antes de que termine la prueba, la suscripción continúa automáticamente en Premiere por $9.99 USD al mes. Exclusive cuesta $19.99 USD al mes. Después del primer pago exitoso de la suscripción, el primer envío de una Nota de Amor por SMS de One2OneLove es gratuito; cada envío adicional cuesta $0.29 USD. Los cargos por uso de Notas de Amor pueden agruparse y cobrarse al método de pago guardado. El cuerpo de una Nota de Amor personalizada está limitado a 171 caracteres y no se admiten emojis añadidos por el usuario en el cuerpo del SMS; el pie del sistema de One2OneLove puede incluir un emoji de corazón de marca. Puedes cancelar una suscripción en cualquier momento; la cancelación entra en vigor al final del período de facturación actual, salvo que la ley exija otra cosa. Los cargos por Notas de Amor ya enviadas siguen siendo pagaderos después de la cancelación. Los cargos ya incurridos por Notas de Amor entregadas no son reembolsables, excepto cuando la ley aplicable exija un reembolso. Los precios de suscripción, cargos de uso, impuestos y funciones pueden cambiar para períodos futuros con el aviso exigido por la ley."
   ]
 ];
