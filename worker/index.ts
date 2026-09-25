@@ -153,7 +153,7 @@ async function profileRoute(request, env, auth) {
                 u.date_frequency,u.communication_style,u.conflict_resolution,u.partner_name,
                 u.profile_completion_percentage,u.profile_completed_fields,u.profile_total_fields,
                 u.subscription_plan,u.subscription_price,u.subscription_status,u.stripe_subscription_id,
-                u.subscription_current_period_start,u.subscription_current_period_end,
+                u.subscription_current_period_start,u.subscription_current_period_end,u.trial_end_date,
                 u.cancel_at_period_end,u.created_at,u.updated_at,
                 COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_number_verified,
                 NULLIF(to_jsonb(u)->>'phone_number','') AS phone_number,
