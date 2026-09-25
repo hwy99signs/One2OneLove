@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Heart, MessageCircle, Gift, Clock, Hand, ChevronRight, ChevronLeft, Share2, RotateCcw, Save, CheckCircle } from "lucide-react";
+import { Heart, MessageCircle, Gift, Clock, Hand, ChevronRight, ChevronLeft, ArrowLeft, Share2, RotateCcw, Save, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { saveLoveLanguage } from "@/lib/profileService";
 import { toast } from "sonner";
 import { buildLoveLanguageQuizSession } from "@/components/lovelanguage/LoveLanguageQuestionBank";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+const backToQuizzesCopy = {
+  en: "Back to Quizzes",
+  es: "Volver a Cuestionarios",
+  fr: "Retour aux Quiz",
+  it: "Torna ai Quiz",
+  de: "Zurück zu den Quiz",
+};
 
 const translations = {
   en: {
@@ -535,6 +545,10 @@ export default function LoveLanguageQuiz() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
+        <Link to={createPageUrl("RelationshipQuizzes")} className="mb-6 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white">
+          <ArrowLeft className="w-4 h-4" />
+          {backToQuizzesCopy[currentLanguage] || backToQuizzesCopy.en}
+        </Link>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
