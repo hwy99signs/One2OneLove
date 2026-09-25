@@ -98,12 +98,12 @@ async function launchReadiness(env) {
             AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
         ) AS legacy_entitlement_rows,
         COALESCE((
-          SELECT column_default = '''Basic''::text'
+          SELECT column_default = '''Premiere''::text'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_plan'
-        ),false) AS basic_default_ready,
+        ),false) AS premiere_default_ready,
         COALESCE((
-          SELECT column_default = '4.99'
+          SELECT column_default = '9.99'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_price'
         ),false) AS price_default_ready,
@@ -136,7 +136,7 @@ async function launchReadinessResponse(request, env) {
   const publicLaunchIdentityGateReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
   const legacyEntitlementRows = Number(readiness.legacy_entitlement_rows || 0);
   const billingDefaultsReady = Boolean(
-    readiness.basic_default_ready &&
+    readiness.premiere_default_ready &&
     readiness.price_default_ready &&
     readiness.status_default_ready
   );
@@ -227,12 +227,12 @@ async function registerLaunchUser(request, env) {
         [user.id, email, country, preferredLanguage, termsVersion, acceptedDate.toISOString()],
       );
 
-      // Newly registered members must complete the Stripe trial/card step before
-      // receiving paid-plan entitlements. Existing migrated members are not touched.
+      // Newly registered members receive a 24-hour Guest Preview without a card.
+      // After that they must start the 7-day card-backed trial or subscribe.
       await db.query(
         `INSERT INTO public.users
           (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-         VALUES ($1::uuid,$2,$3,'regular',true,'Basic',4.99,'inactive')
+         VALUES ($1::uuid,$2,$3,'regular',true,'Premiere',9.99,'inactive')
          ON CONFLICT (id) DO NOTHING`,
         [user.id, email, name],
       );
@@ -250,6 +250,9 @@ async function registerLaunchUser(request, env) {
     emailVerificationRequired: true,
     verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
+    guestPreviewHours: 24,
+    trialDays: 7,
+    trialDefaultPlan: 'Premiere',
   }, 201);
 }
 
