@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, updateAdminMember } from '../lib/adminService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -61,6 +61,7 @@ function Metric({ icon: Icon, label, value, note, tone='rose' }) {
         <div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{value}</p>{note && <p className="mt-1 text-xs text-slate-500">{note}</p>}</div>
         <div className={cx('rounded-xl p-2.5', toneMap[tone] || toneMap.rose)}><Icon size={20}/></div>
       </div>
+      {managedMember && <AccountActionModal member={managedMember} onClose={()=>setManagedMember(null)} onComplete={()=>load(true)}/>}
     </div>
   );
 }
@@ -81,6 +82,92 @@ function DeliveryHealth({ firstLabel, firstValue, passed, failed, pending }) {
   </div>;
 }
 
+
+function AccountActionModal({ member, onClose, onComplete }) {
+  const [action,setAction] = useState('activate');
+  const [tier,setTier] = useState(member?.subscription_plan || 'Basic');
+  const [reason,setReason] = useState('');
+  const [saving,setSaving] = useState(false);
+  const [error,setError] = useState('');
+
+  if (!member) return null;
+
+  const confirm = async () => {
+    const clean = reason.trim();
+    if (clean.length < 5) {
+      setError('Enter a reason of at least 5 characters before confirming.');
+      return;
+    }
+    if (action === 'change_tier' && !['Basic','Premier','Exclusive'].includes(tier)) {
+      setError('Select the new tier.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await updateAdminMember(member.id, { action, reason: clean, tier: action === 'change_tier' ? tier : null });
+      await onComplete();
+      onClose();
+    } catch (err) {
+      setError(err?.message || 'Unable to update this member.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/45 p-4">
+      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-black text-slate-900">Manage Member Account</h2>
+            <p className="mt-1 text-sm text-slate-500">{member.name || 'Unnamed member'} · {member.email}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={20}/></button>
+        </div>
+
+        <div className="mt-5">
+          <label className="mb-2 block text-sm font-bold text-slate-700">Action</label>
+          <select value={action} onChange={e=>setAction(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm outline-none focus:border-rose-400">
+            <option value="activate">Activate Account</option>
+            <option value="deactivate">Deactivate Account</option>
+            <option value="suspend">Suspend Account</option>
+            <option value="change_tier">Change Tier</option>
+          </select>
+        </div>
+
+        {action === 'change_tier' && (
+          <div className="mt-4">
+            <label className="mb-2 block text-sm font-bold text-slate-700">New Tier</label>
+            <select value={tier === 'Premiere' ? 'Premier' : tier} onChange={e=>setTier(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm outline-none focus:border-rose-400">
+              <option value="Basic">Basic</option>
+              <option value="Premier">Premier</option>
+              <option value="Exclusive">Exclusive</option>
+            </select>
+            <p className="mt-2 text-xs leading-5 text-slate-500">If the member has a Stripe subscription, the Stripe subscription price is synchronized without creating an immediate proration charge.</p>
+          </div>
+        )}
+
+        <div className="mt-4">
+          <label className="mb-2 block text-sm font-bold text-slate-700">Reason for this action <span className="text-rose-600">*</span></label>
+          <textarea value={reason} onChange={e=>setReason(e.target.value)} maxLength={1000} rows={4} placeholder="Enter the reason. This will be stored in the admin audit history." className="w-full resize-none rounded-xl border border-slate-300 px-3 py-3 text-sm outline-none focus:border-rose-400"/>
+          <div className="mt-1 text-right text-xs text-slate-400">{reason.length}/1000</div>
+        </div>
+
+        {error && <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={onClose} disabled={saving} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+          <button type="button" onClick={confirm} disabled={saving || reason.trim().length < 5} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
+            {saving && <Loader2 size={16} className="animate-spin"/>}
+            Confirm Action
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const [section,setSection] = useState('overview');
@@ -91,6 +178,7 @@ export default function Admin() {
   const [error,setError] = useState(null);
   const [query,setQuery] = useState('');
   const [mobileNav,setMobileNav] = useState(false);
+  const [managedMember,setManagedMember] = useState(null);
 
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -189,7 +277,7 @@ export default function Admin() {
             <TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Feature</th><th className="px-4 py-3">Unique Users</th><th className="px-4 py-3">7 Days</th><th className="px-4 py-3">30 Days</th><th className="px-4 py-3">Total Activity</th><th className="px-4 py-3">Avg / User</th><th className="px-4 py-3">Last Used</th></tr></thead><tbody className="divide-y divide-slate-100">{features.map(f=><tr key={f.feature} className="hover:bg-slate-50"><td className="px-4 py-3"><div className="font-semibold text-slate-900">{f.feature}</div><div className="text-xs text-slate-400">{f.category}</div></td><td className="px-4 py-3 font-bold text-slate-800">{number(f.unique_users)}</td><td className="px-4 py-3">{number(f.activity_7d)}</td><td className="px-4 py-3">{number(f.activity_30d)}</td><td className="px-4 py-3">{number(f.total_activity)}</td><td className="px-4 py-3">{decimal(f.avg_per_user)}</td><td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{date(f.last_used)}</td></tr>)}</tbody></table></TableShell>
           </div>}
 
-          {section==='members' && <div><Heading title="Members" subtitle="Search recent signups, account status and access level."/><div className="mb-4 flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm"><Search size={17} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/></div><TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Joined</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredMembers.map(m=><tr key={m.id}><td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td><td className="px-4 py-3 text-slate-600">{m.user_type||'user'}</td><td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Basic'}</Pill></td><td className="px-4 py-3"><Pill tone={m.banned?'red':statusTone(m.subscription_status)}>{m.banned?'banned':m.subscription_status||'active'}</Pill></td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td></tr>)}</tbody></table></TableShell></div>}
+          {section==='members' && <div><Heading title="Members" subtitle="Search members and manage account status or subscription tier. Every administrative change requires a recorded reason."/><div className="mb-4 flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm"><Search size={17} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/></div><TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Account Status</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredMembers.map(m=>{const accountStatus=m.banned?'Suspended':m.is_active===false?'Deactivated':'Active';return <tr key={m.id}><td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td><td className="px-4 py-3 text-slate-600">{m.user_type||'user'}</td><td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Basic'}</Pill></td><td className="px-4 py-3"><Pill tone={accountStatus==='Active'?'green':'red'}>{accountStatus}</Pill>{m.ban_reason&&<div className="mt-1 max-w-xs text-xs text-rose-500">{m.ban_reason}</div>}</td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td><td className="px-4 py-3 text-right"><button type="button" onClick={()=>setManagedMember(m)} disabled={m.auth_role==='admin'} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">{m.auth_role==='admin'?'Admin Protected':'Manage Account'}</button></td></tr>})}</tbody></table></TableShell></div>}
 
           {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
 
