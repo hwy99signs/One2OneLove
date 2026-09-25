@@ -34,6 +34,7 @@ import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
+import { handleGameAccessRequest } from './game-access';
 
 export default {
   async fetch(request, env, ctx) {
@@ -54,6 +55,11 @@ export default {
 
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;
+
+    if (url.pathname === '/api/games/scratch/launch') {
+      const response = await handleGameAccessRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/love-notes/')) {
       const response = await handleLoveNoteEntitlementRequest(request, env, url);
