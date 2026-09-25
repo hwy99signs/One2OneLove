@@ -1,9 +1,4 @@
 // @ts-nocheck
-const JSON_HEADERS = {
-  'content-type': 'application/json; charset=utf-8',
-  'cache-control': 'no-store',
-  'x-content-type-options': 'nosniff',
-};
 
 export const LOVE_NOTE_SEND_PRICE_CENTS = 29;
 export const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;
@@ -12,36 +7,6 @@ function canonicalPlan(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (raw === 'exclusive') return 'Exclusive';
   return 'Premiere';
-}
-
-async function stripeRequest(env, method, path, params = null, idempotencyKey = null) {
-  if (!env.STRIPE_SECRET_KEY) {
-    throw Object.assign(new Error('Love Note billing is not configured yet.'), {
-      status: 503,
-      code: 'billing_not_configured',
-    });
-  }
-  const headers = {
-    authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-    accept: 'application/json',
-  };
-  if (idempotencyKey) headers['idempotency-key'] = idempotencyKey;
-
-  let body;
-  if (params) {
-    headers['content-type'] = 'application/x-www-form-urlencoded';
-    body = params instanceof URLSearchParams ? params : new URLSearchParams(params);
-  }
-
-  const response = await fetch(`https://api.stripe.com/v1${path}`, { method, headers, body });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw Object.assign(new Error(payload?.error?.message || 'Stripe Love Note billing request failed.'), {
-      status: 502,
-      code: payload?.error?.code || 'stripe_error',
-    });
-  }
-  return payload;
 }
 
 export async function loveNoteSendAccess(db, userId) {
@@ -63,7 +28,7 @@ export async function loveNoteSendAccess(db, userId) {
          FROM public.payment_history
         WHERE user_id=$1::uuid
           AND status='succeeded'
-          AND amount > 0
+          AND COALESCE(amount,0) > 0
      ) AS has_paid_subscription_payment`,
     [userId],
   );
@@ -105,159 +70,13 @@ export async function loveNoteSendAccess(db, userId) {
     subscriptionStatus: status || 'inactive',
     hasPaidSubscriptionPayment,
     firstPaidSendFree: true,
-    firstFreeAvailable: allowed && reservedOrSent === 0,
+    firstFreeAvailable: allowed && sent === 0,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
     reservedOrSent,
     sent,
     stripeCustomerId: user.stripe_customer_id || null,
     stripeSubscriptionId: user.stripe_subscription_id || null,
   };
-}
-
-export async function reserveLoveNoteSend(db, userId, sourceType, sourceId, quotaDate, status = 'reserved') {
-  await db.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`o2ol-love-notes:${userId}`]);
-  const access = await loveNoteSendAccess(db, userId);
-  if (!access.allowed) {
-    throw Object.assign(new Error(access.message || 'Love Note SMS delivery is unavailable.'), {
-      status: access.code === 'trial_sms_locked' ? 403 : 402,
-      code: access.code || 'love_note_sms_unavailable',
-      usage: access,
-    });
-  }
-
-  const quotaSource = access.firstFreeAvailable ? 'included' : 'purchased';
-  const quotaMonth = `${String(quotaDate).slice(0, 7)}-01`;
-
-  await db.query(
-    `INSERT INTO public.love_note_send_entitlements
-      (user_id,source_type,source_id,quota_month,quota_date,quota_source,status)
-     VALUES($1::uuid,$2,$3::uuid,$4::date,$5::date,$6,$7)`,
-    [userId, sourceType, sourceId, quotaMonth, quotaDate, quotaSource, status],
-  );
-
-  return {
-    quotaSource,
-    amountCents: quotaSource === 'included' ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
-    free: quotaSource === 'included',
-  };
-}
-
-export async function consumeLoveNoteReservation(db, userId, sourceId) {
-  const result = await db.query(
-    `UPDATE public.love_note_send_entitlements
-        SET status='consumed',updated_at=now()
-      WHERE source_id=$1::uuid
-        AND user_id=$2::uuid
-        AND status='reserved'
-      RETURNING id,quota_source,status`,
-    [sourceId, userId],
-  );
-  return result.rows[0] || null;
-}
-
-export async function releaseLoveNoteReservation(db, userId, sourceId) {
-  await db.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`o2ol-love-notes:${userId}`]);
-  const entitlement = await db.query(
-    `SELECT id,quota_source,status
-       FROM public.love_note_send_entitlements
-      WHERE source_id=$1::uuid AND user_id=$2::uuid
-      FOR UPDATE`,
-    [sourceId, userId],
-  );
-  const row = entitlement.rows[0];
-  if (!row || row.status === 'released') return { released: false };
-
-  await db.query(
-    `UPDATE public.love_note_send_entitlements
-        SET status='released',updated_at=now()
-      WHERE id=$1::uuid`,
-    [row.id],
-  );
-
-  // If the cancelled reservation held the one complimentary paid-member send,
-  // move that benefit to the next oldest still-reserved paid send.
-  if (row.quota_source === 'included') {
-    const next = await db.query(
-      `SELECT id
-         FROM public.love_note_send_entitlements
-        WHERE user_id=$1::uuid
-          AND status='reserved'
-          AND quota_source='purchased'
-        ORDER BY created_at ASC
-        LIMIT 1
-        FOR UPDATE`,
-      [userId],
-    );
-    if (next.rows[0]?.id) {
-      await db.query(
-        `UPDATE public.love_note_send_entitlements
-            SET quota_source='included',updated_at=now()
-          WHERE id=$1::uuid`,
-        [next.rows[0].id],
-      );
-    }
-  }
-
-  return { released: true, quotaSource: row.quota_source };
-}
-
-export async function billReservedLoveNoteSend(env, db, userId, sourceId, attempt = 1) {
-  const ent = await db.query(
-    `SELECT id,quota_source,status
-       FROM public.love_note_send_entitlements
-      WHERE source_id=$1::uuid AND user_id=$2::uuid
-      LIMIT 1`,
-    [sourceId, userId],
-  );
-  const row = ent.rows[0];
-  if (!row) {
-    throw Object.assign(new Error('Love Note send reservation was not found.'), {
-      status: 409,
-      code: 'send_reservation_missing',
-    });
-  }
-  if (row.quota_source === 'included') {
-    return { billed: false, free: true, amountCents: 0, invoiceItemId: null };
-  }
-
-  const access = await loveNoteSendAccess(db, userId);
-  if (!access.allowed) {
-    throw Object.assign(new Error(access.message || 'Love Note billing is unavailable.'), {
-      status: 402,
-      code: access.code || 'love_note_billing_unavailable',
-    });
-  }
-
-  const params = new URLSearchParams();
-  params.set('customer', access.stripeCustomerId);
-  params.set('subscription', access.stripeSubscriptionId);
-  params.set('amount', String(LOVE_NOTE_SEND_PRICE_CENTS));
-  params.set('currency', 'usd');
-  params.set('description', 'One2OneLove Love Note SMS');
-  params.set('metadata[user_id]', userId);
-  params.set('metadata[love_note_source_id]', sourceId);
-  params.set('metadata[unit_price_cents]', String(LOVE_NOTE_SEND_PRICE_CENTS));
-
-  const invoiceItem = await stripeRequest(
-    env,
-    'POST',
-    '/invoiceitems',
-    params,
-    `o2ol-love-note-${sourceId}`,
-  );
-
-  return {
-    billed: true,
-    free: false,
-    amountCents: LOVE_NOTE_SEND_PRICE_CENTS,
-    invoiceItemId: invoiceItem?.id || null,
-  };
-}
-
-export async function deleteLoveNoteInvoiceItem(env, invoiceItemId) {
-  if (!invoiceItemId) return { deleted: false };
-  const deleted = await stripeRequest(env, 'DELETE', `/invoiceitems/${encodeURIComponent(invoiceItemId)}`);
-  return { deleted: deleted?.deleted === true };
 }
 
 export async function loveNoteUsageSummary(db, userId) {
@@ -275,8 +94,4 @@ export async function loveNoteUsageSummary(db, userId) {
     reservedOrSentCount: access.reservedOrSent,
     customNoteMaxCharacters: CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
   };
-}
-
-export function loveNoteBillingJson(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 }
