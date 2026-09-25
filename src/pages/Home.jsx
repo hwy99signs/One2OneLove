@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-logo.png';
 const HERO = '/assets/o2ol-hero.png';
+const HERO_SLIDES = [
+  '/assets/hero-slideshow/hero-01.webp',
+  '/assets/hero-slideshow/hero-02.webp',
+  '/assets/hero-slideshow/hero-03.webp',
+  '/assets/hero-slideshow/hero-04.webp',
+  '/assets/hero-slideshow/hero-05.webp',
+  '/assets/hero-slideshow/hero-06.webp',
+  '/assets/hero-slideshow/hero-07.webp',
+];
 
 const COPY = {
   en: {
@@ -48,11 +57,34 @@ export default function Home() {
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
+  const [heroSlide, setHeroSlide] = useState(0);
   const go = page => navigate(createPageUrl(page));
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setHeroSlide((current) => (current + 1) % HERO_SLIDES.length);
+    }, 3000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
-      <section className="relative flex min-h-[900px] items-center justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
+      <section
+        className="relative flex min-h-[900px] items-center justify-center overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url(${HERO})` }}
+      >
+        <div className="absolute inset-0">
+          {HERO_SLIDES.map((src, index) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              aria-hidden="true"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${index === heroSlide ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ))}
+        </div>
         <div className="absolute inset-0 bg-black/10"/>
         <div className="relative z-10 mx-auto max-w-5xl px-6 pb-8 pt-8 text-center text-white">
           <img src={LOGO} alt="One2OneLove" className="mx-auto mb-1 h-44 w-auto drop-shadow-xl md:h-52"/>
