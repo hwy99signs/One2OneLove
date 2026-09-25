@@ -53,7 +53,7 @@ const LOADING_COPY = {
 };
 
 const PREVIEW_READ_ONLY_COPY = {
-  en: { title: '24-Hour Guest Preview — View Only', body: 'You can look through One2OneLove, but features cannot be used during the Guest Preview.', action: 'Start 7-Day Full Access Trial' },
+  en: { title: '24-Hour Guest Preview — View Only', body: 'Explore the real One2OneLove features. You can open tabs, menus, tools, and content; actions that save, send, post, schedule, message, upload, or change data require a trial or subscription.', action: 'Start 7-Day Full Access Trial' },
   es: { title: 'Vista Previa de 24 Horas — Solo Lectura', body: 'Puedes ver One2OneLove, pero no puedes usar las funciones durante la Vista Previa.', action: 'Iniciar Prueba de Acceso Completo de 7 Días' },
   fr: { title: 'Aperçu Invité de 24 Heures — Consultation Uniquement', body: 'Vous pouvez parcourir One2OneLove, mais les fonctionnalités ne peuvent pas être utilisées pendant l’Aperçu Invité.', action: 'Commencer l’Essai Accès Complet de 7 Jours' },
   it: { title: 'Anteprima Ospite di 24 Ore — Solo Visualizzazione', body: 'Puoi visualizzare One2OneLove, ma non puoi usare le funzioni durante l’Anteprima Ospite.', action: 'Inizia la Prova di Accesso Completo di 7 Giorni' },
@@ -76,7 +76,7 @@ function PreviewReadOnly({ children }) {
           </a>
         </div>
       </div>
-      <div className="pointer-events-none select-text" aria-label={copy.title} inert="">
+      <div className="select-text" aria-label={copy.title}>
         {children}
       </div>
     </div>
