@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
 import { Crown, Sparkles, CheckCircle, ArrowRight, CreditCard, Clock3, ShieldCheck } from 'lucide-react';
@@ -63,39 +64,39 @@ const translations = {
 };
 
 const TRIAL_COPY = {
-  en: { title: '7 Days of Full One2OneLove Access', body: 'Add a credit or debit card to start. You will not be charged today. For 7 days you receive Exclusive-level access. Love Note SMS sending is not available during the trial. After 7 days, your membership continues on Premiere at $9.99/month unless you choose Exclusive or cancel before the trial ends.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active. Love Note SMS sending unlocks after your first successful paid subscription payment.' },
-  es: { title: '7 Días de Acceso Completo a One2OneLove', body: 'Agrega una tarjeta de crédito o débito para comenzar. No se te cobrará hoy. Durante 7 días tendrás acceso de nivel Exclusive. El envío de Notas de Amor por SMS no está disponible durante la prueba. Después de 7 días, tu membresía continúa en Premiere por $9.99/mes, a menos que elijas Exclusive o canceles antes de que termine la prueba.', start: 'Comenzar 7 Días de Acceso Completo', starting: 'Abriendo pago seguro...', active: 'Tu prueba de Acceso Completo de 7 días está activa. Los envíos SMS de Notas de Amor se habilitan después del primer pago exitoso de la suscripción.' },
-  fr: { title: '7 Jours d’Accès Complet à One2OneLove', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Aucun prélèvement aujourd’hui. Pendant 7 jours, vous bénéficiez d’un accès de niveau Exclusive. L’envoi de Notes d’Amour par SMS n’est pas disponible pendant l’essai. Après 7 jours, votre abonnement continue avec Premiere à 9,99 $/mois, sauf si vous choisissez Exclusive ou annulez avant la fin de l’essai.', start: 'Commencer 7 Jours d’Accès Complet', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai de 7 jours avec Accès Complet est actif. L’envoi de Notes d’Amour par SMS se débloque après le premier paiement réussi de l’abonnement.' },
-  it: { title: '7 Giorni di Accesso Completo a One2OneLove', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non verrà addebitato nulla. Per 7 giorni avrai accesso di livello Exclusive. L’invio di Note d’Amore via SMS non è disponibile durante la prova. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.', start: 'Inizia 7 Giorni di Accesso Completo', starting: 'Apertura del pagamento sicuro...', active: 'La prova di 7 giorni con Accesso Completo è attiva. Gli invii SMS delle Note d’Amore si sbloccano dopo il primo pagamento riuscito dell’abbonamento.' },
-  de: { title: '7 Tage Vollzugriff auf One2OneLove', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Heute erfolgt keine Belastung. Sie erhalten 7 Tage Zugang auf Exclusive-Niveau. Das Senden von Liebesnachrichten per SMS ist während des Tests nicht verfügbar. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Premiere für 9,99 $/Monat weiter, sofern Sie nicht Exclusive wählen oder vor Ende des Tests kündigen.', start: '7 Tage Vollzugriff Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr 7-Tage-Vollzugriff-Test ist aktiv. SMS-Liebesnachrichten werden nach der ersten erfolgreichen Abonnementzahlung freigeschaltet.' },
+  en: { title: '7 Days of Full One2OneLove Access', body: 'Add a credit or debit card to start. You will not be charged the subscription price today. For 7 days you receive full Exclusive-level feature access. Your first One2OneLove SMS Love Note send is FREE; every additional send is $0.29 and is billed to your payment method on file. After 7 days, your membership continues on Premiere at $9.99/month unless you choose Exclusive or cancel before the trial ends.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active. Your first One2OneLove SMS Love Note send is FREE; every additional send is $0.29.' },
+  es: { title: '7 Días de Acceso Completo a One2OneLove', body: 'Agrega una tarjeta de crédito o débito para comenzar. Hoy no se cobra el precio de la suscripción. Durante 7 días tendrás acceso completo de nivel Exclusive. Tu primer envío SMS de Nota de Amor de One2OneLove es GRATIS; cada envío adicional cuesta $0.29 y se factura al método de pago guardado. Después de 7 días, tu membresía continúa en Premiere por $9.99/mes, a menos que elijas Exclusive o canceles antes de que termine la prueba.', start: 'Comenzar 7 Días de Acceso Completo', starting: 'Abriendo pago seguro...', active: 'Tu prueba de Acceso Completo de 7 días está activa. Tu primer envío SMS de Nota de Amor es GRATIS; cada envío adicional cuesta $0.29.' },
+  fr: { title: '7 Jours d’Accès Complet à One2OneLove', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Le prix de l’abonnement n’est pas débité aujourd’hui. Pendant 7 jours, vous bénéficiez d’un accès complet de niveau Exclusive. Votre premier envoi de Note d’Amour par SMS One2OneLove est GRATUIT ; chaque envoi supplémentaire coûte 0,29 $ et est facturé au moyen de paiement enregistré. Après 7 jours, votre abonnement continue avec Premiere à 9,99 $/mois, sauf si vous choisissez Exclusive ou annulez avant la fin de l’essai.', start: 'Commencer 7 Jours d’Accès Complet', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai de 7 jours avec Accès Complet est actif. Votre premier envoi SMS de Note d’Amour est GRATUIT ; chaque envoi supplémentaire coûte 0,29 $.' },
+  it: { title: '7 Giorni di Accesso Completo a One2OneLove', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non viene addebitato il prezzo dell’abbonamento. Per 7 giorni avrai accesso completo di livello Exclusive. Il primo invio SMS di una Nota d’Amore One2OneLove è GRATIS; ogni invio successivo costa $0.29 e viene addebitato al metodo di pagamento registrato. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.', start: 'Inizia 7 Giorni di Accesso Completo', starting: 'Apertura del pagamento sicuro...', active: 'La prova di 7 giorni con Accesso Completo è attiva. Il primo invio SMS di una Nota d’Amore è GRATIS; ogni invio successivo costa $0.29.' },
+  de: { title: '7 Tage Vollzugriff auf One2OneLove', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Der Abonnementpreis wird heute nicht berechnet. Sie erhalten 7 Tage vollständigen Zugriff auf Exclusive-Niveau. Ihre erste One2OneLove-SMS-Liebesnachricht ist KOSTENLOS; jede weitere Sendung kostet 0,29 $ und wird über die hinterlegte Zahlungsmethode abgerechnet. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Premiere für 9,99 $/Monat weiter, sofern Sie nicht Exclusive wählen oder vor Ende des Tests kündigen.', start: '7 Tage Vollzugriff Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr 7-Tage-Vollzugriff-Test ist aktiv. Ihre erste SMS-Liebesnachricht ist KOSTENLOS; jede weitere Sendung kostet 0,29 $.' },
 };
 
 
 const PREVIEW_COPY = {
   en: {
-    name: '24-Hour Guest Preview', badge: 'NO CARD REQUIRED', active: 'ACTIVE NOW', ended: 'PREVIEW ENDED', complete: 'COMPLETED',
-    timer: 'Time Remaining', period: '24 hours', starts: 'Your 24-hour preview begins when your account is created.',
-    features: ['Explore One2OneLove', 'Exclusive-level feature preview', 'No credit or debit card required', 'Love Note SMS sending is locked during the preview'],
+    name: '24-Hour Guest Preview', badge: 'NO CARD REQUIRED', active: 'ACTIVE — VIEW ONLY', ended: 'PREVIEW ENDED', complete: 'COMPLETED', startHere: 'START HERE', signupTab: 'SIGN UP', createAccount: 'Create Account — Start 24-Hour Preview', signupForPlan: 'Create Account for',
+    timer: 'Time Remaining', period: '24 hours', starts: 'Your 24-hour view-only preview begins when your account is created.',
+    features: ['View One2OneLove screens and content', 'VIEW ONLY — features cannot be used', 'No credit or debit card required', 'Create an account to start the 24-hour timer'],
   },
   es: {
-    name: 'Vista Previa de Invitado de 24 Horas', badge: 'NO SE REQUIERE TARJETA', active: 'ACTIVA AHORA', ended: 'VISTA PREVIA FINALIZADA', complete: 'COMPLETADA',
-    timer: 'Tiempo Restante', period: '24 horas', starts: 'Tu vista previa de 24 horas comienza cuando se crea tu cuenta.',
-    features: ['Explora One2OneLove', 'Vista previa de funciones de nivel Exclusive', 'No se requiere tarjeta de crédito o débito', 'El envío de Notas de Amor por SMS está bloqueado durante la vista previa'],
+    name: 'Vista Previa de Invitado de 24 Horas', badge: 'NO SE REQUIERE TARJETA', active: 'ACTIVA — SOLO VER', ended: 'VISTA PREVIA FINALIZADA', complete: 'COMPLETADA', startHere: 'EMPIEZA AQUÍ', signupTab: 'REGÍSTRATE', createAccount: 'Crear Cuenta — Iniciar Vista Previa de 24 Horas', signupForPlan: 'Crear Cuenta para',
+    timer: 'Tiempo Restante', period: '24 horas', starts: 'Tu vista previa de 24 horas solo para ver comienza cuando se crea tu cuenta.',
+    features: ['Ver pantallas y contenido de One2OneLove', 'SOLO VER — no se pueden usar las funciones', 'No se requiere tarjeta de crédito o débito', 'Crea una cuenta para iniciar el temporizador de 24 horas'],
   },
   fr: {
-    name: 'Aperçu Invité de 24 Heures', badge: 'AUCUNE CARTE REQUISE', active: 'ACTIF MAINTENANT', ended: 'APERÇU TERMINÉ', complete: 'TERMINÉ',
-    timer: 'Temps Restant', period: '24 heures', starts: 'Votre aperçu de 24 heures commence à la création de votre compte.',
-    features: ['Explorez One2OneLove', 'Aperçu des fonctionnalités de niveau Exclusive', 'Aucune carte bancaire requise', 'L’envoi de Notes d’Amour par SMS est bloqué pendant l’aperçu'],
+    name: 'Aperçu Invité de 24 Heures', badge: 'AUCUNE CARTE REQUISE', active: 'ACTIF — CONSULTATION UNIQUEMENT', ended: 'APERÇU TERMINÉ', complete: 'TERMINÉ', startHere: 'COMMENCEZ ICI', signupTab: 'INSCRIPTION', createAccount: 'Créer un Compte — Démarrer l’Aperçu de 24 Heures', signupForPlan: 'Créer un Compte pour',
+    timer: 'Temps Restant', period: '24 heures', starts: 'Votre aperçu de 24 heures en consultation uniquement commence à la création du compte.',
+    features: ['Voir les écrans et contenus One2OneLove', 'CONSULTATION UNIQUEMENT — les fonctions ne peuvent pas être utilisées', 'Aucune carte bancaire requise', 'Créez un compte pour démarrer le minuteur de 24 heures'],
   },
   it: {
-    name: 'Anteprima Ospite di 24 Ore', badge: 'NESSUNA CARTA RICHIESTA', active: 'ATTIVA ORA', ended: 'ANTEPRIMA TERMINATA', complete: 'COMPLETATA',
-    timer: 'Tempo Rimanente', period: '24 ore', starts: 'L’anteprima di 24 ore inizia quando viene creato il tuo account.',
-    features: ['Esplora One2OneLove', 'Anteprima delle funzioni di livello Exclusive', 'Nessuna carta di credito o debito richiesta', 'L’invio SMS delle Note d’Amore è bloccato durante l’anteprima'],
+    name: 'Anteprima Ospite di 24 Ore', badge: 'NESSUNA CARTA RICHIESTA', active: 'ATTIVA — SOLO VISUALIZZAZIONE', ended: 'ANTEPRIMA TERMINATA', complete: 'COMPLETATA', startHere: 'INIZIA QUI', signupTab: 'REGISTRATI', createAccount: 'Crea Account — Avvia Anteprima di 24 Ore', signupForPlan: 'Crea Account per',
+    timer: 'Tempo Rimanente', period: '24 ore', starts: 'L’anteprima di 24 ore solo visualizzazione inizia quando viene creato il tuo account.',
+    features: ['Visualizza schermate e contenuti One2OneLove', 'SOLO VISUALIZZAZIONE — le funzioni non possono essere usate', 'Nessuna carta di credito o debito richiesta', 'Crea un account per avviare il timer di 24 ore'],
   },
   de: {
-    name: '24-Stunden-Gastvorschau', badge: 'KEINE KARTE ERFORDERLICH', active: 'JETZT AKTIV', ended: 'VORSCHAU BEENDET', complete: 'ABGESCHLOSSEN',
-    timer: 'Verbleibende Zeit', period: '24 Stunden', starts: 'Ihre 24-Stunden-Vorschau beginnt mit der Kontoerstellung.',
-    features: ['One2OneLove erkunden', 'Vorschau auf Funktionen auf Exclusive-Niveau', 'Keine Kredit- oder Debitkarte erforderlich', 'SMS-Liebesnachrichten sind während der Vorschau gesperrt'],
+    name: '24-Stunden-Gastvorschau', badge: 'KEINE KARTE ERFORDERLICH', active: 'AKTIV — NUR ANSEHEN', ended: 'VORSCHAU BEENDET', complete: 'ABGESCHLOSSEN', startHere: 'HIER STARTEN', signupTab: 'REGISTRIEREN', createAccount: 'Konto Erstellen — 24-Stunden-Vorschau Starten', signupForPlan: 'Konto Erstellen für',
+    timer: 'Verbleibende Zeit', period: '24 Stunden', starts: 'Ihre 24-Stunden-Vorschau nur zum Ansehen beginnt mit der Kontoerstellung.',
+    features: ['One2OneLove-Bildschirme und Inhalte ansehen', 'NUR ANSEHEN — Funktionen können nicht verwendet werden', 'Keine Kredit- oder Debitkarte erforderlich', 'Erstellen Sie ein Konto, um den 24-Stunden-Timer zu starten'],
   },
 };
 
@@ -107,6 +108,32 @@ function formatPreviewTime(milliseconds) {
   return hours + ':' + minutes + ':' + seconds;
 }
 
+function GuestPreviewTimer({ expiresAt, onExpire }) {
+  const endMs = expiresAt ? new Date(expiresAt).getTime() : NaN;
+  const [remainingMs, setRemainingMs] = useState(() => Number.isNaN(endMs) ? 0 : Math.max(0, endMs - Date.now()));
+
+  useEffect(() => {
+    if (Number.isNaN(endMs)) {
+      setRemainingMs(0);
+      return undefined;
+    }
+    let expiredNotified = false;
+    const update = () => {
+      const next = Math.max(0, endMs - Date.now());
+      setRemainingMs(next);
+      if (next === 0 && !expiredNotified) {
+        expiredNotified = true;
+        onExpire?.();
+      }
+    };
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, [endMs, onExpire]);
+
+  return <>{formatPreviewTime(remainingMs)}</>;
+}
+
 const tierBase = {
   Premiere: { name: 'Premiere', price: 9.99, icon: '💖', gradient: 'from-purple-400 to-pink-500', popular: true, isFree: false, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_1UFUSDCoKDheG1AS2AgFooh0', checkoutDisabled: false },
   Exclusive: { name: 'Exclusive', price: 19.99, icon: '👑', gradient: 'from-yellow-400 to-orange-500', popular: false, isFree: false, priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_1UFUSKCoKDheG1ASG5zk97Ph', checkoutDisabled: false }
@@ -114,6 +141,7 @@ const tierBase = {
 
 export default function Subscription() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const baseTranslation = translations[currentLanguage] || translations.en;
   const planTranslation = subscriptionPlanCopy[currentLanguage] || subscriptionPlanCopy.en;
@@ -123,7 +151,7 @@ export default function Subscription() {
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [trialLoading, setTrialLoading] = useState(false);
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [previewExpired, setPreviewExpired] = useState(false);
 
   useEffect(() => {
     const loadSubscriptionData = async () => {
@@ -139,17 +167,13 @@ export default function Subscription() {
     if (user) loadSubscriptionData();
   }, [user, t.loadError]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   const currentPlanRaw = currentSubscription?.effective_plan || user?.subscription_plan || 'Premiere';
   const currentPlan = currentPlanRaw;
   const currentPlanDisplay = t.plans[currentPlan]?.displayName || currentPlan;
-  const tiers = useMemo(() => ['Premiere', 'Exclusive'].map((name) => ({ ...tierBase[name], ...t.plans[name], periodLabel: t.labels.month })), [t]);
+  const tiers = useMemo(() => ['Premiere', 'Exclusive'].map((name) => ({ ...tierBase[name], ...planTranslation.plans[name], periodLabel: baseTranslation.labels.month })), [planTranslation, baseTranslation]);
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat(currentLanguage || 'en', { year: 'numeric', month: 'short', day: '2-digit' }), [currentLanguage]);
   const statusLabel = (status) => t.statuses[status] || status;
+  const isAnonymous = !user;
   const needsBillingSetup = Boolean(user && currentSubscription && !currentSubscription.stripe_subscription_id);
   const fallbackGuestPreviewExpiresAt = useMemo(() => {
     const createdAt = user?.created_at ? new Date(user.created_at) : null;
@@ -158,8 +182,7 @@ export default function Subscription() {
   }, [user?.created_at]);
   const guestPreviewExpiresAt = currentSubscription?.guest_preview_expires_at || fallbackGuestPreviewExpiresAt;
   const guestPreviewEndMs = guestPreviewExpiresAt ? new Date(guestPreviewExpiresAt).getTime() : NaN;
-  const guestPreviewRemainingMs = Number.isNaN(guestPreviewEndMs) ? 0 : Math.max(0, guestPreviewEndMs - nowMs);
-  const guestPreviewActive = Boolean(needsBillingSetup && guestPreviewRemainingMs > 0);
+  const guestPreviewActive = Boolean(needsBillingSetup && !previewExpired && !Number.isNaN(guestPreviewEndMs) && guestPreviewEndMs > Date.now());
   const trialActive = ['trial', 'trialing'].includes(String(currentSubscription?.subscription_status || '').toLowerCase());
 
   const handleStartTrial = async () => {
@@ -180,9 +203,11 @@ export default function Subscription() {
             <h1 className="text-4xl font-bold text-gray-900">{t.choosePlan}</h1>
           </div>
           <p className="text-xl text-gray-600 mb-2">{t.subtitle}</p>
-          <p className="text-sm text-gray-500">
-            {t.currentlyOn}: <span className="font-bold text-purple-600">{guestPreviewActive ? 'Guest Preview' : currentPlanDisplay}</span>{!guestPreviewActive && t.planWord ? ` ${t.planWord}` : ''}
-          </p>
+          {user && (
+            <p className="text-sm text-gray-500">
+              {t.currentlyOn}: <span className="font-bold text-purple-600">{guestPreviewActive ? previewCopy.name : currentPlanDisplay}</span>{!guestPreviewActive && t.planWord ? ` ${t.planWord}` : ''}
+            </p>
+          )}
         </div>
 
         {(needsBillingSetup || trialActive) && (
@@ -235,11 +260,11 @@ export default function Subscription() {
             <CardContent>
               <div className={`mb-5 rounded-2xl border p-4 text-center ${guestPreviewActive ? 'border-pink-200 bg-pink-50' : 'border-gray-200 bg-gray-50'}`}>
                 <div className="text-xs font-black tracking-wider text-gray-500">
-                  {guestPreviewActive ? previewCopy.active : needsBillingSetup ? previewCopy.ended : previewCopy.complete}
+                  {isAnonymous ? previewCopy.startHere : guestPreviewActive ? previewCopy.active : needsBillingSetup ? previewCopy.ended : previewCopy.complete}
                 </div>
                 <div className="mt-1 text-sm font-semibold text-gray-700">{previewCopy.timer}</div>
                 <div className={`mt-1 font-mono text-3xl font-black tracking-wider ${guestPreviewActive ? 'text-pink-600' : 'text-gray-500'}`}>
-                  {guestPreviewActive ? formatPreviewTime(guestPreviewRemainingMs) : '00:00:00'}
+                  {isAnonymous ? '24:00:00' : guestPreviewActive ? <GuestPreviewTimer expiresAt={guestPreviewExpiresAt} onExpire={() => setPreviewExpired(true)} /> : '00:00:00'}
                 </div>
               </div>
               <div className="space-y-3">
@@ -251,14 +276,32 @@ export default function Subscription() {
                 ))}
               </div>
               <p className="mt-5 text-xs leading-5 text-gray-500">{previewCopy.starts}</p>
-              {needsBillingSetup && !guestPreviewActive && (
+              {isAnonymous && (
+                <div className="mt-5 border-t border-gray-200 pt-4">
+                  <div className="mb-2 inline-flex rounded-t-lg bg-purple-100 px-3 py-1 text-xs font-black tracking-wide text-purple-800">{previewCopy.signupTab}</div>
+                  <Button onClick={() => navigate('/SignUp?source=guest-preview')} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold">
+                    {previewCopy.createAccount}
+                  </Button>
+                </div>
+              )}
+              {!isAnonymous && needsBillingSetup && !guestPreviewActive && (
                 <Button onClick={handleStartTrial} disabled={trialLoading} className="mt-5 w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold">
                   {trialLoading ? trialCopy.starting : trialCopy.start}
                 </Button>
               )}
             </CardContent>
           </Card>
-          {tiers.map((tier, index) => <TierCard key={tier.name} tier={tier} index={index} isSelected={!guestPreviewActive && currentPlan === tier.name} showPayment={true} labels={t.labels} />)}
+          {tiers.map((tier, index) => (
+            <TierCard
+              key={tier.name}
+              tier={tier}
+              index={index}
+              isSelected={!isAnonymous && !guestPreviewActive && currentPlan === tier.name}
+              showPayment={!isAnonymous}
+              onSelect={isAnonymous ? () => navigate('/SignUp?source=subscription-plan') : undefined}
+              labels={isAnonymous ? { ...t.labels, choose: previewCopy.signupForPlan } : t.labels}
+            />
+          ))}
         </div>
 
         <Card className="mb-12 border border-purple-200 bg-white">
