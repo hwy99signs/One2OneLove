@@ -17,7 +17,8 @@ const LANGS = {
 const PUBLIC_ROUTES = [
   '/', '/Home', '/AboutUs', '/SignIn', '/login', '/SignUp', '/signup',
   '/ForgotPassword', '/Invite', '/HelpCenter', '/ContactUs', '/PrivacyPolicy',
-  '/TermsOfService', '/Reviews', '/LeaveReview', '/Suggestions'
+  '/TermsOfService', '/Reviews', '/LeaveReview', '/Suggestions', '/Subscription',
+  '/ProfessionalSignup?plan=Premiere', '/TherapistSignup?plan=Premiere', '/InfluencerSignup?plan=Premiere'
 ];
 
 const PROTECTED_ROUTES = [
