@@ -4,11 +4,11 @@ import { CalendarDays, LockKeyhole } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const COPY = {
-  en: { basic:'Basic unlocks 1 Date Idea this month.', premier:'Premier unlocks 8 Date Ideas this month.', note:'Your custom dates remain available and do not count against this allowance.', upgrade:'Compare Plans' },
-  es: { basic:'Basic desbloquea 1 Idea de Cita este mes.', premier:'Premier desbloquea 8 Ideas de Cita este mes.', note:'Tus citas personalizadas siguen disponibles y no cuentan para este límite.', upgrade:'Comparar Planes' },
-  fr: { basic:'Basic débloque 1 Idée de Rendez-vous ce mois-ci.', premier:'Premier débloque 8 Idées de Rendez-vous ce mois-ci.', note:'Vos rendez-vous personnalisés restent disponibles et ne comptent pas dans cette limite.', upgrade:'Comparer les Formules' },
-  it: { basic:'Basic sblocca 1 Idea per Appuntamento questo mese.', premier:'Premier sblocca 8 Idee per Appuntamenti questo mese.', note:'Gli appuntamenti personalizzati restano disponibili e non contano in questo limite.', upgrade:'Confronta i Piani' },
-  de: { basic:'Basic schaltet diesen Monat 1 Date-Idee frei.', premier:'Premier schaltet diesen Monat 8 Date-Ideen frei.', note:'Eigene Dates bleiben verfügbar und zählen nicht zu diesem Limit.', upgrade:'Pläne Vergleichen' },
+  en: { premier:'Premiere includes 8 Date Ideas this month.', exclusive:'Exclusive includes unlimited Date Ideas.', note:'Your custom dates remain available and do not count against this allowance.', upgrade:'Compare Plans' },
+  es: { premier:'Premiere incluye 8 Ideas de Cita este mes.', exclusive:'Exclusive incluye Ideas de Cita ilimitadas.', note:'Tus citas personalizadas siguen disponibles y no cuentan para este límite.', upgrade:'Comparar Planes' },
+  fr: { premier:'Premiere comprend 8 Idées de Rendez-vous ce mois-ci.', exclusive:'Exclusive comprend des Idées de Rendez-vous illimitées.', note:'Vos rendez-vous personnalisés restent disponibles et ne comptent pas dans cette limite.', upgrade:'Comparer les Formules' },
+  it: { premier:'Premiere include 8 Idee per Appuntamenti questo mese.', exclusive:'Exclusive include Idee per Appuntamenti illimitate.', note:'Gli appuntamenti personalizzati restano disponibili e non contano in questo limite.', upgrade:'Confronta i Piani' },
+  de: { premier:'Premiere enthält diesen Monat 8 Date-Ideen.', exclusive:'Exclusive enthält unbegrenzte Date-Ideen.', note:'Eigene Dates bleiben verfügbar und zählen nicht zu diesem Limit.', upgrade:'Pläne Vergleichen' },
 };
 
 function customerPlan(user) {
@@ -16,10 +16,10 @@ function customerPlan(user) {
   if (role === 'admin') return 'Exclusive';
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
-  const raw = String(user?.subscription_plan || 'Basic').toLowerCase();
+  const raw = String(user?.subscription_plan || 'Premiere').toLowerCase();
   if (raw === 'exclusive') return 'Exclusive';
-  if (raw === 'premier' || raw === 'premiere') return 'Premier';
-  return 'Basic';
+  if (raw === 'premier' || raw === 'premiere') return 'Premiere';
+  return 'Premiere';
 }
 
 function hashSeed(value) {
@@ -59,7 +59,7 @@ export default function DateIdeasPlanAccess() {
   const [mount, setMount] = useState(null);
   const [language, setLanguage] = useState('en');
   const plan = customerPlan(user);
-  const limit = plan === 'Basic' ? 1 : plan === 'Premier' ? 8 : Infinity;
+  const limit = plan === 'Exclusive' ? Infinity : 8;
   const monthKey = new Date().toISOString().slice(0, 7);
   const seedText = `${user?.id || 'member'}:${monthKey}`;
 
@@ -147,10 +147,10 @@ export default function DateIdeasPlanAccess() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
-            {plan === 'Basic' ? <LockKeyhole className="h-5 w-5"/> : <CalendarDays className="h-5 w-5"/>}
+            {<CalendarDays className="h-5 w-5"/>}
           </div>
           <div>
-            <p className="font-bold text-gray-900">{plan === 'Basic' ? t.basic : t.premier}</p>
+            <p className="font-bold text-gray-900">{plan === 'Exclusive' ? t.exclusive : t.premier}</p>
             <p className="mt-1 text-sm text-gray-600">{t.note}</p>
           </div>
         </div>
