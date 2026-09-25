@@ -1029,7 +1029,13 @@ export default function LoveNotes() {
     }
 
     if (selectedSubject !== 'all') {
-      filtered = filtered.filter(note => note.subject === selectedSubject);
+      filtered = filtered.filter(note => {
+        if (note.subject !== selectedSubject) return false;
+        if (selectedSubject === 'family') {
+          return !['romantic', 'lgbtqRomantic', 'dateIdeas'].includes(note.category);
+        }
+        return true;
+      });
     }
 
     const personalizedNotes = filtered.map(note => personalizeNote(note));
