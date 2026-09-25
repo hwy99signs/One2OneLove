@@ -68,13 +68,14 @@ export default function SubscriptionLaunchNotice() {
 
   if (!mount || !notice || dismissed) return null;
   const Icon = notice.type === 'setup' ? CreditCard : LockKeyhole;
+  const closeLabel = (COPY[language()] || COPY.en).close;
 
   return createPortal(
     <div className="mb-7 rounded-2xl border border-purple-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700"><Icon className="h-5 w-5"/></div>
         <div className="min-w-0 flex-1"><h2 className="text-lg font-black text-gray-900">{notice.title}</h2><p className="mt-1 text-sm leading-6 text-gray-600">{notice.body}</p></div>
-        <button type="button" onClick={() => setDismissed(true)} aria-label={t.close} title={t.close} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <button type="button" onClick={() => setDismissed(true)} aria-label={closeLabel} title={closeLabel} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500">
           <X className="h-5 w-5" />
         </button>
       </div>
