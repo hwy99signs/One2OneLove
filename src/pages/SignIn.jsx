@@ -7,6 +7,7 @@ import { useLanguage } from '@/Layout';
 import { toast } from 'sonner';
 import { verifiedEmailLogin } from '@/lib/verifiedLoginService';
 import { readableApiError, sendEmailVerificationOtp, verifyEmailOtp } from '@/lib/apiClient';
+import { startGuestPreview } from '@/lib/guestPreview';
 
 const translations = {
   en: { signIn: { title:'Sign In', subtitle:'Sign in to access your One2OneLove relationship tools.', email:'Email Address', password:'Password', emailPlaceholder:'Enter your email', passwordPlaceholder:'Enter your password', showPassword:'Show password', hidePassword:'Hide password', close:'Close', signInButton:'Sign In', signingIn:'Signing in…', forgotPassword:'Forgot Password?', invite:'Invite Friends', verifyTitle:'Verify Your Email', verifySubtitle:'We sent a 6-digit verification code to', codeLabel:'Verification Code', codePlaceholder:'Enter 6-digit code', verifyButton:'Verify Email', verifying:'Verifying…', resendCode:'Resend Code', resendSent:'A new verification code was sent.', codeHelp:'The code expires in about 5 minutes.', invalidCode:'Enter the 6-digit code from your email.', backToSignIn:'Back to Sign In', required:'Please enter both email and password.', success:'Successfully signed in!', rateLimited:'Your sign-in was accepted, but too many requests were sent too quickly. Wait a few seconds and try once more if you are not redirected.', emailVerificationRequired:'Email verification required.', invalidCredentials:'Invalid email or password. Please try again.', genericError:'An error occurred. Please try again.', resendError:'Could not resend the verification code.', timeout:'Sign-in took too long. Please try again.' } },
@@ -14,6 +15,15 @@ const translations = {
   fr: { signIn: { title:'Se Connecter', subtitle:'Connectez-vous pour accéder à vos outils relationnels One2OneLove.', email:'Adresse E-mail', password:'Mot de Passe', emailPlaceholder:'Entrez votre e-mail', passwordPlaceholder:'Entrez votre mot de passe', showPassword:'Afficher le mot de passe', hidePassword:'Masquer le mot de passe', close:'Fermer', signInButton:'Se Connecter', signingIn:'Connexion…', forgotPassword:'Mot de passe oublié ?', invite:'Inviter des Amis', verifyTitle:'Vérifiez Votre E-mail', verifySubtitle:'Nous avons envoyé un code de vérification à 6 chiffres à', codeLabel:'Code de Vérification', codePlaceholder:'Entrez le code à 6 chiffres', verifyButton:'Vérifier l’E-mail', verifying:'Vérification…', resendCode:'Renvoyer le Code', resendSent:'Un nouveau code de vérification a été envoyé.', codeHelp:'Le code expire dans environ 5 minutes.', invalidCode:'Entrez le code à 6 chiffres reçu par e-mail.', backToSignIn:'Retour à la Connexion', required:'Entrez votre e-mail et votre mot de passe.', success:'Connexion réussie !', rateLimited:'Votre connexion a été acceptée, mais trop de requêtes ont été envoyées trop rapidement. Attendez quelques secondes et réessayez une seule fois si vous n’êtes pas redirigé.', emailVerificationRequired:'La vérification de l’e-mail est requise.', invalidCredentials:'Adresse e-mail ou mot de passe incorrect. Veuillez réessayer.', genericError:'Une erreur s’est produite. Veuillez réessayer.', resendError:'Impossible de renvoyer le code de vérification.', timeout:'La connexion a pris trop de temps. Veuillez réessayer.' } },
   it: { signIn: { title:'Accedi', subtitle:'Accedi per usare gli strumenti di relazione One2OneLove.', email:'Indirizzo E-mail', password:'Password', emailPlaceholder:'Inserisci la tua e-mail', passwordPlaceholder:'Inserisci la password', showPassword:'Mostra password', hidePassword:'Nascondi password', close:'Chiudi', signInButton:'Accedi', signingIn:'Accesso…', forgotPassword:'Password dimenticata?', invite:'Invita Amici', verifyTitle:'Verifica la Tua E-mail', verifySubtitle:'Abbiamo inviato un codice di verifica a 6 cifre a', codeLabel:'Codice di Verifica', codePlaceholder:'Inserisci il codice a 6 cifre', verifyButton:'Verifica E-mail', verifying:'Verifica…', resendCode:'Reinvia Codice', resendSent:'È stato inviato un nuovo codice di verifica.', codeHelp:'Il codice scade tra circa 5 minuti.', invalidCode:'Inserisci il codice a 6 cifre ricevuto via e-mail.', backToSignIn:'Torna ad Accedi', required:'Inserisci e-mail e password.', success:'Accesso eseguito!', rateLimited:'Il tuo accesso è stato accettato, ma sono state inviate troppe richieste troppo rapidamente. Attendi qualche secondo e riprova una sola volta se non vieni reindirizzato.', emailVerificationRequired:'È richiesta la verifica dell’e-mail.', invalidCredentials:'E-mail o password non validi. Riprova.', genericError:'Si è verificato un errore. Riprova.', resendError:'Impossibile reinviare il codice di verifica.', timeout:'L’accesso ha impiegato troppo tempo. Riprova.' } },
   de: { signIn: { title:'Anmelden', subtitle:'Melden Sie sich an, um Ihre One2OneLove-Beziehungstools zu nutzen.', email:'E-Mail-Adresse', password:'Passwort', emailPlaceholder:'E-Mail eingeben', passwordPlaceholder:'Passwort eingeben', showPassword:'Passwort anzeigen', hidePassword:'Passwort ausblenden', close:'Schließen', signInButton:'Anmelden', signingIn:'Anmeldung…', forgotPassword:'Passwort vergessen?', invite:'Freunde Einladen', verifyTitle:'E-Mail Bestätigen', verifySubtitle:'Wir haben einen 6-stelligen Bestätigungscode gesendet an', codeLabel:'Bestätigungscode', codePlaceholder:'6-stelligen Code eingeben', verifyButton:'E-Mail Bestätigen', verifying:'Wird Bestätigt…', resendCode:'Code Erneut Senden', resendSent:'Ein neuer Bestätigungscode wurde gesendet.', codeHelp:'Der Code läuft nach etwa 5 Minuten ab.', invalidCode:'Geben Sie den 6-stelligen Code aus Ihrer E-Mail ein.', backToSignIn:'Zurück zur Anmeldung', required:'Geben Sie E-Mail und Passwort ein.', success:'Erfolgreich angemeldet!', rateLimited:'Ihre Anmeldung wurde akzeptiert, aber es wurden zu viele Anfragen in kurzer Zeit gesendet. Warten Sie einige Sekunden und versuchen Sie es nur einmal erneut, falls keine Weiterleitung erfolgt.', emailVerificationRequired:'Eine E-Mail-Bestätigung ist erforderlich.', invalidCredentials:'E-Mail-Adresse oder Passwort ist ungültig. Bitte versuchen Sie es erneut.', genericError:'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', resendError:'Der Bestätigungscode konnte nicht erneut gesendet werden.', timeout:'Die Anmeldung hat zu lange gedauert. Bitte versuchen Sie es erneut.' } },
+};
+
+
+const GUEST_COPY = {
+  en: { title:'24-Hour Guest Preview — View Only', body:'Explore the actual One2OneLove features for 24 hours. You can open and review the tools, but saving, sending, posting, scheduling, messaging, uploading, or changing data is locked until you subscribe.', button:'Start 24-Hour Guest Preview' },
+  es: { title:'Vista Previa de Invitado por 24 Horas — Solo Lectura', body:'Explora las funciones reales de One2OneLove durante 24 horas. Puedes abrir y revisar las herramientas, pero guardar, enviar, publicar, programar, enviar mensajes, subir archivos o cambiar datos requiere una suscripción.', button:'Iniciar Vista Previa de 24 Horas' },
+  fr: { title:'Aperçu Invité de 24 Heures — Consultation Uniquement', body:'Explorez les vraies fonctionnalités de One2OneLove pendant 24 heures. Vous pouvez ouvrir et consulter les outils, mais enregistrer, envoyer, publier, programmer, envoyer des messages, téléverser ou modifier des données nécessite un abonnement.', button:'Démarrer l’Aperçu de 24 Heures' },
+  it: { title:'Anteprima Ospite di 24 Ore — Solo Visualizzazione', body:'Esplora le vere funzionalità di One2OneLove per 24 ore. Puoi aprire e consultare gli strumenti, ma salvare, inviare, pubblicare, programmare, messaggiare, caricare o modificare dati richiede un abbonamento.', button:'Avvia Anteprima di 24 Ore' },
+  de: { title:'24-Stunden-Gastvorschau — Nur Ansicht', body:'Entdecken Sie 24 Stunden lang die tatsächlichen One2OneLove-Funktionen. Sie können die Tools öffnen und ansehen; Speichern, Senden, Posten, Planen, Nachrichten, Hochladen oder Datenänderungen erfordern ein Abonnement.', button:'24-Stunden-Gastvorschau Starten' },
 };
 
 export default function SignIn() {
@@ -25,6 +35,7 @@ export default function SignIn() {
   const [verificationCode, setVerificationCode] = useState('');
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const guest = GUEST_COPY[currentLanguage] || GUEST_COPY.en;
 
   const finishLogin = async () => {
     const result = await verifiedEmailLogin(email, password);
@@ -137,6 +148,19 @@ export default function SignIn() {
           <div className="text-right"><Link to={createPageUrl('ForgotPassword')} className="text-sm font-medium text-pink-600 hover:text-pink-700">{t.signIn.forgotPassword}</Link></div>
           <Button type="submit" disabled={isLoading} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-lg font-semibold text-white shadow-lg transition-all hover:from-pink-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50">{isLoading?<><Loader2 className="mr-2 h-5 w-5 animate-spin"/>{t.signIn.signingIn}</>:t.signIn.signInButton}</Button>
         </form>
+
+        <div className="mt-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <Eye className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"/>
+            <div>
+              <div className="font-bold text-amber-950">{guest.title}</div>
+              <p className="mt-1 text-sm leading-5 text-amber-900">{guest.body}</p>
+            </div>
+          </div>
+          <Button type="button" onClick={() => { startGuestPreview(); window.location.replace('/DateIdeas'); }} className="mt-4 w-full rounded-xl bg-amber-600 py-5 font-bold text-white hover:bg-amber-700">
+            <Eye className="mr-2 h-5 w-5"/>{guest.button}
+          </Button>
+        </div>
 
         <div className="mt-6 border-t border-gray-200 pt-6"><Link to={createPageUrl('Invite')}><Button variant="outline" className="w-full rounded-xl border-2 border-pink-300 py-3 font-semibold text-pink-600 hover:bg-pink-50"><UserCheck className="mr-2 h-5 w-5"/>{t.signIn.invite}</Button></Link></div>
       </div>
