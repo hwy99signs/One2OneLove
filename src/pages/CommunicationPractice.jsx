@@ -1,12 +1,12 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, ArrowRight, RotateCcw, CheckCircle, AlertCircle, Lightbulb, Heart, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { communicationPracticeScenarios } from "@/components/communication/CommunicationPracticeScenarios";
 
@@ -284,6 +284,21 @@ export default function CommunicationPractice() {
   const [completedScenarios, setCompletedScenarios] = useState([]);
   const [roundResults, setRoundResults] = useState({});
   const [sessionEnded, setSessionEnded] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.relationshipSubview !== 'communication-scenario') {
+      setSelectedScenario(null);
+      setSelectedResponse(null);
+      setShowFeedback(false);
+      if (sessionEnded || Object.keys(roundResults).length >= ROUND_SIZE) {
+        setSessionEnded(false);
+        setCompletedScenarios([]);
+        setRoundResults({});
+      }
+    }
+  }, [location.key]);
 
   const scenarioList = useMemo(
     () => buildScenarioList(roundScenarioIds, scenarios),
@@ -298,7 +313,22 @@ export default function CommunicationPractice() {
   const sessionFinished = sessionEnded || roundComplete;
 
   const handleScenarioSelect = (scenario) => {
+    if (location.state?.relationshipSubview !== 'communication-scenario') {
+      navigate(location.pathname + location.search, {
+        state: { ...(location.state || {}), relationshipSubview: 'communication-scenario' },
+      });
+    }
     setSelectedScenario(scenario);
+    setSelectedResponse(null);
+    setShowFeedback(false);
+  };
+
+  const backToScenarioList = () => {
+    if (location.state?.relationshipSubview === 'communication-scenario') {
+      navigate(-1);
+      return;
+    }
+    setSelectedScenario(null);
     setSelectedResponse(null);
     setShowFeedback(false);
   };
@@ -493,7 +523,7 @@ export default function CommunicationPractice() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedScenario(null)}
+                      onClick={backToScenarioList}
                     >
                       ← Back
                     </Button>
