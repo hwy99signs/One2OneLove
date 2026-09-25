@@ -38,7 +38,7 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const planCopy = planData.plans[userPlan];
 
   const heading = isGuest ? t.guest : isTrial ? t.trial : planCopy.displayName;
-  const priceLabel = isGuest ? '24 hours' : isTrial ? '7 days' : `$${planInfo.price}`;
+  const priceLabel = isGuest ? '24 hours' : isTrial ? '7 days' : `US${planInfo.price}`;
   const priceSub = isGuest ? 'view only · no card required' : isTrial ? 'subscription price not charged today' : t.perMonth;
 
   return (
