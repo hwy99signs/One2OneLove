@@ -80,19 +80,31 @@ export default [
     "Sei responsabile delle tue decisioni, comunicazioni, condotta e dell’utilizzo delle informazioni ottenute tramite One2OneLove. Le decisioni relative alle tue relazioni restano tue. Usa ragionevole prudenza prima di condividere informazioni personali, incontrare qualcuno, agire in base a consigli o inviare contenuti generati."
   ],
   [
-    "21. Modifiche ai presenti Termini",
+    "21. Piani di Abbonamento, Anteprima Ospite e Prova",
+    "One2OneLove offre un’Anteprima Ospite di 24 ore senza carta di pagamento, seguita da una prova facoltativa di 7 giorni con Accesso Completo che richiede una carta di credito o debito valida. All’inizio della prova non viene effettuato alcun addebito dell’abbonamento. La prova include l’accesso alle funzioni di livello Exclusive ma non include l’invio di Note d’Amore via SMS consegnate da One2OneLove. Salvo scelta di Exclusive o annullamento prima della fine della prova, la prova continua automaticamente come abbonamento Premiere a $9.99 al mese. Exclusive costa $19.99 al mese. I prezzi degli abbonamenti sono espressi in dollari statunitensi salvo diversa indicazione."
+  ],
+  [
+    "22. Addebiti per Note d’Amore via SMS",
+    "L’invio di Note d’Amore via SMS consegnate da One2OneLove non è disponibile durante l’Anteprima Ospite né durante la prova di 7 giorni. Dopo il primo pagamento riuscito dell’abbonamento, il primo invio di una Nota d’Amore via SMS consegnata da One2OneLove è gratuito. Ogni invio successivo costa $0.29. Gli addebiti di utilizzo possono essere raggruppati e fatturati al metodo di pagamento registrato. Il corpo di una Nota d’Amore personalizzata è limitato a 171 caratteri. Gli emoji aggiunti dall’utente non sono supportati nel testo personalizzato; il footer SMS brandizzato One2OneLove può includere il simbolo ❤️. Gli addebiti già maturati per Note d’Amore inviate restano dovuti, salvo diversa previsione della legge applicabile."
+  ],
+  [
+    "23. Annullamento e Fatturazione",
+    "Puoi annullare un abbonamento a pagamento in qualsiasi momento. Salvo quanto diversamente richiesto dalla legge o espressamente indicato al checkout, l’annullamento ha effetto alla fine del periodo di fatturazione corrente e impedisce il successivo addebito ricorrente dell’abbonamento. L’annullamento non annulla gli addebiti di utilizzo delle Note d’Amore già maturati né altri addebiti per servizi già forniti."
+  ],
+  [
+    "24. Modifiche ai presenti Termini",
     "Possiamo aggiornare i presenti Termini quando la piattaforma cambia o evolvono requisiti legali, operativi o di sicurezza. La versione vigente sarà pubblicata all’interno di One2OneLove. L’uso continuato dopo l’entrata in vigore di una versione aggiornata costituisce accettazione dei Termini aggiornati ove consentito dalla legge."
   ],
   [
-    "22. Legge applicabile",
+    "25. Legge applicabile",
     "I presenti Termini sono regolati dalla legge applicabile degli Stati Uniti e, ove pertinente, dalle leggi dello Stato del Texas, senza riguardo ai principi sui conflitti di legge, salvo che un’altra legge debba obbligatoriamente applicarsi."
   ],
   [
-    "23. Separabilità",
+    "26. Separabilità",
     "Se una disposizione dei presenti Termini viene ritenuta inapplicabile, le restanti disposizioni rimarranno in vigore nella massima misura consentita dalla legge."
   ],
   [
-    "24. Contatti",
+    "27. Contatti",
     "Le domande sui presenti Termini o sulla piattaforma possono essere inviate a support@one2onelove.com."
   ],
   [
