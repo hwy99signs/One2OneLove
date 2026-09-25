@@ -59,7 +59,7 @@ export async function handleLaunchZeroReset(request, env, url) {
         'chat_room_presence','chat_room_messages','adult_sensitive_consents',
         'contest_participants','gamification_points','contest_winners',
         'waitlist','love_note_send_entitlements','love_note_category_preferences',
-        'story_likes','story_helpful','suggestions','heartbeat_user_presence'
+        'story_likes','story_helpful','suggestions','heartbeat_user_presence','legacy_identity_map'
       ];
 
       for (const table of resetTables) {
