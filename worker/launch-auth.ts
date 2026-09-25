@@ -185,6 +185,12 @@ async function registerLaunchUser(request, env) {
   const termsAcceptedAt = clean(body.termsAcceptedAt, 100, true);
   const privacyAcknowledged = body.privacyPolicyAcknowledged === true;
   const age18Confirmed = body.age18Confirmed === true;
+  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Premiere';
+  const selectedPlan = selectedPlanRaw.toLowerCase() === 'exclusive'
+    ? 'Exclusive'
+    : ['premiere', 'premier'].includes(selectedPlanRaw.toLowerCase()) ? 'Premiere' : null;
+  if (!selectedPlan) return fail('Please choose Premiere or Exclusive before creating an account.');
+  const selectedPrice = selectedPlan === 'Exclusive' ? 19.99 : 9.99;
 
   if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
   if (password.length < 8) return fail('Password must contain at least 8 characters.');
@@ -232,9 +238,9 @@ async function registerLaunchUser(request, env) {
       await db.query(
         `INSERT INTO public.users
           (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-         VALUES ($1::uuid,$2,$3,'regular',true,'Premiere',9.99,'inactive')
+         VALUES ($1::uuid,$2,$3,'regular',true,$4,$5,'inactive')
          ON CONFLICT (id) DO NOTHING`,
-        [user.id, email, name],
+        [user.id, email, name, selectedPlan, selectedPrice],
       );
       await db.query('COMMIT');
     } catch (error) {
@@ -252,7 +258,8 @@ async function registerLaunchUser(request, env) {
     verificationEmailExpected: readiness.verification_email_on_signup === true,
     guestPreviewHours: 24,
     trialDays: 7,
-    trialDefaultPlan: 'Premiere',
+    trialDefaultPlan: selectedPlan,
+    selectedPlan,
   }, 201);
 }
 
