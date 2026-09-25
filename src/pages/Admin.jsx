@@ -186,7 +186,35 @@ export default function Admin() {
           {section==='feature-usage' && <div>
             <Heading title="Feature Usage Analytics" subtitle="See which features attract users, how many members use them, how often they are used, and when they were last active."/>
             <div className={cx('mb-5 rounded-xl border p-4 text-sm',featureUsage.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{featureUsage.trackingMessage}</div>
-            <TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Feature</th><th className="px-4 py-3">Unique Users</th><th className="px-4 py-3">7 Days</th><th className="px-4 py-3">30 Days</th><th className="px-4 py-3">Total Activity</th><th className="px-4 py-3">Avg / User</th><th className="px-4 py-3">Last Used</th></tr></thead><tbody className="divide-y divide-slate-100">{features.map(f=><tr key={f.feature} className="hover:bg-slate-50"><td className="px-4 py-3"><div className="font-semibold text-slate-900">{f.feature}</div><div className="text-xs text-slate-400">{f.category}</div></td><td className="px-4 py-3 font-bold text-slate-800">{number(f.unique_users)}</td><td className="px-4 py-3">{number(f.activity_7d)}</td><td className="px-4 py-3">{number(f.activity_30d)}</td><td className="px-4 py-3">{number(f.total_activity)}</td><td className="px-4 py-3">{decimal(f.avg_per_user)}</td><td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{date(f.last_used)}</td></tr>)}</tbody></table></TableShell>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="min-w-[900px]">
+                <div className="grid grid-cols-[2.2fr_1fr_1fr_1fr_1.2fr_1fr_1.5fr] items-center border-b border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <div>Feature</div>
+                  <div>Unique Users</div>
+                  <div>7 Days</div>
+                  <div>30 Days</div>
+                  <div>Total Activity</div>
+                  <div>Avg / User</div>
+                  <div>Last Used</div>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {features.map(f=>(
+                    <div key={f.feature} className="grid grid-cols-[2.2fr_1fr_1fr_1fr_1.2fr_1fr_1.5fr] items-center px-4 py-3 text-sm hover:bg-slate-50">
+                      <div>
+                        <div className="font-semibold text-slate-900">{f.feature}</div>
+                        <div className="text-xs text-slate-400">{f.category}</div>
+                      </div>
+                      <div className="font-bold text-slate-800">{number(f.unique_users)}</div>
+                      <div>{number(f.activity_7d)}</div>
+                      <div>{number(f.activity_30d)}</div>
+                      <div>{number(f.total_activity)}</div>
+                      <div>{decimal(f.avg_per_user)}</div>
+                      <div className="whitespace-nowrap text-xs text-slate-500">{date(f.last_used)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>}
 
           {section==='members' && <div><Heading title="Members" subtitle="Search recent signups, account status and access level."/><div className="mb-4 flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm"><Search size={17} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/></div><TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Joined</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredMembers.map(m=><tr key={m.id}><td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td><td className="px-4 py-3 text-slate-600">{m.user_type||'user'}</td><td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill></td><td className="px-4 py-3"><Pill tone={m.banned?'red':statusTone(m.subscription_status)}>{m.banned?'banned':m.subscription_status||'active'}</Pill></td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td></tr>)}</tbody></table></TableShell></div>}
