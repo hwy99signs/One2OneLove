@@ -218,7 +218,7 @@ export async function releaseLoveNoteReservation(db, userId, sourceId) {
 
 export async function billReservedLoveNoteSend(env, db, userId, sourceId, attempt = 1) {
   const ent = await db.query(
-    `SELECT id,quota_source,status
+    `SELECT id,source_type,quota_source,status
        FROM public.love_note_send_entitlements
       WHERE source_id=$1::uuid AND user_id=$2::uuid
       LIMIT 1`,
