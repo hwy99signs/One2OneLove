@@ -51,6 +51,58 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
+const ACCESS_TIMER_COPY = {
+  en: { guest: 'Guest Preview', trial: '7-Day Full Access Trial', remaining: 'remaining' },
+  es: { guest: 'Vista Previa', trial: 'Prueba de Acceso Completo de 7 Días', remaining: 'restante' },
+  fr: { guest: 'Aperçu Invité', trial: 'Essai Accès Complet de 7 Jours', remaining: 'restant' },
+  it: { guest: 'Anteprima Ospite', trial: 'Prova di Accesso Completo di 7 Giorni', remaining: 'rimanente' },
+  de: { guest: 'Gastvorschau', trial: '7-Tage-Vollzugriff-Test', remaining: 'verbleibend' },
+};
+
+function formatRemaining(milliseconds) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const clock = [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+  return days > 0 ? `${days}d ${clock}` : clock;
+}
+
+function AccessTimerShell({ user, mode, children }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const language = preferredLanguage();
+  const t = ACCESS_TIMER_COPY[language] || ACCESS_TIMER_COPY.en;
+  let expiry = null;
+  if (mode === 'guest' && user?.created_at) {
+    const created = new Date(user.created_at);
+    if (!Number.isNaN(created.getTime())) expiry = created.getTime() + 24 * 60 * 60 * 1000;
+  } else if (mode === 'trial' && user?.trial_end_date) {
+    const trialEnd = new Date(user.trial_end_date);
+    if (!Number.isNaN(trialEnd.getTime())) expiry = trialEnd.getTime();
+  }
+
+  const remaining = expiry ? Math.max(0, expiry - now) : null;
+  return (
+    <>
+      {remaining != null && remaining > 0 && (
+        <div className="sticky top-0 z-40 flex items-center justify-center gap-2 border-b border-purple-200 bg-white/95 px-3 py-2 text-sm font-semibold text-purple-800 shadow-sm backdrop-blur">
+          <Clock3 className="h-4 w-4" />
+          <span>{mode === 'trial' ? t.trial : t.guest}:</span>
+          <span className="font-mono font-black">{formatRemaining(remaining)}</span>
+          <span>{t.remaining}</span>
+        </div>
+      )}
+      {children}
+    </>
+  );
+}
+
 const PREVIEW_COPY = {
   en: { label: '24-Hour Guest Preview', remaining: 'Time remaining', action: 'Start 7-Day Trial' },
   es: { label: 'Vista Previa de Invitado de 24 Horas', remaining: 'Tiempo restante', action: 'Iniciar Prueba de 7 Días' },
