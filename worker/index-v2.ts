@@ -4,7 +4,6 @@ import { handleAdminRequest } from './admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest } from './feature-usage';
-import { handleSendCreditsRequest } from './send-credits';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
 import { handleLaunchAuthRequest } from './launch-auth';
