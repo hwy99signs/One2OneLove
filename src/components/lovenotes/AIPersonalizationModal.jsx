@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { generateRelationshipContent } from "@/lib/aiService";
+
+const LOVE_NOTE_MAX_CHARACTERS = 171;
+const sanitizeGeneratedLoveNote = (value) => Array.from(String(value || "").replace(/\p{Extended_Pictographic}/gu, "").trim()).slice(0, LOVE_NOTE_MAX_CHARACTERS).join("");
 import { toast } from "sonner";
 
 const personalityTraits = [
@@ -96,7 +99,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
         `Partner personality traits: ${selectedTraits.join(", ")}`,
         sharedMemories ? `Shared memories: ${sharedMemories}` : "",
         insideJokes ? `Inside jokes: ${insideJokes}` : "",
-        "Write 2-3 paragraphs. Naturally weave in the details without inventing facts. Return only the love note text."
+        "Write one concise love note of no more than 171 characters including spaces. Do not use emojis. Naturally weave in the details without inventing facts. Return only the love note text."
       ].filter(Boolean).join("\n");
 
       const response = await generateRelationshipContent({
@@ -109,9 +112,11 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
       });
 
       if (!response) throw new Error(t.noContent);
+      const sanitized = sanitizeGeneratedLoveNote(response);
+      if (!sanitized) throw new Error(t.noContent);
       onNoteGenerated({
         title: t.title,
-        content: response,
+        content: sanitized,
         category: noteStyle,
         budget: "free",
         tags: ["ai-generated", "personalized", ...selectedTraits.slice(0, 3)],
