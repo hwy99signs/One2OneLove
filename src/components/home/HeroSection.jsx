@@ -48,7 +48,7 @@ export default function HeroSection({ stats }) {
       <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
         <div className="flex justify-center mb-6">
           <img 
-            src="/assets/o2ol-logo.png" 
+            src="/assets/o2ol-approved-logo.png" 
             alt="One2One Love Logo" 
             className="h-32 sm:h-40 md:h-48 w-auto drop-shadow-2xl"
           />
