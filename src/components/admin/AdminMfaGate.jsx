@@ -3,7 +3,7 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { endAdminMfa, getAdminMfaStatus, touchAdminMfa } from '@/lib/adminMfaService';
 
-const ADMIN_IDLE_MS = 5 * 60 * 1000;
+const ADMIN_IDLE_MS = 30 * 60 * 1000;
 const SERVER_TOUCH_THROTTLE_MS = 30 * 1000;
 
 export default function AdminMfaGate({ children }) {
