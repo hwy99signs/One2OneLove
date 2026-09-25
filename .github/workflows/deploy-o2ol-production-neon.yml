@@ -111,7 +111,7 @@ jobs:
           grep -F "return 18;" worker/love-note-entitlements.ts >/dev/null
           grep -F "export const LOVE_NOTE_SEND_PRICE_CENTS = 29;" worker/love-note-billing.ts >/dev/null
           grep -F "export const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;" worker/love-note-billing.ts >/dev/null
-          grep -F "Love Note SMS sending is not available during the 7-day trial." worker/love-note-billing.ts >/dev/null
+          grep -F "Trial members are intentionally allowed to send:" worker/love-note-billing.ts >/dev/null
           grep -F "trialSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
           grep -F "firstTrialSendFree: true" worker/love-note-entitlements.ts >/dev/null
           grep -F "sendLoveNoteSms" src/pages/LoveNotes.jsx >/dev/null
