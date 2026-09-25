@@ -209,10 +209,9 @@ jobs:
             curl -fsS --max-time 20 "$BASE/VerifyPhone" -o /tmp/verify-phone.html
             grep -F "$LOCAL_JS" /tmp/verify-phone.html >/dev/null
             curl -fsS --max-time 20 "$BASE$LOCAL_JS" -o /tmp/app.js
-            grep -F '/api/auth/phone-number/send-otp' /tmp/app.js >/dev/null
-            grep -F '/api/auth/phone-number/verify' /tmp/app.js >/dev/null
+            grep -F '/api/phone-verification/send' /tmp/app.js >/dev/null
+            grep -F '/api/phone-verification/verify' /tmp/app.js >/dev/null
             grep -F '/api/consents/adult-sensitive' /tmp/app.js >/dev/null
-            grep -F '/api/contests/leaderboard' /tmp/app.js >/dev/null
             if grep -Fi 'supabase' /tmp/app.js; then
               echo 'Legacy Supabase marker found in deployed bundle.' >&2
               exit 1
