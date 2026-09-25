@@ -121,19 +121,16 @@ const translations = {
 
 
 const TRIAL_COPY = {
-  en: { title: '7 Days of Full One2OneLove Access', body: 'Add a credit or debit card to start. You will not be charged today. For 7 days you receive full One2OneLove access, including Exclusive-level features. After 7 days, your membership continues on Basic at $4.99/month unless you choose Premier, Exclusive, or cancel.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active.' },
-  es: { title: '7 Días de Acceso Completo a One2OneLove', body: 'Agrega una tarjeta de crédito o débito para comenzar. No se te cobrará hoy. Durante 7 días tendrás acceso completo a One2OneLove. Después, tu membresía continúa en Básico por $4.99/mes a menos que elijas Premier, Exclusive o canceles.', start: 'Comenzar 7 Días de Acceso Completo', starting: 'Abriendo pago seguro...', active: 'Tu prueba de acceso completo está activa.' },
-  fr: { title: '7 Jours d’Accès Complet à One2OneLove', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Aucun prélèvement aujourd’hui. Pendant 7 jours, vous bénéficiez d’un accès complet à One2OneLove. Ensuite, votre abonnement continue en Basic à 4,99 $/mois sauf si vous choisissez Premier, Exclusive ou annulez.', start: 'Commencer 7 Jours d’Accès Complet', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai d’accès complet est actif.' },
-  it: { title: '7 Giorni di Accesso Completo a One2OneLove', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non verrà addebitato nulla. Per 7 giorni avrai accesso completo a One2OneLove. Dopo, l’abbonamento continua con Basic a $4,99/mese salvo scelta di Premier, Exclusive o annullamento.', start: 'Inizia 7 Giorni di Accesso Completo', starting: 'Apertura del pagamento sicuro...', active: 'La prova di accesso completo è attiva.' },
-  de: { title: '7 Tage Vollzugriff auf One2OneLove', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Heute erfolgt keine Belastung. Sie erhalten 7 Tage vollständigen One2OneLove-Zugriff. Danach läuft Ihre Mitgliedschaft mit Basic für 4,99 $/Monat weiter, sofern Sie nicht Premier, Exclusive wählen oder kündigen.', start: '7 Tage Vollzugriff Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr Vollzugriff-Test ist aktiv.' },
-  nl: { title: '7 Dagen Volledige One2OneLove-Toegang', body: 'Voeg een creditcard of betaalpas toe om te starten. Vandaag wordt niets afgeschreven. Je krijgt 7 dagen volledige toegang tot One2OneLove. Daarna gaat je lidmaatschap verder met Basic voor $4,99/maand, tenzij je Premier, Exclusive kiest of opzegt.', start: 'Start 7 Dagen Volledige Toegang', starting: 'Beveiligde checkout openen...', active: 'Je proefperiode met volledige toegang is actief.' },
-  pt: { title: '7 Dias de Acesso Completo ao One2OneLove', body: 'Adicione um cartão de crédito ou débito para começar. Nada será cobrado hoje. Durante 7 dias você terá acesso completo ao One2OneLove. Depois, sua assinatura continua no Basic por US$ 4,99/mês, a menos que escolha Premier, Exclusive ou cancele.', start: 'Começar 7 Dias de Acesso Completo', starting: 'Abrindo checkout seguro...', active: 'Seu teste de acesso completo está ativo.' },
+  en: { title: '7 Days of Full One2OneLove Access', body: 'Add a credit or debit card to start. You will not be charged today. For 7 days you receive Exclusive-level access. Love Note SMS sending is not available during the trial. After 7 days, your membership continues on Premiere at $9.99/month unless you choose Exclusive or cancel before the trial ends.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active. Love Note SMS sending unlocks after your first successful paid subscription payment.' },
+  es: { title: '7 Días de Acceso Completo a One2OneLove', body: 'Agrega una tarjeta de crédito o débito para comenzar. No se te cobrará hoy. Durante 7 días tendrás acceso de nivel Exclusive. El envío de Notas de Amor por SMS no está disponible durante la prueba. Después de 7 días, tu membresía continúa en Premiere por $9.99/mes, a menos que elijas Exclusive o canceles antes de que termine la prueba.', start: 'Comenzar 7 Días de Acceso Completo', starting: 'Abriendo pago seguro...', active: 'Tu prueba de Acceso Completo de 7 días está activa. Los envíos SMS de Notas de Amor se habilitan después del primer pago exitoso de la suscripción.' },
+  fr: { title: '7 Jours d’Accès Complet à One2OneLove', body: 'Ajoutez une carte de crédit ou de débit pour commencer. Aucun prélèvement aujourd’hui. Pendant 7 jours, vous bénéficiez d’un accès de niveau Exclusive. L’envoi de Notes d’Amour par SMS n’est pas disponible pendant l’essai. Après 7 jours, votre abonnement continue avec Premiere à 9,99 $/mois, sauf si vous choisissez Exclusive ou annulez avant la fin de l’essai.', start: 'Commencer 7 Jours d’Accès Complet', starting: 'Ouverture du paiement sécurisé...', active: 'Votre essai de 7 jours avec Accès Complet est actif. L’envoi de Notes d’Amour par SMS se débloque après le premier paiement réussi de l’abonnement.' },
+  it: { title: '7 Giorni di Accesso Completo a One2OneLove', body: 'Aggiungi una carta di credito o debito per iniziare. Oggi non verrà addebitato nulla. Per 7 giorni avrai accesso di livello Exclusive. L’invio di Note d’Amore via SMS non è disponibile durante la prova. Dopo 7 giorni, l’abbonamento continua con Premiere a $9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.', start: 'Inizia 7 Giorni di Accesso Completo', starting: 'Apertura del pagamento sicuro...', active: 'La prova di 7 giorni con Accesso Completo è attiva. Gli invii SMS delle Note d’Amore si sbloccano dopo il primo pagamento riuscito dell’abbonamento.' },
+  de: { title: '7 Tage Vollzugriff auf One2OneLove', body: 'Fügen Sie zum Start eine Kredit- oder Debitkarte hinzu. Heute erfolgt keine Belastung. Sie erhalten 7 Tage Zugang auf Exclusive-Niveau. Das Senden von Liebesnachrichten per SMS ist während des Tests nicht verfügbar. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Premiere für 9,99 $/Monat weiter, sofern Sie nicht Exclusive wählen oder vor Ende des Tests kündigen.', start: '7 Tage Vollzugriff Starten', starting: 'Sicherer Checkout wird geöffnet...', active: 'Ihr 7-Tage-Vollzugriff-Test ist aktiv. SMS-Liebesnachrichten werden nach der ersten erfolgreichen Abonnementzahlung freigeschaltet.' },
 };
 
 const tierBase = {
-  Basic: { name: 'Basic', price: 4.99, icon: '💝', gradient: 'from-blue-400 to-blue-600', popular: false, isFree: false, priceId: import.meta.env.VITE_STRIPE_PRICE_BASIC || 'price_1UFUS7CoKDheG1ASULR2gdsn', checkoutDisabled: false },
-  Premiere: { name: 'Premiere', price: 9.99, icon: '💖', gradient: 'from-purple-400 to-pink-500', popular: true, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_1UFUSDCoKDheG1AS2AgFooh0', checkoutDisabled: false },
-  Exclusive: { name: 'Exclusive', price: 19.99, icon: '👑', gradient: 'from-yellow-400 to-orange-500', popular: false, priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_1UFUSKCoKDheG1ASG5zk97Ph', checkoutDisabled: false }
+  Premiere: { name: 'Premiere', price: 9.99, icon: '💖', gradient: 'from-purple-400 to-pink-500', popular: true, isFree: false, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIERE || 'price_1UFUSDCoKDheG1AS2AgFooh0', checkoutDisabled: false },
+  Exclusive: { name: 'Exclusive', price: 19.99, icon: '👑', gradient: 'from-yellow-400 to-orange-500', popular: false, isFree: false, priceId: import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE || 'price_1UFUSKCoKDheG1ASG5zk97Ph', checkoutDisabled: false }
 };
 
 export default function Subscription() {
@@ -161,13 +158,15 @@ export default function Subscription() {
     if (user) loadSubscriptionData();
   }, [user, t.loadError]);
 
-  const currentPlanRaw = currentSubscription?.effective_plan || user?.subscription_plan || 'Basic';
+  const currentPlanRaw = currentSubscription?.effective_plan || user?.subscription_plan || 'Premiere';
   const currentPlan = currentPlanRaw;
   const currentPlanDisplay = t.plans[currentPlan]?.displayName || currentPlan;
-  const tiers = useMemo(() => ['Basic', 'Premiere', 'Exclusive'].map((name) => ({ ...tierBase[name], ...t.plans[name], periodLabel: t.labels.month })), [t]);
+  const tiers = useMemo(() => ['Premiere', 'Exclusive'].map((name) => ({ ...tierBase[name], ...t.plans[name], periodLabel: t.labels.month })), [t]);
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat(currentLanguage || 'en', { year: 'numeric', month: 'short', day: '2-digit' }), [currentLanguage]);
   const statusLabel = (status) => t.statuses[status] || status;
   const needsBillingSetup = Boolean(user && currentSubscription && !currentSubscription.stripe_subscription_id);
+  const createdAt = user?.created_at ? new Date(user.created_at) : null;
+  const guestPreviewActive = Boolean(needsBillingSetup && createdAt && !Number.isNaN(createdAt.getTime()) && (Date.now() - createdAt.getTime()) < 24 * 60 * 60 * 1000);
   const trialActive = currentSubscription?.subscription_status === 'trial';
 
   const handleStartTrial = async () => {
@@ -189,7 +188,7 @@ export default function Subscription() {
           </div>
           <p className="text-xl text-gray-600 mb-2">{t.subtitle}</p>
           <p className="text-sm text-gray-500">
-            {t.currentlyOn}: <span className="font-bold text-purple-600">{currentPlanDisplay}</span>{t.planWord ? ` ${t.planWord}` : ''}
+            {t.currentlyOn}: <span className="font-bold text-purple-600">{guestPreviewActive ? 'Guest Preview' : currentPlanDisplay}</span>{!guestPreviewActive && t.planWord ? ` ${t.planWord}` : ''}
           </p>
         </div>
 
@@ -199,7 +198,7 @@ export default function Subscription() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
                 <div>
                   <h2 className="text-2xl font-black text-gray-900 mb-2">{trialCopy.title}</h2>
-                  <p className="text-gray-700 max-w-3xl">{trialActive ? trialCopy.active : trialCopy.body}</p>
+                  <p className="text-gray-700 max-w-3xl">{trialActive ? trialCopy.active : guestPreviewActive ? t.terms.guest : trialCopy.body}</p>
                 </div>
                 {needsBillingSetup && <Button onClick={handleStartTrial} disabled={trialLoading} className="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold px-7 py-6 whitespace-nowrap">{trialLoading ? trialCopy.starting : trialCopy.start}</Button>}
               </div>
@@ -207,7 +206,7 @@ export default function Subscription() {
           </Card>
         )}
 
-        {currentSubscription && ['active', 'trial'].includes(currentSubscription.subscription_status) && currentPlan !== 'Basic' && (
+        {currentSubscription && ['active', 'trial'].includes(currentSubscription.subscription_status) && (
           <Card className="mb-8 border-2 border-purple-200 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-600" />{t.currentSubscription}</CardTitle>
@@ -223,9 +222,21 @@ export default function Subscription() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {tiers.map((tier, index) => <TierCard key={tier.name} tier={tier} index={index} isSelected={currentPlan === tier.name} showPayment={true} labels={t.labels} />)}
         </div>
+
+        <Card className="mb-12 border border-purple-200 bg-white">
+          <CardHeader>
+            <CardTitle>Membership & Love Note Billing</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm leading-6 text-gray-700">
+            <p>{t.terms.guest}</p>
+            <p>{t.terms.trial}</p>
+            <p>{t.terms.loveNotes}</p>
+            <p>{t.terms.cancel}</p>
+          </CardContent>
+        </Card>
 
         {paymentHistory && paymentHistory.length > 0 && (
           <Card className="border-2 border-gray-200">
