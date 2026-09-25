@@ -56,11 +56,6 @@ export default {
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;
 
-    if (url.pathname.startsWith('/api/send-credits')) {
-      const response = await handleSendCreditsRequest(request, env, url);
-      if (response) return response;
-    }
-
     if (url.pathname.startsWith('/api/love-notes/')) {
       const response = await handleLoveNoteEntitlementRequest(request, env, url);
       if (response) return response;
