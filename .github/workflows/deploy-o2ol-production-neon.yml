@@ -65,8 +65,12 @@ jobs:
             echo 'Stale O2OL subscription pricing/free-plan assumption found.' >&2
             exit 1
           fi
-          if grep -RInE '["'"'"']Basic["'"'"']|subscription_plan[^\n]*Basic|STRIPE_PRICE_BASIC|\$?4\.99' src worker cloudflare/wrangler.production.jsonc wrangler.toml 2>/dev/null; then
-            echo 'Retired O2OL Basic tier or $4.99 pricing found in active runtime code.' >&2
+          if grep -RInE "['\"]Basic['\"]|subscription_plan.*Basic|STRIPE_PRICE_BASIC" src worker cloudflare/wrangler.production.jsonc wrangler.toml 2>/dev/null; then
+            echo 'Retired O2OL Basic tier found in active runtime code.' >&2
+            exit 1
+          fi
+          if grep -RInF '4.99' src worker cloudflare/wrangler.production.jsonc wrangler.toml 2>/dev/null; then
+            echo 'Retired O2OL $4.99 pricing found in active runtime code.' >&2
             exit 1
           fi
           if grep -RInE '/api/send-credits|sms_send_credit_wallets|sms_send_credit_purchases|2 sends per \$1|includedRemaining|monthlyLimit' src worker 2>/dev/null; then
