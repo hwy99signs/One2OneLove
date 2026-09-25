@@ -34,10 +34,14 @@ import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
+import { handleLaunchZeroReset } from './launch-zero-reset';
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    const zeroReset = await handleLaunchZeroReset(request, env, url);
+    if (zeroReset) return zeroReset;
 
     if (url.pathname === '/api/launch-readiness') {
       const response = await handleLaunchReadinessRequest(request, env, url);
