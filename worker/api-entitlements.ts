@@ -85,6 +85,7 @@ export async function enforceApiEntitlement(request, env, url) {
   try {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
+              COALESCE(p.is_active,true) AS is_active,
               p.subscription_plan,p.subscription_status,p.stripe_subscription_id,
               COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
@@ -93,7 +94,7 @@ export async function enforceApiEntitlement(request, env, url) {
       [auth.user.id],
     );
     const row = result.rows[0] || null;
-    if (!row || row.banned) {
+    if (!row || row.banned || row.is_active === false) {
       return json({ ok: false, error: { code: 'forbidden', message: 'Account access is unavailable.' } }, 403);
     }
     const phoneVerificationRequired = Boolean(
