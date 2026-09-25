@@ -131,7 +131,7 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
                 <span className="text-5xl font-bold text-green-600">{copy.free}</span>
               ) : (
                 <>
-                  <span className="text-5xl font-bold text-gray-900">USundefined</span>
+                  <span className="text-5xl font-bold text-gray-900">{`US${Number(tier.price).toFixed(2)}`}</span>
                   <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
                 </>
               )}
