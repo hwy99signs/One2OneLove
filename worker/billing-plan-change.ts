@@ -11,19 +11,17 @@ function json(data, status = 200) { return new Response(JSON.stringify(data), { 
 function fail(message, status = 400, code = 'bad_request') { return json({ ok: false, error: { code, message } }, status); }
 function canonicalPlan(value) {
   const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'basic') return 'Basic';
+  if (raw === 'basic') return 'Premiere';
   if (raw === 'premier' || raw === 'premiere') return 'Premiere';
   if (raw === 'exclusive') return 'Exclusive';
   return null;
 }
 function customerPlan(value) {
   const plan = canonicalPlan(value);
-  if (plan === 'Basic') return 'Basic';
-  if (plan === 'Premiere') return 'Premier';
-  return plan || 'Basic';
+  if (plan === 'Premiere') return 'Premiere';
+  return plan || 'Premiere';
 }
 function priceFor(plan) {
-  if (plan === 'Basic') return 4.99;
   if (plan === 'Premiere') return 9.99;
   if (plan === 'Exclusive') return 19.99;
   return 0;
@@ -34,7 +32,6 @@ function rank(plan) {
   return 1;
 }
 function priceIdFor(env, plan) {
-  if (plan === 'Basic') return env.STRIPE_PRICE_BASIC || null;
   if (plan === 'Premiere') return env.STRIPE_PRICE_PREMIERE || null;
   if (plan === 'Exclusive') return env.STRIPE_PRICE_EXCLUSIVE || null;
   return null;
@@ -81,7 +78,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
   try {
     const input = await readJson(request);
     const targetPlan = canonicalPlan(input?.planName || input?.plan_name || input?.plan);
-    if (!targetPlan) return fail('Choose Basic, Premier, or Exclusive.', 400, 'invalid_plan');
+    if (!targetPlan || !['Premiere','Exclusive'].includes(targetPlan)) return fail('Choose Premiere or Exclusive.', 400, 'invalid_plan');
     const targetPriceId = priceIdFor(env, targetPlan);
     if (!targetPriceId) return fail(`Stripe price is not configured for ${customerPlan(targetPlan)}.`, 503, 'billing_not_configured');
 
@@ -97,7 +94,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
         return fail('Plan switching on this screen is currently available during the 7-day trial.', 409, 'trial_change_only');
       }
 
-      const currentPlan = canonicalPlan(user.subscription_plan) || 'Basic';
+      const currentPlan = canonicalPlan(user.subscription_plan) || 'Premiere';
       const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(user.stripe_subscription_id)}`);
       const item = subscription?.items?.data?.[0];
       if (!item?.id) return fail('Stripe subscription item could not be found.', 502, 'stripe_subscription_item_missing');
