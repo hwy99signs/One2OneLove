@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { hasFeatureAccess } from '@/lib/stripeService';
+import { isGuestPreviewActive } from '@/lib/guestPreview';
 
 const canonicalPlan = (plan) => {
   const value = String(plan || '').trim();
@@ -13,7 +14,7 @@ const canonicalPlan = (plan) => {
  */
 export const useFeatureAccess = (feature) => {
   const { user } = useAuth();
-  const plan = canonicalPlan(user?.subscription_plan);
+  const plan = isGuestPreviewActive(user) ? 'Exclusive' : canonicalPlan(user?.subscription_plan);
 
   return {
     hasAccess: hasFeatureAccess(feature, user),
@@ -31,6 +32,7 @@ export const useHasPaidPlan = () => {
   const { user } = useAuth();
   const status = String(user?.subscription_status || '').toLowerCase();
   if (String(user?.role || '').toLowerCase() === 'admin') return true;
+  if (isGuestPreviewActive(user)) return true;
   return Boolean(user?.stripe_subscription_id && ['active', 'trial', 'trialing'].includes(status));
 };
 
@@ -50,7 +52,7 @@ export const useCanUpgrade = () => {
  */
 export const useFeatureLimits = () => {
   const { user } = useAuth();
-  const plan = canonicalPlan(user?.subscription_plan);
+  const plan = isGuestPreviewActive(user) ? 'Exclusive' : canonicalPlan(user?.subscription_plan);
 
   const limits = {
     Basic: {
