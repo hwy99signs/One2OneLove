@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarDays, LockKeyhole } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { isGuestPreviewActive } from '@/lib/guestPreview';
 
 const COPY = {
   en: { basic:'Basic unlocks 1 Date Idea this month.', premier:'Premier unlocks 8 Date Ideas this month.', note:'Your custom dates remain available and do not count against this allowance.', upgrade:'Compare Plans' },
@@ -13,7 +14,7 @@ const COPY = {
 
 function customerPlan(user) {
   const role = String(user?.role || '').toLowerCase();
-  if (role === 'admin') return 'Exclusive';
+  if (role === 'admin' || isGuestPreviewActive(user)) return 'Exclusive';
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
   const raw = String(user?.subscription_plan || 'Basic').toLowerCase();
