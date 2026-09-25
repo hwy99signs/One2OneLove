@@ -140,7 +140,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
                 <span className="text-5xl font-bold text-green-600">{copy.free}</span>
               ) : (
                 <>
-                  <span className="text-5xl font-bold text-gray-900">${tier.price}</span>
+                  <span className="text-5xl font-bold text-gray-900">US${tier.price}</span>
                   <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
                 </>
               )}
