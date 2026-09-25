@@ -62,7 +62,7 @@ const translations = {
     personalizedFor: "Personalized for",
     recipientPhone: "Recipient's Phone Number",
     recipientPhonePlaceholder: "(555) 123-4567",
-    recipientPhoneDesc: "One2OneLove SMS delivery: your first send during the 7-day Full Access trial is FREE; each additional send is $0.29. Recipient carrier rates may apply.",
+    recipientPhoneDesc: "One2OneLove SMS delivery: your first send during the 7-day Full Access trial is FREE; each additional send is US$0.29. Recipient carrier rates may apply.",
     schedulingOptions: "📅 Scheduling Options",
     sendNow: "Send Now",
     scheduleLater: "Schedule for Later",
@@ -196,7 +196,7 @@ const translations = {
     copiedTikTok: "¡Copiado! Pega en TikTok",
     openingLinkedIn: "Abriendo LinkedIn...",
     openingEmail: "Abriendo email...",
-    recipientPhoneDesc: "Entrega SMS de One2OneLove: tu primer envío durante la prueba de Acceso Completo de 7 días es GRATIS; cada envío adicional cuesta $0.29. Pueden aplicarse tarifas del operador del destinatario.",
+    recipientPhoneDesc: "Entrega SMS de One2OneLove: tu primer envío durante la prueba de Acceso Completo de 7 días es GRATIS; cada envío adicional cuesta US$0.29. Pueden aplicarse tarifas del operador del destinatario.",
     partnerNameDesc: 'Reemplaza "tú" y "tu" en las notas.',
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
@@ -301,7 +301,7 @@ const translations = {
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
     openingText: "Note d’Amour envoyée par One2OneLove.",
-    smsBillingPending: "Note d’Amour livrée. Les frais d’utilisation de 0,29 $ sont encore en cours de finalisation.",
+    smsBillingPending: "Note d’Amour livrée. Les frais d’utilisation de US$0.29 sont encore en cours de finalisation.",
     openingWhatsApp: "Ouverture de WhatsApp...",
     openingFacebook: "Ouverture de Facebook...",
     copiedInstagram: "Copié! Coller dans Instagram",
@@ -309,7 +309,7 @@ const translations = {
     copiedTikTok: "Copié! Coller dans TikTok",
     openingLinkedIn: "Ouverture de LinkedIn...",
     openingEmail: "Ouverture de l'email...",
-    recipientPhoneDesc: "Livraison SMS One2OneLove : votre premier envoi pendant l’essai Accès Complet de 7 jours est GRATUIT ; chaque envoi supplémentaire coûte 0,29 $. Des frais opérateur peuvent s’appliquer au destinataire.",
+    recipientPhoneDesc: "Livraison SMS One2OneLove : votre premier envoi pendant l’essai Accès Complet de 7 jours est GRATUIT ; chaque envoi supplémentaire coûte US$0.29. Des frais opérateur peuvent s’appliquer au destinataire.",
     partnerNameDesc: 'Remplace "tu" et "ton" dans les notes.',
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
@@ -414,7 +414,7 @@ const translations = {
     howItWorksItem4: "• Perfetto per sorprendere il tuo partner!",
     shareViaSocial: "📱 O Condividi Tramite Social Media",
     openingText: "Nota d’Amore inviata da One2OneLove.",
-    smsBillingPending: "Nota d’Amore consegnata. L’addebito di utilizzo di $0.29 è ancora in fase di finalizzazione.",
+    smsBillingPending: "Nota d’Amore consegnata. L’addebito di utilizzo di US$0.29 è ancora in fase di finalizzazione.",
     openingWhatsApp: "Apertura WhatsApp...",
     openingFacebook: "Apertura Facebook...",
     copiedInstagram: "Copiato! Incolla su Instagram",
@@ -422,7 +422,7 @@ const translations = {
     copiedTikTok: "Copiato! Incolla su TikTok",
     openingLinkedIn: "Apertura LinkedIn...",
     openingEmail: "Apertura email...",
-    recipientPhoneDesc: "Consegna SMS One2OneLove: il primo invio durante la prova di Accesso Completo di 7 giorni è GRATIS; ogni invio successivo costa $0.29. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
+    recipientPhoneDesc: "Consegna SMS One2OneLove: il primo invio durante la prova di Accesso Completo di 7 giorni è GRATIS; ogni invio successivo costa US$0.29. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
     partnerNameDesc: 'Sostituisce "tu" e "tuo" nelle note.',
     petNameDesc: 'Aggiunto alle note contenenti "amore".',
     specialPlaceDesc: "Aggiunto alle note di 'Ricordi'.",
@@ -527,7 +527,7 @@ const translations = {
     howItWorksItem4: "• Perfekt, um deinen Partner zu überraschen!",
     shareViaSocial: "📱 Oder Teilen über Social Media",
     openingText: "Liebesnachricht von One2OneLove gesendet.",
-    smsBillingPending: "Liebesnachricht zugestellt. Die Nutzungsgebühr von 0,29 $ wird noch abgeschlossen.",
+    smsBillingPending: "Liebesnachricht zugestellt. Die Nutzungsgebühr von US$0.29 wird noch abgeschlossen.",
     openingWhatsApp: "Öffne WhatsApp...",
     openingFacebook: "Öffne Facebook...",
     copiedInstagram: "Kopiert! In Instagram einfügen",
@@ -535,7 +535,7 @@ const translations = {
     copiedTikTok: "Kopiert! In TikTok einfügen",
     openingLinkedIn: "Öffne LinkedIn...",
     openingEmail: "Öffne E-Mail...",
-    recipientPhoneDesc: "One2OneLove-SMS-Zustellung: Ihre erste Sendung während des 7-Tage-Vollzugriff-Tests ist KOSTENLOS; jede weitere Sendung kostet 0,29 $. Beim Empfänger können Mobilfunkgebühren anfallen.",
+    recipientPhoneDesc: "One2OneLove-SMS-Zustellung: Ihre erste Sendung während des 7-Tage-Vollzugriff-Tests ist KOSTENLOS; jede weitere Sendung kostet US$0.29. Beim Empfänger können Mobilfunkgebühren anfallen.",
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
@@ -1292,7 +1292,7 @@ export default function LoveNotes() {
                     <span className="text-sm font-semibold text-gray-700">{t.additionalSms}</span>
                     <Phone className="w-5 h-5 text-blue-500" />
                   </div>
-                  <div className="text-2xl font-bold text-blue-600">$0.29</div>
+                  <div className="text-2xl font-bold text-blue-600">US$0.29</div>
                   <div className="text-xs text-gray-500">{t.billedWithSubscription}</div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
