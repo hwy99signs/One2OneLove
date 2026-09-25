@@ -448,6 +448,10 @@ export default function LoveLanguageQuiz() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 py-12 px-4">
         <div className="max-w-3xl mx-auto">
+          <Link to={createPageUrl("RelationshipQuizzes")} className="mb-6 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white">
+            <ArrowLeft className="w-4 h-4" />
+            {backToQuizzesCopy[currentLanguage] || backToQuizzesCopy.en}
+          </Link>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
