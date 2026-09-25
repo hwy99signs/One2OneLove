@@ -7,7 +7,6 @@ import { useLanguage } from '@/Layout';
 import { toast } from 'sonner';
 import { verifiedEmailLogin } from '@/lib/verifiedLoginService';
 import { readableApiError, sendEmailVerificationOtp, verifyEmailOtp } from '@/lib/apiClient';
-import { startGuestPreview } from '@/lib/guestPreview';
 
 const translations = {
   en: { signIn: { title:'Sign In', subtitle:'Sign in to access your One2OneLove relationship tools.', email:'Email Address', password:'Password', emailPlaceholder:'Enter your email', passwordPlaceholder:'Enter your password', showPassword:'Show password', hidePassword:'Hide password', close:'Close', signInButton:'Sign In', signingIn:'Signing in…', forgotPassword:'Forgot Password?', invite:'Invite Friends', verifyTitle:'Verify Your Email', verifySubtitle:'We sent a 6-digit verification code to', codeLabel:'Verification Code', codePlaceholder:'Enter 6-digit code', verifyButton:'Verify Email', verifying:'Verifying…', resendCode:'Resend Code', resendSent:'A new verification code was sent.', codeHelp:'The code expires in about 5 minutes.', invalidCode:'Enter the 6-digit code from your email.', backToSignIn:'Back to Sign In', required:'Please enter both email and password.', success:'Successfully signed in!', rateLimited:'Your sign-in was accepted, but too many requests were sent too quickly. Wait a few seconds and try once more if you are not redirected.', emailVerificationRequired:'Email verification required.', invalidCredentials:'Invalid email or password. Please try again.', genericError:'An error occurred. Please try again.', resendError:'Could not resend the verification code.', timeout:'Sign-in took too long. Please try again.' } },
@@ -157,9 +156,11 @@ export default function SignIn() {
               <p className="mt-1 text-sm leading-5 text-amber-900">{guest.body}</p>
             </div>
           </div>
-          <Button type="button" onClick={() => { startGuestPreview(); window.location.replace('/DateIdeas'); }} className="mt-4 w-full rounded-xl bg-amber-600 py-5 font-bold text-white hover:bg-amber-700">
-            <Eye className="mr-2 h-5 w-5"/>{guest.button}
-          </Button>
+          <Link to={createPageUrl('SignUp')}>
+            <Button type="button" className="mt-4 w-full rounded-xl bg-amber-600 py-5 font-bold text-white hover:bg-amber-700">
+              <Eye className="mr-2 h-5 w-5"/>{guest.button}
+            </Button>
+          </Link>
         </div>
 
         <div className="mt-6 border-t border-gray-200 pt-6"><Link to={createPageUrl('Invite')}><Button variant="outline" className="w-full rounded-xl border-2 border-pink-300 py-3 font-semibold text-pink-600 hover:bg-pink-50"><UserCheck className="mr-2 h-5 w-5"/>{t.signIn.invite}</Button></Link></div>
