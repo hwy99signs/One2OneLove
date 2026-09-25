@@ -8,6 +8,7 @@ const HEADERS = {
 };
 
 const PREMIERE_PREFIXES = [
+  '/api/games/scratch',
   '/api/love-notes',
   '/api/community-chat',
   '/api/chat',
