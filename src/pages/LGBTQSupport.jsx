@@ -77,6 +77,8 @@ const countryNameMap = {
   All:{en:'All',es:'Todos',fr:'Tous',it:'Tutti',de:'Alle'},
   Global:{en:'Global',es:'Global',fr:'Mondial',it:'Globale',de:'Global'},
   'United States':{en:'United States',es:'Estados Unidos',fr:'États-Unis',it:'Stati Uniti',de:'USA'},
+  'United States & Canada':{en:'United States & Canada',es:'Estados Unidos y Canadá',fr:'États-Unis et Canada',it:'Stati Uniti e Canada',de:'USA und Kanada'},
+  'France / Overseas France':{en:'France / Overseas France',es:'Francia / Francia de ultramar',fr:'France / Outre-mer',it:'Francia / Francia d’oltremare',de:'Frankreich / Überseegebiete'},
   Canada:{en:'Canada',es:'Canadá',fr:'Canada',it:'Canada',de:'Kanada'},
   Mexico:{en:'Mexico',es:'México',fr:'Mexique',it:'Messico',de:'Mexiko'},
   Spain:{en:'Spain',es:'España',fr:'Espagne',it:'Spagna',de:'Spanien'},
@@ -203,7 +205,7 @@ export default function LGBTQSupport() {
             <div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100 text-purple-700"><Heart size={20}/></div><ExternalLink className="text-slate-300 transition group-hover:text-purple-500" size={18}/></div>
             <h3 className="mt-4 text-lg font-black leading-6 text-slate-900">{resource.name}</h3>
             <div className="mt-4 space-y-2 text-sm text-slate-600">
-              <div className="flex items-start gap-2"><MapPin className="mt-0.5 shrink-0 text-slate-400" size={16}/><span><strong>{t.location}:</strong> {resource.country} · {resource.city}</span></div>
+              <div className="flex items-start gap-2"><MapPin className="mt-0.5 shrink-0 text-slate-400" size={16}/><span><strong>{t.location}:</strong> {localizeCountry(resource.country)} · {resource.city}</span></div>
               <div className="flex items-start gap-2"><Languages className="mt-0.5 shrink-0 text-slate-400" size={16}/><span><strong>{t.languages}:</strong> {resource.languages.map(localizeLanguage).join(', ')}</span></div>
               <div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 shrink-0 text-slate-400" size={16}/><span><strong>{t.type}:</strong> {t.typeMap[resource.type] || resource.type}</span></div>
             </div>
