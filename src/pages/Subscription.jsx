@@ -331,7 +331,7 @@ export default function Subscription() {
                       <tr key={payment.id} className="border-b last:border-0">
                         <td className="py-3 px-4 text-sm text-gray-900">{dateFormatter.format(new Date(payment.created_at))}</td>
                         <td className="py-3 px-4 text-sm text-gray-900">{t.plans[payment.subscription_plan]?.displayName || payment.subscription_plan}</td>
-                        <td className="py-3 px-4 text-sm text-gray-900">${payment.amount.toFixed(2)} {payment.currency.toUpperCase()}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">US${payment.amount.toFixed(2)}</td>
                         <td className="py-3 px-4"><span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${payment.status === 'succeeded' ? 'bg-green-100 text-green-800' : payment.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{payment.status === 'succeeded' && <CheckCircle className="w-3 h-3" />}{statusLabel(payment.status)}</span></td>
                       </tr>
                     ))}
