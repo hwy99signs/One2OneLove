@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - .github/deploy-o2ol-production-neon-trigger
+      - .github/workflows/deploy-o2ol-production-neon.yml
 
 permissions:
   contents: read
