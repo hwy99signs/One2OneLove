@@ -80,19 +80,31 @@ export default [
     "Eres responsable de tus decisiones, comunicaciones, conducta y uso de la información obtenida mediante One2OneLove. Las decisiones sobre tus relaciones siguen siendo tuyas. Usa un criterio razonable antes de compartir información personal, reunirte con alguien, actuar según consejos o enviar contenido generado."
   ],
   [
-    "21. Cambios en estos Términos",
+    "21. Planes de Membresía, Vista Previa de Invitado y Prueba",
+    "One2OneLove ofrece una Vista Previa de Invitado de 24 horas sin tarjeta de pago, seguida de una prueba opcional de Acceso Completo de 7 días que requiere una tarjeta de crédito o débito válida. No se realiza ningún cargo de suscripción al comenzar la prueba. La prueba incluye acceso a funciones de nivel Exclusive, pero no incluye el envío de Notas de Amor por SMS entregadas por One2OneLove. A menos que elijas Exclusive o canceles antes de que termine la prueba, esta continúa automáticamente como una membresía Premiere por $9.99 al mes. Exclusive cuesta $19.99 al mes. Los precios de suscripción se expresan en dólares estadounidenses salvo que se indique lo contrario."
+  ],
+  [
+    "22. Cargos por Notas de Amor por SMS",
+    "El envío de Notas de Amor por SMS entregadas por One2OneLove no está disponible durante la Vista Previa de Invitado ni durante la prueba de 7 días. Después del primer pago exitoso de la suscripción, el primer envío de una Nota de Amor por SMS entregada por One2OneLove es gratuito. Cada envío adicional cuesta $0.29. Los cargos por uso pueden agruparse y facturarse al método de pago guardado. El cuerpo de una Nota de Amor personalizada está limitado a 171 caracteres. No se admiten emojis añadidos por el usuario en el cuerpo personalizado; el pie de marca SMS de One2OneLove puede incluir el símbolo ❤️. Los cargos ya incurridos por Notas de Amor enviadas siguen siendo pagaderos, salvo que la ley aplicable exija lo contrario."
+  ],
+  [
+    "23. Cancelación y Facturación",
+    "Puedes cancelar una membresía de pago en cualquier momento. Salvo que la ley exija otra cosa o se indique expresamente al pagar, la cancelación entra en vigor al final del período de facturación actual y evita el siguiente cargo recurrente de suscripción. La cancelación no revierte los cargos por uso de Notas de Amor ya incurridos ni otros cargos por servicios ya prestados."
+  ],
+  [
+    "24. Cambios en estos Términos",
     "Podemos actualizar estos Términos cuando cambie la plataforma o evolucionen los requisitos legales, operativos o de seguridad. La versión vigente se publicará dentro de One2OneLove. El uso continuado después de que una versión actualizada entre en vigor constituye la aceptación de los Términos actualizados cuando la ley lo permita."
   ],
   [
-    "22. Ley aplicable",
+    "25. Ley aplicable",
     "Estos Términos se rigen por la legislación aplicable de los Estados Unidos y, cuando corresponda, por las leyes del Estado de Texas, sin tener en cuenta los principios sobre conflicto de leyes, salvo que otra ley deba aplicarse obligatoriamente."
   ],
   [
-    "23. Divisibilidad",
+    "26. Divisibilidad",
     "Si una disposición de estos Términos se considera inaplicable, las disposiciones restantes seguirán vigentes en la máxima medida permitida por la ley."
   ],
   [
-    "24. Contacto",
+    "27. Contacto",
     "Las preguntas sobre estos Términos o la plataforma pueden enviarse a support@one2onelove.com."
   ],
   [
