@@ -284,7 +284,7 @@ function LanguageContent({ children, currentPageName }) {
         <div className="max-w-[1400px] mx-auto px-5 py-[0.225rem] flex items-center justify-between gap-5">
           <Link to={createPageUrl("Home")} className="shrink-0 hover:opacity-90 transition-opacity">
             <img 
-              src="/assets/o2ol-logo.png" 
+              src="/assets/o2ol-header-logo.png" 
               alt="One2One Love Logo" 
               className="h-[88px] w-auto object-contain"
               onError={(e) => { e.target.style.display = 'none'; }}
