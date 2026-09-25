@@ -83,14 +83,19 @@ const translations = {
     copiedTikTok: "Copied! Paste in TikTok",
     openingLinkedIn: "Opening LinkedIn...",
     openingEmail: "Opening email...",
-    sendingLimits: "📊 Your Sending Limits",
+    sendingLimits: "📊 Love Note Sending & Billing",
+    firstPaidSend: "First paid-member SMS",
+    freeFirstSend: "FREE",
+    firstSendUsed: "Used",
+    additionalSms: "Additional One2OneLove SMS",
+    billedWithSubscription: "Billed with subscription usage",
     partnerNotes: "Notes to Partner",
     smsNotes: "SMS to Others",
     socialMedia: "Social Media",
     remaining: "remaining",
     limitReached: "Limit Reached!",
     limitPartner: "Your Love Note sending allowance has been reached.",
-    limitSMS: "Your Love Note sending allowance has been reached.",
+    limitSMS: "One2OneLove SMS sending is unavailable for this account right now.",
     limitSocial: "You've already sent a love note to this social platform.",
     aiPersonalize: "AI Personalize",
     aiGeneratedNote: "AI-Generated Note",
@@ -190,14 +195,19 @@ const translations = {
     partnerNameDesc: 'Reemplaza "tú" y "tu" en las notas.',
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
-    sendingLimits: "📊 Tus Límites de Envío",
+    sendingLimits: "📊 Envío y Facturación de Notas de Amor",
+    firstPaidSend: "Primer SMS como miembro de pago",
+    freeFirstSend: "GRATIS",
+    firstSendUsed: "Usado",
+    additionalSms: "SMS adicionales de One2OneLove",
+    billedWithSubscription: "Facturados con el uso de tu suscripción",
     partnerNotes: "Notas a la Pareja",
     smsNotes: "SMS a Otros",
     socialMedia: "Redes Sociales",
     remaining: "restantes",
     limitReached: "¡Límite Alcanzado!",
     limitPartner: "Has alcanzado tu límite de envío de Notas de Amor.",
-    limitSMS: "Has alcanzado tu límite de envío de Notas de Amor.",
+    limitSMS: "El envío de SMS de One2OneLove no está disponible para esta cuenta en este momento.",
     limitSocial: "Ya has enviado una nota de amor a esta plataforma social.",
     aiPersonalize: "Personalización con IA",
     aiGeneratedNote: "Nota Generada por IA",
@@ -297,14 +307,19 @@ const translations = {
     partnerNameDesc: 'Remplace "tu" et "ton" dans les notes.',
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
-    sendingLimits: "📊 Vos Limites d'Envoi",
+    sendingLimits: "📊 Envoi et Facturation des Notes d’Amour",
+    firstPaidSend: "Premier SMS comme membre payant",
+    freeFirstSend: "GRATUIT",
+    firstSendUsed: "Utilisé",
+    additionalSms: "SMS One2OneLove supplémentaires",
+    billedWithSubscription: "Facturés avec l’utilisation de votre abonnement",
     partnerNotes: "Notes au Partenaire",
     smsNotes: "SMS aux Autres",
     socialMedia: "Réseaux Sociaux",
     remaining: "restantes",
     limitReached: "Limite Atteinte !",
     limitPartner: "Vous avez atteint votre limite d’envoi de Notes d’Amour.",
-    limitSMS: "Vous avez atteint votre limite d’envoi de Notes d’Amour.",
+    limitSMS: "L’envoi de SMS One2OneLove n’est pas disponible pour ce compte pour le moment.",
     limitSocial: "Vous avez déjà envoyé une note d'amour sur cette plateforme sociale.",
     aiPersonalize: "Personnaliser avec IA",
     aiGeneratedNote: "Note Générée par IA",
@@ -404,14 +419,19 @@ const translations = {
     partnerNameDesc: 'Sostituisce "tu" e "tuo" nelle note.',
     petNameDesc: 'Aggiunto alle note contenenti "amore".',
     specialPlaceDesc: "Aggiunto alle note di 'Ricordi'.",
-    sendingLimits: "📊 I Tuoi Limiti di Invio",
+    sendingLimits: "📊 Invio e Fatturazione delle Note d’Amore",
+    firstPaidSend: "Primo SMS da membro pagante",
+    freeFirstSend: "GRATIS",
+    firstSendUsed: "Usato",
+    additionalSms: "SMS One2OneLove aggiuntivi",
+    billedWithSubscription: "Addebitati con l’utilizzo dell’abbonamento",
     partnerNotes: "Note al Partner",
     smsNotes: "SMS ad Altri",
     socialMedia: "Social Media",
     remaining: "rimanenti",
     limitReached: "Limite Raggiunto!",
     limitPartner: "Hai raggiunto il limite di invio delle Note d’Amore.",
-    limitSMS: "Hai raggiunto il limite di invio delle Note d’Amore.",
+    limitSMS: "L’invio SMS di One2OneLove non è disponibile per questo account in questo momento.",
     limitSocial: "Hai già inviato una nota d'amore a questa piattaforma social.",
     aiPersonalize: "Personalizza con AI",
     aiGeneratedNote: "Nota Generata da AI",
@@ -511,14 +531,19 @@ const translations = {
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
-    sendingLimits: "📊 Deine Sendelimits",
+    sendingLimits: "📊 Versand und Abrechnung von Liebesnachrichten",
+    firstPaidSend: "Erste SMS als zahlendes Mitglied",
+    freeFirstSend: "KOSTENLOS",
+    firstSendUsed: "Verwendet",
+    additionalSms: "Weitere One2OneLove-SMS",
+    billedWithSubscription: "Mit der Abonnementnutzung abgerechnet",
     partnerNotes: "Nachrichten an den Partner",
     smsNotes: "SMS an Andere",
     socialMedia: "Soziale Medien",
     remaining: "übrig",
     limitReached: "Limit Erreicht!",
     limitPartner: "Du hast dein Sendelimit für Liebesbotschaften erreicht.",
-    limitSMS: "Du hast dein Sendelimit für Liebesbotschaften erreicht.",
+    limitSMS: "One2OneLove-SMS sind für dieses Konto derzeit nicht verfügbar.",
     limitSocial: "Du hast bereits eine Liebesbotschaft an diese soziale Plattform gesendet.",
     aiPersonalize: "AI Personalisieren",
     aiGeneratedNote: "AI-Generierte Nachricht",
@@ -873,8 +898,8 @@ export default function LoveNotes() {
     enabled: !!currentUser?.id,
     staleTime: 30 * 1000,
   });
-  const includedQuotaDisplay = loveNoteUsage
-    ? `${loveNoteUsage.includedRemaining}/${loveNoteUsage.monthlyLimit}`
+  const firstSmsDisplay = loveNoteUsage
+    ? (loveNoteUsage.firstFreeAvailable ? t.freeFirstSend : t.firstSendUsed)
     : '—';
 
   // Calculate usage limits
@@ -1228,7 +1253,7 @@ export default function LoveNotes() {
           )}
         </div>
 
-        {/* Sending Limits Display */}
+        {/* Love Note Sending & Billing */}
         {currentUser && (
           <Card className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
             <CardContent className="pt-6">
@@ -1239,19 +1264,19 @@ export default function LoveNotes() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">{t.partnerNotes}</span>
+                    <span className="text-sm font-semibold text-gray-700">{t.firstPaidSend}</span>
                     <Heart className="w-5 h-5 text-pink-500" />
                   </div>
-                  <div className="text-2xl font-bold text-pink-600">{includedQuotaDisplay}</div>
-                  <div className="text-xs text-gray-500">{t.remaining}</div>
+                  <div className="text-2xl font-bold text-pink-600">{firstSmsDisplay}</div>
+                  <div className="text-xs text-gray-500">{t.smsNotes}</div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">{t.smsNotes}</span>
+                    <span className="text-sm font-semibold text-gray-700">{t.additionalSms}</span>
                     <Phone className="w-5 h-5 text-blue-500" />
                   </div>
-                  <div className="text-2xl font-bold text-blue-600">{includedQuotaDisplay}</div>
-                  <div className="text-xs text-gray-500">{t.remaining}</div>
+                  <div className="text-2xl font-bold text-blue-600">$0.29</div>
+                  <div className="text-xs text-gray-500">{t.billedWithSubscription}</div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
