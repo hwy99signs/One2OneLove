@@ -8,11 +8,11 @@ const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
 const COPY = {
-  en: { guest: 'Guest Preview', trial: 'Full Access Trial', ends: 'remaining', action: 'View Subscription' },
-  es: { guest: 'Vista Previa de Invitado', trial: 'Prueba de Acceso Completo', ends: 'restantes', action: 'Ver Suscripción' },
-  fr: { guest: 'Aperçu Invité', trial: 'Essai Accès Complet', ends: 'restant', action: 'Voir l’Abonnement' },
-  it: { guest: 'Anteprima Ospite', trial: 'Prova Accesso Completo', ends: 'rimanenti', action: 'Vedi Abbonamento' },
-  de: { guest: 'Gastvorschau', trial: 'Vollzugriff-Test', ends: 'verbleibend', action: 'Abonnement Anzeigen' },
+  en: { guest: 'Guest Preview — View Only', trial: 'Full Access Trial', ends: 'remaining', action: 'View Subscription' },
+  es: { guest: 'Vista Previa — Solo Ver', trial: 'Prueba de Acceso Completo', ends: 'restantes', action: 'Ver Suscripción' },
+  fr: { guest: 'Aperçu Invité — Consultation Uniquement', trial: 'Essai Accès Complet', ends: 'restant', action: 'Voir l’Abonnement' },
+  it: { guest: 'Anteprima Ospite — Solo Visualizzazione', trial: 'Prova Accesso Completo', ends: 'rimanenti', action: 'Vedi Abbonamento' },
+  de: { guest: 'Gastvorschau — Nur Ansehen', trial: 'Vollzugriff-Test', ends: 'verbleibend', action: 'Abonnement Anzeigen' },
 };
 
 function language() {
