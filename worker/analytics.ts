@@ -44,7 +44,14 @@ async function requireAdmin(db, userId) {
   return row && row.role === 'admin' && !row.banned ? row : null;
 }
 
-async function analytics(db) {
+function analyticsBaselineSql(env) {
+  const parsed = Date.parse(String(env.ANALYTICS_BASELINE_AT || ''));
+  const iso = Number.isNaN(parsed) ? '1970-01-01T00:00:00.000Z' : new Date(parsed).toISOString();
+  return `'${iso}'::timestamptz`;
+}
+
+async function analytics(db, env) {
+  const baselineSql = analyticsBaselineSql(env);
   const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary] = await Promise.all([
     db.query(`
       WITH days AS (
@@ -52,7 +59,7 @@ async function analytics(db) {
       ), counts AS (
         SELECT created_at::date AS day,count(*)::int AS signups
           FROM public.users
-         WHERE created_at >= current_date-29
+         WHERE created_at >= GREATEST(current_date-29, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,COALESCE(counts.signups,0)::int AS signups
@@ -64,12 +71,12 @@ async function analytics(db) {
       ), direct AS (
         SELECT COALESCE(sent_date,created_at)::date AS day,count(*)::int AS direct_sent
           FROM public.sent_love_notes
-         WHERE COALESCE(sent_date,created_at) >= current_date-29
+         WHERE COALESCE(sent_date,created_at) >= GREATEST(current_date-29, ${baselineSql})
          GROUP BY 1
       ), scheduled AS (
         SELECT created_at::date AS day,count(*)::int AS scheduled
           FROM public.scheduled_love_notes
-         WHERE created_at >= current_date-29
+         WHERE created_at >= GREATEST(current_date-29, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -88,7 +95,7 @@ async function analytics(db) {
                count(*) FILTER (WHERE lower(COALESCE(status,''))='failed')::int AS failed,
                count(*) FILTER (WHERE lower(COALESCE(status,'')) IN ('scheduled','pending'))::int AS pending
           FROM public.scheduled_love_notes
-         WHERE COALESCE(sent_at,last_attempt_at,updated_at,created_at) >= current_date-29
+         WHERE COALESCE(sent_at,last_attempt_at,updated_at,created_at) >= GREATEST(current_date-29, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -103,7 +110,7 @@ async function analytics(db) {
       ), activity AS (
         SELECT created_at::date AS day,count(*)::int AS events,count(DISTINCT user_id)::int AS users
           FROM public.feature_usage_events
-         WHERE created_at >= current_date-29
+         WHERE created_at >= GREATEST(current_date-29, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -128,7 +135,7 @@ async function analytics(db) {
       )
       SELECT feature,count(*)::int AS activity,count(DISTINCT user_id)::int AS users
         FROM activity
-       WHERE occurred_at >= current_date-29 AND user_id IS NOT NULL
+       WHERE occurred_at >= GREATEST(current_date-29, ${baselineSql}) AND user_id IS NOT NULL
        GROUP BY feature
        ORDER BY activity DESC,feature ASC
        LIMIT 12`),
@@ -137,10 +144,10 @@ async function analytics(db) {
         SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
       ), posts AS (
         SELECT created_at::date AS day,count(*)::int AS posts FROM public.community_posts
-         WHERE created_at>=current_date-29 GROUP BY 1
+         WHERE created_at>=GREATEST(current_date-29, ${baselineSql}) GROUP BY 1
       ), comments AS (
         SELECT created_at::date AS day,count(*)::int AS comments FROM public.post_comments
-         WHERE created_at>=current_date-29 GROUP BY 1
+         WHERE created_at>=GREATEST(current_date-29, ${baselineSql}) GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
              COALESCE(posts.posts,0)::int AS posts,
@@ -153,7 +160,7 @@ async function analytics(db) {
       ), counts AS (
         SELECT created_at::date AS day,count(*)::int AS payments
           FROM public.payment_history
-         WHERE created_at>=current_date-29
+         WHERE created_at>=GREATEST(current_date-29, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,COALESCE(counts.payments,0)::int AS payments
@@ -167,7 +174,9 @@ async function analytics(db) {
                  WHEN lower(COALESCE(subscription_plan,''))='exclusive' THEN 'Exclusive'
                  ELSE 'Premiere'
                END AS plan,count(*)::int AS count
-          FROM public.users GROUP BY 1
+          FROM public.users
+          WHERE created_at >= ${baselineSql}
+          GROUP BY 1
       )
       SELECT desired.plan,COALESCE(counts.count,0)::int AS count
         FROM desired LEFT JOIN counts USING(plan)
@@ -177,7 +186,8 @@ async function analytics(db) {
              0::int AS passed,
              0::int AS failed,
              0::int AS pending
-        FROM public.sent_love_notes`),
+        FROM public.sent_love_notes
+       WHERE COALESCE(sent_date,created_at) >= ${baselineSql}`),
   ]);
 
   return {
@@ -198,7 +208,50 @@ async function analytics(db) {
   };
 }
 
+
+async function publicStats(db, env) {
+  const baselineSql = analyticsBaselineSql(env);
+  const [notes, week, month, year] = await Promise.all([
+    db.query(`SELECT count(*)::int AS count FROM public.sent_love_notes WHERE COALESCE(sent_date,created_at) >= ${baselineSql}`),
+    db.query(`SELECT COALESCE(max(note_count),0)::int AS count FROM (
+      SELECT user_id,count(*)::int AS note_count
+      FROM public.sent_love_notes
+      WHERE user_id IS NOT NULL AND COALESCE(sent_date,created_at) >= GREATEST(${baselineSql}, now()-interval '7 days')
+      GROUP BY user_id
+    ) ranked`),
+    db.query(`SELECT COALESCE(max(note_count),0)::int AS count FROM (
+      SELECT user_id,count(*)::int AS note_count
+      FROM public.sent_love_notes
+      WHERE user_id IS NOT NULL AND COALESCE(sent_date,created_at) >= GREATEST(${baselineSql}, now()-interval '30 days')
+      GROUP BY user_id
+    ) ranked`),
+    db.query(`SELECT COALESCE(max(note_count),0)::int AS count FROM (
+      SELECT user_id,count(*)::int AS note_count
+      FROM public.sent_love_notes
+      WHERE user_id IS NOT NULL AND COALESCE(sent_date,created_at) >= GREATEST(${baselineSql}, now()-interval '365 days')
+      GROUP BY user_id
+    ) ranked`),
+  ]);
+  const result = {
+    notesCreated: Number(notes.rows[0]?.count || 0),
+    happyCouples: 0,
+    mostNotesWeek: Number(week.rows[0]?.count || 0),
+    mostNotesMonth: Number(month.rows[0]?.count || 0),
+    mostNotesYear: Number(year.rows[0]?.count || 0),
+  };
+  return { ...result, hasDisplayableData: Object.values(result).some(value => Number(value) > 0) };
+}
+
 export async function handleAnalyticsRequest(request, env, url) {
+  if (url.pathname === '/api/public-stats') {
+    if (request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
+    try {
+      return await withDb(env, async db => json({ ok:true, generatedAt:new Date().toISOString(), ...(await publicStats(db, env)) }));
+    } catch (error) {
+      console.error('One2OneLove public stats API error', error);
+      return json({ ok:true, notesCreated:0, happyCouples:0, mostNotesWeek:0, mostNotesMonth:0, mostNotesYear:0, hasDisplayableData:false });
+    }
+  }
   if (url.pathname !== '/api/admin/analytics') return null;
   if (request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
 
@@ -209,7 +262,7 @@ export async function handleAnalyticsRequest(request, env, url) {
     return await withDb(env, async (db) => {
       const admin = await requireAdmin(db, auth.user.id);
       if (!admin) return fail('Administrator access required.',403,'forbidden');
-      const data = await analytics(db);
+      const data = await analytics(db, env);
       return json({ ok:true,admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
     });
   } catch (error) {
