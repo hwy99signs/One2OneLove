@@ -75,15 +75,24 @@ export default function AdminMfaGate({ children }) {
       idleTimer = window.setTimeout(finishAdminSession, ADMIN_IDLE_MS);
     };
 
+    let touchRetryTimer = null;
+
     const renewServerSession = async () => {
       const now = Date.now();
       if (now - lastServerTouch < SERVER_TOUCH_THROTTLE_MS || ending) return;
-      lastServerTouch = now;
       try {
         await touchAdminMfa();
+        lastServerTouch = Date.now();
       } catch (error) {
-        if ([401, 403, 428].includes(error?.status)) {
-          finishAdminSession();
+        // Do not force-log the admin out because one background renewal request
+        // briefly fails. Every real Admin API call remains protected by the
+        // authenticated admin session + MFA gate on the Worker.
+        console.warn('Admin MFA renewal failed; preserving active dashboard session:', error);
+        if (!touchRetryTimer && !ending) {
+          touchRetryTimer = window.setTimeout(() => {
+            touchRetryTimer = null;
+            renewServerSession();
+          }, 5000);
         }
       }
     };
@@ -108,6 +117,7 @@ export default function AdminMfaGate({ children }) {
 
     return () => {
       if (idleTimer) window.clearTimeout(idleTimer);
+      if (touchRetryTimer) window.clearTimeout(touchRetryTimer);
       window.removeEventListener('pointerdown', registerActivity);
       window.removeEventListener('keydown', registerActivity);
       window.removeEventListener('scroll', registerActivity);
