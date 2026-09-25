@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, Briefcase, Building2, Mic2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,10 @@ export default function ProfessionalSignup() {
   const [searchParams, setSearchParams] = useSearchParams();
   const t = COPY[currentLanguage] || COPY.en;
   const selectedType = searchParams.get("type");
+  const selectedPlanRaw = String(searchParams.get("plan") || "").toLowerCase();
+  const selectedPlan = selectedPlanRaw === "exclusive" ? "Exclusive" : ["premiere", "premier"].includes(selectedPlanRaw) ? "Premiere" : null;
+
+  if (!selectedPlan) return <Navigate to="/Subscription?signup=1" replace />;
 
   if (["coach", "organization"].includes(selectedType)) {
     return <ProfessionalApplication mode={selectedType} />;
@@ -68,20 +72,20 @@ export default function ProfessionalSignup() {
 
   const openApplication = (key) => {
     if (key === "licensed") {
-      navigate(createPageUrl("TherapistSignup"));
+      navigate(`${createPageUrl("TherapistSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
       return;
     }
     if (key === "contributor") {
-      navigate(createPageUrl("InfluencerSignup"));
+      navigate(`${createPageUrl("InfluencerSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
       return;
     }
-    setSearchParams({ type: key });
+    setSearchParams({ type: key, plan: selectedPlan });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(createPageUrl("SignUp"))} className="mb-8 text-gray-600">
+        <Button variant="ghost" onClick={() => navigate(`/SignUp?plan=${encodeURIComponent(selectedPlan)}`)} className="mb-8 text-gray-600">
           <ArrowLeft className="w-5 h-5 mr-2" />{t.back}
         </Button>
 
