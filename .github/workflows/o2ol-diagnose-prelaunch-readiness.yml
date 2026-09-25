@@ -1,0 +1,25 @@
+name: Diagnose O2OL Prelaunch Readiness
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/o2ol-diagnose-prelaunch-readiness.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch readiness response
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://one2onelove-prelaunch.hwy99signs.workers.dev/api/launch-signup/readiness"
+          code=$(curl -sS --max-time 20 -o /tmp/body.txt -w '%{http_code}' "$URL" || true)
+          echo "HTTP=$code"
+          cat /tmp/body.txt || true
+          exit 0
