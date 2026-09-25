@@ -4,8 +4,11 @@ import { scheduledSmsReadiness, scheduledSmsReady, sendTwilioLoveNoteSms } from 
 import {
   CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
   LOVE_NOTE_SEND_PRICE_CENTS,
-  loveNoteSendAccess,
+  billReservedLoveNoteSend,
+  consumeLoveNoteReservation,
   loveNoteUsageSummary,
+  releaseLoveNoteReservation,
+  reserveLoveNoteSend,
 } from './love-note-billing';
 
 const HEADERS = {
@@ -232,9 +235,13 @@ async function postImmediateSms(db, env, auth, body) {
   if (!/^\+[1-9]\d{7,14}$/.test(recipientPhone)) {
     return fail('Enter a valid phone number with country code.', 400, 'invalid_phone');
   }
+
   const quotaDate = dateForTimezone(cleanText(body.timezone || body.client_timezone || 'UTC', 100, false) || 'UTC');
   const sourceId = crypto.randomUUID();
+  let reservation = null;
 
+  // Phase 1: reserve the first-free/29-cent entitlement and deliver the SMS.
+  // If Twilio fails, the DB transaction rolls back so no send is billed.
   await db.query('BEGIN');
   try {
     await db.query(
@@ -244,7 +251,7 @@ async function postImmediateSms(db, env, auth, body) {
       [sourceId, auth.user.id, title, content, recipientPhone],
     );
 
-    const reservation = await reserveLoveNoteSend(
+    reservation = await reserveLoveNoteSend(
       db,
       auth.user.id,
       'direct',
@@ -259,49 +266,53 @@ async function postImmediateSms(db, env, auth, body) {
       note_content: content,
     });
 
-    let billingPending = false;
-    let invoiceItemId = null;
-    if (!reservation.free) {
-      try {
-        const billed = await billReservedLoveNoteSend(env, db, auth.user.id, sourceId, 1);
-        invoiceItemId = billed?.invoiceItemId || null;
-      } catch (billingError) {
-        // Delivery already succeeded. Never resend the SMS just because Stripe had a transient error.
-        billingPending = true;
-        console.error('Delivered immediate Love Note billing pending', {
-          sourceId,
-          userId: auth.user.id,
-          message: billingError?.message,
-        });
-      }
-    }
-
-    await consumeLoveNoteReservation(db, auth.user.id, sourceId);
     await db.query('COMMIT');
-
-    return json({
-      ok: true,
-      note: {
-        id: sourceId,
-        note_title: title,
-        note_content: content,
-        recipient_type: 'sms',
-        recipient_identifier: recipientPhone,
-      },
-      billing: {
-        free: reservation.free === true,
-        amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
-        invoiceItemId,
-        billingPending,
-      },
-      usage: await usageForDate(db, auth.user.id, quotaDate),
-    }, 201);
   } catch (error) {
     await db.query('ROLLBACK').catch(() => null);
     throw error;
   }
-}
 
+  // Phase 2: after successful delivery, add the 29-cent Stripe invoice item
+  // (unless this is the complimentary first paid-member send) and consume the
+  // reservation. A transient Stripe error must never resend the SMS.
+  let billingPending = false;
+  let invoiceItemId = null;
+  await db.query('BEGIN');
+  try {
+    if (!reservation.free) {
+      const billed = await billReservedLoveNoteSend(env, db, auth.user.id, sourceId, 1);
+      invoiceItemId = billed?.invoiceItemId || null;
+    }
+    await consumeLoveNoteReservation(db, auth.user.id, sourceId);
+    await db.query('COMMIT');
+  } catch (billingError) {
+    await db.query('ROLLBACK').catch(() => null);
+    billingPending = true;
+    console.error('Delivered immediate Love Note billing pending', {
+      sourceId,
+      userId: auth.user.id,
+      message: billingError?.message,
+    });
+  }
+
+  return json({
+    ok: true,
+    note: {
+      id: sourceId,
+      note_title: title,
+      note_content: content,
+      recipient_type: 'sms',
+      recipient_identifier: recipientPhone,
+    },
+    billing: {
+      free: reservation.free === true,
+      amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
+      invoiceItemId,
+      billingPending,
+    },
+    usage: await usageForDate(db, auth.user.id, quotaDate),
+  }, 201);
+}
 async function postScheduled(db, env, auth, body) {
   const title = cleanText(body.note_title, 250, true);
   const content = validateLoveNoteBody(body.note_content);
@@ -331,21 +342,21 @@ async function postScheduled(db, env, auth, body) {
       [auth.user.id, title, content, scheduledDate, scheduledTime, scheduledTimezone,
        recipientPhone, deliveryMethod, language],
     );
-    const access = await loveNoteSendAccess(db, auth.user.id);
-    if (!access.allowed) {
-      throw Object.assign(new Error(access.message || 'Love Note SMS delivery is unavailable.'), {
-        status: access.code === 'trial_sms_locked' ? 403 : 402,
-        code: access.code || 'love_note_sms_unavailable',
-        usage: access,
-      });
-    }
+    const reservation = await reserveLoveNoteSend(
+      db,
+      auth.user.id,
+      'scheduled',
+      result.rows[0].id,
+      scheduledDate,
+      'reserved',
+    );
     await db.query('COMMIT');
     return json({
       ok: true,
       note: result.rows[0],
       billing: {
-        free: access.firstFreeAvailable,
-        amountCents: access.firstFreeAvailable ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
+        free: reservation.free === true,
+        amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
         firstPaidSendFree: true,
         additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
       },
@@ -368,12 +379,7 @@ async function cancelScheduled(db, auth, noteId) {
       return fail('Scheduled note not found or cannot be cancelled.', 404, 'not_found');
     }
 
-    await db.query(
-      `UPDATE public.love_note_send_entitlements
-          SET status='released',updated_at=now()
-        WHERE user_id=$1::uuid AND source_type='scheduled' AND source_id=$2::uuid AND status='reserved'`,
-      [auth.user.id, noteId],
-    );
+    await releaseLoveNoteReservation(db, auth.user.id, noteId);
     const updated = await db.query(
       `UPDATE public.scheduled_love_notes SET status='cancelled',updated_at=now()
         WHERE id=$1::uuid AND user_id=$2::uuid RETURNING id,status,updated_at`,
