@@ -32,14 +32,14 @@ export async function handleLaunchZeroReset(request, env, url) {
     await db.query('BEGIN');
     try {
       await db.query(`
-        CREATE TABLE IF NOT EXISTS public.app_migrations (
-          name text PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS public.launch_reset_markers (
+          reset_key text PRIMARY KEY,
           applied_at timestamptz NOT NULL DEFAULT now()
         )
       `);
 
       const existing = await db.query(
-        `SELECT 1 FROM public.app_migrations WHERE name='launch-zero-reset-20260925' LIMIT 1`,
+        `SELECT 1 FROM public.launch_reset_markers WHERE reset_key='launch-zero-reset-20260925' LIMIT 1`,
       );
       if (existing.rows[0]) {
         await db.query('ROLLBACK');
@@ -95,9 +95,9 @@ export async function handleLaunchZeroReset(request, env, url) {
       `);
 
       await db.query(`
-        INSERT INTO public.app_migrations(name,applied_at)
+        INSERT INTO public.launch_reset_markers(reset_key,applied_at)
         VALUES('launch-zero-reset-20260925',now())
-        ON CONFLICT(name) DO NOTHING
+        ON CONFLICT(reset_key) DO NOTHING
       `);
 
       const result = await db.query(`
