@@ -86,6 +86,7 @@ export async function enforceApiEntitlement(request, env, url) {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
               COALESCE(p.is_active,true) AS is_active,
+              p.created_at,
               p.subscription_plan,p.subscription_status,p.stripe_subscription_id,
               COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
@@ -112,6 +113,20 @@ export async function enforceApiEntitlement(request, env, url) {
     if (row.role === 'admin') return null;
 
     const status = String(row.subscription_status || '').toLowerCase();
+    const createdAt = row.created_at ? new Date(row.created_at).getTime() : NaN;
+    const guestPreviewActive = !row.stripe_subscription_id &&
+      Number.isFinite(createdAt) &&
+      createdAt > 0 &&
+      Date.now() < createdAt + 24 * 60 * 60 * 1000;
+
+    if (guestPreviewActive) {
+      if (['GET','HEAD'].includes(request.method.toUpperCase())) return null;
+      return json({
+        ok: false,
+        error: { code: 'guest_preview_view_only', message: 'Your 24-hour Guest Preview is view-only. Subscribe to use this feature.' },
+      }, 403);
+    }
+
     const active = ['active', 'trial', 'trialing'].includes(status);
     if (!active || !row.stripe_subscription_id) {
       return json({
