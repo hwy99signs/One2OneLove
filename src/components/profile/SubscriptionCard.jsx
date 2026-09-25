@@ -38,7 +38,7 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const planCopy = planData.plans[userPlan];
 
   const heading = isGuest ? t.guest : isTrial ? t.trial : planCopy.displayName;
-  const priceLabel = isGuest ? '24 hours' : isTrial ? '7 days' : 'US;
+  const priceLabel = isGuest ? '24 hours' : isTrial ? '7 days' : `US$${planInfo.price}`;
   const priceSub = isGuest ? 'view only · no card required' : isTrial ? 'subscription price not charged today' : t.perMonth;
 
   return (
@@ -57,36 +57,9 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
           <div>
             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-purple-600" />{t.planFeatures}</h4>
             <div className="space-y-2">
-              {planCopy.features.slice(0, 5).map((feature, index) => <div key={index} className="flex items-start gap-2"><Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" /><span className="text-sm text-gray-700">{feature}</span></div>)}
-              {planCopy.features.length > 5 && <p className="text-sm text-gray-500 italic">+ {planCopy.features.length - 5} {t.moreFeatures}</p>}
-            </div>
-          </div>
-          <Link to={createPageUrl('Subscription')}><Button variant="outline" className="w-full">{t.viewPlans}<ArrowRight className="w-4 h-4 ml-2" /></Button></Link>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
- + planInfo.price;
-  const priceSub = isGuest ? 'view only · no card required' : isTrial ? 'subscription price not charged today' : t.perMonth;
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-      <Card className="shadow-xl border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 bg-gradient-to-br ${planInfo.gradient} rounded-xl flex items-center justify-center shadow-lg`}><span className="text-2xl">{planInfo.icon}</span></div>
-              <div><p className="text-sm text-gray-600">{t.currentPlan}</p><h3 className="text-2xl font-bold text-gray-900">{heading}</h3></div>
-            </div>
-            <div className="text-right"><div className="text-2xl font-bold text-gray-900">{priceLabel}</div><div className="text-xs text-gray-600">{priceSub}</div></div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-purple-600" />{t.planFeatures}</h4>
-            <div className="space-y-2">
-              {planCopy.features.slice(0, 5).map((feature, index) => <div key={index} className="flex items-start gap-2"><Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" /><span className="text-sm text-gray-700">{feature}</span></div>)}
+              {planCopy.features.slice(0, 5).map((feature, index) => (
+                <div key={index} className="flex items-start gap-2"><Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" /><span className="text-sm text-gray-700">{feature}</span></div>
+              ))}
               {planCopy.features.length > 5 && <p className="text-sm text-gray-500 italic">+ {planCopy.features.length - 5} {t.moreFeatures}</p>}
             </div>
           </div>
