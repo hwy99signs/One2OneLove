@@ -159,7 +159,6 @@ export async function consumeLoveNoteReservation(db, userId, sourceId) {
     `UPDATE public.love_note_send_entitlements
         SET status='consumed',updated_at=now()
       WHERE user_id=$1::uuid
-        AND source_type='scheduled'
         AND source_id=$2::uuid
         AND status='reserved'
       RETURNING id,quota_source,status`,
@@ -174,7 +173,7 @@ export async function releaseLoveNoteReservation(db, userId, sourceId) {
   const entitlement = await db.query(
     `SELECT id,quota_source,status
        FROM public.love_note_send_entitlements
-      WHERE source_type='scheduled' AND source_id=$1::uuid AND user_id=$2::uuid
+      WHERE source_id=$1::uuid AND user_id=$2::uuid
       LIMIT 1
       FOR UPDATE`,
     [sourceId, userId],
@@ -221,7 +220,7 @@ export async function billReservedLoveNoteSend(env, db, userId, sourceId, attemp
   const ent = await db.query(
     `SELECT id,quota_source,status
        FROM public.love_note_send_entitlements
-      WHERE source_type='scheduled' AND source_id=$1::uuid AND user_id=$2::uuid
+      WHERE source_id=$1::uuid AND user_id=$2::uuid
       LIMIT 1`,
     [sourceId, userId],
   );
@@ -259,6 +258,7 @@ export async function billReservedLoveNoteSend(env, db, userId, sourceId, attemp
   params.set('metadata[o2ol_type]', 'love_note_sms');
   params.set('metadata[user_id]', userId);
   params.set('metadata[love_note_source_id]', sourceId);
+  params.set('metadata[source_type]', row.source_type || 'sms');
   params.set('metadata[unit_price_cents]', String(LOVE_NOTE_SEND_PRICE_CENTS));
 
   const invoiceItem = await stripeRequest(
@@ -266,7 +266,7 @@ export async function billReservedLoveNoteSend(env, db, userId, sourceId, attemp
     'POST',
     '/invoiceitems',
     params,
-    `o2ol-love-note-${sourceId}-attempt-${attempt}`,
+    `o2ol-love-note-${row.source_type || 'sms'}-${sourceId}-attempt-${attempt}`,
   );
 
   return {
