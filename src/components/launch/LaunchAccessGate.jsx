@@ -103,7 +103,6 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if (!isAuthenticated || !user) {
-    if (isGuestPreviewActive() && GUEST_PREVIEW_ROUTES.has(route)) return children;
     return <Navigate to="/SignIn" replace />;
   }
 
@@ -117,6 +116,10 @@ export default function LaunchAccessGate({ pathname, children }) {
 
   const role = String(user.role || '').toLowerCase();
   if (role === 'admin') return children;
+
+  if (isGuestPreviewActive(user) && GUEST_PREVIEW_ROUTES.has(route)) {
+    return children;
+  }
 
   if (route === '/subscription' || route === '/payment-success') return children;
 
