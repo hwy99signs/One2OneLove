@@ -82,7 +82,6 @@ export default function Home() {
               alt=""
               aria-hidden="true"
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${index === heroSlide ? 'opacity-100' : 'opacity-0'}`}
-              style={{ filter: 'brightness(1.5)' }}
             />
           ))}
         </div>
