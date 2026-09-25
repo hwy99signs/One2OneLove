@@ -1,0 +1,103 @@
+name: Verify O2OL AI and SMS Queue
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/o2ol-verify-ai-sms.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Verify AI secret and live readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          SECRETS=$(npx --yes wrangler@latest secret list --name one2onelove-launch)
+          if printf '%s\n' "$SECRETS" | grep -F 'OPENAI_API_KEY' >/dev/null; then
+            echo 'OPENAI_SECRET_PRESENT=yes'
+          else
+            echo 'OPENAI_SECRET_PRESENT=no'
+            exit 1
+          fi
+
+          curl -fsS --max-time 20 'https://one2onelove.com/api/launch-readiness' -o /tmp/readiness.json
+          cat /tmp/readiness.json
+          jq -e '.ok == true and .readiness.optionalProviders.aiProviderReady == true' /tmp/readiness.json >/dev/null
+          echo 'O2OL_AI_PROVIDER_READY=yes'
+
+      - name: Read-only scheduled SMS queue count
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/o2ol-sms-audit
+          mkdir -p /tmp/o2ol-sms-audit
+          cd /tmp/o2ol-sms-audit
+          npm init -y >/dev/null
+          npm install pg@8.16.3 --no-audit --no-fund >/dev/null
+
+          cat > index.js <<'JS'
+          import { Client } from 'pg';
+          export default {
+            async fetch(request, env) {
+              const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
+              await db.connect();
+              try {
+                const result = await db.query(`
+                  SELECT
+                    count(*) FILTER (
+                      WHERE status='scheduled'
+                        AND delivery_method='sms'
+                        AND ((scheduled_date + scheduled_time) AT TIME ZONE scheduled_timezone) <= now()
+                    )::int AS overdue_sms,
+                    count(*) FILTER (
+                      WHERE status='scheduled'
+                        AND delivery_method='sms'
+                        AND ((scheduled_date + scheduled_time) AT TIME ZONE scheduled_timezone) > now()
+                    )::int AS future_sms
+                  FROM public.scheduled_love_notes
+                `);
+                return Response.json({ ok: true, ...result.rows[0] });
+              } finally {
+                await db.end();
+              }
+            }
+          };
+          JS
+
+          cat > wrangler.jsonc <<'JSON'
+          {
+            "name": "o2ol-sms-queue-audit",
+            "main": "./index.js",
+            "compatibility_date": "2026-09-24",
+            "compatibility_flags": ["nodejs_compat"],
+            "workers_dev": true,
+            "hyperdrive": [
+              {
+                "binding": "HYPERDRIVE",
+                "id": "ef44564dbfca4e1bb13176ee568aaddf"
+              }
+            ]
+          }
+          JSON
+
+          cleanup() {
+            npx --yes wrangler@latest delete --name o2ol-sms-queue-audit --force >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          npx --yes wrangler@latest deploy --config wrangler.jsonc >/tmp/deploy.txt
+          cat /tmp/deploy.txt
+          sleep 3
+
+          curl -fsS --max-time 20 'https://o2ol-sms-queue-audit.hwy99signs.workers.dev/' -o /tmp/smsqueue.json
+          cat /tmp/smsqueue.json
+          jq -e '.ok == true and (.overdue_sms|type=="number") and (.future_sms|type=="number")' /tmp/smsqueue.json >/dev/null
