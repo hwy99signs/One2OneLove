@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { CreditCard, LockKeyhole } from 'lucide-react';
 
 const COPY = {
-  en: { setupTitle:'Finish Your Membership Setup', setupBody:'Start your 7-day Full Access trial by adding a credit or debit card. You will not be charged today.', requiredTitle:plan=>`${plan} Access Required`, requiredBody:plan=>`The feature you selected is included with ${plan}. Compare the plans below to continue.` },
-  es: { setupTitle:'Completa la Configuración de Tu Membresía', setupBody:'Inicia tu prueba de Acceso Completo de 7 días agregando una tarjeta de crédito o débito. No se te cobrará hoy.', requiredTitle:plan=>`Se Requiere Acceso ${plan}`, requiredBody:plan=>`La función seleccionada está incluida con ${plan}. Compara los planes a continuación para continuar.` },
-  fr: { setupTitle:'Terminez la Configuration de Votre Abonnement', setupBody:'Commencez votre essai de 7 jours avec Accès Complet en ajoutant une carte de crédit ou de débit. Aucun prélèvement aujourd’hui.', requiredTitle:plan=>`Accès ${plan} Requis`, requiredBody:plan=>`La fonctionnalité sélectionnée est incluse avec ${plan}. Comparez les formules ci-dessous pour continuer.` },
-  it: { setupTitle:'Completa la Configurazione del Tuo Abbonamento', setupBody:'Inizia la prova di 7 giorni con Accesso Completo aggiungendo una carta di credito o debito. Oggi non verrà addebitato nulla.', requiredTitle:plan=>`Accesso ${plan} Richiesto`, requiredBody:plan=>`La funzione selezionata è inclusa con ${plan}. Confronta i piani qui sotto per continuare.` },
-  de: { setupTitle:'Mitgliedschaft Fertig Einrichten', setupBody:'Starten Sie den 7-Tage-Test mit Vollzugriff, indem Sie eine Kredit- oder Debitkarte hinzufügen. Heute wird nichts berechnet.', requiredTitle:plan=>`${plan}-Zugang Erforderlich`, requiredBody:plan=>`Die ausgewählte Funktion ist in ${plan} enthalten. Vergleichen Sie unten die Pläne, um fortzufahren.` },
+  en: { setupTitle:'Finish Your Membership Setup', setupBody:'Your 24-hour Guest Preview is available without a card. To continue after it ends, start the 7-day Full Access trial with a credit or debit card. You will not be charged today, and Love Note SMS sending remains locked until your first successful paid subscription payment.', requiredTitle:plan=>`${plan} Access Required`, requiredBody:plan=>`The feature you selected is included with ${plan}. Compare the plans below to continue.` },
+  es: { setupTitle:'Completa la Configuración de Tu Membresía', setupBody:'Tu Vista Previa de Invitado de 24 horas está disponible sin tarjeta. Para continuar después, inicia la prueba de Acceso Completo de 7 días con una tarjeta. No se te cobrará hoy y los envíos SMS de Notas de Amor permanecen bloqueados hasta el primer pago exitoso de la suscripción.', requiredTitle:plan=>`Se Requiere Acceso ${plan}`, requiredBody:plan=>`La función seleccionada está incluida con ${plan}. Compara los planes a continuación para continuar.` },
+  fr: { setupTitle:'Terminez la Configuration de Votre Abonnement', setupBody:'Votre Aperçu Invité de 24 heures est disponible sans carte. Pour continuer ensuite, commencez l’essai de 7 jours avec Accès Complet avec une carte. Aucun prélèvement aujourd’hui et les envois SMS de Notes d’Amour restent bloqués jusqu’au premier paiement réussi de l’abonnement.', requiredTitle:plan=>`Accès ${plan} Requis`, requiredBody:plan=>`La fonctionnalité sélectionnée est incluse avec ${plan}. Comparez les formules ci-dessous pour continuer.` },
+  it: { setupTitle:'Completa la Configurazione del Tuo Abbonamento', setupBody:'L’Anteprima Ospite di 24 ore è disponibile senza carta. Per continuare dopo, avvia la prova di 7 giorni con Accesso Completo con una carta. Oggi non verrà addebitato nulla e gli invii SMS delle Note d’Amore restano bloccati fino al primo pagamento riuscito dell’abbonamento.', requiredTitle:plan=>`Accesso ${plan} Richiesto`, requiredBody:plan=>`La funzione selezionata è inclusa con ${plan}. Confronta i piani qui sotto per continuare.` },
+  de: { setupTitle:'Mitgliedschaft Fertig Einrichten', setupBody:'Die 24-stündige Gastvorschau ist ohne Karte verfügbar. Um danach fortzufahren, starten Sie den 7-Tage-Test mit Vollzugriff mit einer Karte. Heute wird nichts berechnet; SMS-Liebesnachrichten bleiben bis zur ersten erfolgreichen Abonnementzahlung gesperrt.', requiredTitle:plan=>`${plan}-Zugang Erforderlich`, requiredBody:plan=>`Die ausgewählte Funktion ist in ${plan} enthalten. Vergleichen Sie unten die Pläne, um fortzufahren.` },
 };
 
 function language() {
@@ -30,10 +30,10 @@ export default function SubscriptionLaunchNotice() {
 
     const lang = language();
     const t = COPY[lang] || COPY.en;
-    const normalizedPlan = required === 'Premiere' ? 'Premier' : required;
+    const normalizedPlan = required === 'Premier' ? 'Premiere' : required;
     setNotice(setup
       ? { title:t.setupTitle, body:t.setupBody, type:'setup' }
-      : { title:t.requiredTitle(normalizedPlan || 'Premier'), body:t.requiredBody(normalizedPlan || 'Premier'), type:'required' });
+      : { title:t.requiredTitle(normalizedPlan || 'Premiere'), body:t.requiredBody(normalizedPlan || 'Premiere'), type:'required' });
 
     let host = null;
     const attach = () => {
