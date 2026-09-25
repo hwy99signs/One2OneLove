@@ -1,0 +1,49 @@
+name: Diagnose O2OL Live Frontend
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/o2ol-diagnose-live-frontend.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect both production domains
+        shell: bash
+        run: |
+          set -u
+          for BASE in https://one2onelove.com https://www.one2onelove.com; do
+            echo "=== $BASE ==="
+            curl -sS -i --max-time 20 "$BASE/" -o /tmp/root.txt || true
+            head -40 /tmp/root.txt || true
+            HTML=$(curl -sS --max-time 20 "$BASE/" || true)
+            JS=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//' || true)
+            echo "BUNDLE=$JS"
+
+            echo "-- VerifyPhone --"
+            code=$(curl -sS --max-time 20 -o /tmp/verify.html -w '%{http_code}' "$BASE/VerifyPhone" || true)
+            echo "HTTP=$code"
+            if [ -n "$JS" ]; then
+              if grep -F "$JS" /tmp/verify.html >/dev/null 2>&1; then echo "VerifyPhone bundle=PASS"; else echo "VerifyPhone bundle=FAIL"; fi
+
+              curl -sS --max-time 20 "$BASE$JS" -o /tmp/app.js || true
+              for marker in '/api/auth/phone-number/send-otp' '/api/auth/phone-number/verify' '/api/consents/adult-sensitive' '/api/contests/leaderboard'; do
+                if grep -F "$marker" /tmp/app.js >/dev/null 2>&1; then echo "$marker=PASS"; else echo "$marker=FAIL"; fi
+              done
+              if grep -Fi 'supabase' /tmp/app.js >/dev/null 2>&1; then echo "SUPABASE_MARKER=FOUND"; else echo "SUPABASE_MARKER=NONE"; fi
+            fi
+
+            for path in /api/health /api/reviews /api/stories '/api/contests/leaderboard?type=monthly_love_notes&period=2026-09&limit=1' /api/memories /api/consents/adult-sensitive; do
+              code=$(curl -sS --max-time 20 -o /tmp/api.txt -w '%{http_code}' "$BASE$path" || true)
+              echo "$path -> HTTP $code"
+              head -c 500 /tmp/api.txt || true
+              echo
+            done
+          done
+          exit 0
