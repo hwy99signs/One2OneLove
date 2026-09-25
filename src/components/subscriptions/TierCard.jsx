@@ -140,7 +140,55 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
                 <span className="text-5xl font-bold text-green-600">{copy.free}</span>
               ) : (
                 <>
-                  <span className="text-5xl font-bold text-gray-900">US${tier.price}</span>
+                  <span className="text-5xl font-bold text-gray-900">{'US
+                  <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-grow flex flex-col">
+          <ul className="space-y-3 mb-6 flex-grow">
+            {tier.features.map((feature, idx) => (
+              <li key={idx} className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <span className="text-gray-700 text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Button
+            onClick={(event) => {
+              event.stopPropagation();
+              handleChoosePlan();
+            }}
+            disabled={isProcessing}
+            className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${
+              tier.popular
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
+                : 'bg-gray-800 hover:bg-gray-900 text-white'
+            }`}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                {copy.processing}
+              </>
+            ) : isHighlighted ? (
+              `✓ ${copy.selected}`
+            ) : pricingPending || tier.checkoutDisabled ? (
+              copy.pricingPendingButton
+            ) : (
+              `${copy.choose} ${displayName}`
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+ + tier.price}</span>
                   <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
                 </>
               )}
