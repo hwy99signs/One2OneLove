@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Check, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,12 +107,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="h-full"
-    >
+    <div className="h-full">
       <Card
         onClick={selectThisTier}
         className={`relative h-full flex flex-col cursor-pointer border-2 transition-all duration-300 hover:shadow-2xl hover:border-purple-200 ${
@@ -191,6 +185,6 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
           </Button>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
