@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 
 const defaultLabels = {
   mostPopular: 'MOST POPULAR',
-  free: 'Free',
   month: 'month',
   pricingPending: 'Pricing to be finalized',
   pricingPendingButton: 'Pricing coming next',
@@ -16,7 +15,6 @@ const defaultLabels = {
   selected: 'Selected',
   choose: 'Choose',
   paymentFailed: 'Failed to process payment',
-  basicSuccess: 'Successfully subscribed to Basic plan!',
   redirecting: 'Redirecting to Stripe checkout...',
   planUpdated: 'Plan updated. Your 7-day full-access trial continues.',
   genericError: 'An error occurred. Please try again.',
@@ -80,7 +78,6 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
           name: tier.name,
           price: tier.price || 0,
           priceId: tier.priceId || `price_${tier.name.toLowerCase()}`,
-          isFree: tier.isFree || tier.price === 0,
         };
 
         const result = await handleSubscriptionCheckout(planData);
@@ -100,12 +97,7 @@ export default function TierCard({ tier, index, onSelect, isSelected, showPaymen
           return;
         }
 
-        if (planData.isFree || planData.price === 0) {
-          toast.success(copy.basicSuccess);
-          setTimeout(() => window.location.reload(), 1000);
-        } else {
-          toast.success(copy.redirecting);
-        }
+        toast.success(copy.redirecting);
       } catch (error) {
         console.error('Checkout error:', error);
         toast.error(error.message || copy.genericError);
