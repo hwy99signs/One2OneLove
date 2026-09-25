@@ -114,16 +114,11 @@ async function sign(value, env) {
   return base64UrlFromBytes(new Uint8Array(signature));
 }
 
-function sessionKey(auth) {
-  return String(auth?.session?.id || auth?.session?.token || '');
-}
-
 async function createMfaToken(auth, env) {
   const expiresAt = Math.floor(Date.now() / 1000) + MFA_TTL_SECONDS;
   const payload = base64UrlText(JSON.stringify({
-    v: 1,
+    v: 2,
     uid: auth.user.id,
-    sid: sessionKey(auth),
     exp: expiresAt,
   }));
   const signature = await sign(payload, env);
@@ -148,7 +143,7 @@ async function readMfaToken(request, env, auth) {
   if (!decoded) return null;
   let payload;
   try { payload = JSON.parse(decoded); } catch { return null; }
-  if (payload?.v !== 1 || payload?.uid !== auth.user.id || payload?.sid !== sessionKey(auth)) return null;
+  if (payload?.v !== 2 || payload?.uid !== auth.user.id) return null;
   if (!Number.isFinite(payload?.exp) || payload.exp <= Math.floor(Date.now() / 1000)) return null;
   return payload;
 }
