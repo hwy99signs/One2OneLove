@@ -33,7 +33,7 @@ export async function submitProfessionalApplication(mode, account, application, 
   try {
     const payload = await apiRequest('/api/professional-signup', {
       method: 'POST',
-      body: { mode, account, application, selectedPlan: plan },
+      body: { mode, account: { ...account, selectedPlan: plan }, application, selectedPlan: plan },
     });
     return {
       success: true,
