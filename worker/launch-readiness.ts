@@ -41,12 +41,12 @@ export async function handleLaunchReadinessRequest(request, env, url) {
             AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
         ) AS legacy_entitlement_rows,
         COALESCE((
-          SELECT column_default = '''Basic''::text'
+          SELECT column_default = '''Premiere''::text'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_plan'
-        ),false) AS basic_default_ready,
+        ),false) AS premiere_default_ready,
         COALESCE((
-          SELECT column_default = '4.99'
+          SELECT column_default = '9.99'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_price'
         ),false) AS price_default_ready,
@@ -68,10 +68,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
     const phoneVerificationReady = phoneVerificationProviderConfigured && phoneVerificationSchemaReady;
     const identityReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
 
-    const billingDefaultsReady = Boolean(row.basic_default_ready && row.price_default_ready && row.status_default_ready);
+    const billingDefaultsReady = Boolean(row.premiere_default_ready && row.price_default_ready && row.status_default_ready);
     const stripeCheckoutReady = Boolean(
       env.STRIPE_SECRET_KEY &&
-      env.STRIPE_PRICE_BASIC &&
       env.STRIPE_PRICE_PREMIERE &&
       env.STRIPE_PRICE_EXCLUSIVE
     );
