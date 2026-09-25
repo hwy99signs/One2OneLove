@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-logo.png';
-const HERO = '/assets/o2ol-hero.png';
+const HERO = '/assets/o2ol-hero-v2.png';
 
 const COPY = {
   en: {
