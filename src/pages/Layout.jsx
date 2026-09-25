@@ -354,10 +354,10 @@ function LanguageContent({ children, currentPageName }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">US English</SelectItem>
-                  <SelectItem value="es">ES Español</SelectItem>
-                  <SelectItem value="fr">FR Français</SelectItem>
-                  <SelectItem value="it">IT Italiano</SelectItem>
-                  <SelectItem value="de">DE Deutsch</SelectItem>
+                  <SelectItem value="es">{currentLanguage === 'en' ? 'ES Spanish' : 'ES Español'}</SelectItem>
+                  <SelectItem value="fr">{currentLanguage === 'en' ? 'FR French' : 'FR Français'}</SelectItem>
+                  <SelectItem value="it">{currentLanguage === 'en' ? 'IT Italian' : 'IT Italiano'}</SelectItem>
+                  <SelectItem value="de">{currentLanguage === 'en' ? 'DE German' : 'DE Deutsch'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
