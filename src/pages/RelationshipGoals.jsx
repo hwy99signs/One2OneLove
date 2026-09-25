@@ -1,12 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Target, TrendingUp, CheckCircle2, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import goalsService from "@/lib/goalsService";
 
@@ -145,6 +145,30 @@ export default function RelationshipGoals() {
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   const [updatingGoal, setUpdatingGoal] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!String(location.state?.relationshipSubview || '').startsWith('goal-')) {
+      setShowForm(false);
+      setEditingGoal(null);
+      setUpdatingGoal(null);
+    }
+  }, [location.key]);
+
+  const openGoalSubview = (view) => {
+    navigate(location.pathname + location.search, {
+      state: { ...(location.state || {}), relationshipSubview: view },
+    });
+  };
+
+  const closeGoalSubview = () => {
+    const isGoalSubview = String(location.state?.relationshipSubview || '').startsWith('goal-');
+    setShowForm(false);
+    setEditingGoal(null);
+    setUpdatingGoal(null);
+    if (isGoalSubview) navigate(-1);
+  };
 
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['relationship-goals'],
@@ -155,8 +179,7 @@ export default function RelationshipGoals() {
     mutationFn: (data) => goalsService.createGoal(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['relationship-goals'] });
-      setShowForm(false);
-      setEditingGoal(null);
+      closeGoalSubview();
       toast.success(t.goalAdded);
     },
     onError: (error) => {
@@ -169,9 +192,7 @@ export default function RelationshipGoals() {
     mutationFn: ({ id, data }) => goalsService.updateGoal(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['relationship-goals'] });
-      setShowForm(false);
-      setEditingGoal(null);
-      setUpdatingGoal(null);
+      closeGoalSubview();
       toast.success(t.goalUpdated);
     },
     onError: (error) => {
@@ -201,6 +222,7 @@ export default function RelationshipGoals() {
   };
 
   const handleEdit = (goal) => {
+    openGoalSubview('goal-edit');
     setEditingGoal(goal);
     setShowForm(true);
   };
@@ -213,6 +235,11 @@ export default function RelationshipGoals() {
 
   const handleUpdateProgress = (goalData) => {
     updateMutation.mutate({ id: updatingGoal.id, data: goalData });
+  };
+
+  const openProgressUpdate = (goal) => {
+    openGoalSubview('goal-progress');
+    setUpdatingGoal(goal);
   };
 
   const activeGoals = goals.filter(g => g.status !== 'completed');
@@ -253,6 +280,7 @@ export default function RelationshipGoals() {
           </p>
           <Button
             onClick={() => {
+              openGoalSubview('goal-add');
               setEditingGoal(null);
               setShowForm(true);
             }}
@@ -312,7 +340,7 @@ export default function RelationshipGoals() {
                   goal={goal}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  onUpdateProgress={setUpdatingGoal}
+                  onUpdateProgress={openProgressUpdate}
                 />
               ))}
             </div>
@@ -333,7 +361,7 @@ export default function RelationshipGoals() {
                   goal={goal}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  onUpdateProgress={setUpdatingGoal}
+                  onUpdateProgress={openProgressUpdate}
                 />
               ))}
             </div>
@@ -361,10 +389,7 @@ export default function RelationshipGoals() {
             <GoalForm
               goal={editingGoal}
               onSubmit={handleSubmit}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingGoal(null);
-              }}
+              onCancel={closeGoalSubview}
               isLoading={createMutation.isPending || updateMutation.isPending}
             />
           )}
@@ -376,7 +401,7 @@ export default function RelationshipGoals() {
             <ProgressUpdateModal
               goal={updatingGoal}
               onUpdate={handleUpdateProgress}
-              onCancel={() => setUpdatingGoal(null)}
+              onCancel={closeGoalSubview}
               isLoading={updateMutation.isPending}
             />
           )}
