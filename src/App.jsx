@@ -38,6 +38,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AccessCountdownBanner />
         {isAdminRoute ? (
           <BrowserRouter>
             <AdminMfaGate><Admin /></AdminMfaGate>
@@ -49,7 +50,6 @@ function App() {
         ) : (
           <Pages />
         )}
-        <AccessCountdownBanner />
         <AdminEntryTab />
         <AdminUserModeToggle />
         <DateIdeasPlanAccess />
