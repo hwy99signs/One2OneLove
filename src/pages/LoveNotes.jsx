@@ -870,12 +870,7 @@ export default function LoveNotes() {
     () => new Set(categoryPreference?.categories || (effectivePlan === 'Exclusive' ? allCategories.filter(item => item.id !== 'all').map(item => item.id) : [])),
     [categoryPreference?.categories, effectivePlan, allCategories],
   );
-  const categories = useMemo(() => {
-    if (effectivePlan === 'Exclusive') return allCategories;
-    const all = allCategories.find(item => item.id === 'all');
-    const selected = allCategories.filter(item => item.id !== 'all' && allowedCategoryIds.has(item.id));
-    return all ? [all, ...selected] : selected;
-  }, [allCategories, allowedCategoryIds, effectivePlan]);
+  const categories = useMemo(() => allCategories, [allCategories]);
   const aiPersonalizationReady = aiPlanEligible && aiConfig?.configured === true && aiConfig?.creator?.allowed === true;
 
   // Fetch user's partner identifier (email or phone) from profile or localStorage
@@ -1020,9 +1015,7 @@ export default function LoveNotes() {
   };
 
   const displayedNotes = useMemo(() => {
-    let filtered = effectivePlan === 'Exclusive'
-      ? allNotes
-      : allNotes.filter(note => allowedCategoryIds.has(note.category));
+    let filtered = allNotes;
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(note => note.category === selectedCategory);
