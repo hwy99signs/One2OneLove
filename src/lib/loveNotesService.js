@@ -10,7 +10,7 @@ function notifyQuotaError(error) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('o2ol-love-note-quota-error', {
       detail: {
-        message: error?.message || 'Your Love Note sending allowance has been reached.',
+        message: error?.message || 'Love Note SMS delivery is unavailable.',
         code: error?.payload?.error?.code || null,
         topUpUrl: error?.payload?.error?.topUpUrl || null,
       },
@@ -59,6 +59,25 @@ export async function recordSentLoveNote(data) {
     });
     notifyUsageChanged();
     return payload?.note || null;
+  } catch (error) {
+    notifyQuotaError(error);
+    throw error;
+  }
+}
+
+export async function sendLoveNoteSms(data) {
+  try {
+    const payload = await apiRequest('/api/love-notes/send-sms', {
+      method: 'POST',
+      body: {
+        note_title: data.note_title,
+        note_content: data.note_content,
+        recipient_phone: data.recipient_phone,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      },
+    });
+    notifyUsageChanged();
+    return payload || null;
   } catch (error) {
     notifyQuotaError(error);
     throw error;
