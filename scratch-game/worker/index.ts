@@ -378,7 +378,7 @@ async function health(env: Env) {
         service: "one2onelove-scratch-game",
         stack: "cloudflare-worker-neon-hyperdrive",
         questionCount: count,
-        accountGate: "required",
+        accountGate: "o2ol_sso",
         analytics: "enabled"
       }, count === 4800 ? 200 : 503);
     });
@@ -386,6 +386,87 @@ async function health(env: Env) {
     console.error("health error", error);
     return json({ ok: false, service: "one2onelove-scratch-game" }, 503);
   }
+}
+
+async function o2olLaunch(req: Request, env: Env) {
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  let body:any;
+  try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+  const ticket = String(body?.ticket || "").trim();
+  if (!/^[a-f0-9]{64}$/i.test(ticket)) return json({ error: "Game access is invalid or expired." }, 401);
+  const ticketHash = await sha256Hex(ticket);
+
+  return withDb(env, async client => {
+    await ensureSchema(client);
+
+    const access = await client.query(
+      `SELECT t.user_id,p.email,p.name
+         FROM public.o2ol_game_launch_tickets t
+         JOIN public.users p ON p.id=t.user_id
+        WHERE t.token_hash=$1
+          AND t.game='scratch'
+          AND t.expires_at > now()
+        LIMIT 1`,
+      [ticketHash]
+    );
+    const row = access.rows[0];
+    if (!row?.user_id || !row?.email) return json({ error: "Game access is invalid or expired." }, 401);
+
+    let scratch = (await client.query(
+      `SELECT id,email,username,marketing_opt_in
+         FROM public.o2ol_scratch_users
+        WHERE email=$1
+        LIMIT 1`,
+      [String(row.email).toLowerCase()]
+    )).rows[0];
+
+    if (!scratch) {
+      const base = String(row.name || String(row.email).split("@")[0] || "member")
+        .replace(/[^A-Za-z0-9_.-]/g,"")
+        .slice(0,14) || "member";
+      const suffix = String(row.user_id).replace(/-/g,"").slice(-6);
+      const username = `${base}-${suffix}`.slice(0,24);
+      const randomPassword = randomHex(32);
+      const hashResult = await client.query(
+        "SELECT crypt(encode(digest($1, 'sha256'), 'hex'), gen_salt('bf', 10)) AS hash",
+        [randomPassword]
+      );
+      const passwordHash = String(hashResult.rows[0]?.hash || "");
+      const userId = `o2ol-${row.user_id}`;
+
+      await client.query(
+        `INSERT INTO public.o2ol_scratch_users
+          (id,email,username,username_key,password_salt,password_hash,marketing_opt_in,terms_accepted_at,is_test)
+         VALUES($1,$2,$3,$4,'o2ol-sso-only',$5,false,now(),false)
+         ON CONFLICT (email) DO NOTHING`,
+        [userId,String(row.email).toLowerCase(),username,username.toLowerCase(),passwordHash]
+      );
+
+      scratch = (await client.query(
+        `SELECT id,email,username,marketing_opt_in
+           FROM public.o2ol_scratch_users
+          WHERE email=$1
+          LIMIT 1`,
+        [String(row.email).toLowerCase()]
+      )).rows[0];
+    }
+
+    if (!scratch) return json({ error: "Unable to open the game session." }, 500);
+
+    await client.query("UPDATE public.o2ol_scratch_users SET last_login_at=now() WHERE id=$1", [scratch.id]);
+    await recordEvent(client, scratch.id, "login", { metadata:{ source:"o2ol_sso" } });
+    const token = await createSession(client, scratch.id);
+
+    return json({
+      ok:true,
+      user:{
+        id:scratch.id,
+        email:scratch.email,
+        username:scratch.username,
+        marketingOptIn:scratch.marketing_opt_in
+      }
+    },200,{ "set-cookie": sessionCookie(token) });
+  });
 }
 
 async function signup(req: Request, env: Env) {
@@ -828,6 +909,7 @@ export default {
     const url = new URL(req.url);
 
     if (url.pathname === "/api/health") return health(env);
+    if (url.pathname === "/api/o2ol/launch") return o2olLaunch(req, env);
     if (url.pathname === "/api/auth/signup") return signup(req, env);
     if (url.pathname === "/api/auth/login") return login(req, env);
     if (url.pathname === "/api/auth/logout") return logout(req, env);
