@@ -6,6 +6,7 @@ const PUBLIC_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
   '/reviews', '/leavereview', '/suggestions', '/subscription',
+  '/professionalsignup', '/therapistsignup', '/influencersignup',
 ]);
 
 const PLAN_LEVEL = {
