@@ -80,19 +80,31 @@ export default [
     "Sie sind für Ihre Entscheidungen, Kommunikation, Ihr Verhalten und die Nutzung von Informationen verantwortlich, die Sie über One2OneLove erhalten. Entscheidungen über Ihre Beziehungen bleiben Ihre eigenen. Handeln Sie mit angemessenem Urteilsvermögen, bevor Sie persönliche Informationen teilen, jemanden treffen, Empfehlungen befolgen oder generierte Inhalte senden."
   ],
   [
-    "21. Änderungen dieser Bedingungen",
+    "21. Mitgliedschaftstarife, Gastvorschau und Testphase",
+    "One2OneLove bietet eine 24-stündige Gastvorschau ohne Zahlungskarte, gefolgt von einer optionalen 7-tägigen Vollzugriff-Testphase, für die eine gültige Kredit- oder Debitkarte erforderlich ist. Zu Beginn der Testphase wird keine Abonnementgebühr berechnet. Die Testphase umfasst Funktionen auf Exclusive-Niveau, jedoch nicht den Versand von durch One2OneLove zugestellten SMS-Liebesnachrichten. Sofern Sie nicht Exclusive wählen oder vor Ende der Testphase kündigen, wird die Testphase automatisch als Premiere-Mitgliedschaft für 9,99 $ pro Monat fortgesetzt. Exclusive kostet 19,99 $ pro Monat. Abonnementpreise werden in US-Dollar angegeben, sofern nichts anderes ausgewiesen ist."
+  ],
+  [
+    "22. Gebühren für SMS-Liebesnachrichten",
+    "Der Versand von durch One2OneLove zugestellten SMS-Liebesnachrichten ist während der Gastvorschau und der 7-tägigen Testphase nicht verfügbar. Nach der ersten erfolgreichen Zahlung des Abonnements ist der erste Versand einer durch One2OneLove zugestellten SMS-Liebesnachricht kostenlos. Jede weitere Sendung kostet 0,29 $. Nutzungsgebühren können gebündelt und über die hinterlegte Zahlungsmethode abgerechnet werden. Der Text einer benutzerdefinierten Liebesnachricht ist auf 171 Zeichen begrenzt. Vom Nutzer hinzugefügte Emojis werden im benutzerdefinierten Text nicht unterstützt; die gebrandete SMS-Fußzeile von One2OneLove kann das Symbol ❤️ enthalten. Bereits angefallene Gebühren für versendete Liebesnachrichten bleiben fällig, sofern das anwendbare Recht nichts anderes verlangt."
+  ],
+  [
+    "23. Kündigung und Abrechnung",
+    "Sie können eine kostenpflichtige Mitgliedschaft jederzeit kündigen. Sofern gesetzlich nichts anderes vorgeschrieben oder beim Checkout ausdrücklich anders angegeben ist, wird die Kündigung zum Ende des aktuellen Abrechnungszeitraums wirksam und verhindert die nächste wiederkehrende Abonnementbelastung. Die Kündigung hebt bereits angefallene Nutzungsgebühren für Liebesnachrichten oder andere Gebühren für bereits erbrachte Leistungen nicht auf."
+  ],
+  [
+    "24. Änderungen dieser Bedingungen",
     "Wir können diese Bedingungen aktualisieren, wenn sich die Plattform oder rechtliche, betriebliche oder sicherheitsbezogene Anforderungen ändern. Die aktuelle Version wird innerhalb von One2OneLove veröffentlicht. Die fortgesetzte Nutzung nach Inkrafttreten einer aktualisierten Version gilt, soweit gesetzlich zulässig, als Zustimmung zu den aktualisierten Bedingungen."
   ],
   [
-    "22. Anwendbares Recht",
+    "25. Anwendbares Recht",
     "Diese Bedingungen unterliegen dem anwendbaren Recht der Vereinigten Staaten und, soweit einschlägig, den Gesetzen des Bundesstaates Texas, ohne Berücksichtigung kollisionsrechtlicher Grundsätze, sofern nicht zwingend ein anderes Recht anzuwenden ist."
   ],
   [
-    "23. Salvatorische Klausel",
+    "26. Salvatorische Klausel",
     "Sollte eine Bestimmung dieser Bedingungen nicht durchsetzbar sein, bleiben die übrigen Bestimmungen im größtmöglichen gesetzlich zulässigen Umfang wirksam."
   ],
   [
-    "24. Kontakt",
+    "27. Kontakt",
     "Fragen zu diesen Bedingungen oder zur Plattform können an support@one2onelove.com gesendet werden."
   ],
   [
