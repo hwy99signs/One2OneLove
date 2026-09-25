@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
@@ -48,7 +48,26 @@ export default function Home() {
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
+  const [publicStats, setPublicStats] = useState(null);
   const go = page => navigate(createPageUrl(page));
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/public-stats', { credentials:'same-origin', headers:{ accept:'application/json' } })
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => { if (active && payload?.ok) setPublicStats(payload); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const heroStats = [
+    { value: Number(publicStats?.notesCreated || 0), label: t.stats.loveNotesCreated, white:true },
+    { value: Number(publicStats?.happyCouples || 0), label: t.stats.happyCouples, white:true, accent:'purple' },
+    { value: Number(publicStats?.mostNotesWeek || 0), label: t.stats.mostWeek, tone:'orange', trophy:true },
+    { value: Number(publicStats?.mostNotesMonth || 0), label: t.stats.mostMonth, tone:'blue', trophy:true },
+    { value: Number(publicStats?.mostNotesYear || 0), label: t.stats.mostYear, tone:'green', trophy:true },
+  ].filter(item => item.value > 0);
+  const showHeroStats = publicStats?.hasDisplayableData === true && heroStats.length > 0;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
@@ -69,13 +88,13 @@ export default function Home() {
             <button onClick={() => go('DateIdeas')} className="rounded-2xl bg-teal-600 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-teal-700">▣ {t.toolLabels.dateIdeas}</button>
           </div>
 
-          <div className="mt-16 flex flex-wrap justify-center gap-2 text-slate-900">
-            <Stat value="0" label={t.stats.loveNotesCreated} white />
-            <Stat value="0" label={t.stats.happyCouples} white accent="purple" />
-            <Stat value="0" label={t.stats.mostWeek} tone="orange" trophy />
-            <Stat value="0" label={t.stats.mostMonth} tone="blue" trophy />
-            <Stat value="0" label={t.stats.mostYear} tone="green" trophy />
-          </div>
+          {showHeroStats && (
+            <div className="mt-16 flex flex-wrap justify-center gap-2 text-slate-900">
+              {heroStats.map((item) => (
+                <Stat key={item.label} value={item.value.toLocaleString()} label={item.label} white={item.white} accent={item.accent} tone={item.tone} trophy={item.trophy} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
