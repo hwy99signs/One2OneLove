@@ -202,9 +202,6 @@ async function checkout(db, env, request, auth, input) {
   const checkoutSession = await stripeRequest(env, 'POST', '/checkout/sessions', params);
   return json({ ok: true, sessionId: checkoutSession.id, url: checkoutSession.url, plan, trial: startTrial });
 }
-async function switchToBasic() {
-  return fail('The Basic plan has been retired. Choose Premiere or Exclusive.', 410, 'plan_retired');
-}
 async function cancelSubscription(db, env, userId) {
   const user = await getBillingUser(db, userId);
   if (!user.stripe_subscription_id) return fail('No paid subscription is connected to this account.', 409, 'no_paid_subscription');
@@ -222,6 +219,28 @@ async function reactivateSubscription(db, env, userId) {
   const subscription = await stripeRequest(env, 'POST', `/subscriptions/${encodeURIComponent(user.stripe_subscription_id)}`, params);
   await updateFromSubscription(db, userId, subscription, user.subscription_plan);
   return json({ ok: true, subscription: await getBillingUser(db, userId) });
+}
+async function finalizePendingLoveNoteUsage(env, user, userId) {
+  if (!user?.stripe_customer_id) return null;
+  const customerId = encodeURIComponent(user.stripe_customer_id);
+  const pending = await stripeRequest(env, 'GET', `/invoiceitems?customer=${customerId}&pending=true&limit=100`);
+  const loveNoteItems = (pending?.data || []).filter(item => item?.metadata?.o2ol_type === 'love_note_sms');
+  if (!loveNoteItems.length) return null;
+
+  const params = new URLSearchParams();
+  params.set('customer', user.stripe_customer_id);
+  params.set('collection_method', 'charge_automatically');
+  params.set('pending_invoice_items_behavior', 'include');
+  params.set('auto_advance', 'true');
+  params.set('description', 'Final One2OneLove Love Note usage');
+  params.set('metadata[o2ol_type]', 'love_note_usage_final');
+  params.set('metadata[user_id]', userId);
+  const invoice = await stripeRequest(env, 'POST', '/invoices', params);
+  if (!invoice?.id) throw new Error('Stripe did not create the final Love Note usage invoice.');
+
+  const finalizeParams = new URLSearchParams();
+  finalizeParams.set('auto_advance', 'true');
+  return stripeRequest(env, 'POST', `/invoices/${encodeURIComponent(invoice.id)}/finalize`, finalizeParams);
 }
 function hexToBytes(hex) {
   if (!/^[0-9a-f]+$/i.test(hex) || hex.length % 2) return null;
@@ -255,11 +274,11 @@ function invoiceSubscriptionId(invoice) {
   return null;
 }
 async function recordPayment(db, invoice, subscription, succeeded) {
-  const userId = subscription?.metadata?.user_id;
+  const userId = subscription?.metadata?.user_id || invoice?.metadata?.user_id;
   if (!userId) return;
   const user = await getBillingUser(db, userId).catch(() => null);
   if (!user) return;
-  const plan = canonicalPlan(subscription?.metadata?.plan_name || user.subscription_plan) || 'Premiere';
+  const plan = canonicalPlan(subscription?.metadata?.plan_name || invoice?.metadata?.plan_name || user.subscription_plan) || 'Premiere';
   const status = succeeded ? 'succeeded' : 'failed';
   const duplicate = await db.query(
     'SELECT 1 FROM public.payment_history WHERE stripe_invoice_id=$1 AND status=$2 LIMIT 1',
@@ -313,13 +332,15 @@ async function handleWebhookEvent(db, env, event) {
           cancel_at_period_end=false,canceled_at=now(),updated_at=now() WHERE id=$1::uuid`,
         [userId],
       );
+      await finalizePendingLoveNoteUsage(env, user, userId);
       break;
     }
     case 'invoice.payment_succeeded':
     case 'invoice.payment_failed': {
       const subscriptionId = invoiceSubscriptionId(object);
-      if (!subscriptionId) return;
-      const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`);
+      const subscription = subscriptionId
+        ? await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`)
+        : null;
       await recordPayment(db, object, subscription, event.type === 'invoice.payment_succeeded');
       break;
     }
@@ -355,9 +376,6 @@ export async function handleBillingRequest(request, env, url) {
       if (url.pathname === '/api/billing/payments' && request.method === 'GET') {
         const result = await db.query('SELECT * FROM public.payment_history WHERE user_id=$1::uuid ORDER BY created_at DESC LIMIT 100', [auth.user.id]);
         return json({ ok: true, payments: result.rows });
-      }
-      if (url.pathname === '/api/billing/basic' && request.method === 'POST') {
-        return switchToBasic();
       }
       if (url.pathname === '/api/billing/trial' && request.method === 'POST') {
         return checkout(db, env, request, auth, { planName: 'Premiere', startTrial: true });
