@@ -111,9 +111,9 @@ export default function LaunchAccessGate({ pathname, children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const route = String(pathname || '/').toLowerCase().replace(/\/$/, '') || '/';
 
-  if (PUBLIC_ROUTES.has(route)) return children;
+  const isPublicRoute = PUBLIC_ROUTES.has(route);
 
-  if (isLoading) {
+  if (isLoading && !isPublicRoute) {
     const language = preferredLanguage();
     return (
       <div className="flex min-h-[55vh] items-center justify-center bg-white">
@@ -125,7 +125,17 @@ export default function LaunchAccessGate({ pathname, children }) {
     );
   }
 
-  if (!isAuthenticated || !user) return <Navigate to="/SignIn" replace />;
+  if (!isAuthenticated || !user) {
+    return isPublicRoute ? children : <Navigate to="/SignIn" replace />;
+  }
+
+  const guestPreviewForPublicRoute = previewActive(user);
+  const previewSetupRoute = ['/subscription', '/signin', '/login', '/signup', '/forgotpassword'].includes(route);
+  if (isPublicRoute) {
+    if (guestPreviewForPublicRoute && !previewSetupRoute) return <PreviewReadOnly>{children}</PreviewReadOnly>;
+    return children;
+  }
+
   if (route === '/verifyphone') return children;
 
   const phoneRequired = user.phone_verification_required === true;
