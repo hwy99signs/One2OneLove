@@ -279,7 +279,7 @@ export default function Subscription() {
               {isAnonymous && (
                 <div className="mt-5 border-t border-gray-200 pt-4">
                   <div className="mb-2 inline-flex rounded-t-lg bg-purple-100 px-3 py-1 text-xs font-black tracking-wide text-purple-800">{previewCopy.signupTab}</div>
-                  <Button onClick={() => navigate('/SignUp?source=guest-preview')} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold">
+                  <Button onClick={() => navigate('/SignUp?plan=Premiere&source=guest-preview')} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold">
                     {previewCopy.createAccount}
                   </Button>
                 </div>
@@ -298,7 +298,7 @@ export default function Subscription() {
               index={index}
               isSelected={!isAnonymous && !guestPreviewActive && currentPlan === tier.name}
               showPayment={!isAnonymous}
-              onSelect={isAnonymous ? () => navigate('/SignUp?source=subscription-plan') : undefined}
+              onSelect={isAnonymous ? (selectedTier) => navigate(`/SignUp?plan=${encodeURIComponent(selectedTier.name)}&source=subscription-plan`) : undefined}
               labels={isAnonymous ? { ...t.labels, choose: previewCopy.signupForPlan } : t.labels}
             />
           ))}
