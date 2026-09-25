@@ -11,114 +11,56 @@ import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
 const translations = {
   en: {
-    choosePlan: 'Compare One2OneLove Plans',
-    subtitle: 'Choose the level of relationship tools and experiences that fits you',
-    currentlyOn: 'Currently on',
-    planWord: 'plan',
-    currentSubscription: 'Your Current Subscription',
-    plan: 'Plan',
-    status: 'Status',
-    renewsOn: 'Renews On',
-    notAvailable: 'N/A',
-    cancelNotice: 'Your subscription will be canceled at the end of the current billing period.',
-    paymentHistory: 'Payment History',
-    recentTransactions: 'Your recent transactions',
-    date: 'Date',
-    amount: 'Amount',
-    questions: 'Have questions about our plans?',
-    contactSupport: 'Contact Support',
-    loadError: 'Failed to load subscription information', trialStartError: 'Unable to start the Premier trial.',
-    statuses: { active: 'Active', succeeded: 'Succeeded', failed: 'Failed', pending: 'Pending' },
-    labels: {
-      mostPopular: 'MOST POPULAR', free: 'Free', month: 'month', pricingPending: 'Pricing to be finalized', pricingPendingButton: 'Pricing coming next', processing: 'Processing...', selected: 'Selected', choose: 'Choose',
-      paymentFailed: 'Failed to process payment', basicSuccess: 'Successfully subscribed to Basic plan!', redirecting: 'Redirecting to Stripe checkout...', genericError: 'An error occurred. Please try again.'
-    },
-    plans: {
-      Basic: {
-        displayName: 'Basic',
-        description: 'Core tools for couples building and maintaining connection',
-        features: ['Love Notes', 'Relationship Quizzes', 'Love Language Quiz', 'Date Ideas', 'Anniversary Tracker', 'Memory Lane', 'Member Profile', 'Community & Chat']
-      },
-      Premiere: {
-        displayName: 'Premiere',
-        description: 'Deeper tools for couples who want to grow together',
-        features: ['Everything in Basic, plus:', 'Shared Journals', 'Relationship Milestones', 'Relationship Goals', 'Communication Practice', 'Couple Activities', 'Couples Calendar', 'LGBTQ+ Support', 'Podcasts']
-      },
-      Exclusive: {
-        displayName: 'Exclusive',
-        description: 'The broadest One2OneLove relationship experience',
-        features: ['Everything in Premiere, plus:', 'Couples Dashboard', 'Couples Profile', 'Relationship Support', 'Relationship Articles & Library']
-      }
-    }
+    choosePlan: 'Compare One2OneLove Plans', subtitle: 'Two simple plans for building, growing, and supporting your relationship',
+    currentlyOn: 'Current access', planWord: '', currentSubscription: 'Your Current Subscription', plan: 'Plan', status: 'Status', renewsOn: 'Renews On', notAvailable: 'N/A',
+    cancelNotice: 'Your subscription will end at the close of the current billing period. Love Note charges already incurred remain due.',
+    paymentHistory: 'Payment History', recentTransactions: 'Your recent transactions', date: 'Date', amount: 'Amount',
+    questions: 'Have questions about our plans or billing?', contactSupport: 'Contact Support', loadError: 'Failed to load subscription information',
+    trialStartError: 'Unable to start the 7-day Full Access trial.',
+    statuses: { active: 'Active', trial: 'Trial', trialing: 'Trial', succeeded: 'Succeeded', failed: 'Failed', pending: 'Pending', cancelled: 'Cancelled', inactive: 'Inactive' },
+    labels: { mostPopular: 'MOST POPULAR', month: 'month', pricingPending: 'Pricing unavailable', pricingPendingButton: 'Unavailable', processing: 'Processing...', selected: 'Selected', choose: 'Choose', paymentFailed: 'Failed to process payment', redirecting: 'Redirecting to Stripe checkout...', planUpdated: 'Plan updated. Your 7-day Full Access trial continues.', genericError: 'An error occurred. Please try again.' }
   },
   es: {
-    choosePlan: 'Compara los Planes de One2OneLove',
-    subtitle: 'Elige el nivel de herramientas y experiencias para la relación que mejor se adapte a ti',
-    currentlyOn: 'Actualmente en', planWord: 'plan', currentSubscription: 'Tu Suscripción Actual', plan: 'Plan', status: 'Estado', renewsOn: 'Se Renueva El', notAvailable: 'N/D', cancelNotice: 'Tu suscripción se cancelará al final del período de facturación actual.', paymentHistory: 'Historial de Pagos', recentTransactions: 'Tus transacciones recientes', date: 'Fecha', amount: 'Monto', questions: '¿Tienes preguntas sobre nuestros planes?', contactSupport: 'Contactar Soporte', loadError: 'No se pudo cargar la información de la suscripción', trialStartError: 'No se pudo iniciar la prueba Premier.', statuses: { active: 'Activo', succeeded: 'Completado', failed: 'Fallido', pending: 'Pendiente' },
-    labels: { mostPopular: 'MÁS POPULAR', free: 'Gratis', month: 'mes', pricingPending: 'Precio por finalizar', pricingPendingButton: 'Precio próximamente', processing: 'Procesando...', selected: 'Seleccionado', choose: 'Elegir', paymentFailed: 'No se pudo procesar el pago', basicSuccess: '¡Te suscribiste correctamente al plan Basic!', redirecting: 'Redirigiendo al pago de Stripe...', genericError: 'Ocurrió un error. Inténtalo de nuevo.' },
-    plans: {
-      Basic: { displayName: 'Básico', description: 'Herramientas esenciales para parejas que construyen y mantienen su conexión', features: ['Notas de Amor', 'Cuestionarios de Relación', 'Quiz del Lenguaje del Amor', 'Ideas para Citas', 'Seguimiento de Aniversarios', 'Memory Lane', 'Perfil de Miembro', 'Comunidad y Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Herramientas más profundas para parejas que quieren crecer juntas', features: ['Todo lo de Básico, más:', 'Diarios Compartidos', 'Hitos de la Relación', 'Metas de Relación', 'Práctica de Comunicación', 'Actividades en Pareja', 'Calendario de Pareja', 'Apoyo LGBTQ+', 'Podcasts'] },
-      Exclusive: { displayName: 'Exclusivo', description: 'La experiencia de relación más amplia de One2OneLove', features: ['Todo lo de Premiere, más:', 'Panel de Pareja', 'Perfil de Pareja', 'Apoyo para la Relación', 'Artículos y Biblioteca de Relaciones'] }
-    }
+    choosePlan: 'Compara los Planes de One2OneLove', subtitle: 'Dos planes simples para construir, fortalecer y apoyar tu relación',
+    currentlyOn: 'Acceso actual', planWord: '', currentSubscription: 'Tu Suscripción Actual', plan: 'Plan', status: 'Estado', renewsOn: 'Se Renueva El', notAvailable: 'N/D',
+    cancelNotice: 'Tu suscripción terminará al final del período de facturación actual. Los cargos por Notas de Amor ya realizados siguen siendo pagaderos.',
+    paymentHistory: 'Historial de Pagos', recentTransactions: 'Tus transacciones recientes', date: 'Fecha', amount: 'Monto',
+    questions: '¿Tienes preguntas sobre nuestros planes o facturación?', contactSupport: 'Contactar Soporte', loadError: 'No se pudo cargar la información de la suscripción',
+    trialStartError: 'No se pudo iniciar la prueba de Acceso Completo de 7 días.',
+    statuses: { active: 'Activo', trial: 'Prueba', trialing: 'Prueba', succeeded: 'Completado', failed: 'Fallido', pending: 'Pendiente', cancelled: 'Cancelado', inactive: 'Inactivo' },
+    labels: { mostPopular: 'MÁS POPULAR', month: 'mes', pricingPending: 'Precio no disponible', pricingPendingButton: 'No disponible', processing: 'Procesando...', selected: 'Seleccionado', choose: 'Elegir', paymentFailed: 'No se pudo procesar el pago', redirecting: 'Redirigiendo al pago de Stripe...', planUpdated: 'Plan actualizado. Tu prueba de Acceso Completo de 7 días continúa.', genericError: 'Ocurrió un error. Inténtalo de nuevo.' }
   },
   fr: {
-    choosePlan: 'Comparez les Formules One2OneLove',
-    subtitle: 'Choisissez le niveau d’outils et d’expériences relationnelles qui vous convient',
-    currentlyOn: 'Formule actuelle', planWord: '', currentSubscription: 'Votre Abonnement Actuel', plan: 'Formule', status: 'Statut', renewsOn: 'Renouvellement Le', notAvailable: 'N/D', cancelNotice: 'Votre abonnement sera annulé à la fin de la période de facturation en cours.', paymentHistory: 'Historique des Paiements', recentTransactions: 'Vos transactions récentes', date: 'Date', amount: 'Montant', questions: 'Des questions sur nos formules ?', contactSupport: 'Contacter le Support', loadError: 'Impossible de charger les informations d’abonnement', trialStartError: 'Impossible de démarrer l’essai Premier.', statuses: { active: 'Actif', succeeded: 'Réussi', failed: 'Échoué', pending: 'En attente' },
-    labels: { mostPopular: 'LE PLUS POPULAIRE', free: 'Gratuit', month: 'mois', pricingPending: 'Tarification à finaliser', pricingPendingButton: 'Tarification à venir', processing: 'Traitement...', selected: 'Sélectionné', choose: 'Choisir', paymentFailed: 'Échec du traitement du paiement', basicSuccess: 'Abonnement au plan Basic effectué avec succès !', redirecting: 'Redirection vers le paiement Stripe...', genericError: 'Une erreur s’est produite. Veuillez réessayer.' },
-    plans: {
-      Basic: { displayName: 'Basique', description: 'Les outils essentiels pour les couples qui construisent et entretiennent leur lien', features: ['Notes d’Amour', 'Quiz Relationnels', 'Quiz des Langages de l’Amour', 'Idées de Rendez-vous', 'Suivi des Anniversaires', 'Memory Lane', 'Profil Membre', 'Communauté et Chat'] },
-      Premiere: { displayName: 'Première', description: 'Des outils plus approfondis pour les couples qui veulent grandir ensemble', features: ['Tout ce qui est inclus dans Basique, plus :', 'Journaux Partagés', 'Étapes de la Relation', 'Objectifs de Relation', 'Pratique de la Communication', 'Activités de Couple', 'Calendrier du Couple', 'Soutien LGBTQ+', 'Podcasts'] },
-      Exclusive: { displayName: 'Exclusif', description: 'L’expérience relationnelle One2OneLove la plus complète', features: ['Tout ce qui est inclus dans Première, plus :', 'Tableau de Bord du Couple', 'Profil du Couple', 'Soutien Relationnel', 'Articles et Bibliothèque Relationnelle'] }
-    }
+    choosePlan: 'Comparez les Formules One2OneLove', subtitle: 'Deux formules simples pour construire, faire grandir et soutenir votre relation',
+    currentlyOn: 'Accès actuel', planWord: '', currentSubscription: 'Votre Abonnement Actuel', plan: 'Formule', status: 'Statut', renewsOn: 'Renouvellement Le', notAvailable: 'N/D',
+    cancelNotice: 'Votre abonnement prendra fin à la fin de la période de facturation en cours. Les frais de Notes d’Amour déjà engagés restent dus.',
+    paymentHistory: 'Historique des Paiements', recentTransactions: 'Vos transactions récentes', date: 'Date', amount: 'Montant',
+    questions: 'Des questions sur nos formules ou la facturation ?', contactSupport: 'Contacter le Support', loadError: 'Impossible de charger les informations d’abonnement',
+    trialStartError: 'Impossible de démarrer l’essai Accès Complet de 7 jours.',
+    statuses: { active: 'Actif', trial: 'Essai', trialing: 'Essai', succeeded: 'Réussi', failed: 'Échoué', pending: 'En attente', cancelled: 'Résilié', inactive: 'Inactif' },
+    labels: { mostPopular: 'LE PLUS POPULAIRE', month: 'mois', pricingPending: 'Tarif indisponible', pricingPendingButton: 'Indisponible', processing: 'Traitement...', selected: 'Sélectionné', choose: 'Choisir', paymentFailed: 'Échec du traitement du paiement', redirecting: 'Redirection vers Stripe...', planUpdated: 'Formule mise à jour. Votre essai Accès Complet de 7 jours continue.', genericError: 'Une erreur s’est produite. Veuillez réessayer.' }
   },
   it: {
-    choosePlan: 'Confronta i Piani One2OneLove',
-    subtitle: 'Scegli il livello di strumenti ed esperienze di coppia più adatto a te',
-    currentlyOn: 'Piano attuale', planWord: '', currentSubscription: 'Il Tuo Abbonamento Attuale', plan: 'Piano', status: 'Stato', renewsOn: 'Rinnovo Il', notAvailable: 'N/D', cancelNotice: 'Il tuo abbonamento verrà annullato alla fine del periodo di fatturazione corrente.', paymentHistory: 'Cronologia Pagamenti', recentTransactions: 'Le tue transazioni recenti', date: 'Data', amount: 'Importo', questions: 'Hai domande sui nostri piani?', contactSupport: 'Contatta il Supporto', loadError: 'Impossibile caricare le informazioni sull’abbonamento', trialStartError: 'Impossibile avviare la prova Premier.', statuses: { active: 'Attivo', succeeded: 'Riuscito', failed: 'Fallito', pending: 'In sospeso' },
-    labels: { mostPopular: 'PIÙ POPOLARE', free: 'Gratis', month: 'mese', pricingPending: 'Prezzo da definire', pricingPendingButton: 'Prezzo in arrivo', processing: 'Elaborazione...', selected: 'Selezionato', choose: 'Scegli', paymentFailed: 'Impossibile elaborare il pagamento', basicSuccess: 'Abbonamento al piano Basic completato!', redirecting: 'Reindirizzamento al checkout Stripe...', genericError: 'Si è verificato un errore. Riprova.' },
-    plans: {
-      Basic: { displayName: 'Base', description: 'Strumenti essenziali per le coppie che costruiscono e mantengono il legame', features: ['Note d’Amore', 'Quiz di Relazione', 'Quiz dei Linguaggi dell’Amore', 'Idee per Appuntamenti', 'Tracker degli Anniversari', 'Memory Lane', 'Profilo Membro', 'Community e Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Strumenti più approfonditi per le coppie che vogliono crescere insieme', features: ['Tutto del piano Base, più:', 'Diari Condivisi', 'Traguardi della Relazione', 'Obiettivi di Relazione', 'Pratica di Comunicazione', 'Attività di Coppia', 'Calendario di Coppia', 'Supporto LGBTQ+', 'Podcast'] },
-      Exclusive: { displayName: 'Esclusivo', description: 'L’esperienza One2OneLove più completa', features: ['Tutto del piano Premiere, più:', 'Dashboard di Coppia', 'Profilo di Coppia', 'Supporto per la Relazione', 'Articoli e Biblioteca delle Relazioni'] }
-    }
+    choosePlan: 'Confronta i Piani One2OneLove', subtitle: 'Due piani semplici per costruire, far crescere e sostenere la relazione',
+    currentlyOn: 'Accesso attuale', planWord: '', currentSubscription: 'Il Tuo Abbonamento Attuale', plan: 'Piano', status: 'Stato', renewsOn: 'Rinnovo Il', notAvailable: 'N/D',
+    cancelNotice: 'L’abbonamento terminerà alla fine del periodo di fatturazione corrente. Gli addebiti per Note d’Amore già effettuati restano dovuti.',
+    paymentHistory: 'Cronologia Pagamenti', recentTransactions: 'Le tue transazioni recenti', date: 'Data', amount: 'Importo',
+    questions: 'Hai domande sui piani o sulla fatturazione?', contactSupport: 'Contatta il Supporto', loadError: 'Impossibile caricare le informazioni sull’abbonamento',
+    trialStartError: 'Impossibile avviare la prova di Accesso Completo di 7 giorni.',
+    statuses: { active: 'Attivo', trial: 'Prova', trialing: 'Prova', succeeded: 'Riuscito', failed: 'Fallito', pending: 'In sospeso', cancelled: 'Annullato', inactive: 'Inattivo' },
+    labels: { mostPopular: 'PIÙ POPOLARE', month: 'mese', pricingPending: 'Prezzo non disponibile', pricingPendingButton: 'Non disponibile', processing: 'Elaborazione...', selected: 'Selezionato', choose: 'Scegli', paymentFailed: 'Impossibile elaborare il pagamento', redirecting: 'Reindirizzamento a Stripe...', planUpdated: 'Piano aggiornato. La prova di Accesso Completo di 7 giorni continua.', genericError: 'Si è verificato un errore. Riprova.' }
   },
   de: {
-    choosePlan: 'One2OneLove-Pläne Vergleichen',
-    subtitle: 'Wählen Sie die passenden Beziehungstools und Erlebnisse für sich',
-    currentlyOn: 'Aktueller Plan', planWord: '', currentSubscription: 'Dein Aktuelles Abonnement', plan: 'Plan', status: 'Status', renewsOn: 'Verlängert Am', notAvailable: 'k. A.', cancelNotice: 'Dein Abonnement wird am Ende des aktuellen Abrechnungszeitraums gekündigt.', paymentHistory: 'Zahlungsverlauf', recentTransactions: 'Deine letzten Transaktionen', date: 'Datum', amount: 'Betrag', questions: 'Fragen zu unseren Plänen?', contactSupport: 'Support Kontaktieren', loadError: 'Abonnementinformationen konnten nicht geladen werden', trialStartError: 'Die Premier-Testphase konnte nicht gestartet werden.', statuses: { active: 'Aktiv', succeeded: 'Erfolgreich', failed: 'Fehlgeschlagen', pending: 'Ausstehend' },
-    labels: { mostPopular: 'AM BELIEBTESTEN', free: 'Kostenlos', month: 'Monat', pricingPending: 'Preis wird noch festgelegt', pricingPendingButton: 'Preis folgt als Nächstes', processing: 'Verarbeitung...', selected: 'Ausgewählt', choose: 'Wählen', paymentFailed: 'Zahlung konnte nicht verarbeitet werden', basicSuccess: 'Basic-Plan erfolgreich abonniert!', redirecting: 'Weiterleitung zur Stripe-Kasse...', genericError: 'Ein Fehler ist aufgetreten. Bitte erneut versuchen.' },
-    plans: {
-      Basic: { displayName: 'Basic', description: 'Grundlegende Tools für Paare, die ihre Verbindung aufbauen und pflegen', features: ['Liebesnotizen', 'Beziehungsquizze', 'Liebessprachen-Quiz', 'Date-Ideen', 'Jahrestags-Tracker', 'Memory Lane', 'Mitgliederprofil', 'Community und Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Vertiefende Tools für Paare, die gemeinsam wachsen möchten', features: ['Alles aus Basic, plus:', 'Geteilte Tagebücher', 'Beziehungsmeilensteine', 'Beziehungsziele', 'Kommunikationsübungen', 'Paaraktivitäten', 'Paarkalender', 'LGBTQ+ Unterstützung', 'Podcasts'] },
-      Exclusive: { displayName: 'Exklusiv', description: 'Das umfassendste One2OneLove-Beziehungserlebnis', features: ['Alles aus Premiere, plus:', 'Paar-Dashboard', 'Paarprofil', 'Beziehungsunterstützung', 'Beziehungsartikel und Bibliothek'] }
-    }
+    choosePlan: 'One2OneLove-Pläne Vergleichen', subtitle: 'Zwei einfache Pläne zum Aufbau, Wachstum und zur Unterstützung Ihrer Beziehung',
+    currentlyOn: 'Aktueller Zugang', planWord: '', currentSubscription: 'Ihr Aktuelles Abonnement', plan: 'Plan', status: 'Status', renewsOn: 'Verlängert Am', notAvailable: 'k. A.',
+    cancelNotice: 'Ihr Abonnement endet zum Ende des laufenden Abrechnungszeitraums. Bereits entstandene Gebühren für Liebesnachrichten bleiben fällig.',
+    paymentHistory: 'Zahlungsverlauf', recentTransactions: 'Ihre letzten Transaktionen', date: 'Datum', amount: 'Betrag',
+    questions: 'Fragen zu unseren Plänen oder zur Abrechnung?', contactSupport: 'Support Kontaktieren', loadError: 'Abonnementinformationen konnten nicht geladen werden',
+    trialStartError: 'Der 7-Tage-Vollzugriff-Test konnte nicht gestartet werden.',
+    statuses: { active: 'Aktiv', trial: 'Test', trialing: 'Test', succeeded: 'Erfolgreich', failed: 'Fehlgeschlagen', pending: 'Ausstehend', cancelled: 'Gekündigt', inactive: 'Inaktiv' },
+    labels: { mostPopular: 'AM BELIEBTESTEN', month: 'Monat', pricingPending: 'Preis nicht verfügbar', pricingPendingButton: 'Nicht verfügbar', processing: 'Verarbeitung...', selected: 'Ausgewählt', choose: 'Wählen', paymentFailed: 'Zahlung konnte nicht verarbeitet werden', redirecting: 'Weiterleitung zu Stripe...', planUpdated: 'Plan aktualisiert. Ihr 7-Tage-Vollzugriff-Test läuft weiter.', genericError: 'Ein Fehler ist aufgetreten. Bitte erneut versuchen.' }
   },
-  nl: {
-    choosePlan: 'Vergelijk One2OneLove-abonnementen',
-    subtitle: 'Kies het niveau van relatietools en ervaringen dat bij jullie past',
-    currentlyOn: 'Huidig abonnement', planWord: '', currentSubscription: 'Je Huidige Abonnement', plan: 'Abonnement', status: 'Status', renewsOn: 'Verlenging Op', notAvailable: 'N.v.t.', cancelNotice: 'Je abonnement wordt aan het einde van de huidige factureringsperiode beëindigd.', paymentHistory: 'Betalingsgeschiedenis', recentTransactions: 'Je recente transacties', date: 'Datum', amount: 'Bedrag', questions: 'Vragen over onze abonnementen?', contactSupport: 'Contact Opnemen', loadError: 'Abonnementsinformatie kon niet worden geladen', statuses: { active: 'Actief', succeeded: 'Geslaagd', failed: 'Mislukt', pending: 'In behandeling' },
-    labels: { mostPopular: 'MEEST POPULAIR', free: 'Gratis', month: 'maand', pricingPending: 'Prijs wordt nog vastgesteld', pricingPendingButton: 'Prijs volgt hierna', processing: 'Bezig...', selected: 'Geselecteerd', choose: 'Kies', paymentFailed: 'Betaling kon niet worden verwerkt', basicSuccess: 'Basic-abonnement succesvol geactiveerd!', redirecting: 'Doorsturen naar Stripe-checkout...', genericError: 'Er is een fout opgetreden. Probeer het opnieuw.' },
-    plans: {
-      Basic: { displayName: 'Basic', description: 'Kernfuncties voor koppels die hun verbinding opbouwen en onderhouden', features: ['Liefdesnotities', 'Relatiequizzen', 'Date-ideeën', 'Jubileumtracker', 'Memory Lane', 'Relatiedoelen', 'Koppelkalender', 'Community en Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Diepere tools voor koppels die samen willen groeien', features: ['Alles van Basic, plus:', 'AI-relatiecoach', 'Gedeelde Dagboeken', 'Relatiemijlpalen', 'Communicatieoefeningen', 'Meditatie', 'Koppelactiviteiten', 'Coöperatieve Spellen', 'Vrienden Vinden en Vriendschapsverzoeken'] },
-      Exclusive: { displayName: 'Exclusive', description: 'De meest uitgebreide One2OneLove-relatie-ervaring', features: ['Alles van Premiere, plus:', 'AI-contentmaker', 'Koppeldashboard', 'Koppelprofiel', 'Premiumfuncties-hub', 'Prestaties en Ranglijst', 'Ondersteuning bij Counseling', 'Artikelen en Podcasts', 'Influencer- en Communityondersteuning', 'LGBTQ-relatieondersteuning'] }
-    }
-  },
-  pt: {
-    choosePlan: 'Compare os Planos One2OneLove',
-    subtitle: 'Escolha o nível de ferramentas e experiências de relacionamento que combina com você',
-    currentlyOn: 'Plano atual', planWord: '', currentSubscription: 'Sua Assinatura Atual', plan: 'Plano', status: 'Status', renewsOn: 'Renova Em', notAvailable: 'N/D', cancelNotice: 'Sua assinatura será cancelada ao final do período de cobrança atual.', paymentHistory: 'Histórico de Pagamentos', recentTransactions: 'Suas transações recentes', date: 'Data', amount: 'Valor', questions: 'Tem dúvidas sobre nossos planos?', contactSupport: 'Contatar Suporte', loadError: 'Não foi possível carregar as informações da assinatura', statuses: { active: 'Ativo', succeeded: 'Concluído', failed: 'Falhou', pending: 'Pendente' },
-    labels: { mostPopular: 'MAIS POPULAR', free: 'Grátis', month: 'mês', pricingPending: 'Preço a ser definido', pricingPendingButton: 'Preço em breve', processing: 'Processando...', selected: 'Selecionado', choose: 'Escolher', paymentFailed: 'Falha ao processar o pagamento', basicSuccess: 'Assinatura do plano Basic realizada com sucesso!', redirecting: 'Redirecionando para o checkout Stripe...', genericError: 'Ocorreu um erro. Tente novamente.' },
-    plans: {
-      Basic: { displayName: 'Básico', description: 'Ferramentas essenciais para casais que constroem e mantêm sua conexão', features: ['Notas de Amor', 'Questionários de Relacionamento', 'Ideias para Encontros', 'Rastreador de Aniversários', 'Memory Lane', 'Metas de Relacionamento', 'Calendário do Casal', 'Comunidade e Chat'] },
-      Premiere: { displayName: 'Premiere', description: 'Ferramentas mais profundas para casais que querem crescer juntos', features: ['Tudo do Básico, mais:', 'Coach de Relacionamento com IA', 'Diários Compartilhados', 'Marcos do Relacionamento', 'Prática de Comunicação', 'Meditação', 'Atividades para Casais', 'Jogos Cooperativos', 'Encontrar Amigos e Solicitações de Amizade'] },
-      Exclusive: { displayName: 'Exclusivo', description: 'A experiência de relacionamento One2OneLove mais completa', features: ['Tudo do Premiere, mais:', 'Criador de Conteúdo com IA', 'Painel do Casal', 'Perfil do Casal', 'Central de Recursos Premium', 'Conquistas e Classificação', 'Apoio de Aconselhamento', 'Artigos e Podcasts', 'Apoio de Influenciadores e Comunidade', 'Apoio a Relacionamentos LGBTQ'] }
-    }
-  }
 };
-
 
 const TRIAL_COPY = {
   en: { title: '7 Days of Full One2OneLove Access', body: 'Add a credit or debit card to start. You will not be charged today. For 7 days you receive Exclusive-level access. Love Note SMS sending is not available during the trial. After 7 days, your membership continues on Premiere at $9.99/month unless you choose Exclusive or cancel before the trial ends.', start: 'Start 7-Day Full Access Trial', starting: 'Opening secure checkout...', active: 'Your 7-day Full Access trial is active. Love Note SMS sending unlocks after your first successful paid subscription payment.' },
