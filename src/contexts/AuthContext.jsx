@@ -30,10 +30,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUserProfile = async () => {
+  const refreshUserProfile = async ({ preserveOnNull = false } = {}) => {
     try {
       const auth = await getAuthSessionWithRetry(3, 250);
       if (!auth?.user) {
+        if (preserveOnNull) return undefined;
         setUser(null);
         return null;
       }
@@ -66,7 +67,7 @@ export function AuthProvider({ children }) {
     const refresh = async () => {
       setIsLoading(true);
       try {
-        const current = await refreshUserProfile();
+        const current = await refreshUserProfile({ preserveOnNull: false });
         if (!mounted) return;
         if (current !== undefined) setUser(current);
       } finally {
@@ -77,11 +78,11 @@ export function AuthProvider({ children }) {
     refresh();
 
     const interval = window.setInterval(() => {
-      if (mounted) refreshUserProfile();
+      if (mounted) refreshUserProfile({ preserveOnNull: true });
     }, 5 * 60 * 1000);
 
     const onVisibility = () => {
-      if (document.visibilityState === 'visible' && mounted) refreshUserProfile();
+      if (document.visibilityState === 'visible' && mounted) refreshUserProfile({ preserveOnNull: true });
     };
     document.addEventListener('visibilitychange', onVisibility);
 
