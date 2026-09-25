@@ -168,6 +168,11 @@ export async function getProfile() {
   return payload?.profile || null;
 }
 
+export async function getGuestPreviewStatus() {
+  const payload = await apiRequest('/api/guest-preview/status');
+  return payload?.guestPreview || null;
+}
+
 export async function updateProfile(fields) {
   const payload = await apiRequest('/api/profile', {
     method: 'PATCH',
