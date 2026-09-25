@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PUBLIC_ROUTES = new Set([
@@ -51,77 +51,12 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
-const ACCESS_TIMER_COPY = {
-  en: { guest: 'Guest Preview', trial: '7-Day Full Access Trial', remaining: 'remaining' },
-  es: { guest: 'Vista Previa', trial: 'Prueba de Acceso Completo de 7 Días', remaining: 'restante' },
-  fr: { guest: 'Aperçu Invité', trial: 'Essai Accès Complet de 7 Jours', remaining: 'restant' },
-  it: { guest: 'Anteprima Ospite', trial: 'Prova di Accesso Completo di 7 Giorni', remaining: 'rimanente' },
-  de: { guest: 'Gastvorschau', trial: '7-Tage-Vollzugriff-Test', remaining: 'verbleibend' },
-};
-
-function formatRemaining(milliseconds) {
-  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const clock = [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
-  return days > 0 ? `${days}d ${clock}` : clock;
-}
-
-function AccessTimerShell({ user, mode, children }) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const language = preferredLanguage();
-  const t = ACCESS_TIMER_COPY[language] || ACCESS_TIMER_COPY.en;
-  let expiry = null;
-  if (mode === 'guest' && user?.created_at) {
-    const created = new Date(user.created_at);
-    if (!Number.isNaN(created.getTime())) expiry = created.getTime() + 24 * 60 * 60 * 1000;
-  } else if (mode === 'trial' && user?.trial_end_date) {
-    const trialEnd = new Date(user.trial_end_date);
-    if (!Number.isNaN(trialEnd.getTime())) expiry = trialEnd.getTime();
-  }
-
-  const remaining = expiry ? Math.max(0, expiry - now) : null;
-  return (
-    <>
-      {remaining != null && remaining > 0 && (
-        <div className="sticky top-0 z-40 flex items-center justify-center gap-2 border-b border-purple-200 bg-white/95 px-3 py-2 text-sm font-semibold text-purple-800 shadow-sm backdrop-blur">
-          <Clock3 className="h-4 w-4" />
-          <span>{mode === 'trial' ? t.trial : t.guest}:</span>
-          <span className="font-mono font-black">{formatRemaining(remaining)}</span>
-          <span>{t.remaining}</span>
-        </div>
-      )}
-      {children}
-    </>
-  );
-}
-
-const PREVIEW_COPY = {
-  en: { label: '24-Hour Guest Preview', remaining: 'Time remaining', action: 'Start 7-Day Trial' },
-  es: { label: 'Vista Previa de Invitado de 24 Horas', remaining: 'Tiempo restante', action: 'Iniciar Prueba de 7 Días' },
-  fr: { label: 'Aperçu Invité de 24 Heures', remaining: 'Temps restant', action: 'Commencer l’Essai de 7 Jours' },
-  it: { label: 'Anteprima Ospite di 24 Ore', remaining: 'Tempo rimanente', action: 'Inizia la Prova di 7 Giorni' },
-  de: { label: '24-Stunden-Gastvorschau', remaining: 'Verbleibende Zeit', action: '7-Tage-Test Starten' },
-};
-
 const PREVIEW_MS = 24 * 60 * 60 * 1000;
 
-function previewRemainingMs(user, now = Date.now()) {
-  if (user?.stripe_subscription_id) return 0;
-  const created = user?.created_at ? new Date(user.created_at) : null;
-  if (!created || Number.isNaN(created.getTime())) return 0;
-  return Math.max(0, created.getTime() + PREVIEW_MS - now);
-}
-
 function previewActive(user) {
-  return previewRemainingMs(user) > 0;
+  if (user?.stripe_subscription_id) return false;
+  const created = user?.created_at ? new Date(user.created_at) : null;
+  return Boolean(created && !Number.isNaN(created.getTime()) && created.getTime() + PREVIEW_MS > Date.now());
 }
 
 function currentPlanFor(user) {
@@ -141,69 +76,11 @@ function preferredLanguage() {
   }
 }
 
-function formatRemaining(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const seconds = total % 60;
-  return [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
-}
-
-function PreviewCountdown({ user }) {
-  const navigate = useNavigate();
-  const [remaining, setRemaining] = useState(() => previewRemainingMs(user));
-  const language = preferredLanguage();
-  const copy = PREVIEW_COPY[language] || PREVIEW_COPY.en;
-
-  useEffect(() => {
-    const update = () => {
-      const next = previewRemainingMs(user);
-      setRemaining(next);
-      if (next <= 0) navigate('/Subscription?setup=required', { replace: true });
-    };
-    update();
-    const timer = window.setInterval(update, 1000);
-    return () => window.clearInterval(timer);
-  }, [user?.created_at, user?.stripe_subscription_id, navigate]);
-
-  if (remaining <= 0) return null;
-
-  return (
-    <div className="sticky top-0 z-40 border-b border-pink-300 bg-gradient-to-r from-pink-600 to-purple-700 px-3 py-2 text-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-sm font-semibold">
-        <span>{copy.label}</span>
-        <span className="rounded-md bg-white/15 px-2 py-1 font-mono text-base tracking-wide">
-          {copy.remaining}: {formatRemaining(remaining)}
-        </span>
-        <button
-          type="button"
-          onClick={() => navigate('/Subscription')}
-          className="rounded-md bg-white px-3 py-1 font-bold text-purple-700 transition hover:bg-pink-50"
-        >
-          {copy.action}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function withPreviewTimer(children, user) {
-  if (!previewActive(user)) return children;
-  return (
-    <>
-      <PreviewCountdown user={user} />
-      {children}
-    </>
-  );
-}
-
 export default function LaunchAccessGate({ pathname, children }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const route = String(pathname || '/').toLowerCase().replace(/\/$/, '') || '/';
 
-  if (PUBLIC_ROUTES.has(route)) {
-    return isAuthenticated && user ? withPreviewTimer(children, user) : children;
-  }
+  if (PUBLIC_ROUTES.has(route)) return children;
 
   if (isLoading) {
     const language = preferredLanguage();
@@ -227,7 +104,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   const role = String(user.role || '').toLowerCase();
   if (role === 'admin') return children;
 
-  if (route === '/subscription' || route === '/payment-success') return withPreviewTimer(children, user);
+  if (route === '/subscription' || route === '/payment-success') return children;
   if (route === '/sendcredits') return <Navigate to="/Subscription" replace />;
 
   const status = String(user.subscription_status || '').toLowerCase();
@@ -238,10 +115,10 @@ export default function LaunchAccessGate({ pathname, children }) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
 
-  // The 24-hour Guest Preview and the 7-day trial can explore all plan surfaces.
-  // SMS Love Note sending is separately blocked server-side until the first paid invoice succeeds.
-  if (guestPreview) return withPreviewTimer(children, user);
-  if (status === 'trial' || status === 'trialing') return children;
+  // The 24-hour Guest Preview and 7-day trial can explore plan surfaces.
+  // One2OneLove SMS Love Note delivery remains blocked server-side until
+  // the first successful paid subscription payment.
+  if (guestPreview || status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
   if (!required) return children;
