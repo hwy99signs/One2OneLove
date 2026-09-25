@@ -77,16 +77,12 @@ export async function loveNoteSendAccess(db, userId) {
   let code = null;
   let message = null;
 
-  if (trial) {
-    code = 'trial_sms_locked';
-    message = 'Love Note SMS sending is not available during the 7-day trial.';
-  } else if (!active || !user.stripe_subscription_id || !user.stripe_customer_id) {
-    code = 'paid_membership_required';
-    message = 'An active paid One2OneLove membership is required for Love Note SMS delivery.';
-  } else if (!hasPaidSubscriptionPayment) {
-    code = 'first_payment_required';
-    message = 'Love Note SMS delivery unlocks after your first successful paid subscription payment.';
+  if (!(trial || active) || !user.stripe_subscription_id || !user.stripe_customer_id) {
+    code = 'subscription_required';
+    message = 'Start the 7-day Full Access trial or an active One2OneLove membership to send Love Notes by SMS.';
   } else {
+    // Trial members are intentionally allowed to send:
+    // first One2OneLove SMS Love Note is complimentary, then $0.29 per send.
     allowed = true;
   }
 
@@ -97,7 +93,8 @@ export async function loveNoteSendAccess(db, userId) {
     plan,
     subscriptionStatus: status || 'inactive',
     hasPaidSubscriptionPayment,
-    firstPaidSendFree: true,
+    firstTrialSendFree: true,
+    firstSendFree: true,
     firstFreeAvailable: allowed && reservedOrSent === 0,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
     reservedOrSent,
@@ -130,7 +127,7 @@ export async function reserveLoveNoteSend(db, userId, sourceType, sourceId, quot
   const access = await loveNoteSendAccess(db, userId);
   if (!access.allowed) {
     throw Object.assign(new Error(access.message || 'Love Note SMS delivery is unavailable.'), {
-      status: access.code === 'trial_sms_locked' ? 403 : 402,
+      status: 402,
       code: access.code || 'love_note_sms_unavailable',
       usage: access,
     });
@@ -188,7 +185,7 @@ export async function releaseLoveNoteReservation(db, userId, sourceId) {
     [row.id],
   );
 
-  // If the cancelled reservation held the complimentary first paid-member send,
+  // If the cancelled reservation held the complimentary first send,
   // transfer that benefit to the next oldest still-reserved paid Love Note.
   if (row.quota_source === 'included') {
     const next = await db.query(
@@ -285,7 +282,8 @@ export async function loveNoteUsageSummary(db, userId) {
     smsSendingAllowed: access.allowed,
     smsSendingCode: access.code,
     smsSendingMessage: access.message,
-    firstPaidSendFree: true,
+    firstTrialSendFree: true,
+    firstSendFree: true,
     firstFreeAvailable: access.firstFreeAvailable,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
     sentCount: access.sent,
