@@ -35,6 +35,7 @@ import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
+import { enforceGuestPreviewReadOnly } from './guest-preview';
 
 export default {
   async fetch(request, env, ctx) {
@@ -57,6 +58,9 @@ export default {
 
     const identityGate = await enforceLaunchIdentity(request, env, url);
     if (identityGate) return identityGate;
+
+    const guestPreviewGate = await enforceGuestPreviewReadOnly(request, env, url);
+    if (guestPreviewGate) return guestPreviewGate;
 
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;
