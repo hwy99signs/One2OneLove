@@ -109,13 +109,13 @@ async function requireUser(request, env) {
   if (!auth) return { response: error('Authentication required.', 401, 'unauthorized') };
 
   // Ensure every authenticated Neon user has an application profile. Newly
-  // created launch members remain inactive until Stripe activates a trial or
-  // paid subscription. Existing migrated profiles are preserved as-is.
+  // New members begin with a 24-hour Guest Preview. The profile remains
+  // inactive for billing until Stripe activates the 7-day trial or a paid subscription.
   await withDb(env, async (db) => {
     await db.query(
       `INSERT INTO public.users
         (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
-       VALUES ($1::uuid, $2, $3, 'regular', true, 'Basic', 4.99, 'inactive')
+       VALUES ($1::uuid, $2, $3, 'regular', true, 'Premiere', 9.99, 'inactive')
        ON CONFLICT (id) DO UPDATE SET
          email = EXCLUDED.email,
          name = COALESCE(NULLIF(public.users.name, ''), EXCLUDED.name),
