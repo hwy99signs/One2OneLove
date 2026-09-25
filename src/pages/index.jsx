@@ -42,6 +42,9 @@ import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
 import VerifyPhone from './VerifyPhone';
+import ProfessionalSignup from './ProfessionalSignup';
+import TherapistSignup from './TherapistSignup';
+import InfluencerSignup from './InfluencerSignup';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import SubscriptionLaunchNotice from '@/components/subscriptions/SubscriptionLaunchNotice.jsx';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +57,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
+  ProfessionalSignup, TherapistSignup, InfluencerSignup,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -177,11 +181,11 @@ function PagesContent() {
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Subscription" element={<Subscription />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
+          <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
+          <Route path="/TherapistSignup" element={<TherapistSignup />} />
+          <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
-          <Route path="/InfluencerSignup" element={<Navigate to="/Home" replace />} />
-          <Route path="/ProfessionalSignup" element={<Navigate to="/Home" replace />} />
-          <Route path="/TherapistSignup" element={<Navigate to="/Home" replace />} />
           <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
           <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
