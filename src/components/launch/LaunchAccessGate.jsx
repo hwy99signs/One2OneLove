@@ -52,37 +52,6 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
-const PREVIEW_READ_ONLY_COPY = {
-  en: { title: '24-Hour Guest Preview — View Only', body: 'Explore the real One2OneLove features. You can open tabs, menus, tools, and content; actions that save, send, post, schedule, message, upload, or change data require a trial or subscription.', action: 'Start 7-Day Full Access Trial' },
-  es: { title: 'Vista Previa de 24 Horas — Solo Lectura', body: 'Puedes ver One2OneLove, pero no puedes usar las funciones durante la Vista Previa.', action: 'Iniciar Prueba de Acceso Completo de 7 Días' },
-  fr: { title: 'Aperçu Invité de 24 Heures — Consultation Uniquement', body: 'Vous pouvez parcourir One2OneLove, mais les fonctionnalités ne peuvent pas être utilisées pendant l’Aperçu Invité.', action: 'Commencer l’Essai Accès Complet de 7 Jours' },
-  it: { title: 'Anteprima Ospite di 24 Ore — Solo Visualizzazione', body: 'Puoi visualizzare One2OneLove, ma non puoi usare le funzioni durante l’Anteprima Ospite.', action: 'Inizia la Prova di Accesso Completo di 7 Giorni' },
-  de: { title: '24-Stunden-Gastvorschau — Nur Ansehen', body: 'Sie können One2OneLove ansehen, Funktionen können während der Gastvorschau jedoch nicht verwendet werden.', action: '7-Tage-Vollzugriff Starten' },
-};
-
-function PreviewReadOnly({ children }) {
-  const language = preferredLanguage();
-  const copy = PREVIEW_READ_ONLY_COPY[language] || PREVIEW_READ_ONLY_COPY.en;
-  return (
-    <div className="relative">
-      <div className="sticky top-0 z-[70] border-b border-amber-300 bg-amber-50 px-4 py-3 shadow-sm">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-black text-amber-950">{copy.title}</p>
-            <p className="text-sm text-amber-900">{copy.body}</p>
-          </div>
-          <a href="/Subscription" className="inline-flex shrink-0 items-center justify-center rounded-lg bg-purple-700 px-4 py-2 text-sm font-bold text-white hover:bg-purple-800">
-            {copy.action}
-          </a>
-        </div>
-      </div>
-      <div className="select-text" aria-label={copy.title}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 const PREVIEW_MS = 24 * 60 * 60 * 1000;
 
 function previewActive(user) {
@@ -133,7 +102,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   const guestPreviewForPublicRoute = previewActive(user);
   const previewSetupRoute = ['/subscription', '/signin', '/login', '/signup', '/forgotpassword'].includes(route);
   if (isPublicRoute) {
-    if (guestPreviewForPublicRoute && !previewSetupRoute) return <PreviewReadOnly>{children}</PreviewReadOnly>;
+    if (guestPreviewForPublicRoute && !previewSetupRoute) return children;
     return children;
   }
 
@@ -158,7 +127,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   // Guest Preview is strictly view-only. Trial members may use the platform.
-  if (guestPreview) return <PreviewReadOnly>{children}</PreviewReadOnly>;
+  if (guestPreview) return children;
   if (status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
