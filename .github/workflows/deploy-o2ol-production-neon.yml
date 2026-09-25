@@ -122,7 +122,9 @@ jobs:
           grep -F "formatPreviewTime" src/pages/Subscription.jsx >/dev/null
           grep -F "GuestPreviewTimer" src/pages/Subscription.jsx >/dev/null
           grep -F "guest_preview_read_only" worker/api-entitlements.ts >/dev/null
-          grep -F "PreviewReadOnly" src/components/launch/LaunchAccessGate.jsx >/dev/null
+          grep -F "if (guestPreview) return children;" src/components/launch/LaunchAccessGate.jsx >/dev/null
+          ! grep -F "pointer-events-none" src/components/launch/LaunchAccessGate.jsx >/dev/null
+          ! grep -F "PreviewReadOnly" src/components/launch/LaunchAccessGate.jsx >/dev/null
 
       - name: Verify production deployment isolation
         shell: bash
