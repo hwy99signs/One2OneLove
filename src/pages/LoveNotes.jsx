@@ -18,6 +18,7 @@ import { subjectSupplementalNotes } from "../components/lovenotes/additional/Lov
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getAiConfig } from "@/lib/aiService";
+import { isGuestPreviewActive } from "@/lib/guestPreview";
 
 const translations = {
   en: {
@@ -743,7 +744,7 @@ const categoryPlanCopy = {
 };
 
 function effectiveLoveNotesPlan(user) {
-  if (String(user?.role || '').toLowerCase() === 'admin') return 'Exclusive';
+  if (String(user?.role || '').toLowerCase() === 'admin' || isGuestPreviewActive(user)) return 'Exclusive';
   const status = String(user?.subscription_status || '').toLowerCase();
   if (status === 'trial' || status === 'trialing') return 'Exclusive';
   const raw = String(user?.subscription_plan || 'Basic').toLowerCase();
