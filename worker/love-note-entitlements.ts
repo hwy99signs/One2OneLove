@@ -108,14 +108,21 @@ async function ensureProfile(db, auth) {
 }
 async function planForUser(db, userId) {
   const result = await db.query(
-    `SELECT subscription_plan,subscription_status FROM public.users WHERE id=$1::uuid`,
+    `SELECT p.subscription_plan,p.subscription_status,
+            EXISTS (
+              SELECT 1 FROM public.guest_preview_sessions g
+              WHERE g.user_id=p.id AND g.expires_at > now()
+            ) AS guest_preview_active
+       FROM public.users p
+      WHERE p.id=$1::uuid`,
     [userId],
   );
   const row = result.rows[0] || {};
   const stored = canonicalPlan(row.subscription_plan);
   const trial = ['trial', 'trialing'].includes(String(row.subscription_status || '').toLowerCase());
-  const effective = trial ? 'Exclusive' : stored;
-  return { storedPlan: stored, effectivePlan: effective, subscriptionStatus: row.subscription_status || 'inactive', ...limitsFor(effective) };
+  const effective = (trial || row.guest_preview_active === true) ? 'Exclusive' : stored;
+  const subscriptionStatus = row.guest_preview_active === true ? 'guest_preview' : (row.subscription_status || 'inactive');
+  return { storedPlan: stored, effectivePlan: effective, subscriptionStatus, ...limitsFor(effective) };
 }
 async function walletBalance(db, userId, lock = false) {
   const result = await db.query(
