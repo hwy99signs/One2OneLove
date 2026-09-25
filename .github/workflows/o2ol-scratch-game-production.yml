@@ -29,31 +29,32 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Worker dependencies
         run: npm --prefix worker install --no-audit --no-fund
-      - name: Verify player bundle, password rule, and solo mode
+      - name: Verify player bundle, O2OL SSO, and solo mode
         shell: bash
         run: |
           set -euo pipefail
           ! grep -RIn "const questionBank" public worker 2>/dev/null
           grep -Fq 'data-players="1"' public/index.html
-          grep -Fq 'Self Evaluation' public/index.html
-          grep -Fq 'maxlength="12"' public/auth-gate.js
+          grep -Fq 'SOLO PLAYER' public/index.html
+          grep -Fq '/api/o2ol/launch' public/auth-gate.js
+          ! grep -Fq 'Create Free Account & Play' public/auth-gate.js
       - name: Dry run production custom domain
         run: npx --yes wrangler@latest deploy --dry-run --config wrangler.production.toml
       - name: Deploy production custom domain
         run: npx --yes wrangler@latest deploy --config wrangler.production.toml
-      - name: Verify production database, auth gate, analytics, and all 12 categories
+      - name: Verify production database, O2OL SSO gate, analytics, and all 12 categories
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 30); do
             code=$(curl -sS --max-time 20 -o /tmp/live-health.json -w '%{http_code}' "$LIVE_URL/api/health" || true)
-            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 4800 and .accountGate == "required" and .analytics == "enabled"' /tmp/live-health.json >/dev/null 2>&1; then
+            if [ "$code" = "200" ] && jq -e '.ok == true and .questionCount == 4800 and .accountGate == "o2ol_sso" and .analytics == "enabled"' /tmp/live-health.json >/dev/null 2>&1; then
               break
             fi
             sleep 5
           done
           cat /tmp/live-health.json
-          jq -e '.ok == true and .questionCount == 4800 and .accountGate == "required" and .analytics == "enabled"' /tmp/live-health.json >/dev/null
+          jq -e '.ok == true and .questionCount == 4800 and .accountGate == "o2ol_sso" and .analytics == "enabled"' /tmp/live-health.json >/dev/null
 
           unauth_code=$(curl -sS --max-time 20 -o /tmp/unauth.json -w '%{http_code}'             -X POST "$LIVE_URL/api/draw-question"             -H 'content-type: application/json'             --data '{"relationship":"Married","category":"Communication","exclude":[],"avoidId":null}')
           test "$unauth_code" = "401"
