@@ -4,7 +4,7 @@ import { handleAdminRequest } from './admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest } from './feature-usage';
-import { handleSendCreditWebhook, handleSendCreditsRequest } from './send-credits';
+import { handleSendCreditsRequest } from './send-credits';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
 import { handleLaunchAuthRequest } from './launch-auth';
@@ -39,11 +39,6 @@ import { handlePhoneVerificationRequest } from './phone-verification';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-
-    if (url.pathname === '/api/billing/webhook') {
-      const sendCreditResponse = await handleSendCreditWebhook(request.clone(), env, url);
-      if (sendCreditResponse) return sendCreditResponse;
-    }
 
     if (url.pathname === '/api/launch-readiness') {
       const response = await handleLaunchReadinessRequest(request, env, url);
