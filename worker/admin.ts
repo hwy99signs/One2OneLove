@@ -76,6 +76,24 @@ async function adminIdentity(db, userId) {
   return row;
 }
 
+async function ensureChatModerationSchema(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.chat_room_reports (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      room_id uuid NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
+      message_id uuid NOT NULL REFERENCES public.chat_room_messages(id) ON DELETE CASCADE,
+      reporter_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      reported_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL,
+      reason text NOT NULL,
+      status text NOT NULL DEFAULT 'pending',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      reviewed_at timestamptz,
+      reviewed_by uuid REFERENCES public.users(id) ON DELETE SET NULL,
+      UNIQUE(message_id, reporter_id)
+    )
+  `);
+}
+
 async function overview(db) {
   const [users, plans, applications, moderation, payments, loveNotes, communities] = await Promise.all([
     db.query(`
@@ -110,7 +128,8 @@ async function overview(db) {
         (SELECT count(*) FROM public.success_stories WHERE moderation_status='pending')::int AS stories_pending,
         (SELECT count(*) FROM public.community_posts WHERE moderation_status='pending')::int AS posts_pending,
         (SELECT count(*) FROM public.post_comments WHERE moderation_status='pending')::int AS comments_pending,
-        (SELECT count(*) FROM public.reviews WHERE COALESCE(is_published,false)=false)::int AS reviews_unpublished`),
+        (SELECT count(*) FROM public.reviews WHERE COALESCE(is_published,false)=false)::int AS reviews_unpublished,
+        (SELECT count(*) FROM public.chat_room_reports WHERE status='pending')::int AS chat_reports_pending`),
     db.query(`
       SELECT count(*)::int AS recorded_payments,
              count(*) FILTER (WHERE created_at >= date_trunc('month',now()))::int AS payments_this_month,
@@ -141,7 +160,7 @@ async function overview(db) {
     users: users.rows[0] || {},
     plans: plans.rows,
     applications: { ...app, pending_total: Number(app.licensed_pending || 0) + Number(app.professional_pending || 0) + Number(app.contributor_pending || 0) },
-    moderation: { ...mod, pending_total: Number(mod.stories_pending || 0) + Number(mod.posts_pending || 0) + Number(mod.comments_pending || 0) + Number(mod.reviews_unpublished || 0) },
+    moderation: { ...mod, pending_total: Number(mod.stories_pending || 0) + Number(mod.posts_pending || 0) + Number(mod.comments_pending || 0) + Number(mod.reviews_unpublished || 0) + Number(mod.chat_reports_pending || 0) },
     payments: payments.rows[0] || {},
     loveNotes: loveNotes.rows[0] || {},
     community: communities.rows[0] || {},
@@ -208,6 +227,17 @@ async function moderation(db) {
       UNION ALL
       SELECT 'review'::text,id,user_id,NULL::text,left(review_text,500),CASE WHEN is_published THEN 'published' ELSE 'unpublished' END,NULL::text,created_at,updated_at
         FROM public.reviews WHERE COALESCE(is_published,false)=false
+      UNION ALL
+      SELECT 'chat_report'::text,r.id,r.reported_user_id,
+             'Reported community chat message'::text,
+             left(m.content,500),
+             r.status,
+             r.reason,
+             r.created_at,
+             COALESCE(r.reviewed_at,r.created_at)
+        FROM public.chat_room_reports r
+        JOIN public.chat_room_messages m ON m.id=r.message_id
+       WHERE r.status <> 'resolved'
     ) queue
     ORDER BY created_at DESC
     LIMIT 250`);
@@ -319,6 +349,7 @@ async function system(db) {
 }
 
 async function dashboard(db) {
+  await ensureChatModerationSchema(db);
   const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,systemData] = await Promise.all([
     overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),system(db),
   ]);
