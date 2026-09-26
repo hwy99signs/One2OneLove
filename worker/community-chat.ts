@@ -42,8 +42,47 @@ function cleanMessage(value) {
   return text;
 }
 function isUuid(value) { return UUID.test(String(value || '')); }
+function cleanReportReason(value) {
+  const text = String(value || '').trim();
+  if (text.length < 3) throw new Error('Please provide a reason for the report.');
+  if (text.length > 500) throw new Error('Report reason can be up to 500 characters.');
+  return text;
+}
 
-async function listRooms(db) {
+async function ensureChatSafetySchema(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.chat_room_reports (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      room_id uuid NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
+      message_id uuid NOT NULL REFERENCES public.chat_room_messages(id) ON DELETE CASCADE,
+      reporter_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      reported_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL,
+      reason text NOT NULL,
+      status text NOT NULL DEFAULT 'pending',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      reviewed_at timestamptz,
+      reviewed_by uuid REFERENCES public.users(id) ON DELETE SET NULL,
+      UNIQUE(message_id, reporter_id)
+    )
+  `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.chat_user_mutes (
+      owner_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      muted_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY(owner_user_id, muted_user_id)
+    )
+  `);
+  await db.query(`
+    INSERT INTO public.chat_rooms(id,slug,name,description,icon,is_active,created_at)
+    SELECT gen_random_uuid(),'lgbtq-community','LGBTQ+ Community Chat',
+           'A dedicated LGBTQ+ community space for support, connection and respectful conversation.',
+           '🏳️‍🌈',true,now()
+     WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='lgbtq-community')
+  `);
+}
+
+async function listRooms(db, scope = 'general') {
   const result = await db.query(`
     SELECT r.id,r.slug,r.name,r.description,r.icon,
            COALESCE(p.online_count,0)::int AS online_count,
@@ -62,12 +101,17 @@ async function listRooms(db) {
          GROUP BY room_id
       ) m ON m.room_id=r.id
      WHERE r.is_active=true
+       AND (
+         ($1='lgbtq' AND r.slug='lgbtq-community')
+         OR
+         ($1<>'lgbtq' AND r.slug<>'lgbtq-community')
+       )
      ORDER BY r.created_at ASC,r.name ASC
-  `);
+  `, [scope]);
   return result.rows;
 }
 
-async function listMessages(db, roomId, url) {
+async function listMessages(db, roomId, url, viewerId = null) {
   const limit = Math.min(100, Math.max(10, Number(url.searchParams.get('limit') || 60)));
   const before = url.searchParams.get('before');
   const values = [roomId];
@@ -92,7 +136,16 @@ async function listMessages(db, roomId, url) {
     ) q
     ORDER BY q.created_at ASC,q.id ASC
   `, values);
-  return result.rows.map(row => ({
+  let rows = result.rows;
+  if (viewerId) {
+    const muted = await db.query(
+      'SELECT muted_user_id FROM public.chat_user_mutes WHERE owner_user_id=$1::uuid',
+      [viewerId],
+    );
+    const mutedIds = new Set(muted.rows.map(row => String(row.muted_user_id)));
+    rows = rows.filter(row => !mutedIds.has(String(row.user_id)));
+  }
+  return rows.map(row => ({
     id: row.id,
     roomId: row.room_id,
     userId: row.user_id,
@@ -119,8 +172,11 @@ export async function handleCommunityChatRequest(request, env, url) {
 
   try {
     return await withDb(env, async db => {
+      await ensureChatSafetySchema(db);
+
       if (url.pathname === '/api/community-chat/rooms' && request.method === 'GET') {
-        return json({ ok: true, rooms: await listRooms(db) });
+        const scope = url.searchParams.get('scope') === 'lgbtq' ? 'lgbtq' : 'general';
+        return json({ ok: true, rooms: await listRooms(db, scope) });
       }
 
       const messagesMatch = url.pathname.match(/^\/api\/community-chat\/rooms\/([0-9a-f-]{36})\/messages$/i);
@@ -131,7 +187,7 @@ export async function handleCommunityChatRequest(request, env, url) {
 
         if (request.method === 'GET') {
           if (auth) await touchPresence(db, roomId, auth.user.id);
-          return json({ ok: true, messages: await listMessages(db, roomId, url) });
+          return json({ ok: true, messages: await listMessages(db, roomId, url, auth?.user?.id || null) });
         }
 
         if (request.method === 'POST') {
@@ -192,6 +248,61 @@ export async function handleCommunityChatRequest(request, env, url) {
         if (!room.rowCount) return fail('Chat room not found.', 404, 'not_found');
         await touchPresence(db, roomId, auth.user.id);
         return json({ ok: true });
+      }
+
+      const reportMatch = url.pathname.match(/^\/api\/community-chat\/messages\/([0-9a-f-]{36})\/report$/i);
+      if (reportMatch && request.method === 'POST') {
+        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
+        const input = await readJson(request);
+        const reason = cleanReportReason(input.reason);
+        const message = await db.query(
+          `SELECT m.id,m.room_id,m.user_id,r.slug
+             FROM public.chat_room_messages m
+             JOIN public.chat_rooms r ON r.id=m.room_id
+            WHERE m.id=$1::uuid AND m.is_deleted=false`,
+          [reportMatch[1]],
+        );
+        const row = message.rows[0];
+        if (!row) return fail('Message not found.', 404, 'not_found');
+        if (String(row.user_id) === String(auth.user.id)) return fail('You cannot report your own message.', 400, 'invalid_report');
+
+        await db.query(
+          `INSERT INTO public.chat_room_reports(room_id,message_id,reporter_id,reported_user_id,reason,status)
+           VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5,'pending')
+           ON CONFLICT(message_id,reporter_id)
+           DO UPDATE SET reason=EXCLUDED.reason,status='pending',created_at=now(),reviewed_at=NULL,reviewed_by=NULL`,
+          [row.room_id,row.id,auth.user.id,row.user_id,reason],
+        );
+        return json({ ok:true });
+      }
+
+      const muteMatch = url.pathname.match(/^\/api\/community-chat\/users\/([0-9a-f-]{36})\/mute$/i);
+      if (muteMatch) {
+        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
+        const targetId = muteMatch[1];
+        if (String(targetId) === String(auth.user.id)) return fail('You cannot mute yourself.', 400, 'invalid_mute');
+
+        if (request.method === 'POST') {
+          const exists = await db.query('SELECT 1 FROM public.users WHERE id=$1::uuid', [targetId]);
+          if (!exists.rowCount) return fail('Member not found.', 404, 'not_found');
+          await db.query(
+            `INSERT INTO public.chat_user_mutes(owner_user_id,muted_user_id)
+             VALUES($1::uuid,$2::uuid)
+             ON CONFLICT(owner_user_id,muted_user_id) DO NOTHING`,
+            [auth.user.id,targetId],
+          );
+          return json({ ok:true });
+        }
+
+        if (request.method === 'DELETE') {
+          await db.query(
+            'DELETE FROM public.chat_user_mutes WHERE owner_user_id=$1::uuid AND muted_user_id=$2::uuid',
+            [auth.user.id,targetId],
+          );
+          return json({ ok:true });
+        }
+
+        return fail('Method not allowed.',405,'method_not_allowed');
       }
 
       const messageMatch = url.pathname.match(/^\/api\/community-chat\/messages\/([0-9a-f-]{36})$/i);
