@@ -1,7 +1,8 @@
 import { apiRequest } from './apiClient';
 
-export async function getCommunityChatRooms() {
-  const payload = await apiRequest('/api/community-chat/rooms');
+export async function getCommunityChatRooms(scope = 'general') {
+  const query = scope === 'lgbtq' ? '?scope=lgbtq' : '';
+  const payload = await apiRequest('/api/community-chat/rooms' + query);
   return payload?.rooms || [];
 }
 
@@ -27,4 +28,25 @@ export async function touchCommunityChatPresence(roomId) {
 
 export async function deleteCommunityChatMessage(messageId) {
   await apiRequest(`/api/community-chat/messages/${encodeURIComponent(messageId)}`, { method: 'DELETE' });
+}
+
+
+export async function reportCommunityChatMessage(messageId, reason) {
+  await apiRequest(`/api/community-chat/messages/${encodeURIComponent(messageId)}/report`, {
+    method: 'POST',
+    body: { reason },
+  });
+}
+
+export async function muteCommunityChatUser(userId) {
+  await apiRequest(`/api/community-chat/users/${encodeURIComponent(userId)}/mute`, {
+    method: 'POST',
+    body: {},
+  });
+}
+
+export async function unmuteCommunityChatUser(userId) {
+  await apiRequest(`/api/community-chat/users/${encodeURIComponent(userId)}/mute`, {
+    method: 'DELETE',
+  });
 }
