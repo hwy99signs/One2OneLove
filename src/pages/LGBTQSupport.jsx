@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, ExternalLink, Globe2, Heart, Languages, MapPin, Search, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ExternalLink, Globe2, Heart, Languages, MapPin, MessageCircle, Search, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
@@ -11,6 +11,7 @@ const copy = {
   en:{
     title:'LGBTQ+ Support', subtitle:'Affirming relationship guidance, practical tools, community resources and international support for LGBTQ+ people, couples and loved ones.',
     back:'Back to Relationship Support', intro:'You deserve support that respects your identity, your relationship, your safety and the life you are building.',
+    chatTitle:'LGBTQ+ Community Chat', chatBody:'Connect, ask questions and support one another in a dedicated LGBTQ+ community space separate from General Chat.', chatEnter:'Enter Community Chat',
     learn:'Learn & Understand', learnBody:'Original One2OneLove articles written for common LGBTQ+ relationship experiences.', read:'Read Article', backArticles:'Back to LGBTQ+ Articles', key:'Key Takeaways',
     resources:'Support Directory', resourcesBody:'Find LGBTQ+ organizations, affirming care, peer support and community resources by country and service language.', searchLabel:'Search', search:'Search organizations or locations…', country:'Country / Territory', language:'Service Language', all:'All', visit:'Visit Resource', noResults:'No matching resources. Try another country, language or search term.',
     featured:'Featured Resources', therapistAid:'Therapist Aid', therapistAidBody:'Original therapy worksheets and relationship tools. One2OneLove links to Therapist Aid directly so the original copyrighted resources stay with their publisher.',
@@ -22,6 +23,7 @@ const copy = {
   es:{
     title:'Apoyo LGBTQ+', subtitle:'Orientación afirmativa, herramientas prácticas, recursos comunitarios y apoyo internacional para personas LGBTQ+, parejas y seres queridos.',
     back:'Volver al Apoyo de Relaciones', intro:'Mereces apoyo que respete tu identidad, tu relación, tu seguridad y la vida que estás construyendo.',
+    chatTitle:'Chat Comunitario LGBTQ+', chatBody:'Conecta, pregunta y apoya a otras personas en un espacio LGBTQ+ dedicado y separado del Chat General.', chatEnter:'Entrar al Chat Comunitario',
     learn:'Aprender y Comprender', learnBody:'Artículos originales de One2OneLove sobre experiencias comunes en relaciones LGBTQ+.', read:'Leer Artículo', backArticles:'Volver a Artículos LGBTQ+', key:'Puntos Clave',
     resources:'Directorio de Apoyo', resourcesBody:'Encuentra organizaciones LGBTQ+, atención afirmativa, apoyo entre pares y recursos comunitarios por país e idioma.', searchLabel:'Buscar', search:'Buscar organizaciones o lugares…', country:'País / Territorio', language:'Idioma del Servicio', all:'Todos', visit:'Visitar Recurso', noResults:'No hay recursos que coincidan. Prueba otro país, idioma o búsqueda.',
     featured:'Recursos Destacados', therapistAid:'Therapist Aid', therapistAidBody:'Hojas de trabajo y herramientas originales. One2OneLove enlaza directamente a Therapist Aid para mantener los recursos con su editor original.',
@@ -33,6 +35,7 @@ const copy = {
   fr:{
     title:'Soutien LGBTQ+', subtitle:'Conseils affirmatifs, outils pratiques, ressources communautaires et soutien international pour les personnes LGBTQ+, les couples et leurs proches.',
     back:'Retour au Soutien Relationnel', intro:'Vous méritez un soutien qui respecte votre identité, votre relation, votre sécurité et la vie que vous construisez.',
+    chatTitle:'Chat Communautaire LGBTQ+', chatBody:'Échangez, posez des questions et soutenez-vous dans un espace LGBTQ+ dédié, séparé du chat général.', chatEnter:'Entrer dans le Chat',
     learn:'Apprendre et Comprendre', learnBody:'Articles originaux One2OneLove sur des expériences relationnelles LGBTQ+ courantes.', read:'Lire l’Article', backArticles:'Retour aux Articles LGBTQ+', key:'Points Clés',
     resources:'Annuaire de Soutien', resourcesBody:'Trouvez des organisations LGBTQ+, des soins affirmatifs, du soutien par les pairs et des ressources communautaires par pays et langue.', searchLabel:'Rechercher', search:'Rechercher une organisation ou un lieu…', country:'Pays / Territoire', language:'Langue du Service', all:'Tous', visit:'Voir la Ressource', noResults:'Aucune ressource correspondante. Essayez un autre pays, une autre langue ou une autre recherche.',
     featured:'Ressources en Vedette', therapistAid:'Therapist Aid', therapistAidBody:'Outils et fiches thérapeutiques originaux. One2OneLove renvoie directement vers Therapist Aid afin de laisser les ressources protégées chez leur éditeur.',
@@ -44,6 +47,7 @@ const copy = {
   it:{
     title:'Supporto LGBTQ+', subtitle:'Guida affermativa, strumenti pratici, risorse comunitarie e supporto internazionale per persone LGBTQ+, coppie e persone care.',
     back:'Torna al Supporto Relazionale', intro:'Meriti un supporto che rispetti la tua identità, la tua relazione, la tua sicurezza e la vita che stai costruendo.',
+    chatTitle:'Chat Comunitaria LGBTQ+', chatBody:'Connettiti, fai domande e sostieniti in uno spazio LGBTQ+ dedicato e separato dalla chat generale.', chatEnter:'Entra nella Chat',
     learn:'Impara e Comprendi', learnBody:'Articoli originali One2OneLove su esperienze comuni nelle relazioni LGBTQ+.', read:'Leggi Articolo', backArticles:'Torna agli Articoli LGBTQ+', key:'Punti Chiave',
     resources:'Directory di Supporto', resourcesBody:'Trova organizzazioni LGBTQ+, cure affermative, supporto tra pari e risorse comunitarie per paese e lingua.', searchLabel:'Cerca', search:'Cerca organizzazioni o luoghi…', country:'Paese / Territorio', language:'Lingua del Servizio', all:'Tutti', visit:'Visita Risorsa', noResults:'Nessuna risorsa corrispondente. Prova un altro paese, lingua o ricerca.',
     featured:'Risorse in Evidenza', therapistAid:'Therapist Aid', therapistAidBody:'Fogli e strumenti terapeutici originali. One2OneLove collega direttamente a Therapist Aid per mantenere i contenuti protetti presso l’editore originale.',
@@ -55,6 +59,7 @@ const copy = {
   de:{
     title:'LGBTQ+ Unterstützung', subtitle:'Bestärkende Beziehungsinformationen, praktische Werkzeuge, Community-Ressourcen und internationale Unterstützung für LGBTQ+ Menschen, Paare und Angehörige.',
     back:'Zurück zur Beziehungsunterstützung', intro:'Du verdienst Unterstützung, die deine Identität, deine Beziehung, deine Sicherheit und dein Leben respektiert.',
+    chatTitle:'LGBTQ+ Community-Chat', chatBody:'Austauschen, Fragen stellen und unterstützen – in einem eigenen LGBTQ+ Raum, getrennt vom allgemeinen Chat.', chatEnter:'Community-Chat Öffnen',
     learn:'Lernen und Verstehen', learnBody:'Originale One2OneLove-Artikel zu häufigen LGBTQ+ Beziehungserfahrungen.', read:'Artikel Lesen', backArticles:'Zurück zu LGBTQ+ Artikeln', key:'Wichtige Erkenntnisse',
     resources:'Unterstützungsverzeichnis', resourcesBody:'Finde LGBTQ+ Organisationen, affirmative Versorgung, Peer-Support und Community-Angebote nach Land und Sprache.', searchLabel:'Suche', search:'Organisationen oder Orte suchen…', country:'Land / Gebiet', language:'Servicesprache', all:'Alle', visit:'Ressource Öffnen', noResults:'Keine passenden Ressourcen. Versuche ein anderes Land, eine andere Sprache oder Suche.',
     featured:'Empfohlene Ressourcen', therapistAid:'Therapist Aid', therapistAidBody:'Originale Arbeitsblätter und Beziehungstools. One2OneLove verlinkt direkt zu Therapist Aid, damit die geschützten Inhalte beim ursprünglichen Anbieter bleiben.',
@@ -168,6 +173,22 @@ export default function LGBTQSupport() {
             </div>
           </div>
         </motion.header>
+
+        <section className="mt-10 overflow-hidden rounded-[2rem] border border-purple-200 bg-white shadow-lg">
+          <div className="grid h-2 grid-cols-6"><div className="bg-red-500"/><div className="bg-orange-500"/><div className="bg-yellow-400"/><div className="bg-green-500"/><div className="bg-blue-500"/><div className="bg-violet-600"/></div>
+          <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 text-white shadow-md"><MessageCircle size={27}/></div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">{t.chatTitle}</h2>
+                <p className="mt-2 max-w-3xl leading-7 text-slate-600">{t.chatBody}</p>
+              </div>
+            </div>
+            <Link to="/Chat?scope=lgbtq" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3 font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+              {t.chatEnter}<ArrowRight size={17}/>
+            </Link>
+          </div>
+        </section>
 
         <section className="mt-10">
           <div className="flex items-center gap-3"><BookOpen className="text-purple-600"/><div><h2 className="text-2xl font-black text-slate-900">{t.learn}</h2><p className="mt-1 text-slate-600">{t.learnBody}</p></div></div>
