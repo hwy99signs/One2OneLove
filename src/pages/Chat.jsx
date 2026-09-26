@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MessageCircle, Send, Users, ShieldCheck, Sparkles, ArrowLeft, Trash2, LogIn, RefreshCw } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { MessageCircle, Send, Users, ShieldCheck, Sparkles, ArrowLeft, Trash2, LogIn, RefreshCw, Flag, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +11,67 @@ import {
   sendCommunityChatMessage,
   touchCommunityChatPresence,
   deleteCommunityChatMessage,
+  reportCommunityChatMessage,
+  muteCommunityChatUser,
 } from '@/lib/communityChatService';
+
+const lgbtqCopy = {
+  en: {
+    title:'LGBTQ+ Community Chat',
+    subtitle:'A dedicated LGBTQ+ space for connection, questions, encouragement and respectful conversation.',
+    back:'Back to LGBTQ+ Support',
+    safetyTitle:'This is a protected community space',
+    safetyBody:'No bullying, hate speech, threats, outing, harassment, sexual harassment, or sharing another person’s private information. You do not have to disclose or prove your identity to participate respectfully.',
+    report:'Report', mute:'Mute', reported:'Report sent to moderation.', muted:'Member muted for you.',
+    reportPrompt:'Briefly tell us why you are reporting this message. Examples: harassment, hate speech, threat, outing/private information, sexual harassment.',
+    muteConfirm:'Mute this member? Their messages will no longer appear for you.',
+    prompt:['Amora','What helps an LGBTQ+ relationship or community space feel genuinely safe, respectful and supportive?']
+  },
+  es: {
+    title:'Chat Comunitario LGBTQ+',
+    subtitle:'Un espacio LGBTQ+ dedicado a conexión, preguntas, ánimo y conversación respetuosa.',
+    back:'Volver a Apoyo LGBTQ+',
+    safetyTitle:'Este es un espacio comunitario protegido',
+    safetyBody:'No se permite acoso, odio, amenazas, sacar a alguien del clóset, acoso sexual ni compartir información privada de otra persona. No tienes que revelar ni demostrar tu identidad para participar con respeto.',
+    report:'Reportar', mute:'Silenciar', reported:'Reporte enviado a moderación.', muted:'Miembro silenciado para ti.',
+    reportPrompt:'Explica brevemente por qué reportas este mensaje: acoso, odio, amenaza, outing/información privada, acoso sexual, etc.',
+    muteConfirm:'¿Silenciar a este miembro? Sus mensajes dejarán de aparecer para ti.',
+    prompt:['Amora','¿Qué hace que un espacio o relación LGBTQ+ se sienta realmente seguro, respetuoso y solidario?']
+  },
+  fr: {
+    title:'Chat Communautaire LGBTQ+',
+    subtitle:'Un espace LGBTQ+ dédié à la connexion, aux questions, à l’encouragement et aux échanges respectueux.',
+    back:'Retour au Soutien LGBTQ+',
+    safetyTitle:'Cet espace communautaire est protégé',
+    safetyBody:'Aucun harcèlement, propos haineux, menace, outing, harcèlement sexuel ou partage d’informations privées d’autrui. Vous n’avez pas à révéler ni prouver votre identité pour participer avec respect.',
+    report:'Signaler', mute:'Masquer', reported:'Signalement envoyé à la modération.', muted:'Membre masqué pour vous.',
+    reportPrompt:'Expliquez brièvement pourquoi vous signalez ce message : harcèlement, haine, menace, outing/informations privées, harcèlement sexuel, etc.',
+    muteConfirm:'Masquer ce membre ? Ses messages ne s’afficheront plus pour vous.',
+    prompt:['Amora','Qu’est-ce qui rend un espace ou une relation LGBTQ+ réellement sûr, respectueux et solidaire ?']
+  },
+  it: {
+    title:'Chat Comunitaria LGBTQ+',
+    subtitle:'Uno spazio LGBTQ+ dedicato a connessione, domande, incoraggiamento e conversazioni rispettose.',
+    back:'Torna al Supporto LGBTQ+',
+    safetyTitle:'Questo è uno spazio comunitario protetto',
+    safetyBody:'Niente bullismo, odio, minacce, outing, molestie sessuali o condivisione di informazioni private altrui. Non devi rivelare o dimostrare la tua identità per partecipare con rispetto.',
+    report:'Segnala', mute:'Silenzia', reported:'Segnalazione inviata alla moderazione.', muted:'Membro silenziato per te.',
+    reportPrompt:'Spiega brevemente perché segnali questo messaggio: molestie, odio, minaccia, outing/informazioni private, molestie sessuali, ecc.',
+    muteConfirm:'Silenziare questo membro? I suoi messaggi non appariranno più per te.',
+    prompt:['Amora','Cosa rende uno spazio o una relazione LGBTQ+ davvero sicuro, rispettoso e solidale?']
+  },
+  de: {
+    title:'LGBTQ+ Community-Chat',
+    subtitle:'Ein eigener LGBTQ+ Raum für Austausch, Fragen, Ermutigung und respektvolle Gespräche.',
+    back:'Zurück zur LGBTQ+ Unterstützung',
+    safetyTitle:'Dies ist ein geschützter Community-Raum',
+    safetyBody:'Kein Mobbing, keine Hassrede, Drohungen, Outing, sexuelle Belästigung oder Weitergabe privater Informationen anderer. Du musst deine Identität nicht offenlegen oder beweisen, um respektvoll teilzunehmen.',
+    report:'Melden', mute:'Stummschalten', reported:'Meldung an die Moderation gesendet.', muted:'Mitglied für dich stummgeschaltet.',
+    reportPrompt:'Beschreibe kurz den Grund der Meldung: Belästigung, Hassrede, Drohung, Outing/private Informationen, sexuelle Belästigung usw.',
+    muteConfirm:'Dieses Mitglied stummschalten? Seine Nachrichten werden dir nicht mehr angezeigt.',
+    prompt:['Amora','Was macht einen LGBTQ+ Raum oder eine Beziehung wirklich sicher, respektvoll und unterstützend?']
+  },
+};
 
 const copy = {
   en: {
@@ -98,6 +158,7 @@ const copy = {
 
 const roomLabels = {
   en: {
+    'lgbtq-community': [lgbtqCopy.en.title, lgbtqCopy.en.subtitle],
     'general-connection': ['General Connection', 'Open conversation about relationships, love, growth and everyday connection.'],
     'dating-new-relationships': ['Dating & New Relationships', 'Expectations, pacing, trust and early relationship questions.'],
     'marriage-partnership': ['Marriage & Partnership', 'Marriage, commitment, connection and everyday partnership.'],
@@ -106,6 +167,7 @@ const roomLabels = {
     'love-intimacy-connection': ['Love, Intimacy & Connection', 'Affection, emotional closeness, romance and intimacy.'],
   },
   es: {
+    'lgbtq-community': [lgbtqCopy.es.title, lgbtqCopy.es.subtitle],
     'general-connection': ['Conexión General', 'Conversación abierta sobre relaciones, amor, crecimiento y conexión cotidiana.'],
     'dating-new-relationships': ['Citas y Nuevas Relaciones', 'Expectativas, ritmo, confianza y preguntas de nuevas relaciones.'],
     'marriage-partnership': ['Matrimonio y Pareja', 'Matrimonio, compromiso, conexión y vida en pareja.'],
@@ -114,6 +176,7 @@ const roomLabels = {
     'love-intimacy-connection': ['Amor, Intimidad y Conexión', 'Afecto, cercanía emocional, romance e intimidad.'],
   },
   fr: {
+    'lgbtq-community': [lgbtqCopy.fr.title, lgbtqCopy.fr.subtitle],
     'general-connection': ['Connexion Générale', 'Conversation ouverte sur les relations, l’amour, la croissance et la connexion quotidienne.'],
     'dating-new-relationships': ['Rencontres et Nouvelles Relations', 'Attentes, rythme, confiance et débuts de relation.'],
     'marriage-partnership': ['Mariage et Partenariat', 'Mariage, engagement, connexion et vie de couple.'],
@@ -122,6 +185,7 @@ const roomLabels = {
     'love-intimacy-connection': ['Amour, Intimité et Connexion', 'Affection, proximité émotionnelle, romance et intimité.'],
   },
   it: {
+    'lgbtq-community': [lgbtqCopy.it.title, lgbtqCopy.it.subtitle],
     'general-connection': ['Connessione Generale', 'Conversazione aperta su relazioni, amore, crescita e connessione quotidiana.'],
     'dating-new-relationships': ['Incontri e Nuove Relazioni', 'Aspettative, ritmo, fiducia e domande iniziali.'],
     'marriage-partnership': ['Matrimonio e Partnership', 'Matrimonio, impegno, connessione e vita di coppia.'],
@@ -130,6 +194,7 @@ const roomLabels = {
     'love-intimacy-connection': ['Amore, Intimità e Connessione', 'Affetto, vicinanza emotiva, romanticismo e intimità.'],
   },
   de: {
+    'lgbtq-community': [lgbtqCopy.de.title, lgbtqCopy.de.subtitle],
     'general-connection': ['Allgemeine Verbindung', 'Offenes Gespräch über Beziehungen, Liebe, Wachstum und alltägliche Verbundenheit.'],
     'dating-new-relationships': ['Dating und Neue Beziehungen', 'Erwartungen, Tempo, Vertrauen und frühe Beziehungsfragen.'],
     'marriage-partnership': ['Ehe und Partnerschaft', 'Ehe, Verbindlichkeit, Nähe und gemeinsamer Alltag.'],
@@ -142,7 +207,10 @@ const roomLabels = {
 export default function Chat() {
   const { currentLanguage } = useLanguage();
   const { user, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
+  const lgbtqMode = searchParams.get('scope') === 'lgbtq';
   const t = copy[currentLanguage] || copy.en;
+  const lt = lgbtqCopy[currentLanguage] || lgbtqCopy.en;
   const labels = roomLabels[currentLanguage] || roomLabels.en;
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
@@ -155,11 +223,13 @@ export default function Chat() {
 
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || rooms[0] || null, [rooms, selectedRoomId]);
   const roomLabel = selectedRoom ? (labels[selectedRoom.slug] || [selectedRoom.name, selectedRoom.description]) : null;
-  const prompt = selectedRoom ? (t.prompts[selectedRoom.slug] || ['O2OL', t.defaultPrompt]) : null;
+  const prompt = selectedRoom
+    ? (selectedRoom.slug === 'lgbtq-community' ? lt.prompt : (t.prompts[selectedRoom.slug] || ['O2OL', t.defaultPrompt]))
+    : null;
 
   const loadRooms = async () => {
     try {
-      const data = await getCommunityChatRooms();
+      const data = await getCommunityChatRooms(lgbtqMode ? 'lgbtq' : 'general');
       setRooms(data);
       setSelectedRoomId(current => current || data[0]?.id || null);
     } catch (error) {
@@ -186,7 +256,7 @@ export default function Chat() {
     }
   };
 
-  useEffect(() => { loadRooms(); }, []);
+  useEffect(() => { loadRooms(); }, [lgbtqMode]);
   useEffect(() => {
     if (!selectedRoomId) return;
     loadMessages(selectedRoomId);
@@ -237,6 +307,30 @@ export default function Chat() {
     }
   };
 
+  const reportMessage = async (item) => {
+    if (!isAuthenticated) return toast.error(t.signIn);
+    const reason = window.prompt(lt.reportPrompt);
+    if (!reason?.trim()) return;
+    try {
+      await reportCommunityChatMessage(item.id, reason.trim());
+      toast.success(lt.reported);
+    } catch (error) {
+      toast.error(error?.message || t.sendError);
+    }
+  };
+
+  const muteMember = async (item) => {
+    if (!isAuthenticated || !item?.userId) return;
+    if (!window.confirm(lt.muteConfirm)) return;
+    try {
+      await muteCommunityChatUser(item.userId);
+      await loadMessages(selectedRoomId, true);
+      toast.success(lt.muted);
+    } catch (error) {
+      toast.error(error?.message || t.sendError);
+    }
+  };
+
   const formatTime = (value) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
@@ -246,14 +340,15 @@ export default function Chat() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 px-4 py-8">
       <div className="mx-auto max-w-7xl">
-        <Link to={createPageUrl('Home')} className="mb-5 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-purple-700">
-          <ArrowLeft size={18}/>{t.back}
+        <Link to={lgbtqMode ? createPageUrl('LGBTQSupport') : createPageUrl('Home')} className="mb-5 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-purple-700">
+          <ArrowLeft size={18}/>{lgbtqMode ? lt.back : t.back}
         </Link>
 
         <div className="mb-7 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg"><MessageCircle size={32}/></div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 md:text-5xl">{t.title}</h1>
-          <p className="mx-auto mt-3 max-w-3xl text-lg text-slate-600">{t.subtitle}</p>
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 md:text-5xl">{lgbtqMode ? lt.title : t.title}</h1>
+          <p className="mx-auto mt-3 max-w-3xl text-lg text-slate-600">{lgbtqMode ? lt.subtitle : t.subtitle}</p>
+          {lgbtqMode && <div className="mx-auto mt-5 max-w-4xl overflow-hidden rounded-2xl border border-purple-200 bg-white text-left shadow-sm"><div className="grid h-2 grid-cols-6"><span className="bg-red-500"/><span className="bg-orange-500"/><span className="bg-yellow-400"/><span className="bg-green-500"/><span className="bg-blue-500"/><span className="bg-violet-600"/></div><div className="flex items-start gap-3 p-4"><ShieldCheck className="mt-0.5 shrink-0 text-purple-600" size={20}/><div><p className="font-black text-slate-900">{lt.safetyTitle}</p><p className="mt-1 text-sm leading-6 text-slate-600">{lt.safetyBody}</p></div></div></div>}
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
@@ -299,7 +394,7 @@ export default function Chat() {
                         return (
                           <div key={item.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[86%] rounded-2xl px-4 py-3 sm:max-w-[74%] ${mine ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-900'}`}>
-                              <div className="mb-1 flex items-center justify-between gap-3"><span className={`text-xs font-black ${mine ? 'text-white/90' : 'text-purple-700'}`}>{mine ? (user?.name || item.authorName) : item.authorName}</span>{mine && <button type="button" onClick={() => removeMessage(item.id)} className="opacity-70 hover:opacity-100" aria-label={t.delete}><Trash2 size={14}/></button>}</div>
+                              <div className="mb-1 flex items-center justify-between gap-3"><span className={`text-xs font-black ${mine ? 'text-white/90' : 'text-purple-700'}`}>{mine ? (user?.name || item.authorName) : item.authorName}</span><div className="flex items-center gap-2">{mine ? <button type="button" onClick={() => removeMessage(item.id)} className="opacity-70 hover:opacity-100" aria-label={t.delete}><Trash2 size={14}/></button> : (lgbtqMode && isAuthenticated ? <><button type="button" onClick={() => reportMessage(item)} className="text-slate-400 hover:text-rose-600" aria-label={lt.report} title={lt.report}><Flag size={14}/></button><button type="button" onClick={() => muteMember(item)} className="text-slate-400 hover:text-slate-700" aria-label={lt.mute} title={lt.mute}><VolumeX size={14}/></button></> : null)}</div></div>
                               <p className="whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>
                               <p className={`mt-1 text-[11px] ${mine ? 'text-white/70' : 'text-slate-400'}`}>{formatTime(item.createdAt)}</p>
                             </div>
