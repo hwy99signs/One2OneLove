@@ -156,12 +156,20 @@ async function readSignedMfaPayload(request, env) {
 }
 
 async function readMfaToken(request, env, auth) {
+  const persistent = await readPersistentMfaToken(request, env);
+  if (persistent?.payload?.uid === auth.user.id) return persistent.payload;
+
   const payload = await readSignedMfaPayload(request, env);
   if (!payload || payload.uid !== auth.user.id) return null;
   return payload;
 }
 
 export async function getVerifiedAdminMfaIdentity(request, env) {
+  const persistent = await readPersistentMfaToken(request, env);
+  if (persistent) return persistent;
+
+  // Temporary compatibility for Admin sessions issued before the persistent
+  // database-backed token rollout. A successful touch converts these to v3.
   const payload = await readSignedMfaPayload(request, env);
   if (!payload) return null;
   const admin = await adminIdentity(env, payload.uid);
@@ -175,6 +183,90 @@ function mfaCookie(token) {
 
 function clearMfaCookie() {
   return `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
+}
+
+
+async function ensureAdminMfaSessionTable(env) {
+  return withDb(env, async (db) => {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS public.admin_mfa_sessions (
+        token_hash text PRIMARY KEY,
+        admin_user_id uuid NOT NULL REFERENCES neon_auth."user"(id) ON DELETE CASCADE,
+        expires_at timestamptz NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        last_seen_at timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_admin_mfa_sessions_user_expiry ON public.admin_mfa_sessions(admin_user_id,expires_at)`);
+    await db.query(`DELETE FROM public.admin_mfa_sessions WHERE expires_at <= now()`);
+  });
+}
+
+function randomOpaqueToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64UrlFromBytes(bytes);
+}
+
+async function sha256Text(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value)));
+  return base64UrlFromBytes(new Uint8Array(digest));
+}
+
+async function createPersistentMfaToken(auth, env) {
+  await ensureAdminMfaSessionTable(env);
+  const raw = randomOpaqueToken();
+  const hash = await sha256Text(raw);
+  const expiresAt = Math.floor(Date.now() / 1000) + MFA_TTL_SECONDS;
+  await withDb(env, async (db) => {
+    await db.query(
+      `INSERT INTO public.admin_mfa_sessions(token_hash,admin_user_id,expires_at,last_seen_at)
+       VALUES($1,$2::uuid,to_timestamp($3),now())`,
+      [hash, auth.user.id, expiresAt],
+    );
+  });
+  return { token: `db.${raw}`, expiresAt };
+}
+
+async function readPersistentMfaToken(request, env) {
+  const token = cookieValue(request, COOKIE_NAME);
+  if (!token || !token.startsWith('db.')) return null;
+  const raw = token.slice(3);
+  if (!raw) return null;
+  await ensureAdminMfaSessionTable(env);
+  const hash = await sha256Text(raw);
+  return withDb(env, async (db) => {
+    const result = await db.query(
+      `UPDATE public.admin_mfa_sessions s
+          SET last_seen_at=now()
+         FROM neon_auth."user" u
+        WHERE s.token_hash=$1
+          AND s.admin_user_id=u.id
+          AND s.expires_at>now()
+          AND u.role='admin'
+          AND COALESCE(u.banned,false)=false
+        RETURNING s.admin_user_id,s.expires_at,u.email,u.name,u.role,COALESCE(u.banned,false) AS banned`,
+      [hash],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      admin: { id:row.admin_user_id,email:row.email,name:row.name,role:row.role,banned:row.banned },
+      payload: { v:3, uid:row.admin_user_id, exp:Math.floor(new Date(row.expires_at).getTime()/1000) },
+    };
+  });
+}
+
+async function revokePersistentMfaToken(request, env) {
+  const token = cookieValue(request, COOKIE_NAME);
+  if (!token || !token.startsWith('db.')) return;
+  const raw = token.slice(3);
+  if (!raw) return;
+  const hash = await sha256Text(raw);
+  await ensureAdminMfaSessionTable(env);
+  await withDb(env, async (db) => {
+    await db.query('DELETE FROM public.admin_mfa_sessions WHERE token_hash=$1', [hash]);
+  });
 }
 
 function maskedEmail(email) {
@@ -238,6 +330,7 @@ export async function handleAdminMfaRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/admin/mfa')) return null;
 
   if (url.pathname === '/api/admin/mfa/end' && request.method === 'POST') {
+    await revokePersistentMfaToken(request, env).catch(() => undefined);
     return json({ ok: true, verified: false, reason: 'idle_timeout' }, 200, { 'set-cookie': clearMfaCookie() });
   }
 
@@ -257,7 +350,7 @@ export async function handleAdminMfaRequest(request, env, url) {
 
   if (url.pathname === '/api/admin/mfa/touch' && request.method === 'POST') {
     if (!status.verified) return fail('Administrator verification required.', 428, 'mfa_required');
-    const issued = await createMfaToken(auth, env);
+    const issued = await createPersistentMfaToken(auth, env);
     return json({
       ok: true,
       verified: true,
@@ -303,7 +396,7 @@ export async function handleAdminMfaRequest(request, env, url) {
       return fail(result?.message || result?.error?.message || 'The verification code is invalid or expired.', 400, 'invalid_otp');
     }
 
-    const issued = await createMfaToken(auth, env);
+    const issued = await createPersistentMfaToken(auth, env);
     return json({
       ok: true,
       verified: true,
