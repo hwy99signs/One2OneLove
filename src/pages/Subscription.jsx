@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, CreditCard, ShieldCheck } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
 import { Button } from '@/components/ui/button';
-import { getUserSubscription, handleSubscriptionCheckout, startPremierTrial } from '@/lib/stripeService';
+import { handleSubscriptionCheckout } from '@/lib/stripeService';
 import { toast } from 'sonner';
 import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
@@ -26,7 +25,7 @@ const FOUNDING={
 
 const PLANS=[{name:'Premiere',price:9.99},{name:'Exclusive',price:19.99}];
 
-function PlanCard({plan,t,planCopy,user,busy,onChoose}){
+function PlanCard({plan,t,planCopy,busy,onChoose}){
  const features=planCopy.plans[plan.name].features;
  const price=plan.name==='Exclusive'?t.exclusivePrice:t.premierePrice;
  const create=plan.name==='Exclusive'?t.createExclusive:t.createPremiere;
@@ -35,49 +34,44 @@ function PlanCard({plan,t,planCopy,user,busy,onChoose}){
    <h2 className="mt-4 text-3xl font-black text-slate-900">{plan.name==='Exclusive'?t.exclusive:t.premiere}</h2>
    <div className="mt-2 text-2xl font-black text-slate-800">{price}</div>
    <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-sm leading-6 text-slate-700"><Check className="mt-1 h-4 w-4 shrink-0 text-emerald-600"/><span>{item}</span></li>)}</ul>
-   <Button disabled={busy} onClick={()=>onChoose(plan)} className="mt-7 w-full py-6 text-base font-bold">{user?(busy?t.starting:(user.stripe_subscription_id?'Choose '+plan.name:t.startTrial)):create}</Button>
+   <Button disabled={busy} onClick={()=>onChoose(plan)} className="mt-7 w-full py-6 text-base font-bold">{busy?t.starting:create}</Button>
  </section>;
 }
 
 export default function Subscription(){
- const {user}=useAuth();
  const navigate=useNavigate();
  const [searchParams]=useSearchParams();
  const {currentLanguage}=useLanguage();
  const t=COPY[currentLanguage]||COPY.en;
  const planCopy=subscriptionPlanCopy[currentLanguage]||subscriptionPlanCopy.en;
  const founding=FOUNDING[currentLanguage]||FOUNDING.en;
- const [subscription,setSubscription]=useState(null);
- const [checked,setChecked]=useState(!user);
  const [busy,setBusy]=useState('');
 
- useEffect(()=>{
-  let active=true;
-  if(!user){setSubscription(null);setChecked(true);return()=>{active=false;};}
-  setChecked(false);
-  getUserSubscription().then(v=>{if(active){setSubscription(v);setChecked(true);}}).catch(()=>{if(active)setChecked(true);});
-  return()=>{active=false;};
- },[user?.id]);
-
  const choose=async plan=>{
-  if(!user){navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&type=individual&source=subscription-plan');return;}
   setBusy(plan.name);
   try{
-   if(!subscription?.stripe_subscription_id){const result=await startPremierTrial();if(!result?.success)toast.error(result?.error||'Unable to start checkout.');return;}
    const result=await handleSubscriptionCheckout({name:plan.name,price:plan.price,priceId:plan.name==='Exclusive'?(import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE||'price_1UFUSKCoKDheG1ASG5zk97Ph'):(import.meta.env.VITE_STRIPE_PRICE_PREMIERE||'price_1UFUSDCoKDheG1AS2AgFooh0')});
-   if(!result?.success)toast.error(result?.error||'Unable to update membership.');
+   if(result?.success) return;
+   if(result?.status===401 || result?.code==='unauthorized'){
+     navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&type=individual&source=subscription-plan');
+     return;
+   }
+   toast.error(result?.error||'Unable to continue.');
   }finally{setBusy('');}
  };
 
  const setupRequired=searchParams.get('setup')==='required';
- return <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6">
+ return <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6" style={{fontFamily:'Arial, Helvetica, sans-serif',overflowAnchor:'none'}}>
   <div className="mx-auto max-w-6xl">
    <header className="text-center"><h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">{t.subtitle}</p></header>
    <div className="mt-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-center shadow-sm"><div className="text-sm font-black uppercase tracking-widest text-amber-700">{founding.hero}</div><h2 className="mt-1 text-2xl font-black text-slate-900">{founding.title}</h2></div>
-   <div className="mt-6 min-h-[86px] rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">{!checked?<p className="font-semibold text-slate-600">{t.loading}</p>:user?<div><div className="text-xs font-black uppercase tracking-wider text-slate-500">{t.current}</div><div className="mt-1 text-lg font-black text-slate-900">{subscription?.subscription_plan||user.subscription_plan||'Guest Preview'}</div>{setupRequired&&<p className="mt-1 text-sm text-amber-700">{t.setup}</p>}</div>:<p className="text-sm font-semibold text-slate-600">{t.guestBody}</p>}</div>
+   <div className="mt-6 min-h-[86px] rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+    <p className="text-sm font-semibold leading-6 text-slate-600">{t.guestBody}</p>
+    {setupRequired&&<p className="mt-1 text-sm font-semibold text-amber-700">{t.setup}</p>}
+   </div>
    <div className="mt-8 grid gap-6 lg:grid-cols-3">
-    <section className="flex min-h-[430px] flex-col rounded-3xl border-2 border-emerald-200 bg-white p-7 shadow-sm"><div className="flex items-center justify-between"><ShieldCheck className="h-8 w-8 text-emerald-600"/><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">{t.guestBadge}</span></div><h2 className="mt-4 text-3xl font-black text-slate-900">{t.guest}</h2><div className="mt-2 text-2xl font-black text-emerald-700">{t.guestPrice}</div><p className="mt-6 flex-1 text-sm leading-7 text-slate-700">{t.guestBody}</p>{!user&&<Button onClick={()=>navigate('/SignUp?plan=Premiere&type=individual&source=guest-preview')} className="mt-7 w-full bg-emerald-600 py-6 text-base font-bold text-white hover:bg-emerald-700">{t.guestButton}</Button>}{user&&!subscription?.stripe_subscription_id&&<Button disabled={Boolean(busy)} onClick={()=>choose(PLANS[0])} className="mt-7 w-full bg-emerald-600 py-6 text-base font-bold text-white hover:bg-emerald-700"><CreditCard className="mr-2 h-5 w-5"/>{busy?t.starting:t.startTrial}</Button>}</section>
-    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} user={user} busy={busy===plan.name} onChoose={choose}/>) }
+    <section className="flex min-h-[430px] flex-col rounded-3xl border-2 border-emerald-200 bg-white p-7 shadow-sm"><div className="flex items-center justify-between"><ShieldCheck className="h-8 w-8 text-emerald-600"/><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">{t.guestBadge}</span></div><h2 className="mt-4 text-3xl font-black text-slate-900">{t.guest}</h2><div className="mt-2 text-2xl font-black text-emerald-700">{t.guestPrice}</div><p className="mt-6 flex-1 text-sm leading-7 text-slate-700">{t.guestBody}</p><Button onClick={()=>navigate('/SignUp?plan=Premiere&type=individual&source=guest-preview')} className="mt-7 w-full bg-emerald-600 py-6 text-base font-bold text-white hover:bg-emerald-700">{t.guestButton}</Button></section>
+    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} onChoose={choose}/>) }
    </div>
    <div className="mt-8 space-y-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-sm leading-6 text-slate-700"><h3 className="text-xl font-black text-slate-900">{founding.title}</h3><p><strong>{founding.first}</strong></p><p><strong>{founding.second}</strong></p><p>{founding.terms}</p></div>
    <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600"><p>{planCopy.terms.guest}</p><p>{planCopy.terms.trial}</p><p>{planCopy.terms.loveNotes}</p><p>{planCopy.terms.cancel}</p></div>
