@@ -1,5 +1,5 @@
 
-import React, { useState, createContext, useContext, useRef, useEffect } from "react";
+import React, { useState, createContext, useContext, useRef, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Heart, Home, ChevronDown, User, LogIn, LogOut, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell, Gamepad2, Share2, Copy } from "lucide-react";
@@ -109,14 +109,14 @@ function LanguageProvider({ children }) {
     return stored;
   });
 
-  const changeLanguage = (languageCode) => {
+  const changeLanguage = useCallback((languageCode) => {
     // Prevent selecting disabled languages
     if (languageCode === 'nl' || languageCode === 'pt') {
       return;
     }
     setCurrentLanguage(languageCode);
     localStorage.setItem('preferredLanguage', languageCode);
-  };
+  }, []);
 
   return (
     <LanguageContext.Provider value={{ currentLanguage, changeLanguage }}>
