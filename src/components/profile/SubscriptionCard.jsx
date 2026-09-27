@@ -13,11 +13,11 @@ const planMeta = {
 };
 
 const translations = {
-  en: { currentPlan: 'Current Plan', guest: 'Guest Preview — View Only', trial: 'Full Access Trial', viewPlans: 'View Plans & Billing Terms', planFeatures: 'Plan Features', perMonth: 'per month', moreFeatures: 'more features' },
-  es: { currentPlan: 'Plan Actual', guest: 'Vista Previa — Solo Ver', trial: 'Prueba de Acceso Completo', viewPlans: 'Ver Planes y Condiciones de Facturación', planFeatures: 'Características del Plan', perMonth: 'por mes', moreFeatures: 'funciones más' },
-  fr: { currentPlan: 'Plan Actuel', guest: 'Aperçu Invité — Consultation Uniquement', trial: 'Essai Accès Complet', viewPlans: 'Voir les Formules et Conditions de Facturation', planFeatures: 'Fonctionnalités du Plan', perMonth: 'par mois', moreFeatures: 'fonctionnalités supplémentaires' },
-  it: { currentPlan: 'Piano Attuale', guest: 'Anteprima Ospite — Solo Visualizzazione', trial: 'Prova Accesso Completo', viewPlans: 'Vedi Piani e Condizioni di Fatturazione', planFeatures: 'Caratteristiche del Piano', perMonth: 'al mese', moreFeatures: 'altre funzionalità' },
-  de: { currentPlan: 'Aktueller Plan', guest: 'Gastvorschau — Nur Ansehen', trial: 'Vollzugriff-Test', viewPlans: 'Tarife & Abrechnungsbedingungen Anzeigen', planFeatures: 'Plan-Funktionen', perMonth: 'pro Monat', moreFeatures: 'weitere Funktionen' },
+  en: { currentPlan: 'Current Plan', guest: 'Guest Preview — View Only', trial: 'Founding Member Free Period', viewPlans: 'View Plans & Billing Terms', planFeatures: 'Plan Features', perMonth: 'per month', moreFeatures: 'more features' },
+  es: { currentPlan: 'Plan Actual', guest: 'Vista Previa — Solo Ver', trial: 'Período Gratis de Miembro Fundador', viewPlans: 'Ver Planes y Condiciones de Facturación', planFeatures: 'Características del Plan', perMonth: 'por mes', moreFeatures: 'funciones más' },
+  fr: { currentPlan: 'Plan Actuel', guest: 'Aperçu Invité — Consultation Uniquement', trial: 'Période Gratuite Membre Fondateur', viewPlans: 'Voir les Formules et Conditions de Facturation', planFeatures: 'Fonctionnalités du Plan', perMonth: 'par mois', moreFeatures: 'fonctionnalités supplémentaires' },
+  it: { currentPlan: 'Piano Attuale', guest: 'Anteprima Ospite — Solo Visualizzazione', trial: 'Periodo Gratuito Membro Fondatore', viewPlans: 'Vedi Piani e Condizioni di Fatturazione', planFeatures: 'Caratteristiche del Piano', perMonth: 'al mese', moreFeatures: 'altre funzionalità' },
+  de: { currentPlan: 'Aktueller Plan', guest: 'Gastvorschau — Nur Ansehen', trial: 'Kostenloser Gründungszeitraum', viewPlans: 'Tarife & Abrechnungsbedingungen Anzeigen', planFeatures: 'Plan-Funktionen', perMonth: 'pro Monat', moreFeatures: 'weitere Funktionen' },
 };
 
 function previewActive(user) {
