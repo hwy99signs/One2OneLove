@@ -115,7 +115,37 @@ export async function handleLaunchReadinessRequest(request, env, url) {
            FROM neon_auth.verification
           WHERE "createdAt" >= now()-interval '24 hours') AS verification_identifier_shapes,
         (SELECT count(*)::int FROM neon_auth.account) AS account_total,
-        (SELECT max("createdAt") FROM neon_auth.account) AS newest_account_at
+        (SELECT max("createdAt") FROM neon_auth.account) AS newest_account_at,
+        (
+          SELECT count(*)::int
+          FROM neon_auth.verification v
+          WHERE v."createdAt" >= now()-interval '48 hours'
+            AND NOT EXISTS (
+              SELECT 1 FROM neon_auth."user" u
+              WHERE lower(v.identifier) LIKE '%' || lower(u.email) || '%'
+            )
+        ) AS verification_without_user_48h,
+        (
+          SELECT EXISTS (
+            SELECT 1 FROM neon_auth."user" u
+            WHERE lower(v.identifier) LIKE '%' || lower(u.email) || '%'
+          )
+          FROM neon_auth.verification v
+          ORDER BY v."createdAt" DESC
+          LIMIT 1
+        ) AS latest_verification_matches_user,
+        (
+          SELECT lower(v.identifier) LIKE '%email-verification%'
+          FROM neon_auth.verification v
+          ORDER BY v."createdAt" DESC
+          LIMIT 1
+        ) AS latest_verification_is_email_verification,
+        (
+          SELECT lower(v.identifier) LIKE '%password%'
+          FROM neon_auth.verification v
+          ORDER BY v."createdAt" DESC
+          LIMIT 1
+        ) AS latest_verification_is_password_flow
     `);
     const memberAudit = memberAuditResult.rows[0] || {};
 
@@ -206,6 +236,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           verificationIdentifierShapes: memberAudit.verification_identifier_shapes || [],
           accountTotal: Number(memberAudit.account_total || 0),
           newestAccountAt: memberAudit.newest_account_at || null,
+          verificationWithoutUser48h: Number(memberAudit.verification_without_user_48h || 0),
+          latestVerificationMatchesUser: memberAudit.latest_verification_matches_user === true,
+          latestVerificationIsEmailVerification: memberAudit.latest_verification_is_email_verification === true,
+          latestVerificationIsPasswordFlow: memberAudit.latest_verification_is_password_flow === true,
         },
         optionalProviders: {
           aiProviderReady,
