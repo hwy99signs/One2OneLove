@@ -7,6 +7,7 @@ import { useLanguage } from '@/Layout';
 import { toast } from 'sonner';
 import { verifiedEmailLogin } from '@/lib/verifiedLoginService';
 import { readableApiError, sendEmailVerificationOtp, verifyEmailOtp } from '@/lib/apiClient';
+import { endAdminMfa } from '@/lib/adminMfaService';
 
 const translations = {
   en: { signIn: { title:'Sign In', subtitle:'Sign in to access your One2OneLove relationship tools.', email:'Email Address', password:'Password', emailPlaceholder:'Enter your email', passwordPlaceholder:'Enter your password', showPassword:'Show password', hidePassword:'Hide password', close:'Close', signInButton:'Sign In', signingIn:'Signing in…', forgotPassword:'Forgot Password?', invite:'Invite Friends', verifyTitle:'Verify Your Email', verifySubtitle:'We sent a 6-digit verification code to', codeLabel:'Verification Code', codePlaceholder:'Enter 6-digit code', verifyButton:'Verify Email', verifying:'Verifying…', resendCode:'Resend Code', resendSent:'A new verification code was sent.', codeHelp:'The code expires in about 5 minutes.', invalidCode:'Enter the 6-digit code from your email.', backToSignIn:'Back to Sign In', required:'Please enter both email and password.', success:'Successfully signed in!', rateLimited:'Your sign-in was accepted, but too many requests were sent too quickly. Wait a few seconds and try once more if you are not redirected.', emailVerificationRequired:'Email verification required.', invalidCredentials:'Invalid email or password. Please try again.', genericError:'An error occurred. Please try again.', resendError:'Could not resend the verification code.', timeout:'Sign-in took too long. Please try again.' } },
@@ -33,10 +34,14 @@ export default function SignIn() {
       const role = String(result?.user?.role || '').toLowerCase();
       const phoneRequired = result?.user?.phone_verification_required === true;
       const phoneVerified = result?.user?.phoneNumberVerified === true || result?.user?.phone_number_verified === true;
+      if (role === 'admin') {
+        try { sessionStorage.removeItem('o2ol-admin-mfa-code-sent-at'); } catch {}
+        await endAdminMfa().catch(() => null);
+      }
       const target = phoneRequired && !phoneVerified
         ? '/VerifyPhone'
         : role === 'admin'
-          ? '/Admin'
+          ? '/AdminAccess'
           : createPageUrl('Home');
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
