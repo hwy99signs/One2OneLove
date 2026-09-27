@@ -7,14 +7,22 @@ const ADMIN_IDLE_MS = 30 * 60 * 1000;
 const SERVER_TOUCH_THROTTLE_MS = 30 * 1000;
 
 export default function AdminMfaGate({ children }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshUserProfile } = useAuth();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
+    let active = true;
     if (!isAuthenticated) {
-      window.location.replace('/SignIn');
+      // On a hard refresh the AuthContext can briefly have no hydrated user even
+      // though the secure Neon session cookie is still valid. Re-check the server
+      // session before treating the admin as signed out.
+      (async () => {
+        const recovered = await refreshUserProfile({ preserveOnNull: true }).catch(() => undefined);
+        if (!active && active !== undefined) return;
+        if (!recovered) window.location.replace('/SignIn');
+      })();
       return;
     }
     if (user?.role !== 'admin') {
@@ -28,7 +36,6 @@ export default function AdminMfaGate({ children }) {
       return;
     }
 
-    let active = true;
     (async () => {
       try {
         const status = await getAdminMfaStatus();
@@ -48,7 +55,7 @@ export default function AdminMfaGate({ children }) {
     })();
 
     return () => { active = false; };
-  }, [isAuthenticated, isLoading, user?.role, user?.phone_verification_required, user?.phoneNumberVerified, user?.phone_number_verified]);
+  }, [isAuthenticated, isLoading, user?.role, user?.phone_verification_required, user?.phoneNumberVerified, user?.phone_number_verified, refreshUserProfile]);
 
   useEffect(() => {
     if (!allowed) return undefined;
