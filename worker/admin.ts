@@ -168,24 +168,46 @@ async function overview(db) {
 }
 
 async function members(db) {
+  // Admin must show every account created in Neon Auth, including a Guest
+  // Preview signup whose public.users profile write is delayed or incomplete.
   const result = await db.query(`
-    SELECT u.id,u.email,u.name,u.user_type,u.relationship_status,u.location,
+    SELECT a.id,
+           COALESCE(u.email,a.email) AS email,
+           COALESCE(u.name,a.name) AS name,
+           COALESCE(u.user_type,'regular') AS user_type,
+           u.relationship_status,u.location,
            COALESCE(u.is_active,true) AS is_active,
-           COALESCE(u.is_verified,false) AS is_verified,
+           COALESCE(u.is_verified,a."emailVerified",false) AS is_verified,
            CASE
+             WHEN u.id IS NULL THEN 'Guest'
+             WHEN u.stripe_subscription_id IS NULL
+                  AND COALESCE(u.subscription_status,'inactive')='inactive'
+                  AND u.created_at + interval '24 hours' > now() THEN 'Guest'
              WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
              WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
              ELSE 'Premiere'
            END AS subscription_plan,
-           COALESCE(u.subscription_status,'active') AS subscription_status,
-           u.subscription_price,u.created_at,u.updated_at,
+           CASE
+             WHEN u.id IS NULL THEN 'guest'
+             WHEN u.stripe_subscription_id IS NULL
+                  AND COALESCE(u.subscription_status,'inactive')='inactive'
+                  AND u.created_at + interval '24 hours' > now() THEN 'guest'
+             WHEN u.stripe_subscription_id IS NULL
+                  AND COALESCE(u.subscription_status,'inactive')='inactive'
+                  AND u.created_at + interval '24 hours' <= now() THEN 'guest_expired'
+             ELSE COALESCE(u.subscription_status,'inactive')
+           END AS subscription_status,
+           u.subscription_price,
+           COALESCE(u.created_at,a."createdAt") AS created_at,
+           COALESCE(u.updated_at,a."updatedAt",a."createdAt") AS updated_at,
            COALESCE(a.role,'user') AS auth_role,
            COALESCE(a.banned,false) AS banned,
-           a."banReason" AS ban_reason
-      FROM public.users u
-      LEFT JOIN neon_auth."user" a ON a.id=u.id
-     ORDER BY u.created_at DESC
-     LIMIT 250`);
+           a."banReason" AS ban_reason,
+           (u.id IS NOT NULL) AS profile_ready
+      FROM neon_auth."user" a
+      LEFT JOIN public.users u ON u.id=a.id
+     ORDER BY COALESCE(u.created_at,a."createdAt") DESC
+     LIMIT 1000`);
   return result.rows;
 }
 
