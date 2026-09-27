@@ -219,7 +219,6 @@ async function members(db) {
            (a.id IS NOT NULL) AS auth_ready
       FROM neon_auth."user" a
       FULL OUTER JOIN public.users u ON u.id=a.id
-     WHERE COALESCE(a.role,'user') <> 'admin'
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
