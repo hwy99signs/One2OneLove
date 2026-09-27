@@ -55,7 +55,7 @@ export default function Subscription(){
    const result=await handleSubscriptionCheckout({name:plan.name,price:plan.price,priceId:plan.name==='Exclusive'?(import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE||'price_1UFUSKCoKDheG1ASG5zk97Ph'):(import.meta.env.VITE_STRIPE_PRICE_PREMIERE||'price_1UFUSDCoKDheG1AS2AgFooh0')});
    if(result?.success) return;
    if(result?.status===401 || result?.code==='unauthorized'){
-     navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&type=individual&source=subscription-plan');
+     navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&source=subscription-plan');
      return;
    }
    toast.error(result?.error||'Unable to continue.');
