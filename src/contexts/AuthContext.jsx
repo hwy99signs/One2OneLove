@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   apiRequest,
   getAuthSessionWithRetry,
@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUserProfile = async ({ preserveOnNull = false } = {}) => {
+  const refreshUserProfile = useCallback(async ({ preserveOnNull = false } = {}) => {
     try {
       const auth = await getAuthSessionWithRetry(3, 250);
       if (!auth?.user) {
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
       console.warn('Session refresh failed; preserving current sign-in state:', error);
       return undefined;
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -91,7 +91,7 @@ export function AuthProvider({ children }) {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [refreshUserProfile]);
 
   const login = async (email, password) => {
     try {
@@ -165,7 +165,7 @@ export function AuthProvider({ children }) {
     registerInfluencer,
     registerProfessional,
     refreshUserProfile,
-  }), [user, isLoading]);
+  }), [user, isLoading, refreshUserProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
