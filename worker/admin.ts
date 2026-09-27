@@ -205,6 +205,7 @@ async function members(db) {
              ELSE COALESCE(u.subscription_status,'inactive')
            END AS subscription_status,
            u.subscription_price,
+           u.subscription_end_date,
            COALESCE(u.created_at,a."createdAt") AS created_at,
            COALESCE(u.updated_at,a."updatedAt",a."createdAt") AS updated_at,
            COALESCE(a.role,'user') AS auth_role,
@@ -259,6 +260,82 @@ async function manageMemberAccount(db, admin, memberId, action, reason = '') {
 
     await db.query('COMMIT');
     return { id: target.id, email: target.email, account_state: action === 'restore' ? 'active' : action };
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => {});
+    throw error;
+  }
+}
+
+async function grantMemberAccessTime(db, admin, memberId, unit, amount = 1) {
+  const normalizedUnit = String(unit || '').toLowerCase();
+  if (!['hours','days','weeks','unlimited'].includes(normalizedUnit)) {
+    throw Object.assign(new Error('Access time must be Hours, Days, Weeks, or Unlimited.'), { status: 400, code: 'invalid_access_unit' });
+  }
+
+  const numericAmount = normalizedUnit === 'unlimited' ? 1 : Number.parseInt(String(amount), 10);
+  if (normalizedUnit !== 'unlimited' && (!Number.isInteger(numericAmount) || numericAmount < 1 || numericAmount > 10000)) {
+    throw Object.assign(new Error('Enter an amount between 1 and 10,000.'), { status: 400, code: 'invalid_access_amount' });
+  }
+
+  await db.query('BEGIN');
+  try {
+    const targetResult = await db.query(
+      `SELECT a.id,a.email,a.name,a.role,u.subscription_end_date
+         FROM neon_auth."user" a
+         LEFT JOIN public.users u ON u.id=a.id
+        WHERE a.id=$1::uuid
+        FOR UPDATE OF a`,
+      [memberId],
+    );
+    const target = targetResult.rows[0];
+    if (!target) throw Object.assign(new Error('Member account not found.'), { status: 404, code: 'member_not_found' });
+    if (target.id === admin.id || target.role === 'admin') {
+      throw Object.assign(new Error('Administrator access is already unrestricted.'), { status: 403, code: 'protected_admin_account' });
+    }
+
+    await db.query(
+      `INSERT INTO public.users
+        (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
+       VALUES ($1::uuid,$2,$3,'regular',true,'Premiere',9.99,'active')
+       ON CONFLICT (id) DO NOTHING`,
+      [target.id, target.email, target.name || target.email?.split('@')[0] || 'Member'],
+    );
+
+    let result;
+    if (normalizedUnit === 'unlimited') {
+      result = await db.query(
+        `UPDATE public.users
+            SET is_active=true,
+                subscription_status='active',
+                subscription_end_date='9999-12-31 23:59:59+00'::timestamptz,
+                updated_at=now()
+          WHERE id=$1::uuid
+          RETURNING id,email,subscription_plan,subscription_status,subscription_end_date`,
+        [memberId],
+      );
+    } else {
+      const intervalUnit = normalizedUnit === 'hours' ? 'hour' : normalizedUnit === 'days' ? 'day' : 'week';
+      result = await db.query(
+        `UPDATE public.users
+            SET is_active=true,
+                subscription_status='active',
+                subscription_end_date =
+                  GREATEST(COALESCE(subscription_end_date, now()), now())
+                  + ($2::int * ('1 ${intervalUnit}')::interval),
+                updated_at=now()
+          WHERE id=$1::uuid
+          RETURNING id,email,subscription_plan,subscription_status,subscription_end_date`,
+        [memberId, numericAmount],
+      );
+    }
+
+    await db.query('COMMIT');
+    return {
+      ...result.rows[0],
+      access_unit: normalizedUnit,
+      access_amount: normalizedUnit === 'unlimited' ? null : numericAmount,
+      unlimited: normalizedUnit === 'unlimited',
+    };
   } catch (error) {
     await db.query('ROLLBACK').catch(() => {});
     throw error;
@@ -504,6 +581,13 @@ export async function handleAdminRequest(request, env, url) {
         const body = await request.json().catch(() => ({}));
         const result = await manageMemberAccountsBulk(db, admin, body?.memberIds, String(body?.action || '').toLowerCase(), body?.reason || '');
         return json({ ok:true, ...result });
+      }
+
+      const accessMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/access$/i);
+      if (request.method === 'POST' && accessMatch) {
+        const body = await request.json().catch(() => ({}));
+        const result = await grantMemberAccessTime(db, admin, accessMatch[1], body?.unit, body?.amount);
+        return json({ ok:true, member:result });
       }
 
       const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);
