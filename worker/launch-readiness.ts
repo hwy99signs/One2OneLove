@@ -126,6 +126,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         (SELECT count(*)::int FROM public.therapist_profiles) AS therapist_total,
         (SELECT count(*)::int FROM public.professional_profiles) AS professional_total,
         (SELECT count(*)::int FROM public.influencer_profiles) AS contributor_total,
+        current_setting('neon.project_id', true) AS neon_project_id_setting,
+        current_setting('neon.branch_id', true) AS neon_branch_id_setting,
+        (SELECT jsonb_object_agg(name,setting) FROM pg_settings WHERE name ILIKE '%neon%' OR name ILIKE '%project%') AS neon_related_settings,
         (
           SELECT count(*)::int
           FROM neon_auth.verification v
@@ -253,6 +256,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           therapistTotal: Number(memberAudit.therapist_total || 0),
           professionalTotal: Number(memberAudit.professional_total || 0),
           contributorTotal: Number(memberAudit.contributor_total || 0),
+          neonProjectIdSetting: memberAudit.neon_project_id_setting || null,
+          neonBranchIdSetting: memberAudit.neon_branch_id_setting || null,
+          neonRelatedSettings: memberAudit.neon_related_settings || {},
           verificationWithoutUser48h: Number(memberAudit.verification_without_user_48h || 0),
           latestVerificationMatchesUser: memberAudit.latest_verification_matches_user === true,
           latestVerificationIsEmailVerification: memberAudit.latest_verification_is_email_verification === true,
