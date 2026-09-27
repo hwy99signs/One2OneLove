@@ -61,6 +61,17 @@ const SHARE_COPY = {
   de:{ share:'Diese Seite teilen', copied:'Link kopiert', text:'Schau dir diese One2OneLove-Seite an.' },
 };
 
+const SHARE_PAGE_TITLES = {
+  '/': { en:'One2OneLove', es:'One2OneLove', fr:'One2OneLove', it:'One2OneLove', de:'One2OneLove' },
+  '/home': { en:'One2OneLove', es:'One2OneLove', fr:'One2OneLove', it:'One2OneLove', de:'One2OneLove' },
+  '/lovenotes': { en:'Love Notes', es:'Notas de Amor', fr:'Notes d’Amour', it:'Note d’Amore', de:'Liebesbotschaften' },
+  '/dateideas': { en:'Date Ideas', es:'Ideas para Citas', fr:'Idées de Rendez-vous', it:'Idee per Appuntamenti', de:'Date-Ideen' },
+  '/lgbtqsupport': { en:'LGBTQ+ Support', es:'Apoyo LGBTQ+', fr:'Soutien LGBTQ+', it:'Supporto LGBTQ+', de:'LGBTQ+ Unterstützung' },
+  '/couplesupport': { en:'Relationship Support', es:'Apoyo para Relaciones', fr:'Soutien Relationnel', it:'Supporto Relazionale', de:'Beziehungsunterstützung' },
+  '/podcastssupport': { en:'Podcasts', es:'Pódcasts', fr:'Podcasts', it:'Podcast', de:'Podcasts' },
+  '/professionals': { en:'Therapists & Professionals', es:'Terapeutas y Profesionales', fr:'Thérapeutes et Professionnels', it:'Terapeuti e Professionisti', de:'Therapeuten & Fachkräfte' },
+};
+
 const SHARE_EXCLUDED_ROUTES = new Set([
   '/admin','/adminaccess','/profile','/dashboard','/subscription','/payment-success',
   '/verifyphone','/signin','/login','/signup','/forgotpassword',
@@ -167,9 +178,14 @@ function LanguageContent({ children, currentPageName }) {
     const url = new URL(window.location.href);
     url.searchParams.set('lang', currentLanguage);
     const shareUrl = url.toString();
-    const pageTitle = currentPageName && currentPageName !== 'Home'
-      ? `${currentPageName} | One2OneLove`
+    const normalizedRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
+    const localizedTitle = SHARE_PAGE_TITLES[normalizedRoute]?.[currentLanguage];
+    const fallbackTitle = currentPageName && currentPageName !== 'Home'
+      ? String(currentPageName).replace(/([a-z0-9])([A-Z])/g, '$1 $2')
       : 'One2OneLove';
+    const pageTitle = localizedTitle
+      ? (localizedTitle === 'One2OneLove' ? localizedTitle : `${localizedTitle} | One2OneLove`)
+      : `${fallbackTitle} | One2OneLove`;
     const copy = SHARE_COPY[currentLanguage] || SHARE_COPY.en;
 
     try {
@@ -323,6 +339,17 @@ function LanguageContent({ children, currentPageName }) {
           min-width: max-content;
           animation: o2ol-marquee 20s linear infinite;
           will-change: transform;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .o2ol-announcement-track {
+            animation: none;
+            transform: none;
+            white-space: normal;
+            min-width: 100%;
+            justify-content: center;
+            text-align: center;
+          }
         }
       `}</style>
 
@@ -665,7 +692,7 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Shareable page promotion */}
       {showPageShare && (
-        <div className="pointer-events-none relative z-30 mx-auto h-0 w-full max-w-[1400px] px-4 sm:px-6">
+        <div className="pointer-events-none relative z-30 mx-auto h-14 w-full max-w-[1400px] px-4 sm:px-6">
           <div className="pointer-events-auto absolute right-4 top-3 sm:right-6">
             <button
               type="button"
