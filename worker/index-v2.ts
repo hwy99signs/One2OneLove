@@ -36,9 +36,125 @@ import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
 
+
+const SOCIAL_PAGE_META = {
+  '/': {
+    image:'/assets/o2ol-hero.png',
+    en:['One2OneLove','Love. Grow. Evolve. Together. Practical tools, community and support for healthier relationships.'],
+    es:['One2OneLove','Ama. Crece. Evoluciona. Juntos. Herramientas, comunidad y apoyo para relaciones más saludables.'],
+    fr:['One2OneLove','Aimez. Grandissez. Évoluez. Ensemble. Outils, communauté et soutien pour des relations plus saines.'],
+    it:['One2OneLove','Ama. Cresci. Evolvi. Insieme. Strumenti, comunità e supporto per relazioni più sane.'],
+    de:['One2OneLove','Lieben. Wachsen. Entwickeln. Gemeinsam. Tools, Community und Unterstützung für gesündere Beziehungen.'],
+  },
+  '/home': null,
+  '/lovenotes': {
+    image:'/assets/o2ol-hero.png',
+    en:['Love Notes | One2OneLove','Create and share meaningful Love Notes for appreciation, affection and encouragement.'],
+    es:['Notas de Amor | One2OneLove','Crea y comparte Notas de Amor para expresar aprecio, afecto y ánimo.'],
+    fr:["Notes d’Amour | One2OneLove","Créez et partagez des Notes d’Amour pour exprimer appréciation, affection et encouragement."],
+    it:["Note d’Amore | One2OneLove","Crea e condividi Note d’Amore per esprimere apprezzamento, affetto e incoraggiamento."],
+    de:['Liebesbotschaften | One2OneLove','Erstellen und teilen Sie Liebesbotschaften für Wertschätzung, Zuneigung und Ermutigung.'],
+  },
+  '/dateideas': {
+    image:'/assets/o2ol-hero.png',
+    en:['Date Ideas | One2OneLove','Discover meaningful date ideas and new ways to spend quality time together.'],
+    es:['Ideas para Citas | One2OneLove','Descubre ideas para citas y nuevas formas de disfrutar tiempo de calidad juntos.'],
+    fr:['Idées de Rendez-vous | One2OneLove','Découvrez des idées de rendez-vous et de nouvelles façons de passer du temps ensemble.'],
+    it:['Idee per Appuntamenti | One2OneLove','Scopri idee per appuntamenti e nuovi modi per trascorrere tempo di qualità insieme.'],
+    de:['Date-Ideen | One2OneLove','Entdecken Sie Date-Ideen und neue Möglichkeiten für gemeinsame Qualitätszeit.'],
+  },
+  '/lgbtqsupport': {
+    image:'/assets/o2ol-hero.png',
+    en:['LGBTQ+ Support | One2OneLove','Inclusive relationship support, resources and community for LGBTQ+ people and couples.'],
+    es:['Apoyo LGBTQ+ | One2OneLove','Apoyo, recursos y comunidad inclusivos para personas y parejas LGBTQ+.'],
+    fr:['Soutien LGBTQ+ | One2OneLove','Soutien relationnel, ressources et communauté inclusifs pour les personnes et couples LGBTQ+.'],
+    it:['Supporto LGBTQ+ | One2OneLove','Supporto relazionale, risorse e comunità inclusive per persone e coppie LGBTQ+.'],
+    de:['LGBTQ+ Unterstützung | One2OneLove','Inklusive Beziehungsunterstützung, Ressourcen und Community für LGBTQ+ Menschen und Paare.'],
+  },
+  '/couplesupport': {
+    image:'/assets/o2ol-hero.png',
+    en:['Relationship Support | One2OneLove','Practical relationship tools and support for stronger, healthier connections.'],
+    es:['Apoyo para Relaciones | One2OneLove','Herramientas y apoyo práctico para relaciones más fuertes y saludables.'],
+    fr:['Soutien Relationnel | One2OneLove','Outils et soutien pratiques pour des relations plus fortes et plus saines.'],
+    it:['Supporto Relazionale | One2OneLove','Strumenti e supporto pratici per relazioni più forti e sane.'],
+    de:['Beziehungsunterstützung | One2OneLove','Praktische Tools und Unterstützung für stärkere, gesündere Beziehungen.'],
+  },
+  '/podcastssupport': {
+    image:'/assets/o2ol-hero.png',
+    en:['Podcasts | One2OneLove','Explore relationship conversations, ideas and inspiration through One2OneLove podcasts.'],
+    es:['Pódcasts | One2OneLove','Explora conversaciones, ideas e inspiración sobre relaciones en los pódcasts de One2OneLove.'],
+    fr:['Podcasts | One2OneLove','Découvrez des conversations, idées et inspirations relationnelles avec les podcasts One2OneLove.'],
+    it:['Podcast | One2OneLove','Scopri conversazioni, idee e ispirazione sulle relazioni con i podcast One2OneLove.'],
+    de:['Podcasts | One2OneLove','Entdecken Sie Beziehungsgespräche, Ideen und Inspiration in den One2OneLove Podcasts.'],
+  },
+  '/professionals': {
+    image:'/assets/o2ol-hero.png',
+    en:['Therapists & Professionals | One2OneLove','The One2OneLove professional network is now on-boarding qualified relationship professionals.'],
+    es:['Terapeutas y Profesionales | One2OneLove','La red profesional de One2OneLove está incorporando profesionales cualificados.'],
+    fr:['Thérapeutes et Professionnels | One2OneLove','Le réseau professionnel One2OneLove recrute actuellement des professionnels qualifiés.'],
+    it:['Terapeuti e Professionisti | One2OneLove','La rete professionale One2OneLove sta inserendo professionisti qualificati.'],
+    de:['Therapeuten & Fachkräfte | One2OneLove','Das professionelle One2OneLove-Netzwerk nimmt derzeit qualifizierte Fachkräfte auf.'],
+  },
+};
+SOCIAL_PAGE_META['/home'] = SOCIAL_PAGE_META['/'];
+
+function escapeHtmlMeta(value='') {
+  return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function socialPageResponse(request, env, url) {
+  if (!['GET','HEAD'].includes(request.method)) return null;
+  const route=String(url.pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
+  const meta=SOCIAL_PAGE_META[route];
+  if (!meta) return null;
+
+  const assetResponse=await env.ASSETS.fetch(request);
+  if (!assetResponse.ok || request.method==='HEAD') return assetResponse;
+  const contentType=assetResponse.headers.get('content-type')||'';
+  if (!contentType.includes('text/html')) return assetResponse;
+
+  const requestedLang=String(url.searchParams.get('lang')||'en').toLowerCase();
+  const lang=['en','es','fr','it','de'].includes(requestedLang)?requestedLang:'en';
+  const pair=meta[lang]||meta.en;
+  const title=pair[0];
+  const description=pair[1];
+  const canonical='https://www.one2onelove.com'+url.pathname+(lang!=='en'?('?lang='+encodeURIComponent(lang)):'');
+  const image='https://www.one2onelove.com'+meta.image;
+
+  let html=await assetResponse.text();
+  html=html.replace(/<html lang="[^"]*">/i,'<html lang="'+lang+'">')
+    .replace(/<title>[^<]*<\/title>/i,'<title>'+escapeHtmlMeta(title)+'</title>');
+
+  const tags=
+    '<meta name="description" content="'+escapeHtmlMeta(description)+'" />'+
+    '<link rel="canonical" href="'+escapeHtmlMeta(canonical)+'" />'+
+    '<meta property="og:type" content="website" />'+
+    '<meta property="og:site_name" content="One2OneLove" />'+
+    '<meta property="og:title" content="'+escapeHtmlMeta(title)+'" />'+
+    '<meta property="og:description" content="'+escapeHtmlMeta(description)+'" />'+
+    '<meta property="og:url" content="'+escapeHtmlMeta(canonical)+'" />'+
+    '<meta property="og:image" content="'+escapeHtmlMeta(image)+'" />'+
+    '<meta property="og:image:width" content="1200" />'+
+    '<meta property="og:image:height" content="630" />'+
+    '<meta property="og:image:alt" content="One2OneLove" />'+
+    '<meta name="twitter:card" content="summary_large_image" />'+
+    '<meta name="twitter:title" content="'+escapeHtmlMeta(title)+'" />'+
+    '<meta name="twitter:description" content="'+escapeHtmlMeta(description)+'" />'+
+    '<meta name="twitter:image" content="'+escapeHtmlMeta(image)+'" />';
+  html=html.replace('</head>',tags+'</head>');
+  const headers=new Headers(assetResponse.headers);
+  headers.set('content-type','text/html; charset=utf-8');
+  headers.set('cache-control','public, max-age=300');
+  headers.delete('content-length');
+  return new Response(html,{status:assetResponse.status,statusText:assetResponse.statusText,headers});
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    const socialPage = await socialPageResponse(request, env, url);
+    if (socialPage) return socialPage;
 
     if (url.pathname === '/api/launch-readiness') {
       const response = await handleLaunchReadinessRequest(request, env, url);
