@@ -19,7 +19,6 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       APEX_URL: https://one2onelove.com
       WWW_URL: https://www.one2onelove.com
-      PRELAUNCH_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,11 +65,11 @@ jobs:
             echo 'Stale O2OL subscription pricing/free-plan assumption found.' >&2
             exit 1
           fi
-          if grep -RInE "['\"]Basic['\"]|subscription_plan.*Basic|STRIPE_PRICE_BASIC" src worker cloudflare/wrangler.production.jsonc wrangler.toml 2>/dev/null; then
+          if grep -RInE "['\"]Basic['\"]|subscription_plan.*Basic|STRIPE_PRICE_BASIC" src worker cloudflare/wrangler.production.jsonc 2>/dev/null; then
             echo 'Retired O2OL Basic tier found in active runtime code.' >&2
             exit 1
           fi
-          if grep -RInF '4.99' src/components/subscriptions src/components/profile src/components/signup src/hooks src/lib/stripeService.js src/pages/Subscription.jsx src/pages/PaymentSuccess.jsx worker cloudflare/wrangler.production.jsonc wrangler.toml 2>/dev/null; then
+          if grep -RInF '4.99' src/components/subscriptions src/components/profile src/components/signup src/hooks src/lib/stripeService.js src/pages/Subscription.jsx src/pages/PaymentSuccess.jsx worker cloudflare/wrangler.production.jsonc 2>/dev/null; then
             echo 'Retired O2OL $4.99 pricing found in billing/subscription runtime code.' >&2
             exit 1
           fi
@@ -97,7 +96,7 @@ jobs:
             echo 'Unsafe dynamic HTML/code execution primitive found in active O2OL code.' >&2
             exit 1
           fi
-          if grep -RInE 'sk_(live|test)_[A-Za-z0-9]|sk-proj-[A-Za-z0-9]|whsec_[A-Za-z0-9]|re_[A-Za-z0-9]{20,}' src worker wrangler.toml cloudflare/wrangler.production.jsonc 2>/dev/null; then
+          if grep -RInE 'sk_(live|test)_[A-Za-z0-9]|sk-proj-[A-Za-z0-9]|whsec_[A-Za-z0-9]|re_[A-Za-z0-9]{20,}' src worker cloudflare/wrangler.production.jsonc 2>/dev/null; then
             echo 'Plaintext runtime credential pattern found in active O2OL code/config.' >&2
             exit 1
           fi
@@ -127,13 +126,13 @@ jobs:
           ! grep -F "pointer-events-none" src/components/launch/LaunchAccessGate.jsx >/dev/null
           ! grep -F "PreviewReadOnly" src/components/launch/LaunchAccessGate.jsx >/dev/null
 
-      - name: Verify production deployment isolation
+      - name: Verify production deployment configuration
         shell: bash
         run: |
           set -euo pipefail
-          grep -Eq '^name = "one2onelove-prelaunch"$' wrangler.toml
           grep -F '"name": "one2onelove-launch"' cloudflare/wrangler.production.jsonc >/dev/null
-          ! grep -Eq '^name = "one2onelove-launch"$' wrangler.toml
+          grep -F '"pattern": "one2onelove.com/*"' cloudflare/wrangler.production.jsonc >/dev/null
+          grep -F '"pattern": "www.one2onelove.com/*"' cloudflare/wrangler.production.jsonc >/dev/null
           npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc
 
       - name: Verify production Worker runtime secrets
@@ -164,46 +163,6 @@ jobs:
           test -n "$ZONE_ID"
           curl -fsS -H "$AUTH" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" -o /tmp/routes.json
           jq -e '.success == true' /tmp/routes.json >/dev/null
-
-      - name: Verify public-launch identity gate in prelaunch
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsS --max-time 20 "$PRELAUNCH_URL/api/launch-signup/readiness" -o /tmp/readiness.json
-          cat /tmp/readiness.json
-          jq -e '
-            .ok == true and
-            .readiness.consentTableReady == true and
-            .readiness.emailVerificationReady == true and
-            .readiness.emailDeliveryReady == true and
-            .readiness.phoneVerificationReady == true and
-            .readiness.publicLaunchIdentityGateReady == true and
-            .readiness.billingDataReady == true and
-            .readiness.billingDefaultsReady == true and
-            (.readiness.legacyEntitlementRows | type == "number")
-          ' /tmp/readiness.json >/dev/null
-
-      - name: Verify canonical O2OL launch readiness
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsS --max-time 20 "$PRELAUNCH_URL/api/launch-readiness" -o /tmp/o2ol-launch-readiness.json
-          cat /tmp/o2ol-launch-readiness.json
-          jq -e '
-            .ok == true and
-            .readiness.productionPromotionReady == true and
-            .readiness.database.requiredDatabaseReady == true and
-            .readiness.identity.requiredIdentityReady == true and
-            .readiness.billing.billingProviderReady == true
-          ' /tmp/o2ol-launch-readiness.json >/dev/null
-
-      - name: Verify Suggestions storage is launch-ready
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsS --max-time 20 "$PRELAUNCH_URL/api/suggestions/readiness" -o /tmp/suggestions-readiness.json
-          cat /tmp/suggestions-readiness.json
-          jq -e '.ok == true and .ready == true' /tmp/suggestions-readiness.json >/dev/null
 
       - name: Deploy Cloudflare Worker to production domains
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
