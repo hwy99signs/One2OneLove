@@ -213,7 +213,6 @@ export default function LicensedProfessionalApplication() {
         lastName: form.lastName,
         email: form.email,
         password: form.password,
-        selectedPlan: String(new URLSearchParams(window.location.search).get("plan") || "Premiere").toLowerCase() === "exclusive" ? "Exclusive" : "Premiere",
       }, application);
 
       if (!result.success) {
