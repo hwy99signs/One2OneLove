@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MessageCircle, Send, Users, ShieldCheck, Sparkles, ArrowLeft, Trash2, LogIn, RefreshCw, Flag, VolumeX } from 'lucide-react';
+import { MessageCircle, Send, Users, ShieldCheck, Sparkles, ArrowLeft, Trash2, LogIn, RefreshCw, Flag, VolumeX, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,8 @@ import { createPageUrl } from '@/utils';
 import {
   getCommunityChatRooms,
   getCommunityChatMessages,
+  getCommunityChatTopics,
+  createCommunityChatTopic,
   sendCommunityChatMessage,
   touchCommunityChatPresence,
   deleteCommunityChatMessage,
@@ -25,6 +27,7 @@ const lgbtqCopy = {
     report:'Report', mute:'Mute', reported:'Report sent to moderation.', muted:'Member muted for you.',
     reportPrompt:'Briefly tell us why you are reporting this message. Examples: harassment, hate speech, threat, outing/private information, sexual harassment.',
     muteConfirm:'Mute this member? Their messages will no longer appear for you.',
+    topics:'Chat Topics', mainRoom:'Main Room', startTopic:'Start a Topic', topicTitle:'Topic title', topicPlaceholder:'What would you like to talk about?', openingMessage:'Opening message (optional)', openingPlaceholder:'Add a little context or start the conversation…', createTopic:'Start Topic', cancelTopic:'Cancel', topicCreated:'Your chat topic is live.', topicError:'Unable to start this chat topic.',
     prompt:['Amora','What helps an LGBTQ+ relationship or community space feel genuinely safe, respectful and supportive?']
   },
   es: {
@@ -36,6 +39,7 @@ const lgbtqCopy = {
     report:'Reportar', mute:'Silenciar', reported:'Reporte enviado a moderación.', muted:'Miembro silenciado para ti.',
     reportPrompt:'Explica brevemente por qué reportas este mensaje: acoso, odio, amenaza, outing/información privada, acoso sexual, etc.',
     muteConfirm:'¿Silenciar a este miembro? Sus mensajes dejarán de aparecer para ti.',
+    topics:'Temas del Chat', mainRoom:'Sala Principal', startTopic:'Iniciar un Tema', topicTitle:'Título del tema', topicPlaceholder:'¿De qué te gustaría hablar?', openingMessage:'Mensaje inicial (opcional)', openingPlaceholder:'Añade contexto o inicia la conversación…', createTopic:'Iniciar Tema', cancelTopic:'Cancelar', topicCreated:'Tu tema de chat ya está activo.', topicError:'No se pudo iniciar este tema.',
     prompt:['Amora','¿Qué hace que un espacio o relación LGBTQ+ se sienta realmente seguro, respetuoso y solidario?']
   },
   fr: {
@@ -47,6 +51,7 @@ const lgbtqCopy = {
     report:'Signaler', mute:'Masquer', reported:'Signalement envoyé à la modération.', muted:'Membre masqué pour vous.',
     reportPrompt:'Expliquez brièvement pourquoi vous signalez ce message : harcèlement, haine, menace, outing/informations privées, harcèlement sexuel, etc.',
     muteConfirm:'Masquer ce membre ? Ses messages ne s’afficheront plus pour vous.',
+    topics:'Sujets du Chat', mainRoom:'Salon Principal', startTopic:'Créer un Sujet', topicTitle:'Titre du sujet', topicPlaceholder:'De quoi souhaitez-vous parler ?', openingMessage:'Message d’ouverture (facultatif)', openingPlaceholder:'Ajoutez du contexte ou lancez la discussion…', createTopic:'Créer le Sujet', cancelTopic:'Annuler', topicCreated:'Votre sujet de discussion est en ligne.', topicError:'Impossible de créer ce sujet.',
     prompt:['Amora','Qu’est-ce qui rend un espace ou une relation LGBTQ+ réellement sûr, respectueux et solidaire ?']
   },
   it: {
@@ -58,6 +63,7 @@ const lgbtqCopy = {
     report:'Segnala', mute:'Silenzia', reported:'Segnalazione inviata alla moderazione.', muted:'Membro silenziato per te.',
     reportPrompt:'Spiega brevemente perché segnali questo messaggio: molestie, odio, minaccia, outing/informazioni private, molestie sessuali, ecc.',
     muteConfirm:'Silenziare questo membro? I suoi messaggi non appariranno più per te.',
+    topics:'Argomenti Chat', mainRoom:'Stanza Principale', startTopic:'Avvia un Argomento', topicTitle:'Titolo argomento', topicPlaceholder:'Di cosa vuoi parlare?', openingMessage:'Messaggio iniziale (opzionale)', openingPlaceholder:'Aggiungi un po’ di contesto o avvia la conversazione…', createTopic:'Avvia Argomento', cancelTopic:'Annulla', topicCreated:'Il tuo argomento è ora attivo.', topicError:'Impossibile avviare questo argomento.',
     prompt:['Amora','Cosa rende uno spazio o una relazione LGBTQ+ davvero sicuro, rispettoso e solidale?']
   },
   de: {
@@ -69,6 +75,7 @@ const lgbtqCopy = {
     report:'Melden', mute:'Stummschalten', reported:'Meldung an die Moderation gesendet.', muted:'Mitglied für dich stummgeschaltet.',
     reportPrompt:'Beschreibe kurz den Grund der Meldung: Belästigung, Hassrede, Drohung, Outing/private Informationen, sexuelle Belästigung usw.',
     muteConfirm:'Dieses Mitglied stummschalten? Seine Nachrichten werden dir nicht mehr angezeigt.',
+    topics:'Chat-Themen', mainRoom:'Hauptraum', startTopic:'Thema Starten', topicTitle:'Thementitel', topicPlaceholder:'Worüber möchtest du sprechen?', openingMessage:'Eröffnungsnachricht (optional)', openingPlaceholder:'Gib etwas Kontext oder starte das Gespräch…', createTopic:'Thema Starten', cancelTopic:'Abbrechen', topicCreated:'Dein Chat-Thema ist jetzt aktiv.', topicError:'Dieses Chat-Thema konnte nicht gestartet werden.',
     prompt:['Amora','Was macht einen LGBTQ+ Raum oder eine Beziehung wirklich sicher, respektvoll und unterstützend?']
   },
 };
@@ -214,6 +221,12 @@ export default function Chat() {
   const labels = roomLabels[currentLanguage] || roomLabels.en;
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [topics, setTopics] = useState([]);
+  const [selectedTopicId, setSelectedTopicId] = useState(null);
+  const [topicFormOpen, setTopicFormOpen] = useState(false);
+  const [topicTitle, setTopicTitle] = useState('');
+  const [topicOpening, setTopicOpening] = useState('');
+  const [creatingTopic, setCreatingTopic] = useState(false);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [loadingRooms, setLoadingRooms] = useState(true);
@@ -244,7 +257,7 @@ export default function Chat() {
     if (!roomId) return;
     if (!quiet) setLoadingMessages(true);
     try {
-      const data = await getCommunityChatMessages(roomId);
+      const data = await getCommunityChatMessages(roomId, lgbtqMode ? selectedTopicId : null);
       setMessages(data);
     } catch (error) {
       if (!quiet) {
@@ -256,12 +269,50 @@ export default function Chat() {
     }
   };
 
+  const loadTopics = async (roomId = selectedRoomId) => {
+    if (!lgbtqMode || !roomId) {
+      setTopics([]);
+      setSelectedTopicId(null);
+      return;
+    }
+    try {
+      const data = await getCommunityChatTopics(roomId);
+      setTopics(data);
+      setSelectedTopicId(current => current && data.some(topic => topic.id === current) ? current : null);
+    } catch (error) {
+      console.error('Unable to load LGBTQ+ chat topics:', error);
+    }
+  };
+
+  const startTopic = async (event) => {
+    event.preventDefault();
+    if (!isAuthenticated) return toast.error(t.signIn);
+    const title = topicTitle.trim();
+    if (title.length < 3 || creatingTopic || !selectedRoomId) return;
+    setCreatingTopic(true);
+    try {
+      const topic = await createCommunityChatTopic(selectedRoomId, title, topicOpening.trim());
+      setTopicTitle('');
+      setTopicOpening('');
+      setTopicFormOpen(false);
+      await loadTopics(selectedRoomId);
+      if (topic?.id) setSelectedTopicId(topic.id);
+      toast.success(lt.topicCreated);
+    } catch (error) {
+      toast.error(error?.message || lt.topicError);
+    } finally {
+      setCreatingTopic(false);
+    }
+  };
+
   useEffect(() => { loadRooms(); }, [lgbtqMode]);
   useEffect(() => {
     if (!selectedRoomId) return;
     loadMessages(selectedRoomId);
+    if (lgbtqMode) loadTopics(selectedRoomId);
     const messageTimer = window.setInterval(() => loadMessages(selectedRoomId, true), 3000);
     const roomTimer = window.setInterval(loadRooms, 10000);
+    const topicTimer = lgbtqMode ? window.setInterval(() => loadTopics(selectedRoomId), 10000) : null;
     let presenceTimer;
     if (isAuthenticated) {
       touchCommunityChatPresence(selectedRoomId).catch(() => {});
@@ -270,9 +321,10 @@ export default function Chat() {
     return () => {
       window.clearInterval(messageTimer);
       window.clearInterval(roomTimer);
+      if (topicTimer) window.clearInterval(topicTimer);
       if (presenceTimer) window.clearInterval(presenceTimer);
     };
-  }, [selectedRoomId, isAuthenticated]);
+  }, [selectedRoomId, selectedTopicId, isAuthenticated, lgbtqMode]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length, selectedRoomId]);
 
@@ -286,7 +338,7 @@ export default function Chat() {
     if (!text || !selectedRoomId || sending) return;
     setSending(true);
     try {
-      await sendCommunityChatMessage(selectedRoomId, text);
+      await sendCommunityChatMessage(selectedRoomId, text, null, lgbtqMode ? selectedTopicId : null);
       setMessage('');
       await Promise.all([loadMessages(selectedRoomId, true), loadRooms()]);
     } catch (error) {
@@ -379,6 +431,29 @@ export default function Chat() {
                 <div className="border-b border-slate-200 bg-gradient-to-r from-purple-600 to-pink-500 p-5 text-white">
                   <div className="flex items-center justify-between gap-4"><div><h2 className="text-2xl font-black">{roomLabel?.[0]}</h2><p className="mt-1 text-sm text-white/90">{roomLabel?.[1]}</p></div><div className="rounded-xl bg-white/15 px-3 py-2 text-sm font-bold"><Users className="mr-1 inline" size={16}/>{selectedRoom.online_count}</div></div>
                 </div>
+
+                {lgbtqMode && (
+                  <div className="border-b border-slate-200 bg-white p-4 sm:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wide text-purple-600">{lt.topics}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button type="button" onClick={()=>setSelectedTopicId(null)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${!selectedTopicId?'border-purple-500 bg-purple-600 text-white':'border-slate-200 bg-white text-slate-600 hover:border-purple-300'}`}>{lt.mainRoom}</button>
+                          {topics.map(topic=><button key={topic.id} type="button" onClick={()=>setSelectedTopicId(topic.id)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${selectedTopicId===topic.id?'border-purple-500 bg-purple-600 text-white':'border-slate-200 bg-white text-slate-600 hover:border-purple-300'}`} title={`${topic.messageCount || 0} messages`}>{topic.title}</button>)}
+                        </div>
+                      </div>
+                      {isAuthenticated && <button type="button" onClick={()=>setTopicFormOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-4 py-2 text-sm font-black text-white shadow-sm"><Plus size={16}/>{lt.startTopic}</button>}
+                    </div>
+                    {topicFormOpen && <form onSubmit={startTopic} className="relative mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-4">
+                      <button type="button" onClick={()=>setTopicFormOpen(false)} className="absolute right-3 top-3 rounded-lg p-1 text-slate-400 hover:bg-white hover:text-slate-700" aria-label={lt.cancelTopic}><X size={17}/></button>
+                      <label className="block text-xs font-black uppercase tracking-wide text-slate-600">{lt.topicTitle}</label>
+                      <input value={topicTitle} onChange={e=>setTopicTitle(e.target.value.slice(0,160))} placeholder={lt.topicPlaceholder} maxLength={160} className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100" autoFocus/>
+                      <label className="mt-3 block text-xs font-black uppercase tracking-wide text-slate-600">{lt.openingMessage}</label>
+                      <textarea value={topicOpening} onChange={e=>setTopicOpening(e.target.value.slice(0,2000))} placeholder={lt.openingPlaceholder} rows={3} maxLength={2000} className="mt-2 w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100"/>
+                      <div className="mt-3 flex justify-end gap-2"><button type="button" onClick={()=>setTopicFormOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600">{lt.cancelTopic}</button><button type="submit" disabled={creatingTopic||topicTitle.trim().length<3} className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-black text-white disabled:opacity-50">{creatingTopic?t.loading:lt.createTopic}</button></div>
+                    </form>}
+                  </div>
+                )}
 
                 {prompt && (
                   <div className="border-b border-purple-100 bg-purple-50 p-4 sm:p-5">
