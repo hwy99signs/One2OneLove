@@ -182,20 +182,8 @@ export default function Admin() {
     }
   };
 
-  const handleGrantAccessTime = async (member) => {
-    if (member.auth_role === 'admin') return;
-
-    const enteredUnit = window.prompt(
-      'Add member access time. Enter: Hours, Days, Weeks, or Unlimited',
-      'Days',
-    );
-    if (enteredUnit === null) return;
-
-    const unit = String(enteredUnit).trim().toLowerCase();
-    if (!['hours','days','weeks','unlimited'].includes(unit)) {
-      window.alert('Enter exactly Hours, Days, Weeks, or Unlimited.');
-      return;
-    }
+  const handleGrantAccessTime = async (member, unit) => {
+    if (member.auth_role === 'admin' || !unit) return;
 
     let amount = 1;
     if (unit !== 'unlimited') {
@@ -221,11 +209,11 @@ export default function Admin() {
     }
   };
 
-  const handleChangeTier = async (member) => {
-    if (member.auth_role === 'admin') return;
+  const handleChangeTier = async (member, target) => {
+    if (member.auth_role === 'admin' || !target) return;
 
     const current = String(member.subscription_plan || 'Premiere');
-    const target = current === 'Exclusive' ? 'Premiere' : 'Exclusive';
+    if (target === current) return;
     const action = target === 'Exclusive' ? 'UPGRADE' : 'DOWNGRADE';
 
     if (!window.confirm(`${action} ${member.email} from ${current} to ${target}?`)) return;
@@ -396,8 +384,29 @@ export default function Admin() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
-                        <button disabled={busy} onClick={()=>handleGrantAccessTime(m)} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 disabled:opacity-50"><Clock3 size={14}/>Add Time</button>
-                        <button disabled={busy} onClick={()=>handleChangeTier(m)} className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-700 disabled:opacity-50">{m.subscription_plan==='Exclusive'?'Downgrade':'Upgrade'}</button>
+                        <select
+                          disabled={busy}
+                          defaultValue=""
+                          onChange={event=>{const unit=event.target.value;event.target.value='';if(unit)handleGrantAccessTime(m,unit);}}
+                          className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 outline-none disabled:opacity-50"
+                          aria-label={`Add access time for ${m.email}`}
+                        >
+                          <option value="" disabled>Add Time ▾</option>
+                          <option value="hours">Hours…</option>
+                          <option value="days">Days…</option>
+                          <option value="weeks">Weeks…</option>
+                          <option value="unlimited">Unlimited</option>
+                        </select>
+                        <select
+                          disabled={busy}
+                          value={m.subscription_plan==='Exclusive'?'Exclusive':'Premiere'}
+                          onChange={event=>handleChangeTier(m,event.target.value)}
+                          className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-700 outline-none disabled:opacity-50"
+                          aria-label={`Change membership tier for ${m.email}`}
+                        >
+                          <option value="Premiere">Premiere</option>
+                          <option value="Exclusive">Exclusive</option>
+                        </select>
                         {state==='active' ? <>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
