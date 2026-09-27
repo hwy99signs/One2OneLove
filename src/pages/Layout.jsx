@@ -2,7 +2,7 @@
 import React, { useState, createContext, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Heart, Home, ChevronDown, User, LogIn, LogOut, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell, Gamepad2 } from "lucide-react";
+import { Heart, Home, ChevronDown, User, LogIn, LogOut, Users, UserPlus, Menu, X, Sparkles, Target, Code, Rainbow, UserCheck, Gift, MessageCircle, Bell, Gamepad2, Share2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -52,6 +52,20 @@ const translations = {
     announcement: { label: "Anúncios O2OL", text: "One2OneLove já está no ar — Ame • Cresça • Evolua Juntos." }
   }
 };
+
+const SHARE_COPY = {
+  en:{ share:'Share this page', copied:'Link copied', text:'Check out this One2OneLove page.' },
+  es:{ share:'Compartir esta página', copied:'Enlace copiado', text:'Mira esta página de One2OneLove.' },
+  fr:{ share:'Partager cette page', copied:'Lien copié', text:'Découvrez cette page One2OneLove.' },
+  it:{ share:'Condividi questa pagina', copied:'Link copiato', text:'Guarda questa pagina di One2OneLove.' },
+  de:{ share:'Diese Seite teilen', copied:'Link kopiert', text:'Schau dir diese One2OneLove-Seite an.' },
+};
+
+const SHARE_EXCLUDED_ROUTES = new Set([
+  '/admin','/adminaccess','/profile','/dashboard','/subscription','/payment-success',
+  '/verifyphone','/signin','/login','/signup','/forgotpassword',
+  '/professionalsignup','/therapistsignup','/influencersignup'
+]);
 
 const LanguageContext = createContext();
 
@@ -135,12 +149,51 @@ function LanguageContent({ children, currentPageName }) {
   const [actionOpen, setActionOpen] = useState(false);
   const [mobileActionOpen, setMobileActionOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
   const closeTimeoutRef = useRef(null);
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
+  useEffect(() => {
+    const langFromUrl = new URLSearchParams(location.search).get('lang');
+    if (['en','es','fr','it','de'].includes(langFromUrl) && langFromUrl !== currentLanguage) {
+      changeLanguage(langFromUrl);
+    }
+  }, [location.search, currentLanguage, changeLanguage]);
+
+  const shareCurrentPage = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', currentLanguage);
+    const shareUrl = url.toString();
+    const pageTitle = currentPageName && currentPageName !== 'Home'
+      ? `${currentPageName} | One2OneLove`
+      : 'One2OneLove';
+    const copy = SHARE_COPY[currentLanguage] || SHARE_COPY.en;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: pageTitle, text: copy.text, url: shareUrl });
+        return;
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1800);
+    } catch (_) {
+      window.prompt(copy.copied, shareUrl);
+    }
+  };
+
+  const normalizedShareRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
+  const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
+
+
 
   // Get authentication state
   const { isAuthenticated, logout, user } = useAuth();
@@ -609,6 +662,24 @@ function LanguageContent({ children, currentPageName }) {
           )}
         </div>
       </header>
+
+      {/* Shareable page promotion */}
+      {showPageShare && (
+        <div className="pointer-events-none relative z-30 mx-auto h-0 w-full max-w-[1400px] px-4 sm:px-6">
+          <div className="pointer-events-auto absolute right-4 top-3 sm:right-6">
+            <button
+              type="button"
+              onClick={shareCurrentPage}
+              className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white/95 px-3.5 py-2 text-sm font-black text-purple-700 shadow-md backdrop-blur transition hover:-translate-y-0.5 hover:border-purple-300 hover:shadow-lg"
+              aria-label={(SHARE_COPY[currentLanguage] || SHARE_COPY.en).share}
+              title={(SHARE_COPY[currentLanguage] || SHARE_COPY.en).share}
+            >
+              {shareCopied ? <Copy className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              <span className="hidden sm:inline">{shareCopied ? (SHARE_COPY[currentLanguage] || SHARE_COPY.en).copied : (SHARE_COPY[currentLanguage] || SHARE_COPY.en).share}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main>{children}</main>
