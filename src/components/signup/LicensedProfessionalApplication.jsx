@@ -213,6 +213,7 @@ export default function LicensedProfessionalApplication() {
         lastName: form.lastName,
         email: form.email,
         password: form.password,
+        selectedPlan: String(new URLSearchParams(window.location.search).get("plan") || "Premiere").toLowerCase() === "exclusive" ? "Exclusive" : "Premiere",
       }, application);
 
       if (!result.success) {
@@ -248,7 +249,7 @@ export default function LicensedProfessionalApplication() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 px-4 py-12">
       <div className="max-w-5xl mx-auto">
-        <Link to={`${createPageUrl("ProfessionalSignup")}?plan=${encodeURIComponent(new URLSearchParams(window.location.search).get("plan") || "Premiere")}`} className="inline-flex items-center text-gray-600 hover:text-teal-700 mb-7">
+        <Link to={`${createPageUrl("ProfessionalSignup")}?plan=${encodeURIComponent(new URLSearchParams(window.location.search).get("plan") || "Premiere")}${new URLSearchParams(window.location.search).get("source") ? `&source=${encodeURIComponent(new URLSearchParams(window.location.search).get("source"))}` : ""}`} className="inline-flex items-center text-gray-600 hover:text-teal-700 mb-7">
           <ArrowLeft className="w-5 h-5 mr-2" />{t.back}
         </Link>
 
