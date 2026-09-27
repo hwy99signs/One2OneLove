@@ -61,6 +61,7 @@ export default function ProfessionalSignup() {
   const [searchParams, setSearchParams] = useSearchParams();
   const t = COPY[currentLanguage] || COPY.en;
   const selectedType = searchParams.get("type");
+  const source = String(searchParams.get("source") || "").toLowerCase();
   const selectedPlanRaw = String(searchParams.get("plan") || "").toLowerCase();
   const selectedPlan = selectedPlanRaw === "exclusive" ? "Exclusive" : ["premiere", "premier"].includes(selectedPlanRaw) ? "Premiere" : null;
 
@@ -79,13 +80,13 @@ export default function ProfessionalSignup() {
       navigate(`${createPageUrl("InfluencerSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
       return;
     }
-    setSearchParams({ type: key, plan: selectedPlan });
+    setSearchParams({ type: key, plan: selectedPlan, ...(source ? { source } : {}) });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(`/SignUp?plan=${encodeURIComponent(selectedPlan)}`)} className="mb-8 text-gray-600">
+        <Button variant="ghost" onClick={() => navigate(source === 'professionals-page' ? '/Professionals' : `/SignUp?plan=${encodeURIComponent(selectedPlan)}`)} className="mb-8 text-gray-600">
           <ArrowLeft className="w-5 h-5 mr-2" />{t.back}
         </Button>
 
