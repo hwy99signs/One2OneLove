@@ -59,3 +59,14 @@ export async function grantMemberAccessTime(memberId, unit, amount = 1) {
   });
   return parseJson(response);
 }
+
+
+export async function changeMemberTier(memberId, plan) {
+  const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/tier`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ plan }),
+  });
+  return parseJson(response);
+}
