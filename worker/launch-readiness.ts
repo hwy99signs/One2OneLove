@@ -69,7 +69,23 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         (SELECT count(*)::int FROM neon_auth."user" WHERE "createdAt" >= now()-interval '24 hours') AS auth_new_24h,
         (SELECT count(*)::int FROM public.users WHERE created_at >= now()-interval '24 hours') AS profile_new_24h,
         (SELECT max("createdAt") FROM neon_auth."user") AS newest_auth_at,
-        (SELECT max(created_at) FROM public.users) AS newest_profile_at
+        (SELECT max(created_at) FROM public.users) AS newest_profile_at,
+        (SELECT count(*)::int FROM public.signup_consents) AS consent_total,
+        (SELECT max(terms_accepted_at) FROM public.signup_consents) AS newest_consent_at,
+        EXISTS (
+          SELECT 1
+            FROM pg_constraint con
+           WHERE con.contype='f'
+             AND con.conrelid='public.signup_consents'::regclass
+             AND con.confrelid='public.users'::regclass
+        ) AS consent_fk_users,
+        EXISTS (
+          SELECT 1
+            FROM pg_constraint con
+           WHERE con.contype='f'
+             AND con.conrelid='public.users'::regclass
+             AND con.confrelid='neon_auth."user"'::regclass
+        ) AS users_fk_auth
     `);
     const memberAudit = memberAuditResult.rows[0] || {};
 
@@ -138,6 +154,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           profileNew24h: Number(memberAudit.profile_new_24h || 0),
           newestAuthAt: memberAudit.newest_auth_at || null,
           newestProfileAt: memberAudit.newest_profile_at || null,
+          consentTotal: Number(memberAudit.consent_total || 0),
+          newestConsentAt: memberAudit.newest_consent_at || null,
+          consentFkUsers: memberAudit.consent_fk_users === true,
+          usersFkAuth: memberAudit.users_fk_auth === true,
         },
         optionalProviders: {
           aiProviderReady,
