@@ -135,6 +135,7 @@ async function ensureFoundingMemberSchema(db) {
 
 async function reserveFoundingMember(db, userId) {
   await ensureFoundingMemberSchema(db);
+  await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`o2ol-founding-member:${userId}`]);
   const existing = await db.query(
     'SELECT user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at,offer_redeemed_at,founding_rate_forfeited_at FROM public.founding_members WHERE user_id=$1::uuid',
     [userId],
@@ -238,7 +239,7 @@ async function checkout(db, env, request, auth, input) {
 
   // The only free paid-membership offer is the Founding Members Launch Offer.
   // A Founding Member number is permanently reserved to this account and never recycled.
-  const founding = billingUser.founding_number
+  let founding = billingUser.founding_number
     ? {
         founding_number: billingUser.founding_number,
         cohort: billingUser.founding_cohort,
@@ -247,7 +248,17 @@ async function checkout(db, env, request, auth, input) {
         offer_redeemed_at: billingUser.founding_offer_redeemed_at,
         founding_rate_forfeited_at: billingUser.founding_rate_forfeited_at,
       }
-    : await reserveFoundingMember(db, auth.user.id);
+    : null;
+  if (!founding) {
+    await db.query('BEGIN');
+    try {
+      founding = await reserveFoundingMember(db, auth.user.id);
+      await db.query('COMMIT');
+    } catch (error) {
+      await db.query('ROLLBACK');
+      throw error;
+    }
+  }
 
   const isFoundingMember = Boolean(founding && Number(founding.founding_number) <= 200);
   const foundingOfferAvailable = Boolean(isFoundingMember && !founding.offer_redeemed_at);
