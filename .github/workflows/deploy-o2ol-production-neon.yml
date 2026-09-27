@@ -164,6 +164,16 @@ jobs:
           curl -fsS -H "$AUTH" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" -o /tmp/routes.json
           jq -e '.success == true' /tmp/routes.json >/dev/null
 
+      - name: Trace production Hyperdrive target
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          curl -fsS -H "$AUTH" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs/ef44564dbfca4e1bb13176ee568aaddf" -o /tmp/hyperdrive.json
+          jq -e '.success == true' /tmp/hyperdrive.json >/dev/null
+          echo "O2OL_HYPERDRIVE_HOST=$(jq -r '.result.origin.host // .result.origin.hostname // "unknown"' /tmp/hyperdrive.json)"
+          echo "O2OL_HYPERDRIVE_DATABASE=$(jq -r '.result.origin.database // "unknown"' /tmp/hyperdrive.json)"
+
       - name: Deploy Cloudflare Worker to production domains
         run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.production.jsonc
 
