@@ -73,11 +73,11 @@ export default function ProfessionalSignup() {
 
   const openApplication = (key) => {
     if (key === "licensed") {
-      navigate(`${createPageUrl("TherapistSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
+      navigate(`${createPageUrl("TherapistSignup")}?plan=${encodeURIComponent(selectedPlan)}${source ? `&source=${encodeURIComponent(source)}` : ""}`);
       return;
     }
     if (key === "contributor") {
-      navigate(`${createPageUrl("InfluencerSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
+      navigate(`${createPageUrl("InfluencerSignup")}?plan=${encodeURIComponent(selectedPlan)}${source ? `&source=${encodeURIComponent(source)}` : ""}`);
       return;
     }
     setSearchParams({ type: key, plan: selectedPlan, ...(source ? { source } : {}) });
