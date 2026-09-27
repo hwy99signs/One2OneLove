@@ -45,6 +45,39 @@ function fail(message, status = 400, code = 'bad_request') {
   return json({ ok: false, error: { code, message } }, status);
 }
 
+function canonicalAdminPlan(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'premier' || raw === 'premiere' || raw === 'basic') return 'Premiere';
+  if (raw === 'exclusive') return 'Exclusive';
+  return null;
+}
+
+function adminPlanPrice(plan) {
+  return plan === 'Exclusive' ? 19.99 : 9.99;
+}
+
+function adminPlanRank(plan) {
+  return plan === 'Exclusive' ? 2 : 1;
+}
+
+function adminPriceId(env, plan) {
+  return plan === 'Exclusive' ? (env.STRIPE_PRICE_EXCLUSIVE || null) : (env.STRIPE_PRICE_PREMIERE || null);
+}
+
+async function stripeRequest(env, method, path, params = null) {
+  if (!env.STRIPE_SECRET_KEY) throw Object.assign(new Error('Payment processing is not configured.'), { status: 503, code: 'billing_not_configured' });
+  const headers = { authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, accept: 'application/json' };
+  let body;
+  if (params) {
+    headers['content-type'] = 'application/x-www-form-urlencoded';
+    body = params instanceof URLSearchParams ? params : new URLSearchParams(params);
+  }
+  const response = await fetch(`https://api.stripe.com/v1${path}`, { method, headers, body });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw Object.assign(new Error(payload?.error?.message || 'Stripe request failed.'), { status: 502, code: payload?.error?.code || 'stripe_error' });
+  return payload;
+}
+
 async function session(request, env) {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
@@ -342,6 +375,86 @@ async function grantMemberAccessTime(db, admin, memberId, unit, amount = 1) {
   }
 }
 
+async function changeMemberTier(db, env, admin, memberId, requestedPlan) {
+  const targetPlan = canonicalAdminPlan(requestedPlan);
+  if (!targetPlan) {
+    throw Object.assign(new Error('Choose Premiere or Exclusive.'), { status: 400, code: 'invalid_plan' });
+  }
+
+  await db.query('BEGIN');
+  try {
+    const targetResult = await db.query(
+      `SELECT a.id,a.email,a.role,
+              u.subscription_plan,u.subscription_status,u.stripe_subscription_id
+         FROM neon_auth."user" a
+         LEFT JOIN public.users u ON u.id=a.id
+        WHERE a.id=$1::uuid
+        FOR UPDATE OF a`,
+      [memberId],
+    );
+    const target = targetResult.rows[0];
+    if (!target) throw Object.assign(new Error('Member account not found.'), { status: 404, code: 'member_not_found' });
+    if (target.id === admin.id || target.role === 'admin') {
+      throw Object.assign(new Error('Administrator tier cannot be changed from Member Management.'), { status: 403, code: 'protected_admin_account' });
+    }
+    if (!target.subscription_plan) {
+      throw Object.assign(new Error('Member profile is not ready yet.'), { status: 409, code: 'profile_not_ready' });
+    }
+
+    const currentPlan = canonicalAdminPlan(target.subscription_plan) || 'Premiere';
+    let stripeUpdated = false;
+
+    if (target.stripe_subscription_id) {
+      const targetPriceId = adminPriceId(env, targetPlan);
+      if (!targetPriceId) throw Object.assign(new Error(`Stripe price is not configured for ${targetPlan}.`), { status: 503, code: 'billing_not_configured' });
+
+      const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(target.stripe_subscription_id)}`);
+      const item = subscription?.items?.data?.[0];
+      if (!item?.id) throw Object.assign(new Error('Stripe subscription item could not be found.'), { status: 502, code: 'stripe_subscription_item_missing' });
+
+      const params = new URLSearchParams();
+      params.set('items[0][id]', item.id);
+      params.set('items[0][price]', targetPriceId);
+      params.set('proration_behavior', 'none');
+      params.set('metadata[user_id]', target.id);
+      params.set('metadata[plan_name]', targetPlan);
+      params.set('metadata[admin_changed]', 'true');
+      await stripeRequest(env, 'POST', `/subscriptions/${encodeURIComponent(target.stripe_subscription_id)}`, params);
+      stripeUpdated = true;
+    }
+
+    await db.query(
+      `UPDATE public.users
+          SET subscription_plan=$1,
+              subscription_price=$2,
+              updated_at=now()
+        WHERE id=$3::uuid`,
+      [targetPlan, adminPlanPrice(targetPlan), memberId],
+    );
+
+    if (currentPlan !== targetPlan) {
+      await db.query(
+        `INSERT INTO public.subscription_changes(user_id,from_plan,to_plan,change_type,effective_date)
+         VALUES($1::uuid,$2,$3,$4,now())`,
+        [memberId, currentPlan, targetPlan, adminPlanRank(targetPlan) > adminPlanRank(currentPlan) ? 'upgrade' : 'downgrade'],
+      );
+    }
+
+    await db.query('COMMIT');
+    return {
+      id: target.id,
+      email: target.email,
+      from_plan: currentPlan,
+      to_plan: targetPlan,
+      change_type: currentPlan === targetPlan ? 'unchanged' : (adminPlanRank(targetPlan) > adminPlanRank(currentPlan) ? 'upgrade' : 'downgrade'),
+      stripe_updated: stripeUpdated,
+    };
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => {});
+    throw error;
+  }
+}
+
 async function manageMemberAccountsBulk(db, admin, memberIds, action, reason = '') {
   if (!['suspend','delete'].includes(action)) {
     throw Object.assign(new Error('Bulk action must be suspend or delete.'), { status: 400, code: 'invalid_bulk_member_action' });
@@ -581,6 +694,13 @@ export async function handleAdminRequest(request, env, url) {
         const body = await request.json().catch(() => ({}));
         const result = await manageMemberAccountsBulk(db, admin, body?.memberIds, String(body?.action || '').toLowerCase(), body?.reason || '');
         return json({ ok:true, ...result });
+      }
+
+      const tierMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/tier$/i);
+      if (request.method === 'POST' && tierMatch) {
+        const body = await request.json().catch(() => ({}));
+        const result = await changeMemberTier(db, env, admin, tierMatch[1], body?.plan);
+        return json({ ok:true, member:result });
       }
 
       const accessMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/access$/i);
