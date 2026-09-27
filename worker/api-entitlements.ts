@@ -66,8 +66,14 @@ async function authSession(request, env) {
   return { user, session };
 }
 
+function adminAccessActive(row) {
+  if (!row?.subscription_end_date) return false;
+  const end = new Date(row.subscription_end_date);
+  return !Number.isNaN(end.getTime()) && end.getTime() > Date.now();
+}
+
 function guestPreviewActive(row) {
-  if (row?.stripe_subscription_id) return false;
+  if (row?.stripe_subscription_id || adminAccessActive(row)) return false;
   const created = row?.created_at ? new Date(row.created_at) : null;
   return Boolean(created && !Number.isNaN(created.getTime()) && Date.now() - created.getTime() < 24 * 60 * 60 * 1000);
 }
@@ -86,7 +92,7 @@ export async function enforceApiEntitlement(request, env, url) {
   try {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
-              p.subscription_plan,p.subscription_status,p.stripe_subscription_id,p.created_at,
+              p.subscription_plan,p.subscription_status,p.subscription_end_date,p.stripe_subscription_id,p.created_at,
               COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
          LEFT JOIN public.users p ON p.id=u.id
@@ -111,9 +117,10 @@ export async function enforceApiEntitlement(request, env, url) {
 
     const status = String(row.subscription_status || '').toLowerCase();
     const guestPreview = guestPreviewActive(row);
+    const adminAccess = adminAccessActive(row);
     const active = ['active', 'trial', 'trialing'].includes(status);
 
-    if (!guestPreview && (!active || !row.stripe_subscription_id)) {
+    if (!guestPreview && (!active || (!row.stripe_subscription_id && !adminAccess))) {
       return json({ ok: false, error: { code: 'billing_required', message: 'Your 24-hour Guest Preview has ended. Start the 7-day Full Access trial or subscribe to continue.' } }, 402);
     }
 
