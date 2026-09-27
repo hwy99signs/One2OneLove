@@ -7,6 +7,7 @@ import {
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
 import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { touchAdminMfa } from '../lib/adminMfaService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -101,16 +102,19 @@ export default function Admin() {
     const fetchBundle = async () => Promise.all([getAdminDashboard(),getAdminAnalytics()]);
     try {
       let result;
-      try {
-        result = await fetchBundle();
-      } catch (firstError) {
-        if (refresh && [401,428,429,500,502,503,504].includes(firstError?.status)) {
-          await new Promise(resolve => window.setTimeout(resolve, 800));
+      let lastError = null;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        try {
           result = await fetchBundle();
-        } else {
-          throw firstError;
+          lastError = null;
+          break;
+        } catch (attemptError) {
+          lastError = attemptError;
+          if (![401,428,429,500,502,503,504].includes(attemptError?.status) || attempt === 3) break;
+          await new Promise(resolve => window.setTimeout(resolve, 500 * (attempt + 1)));
         }
       }
+      if (!result) throw lastError || new Error('Unable to load Admin dashboard.');
       const [dashboardData,analyticsData] = result;
       setData(dashboardData);
       setAnalytics(analyticsData);
@@ -132,6 +136,24 @@ export default function Admin() {
   };
   useEffect(() => {
     load(false);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const keepAdminSessionAlive = () => {
+      if (!active || document.visibilityState !== 'visible') return;
+      touchAdminMfa().catch(error => {
+        // Do not eject the Admin for a transient heartbeat failure. The next
+        // successful request can recover through the signed Admin MFA cookie.
+        console.warn('Admin session heartbeat missed; keeping dashboard active.', error);
+      });
+    };
+    keepAdminSessionAlive();
+    const timer = window.setInterval(keepAdminSessionAlive, 10 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const filteredMembers = useMemo(() => {
