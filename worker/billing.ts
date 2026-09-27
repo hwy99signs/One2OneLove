@@ -402,7 +402,7 @@ async function handleWebhookEvent(db, env, event) {
       if (!userId || !plan || !subscriptionId) return;
       const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`);
       await db.query('UPDATE public.users SET stripe_customer_id=COALESCE(stripe_customer_id,$1) WHERE id=$2::uuid', [typeof object.customer === 'string' ? object.customer : object.customer?.id || null, userId]);
-      await updateFromSubscription(db, userId, subscription, plan, planMonthlyPrice(plan));
+      await updateFromSubscription(db, userId, subscription, plan);
       break;
     }
     case 'customer.subscription.created':
