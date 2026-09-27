@@ -31,6 +31,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         COALESCE((pc.email_and_password->>'sendVerificationEmailOnSignUp')::boolean,false) AS email_on_signup,
         COALESCE(pc.email_and_password->>'emailVerificationMethod','') AS email_method,
         COALESCE(pc.email_provider->>'type','') AS email_provider_type,
+        COALESCE(pc.email_and_password->>'enabled','') AS email_password_enabled,
+        COALESCE(pc.email_and_password->>'minPasswordLength','') AS min_password_length,
+        COALESCE(pc.email_and_password->>'maxPasswordLength','') AS max_password_length,
+        COALESCE(to_jsonb(pc)->'trusted_origins','[]'::jsonb) AS trusted_origins,
         (
           EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number') AND
           EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number_verified')
@@ -135,6 +139,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           emailDeliveryReady,
           emailProviderMode: row.email_provider_type || null,
           phoneVerificationReady,
+          emailPasswordEnabled: row.email_password_enabled || null,
+          minPasswordLength: row.min_password_length || null,
+          maxPasswordLength: row.max_password_length || null,
+          trustedOrigins: row.trusted_origins || [],
           phoneVerificationProviderConfigured,
           phoneVerificationSchemaReady,
           requiredIdentityReady: identityReady,
