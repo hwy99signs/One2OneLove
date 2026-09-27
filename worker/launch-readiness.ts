@@ -61,6 +61,18 @@ export async function handleLaunchReadinessRequest(request, env, url) {
     `);
     const row = result.rows[0] || {};
 
+    const memberAuditResult = await db.query(`
+      SELECT
+        (SELECT count(*)::int FROM neon_auth."user") AS auth_total,
+        (SELECT count(*)::int FROM public.users) AS profile_total,
+        (SELECT count(*)::int FROM neon_auth."user" a FULL OUTER JOIN public.users u ON u.id=a.id) AS combined_total,
+        (SELECT count(*)::int FROM neon_auth."user" WHERE "createdAt" >= now()-interval '24 hours') AS auth_new_24h,
+        (SELECT count(*)::int FROM public.users WHERE created_at >= now()-interval '24 hours') AS profile_new_24h,
+        (SELECT max("createdAt") FROM neon_auth."user") AS newest_auth_at,
+        (SELECT max(created_at) FROM public.users) AS newest_profile_at
+    `);
+    const memberAudit = memberAuditResult.rows[0] || {};
+
     const emailVerificationReady = Boolean(row.consents_ready && row.email_required && row.email_on_signup && row.email_method);
     const emailDeliveryReady = Boolean(row.email_provider_type && row.email_provider_type !== 'shared');
     const phoneVerificationProviderConfigured = Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_VERIFY_SERVICE_SID);
@@ -117,6 +129,15 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           billingProviderReady,
           legacyEntitlementRows: Number(row.legacy_entitlement_rows || 0),
           legacyRowsProtectedByStripeGates: true,
+        },
+        memberAudit: {
+          authTotal: Number(memberAudit.auth_total || 0),
+          profileTotal: Number(memberAudit.profile_total || 0),
+          combinedTotal: Number(memberAudit.combined_total || 0),
+          authNew24h: Number(memberAudit.auth_new_24h || 0),
+          profileNew24h: Number(memberAudit.profile_new_24h || 0),
+          newestAuthAt: memberAudit.newest_auth_at || null,
+          newestProfileAt: memberAudit.newest_profile_at || null,
         },
         optionalProviders: {
           aiProviderReady,
