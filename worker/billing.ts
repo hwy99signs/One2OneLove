@@ -254,7 +254,7 @@ async function checkout(db, env, request, auth, input) {
   const plan = foundingOfferAvailable ? canonicalPlan(founding.original_plan) : requestedPlan;
   const monthlyPrice = foundingOfferAvailable ? Number(founding.original_monthly_price) : planMonthlyPrice(plan);
   const priceId = stripePriceForPlan(env, plan);
-  if (!isFounding && !priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
+  if (!foundingOfferAvailable && !priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
 
   const customerId = await getOrCreateCustomer(db, env, auth, billingUser);
   const origin = new URL(request.url).origin;
