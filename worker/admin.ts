@@ -704,7 +704,7 @@ async function topFeatureActivity(db, env) {
     FROM public.custom_date_ideas
   `);
   const dateTop = await db.query(`
-    SELECT regexp_replace(title,'^__builtin__:', '') AS name,
+    SELECT CASE WHEN title LIKE '__builtin__:%' THEN COALESCE(NULLIF(description,''),regexp_replace(title,'^__builtin__:','')) ELSE title END AS name,
       count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
       count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
@@ -828,7 +828,7 @@ export async function handleAdminRequest(request, env, url) {
         return json({ ok:true, admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role } });
       }
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') {
-        const data = await dashboard(db);
+        const data = await dashboard(db, env);
         return json({ ok:true,recovered:true,mode:'admin_management',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
       }
 
