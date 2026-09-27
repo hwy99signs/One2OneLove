@@ -89,7 +89,11 @@ export async function handleLaunchReadinessRequest(request, env, url) {
            WHERE con.contype='f'
              AND con.conrelid='public.users'::regclass
              AND con.confrelid='neon_auth."user"'::regclass
-        ) AS users_fk_auth
+        ) AS users_fk_auth,
+        (SELECT count(*)::int FROM neon_auth.verification) AS verification_total,
+        (SELECT max("createdAt") FROM neon_auth.verification) AS newest_verification_at,
+        (SELECT count(*)::int FROM neon_auth.account) AS account_total,
+        (SELECT max("createdAt") FROM neon_auth.account) AS newest_account_at
     `);
     const memberAudit = memberAuditResult.rows[0] || {};
 
@@ -166,6 +170,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           newestConsentAt: memberAudit.newest_consent_at || null,
           consentFkUsers: memberAudit.consent_fk_users === true,
           usersFkAuth: memberAudit.users_fk_auth === true,
+          verificationTotal: Number(memberAudit.verification_total || 0),
+          newestVerificationAt: memberAudit.newest_verification_at || null,
+          accountTotal: Number(memberAudit.account_total || 0),
+          newestAccountAt: memberAudit.newest_account_at || null,
         },
         optionalProviders: {
           aiProviderReady,
