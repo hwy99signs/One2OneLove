@@ -116,6 +116,16 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           WHERE "createdAt" >= now()-interval '24 hours') AS verification_identifier_shapes,
         (SELECT count(*)::int FROM neon_auth.account) AS account_total,
         (SELECT max("createdAt") FROM neon_auth.account) AS newest_account_at,
+        (SELECT jsonb_object_agg(role,count) FROM (
+          SELECT COALESCE(role,'user') AS role,count(*)::int AS count
+          FROM neon_auth."user" GROUP BY COALESCE(role,'user')
+        ) roles) AS auth_roles,
+        (SELECT count(*)::int FROM public.waitlist) AS waitlist_total,
+        (SELECT count(*)::int FROM public.waitlist WHERE created_at >= now()-interval '7 days') AS waitlist_new_7d,
+        (SELECT max(created_at) FROM public.waitlist) AS newest_waitlist_at,
+        (SELECT count(*)::int FROM public.therapist_profiles) AS therapist_total,
+        (SELECT count(*)::int FROM public.professional_profiles) AS professional_total,
+        (SELECT count(*)::int FROM public.influencer_profiles) AS contributor_total,
         (
           SELECT count(*)::int
           FROM neon_auth.verification v
@@ -236,6 +246,13 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           verificationIdentifierShapes: memberAudit.verification_identifier_shapes || [],
           accountTotal: Number(memberAudit.account_total || 0),
           newestAccountAt: memberAudit.newest_account_at || null,
+          authRoles: memberAudit.auth_roles || {},
+          waitlistTotal: Number(memberAudit.waitlist_total || 0),
+          waitlistNew7d: Number(memberAudit.waitlist_new_7d || 0),
+          newestWaitlistAt: memberAudit.newest_waitlist_at || null,
+          therapistTotal: Number(memberAudit.therapist_total || 0),
+          professionalTotal: Number(memberAudit.professional_total || 0),
+          contributorTotal: Number(memberAudit.contributor_total || 0),
           verificationWithoutUser48h: Number(memberAudit.verification_without_user_48h || 0),
           latestVerificationMatchesUser: memberAudit.latest_verification_matches_user === true,
           latestVerificationIsEmailVerification: memberAudit.latest_verification_is_email_verification === true,
