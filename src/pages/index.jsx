@@ -48,7 +48,6 @@ import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
-import SubscriptionLaunchNotice from '@/components/subscriptions/SubscriptionLaunchNotice.jsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
@@ -130,7 +129,6 @@ function PagesContent() {
 
   return (
     <Layout currentPageName={currentPage}>
-      <SubscriptionLaunchNotice />
       <LaunchAccessGate pathname={location.pathname}>
         <Routes>
           <Route path="/" element={<Home />} />
