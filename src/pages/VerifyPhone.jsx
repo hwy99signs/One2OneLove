@@ -105,8 +105,10 @@ function normalizePhone(value) {
 
 function nextRoute(user) {
   if (String(user?.role || '').toLowerCase() === 'admin') return '/Admin';
-  if (user?.stripe_subscription_id) return '/Profile';
-  return '/Subscription?setup=required';
+  // New members begin on Home after identity verification. The 24-hour Guest
+  // Preview/access gates decide what they can use; do not force them back to
+  // the membership/tier page immediately after creating an account.
+  return '/Home';
 }
 
 export default function VerifyPhone() {
