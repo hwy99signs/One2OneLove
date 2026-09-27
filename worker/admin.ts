@@ -655,6 +655,146 @@ async function featureUsage(db) {
   };
 }
 
+
+function analyticsBaselineDate(env) {
+  const parsed = Date.parse(String(env?.ANALYTICS_BASELINE_AT || ''));
+  return Number.isNaN(parsed) ? new Date(0).toISOString() : new Date(parsed).toISOString();
+}
+
+async function topFeatureActivity(db, env) {
+  const baseline = analyticsBaselineDate(env);
+  const windows = [7,14,21,30];
+
+  const windowCounts = async (sql, params = []) => {
+    const result = await db.query(sql, [baseline, ...params]);
+    const row = result.rows[0] || {};
+    return Object.fromEntries(windows.map(days => [days, Number(row[`d${days}`] || 0)]));
+  };
+
+  const subscriptionRows = await db.query(`
+    SELECT
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '7 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc7,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '7 days') AND u.stripe_subscription_id IS NULL)::int AS no7,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '14 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc14,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '14 days') AND u.stripe_subscription_id IS NULL)::int AS no14,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '21 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc21,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '21 days') AND u.stripe_subscription_id IS NULL)::int AS no21,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '30 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc30,
+      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '30 days') AND u.stripe_subscription_id IS NULL)::int AS no30
+    FROM public.users u
+    LEFT JOIN neon_auth."user" a ON a.id=u.id
+    WHERE COALESCE(a.role,'user') <> 'admin'
+  `, [baseline]);
+  const s=subscriptionRows.rows[0]||{};
+
+  const dateUse = await windowCounts(`
+    SELECT
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+    FROM public.feature_usage_events WHERE feature='Date Ideas' AND event_type='view'
+  `);
+  const dateSaved = await windowCounts(`
+    SELECT
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '7 days') AND is_favorite=true)::int AS d7,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '14 days') AND is_favorite=true)::int AS d14,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '21 days') AND is_favorite=true)::int AS d21,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '30 days') AND is_favorite=true)::int AS d30
+    FROM public.custom_date_ideas
+  `);
+  const dateTop = await db.query(`
+    SELECT regexp_replace(title,'^__builtin__:', '') AS name,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+      count(*) FILTER (WHERE updated_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+    FROM public.custom_date_ideas
+    WHERE is_favorite=true AND updated_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+    GROUP BY 1 ORDER BY d30 DESC,name ASC LIMIT 5
+  `,[baseline]);
+
+  const pageViews = async feature => windowCounts(`
+    SELECT
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+    FROM public.feature_usage_events WHERE feature=$2 AND event_type='view'
+  `,[feature]);
+
+  const routedTop = async (feature,prefix) => {
+    const result=await db.query(`
+      SELECT substring(route from $3) AS name,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+      FROM public.feature_usage_events
+      WHERE feature=$2 AND event_type='action' AND route LIKE $4
+        AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+      GROUP BY 1 ORDER BY d30 DESC,name ASC LIMIT 5
+    `,[baseline,feature,prefix.length+1,`${prefix}%`]);
+    return result.rows;
+  };
+
+  const [lgbtqViews,lgbtqTop,relationshipViews,podcastViews,podcastTop,loveSent,loveScheduled,loveTop] = await Promise.all([
+    pageViews('LGBTQ+ Support'),
+    routedTop('LGBTQ+ Support','lgbtq:'),
+    pageViews('Relationship Support'),
+    pageViews('Podcasts'),
+    routedTop('Podcasts','podcast:'),
+    windowCounts(`
+      SELECT
+        count(*) FILTER (WHERE COALESCE(sent_date,created_at)>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+        count(*) FILTER (WHERE COALESCE(sent_date,created_at)>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+        count(*) FILTER (WHERE COALESCE(sent_date,created_at)>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+        count(*) FILTER (WHERE COALESCE(sent_date,created_at)>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+      FROM public.sent_love_notes
+    `),
+    windowCounts(`
+      SELECT
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+        count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+      FROM public.scheduled_love_notes
+    `),
+    routedTop('Love Notes','love-note-category:'),
+  ]);
+
+  const relationshipTopResult = await db.query(`
+    SELECT feature AS name,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
+      count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
+    FROM public.feature_usage_events
+    WHERE event_type='view'
+      AND feature IN ('Communication Practice','Meditation','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
+      AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+    GROUP BY feature ORDER BY d30 DESC,name ASC LIMIT 5
+  `,[baseline]);
+
+  const mapTop = rows => rows.map(row => ({
+    name:row.name,
+    counts:Object.fromEntries(windows.map(days=>[days,Number(row[`d${days}`]||0)])),
+  }));
+
+  return {
+    windows,
+    subscriptionBilling:{
+      withCard:Object.fromEntries(windows.map(d=>[d,Number(s[`cc${d}`]||0)])),
+      withoutCard:Object.fromEntries(windows.map(d=>[d,Number(s[`no${d}`]||0)])),
+    },
+    dateIdeas:{ used:dateUse, saved:dateSaved, top:mapTop(dateTop.rows) },
+    lgbtq:{ accesses:lgbtqViews, top:mapTop(lgbtqTop) },
+    loveNotes:{ sent:loveSent, scheduled:loveScheduled, top:mapTop(loveTop) },
+    relationshipSupport:{ accesses:relationshipViews, top:mapTop(relationshipTopResult.rows) },
+    podcasts:{ accesses:podcastViews, top:mapTop(podcastTop) },
+  };
+}
+
 async function system(db) {
   const [migrations, ai, authRoles] = await Promise.all([
     db.query(`SELECT migration_key,applied_at,notes FROM public.app_migrations ORDER BY applied_at DESC LIMIT 50`),
@@ -664,12 +804,12 @@ async function system(db) {
   return { migrations: migrations.rows, aiUsage30d: ai.rows, authRoles: authRoles.rows };
 }
 
-async function dashboard(db) {
+async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,systemData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),system(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,systemData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),topFeatureActivity(db,env),system(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,system:systemData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,topFeatureActivity:topFeatureData,system:systemData };
 }
 
 export async function handleAdminRequest(request, env, url) {
