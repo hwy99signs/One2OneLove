@@ -44,6 +44,7 @@ import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
 import VerifyPhone from './VerifyPhone';
+import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
@@ -58,7 +59,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  ProfessionalSignup, TherapistSignup, InfluencerSignup,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -180,6 +181,7 @@ function PagesContent() {
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Subscription" element={<Subscription />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
+          <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
