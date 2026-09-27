@@ -37,6 +37,12 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         COALESCE(to_jsonb(pc)->'trusted_origins','[]'::jsonb) AS trusted_origins,
         COALESCE(to_jsonb(pc)->>'project_id','') AS project_id_hint,
         COALESCE(to_jsonb(pc)->'plugins','[]'::jsonb) AS auth_plugins,
+        CASE WHEN jsonb_typeof(COALESCE(to_jsonb(pc)->'plugin_configs','{}'::jsonb))='object'
+          THEN (SELECT COALESCE(jsonb_agg(k ORDER BY k),'[]'::jsonb) FROM jsonb_object_keys(COALESCE(to_jsonb(pc)->'plugin_configs','{}'::jsonb)) AS k)
+          ELSE '[]'::jsonb END AS plugin_config_keys,
+        CASE WHEN jsonb_typeof(COALESCE(pc.email_and_password,'{}'::jsonb))='object'
+          THEN (SELECT COALESCE(jsonb_agg(k ORDER BY k),'[]'::jsonb) FROM jsonb_object_keys(COALESCE(pc.email_and_password,'{}'::jsonb)) AS k)
+          ELSE '[]'::jsonb END AS email_password_keys,
         (SELECT jsonb_agg(k ORDER BY k) FROM jsonb_object_keys(to_jsonb(pc)) AS k) AS project_config_keys,
         (
           EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number') AND
@@ -152,6 +158,8 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           trustedOrigins: row.trusted_origins || [],
           projectIdHint: row.project_id_hint || null,
           authPlugins: row.auth_plugins || [],
+          pluginConfigKeys: row.plugin_config_keys || [],
+          emailPasswordKeys: row.email_password_keys || [],
           projectConfigKeys: row.project_config_keys || [],
           phoneVerificationProviderConfigured,
           phoneVerificationSchemaReady,
