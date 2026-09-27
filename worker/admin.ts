@@ -203,9 +203,16 @@ async function members(db) {
            COALESCE(a.role,'user') AS auth_role,
            COALESCE(a.banned,false) AS banned,
            a."banReason" AS ban_reason,
-           (u.id IS NOT NULL) AS profile_ready
+           (u.id IS NOT NULL) AS profile_ready,
+           fm.member_number AS founding_member_number,
+           fm.club AS founding_member_club,
+           fm.founding_plan,
+           fm.trial_ends_at AS founding_trial_ends_at,
+           fm.continuous_subscription AS founding_continuous_subscription,
+           fm.founding_rate_forfeited_at
       FROM neon_auth."user" a
       LEFT JOIN public.users u ON u.id=a.id
+      LEFT JOIN public.founding_members fm ON fm.user_id=a.id
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC
      LIMIT 1000`);
   return result.rows;
