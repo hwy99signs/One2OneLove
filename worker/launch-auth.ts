@@ -234,7 +234,8 @@ async function registerLaunchUser(request, env) {
       );
 
       // Newly registered members receive a 24-hour Guest Preview without a card.
-      // After that they must start the 7-day card-backed trial or subscribe.
+      // After that, feature use requires a card-backed membership. Eligible members
+      // automatically receive the Founding Member launch offer at checkout.
       await db.query(
         `INSERT INTO public.users
           (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
@@ -257,8 +258,11 @@ async function registerLaunchUser(request, env) {
     verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
     guestPreviewHours: 24,
-    trialDays: 7,
-    trialDefaultPlan: selectedPlan,
+    foundingOffer: {
+      first100: { plan: 'Exclusive', freeDays: 30, monthlyPrice: 15.99 },
+      second100: { plan: 'Premiere', freeDays: 30, monthlyPrice: 9.99 },
+      maxMembers: 200,
+    },
     selectedPlan,
   }, 201);
 }
