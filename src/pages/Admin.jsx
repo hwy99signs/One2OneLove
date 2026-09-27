@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -221,6 +221,26 @@ export default function Admin() {
     }
   };
 
+  const handleChangeTier = async (member) => {
+    if (member.auth_role === 'admin') return;
+
+    const current = String(member.subscription_plan || 'Premiere');
+    const target = current === 'Exclusive' ? 'Premiere' : 'Exclusive';
+    const action = target === 'Exclusive' ? 'UPGRADE' : 'DOWNGRADE';
+
+    if (!window.confirm(`${action} ${member.email} from ${current} to ${target}?`)) return;
+
+    setMemberActionId(member.id);
+    try {
+      await changeMemberTier(member.id, target);
+      await load(true);
+    } catch (err) {
+      window.alert(err?.message || `Unable to ${action.toLowerCase()} this member.`);
+    } finally {
+      setMemberActionId(null);
+    }
+  };
+
   const handleBulkMemberAction = async (action) => {
     const selected = (data?.members || []).filter(m => selectedMemberIds.includes(m.id) && m.auth_role !== 'admin');
     if (!selected.length) return;
@@ -377,6 +397,7 @@ export default function Admin() {
                     <div className="flex justify-end gap-2">
                       {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
                         <button disabled={busy} onClick={()=>handleGrantAccessTime(m)} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 disabled:opacity-50"><Clock3 size={14}/>Add Time</button>
+                        <button disabled={busy} onClick={()=>handleChangeTier(m)} className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-700 disabled:opacity-50">{m.subscription_plan==='Exclusive'?'Downgrade':'Upgrade'}</button>
                         {state==='active' ? <>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
