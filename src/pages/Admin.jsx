@@ -85,22 +85,23 @@ function FeatureWindowGrid({ rows, windows=[7,14,21,30] }) {
   </div>;
 }
 
-function FeatureTopFive({ title='Top 5', items=[], windows=[7,14,21,30] }) {
+function FeatureTopFive({ title='Top 5', items=[], windows=[7,14,21,30], fixedSlots=false }) {
+  const visibleItems = fixedSlots ? Array.from({ length:5 }, (_,index)=>items[index]||null) : items;
   return <div className="mt-4">
     <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">{title}</p>
-    {items.length ? <div className="space-y-2">{items.map((item,index)=><div key={item.name||index} className="rounded-xl bg-slate-50 p-3">
-      <div className="flex items-start justify-between gap-3"><span className="text-sm font-bold text-slate-800">{index+1}. {item.name}</span><span className="text-xs font-black text-purple-700">{number(item.counts?.[30]||0)} / 30d</span></div>
-      <div className="mt-2 grid grid-cols-4 gap-2 text-center text-[11px] text-slate-500">{windows.map(d=><div key={d}><span className="block">{d}d</span><strong className="text-slate-800">{number(item.counts?.[d]||0)}</strong></div>)}</div>
+    {visibleItems.length ? <div className="space-y-2">{visibleItems.map((item,index)=><div key={item?.name||('empty-'+index)} className={cx('rounded-xl p-3',item?'bg-slate-50':'border border-dashed border-slate-200 bg-white')}>
+      <div className="flex items-start justify-between gap-3"><span className={cx('text-sm font-bold',item?'text-slate-800':'text-slate-400')}>{index+1}. {item?.name||'No activity yet'}</span><span className={cx('text-xs font-black',item?'text-purple-700':'text-slate-300')}>{item?(number(item.counts?.[30]||0)+' / 30d'):'—'}</span></div>
+      <div className="mt-2 grid grid-cols-4 gap-2 text-center text-[11px] text-slate-500">{windows.map(d=><div key={d}><span className="block">{d}d</span><strong className={item?'text-slate-800':'text-slate-300'}>{item?number(item.counts?.[d]||0):'—'}</strong></div>)}</div>
     </div>)}</div> : <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">No ranked activity yet.</div>}
   </div>;
 }
 
-function FeatureActivityCard({ title, subtitle, rows, topTitle, topItems, windows=[7,14,21,30] }) {
+function FeatureActivityCard({ title, subtitle, rows, topTitle, topItems, windows=[7,14,21,30], fixedTopSlots=false }) {
   return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
     <h4 className="font-black text-slate-900">{title}</h4>
     {subtitle&&<p className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</p>}
     <FeatureWindowGrid rows={rows} windows={windows}/>
-    {topTitle&&<FeatureTopFive title={topTitle} items={topItems||[]} windows={windows}/>}
+    {topTitle&&<FeatureTopFive title={topTitle} items={topItems||[]} windows={windows} fixedSlots={fixedTopSlots}/>}
   </div>;
 }
 
@@ -395,6 +396,7 @@ export default function Admin() {
                   rows={[{label:'Page accesses',values:topFeatureActivity.lgbtq?.accesses}]}
                   topTitle="Top 5 features"
                   topItems={topFeatureActivity.lgbtq?.top}
+                  fixedTopSlots
                 />
                 <FeatureActivityCard
                   title="Love Notes"
@@ -414,6 +416,7 @@ export default function Admin() {
                   rows={[{label:'Page accesses',values:topFeatureActivity.relationshipSupport?.accesses}]}
                   topTitle="Top 5 features"
                   topItems={topFeatureActivity.relationshipSupport?.top}
+                  fixedTopSlots
                 />
                 <FeatureActivityCard
                   title="Podcasts"
