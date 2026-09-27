@@ -1,0 +1,28 @@
+name: O2OL QA Build
+
+on:
+  push:
+    branches:
+      - qa/o2ol-deep-ux-ui-20260927
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/o2ol-deep-ux-ui-20260927
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build application
+        run: npm run build
+      - name: Audit frontend high severity
+        run: npm audit --audit-level=high
+      - name: Install Worker dependencies
+        run: npm --prefix worker install --no-audit --no-fund
+      - name: Audit Worker high severity
+        run: npm --prefix worker audit --audit-level=high
