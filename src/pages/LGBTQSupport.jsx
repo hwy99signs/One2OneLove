@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/Layout';
 import { createPageUrl } from '@/utils';
 import { lgbtqSupportArticles } from '@/data/lgbtqSupportArticles';
+import { trackFeatureAction } from '@/lib/featureUsageService';
 import { lgbtqCountryOptions, lgbtqLanguageOptions, lgbtqSupportResources } from '@/data/lgbtqSupportResources';
 
 const copy = {
@@ -112,6 +113,7 @@ export default function LGBTQSupport() {
   }, [location.key]);
 
   const openArticle = article => {
+    trackFeatureAction('LGBTQ+ Support', `lgbtq:Article · ${article.title}`);
     navigate(location.pathname + location.search,{state:{...(location.state||{}),lgbtqSubview:'article'}});
     setSelectedArticle(article);
     window.scrollTo({top:0,behavior:'smooth'});
@@ -184,7 +186,7 @@ export default function LGBTQSupport() {
                 <p className="mt-2 max-w-3xl leading-7 text-slate-600">{t.chatBody}</p>
               </div>
             </div>
-            <Link to="/Chat?scope=lgbtq" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3 font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+            <Link to="/Chat?scope=lgbtq" onClick={()=>trackFeatureAction('LGBTQ+ Support','lgbtq:Community Chat')} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3 font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
               {t.chatEnter}<ArrowRight size={17}/>
             </Link>
           </div>
@@ -205,9 +207,9 @@ export default function LGBTQSupport() {
         <section className="mt-10">
           <div className="flex items-center gap-3"><Sparkles className="text-pink-600"/><div><h2 className="text-2xl font-black text-slate-900">{t.featured}</h2><p className="mt-1 text-slate-600">{t.therapistAidBody}</p></div></div>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <a href="https://www.therapistaid.com/therapy-worksheet/coming-out-discussion-questions" target="_blank" rel="noopener noreferrer" className="rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><BookOpen className="text-purple-600"/><h3 className="mt-3 font-black text-slate-900">{t.therapistAid}: {t.comingOut}</h3><div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-purple-600">{t.external}<ExternalLink size={15}/></div></a>
-            <a href="https://www.therapistaid.com/tools/relationships" target="_blank" rel="noopener noreferrer" className="rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><Users className="text-blue-600"/><h3 className="mt-3 font-black text-slate-900">{t.therapistAid}: {t.relationshipTools}</h3><div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-purple-600">{t.external}<ExternalLink size={15}/></div></a>
-            <a href="https://lgbtqhealthcaredirectory.org/directory" target="_blank" rel="noopener noreferrer" className="rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><ShieldCheck className="text-emerald-600"/><h3 className="mt-3 font-black text-slate-900">{t.healthcare}</h3><div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-purple-600">{t.external}<ExternalLink size={15}/></div></a>
+            <a href="https://www.therapistaid.com/therapy-worksheet/coming-out-discussion-questions" onClick={()=>trackFeatureAction('LGBTQ+ Support','lgbtq:Coming Out Questions')} target="_blank" rel="noopener noreferrer" className="rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><BookOpen className="text-purple-600"/><h3 className="mt-3 font-black text-slate-900">{t.therapistAid}: {t.comingOut}</h3><div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-purple-600">{t.external}<ExternalLink size={15}/></div></a>
+            <a href="https://www.therapistaid.com/tools/relationships" onClick={()=>trackFeatureAction('LGBTQ+ Support','lgbtq:Relationship Tools')} target="_blank" rel="noopener noreferrer" className="rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><Users className="text-blue-600"/><h3 className="mt-3 font-black text-slate-900">{t.therapistAid}: {t.relationshipTools}</h3><div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-purple-600">{t.external}<ExternalLink size={15}/></div></a>
+            <a href="https://lgbtqhealthcaredirectory.org/directory" onClick={()=>trackFeatureAction('LGBTQ+ Support','lgbtq:Affirming Care Directory')} target="_blank" rel="noopener noreferrer" className="rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><ShieldCheck className="text-emerald-600"/><h3 className="mt-3 font-black text-slate-900">{t.healthcare}</h3><div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-purple-600">{t.external}<ExternalLink size={15}/></div></a>
           </div>
         </section>
 
@@ -222,7 +224,7 @@ export default function LGBTQSupport() {
             </div>
           </div>
 
-          {filteredResources.length ? <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{filteredResources.map(resource=><a key={resource.id} href={resource.url} target="_blank" rel="noopener noreferrer" className="group rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+          {filteredResources.length ? <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{filteredResources.map(resource=><a key={resource.id} href={resource.url} onClick={()=>trackFeatureAction('LGBTQ+ Support',`lgbtq:${resource.name}`)} target="_blank" rel="noopener noreferrer" className="group rounded-3xl border border-purple-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100 text-purple-700"><Heart size={20}/></div><ExternalLink className="text-slate-300 transition group-hover:text-purple-500" size={18}/></div>
             <h3 className="mt-4 text-lg font-black leading-6 text-slate-900">{resource.name}</h3>
             <div className="mt-4 space-y-2 text-sm text-slate-600">
