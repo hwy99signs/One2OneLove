@@ -108,21 +108,36 @@ async function requireUser(request, env) {
   const auth = await getSession(request, env);
   if (!auth) return { response: error('Authentication required.', 401, 'unauthorized') };
 
-  // Ensure every authenticated Neon user has an application profile. Newly
-  // New members begin with a 24-hour Guest Preview. The profile remains
-  // inactive for billing until Stripe activates the 7-day trial or a paid subscription.
-  await withDb(env, async (db) => {
-    await db.query(
+  // A profile missing after a successful Auth signup is recoverable only for
+  // the first 48 hours. This prevents stale records from being reinstated by
+  // an old session while preserving recovery for a recent interrupted signup.
+  const profileState = await withDb(env, async (db) => {
+    const result = await db.query(
+      `SELECT EXISTS (SELECT 1 FROM public.users p WHERE p.id=a.id) AS profile_ready,
+              a."createdAt" >= now()-interval '48 hours' AS recovery_eligible
+         FROM neon_auth."user" a
+        WHERE a.id=$1::uuid
+        LIMIT 1`,
+      [auth.user.id],
+    );
+    return result.rows[0] || null;
+  });
+
+  if (!profileState?.profile_ready && profileState?.recovery_eligible !== true) {
+    return { response: error('This account is outside the 48-hour automatic recovery window. Please contact support for help.', 403, 'reinstatement_window_expired') };
+  }
+
+  if (!profileState?.profile_ready) {
+    await withDb(env, async (db) => {
+      await db.query(
       `INSERT INTO public.users
         (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
        VALUES ($1::uuid, $2, $3, 'regular', true, 'Premiere', 9.99, 'inactive')
-       ON CONFLICT (id) DO UPDATE SET
-         email = EXCLUDED.email,
-         name = COALESCE(NULLIF(public.users.name, ''), EXCLUDED.name),
-         is_active = true`,
+       ON CONFLICT (id) DO NOTHING`,
       [auth.user.id, auth.user.email, auth.user.name || auth.user.email?.split('@')[0] || 'Member'],
-    );
-  });
+      );
+    });
+  }
 
   return { auth };
 }

@@ -7,6 +7,8 @@ const JSON_HEADERS = {
   'x-content-type-options': 'nosniff',
 };
 
+const AUTO_REINSTATEMENT_WINDOW = "48 hours";
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 }
@@ -200,9 +202,7 @@ async function persistRegistration(db, user, registration) {
        VALUES ($1::uuid,$2,$3,'regular',true,$4,$5,'inactive')
        ON CONFLICT (id) DO UPDATE SET
          email=EXCLUDED.email,
-         name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name),
-         user_type='regular',
-         is_active=COALESCE(public.users.is_active,true)`,
+         name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name)`,
       [user.id, registration.email, registration.name, registration.selectedPlan, registration.selectedPrice],
     );
     await db.query('COMMIT');
@@ -221,7 +221,12 @@ async function resumeUnverifiedRegistration(request, env, registration) {
   try {
     user = await withDb(env, async db => {
       const result = await db.query(
-        'SELECT id,email,name,"emailVerified" FROM neon_auth."user" WHERE lower(email)=lower($1) LIMIT 1',
+        `SELECT a.id,a.email,a.name,a."emailVerified",a."createdAt",
+                EXISTS (SELECT 1 FROM public.users p WHERE p.id=a.id) AS profile_ready,
+                a."createdAt" >= now()-interval '${AUTO_REINSTATEMENT_WINDOW}' AS recovery_eligible
+           FROM neon_auth."user" a
+          WHERE lower(a.email)=lower($1)
+          LIMIT 1`,
         [registration.email],
       );
       return result.rows[0] || null;
@@ -233,12 +238,18 @@ async function resumeUnverifiedRegistration(request, env, registration) {
 
   if (!user?.id || user.emailVerified === true) return null;
 
+  if (!user.profile_ready && user.recovery_eligible !== true) {
+    return { expired: true };
+  }
+
   let profileReady = true;
-  try {
-    await withDb(env, db => persistRegistration(db, user, registration));
-  } catch (error) {
-    console.error('One2OneLove duplicate signup profile recovery deferred', error);
-    profileReady = false;
+  if (!user.profile_ready) {
+    try {
+      await withDb(env, db => persistRegistration(db, user, registration));
+    } catch (error) {
+      console.error('One2OneLove duplicate signup profile recovery deferred', error);
+      profileReady = false;
+    }
   }
 
   let resend;
@@ -326,6 +337,9 @@ async function registerLaunchUser(request, env) {
 
   if (!upstream.ok) {
     const resumed = await resumeUnverifiedRegistration(request, env, registration);
+    if (resumed?.expired) {
+      return fail('This account is outside the 48-hour automatic recovery window. Please contact support for help.', 410, 'reinstatement_window_expired');
+    }
     if (resumed) {
       return json({
         ok: true,
@@ -421,11 +435,25 @@ async function verifyLaunchEmail(request, env) {
   let profileReady = true;
   try {
     await withDb(env, async db => {
-      const result = await db.query('SELECT id,email,name,"emailVerified" FROM neon_auth."user" WHERE lower(email)=lower($1) LIMIT 1', [email]);
+      const result = await db.query(
+        `SELECT a.id,a.email,a.name,a."emailVerified",a."createdAt",
+                EXISTS (SELECT 1 FROM public.users p WHERE p.id=a.id) AS profile_ready,
+                a."createdAt" >= now()-interval '${AUTO_REINSTATEMENT_WINDOW}' AS recovery_eligible
+           FROM neon_auth."user" a
+          WHERE lower(a.email)=lower($1)
+          LIMIT 1`,
+        [email],
+      );
       const user = result.rows[0] || null;
       verified = user?.emailVerified === true;
       if (!verified) return;
-      if (registration) await persistRegistration(db, user, registration);
+      if (!user.profile_ready && user.recovery_eligible !== true) {
+        profileReady = false;
+        return;
+      }
+      if (registration && !user.profile_ready) {
+        await persistRegistration(db, user, registration);
+      }
     });
   } catch (error) {
     // The email is already verified upstream. Sign-in remains a safe recovery
@@ -435,6 +463,7 @@ async function verifyLaunchEmail(request, env) {
   }
 
   if (!verified) return fail('Email verification did not complete. Request a new code and try again.', 409, 'verification_incomplete');
+  if (!profileReady) return fail('Email verified, but this account is outside the 48-hour automatic recovery window. Please contact support for help.', 410, 'reinstatement_window_expired');
   return json({ ok: true, success: true, verified: true, profileReady, recoveryPending: !profileReady }, profileReady ? 200 : 202);
 }
 
