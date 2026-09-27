@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -675,11 +676,12 @@ export async function handleAdminRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/admin')) return null;
 
   const auth = await session(request, env);
-  if (!auth) return fail('Authentication required.',401,'unauthorized');
+  const mfaFallback = auth ? null : await getVerifiedAdminMfaIdentity(request, env);
+  if (!auth && !mfaFallback) return fail('Authentication required.',401,'unauthorized');
 
   try {
     return await withDb(env, async (db) => {
-      const admin = await adminIdentity(db, auth.user.id);
+      const admin = mfaFallback?.admin || await adminIdentity(db, auth.user.id);
       if (!admin) return fail('Administrator access required.',403,'forbidden');
 
       if (request.method === 'GET' && url.pathname === '/api/admin/me') {
