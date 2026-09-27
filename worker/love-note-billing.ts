@@ -79,9 +79,9 @@ export async function loveNoteSendAccess(db, userId) {
 
   if (!(trial || active) || !user.stripe_subscription_id || !user.stripe_customer_id) {
     code = 'subscription_required';
-    message = 'Start the 7-day Full Access trial or an active One2OneLove membership to send Love Notes by SMS.';
+    message = 'Complete membership setup with a card or use an active One2OneLove membership to send Love Notes by SMS.';
   } else {
-    // Trial members are intentionally allowed to send:
+    // Founding Members in their 30-day free period are intentionally allowed to send:
     // first One2OneLove SMS Love Note is complimentary, then $0.29 per send.
     allowed = true;
   }
@@ -93,7 +93,7 @@ export async function loveNoteSendAccess(db, userId) {
     plan,
     subscriptionStatus: status || 'inactive',
     hasPaidSubscriptionPayment,
-    firstTrialSendFree: true,
+    firstFoundingSendFree: true,
     firstSendFree: true,
     firstFreeAvailable: allowed && reservedOrSent === 0,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
@@ -282,7 +282,7 @@ export async function loveNoteUsageSummary(db, userId) {
     smsSendingAllowed: access.allowed,
     smsSendingCode: access.code,
     smsSendingMessage: access.message,
-    firstTrialSendFree: true,
+    firstFoundingSendFree: true,
     firstSendFree: true,
     firstFreeAvailable: access.firstFreeAvailable,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
