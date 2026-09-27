@@ -84,17 +84,29 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
 
     return await withDb(env, async db => {
       const result = await db.query(
-        `SELECT subscription_plan,subscription_status,stripe_subscription_id
-           FROM public.users WHERE id=$1::uuid`,
+        `SELECT u.subscription_plan,u.subscription_status,u.stripe_subscription_id,
+                f.founding_number,f.cohort AS founding_cohort,f.offer_redeemed_at
+           FROM public.users u
+           LEFT JOIN public.founding_members f ON f.user_id=u.id
+          WHERE u.id=$1::uuid`,
         [auth.user.id],
       );
       const user = result.rows[0];
       if (!user?.stripe_subscription_id) return fail('No Stripe subscription is connected to this account.', 409, 'no_paid_subscription');
-      if (String(user.subscription_status || '').toLowerCase() !== 'trial') {
-        return fail('Plan switching on this screen is currently available during the Founding Member free period.', 409, 'trial_change_only');
+      if (String(user.subscription_status || '').toLowerCase() !== 'trial' || !user.founding_number) {
+        return fail('Founding Member plan changes are only available during an active Founding Member free period.', 409, 'founding_change_only');
       }
 
       const currentPlan = canonicalPlan(user.subscription_plan) || 'Premiere';
+      if (targetPlan === currentPlan) {
+        return json({ ok: true, plan: currentPlan, storedPlan: currentPlan, subscriptionStatus: 'trial', unchanged: true });
+      }
+      // The Founding terms explicitly allow members #1–100 to choose Premiere
+      // before their 30-day Exclusive free period ends. Other plan changes wait
+      // until the Founding free period has completed.
+      if (user.founding_cohort !== 'first_100' || currentPlan !== 'Exclusive' || targetPlan !== 'Premiere') {
+        return fail('During the Founding free period, only first-100 members may switch from Exclusive to Premiere.', 409, 'founding_plan_change_not_allowed');
+      }
       const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(user.stripe_subscription_id)}`);
       const item = subscription?.items?.data?.[0];
       if (!item?.id) return fail('Stripe subscription item could not be found.', 502, 'stripe_subscription_item_missing');
@@ -135,6 +147,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
         storedPlan: targetPlan,
         subscriptionStatus: 'trial',
         foundingPlanChange: targetPlan,
+        foundingNumber: Number(user.founding_number),
         stripeSubscriptionStatus: updated?.status || 'trialing',
       });
     });
