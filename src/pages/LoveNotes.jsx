@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, sendLoveNoteSms, scheduleLoveNote } from "@/lib/loveNotesService";
+import { trackFeatureAction } from "@/lib/featureUsageService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
@@ -914,6 +915,7 @@ export default function LoveNotes() {
       return await scheduleLoveNote(data);
     },
     onSuccess: () => {
+      trackFeatureAction('Love Notes', `love-note-category:${sendModalNote?.category || 'uncategorized'}`);
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
       queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
       toast.success(t.scheduleSuccess);
@@ -1101,6 +1103,7 @@ export default function LoveNotes() {
         });
         queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
         queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
+        trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
         toast.success(t.openingText);
         if (result?.billing?.billingPending) toast.message(t.smsBillingPending);
         setSendModalNote(null);
@@ -1121,6 +1124,7 @@ export default function LoveNotes() {
         sent_date: new Date().toISOString(),
         created_by: currentUser.id,
       });
+      trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
     }
 
     switch(method) {
