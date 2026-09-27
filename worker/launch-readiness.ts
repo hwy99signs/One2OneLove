@@ -101,6 +101,17 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         ) AS users_fk_auth,
         (SELECT count(*)::int FROM neon_auth.verification) AS verification_total,
         (SELECT max("createdAt") FROM neon_auth.verification) AS newest_verification_at,
+        (SELECT count(*)::int FROM neon_auth.verification WHERE "createdAt" >= now()-interval '24 hours') AS verification_new_24h,
+        (SELECT count(*)::int
+           FROM neon_auth.verification v
+          WHERE v."createdAt" >= now()-interval '24 hours'
+            AND EXISTS (
+              SELECT 1 FROM neon_auth."user" u
+               WHERE lower(v.identifier) LIKE '%' || lower(u.email) || '%'
+            )) AS verification_new_24h_existing_users,
+        (SELECT array_agg(DISTINCT regexp_replace(identifier,'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+','<email>','g'))
+           FROM neon_auth.verification
+          WHERE "createdAt" >= now()-interval '24 hours') AS verification_identifier_shapes,
         (SELECT count(*)::int FROM neon_auth.account) AS account_total,
         (SELECT max("createdAt") FROM neon_auth.account) AS newest_account_at
     `);
@@ -186,6 +197,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           usersFkAuth: memberAudit.users_fk_auth === true,
           verificationTotal: Number(memberAudit.verification_total || 0),
           newestVerificationAt: memberAudit.newest_verification_at || null,
+          verificationNew24h: Number(memberAudit.verification_new_24h || 0),
+          verificationNew24hExistingUsers: Number(memberAudit.verification_new_24h_existing_users || 0),
+          verificationIdentifierShapes: memberAudit.verification_identifier_shapes || [],
           accountTotal: Number(memberAudit.account_total || 0),
           newestAccountAt: memberAudit.newest_account_at || null,
         },
