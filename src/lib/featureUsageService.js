@@ -1,6 +1,6 @@
 export function trackFeatureAction(feature, detail) {
   const route = String(detail || '').trim().slice(0, 300);
-  if (!feature || !route) return Promise.resolve();
+  if (!feature || !route) return undefined;
   return fetch('/api/feature-usage', {
     method: 'POST',
     credentials: 'include',
