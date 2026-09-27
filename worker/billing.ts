@@ -124,15 +124,19 @@ async function ensureFoundingMemberSchema(db) {
       cohort text NOT NULL CHECK (cohort IN ('first_100','second_100')),
       original_plan text NOT NULL CHECK (original_plan IN ('Premiere','Exclusive')),
       original_monthly_price numeric(10,2) NOT NULL,
-      reserved_at timestamptz NOT NULL DEFAULT now()
+      reserved_at timestamptz NOT NULL DEFAULT now(),
+      offer_redeemed_at timestamptz,
+      founding_rate_forfeited_at timestamptz
     );
+    ALTER TABLE public.founding_members ADD COLUMN IF NOT EXISTS offer_redeemed_at timestamptz;
+    ALTER TABLE public.founding_members ADD COLUMN IF NOT EXISTS founding_rate_forfeited_at timestamptz;
   `);
 }
 
 async function reserveFoundingMember(db, userId) {
   await ensureFoundingMemberSchema(db);
   const existing = await db.query(
-    'SELECT user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at FROM public.founding_members WHERE user_id=$1::uuid',
+    'SELECT user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at,offer_redeemed_at,founding_rate_forfeited_at FROM public.founding_members WHERE user_id=$1::uuid',
     [userId],
   );
   if (existing.rows[0]) return existing.rows[0];
@@ -148,7 +152,7 @@ async function reserveFoundingMember(db, userId) {
     `INSERT INTO public.founding_members(user_id,founding_number,cohort,original_plan,original_monthly_price)
      VALUES($1::uuid,$2,$3,$4,$5)
      ON CONFLICT(user_id) DO UPDATE SET user_id=EXCLUDED.user_id
-     RETURNING user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at`,
+     RETURNING user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at,offer_redeemed_at,founding_rate_forfeited_at`,
     [userId, number, cohort, originalPlan, originalPrice],
   );
   return inserted.rows[0] || null;
@@ -162,7 +166,9 @@ async function getBillingUser(db, userId) {
             u.payment_method,u.subscription_current_period_start,u.subscription_current_period_end,
             u.trial_end_date,u.cancel_at_period_end,u.canceled_at,u.created_at,
             f.founding_number,f.cohort AS founding_cohort,f.original_plan AS founding_original_plan,
-            f.original_monthly_price AS founding_original_monthly_price,f.reserved_at AS founding_reserved_at
+            f.original_monthly_price AS founding_original_monthly_price,f.reserved_at AS founding_reserved_at,
+            f.offer_redeemed_at AS founding_offer_redeemed_at,
+            f.founding_rate_forfeited_at
        FROM public.users u
        LEFT JOIN public.founding_members f ON f.user_id=u.id
        WHERE u.id=$1::uuid`,
@@ -238,12 +244,15 @@ async function checkout(db, env, request, auth, input) {
         cohort: billingUser.founding_cohort,
         original_plan: billingUser.founding_original_plan,
         original_monthly_price: Number(billingUser.founding_original_monthly_price),
+        offer_redeemed_at: billingUser.founding_offer_redeemed_at,
+        founding_rate_forfeited_at: billingUser.founding_rate_forfeited_at,
       }
     : await reserveFoundingMember(db, auth.user.id);
 
-  const isFounding = Boolean(founding && Number(founding.founding_number) <= 200);
-  const plan = isFounding ? canonicalPlan(founding.original_plan) : requestedPlan;
-  const monthlyPrice = isFounding ? Number(founding.original_monthly_price) : planMonthlyPrice(plan);
+  const isFoundingMember = Boolean(founding && Number(founding.founding_number) <= 200);
+  const foundingOfferAvailable = Boolean(isFoundingMember && !founding.offer_redeemed_at);
+  const plan = foundingOfferAvailable ? canonicalPlan(founding.original_plan) : requestedPlan;
+  const monthlyPrice = foundingOfferAvailable ? Number(founding.original_monthly_price) : planMonthlyPrice(plan);
   const priceId = stripePriceForPlan(env, plan);
   if (!isFounding && !priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
 
@@ -256,7 +265,7 @@ async function checkout(db, env, request, auth, input) {
   params.set('payment_method_collection', 'always');
   params.set('branding_settings[display_name]', 'One2OneLove');
 
-  if (isFounding) {
+  if (foundingOfferAvailable) {
     params.set('line_items[0][price_data][currency]', 'usd');
     params.set('line_items[0][price_data][product_data][name]', `One2OneLove ${plan} — Founding Member`);
     params.set('line_items[0][price_data][recurring][interval]', 'month');
@@ -274,7 +283,7 @@ async function checkout(db, env, request, auth, input) {
   params.set('subscription_data[metadata][user_id]', auth.user.id);
   params.set('subscription_data[metadata][plan_name]', plan);
 
-  if (isFounding) {
+  if (foundingOfferAvailable) {
     params.set('subscription_data[trial_period_days]', '30');
     params.set('metadata[founding_member]', 'true');
     params.set('metadata[founding_number]', String(founding.founding_number));
@@ -290,10 +299,11 @@ async function checkout(db, env, request, auth, input) {
     sessionId: checkoutSession.id,
     url: checkoutSession.url,
     plan,
-    foundingMember: isFounding,
-    foundingNumber: isFounding ? Number(founding.founding_number) : null,
-    foundingCohort: isFounding ? founding.cohort : null,
-    freeDays: isFounding ? 30 : 0,
+    foundingMember: isFoundingMember,
+    foundingOfferApplied: foundingOfferAvailable,
+    foundingNumber: isFoundingMember ? Number(founding.founding_number) : null,
+    foundingCohort: isFoundingMember ? founding.cohort : null,
+    freeDays: foundingOfferAvailable ? 30 : 0,
     monthlyPrice,
   });
 }
@@ -402,6 +412,13 @@ async function handleWebhookEvent(db, env, event) {
       if (!userId || !plan || !subscriptionId) return;
       const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`);
       await db.query('UPDATE public.users SET stripe_customer_id=COALESCE(stripe_customer_id,$1) WHERE id=$2::uuid', [typeof object.customer === 'string' ? object.customer : object.customer?.id || null, userId]);
+      if (object.metadata?.founding_member === 'true') {
+        await ensureFoundingMemberSchema(db);
+        await db.query(
+          'UPDATE public.founding_members SET offer_redeemed_at=COALESCE(offer_redeemed_at,now()) WHERE user_id=$1::uuid',
+          [userId],
+        );
+      }
       await updateFromSubscription(db, userId, subscription, plan);
       break;
     }
@@ -425,6 +442,13 @@ async function handleWebhookEvent(db, env, event) {
         `UPDATE public.users SET subscription_status='cancelled',
           stripe_subscription_id=NULL,subscription_current_period_start=NULL,subscription_current_period_end=NULL,
           cancel_at_period_end=false,canceled_at=now(),updated_at=now() WHERE id=$1::uuid`,
+        [userId],
+      );
+      await ensureFoundingMemberSchema(db);
+      await db.query(
+        `UPDATE public.founding_members
+            SET founding_rate_forfeited_at=CASE WHEN cohort='first_100' THEN COALESCE(founding_rate_forfeited_at,now()) ELSE founding_rate_forfeited_at END
+          WHERE user_id=$1::uuid`,
         [userId],
       );
       await finalizePendingLoveNoteUsage(env, user, userId);
