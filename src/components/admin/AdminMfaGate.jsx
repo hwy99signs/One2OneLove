@@ -17,7 +17,7 @@ export default function AdminMfaGate({ children }) {
       // refresh. Do not redirect based on the still-hydrating React auth state.
       let lastError = null;
 
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
         try {
           const status = await getAdminMfaStatus();
           if (!active) return;
@@ -38,8 +38,8 @@ export default function AdminMfaGate({ children }) {
           // A hard refresh can briefly race session hydration upstream. Give the
           // secure cookie-backed session a moment before treating a 401/5xx as
           // an actual logout.
-          if ([401, 429, 500, 502, 503, 504].includes(error?.status) && attempt < 2) {
-            await wait(350 * (attempt + 1));
+          if ([401, 429, 500, 502, 503, 504].includes(error?.status) && attempt < 4) {
+            await wait(500 * (attempt + 1));
             continue;
           }
           break;
