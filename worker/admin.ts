@@ -594,7 +594,11 @@ async function featureUsage(db) {
   const tableCheck = await db.query(`SELECT to_regclass('public.feature_usage_events') IS NOT NULL AS ready`);
   const liveTracking = Boolean(tableCheck.rows[0]?.ready);
   const eventSql = liveTracking ? `
-      UNION ALL SELECT feature,user_id,created_at FROM public.feature_usage_events
+      UNION ALL
+      SELECT e.feature,e.user_id,e.created_at
+        FROM public.feature_usage_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE COALESCE(a.role,'user') <> 'admin'
   ` : '';
 
   const activity = await db.query(`
@@ -693,7 +697,9 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events WHERE feature='Date Ideas' AND event_type='view'
+    FROM public.feature_usage_events e
+    LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+    WHERE e.feature='Date Ideas' AND e.event_type='view' AND COALESCE(a.role,'user') <> 'admin'
   `);
   const dateSaved = await windowCounts(`
     SELECT
@@ -720,7 +726,9 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events WHERE feature=$2 AND event_type='view'
+    FROM public.feature_usage_events e
+    LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+    WHERE e.feature=$2 AND e.event_type='view' AND COALESCE(a.role,'user') <> 'admin'
   `,[feature]);
 
   const routedTop = async (feature,prefix) => {
@@ -730,9 +738,11 @@ async function topFeatureActivity(db, env) {
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-      FROM public.feature_usage_events
-      WHERE feature=$2 AND event_type='action' AND route LIKE $4
-        AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+      FROM public.feature_usage_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      WHERE e.feature=$2 AND e.event_type='action' AND e.route LIKE $4
+        AND COALESCE(a.role,'user') <> 'admin'
+        AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
       GROUP BY 1 ORDER BY d30 DESC,name ASC LIMIT 5
     `,[baseline,feature,prefix.length+1,`${prefix}%`]);
     return result.rows;
@@ -769,11 +779,13 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events
-    WHERE event_type='view'
-      AND feature IN ('Communication Practice','Meditation','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
-      AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-    GROUP BY feature ORDER BY d30 DESC,name ASC LIMIT 5
+    FROM public.feature_usage_events e
+    LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+    WHERE e.event_type='view'
+      AND e.feature IN ('Communication Practice','Meditation','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
+      AND COALESCE(a.role,'user') <> 'admin'
+      AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+    GROUP BY e.feature ORDER BY d30 DESC,name ASC LIMIT 5
   `,[baseline]);
 
   const mapTop = rows => rows.map(row => ({
