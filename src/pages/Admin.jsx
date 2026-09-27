@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -182,6 +182,45 @@ export default function Admin() {
     }
   };
 
+  const handleGrantAccessTime = async (member) => {
+    if (member.auth_role === 'admin') return;
+
+    const enteredUnit = window.prompt(
+      'Add member access time. Enter: Hours, Days, Weeks, or Unlimited',
+      'Days',
+    );
+    if (enteredUnit === null) return;
+
+    const unit = String(enteredUnit).trim().toLowerCase();
+    if (!['hours','days','weeks','unlimited'].includes(unit)) {
+      window.alert('Enter exactly Hours, Days, Weeks, or Unlimited.');
+      return;
+    }
+
+    let amount = 1;
+    if (unit !== 'unlimited') {
+      const enteredAmount = window.prompt(`How many ${unit} should be added?`, '1');
+      if (enteredAmount === null) return;
+      amount = Number.parseInt(String(enteredAmount), 10);
+      if (!Number.isInteger(amount) || amount < 1 || amount > 10000) {
+        window.alert('Enter a whole number from 1 to 10,000.');
+        return;
+      }
+    } else if (!window.confirm(`Give ${member.email} unlimited membership access?`)) {
+      return;
+    }
+
+    setMemberActionId(member.id);
+    try {
+      await grantMemberAccessTime(member.id, unit, amount);
+      await load(true);
+    } catch (err) {
+      window.alert(err?.message || 'Unable to add access time to this member.');
+    } finally {
+      setMemberActionId(null);
+    }
+  };
+
   const handleBulkMemberAction = async (action) => {
     const selected = (data?.members || []).filter(m => selectedMemberIds.includes(m.id) && m.auth_role !== 'admin');
     if (!selected.length) return;
@@ -220,7 +259,7 @@ export default function Admin() {
         <button onClick={()=>{openAnalytics();setMobileNav(false);}} className="mb-2 flex w-full items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-left text-sm font-semibold text-rose-700 transition hover:bg-rose-100"><TrendingUp size={18}/>Analytics</button>
         {sections.map(({id,label,icon:Icon}) => <button key={id} onClick={()=>{setSection(id);setMobileNav(false);}} className={cx('flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition',section===id?'bg-rose-50 text-rose-700':'text-slate-600 hover:bg-slate-50 hover:text-slate-900')}><Icon size={18}/>{label}</button>)}
       </nav>
-      <div className="mt-auto border-t border-slate-200 p-4"><div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><ShieldCheck size={16} className="mb-1"/>Secure admin-only access. Dashboard controls remain read-only during launch QA.</div><button onClick={()=>navigate('/Home')} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ArrowLeft size={16}/>Exit Admin</button></div>
+      <div className="mt-auto border-t border-slate-200 p-4"><div className="mb-3 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><ShieldCheck size={16} className="mb-1"/>Secure admin-only access. Member account controls are available only to authorized administrators.</div><button onClick={()=>navigate('/Home')} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ArrowLeft size={16}/>Exit Admin</button></div>
     </>
   );
 
@@ -331,15 +370,18 @@ export default function Admin() {
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
                   <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
-                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill></td>
+                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill>{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : state==='active' ? <>
-                        <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
-                        <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
-                      </> : <button disabled={busy} onClick={()=>handleMemberAction(m,'restore')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">{busy?<Loader2 size={14} className="animate-spin"/>:<RotateCcw size={14}/>}Restore</button>}
+                      {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
+                        <button disabled={busy} onClick={()=>handleGrantAccessTime(m)} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 disabled:opacity-50"><Clock3 size={14}/>Add Time</button>
+                        {state==='active' ? <>
+                          <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
+                          <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
+                        </> : <button disabled={busy} onClick={()=>handleMemberAction(m,'restore')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">{busy?<Loader2 size={14} className="animate-spin"/>:<RotateCcw size={14}/>}Restore</button>}
+                      </>}
                     </div>
                   </td>
                 </tr>;
