@@ -18,14 +18,19 @@ function fail(message, status = 400, code = 'bad_request') {
 async function session(request, env) {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
-  const response = await fetch(env.NEON_AUTH_BASE_URL.replace(/\/$/, '') + '/get-session', {
-    headers: { cookie, accept: 'application/json' },
-  });
-  if (!response.ok) return null;
-  const payload = await response.json().catch(() => null);
-  const user = payload?.user ?? payload?.data?.user ?? null;
-  const active = payload?.session ?? payload?.data?.session ?? null;
-  return user?.id && user?.emailVerified === true && active ? { user, session: active } : null;
+  const endpoint = env.NEON_AUTH_BASE_URL.replace(/\/$/, '') + '/get-session';
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(endpoint, { headers: { cookie, accept: 'application/json' } });
+    if (response.ok) {
+      const payload = await response.json().catch(() => null);
+      const user = payload?.user ?? payload?.data?.user ?? null;
+      const active = payload?.session ?? payload?.data?.session ?? null;
+      return user?.id && user?.emailVerified === true && active ? { user, session: active } : null;
+    }
+    if (![429,500,502,503,504].includes(response.status) || attempt === 2) return null;
+    await new Promise(resolve => setTimeout(resolve, 200 * (attempt + 1)));
+  }
+  return null;
 }
 
 async function withDb(env, fn) {

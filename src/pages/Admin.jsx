@@ -97,17 +97,42 @@ export default function Admin() {
 
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
-    setError(null);
+    if (!refresh) setError(null);
+    const fetchBundle = async () => Promise.all([getAdminDashboard(),getAdminAnalytics()]);
     try {
-      const [dashboardData,analyticsData] = await Promise.all([getAdminDashboard(),getAdminAnalytics()]);
+      let result;
+      try {
+        result = await fetchBundle();
+      } catch (firstError) {
+        if (refresh && [401,428,429,500,502,503,504].includes(firstError?.status)) {
+          await new Promise(resolve => window.setTimeout(resolve, 800));
+          result = await fetchBundle();
+        } else {
+          throw firstError;
+        }
+      }
+      const [dashboardData,analyticsData] = result;
       setData(dashboardData);
       setAnalytics(analyticsData);
-    } catch (err) { setError(err); }
-    finally { setLoading(false); setRefreshing(false); }
+      setError(null);
+    } catch (err) {
+      if (!refresh || !data) {
+        setError(err);
+      } else if (err?.status === 428) {
+        window.location.replace('/AdminAccess');
+      } else if (err?.status === 401) {
+        window.location.replace('/SignIn');
+      } else {
+        console.warn('Admin background refresh failed; keeping the current dashboard visible.', err);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
   useEffect(() => {
     load(false);
-    const interval = window.setInterval(() => load(true), 15000);
+    const interval = window.setInterval(() => load(true), 60000);
     const onVisibility = () => { if (document.visibilityState === 'visible') load(true); };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
