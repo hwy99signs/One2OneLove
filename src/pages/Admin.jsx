@@ -73,6 +73,37 @@ function TableShell({ children }) { return <div className="overflow-x-auto round
 function Empty({ children='No records yet.' }) { return <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm text-slate-500">{children}</div>; }
 function Heading({ title, subtitle }) { return <div className="mb-5"><h2 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>; }
 
+function FeatureWindowGrid({ rows, windows=[7,14,21,30] }) {
+  return <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+    <div className="grid grid-cols-[1.35fr_repeat(4,minmax(48px,1fr))] bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500">
+      <div className="px-3 py-2">Metric</div>{windows.map(d=><div key={d} className="px-2 py-2 text-center">{d}d</div>)}
+    </div>
+    {rows.map(row=><div key={row.label} className="grid grid-cols-[1.35fr_repeat(4,minmax(48px,1fr))] border-t border-slate-100 text-xs">
+      <div className="px-3 py-2 font-semibold text-slate-700">{row.label}</div>
+      {windows.map(d=><div key={d} className="px-2 py-2 text-center font-black text-slate-900">{number(row.values?.[d]||0)}</div>)}
+    </div>)}
+  </div>;
+}
+
+function FeatureTopFive({ title='Top 5', items=[], windows=[7,14,21,30] }) {
+  return <div className="mt-4">
+    <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">{title}</p>
+    {items.length ? <div className="space-y-2">{items.map((item,index)=><div key={item.name||index} className="rounded-xl bg-slate-50 p-3">
+      <div className="flex items-start justify-between gap-3"><span className="text-sm font-bold text-slate-800">{index+1}. {item.name}</span><span className="text-xs font-black text-purple-700">{number(item.counts?.[30]||0)} / 30d</span></div>
+      <div className="mt-2 grid grid-cols-4 gap-2 text-center text-[11px] text-slate-500">{windows.map(d=><div key={d}><span className="block">{d}d</span><strong className="text-slate-800">{number(item.counts?.[d]||0)}</strong></div>)}</div>
+    </div>)}</div> : <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">No ranked activity yet.</div>}
+  </div>;
+}
+
+function FeatureActivityCard({ title, subtitle, rows, topTitle, topItems, windows=[7,14,21,30] }) {
+  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h4 className="font-black text-slate-900">{title}</h4>
+    {subtitle&&<p className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</p>}
+    <FeatureWindowGrid rows={rows} windows={windows}/>
+    {topTitle&&<FeatureTopFive title={topTitle} items={topItems||[]} windows={windows}/>}
+  </div>;
+}
+
 function DeliveryHealth({ firstLabel, firstValue, passed, failed, pending }) {
   return <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
     <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-semibold text-blue-700">{firstLabel}</p><p className="mt-1 text-2xl font-black text-blue-900">{number(firstValue)}</p></div>
@@ -171,8 +202,9 @@ export default function Admin() {
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
   const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, features=featureUsage.features || [];
+  const topFeatureActivity=data?.topFeatureActivity || {};
+  const featureWindows=topFeatureActivity.windows || [7,14,21,30];
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
-  const topFeatures=features.filter(f=>f.total_activity>0).slice(0,6);
 
   const openAnalytics = () => window.location.assign('/Analytics');
 
@@ -334,8 +366,64 @@ export default function Admin() {
               </Panel>
             </div>
 
-            <Panel title="Top Feature Activity" subtitle="Unique users and activity help show which parts of One2OneLove are attracting attention." className="mt-6">
-              {topFeatures.length ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{topFeatures.map(f=><button key={f.feature} onClick={()=>setSection('feature-usage')} className="rounded-xl border border-slate-200 p-4 text-left hover:border-rose-200 hover:bg-rose-50/40"><div className="flex items-center justify-between gap-3"><p className="font-bold text-slate-900">{f.feature}</p><Pill tone="purple">{number(f.unique_users)} {Number(f.unique_users)===1?'user':'users'} · {number(f.total_activity)} {Number(f.total_activity)===1?'action':'actions'}</Pill></div><div className="mt-3 flex gap-5 text-sm"><div><span className="block text-xs text-slate-400">30-day actions</span><strong>{number(f.activity_30d)}</strong></div><div><span className="block text-xs text-slate-400">All actions</span><strong>{number(f.total_activity)}</strong></div><div><span className="block text-xs text-slate-400">Actions/user</span><strong>{decimal(f.avg_per_user)}</strong></div></div></button>)}</div> : <Empty>Feature activity will appear as members use the platform.</Empty>}
+            <Panel title="Top Feature Activity" subtitle="Operational activity for the six launch areas you want to watch most closely. Each card uses rolling 7, 14, 21 and 30-day windows." className="mt-6">
+              <div className="grid gap-4 xl:grid-cols-2">
+                <FeatureActivityCard
+                  title="Subscription / Billing"
+                  subtitle="Member accounts created with a Stripe card/subscription connection versus accounts without one."
+                  windows={featureWindows}
+                  rows={[
+                    {label:'With CC',values:topFeatureActivity.subscriptionBilling?.withCard},
+                    {label:'Without CC',values:topFeatureActivity.subscriptionBilling?.withoutCard},
+                  ]}
+                />
+                <FeatureActivityCard
+                  title="Date Ideas"
+                  subtitle="Page usage and saved/favorited date ideas."
+                  windows={featureWindows}
+                  rows={[
+                    {label:'Used',values:topFeatureActivity.dateIdeas?.used},
+                    {label:'Saved',values:topFeatureActivity.dateIdeas?.saved},
+                  ]}
+                  topTitle="Top 5 saved date ideas"
+                  topItems={topFeatureActivity.dateIdeas?.top}
+                />
+                <FeatureActivityCard
+                  title="LGBTQ+ Support"
+                  subtitle="Page accesses plus the most-used LGBTQ+ articles, chat/resources and support actions."
+                  windows={featureWindows}
+                  rows={[{label:'Page accesses',values:topFeatureActivity.lgbtq?.accesses}]}
+                  topTitle="Top 5 features"
+                  topItems={topFeatureActivity.lgbtq?.top}
+                />
+                <FeatureActivityCard
+                  title="Love Notes"
+                  subtitle="Love Notes sent and scheduled, with the most-used note categories."
+                  windows={featureWindows}
+                  rows={[
+                    {label:'Sent',values:topFeatureActivity.loveNotes?.sent},
+                    {label:'Scheduled',values:topFeatureActivity.loveNotes?.scheduled},
+                  ]}
+                  topTitle="Top 5 categories"
+                  topItems={topFeatureActivity.loveNotes?.top}
+                />
+                <FeatureActivityCard
+                  title="Relationship Support"
+                  subtitle="Relationship Support page accesses and the most-used support tools."
+                  windows={featureWindows}
+                  rows={[{label:'Page accesses',values:topFeatureActivity.relationshipSupport?.accesses}]}
+                  topTitle="Top 5 features"
+                  topItems={topFeatureActivity.relationshipSupport?.top}
+                />
+                <FeatureActivityCard
+                  title="Podcasts"
+                  subtitle="Podcast library accesses and the most-opened podcasts."
+                  windows={featureWindows}
+                  rows={[{label:'Page accesses',values:topFeatureActivity.podcasts?.accesses}]}
+                  topTitle="Top 5 podcasts"
+                  topItems={topFeatureActivity.podcasts?.top}
+                />
+              </div>
             </Panel>
           </div>}
 
