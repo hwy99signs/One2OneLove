@@ -221,12 +221,12 @@ async function manageMemberAccount(db, admin, memberId, action, reason = '') {
 
   await db.query('BEGIN');
   try {
+    // Lock only the auth row. PostgreSQL cannot apply FOR UPDATE to the nullable
+    // side of the LEFT JOIN used by the previous implementation.
     const targetResult = await db.query(
-      `SELECT a.id,a.email,a.role,COALESCE(a.banned,false) AS banned,a."banReason" AS ban_reason,
-              u.id AS profile_id,COALESCE(u.is_active,true) AS is_active
-         FROM neon_auth."user" a
-         LEFT JOIN public.users u ON u.id=a.id
-        WHERE a.id=$1::uuid
+      `SELECT id,email,role,COALESCE(banned,false) AS banned,"banReason" AS ban_reason
+         FROM neon_auth."user"
+        WHERE id=$1::uuid
         FOR UPDATE`,
       [memberId],
     );
@@ -251,6 +251,55 @@ async function manageMemberAccount(db, admin, memberId, action, reason = '') {
 
     await db.query('COMMIT');
     return { id: target.id, email: target.email, account_state: action === 'restore' ? 'active' : action };
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => {});
+    throw error;
+  }
+}
+
+async function manageMemberAccountsBulk(db, admin, memberIds, action, reason = '') {
+  if (!['suspend','delete'].includes(action)) {
+    throw Object.assign(new Error('Bulk action must be suspend or delete.'), { status: 400, code: 'invalid_bulk_member_action' });
+  }
+  const ids = [...new Set((Array.isArray(memberIds) ? memberIds : []).map(String))].filter(id => /^[0-9a-f-]{36}$/i.test(id));
+  if (!ids.length) throw Object.assign(new Error('Select at least one member account.'), { status: 400, code: 'no_members_selected' });
+  if (ids.length > 500) throw Object.assign(new Error('Select no more than 500 accounts at once.'), { status: 400, code: 'too_many_members_selected' });
+
+  await db.query('BEGIN');
+  try {
+    const result = await db.query(
+      `SELECT id,email,role
+         FROM neon_auth."user"
+        WHERE id = ANY($1::uuid[])
+        ORDER BY id
+        FOR UPDATE`,
+      [ids],
+    );
+    if (result.rows.length !== ids.length) {
+      throw Object.assign(new Error('One or more selected member accounts were not found.'), { status: 404, code: 'member_not_found' });
+    }
+    const protectedRows = result.rows.filter(row => row.id === admin.id || row.role === 'admin');
+    if (protectedRows.length) {
+      throw Object.assign(new Error('Administrator accounts cannot be suspended or deleted from Member Management.'), { status: 403, code: 'protected_admin_account' });
+    }
+
+    const prefix = action === 'delete' ? 'O2OL_DELETED:' : 'O2OL_SUSPENDED:';
+    const safeReason = String(reason || '').trim().slice(0,500) || (action === 'delete' ? 'Deleted by administrator' : 'Suspended by administrator');
+    await db.query(
+      `UPDATE neon_auth."user"
+          SET banned=true,"banReason"=$2,"updatedAt"=now()
+        WHERE id = ANY($1::uuid[])`,
+      [ids, prefix + ' ' + safeReason],
+    );
+    await db.query(
+      `UPDATE public.users
+          SET is_active=false,updated_at=now()
+        WHERE id = ANY($1::uuid[])`,
+      [ids],
+    );
+
+    await db.query('COMMIT');
+    return { action, count: result.rows.length, members: result.rows.map(row => ({ id: row.id, email: row.email })) };
   } catch (error) {
     await db.query('ROLLBACK').catch(() => {});
     throw error;
@@ -441,6 +490,12 @@ export async function handleAdminRequest(request, env, url) {
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') {
         const data = await dashboard(db);
         return json({ ok:true,recovered:true,mode:'admin_management',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/admin/members/bulk') {
+        const body = await request.json().catch(() => ({}));
+        const result = await manageMemberAccountsBulk(db, admin, body?.memberIds, String(body?.action || '').toLowerCase(), body?.reason || '');
+        return json({ ok:true, ...result });
       }
 
       const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);

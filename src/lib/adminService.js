@@ -37,3 +37,14 @@ export async function manageMemberAccount(memberId, action, reason = '') {
   });
   return parseJson(response);
 }
+
+
+export async function manageMemberAccountsBulk(memberIds, action, reason = '') {
+  const response = await fetch('/api/admin/members/bulk', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ memberIds, action, reason }),
+  });
+  return parseJson(response);
+}

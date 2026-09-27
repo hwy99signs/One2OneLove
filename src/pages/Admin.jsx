@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard, manageMemberAccount } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -92,6 +92,8 @@ export default function Admin() {
   const [query,setQuery] = useState('');
   const [mobileNav,setMobileNav] = useState(false);
   const [memberActionId,setMemberActionId] = useState(null);
+  const [selectedMemberIds,setSelectedMemberIds] = useState([]);
+  const [bulkMemberAction,setBulkMemberAction] = useState(false);
 
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -161,6 +163,35 @@ export default function Admin() {
       setMemberActionId(null);
     }
   };
+
+  const handleBulkMemberAction = async (action) => {
+    const selected = (data?.members || []).filter(m => selectedMemberIds.includes(m.id) && m.auth_role !== 'admin');
+    if (!selected.length) return;
+    const label = action === 'delete' ? 'delete' : 'suspend';
+    if (!window.confirm(`${label === 'delete' ? 'Delete' : 'Suspend'} ${selected.length} selected account${selected.length===1?'':'s'}? ${label === 'delete' ? 'Deleted accounts remain restorable from this dashboard.' : 'They will lose access until restored.'}`)) return;
+    const entered = window.prompt(`Reason for bulk ${label} (optional):`, '');
+    if (entered === null) return;
+    setBulkMemberAction(true);
+    try {
+      await manageMemberAccountsBulk(selected.map(m=>m.id), action, entered);
+      setSelectedMemberIds([]);
+      await load(true);
+    } catch (err) {
+      window.alert(err?.message || `Unable to ${label} selected accounts.`);
+    } finally {
+      setBulkMemberAction(false);
+    }
+  };
+
+  const selectableMembers = filteredMembers.filter(m => m.auth_role !== 'admin');
+  const allVisibleSelected = selectableMembers.length > 0 && selectableMembers.every(m => selectedMemberIds.includes(m.id));
+  const toggleVisibleSelection = () => {
+    const visibleIds = selectableMembers.map(m => m.id);
+    setSelectedMemberIds(current => allVisibleSelected
+      ? current.filter(id => !visibleIds.includes(id))
+      : [...new Set([...current, ...visibleIds])]);
+  };
+
 
   const nav = (
     <>
@@ -257,19 +288,29 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Live member management. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
-            <div className="mb-4 flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-              <Search size={17} className="text-slate-400"/>
-              <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/>
+            <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                <Search size={17} className="text-slate-400"/>
+                <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-slate-600">{selectedMemberIds.length} selected</span>
+                <button disabled={!selectedMemberIds.length || bulkMemberAction} onClick={()=>handleBulkMemberAction('suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 disabled:opacity-40"><UserX size={14}/>Suspend selected</button>
+                <button disabled={!selectedMemberIds.length || bulkMemberAction} onClick={()=>handleBulkMemberAction('delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:opacity-40">{bulkMemberAction?<Loader2 size={14} className="animate-spin"/>:<Trash2 size={14}/>}Delete selected</button>
+                {selectedMemberIds.length>0&&<button onClick={()=>setSelectedMemberIds([])} className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
+              </div>
             </div>
             <TableShell><table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>
-                <th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
+                <th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all visible members" checked={allVisibleSelected} onChange={toggleVisibleSelection}/></th><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">{filteredMembers.map(m=>{
                 const state=m.account_state || (m.banned?'suspended':m.is_active===false?'suspended':'active');
                 const busy=memberActionId===m.id;
                 const protectedAdmin=m.auth_role==='admin';
-                return <tr key={m.id}>
+                const selected=selectedMemberIds.includes(m.id);
+                return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
+                  <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
                   <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
                   <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill></td>
