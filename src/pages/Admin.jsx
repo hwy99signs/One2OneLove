@@ -202,7 +202,8 @@ export default function Admin() {
 
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
-  const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, features=featureUsage.features || [];
+  const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {};
+  const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
   const featureWindows=topFeatureActivity.windows || [7,14,21,30];
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
