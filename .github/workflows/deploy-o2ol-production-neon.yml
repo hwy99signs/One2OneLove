@@ -236,3 +236,6 @@ jobs:
             check_json "$BASE/api/phone-verification/verify" 401 /tmp/phone-verify.json
           done
           echo 'O2OL_PRODUCTION_NEON_VERIFIED=yes'
+          echo 'O2OL_MEMBER_AUDIT_BEGIN'
+          curl -fsS --max-time 20 "$APEX_URL/api/launch-readiness" | jq -c '.readiness.memberAudit'
+          echo 'O2OL_MEMBER_AUDIT_END'
