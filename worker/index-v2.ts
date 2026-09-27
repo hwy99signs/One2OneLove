@@ -134,8 +134,8 @@ async function socialPageResponse(request, env, url) {
     '<meta property="og:description" content="'+escapeHtmlMeta(description)+'" />'+
     '<meta property="og:url" content="'+escapeHtmlMeta(canonical)+'" />'+
     '<meta property="og:image" content="'+escapeHtmlMeta(image)+'" />'+
-    '<meta property="og:image:width" content="1200" />'+
-    '<meta property="og:image:height" content="630" />'+
+    '<meta property="og:image:width" content="512" />'+
+    '<meta property="og:image:height" content="512" />'+
     '<meta property="og:image:alt" content="One2OneLove" />'+
     '<meta name="twitter:card" content="summary_large_image" />'+
     '<meta name="twitter:title" content="'+escapeHtmlMeta(title)+'" />'+
