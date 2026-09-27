@@ -20,6 +20,20 @@ jobs:
         run: npm ci
       - name: Build application
         run: npm run build
+      - name: Lint application
+        run: npm run lint
+      - name: Runtime safety scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInEi 'supabase|supabase\.co|@supabase|vercel\.app|VERCEL_URL|@vercel/|@base44|base44\.app|firebaseio\.com|@firebase/' src worker public 2>/dev/null; then
+            echo 'Retired runtime provider reference found.' >&2
+            exit 1
+          fi
+          if grep -RInE 'dangerouslySetInnerHTML|eval\(|new Function\(' src worker 2>/dev/null; then
+            echo 'Unsafe HTML/code execution primitive found.' >&2
+            exit 1
+          fi
       - name: Audit frontend high severity
         run: npm audit --audit-level=high
       - name: Install Worker dependencies
