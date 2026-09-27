@@ -473,7 +473,7 @@ export async function handleBillingRequest(request, env, url) {
         return json({ ok: true, payments: result.rows });
       }
       if (url.pathname === '/api/billing/trial') {
-        return fail('The 7-day Full Access trial has been retired. Use the Founding Member offer or regular paid checkout.', 410, 'trial_retired');
+        return fail('This trial endpoint is disabled. Use Founding Member or regular paid checkout.', 410, 'trial_retired');
       }
       if (url.pathname === '/api/billing/checkout' && request.method === 'POST') {
         return checkout(db, env, request, auth, await readJson(request));
