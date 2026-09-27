@@ -4,9 +4,9 @@ import {
   Activity, AlertTriangle, ArrowLeft, BarChart3, CalendarDays, CheckCircle2,
   Clock3, CreditCard, FileCheck2, Gauge, Heart, Loader2, LockKeyhole,
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
-  UserCheck, Users, X,
+  UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, manageMemberAccount } from '../lib/adminService';
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -91,6 +91,7 @@ export default function Admin() {
   const [error,setError] = useState(null);
   const [query,setQuery] = useState('');
   const [mobileNav,setMobileNav] = useState(false);
+  const [memberActionId,setMemberActionId] = useState(null);
 
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -132,6 +133,34 @@ export default function Admin() {
   const topFeatures=features.filter(f=>f.total_activity>0).slice(0,6);
 
   const openAnalytics = () => window.location.assign('/Analytics');
+
+  const handleMemberAction = async (member, action) => {
+    if (member.auth_role === 'admin') return;
+    const verb = action === 'restore' ? 'restore' : action;
+    const confirmation = action === 'delete'
+      ? `Delete ${member.email}? This is a reversible account deletion: access is blocked immediately, but the account can be restored later from this dashboard.`
+      : action === 'suspend'
+        ? `Suspend ${member.email}? The member will lose access until you restore the account.`
+        : `Restore ${member.email}? The member will regain account access.`;
+    if (!window.confirm(confirmation)) return;
+
+    let reason = '';
+    if (action !== 'restore') {
+      const entered = window.prompt(action === 'delete' ? 'Reason for deletion (optional):' : 'Reason for suspension (optional):', '');
+      if (entered === null) return;
+      reason = entered;
+    }
+
+    setMemberActionId(member.id);
+    try {
+      await manageMemberAccount(member.id, action, reason);
+      await load(true);
+    } catch (err) {
+      window.alert(err?.message || `Unable to ${verb} this member.`);
+    } finally {
+      setMemberActionId(null);
+    }
+  };
 
   const nav = (
     <>
@@ -226,7 +255,38 @@ export default function Admin() {
             </div>
           </div>}
 
-          {section==='members' && <div><Heading title="All Sign-ups" subtitle="Live view of every One2OneLove account found in Neon Auth or the member profile records. Refreshes automatically."/><div className="mb-4 flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm"><Search size={17} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/></div><TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Joined</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredMembers.map(m=><tr key={m.id}><td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td><td className="px-4 py-3 text-slate-600">{m.user_type||'user'}</td><td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill></td><td className="px-4 py-3"><Pill tone={m.banned?'red':statusTone(m.subscription_status)}>{m.banned?'banned':m.subscription_status||'active'}</Pill></td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td></tr>)}</tbody></table></TableShell></div>}
+          {section==='members' && <div>
+            <Heading title="All Sign-ups" subtitle="Live member management. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
+            <div className="mb-4 flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+              <Search size={17} className="text-slate-400"/>
+              <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/>
+            </div>
+            <TableShell><table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>
+                <th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
+              </tr></thead>
+              <tbody className="divide-y divide-slate-100">{filteredMembers.map(m=>{
+                const state=m.account_state || (m.banned?'suspended':m.is_active===false?'suspended':'active');
+                const busy=memberActionId===m.id;
+                const protectedAdmin=m.auth_role==='admin';
+                return <tr key={m.id}>
+                  <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
+                  <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
+                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill></td>
+                  <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : state==='active' ? <>
+                        <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
+                        <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
+                      </> : <button disabled={busy} onClick={()=>handleMemberAction(m,'restore')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">{busy?<Loader2 size={14} className="animate-spin"/>:<RotateCcw size={14}/>}Restore</button>}
+                    </div>
+                  </td>
+                </tr>;
+              })}</tbody>
+            </table></TableShell>
+          </div>}
 
           {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
 

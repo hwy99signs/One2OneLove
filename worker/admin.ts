@@ -202,6 +202,11 @@ async function members(db) {
            COALESCE(a.role,'user') AS auth_role,
            COALESCE(a.banned,false) AS banned,
            a."banReason" AS ban_reason,
+           CASE
+             WHEN COALESCE(a."banReason",'') LIKE 'O2OL_DELETED:%' THEN 'deleted'
+             WHEN COALESCE(a."banReason",'') LIKE 'O2OL_SUSPENDED:%' OR COALESCE(a.banned,false)=true OR COALESCE(u.is_active,true)=false THEN 'suspended'
+             ELSE 'active'
+           END AS account_state,
            (u.id IS NOT NULL) AS profile_ready,
            (a.id IS NOT NULL) AS auth_ready
       FROM neon_auth."user" a
@@ -209,6 +214,49 @@ async function members(db) {
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
+async function manageMemberAccount(db, admin, memberId, action, reason = '') {
+  if (!['suspend','delete','restore'].includes(action)) {
+    throw Object.assign(new Error('Unsupported member action.'), { status: 400, code: 'invalid_member_action' });
+  }
+
+  await db.query('BEGIN');
+  try {
+    const targetResult = await db.query(
+      `SELECT a.id,a.email,a.role,COALESCE(a.banned,false) AS banned,a."banReason" AS ban_reason,
+              u.id AS profile_id,COALESCE(u.is_active,true) AS is_active
+         FROM neon_auth."user" a
+         LEFT JOIN public.users u ON u.id=a.id
+        WHERE a.id=$1::uuid
+        FOR UPDATE`,
+      [memberId],
+    );
+    const target = targetResult.rows[0];
+    if (!target) throw Object.assign(new Error('Member account not found.'), { status: 404, code: 'member_not_found' });
+    if (target.id === admin.id || target.role === 'admin') {
+      throw Object.assign(new Error('Administrator accounts cannot be suspended or deleted from Member Management.'), { status: 403, code: 'protected_admin_account' });
+    }
+
+    if (action === 'restore') {
+      await db.query(`UPDATE neon_auth."user" SET banned=false,"banReason"=NULL,"updatedAt"=now() WHERE id=$1::uuid`, [memberId]);
+      await db.query(`UPDATE public.users SET is_active=true,updated_at=now() WHERE id=$1::uuid`, [memberId]);
+    } else {
+      const prefix = action === 'delete' ? 'O2OL_DELETED:' : 'O2OL_SUSPENDED:';
+      const safeReason = String(reason || '').trim().slice(0,500) || (action === 'delete' ? 'Deleted by administrator' : 'Suspended by administrator');
+      await db.query(
+        `UPDATE neon_auth."user" SET banned=true,"banReason"=$2,"updatedAt"=now() WHERE id=$1::uuid`,
+        [memberId, prefix + ' ' + safeReason],
+      );
+      await db.query(`UPDATE public.users SET is_active=false,updated_at=now() WHERE id=$1::uuid`, [memberId]);
+    }
+
+    await db.query('COMMIT');
+    return { id: target.id, email: target.email, account_state: action === 'restore' ? 'active' : action };
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => {});
+    throw error;
+  }
+}
+
 async function applications(db) {
   const result = await db.query(`
     SELECT * FROM (
@@ -378,7 +426,6 @@ async function dashboard(db) {
 
 export async function handleAdminRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/admin')) return null;
-  if (request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
 
   const auth = await session(request, env);
   if (!auth) return fail('Authentication required.',401,'unauthorized');
@@ -388,17 +435,26 @@ export async function handleAdminRequest(request, env, url) {
       const admin = await adminIdentity(db, auth.user.id);
       if (!admin) return fail('Administrator access required.',403,'forbidden');
 
-      if (url.pathname === '/api/admin/me') {
+      if (request.method === 'GET' && url.pathname === '/api/admin/me') {
         return json({ ok:true, admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role } });
       }
-      if (url.pathname === '/api/admin/dashboard') {
+      if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') {
         const data = await dashboard(db);
-        return json({ ok:true,recovered:true,mode:'read_only_recovery',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
+        return json({ ok:true,recovered:true,mode:'admin_management',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
       }
+
+      const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);
+      if (request.method === 'POST' && memberMatch) {
+        const body = await request.json().catch(() => ({}));
+        const result = await manageMemberAccount(db, admin, memberMatch[1], memberMatch[2].toLowerCase(), body?.reason || '');
+        return json({ ok:true, member:result });
+      }
+
+      if (!['GET','POST'].includes(request.method)) return fail('Method not allowed.',405,'method_not_allowed');
       return fail('Admin route not found.',404,'not_found');
     });
   } catch (error) {
     console.error('One2OneLove admin API error', error);
-    return fail(error?.message || 'Unable to load the admin dashboard.',500,'admin_error');
+    return fail(error?.message || 'Unable to process the admin request.',error?.status || 500,error?.code || 'admin_error');
   }
 }

@@ -26,3 +26,14 @@ export async function getAdminAnalytics() {
   });
   return parseJson(response);
 }
+
+
+export async function manageMemberAccount(memberId, action, reason = '') {
+  const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/${encodeURIComponent(action)}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+  return parseJson(response);
+}

@@ -81,18 +81,22 @@ async function phoneSchemaReady(env) {
   }
 }
 
-async function userPhoneVerified(env, userId) {
+async function userIdentityState(env, userId) {
   const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
   await db.connect();
   try {
     const result = await db.query(
-      `SELECT COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS verified
-         FROM public.users u
-        WHERE id=$1::uuid
+      `SELECT COALESCE(u.phone_number_verified,false) AS phone_verified,
+              COALESCE(u.is_active,true) AS is_active,
+              COALESCE(a.banned,false) AS banned,
+              COALESCE(a."banReason",'') AS ban_reason
+         FROM neon_auth."user" a
+         LEFT JOIN public.users u ON u.id=a.id
+        WHERE a.id=$1::uuid
         LIMIT 1`,
       [userId],
     );
-    return result.rows[0]?.verified === true;
+    return result.rows[0] || null;
   } finally {
     await db.end();
   }
@@ -120,7 +124,23 @@ export async function enforceLaunchIdentity(request, env, url) {
     }, 401);
   }
 
-  if (!(await userPhoneVerified(env, auth.user.id))) {
+  const identity = await userIdentityState(env, auth.user.id);
+  if (!identity) return null;
+
+  if (identity.banned || identity.is_active === false) {
+    const deleted = String(identity.ban_reason || '').startsWith('O2OL_DELETED:');
+    return json({
+      ok: false,
+      error: {
+        code: deleted ? 'account_deleted' : 'account_suspended',
+        message: deleted
+          ? 'This account has been deleted by an administrator. Contact One2OneLove support if you believe this was a mistake.'
+          : 'This account has been suspended by an administrator. Contact One2OneLove support for assistance.',
+      },
+    }, 403);
+  }
+
+  if (identity.phone_verified !== true) {
     return json({
       ok: false,
       error: { code: 'phone_verification_required', message: 'Phone verification is required.' },
