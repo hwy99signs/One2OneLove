@@ -35,6 +35,7 @@ import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
+import { handleFoundingMemberRequest } from './founding-members';
 
 export default {
   async fetch(request, env, ctx) {
@@ -52,6 +53,11 @@ export default {
 
     const identityGate = await enforceLaunchIdentity(request, env, url);
     if (identityGate) return identityGate;
+
+    if (url.pathname.startsWith('/api/founding-members')) {
+      const response = await handleFoundingMemberRequest(request, env, url);
+      if (response) return response;
+    }
 
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;

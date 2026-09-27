@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { finalizeFoundingCheckout, forfeitFoundingRate } from './founding-members';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -316,9 +317,14 @@ async function handleWebhookEvent(db, env, event) {
       const userId = object.metadata?.user_id || object.client_reference_id;
       const plan = canonicalPlan(object.metadata?.plan_name);
       const subscriptionId = typeof object.subscription === 'string' ? object.subscription : object.subscription?.id;
-      if (!userId || !plan || !subscriptionId) return;
-      const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`);
+      if (!userId || !subscriptionId) return;
       await db.query('UPDATE public.users SET stripe_customer_id=COALESCE(stripe_customer_id,$1) WHERE id=$2::uuid', [typeof object.customer === 'string' ? object.customer : object.customer?.id || null, userId]);
+      if (object.metadata?.o2ol_founding_offer === 'true') {
+        await finalizeFoundingCheckout(db, env, object);
+        break;
+      }
+      if (!plan) return;
+      const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(subscriptionId)}`);
       await updateFromSubscription(db, userId, subscription, plan, planMonthlyPrice(plan));
       break;
     }
@@ -344,6 +350,7 @@ async function handleWebhookEvent(db, env, event) {
           cancel_at_period_end=false,canceled_at=now(),updated_at=now() WHERE id=$1::uuid`,
         [userId],
       );
+      await forfeitFoundingRate(db, userId);
       await finalizePendingLoveNoteUsage(env, user, userId);
       break;
     }
