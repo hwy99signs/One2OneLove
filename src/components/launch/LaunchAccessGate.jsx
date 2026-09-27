@@ -68,7 +68,6 @@ function previewActive(user) {
 
 function currentPlanFor(user) {
   const status = String(user?.subscription_status || '').toLowerCase();
-  if (status === 'trial' || status === 'trialing') return 'Exclusive';
   const stored = String(user?.subscription_plan || 'Premiere');
   if (stored.toLowerCase() === 'exclusive') return 'Exclusive';
   return 'Premiere';
@@ -133,7 +132,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
 
-  // Guest Preview is strictly view-only. Trial members may use the platform.
+  // Guest Preview is strictly view-only. Founding Members in their 30-day free period may use their assigned membership plan.
   if (guestPreview) return children;
   if (status === 'trial' || status === 'trialing') return children;
 
