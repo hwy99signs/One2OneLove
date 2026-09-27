@@ -98,10 +98,11 @@ async function overview(db) {
   const [users, plans, applications, moderation, payments, loveNotes, communities] = await Promise.all([
     db.query(`
       SELECT count(*)::int AS total,
-             count(*) FILTER (WHERE created_at >= now()-interval '7 days')::int AS new_7d,
-             count(*) FILTER (WHERE COALESCE(is_active,true)=false)::int AS inactive,
-             count(*) FILTER (WHERE COALESCE(is_verified,false)=true)::int AS verified
-        FROM public.users`),
+             count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '7 days')::int AS new_7d,
+             count(*) FILTER (WHERE p.id IS NOT NULL AND COALESCE(p.is_active,true)=false)::int AS inactive,
+             count(*) FILTER (WHERE COALESCE(p.is_verified,a."emailVerified",false)=true)::int AS verified
+        FROM neon_auth."user" a
+        LEFT JOIN public.users p ON p.id=a.id`),
     db.query(`
       WITH desired(plan,sort_order) AS (
         VALUES ('Premiere'::text,1),('Exclusive'::text,2)
