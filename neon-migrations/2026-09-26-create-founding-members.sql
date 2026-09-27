@@ -1,5 +1,11 @@
 BEGIN;
-CREATE SEQUENCE IF NOT EXISTS public.o2ol_founding_member_number_seq START 1 MINVALUE 1 MAXVALUE 200 NO CYCLE;
+CREATE TABLE IF NOT EXISTS public.founding_member_counter (
+  singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+  last_member_number integer NOT NULL DEFAULT 0 CHECK (last_member_number BETWEEN 0 AND 200)
+);
+INSERT INTO public.founding_member_counter(singleton,last_member_number)
+VALUES(true,0) ON CONFLICT(singleton) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS public.founding_members (
  user_id uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE RESTRICT,
  member_number integer NOT NULL UNIQUE CHECK (member_number BETWEEN 1 AND 200),

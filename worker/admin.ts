@@ -214,8 +214,7 @@ async function members(db) {
       FROM neon_auth."user" a
       LEFT JOIN public.users u ON u.id=a.id
       LEFT JOIN public.founding_members fm ON fm.user_id=a.id
-     ORDER BY COALESCE(u.created_at,a."createdAt") DESC
-     LIMIT 1000`);
+     ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
 
