@@ -9,6 +9,7 @@ import TierCard from '@/components/subscriptions/TierCard';
 import { getUserSubscription, getPaymentHistory, startPremierTrial } from '@/lib/stripeService';
 import { toast } from 'sonner';
 import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
+import { getFoundingMemberStatus, startFoundingMemberCheckout, chooseFoundingPremiere } from '@/lib/foundingMemberService';
 
 const translations = {
   en: {
@@ -152,13 +153,16 @@ export default function Subscription() {
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [trialLoading, setTrialLoading] = useState(false);
   const [previewExpired, setPreviewExpired] = useState(false);
+  const [founding, setFounding] = useState(null);
+  const [foundingLoading, setFoundingLoading] = useState(false);
 
   useEffect(() => {
     const loadSubscriptionData = async () => {
       try {
-        const [subscription, payments] = await Promise.all([getUserSubscription(), getPaymentHistory()]);
+        const [subscription, payments, foundingStatus] = await Promise.all([getUserSubscription(), getPaymentHistory(), getFoundingMemberStatus()]);
         setCurrentSubscription(subscription);
         setPaymentHistory(payments);
+        setFounding(foundingStatus);
       } catch (error) {
         console.error('Error loading subscription data:', error);
         toast.error(t.loadError);
@@ -209,6 +213,40 @@ export default function Subscription() {
             </p>
           )}
         </div>
+
+        {user && founding && !founding.unavailable && (
+          <Card className="mb-8 border-2 border-fuchsia-400 bg-gradient-to-r from-fuchsia-50 via-pink-50 to-purple-50 shadow-lg">
+            <CardContent className="p-6 md:p-8">
+              {founding.member ? (
+                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="mb-2 inline-flex rounded-full bg-fuchsia-700 px-3 py-1 text-xs font-black tracking-wide text-white">
+                      {Number(founding.member.member_number) <= 100 ? '1st 100 FOUNDING MEMBERS CLUB' : 'FOUNDING MEMBER CLUB'}
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-900">Founding Member #{founding.member.member_number}</h2>
+                    <p className="mt-2 max-w-3xl text-gray-700">Your Founding Member designation and number are permanent.</p>
+                    {Number(founding.member.member_number) <= 100 && founding.member.founding_plan === 'Exclusive' && (
+                      <p className="mt-2 text-sm text-gray-700">Your 30-day Exclusive trial continues automatically at US$15.99/month while continuously subscribed. Cancelling permanently forfeits that special rate, but never your Founding Member badge.</p>
+                    )}
+                  </div>
+                  {Number(founding.member.member_number) <= 100 && founding.member.founding_plan === 'Exclusive' && new Date(founding.member.trial_ends_at).getTime() > Date.now() && (
+                    <Button variant="outline" disabled={foundingLoading} onClick={async()=>{setFoundingLoading(true);try{await chooseFoundingPremiere();setFounding(await getFoundingMemberStatus());toast.success('Your post-trial plan is now Premiere.');}catch(e){toast.error(e?.message||'Unable to change the Founding Member plan.');}finally{setFoundingLoading(false);}}}>Choose Premiere after trial</Button>
+                  )}
+                </div>
+              ) : founding.remaining > 0 ? (
+                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="mb-2 inline-flex rounded-full bg-fuchsia-700 px-3 py-1 text-xs font-black tracking-wide text-white">FOUNDING MEMBERS · FIRST 200</div>
+                    <h2 className="text-2xl font-black text-gray-900">Become a One2OneLove Founding Member</h2>
+                    <p className="mt-2 max-w-3xl text-gray-700">{founding.claimed < 100 ? 'First 100: add a credit/debit card and receive Exclusive FREE for 30 days, then US$15.99/month while continuously subscribed. You may choose Premiere before the trial ends.' : 'Members 101–200: add a credit/debit card and receive Premiere FREE for 30 days, then continue automatically at the regular Premiere monthly price.'}</p>
+                    <p className="mt-2 text-sm font-semibold text-fuchsia-800">{founding.remaining} of 200 Founding Member places remain. Your badge and member number remain permanently, even if you later cancel.</p>
+                  </div>
+                  <Button disabled={foundingLoading} onClick={async()=>{setFoundingLoading(true);try{await startFoundingMemberCheckout();}catch(e){toast.error(e?.message||'Unable to open secure checkout.');setFoundingLoading(false);}}} className="bg-gradient-to-r from-fuchsia-600 to-purple-600 px-7 py-6 font-bold text-white">{foundingLoading?'Opening secure checkout...':'Claim Founding Membership'}</Button>
+                </div>
+              ) : <div><h2 className="text-2xl font-black text-gray-900">Founding Membership Is Full</h2><p className="mt-2 text-gray-700">All 200 permanent Founding Member positions have been claimed.</p></div>}
+            </CardContent>
+          </Card>
+        )}
 
         {(needsBillingSetup || trialActive) && (
           <Card className="mb-8 border-2 border-pink-300 bg-gradient-to-r from-pink-50 to-purple-50">

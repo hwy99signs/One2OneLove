@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
 import goalsService from "@/lib/goalsService";
+import { getFoundingMemberStatus } from "@/lib/foundingMemberService";
 
 const translations = {
   en: {
@@ -935,6 +936,7 @@ export default function Profile() {
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [foundingMember, setFoundingMember] = useState(null);
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
   const { user, isLoading, refreshUserProfile } = useAuth();
@@ -947,6 +949,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['user', user.id] });
       queryClient.invalidateQueries({ queryKey: ['relationship-goals'] });
       refreshUserProfile();
+      getFoundingMemberStatus().then(result => setFoundingMember(result?.member || null)).catch(() => null);
     }
   }, [user?.id, queryClient, refreshUserProfile]);
 
@@ -1245,7 +1248,8 @@ export default function Profile() {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
             {user?.name || user?.email?.split('@')[0] || t.profile.userFallback} 💕
           </h1>
-          <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
+          <p className="text-gray-600 mb-3">{t.profile.memberSince} {joinDate}</p>
+          {foundingMember && <div className="mb-6 inline-flex items-center gap-2 rounded-full border-2 border-fuchsia-300 bg-gradient-to-r from-fuchsia-50 to-purple-50 px-4 py-2 text-sm font-black text-fuchsia-800 shadow-sm"><Award className="h-4 w-4" />{Number(foundingMember.member_number)<=100 ? "1st 100 Founding Member" : "Founding Member"} · #{foundingMember.member_number}</div>}
           
           {/* Profile Completion */}
           <motion.div

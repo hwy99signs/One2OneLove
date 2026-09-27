@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/Layout';
 import { getUserSubscription } from '@/lib/stripeService';
+import { getFoundingMemberStatus } from '@/lib/foundingMemberService';
 
 const COPY = {
   en: {
@@ -72,6 +73,7 @@ export default function PaymentSuccess() {
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [foundingMember, setFoundingMember] = useState(null);
 
   const sessionId = searchParams.get('session_id');
 
@@ -93,6 +95,7 @@ export default function PaymentSuccess() {
           setSubscriptionInfo(latest);
           setConfirmed(true);
           await refreshUserProfile().catch(() => null);
+          if (searchParams.get('founding') === '1') { const f=await getFoundingMemberStatus(); setFoundingMember(f?.member||null); }
           break;
         }
       }
@@ -140,8 +143,8 @@ export default function PaymentSuccess() {
         <Card className="overflow-hidden border-2 border-purple-200 shadow-2xl">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-8 text-center">
             <div className="mx-auto mb-4 inline-flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-xl"><CheckCircle className="h-16 w-16 text-green-500"/></div>
-            <h1 className="mb-2 text-4xl font-bold text-white">{isTrial ? t.trialTitle : t.activeTitle}</h1>
-            <p className="text-lg text-white/90">{isTrial ? t.trialWelcome : t.activeWelcome}</p>
+            <h1 className="mb-2 text-4xl font-bold text-white">{foundingMember ? 'Welcome, Founding Member!' : isTrial ? t.trialTitle : t.activeTitle}</h1>
+            <p className="text-lg text-white/90">{foundingMember ? `Founding Member #${foundingMember.member_number} · ${Number(foundingMember.member_number)<=100?'1st 100 FOUNDING MEMBERS CLUB':'FOUNDING MEMBER CLUB'}` : isTrial ? t.trialWelcome : t.activeWelcome}</p>
           </div>
 
           <CardContent className="p-8">
