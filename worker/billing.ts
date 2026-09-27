@@ -79,7 +79,7 @@ function planUsage(plan) {
 }
 function decorateSubscription(user) {
   const storedPlan = canonicalPlan(user?.subscription_plan) || 'Premiere';
-  const effectivePlan = user?.subscription_status === 'trial' ? 'Exclusive' : storedPlan;
+  const effectivePlan = storedPlan;
   const created = user?.created_at ? new Date(user.created_at) : null;
   const guestPreviewExpiresAt = created && !Number.isNaN(created.getTime())
     ? new Date(created.getTime() + 24 * 60 * 60 * 1000).toISOString()
@@ -87,7 +87,7 @@ function decorateSubscription(user) {
   return {
     ...user,
     effective_plan: effectivePlan,
-    trial_entitlement: user?.subscription_status === 'trial' ? 'Exclusive' : null,
+    trial_entitlement: null,
     usage_limits: planUsage(effectivePlan),
     server_now: new Date().toISOString(),
     guest_preview_expires_at: guestPreviewExpiresAt,
@@ -115,13 +115,57 @@ async function stripeRequest(env, method, path, params = null) {
   }
   return payload;
 }
+async function ensureFoundingMemberSchema(db) {
+  await db.query(`
+    CREATE SEQUENCE IF NOT EXISTS public.o2ol_founding_member_number_seq START 1;
+    CREATE TABLE IF NOT EXISTS public.founding_members (
+      user_id uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+      founding_number integer UNIQUE NOT NULL CHECK (founding_number BETWEEN 1 AND 200),
+      cohort text NOT NULL CHECK (cohort IN ('first_100','second_100')),
+      original_plan text NOT NULL CHECK (original_plan IN ('Premiere','Exclusive')),
+      original_monthly_price numeric(10,2) NOT NULL,
+      reserved_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+}
+
+async function reserveFoundingMember(db, userId) {
+  await ensureFoundingMemberSchema(db);
+  const existing = await db.query(
+    'SELECT user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at FROM public.founding_members WHERE user_id=$1::uuid',
+    [userId],
+  );
+  if (existing.rows[0]) return existing.rows[0];
+
+  const next = await db.query("SELECT nextval('public.o2ol_founding_member_number_seq')::int AS founding_number");
+  const number = Number(next.rows[0]?.founding_number || 0);
+  if (!number || number > 200) return null;
+
+  const cohort = number <= 100 ? 'first_100' : 'second_100';
+  const originalPlan = number <= 100 ? 'Exclusive' : 'Premiere';
+  const originalPrice = number <= 100 ? 15.99 : 9.99;
+  const inserted = await db.query(
+    `INSERT INTO public.founding_members(user_id,founding_number,cohort,original_plan,original_monthly_price)
+     VALUES($1::uuid,$2,$3,$4,$5)
+     ON CONFLICT(user_id) DO UPDATE SET user_id=EXCLUDED.user_id
+     RETURNING user_id,founding_number,cohort,original_plan,original_monthly_price,reserved_at`,
+    [userId, number, cohort, originalPlan, originalPrice],
+  );
+  return inserted.rows[0] || null;
+}
+
 async function getBillingUser(db, userId) {
+  await ensureFoundingMemberSchema(db);
   const result = await db.query(
-    `SELECT id,email,subscription_plan,subscription_status,subscription_price,
-            subscription_start_date,subscription_end_date,stripe_customer_id,stripe_subscription_id,
-            payment_method,subscription_current_period_start,subscription_current_period_end,
-            trial_end_date,cancel_at_period_end,canceled_at,created_at
-       FROM public.users WHERE id=$1::uuid`,
+    `SELECT u.id,u.email,u.subscription_plan,u.subscription_status,u.subscription_price,
+            u.subscription_start_date,u.subscription_end_date,u.stripe_customer_id,u.stripe_subscription_id,
+            u.payment_method,u.subscription_current_period_start,u.subscription_current_period_end,
+            u.trial_end_date,u.cancel_at_period_end,u.canceled_at,u.created_at,
+            f.founding_number,f.cohort AS founding_cohort,f.original_plan AS founding_original_plan,
+            f.original_monthly_price AS founding_original_monthly_price,f.reserved_at AS founding_reserved_at
+       FROM public.users u
+       LEFT JOIN public.founding_members f ON f.user_id=u.id
+       WHERE u.id=$1::uuid`,
     [userId],
   );
   if (!result.rows[0]) throw Object.assign(new Error('User profile not found.'), { status: 404, code: 'not_found' });
@@ -178,17 +222,31 @@ async function updateFromSubscription(db, userId, subscription, planOverride = n
   await db.query(`UPDATE public.users SET ${fields.join(',')} WHERE id=$${values.length}::uuid`, values);
 }
 async function checkout(db, env, request, auth, input) {
-  const startTrial = Boolean(input?.startTrial || input?.start_trial);
   const requestedPlan = canonicalPlan(input?.planName || input?.plan_name || input?.plan);
-  const plan = startTrial ? (requestedPlan || 'Premiere') : requestedPlan;
-  if (!PAID_PLANS.has(plan)) return fail('Choose Premiere or Exclusive for paid checkout.');
-  const priceId = stripePriceForPlan(env, plan);
-  if (!priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
+  if (!PAID_PLANS.has(requestedPlan)) return fail('Choose Premiere or Exclusive for paid checkout.');
 
   const billingUser = await getBillingUser(db, auth.user.id);
   if (billingUser.stripe_subscription_id && ['active', 'trial'].includes(billingUser.subscription_status)) {
     return fail('An active subscription already exists. Manage that subscription before starting another checkout.', 409, 'subscription_exists');
   }
+
+  // The only free paid-membership offer is the Founding Members Launch Offer.
+  // A Founding Member number is permanently reserved to this account and never recycled.
+  const founding = billingUser.founding_number
+    ? {
+        founding_number: billingUser.founding_number,
+        cohort: billingUser.founding_cohort,
+        original_plan: billingUser.founding_original_plan,
+        original_monthly_price: Number(billingUser.founding_original_monthly_price),
+      }
+    : await reserveFoundingMember(db, auth.user.id);
+
+  const isFounding = Boolean(founding && Number(founding.founding_number) <= 200);
+  const plan = isFounding ? canonicalPlan(founding.original_plan) : requestedPlan;
+  const monthlyPrice = isFounding ? Number(founding.original_monthly_price) : planMonthlyPrice(plan);
+  const priceId = stripePriceForPlan(env, plan);
+  if (!isFounding && !priceId) return fail(`Stripe price is not configured for ${plan}.`, 503, 'billing_not_configured');
+
   const customerId = await getOrCreateCustomer(db, env, auth, billingUser);
   const origin = new URL(request.url).origin;
   const params = new URLSearchParams();
@@ -197,8 +255,17 @@ async function checkout(db, env, request, auth, input) {
   params.set('payment_method_types[0]', 'card');
   params.set('payment_method_collection', 'always');
   params.set('branding_settings[display_name]', 'One2OneLove');
-  params.set('line_items[0][price]', priceId);
+
+  if (isFounding) {
+    params.set('line_items[0][price_data][currency]', 'usd');
+    params.set('line_items[0][price_data][product_data][name]', `One2OneLove ${plan} — Founding Member`);
+    params.set('line_items[0][price_data][recurring][interval]', 'month');
+    params.set('line_items[0][price_data][unit_amount]', String(Math.round(monthlyPrice * 100)));
+  } else {
+    params.set('line_items[0][price]', priceId);
+  }
   params.set('line_items[0][quantity]', '1');
+
   params.set('success_url', `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`);
   params.set('cancel_url', `${origin}/subscription?canceled=true`);
   params.set('client_reference_id', auth.user.id);
@@ -206,13 +273,29 @@ async function checkout(db, env, request, auth, input) {
   params.set('metadata[plan_name]', plan);
   params.set('subscription_data[metadata][user_id]', auth.user.id);
   params.set('subscription_data[metadata][plan_name]', plan);
-  if (startTrial) {
-    params.set('subscription_data[trial_period_days]', '7');
-    params.set('metadata[trial_entitlement]', 'Exclusive');
-    params.set('subscription_data[metadata][trial_entitlement]', 'Exclusive');
+
+  if (isFounding) {
+    params.set('subscription_data[trial_period_days]', '30');
+    params.set('metadata[founding_member]', 'true');
+    params.set('metadata[founding_number]', String(founding.founding_number));
+    params.set('metadata[founding_cohort]', String(founding.cohort));
+    params.set('subscription_data[metadata][founding_member]', 'true');
+    params.set('subscription_data[metadata][founding_number]', String(founding.founding_number));
+    params.set('subscription_data[metadata][founding_cohort]', String(founding.cohort));
   }
+
   const checkoutSession = await stripeRequest(env, 'POST', '/checkout/sessions', params);
-  return json({ ok: true, sessionId: checkoutSession.id, url: checkoutSession.url, plan, trial: startTrial });
+  return json({
+    ok: true,
+    sessionId: checkoutSession.id,
+    url: checkoutSession.url,
+    plan,
+    foundingMember: isFounding,
+    foundingNumber: isFounding ? Number(founding.founding_number) : null,
+    foundingCohort: isFounding ? founding.cohort : null,
+    freeDays: isFounding ? 30 : 0,
+    monthlyPrice,
+  });
 }
 async function cancelSubscription(db, env, userId) {
   const user = await getBillingUser(db, userId);
@@ -389,9 +472,8 @@ export async function handleBillingRequest(request, env, url) {
         const result = await db.query('SELECT * FROM public.payment_history WHERE user_id=$1::uuid ORDER BY created_at DESC LIMIT 100', [auth.user.id]);
         return json({ ok: true, payments: result.rows });
       }
-      if (url.pathname === '/api/billing/trial' && request.method === 'POST') {
-        const billingUser = await getBillingUser(db, auth.user.id);
-        return checkout(db, env, request, auth, { planName: canonicalPlan(billingUser.subscription_plan) || 'Premiere', startTrial: true });
+      if (url.pathname === '/api/billing/trial') {
+        return fail('The 7-day Full Access trial has been retired. Use the Founding Member offer or regular paid checkout.', 410, 'trial_retired');
       }
       if (url.pathname === '/api/billing/checkout' && request.method === 'POST') {
         return checkout(db, env, request, auth, await readJson(request));
@@ -403,7 +485,7 @@ export async function handleBillingRequest(request, env, url) {
         return reactivateSubscription(db, env, auth.user.id);
       }
       if (url.pathname === '/api/billing/config' && request.method === 'GET') {
-        return json({ ok: true, paid_checkout_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_PREMIERE && env.STRIPE_PRICE_EXCLUSIVE), webhook_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET), plans: ['Premiere','Exclusive'], trial_default_plan: 'Premiere', trial_days: 7, love_note_sms_price_cents: 29 });
+        return json({ ok: true, paid_checkout_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_PREMIERE && env.STRIPE_PRICE_EXCLUSIVE), webhook_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET), plans: ['Premiere','Exclusive'], guest_preview_hours: 24, founding_offer: { first_100: { plan: 'Exclusive', free_days: 30, monthly_price: 15.99 }, second_100: { plan: 'Premiere', free_days: 30, monthly_price: 9.99 }, max_members: 200 }, love_note_sms_price_cents: 29 });
       }
       return fail('Not found.', 404, 'not_found');
     });
