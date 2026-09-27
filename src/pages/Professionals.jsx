@@ -32,7 +32,7 @@ export default function Professionals() {
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-purple-600 text-white"><BriefcaseBusiness size={27}/></div>
             <div className="flex-1"><h2 className="text-xl font-black text-slate-900">{t.apply}</h2><p className="mt-1 text-sm leading-6 text-slate-600">{t.applyBody}</p></div>
-            <button onClick={()=>navigate('/Subscription?signup=1')} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3 text-sm font-black text-white shadow-sm hover:shadow-md">{t.applyButton}</button>
+            <button onClick={()=>navigate('/SignUp')} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3 text-sm font-black text-white shadow-sm hover:shadow-md">{t.applyButton}</button>
           </div>
         </div>
       </div>
