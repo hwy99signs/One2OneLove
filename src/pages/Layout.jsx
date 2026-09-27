@@ -149,12 +149,12 @@ function LanguageContent({ children, currentPageName }) {
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: getMyConversations,
-    enabled: !!user && isAuthenticated,
-    refetchInterval: 3000, // Refetch every 3 seconds for faster badge updates
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnMount: true, // Refetch when component mounts
-    staleTime: 0, // Always consider data stale to force fresh fetches
-    cacheTime: 0, // Don't cache to ensure fresh data
+    enabled: !!user && isAuthenticated && location.pathname.toLowerCase() !== '/subscription',
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: 60 * 1000,
+    cacheTime: 5 * 60 * 1000
   });
 
 

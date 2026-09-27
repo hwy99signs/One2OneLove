@@ -103,7 +103,7 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
     <div className="h-full">
       <Card
         onClick={selectThisTier}
-        className={`relative h-full flex flex-col cursor-pointer border-2 transition-all duration-300 hover:shadow-2xl hover:border-purple-200 ${isHighlighted ? 'ring-4 ring-purple-500 ring-offset-2' : ''}`}
+        className={`relative h-full flex flex-col cursor-pointer border-2 transition-shadow duration-200 hover:shadow-xl ${isHighlighted ? 'ring-2 ring-purple-500' : ''}`}
       >
         {tier.popular && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
@@ -155,7 +155,7 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
               handleChoosePlan();
             }}
             disabled={isProcessing}
-            className={`w-full text-lg py-6 font-semibold transition-all duration-300 ${tier.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg' : 'bg-gray-800 hover:bg-gray-900 text-white'}`}
+            className={`w-full text-lg py-6 font-semibold transition-colors duration-200 ${tier.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg' : 'bg-gray-800 hover:bg-gray-900 text-white'}`}
           >
             {isProcessing ? (
               <>

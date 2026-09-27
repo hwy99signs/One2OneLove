@@ -119,16 +119,14 @@ function PagesContent() {
   const currentPage = _getCurrentPage(location.pathname);
 
   useEffect(() => {
-    const scrollToTop = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    };
-    scrollToTop();
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
+
+  useEffect(() => {
     trackFeatureView(location.pathname, isAuthenticated);
-    const frame = window.requestAnimationFrame(scrollToTop);
-    return () => window.cancelAnimationFrame(frame);
-  }, [location.pathname, location.search, location.key, isAuthenticated]);
+  }, [location.pathname, isAuthenticated]);
 
   return (
     <Layout currentPageName={currentPage}>
