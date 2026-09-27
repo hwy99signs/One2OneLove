@@ -102,9 +102,9 @@ function _getCurrentPage(url) {
   return pageName || 'Home';
 }
 
-function trackFeatureView(pathname, isAuthenticated) {
+function trackFeatureView(pathname, isAuthenticated, user) {
   const feature = FEATURE_BY_ROUTE[String(pathname || '').toLowerCase()];
-  if (!feature || !isAuthenticated) return;
+  if (!feature || !isAuthenticated || String(user?.role || '').toLowerCase() === 'admin') return;
   fetch('/api/feature-usage', {
     method: 'POST',
     credentials: 'include',
@@ -115,7 +115,7 @@ function trackFeatureView(pathname, isAuthenticated) {
 
 function PagesContent() {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const currentPage = _getCurrentPage(location.pathname);
 
   useEffect(() => {
@@ -125,8 +125,8 @@ function PagesContent() {
   }, [location.pathname]);
 
   useEffect(() => {
-    trackFeatureView(location.pathname, isAuthenticated);
-  }, [location.pathname, isAuthenticated]);
+    trackFeatureView(location.pathname, isAuthenticated, user);
+  }, [location.pathname, isAuthenticated, user?.role]);
 
   return (
     <Layout currentPageName={currentPage}>
