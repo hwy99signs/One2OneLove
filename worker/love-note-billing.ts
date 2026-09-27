@@ -94,6 +94,7 @@ export async function loveNoteSendAccess(db, userId) {
     subscriptionStatus: status || 'inactive',
     hasPaidSubscriptionPayment,
     firstFoundingSendFree: true,
+    firstTrialSendFree: true, // legacy response key retained for client compatibility
     firstSendFree: true,
     firstFreeAvailable: allowed && reservedOrSent === 0,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
@@ -283,6 +284,7 @@ export async function loveNoteUsageSummary(db, userId) {
     smsSendingCode: access.code,
     smsSendingMessage: access.message,
     firstFoundingSendFree: true,
+    firstTrialSendFree: true, // legacy response key retained for client compatibility
     firstSendFree: true,
     firstFreeAvailable: access.firstFreeAvailable,
     sendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
