@@ -182,7 +182,7 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignUp = () => {
-    navigate("/Subscription?signup=1");
+    navigate("/SignUp?plan=Premiere&type=individual&source=guest-preview");
   };
 
   const handleSignOut = async (e) => {

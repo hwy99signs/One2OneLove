@@ -31,21 +31,22 @@ export default function SignUp() {
   const selectedPlan = canonicalPlan(searchParams.get("plan"));
   const signupType = String(searchParams.get("type") || "").toLowerCase();
 
-  if (!selectedPlan) return <Navigate to="/Subscription?signup=1" replace />;
+  const effectivePlan = selectedPlan || 'Premiere';
+  const directGuestSignup = String(searchParams.get("source") || "").toLowerCase() === "guest-preview";
 
-  if (signupType === "individual") {
+  if (signupType === "individual" || directGuestSignup) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
         <LaunchRegularUserForm
-          selectedPlan={selectedPlan}
-          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(selectedPlan)}`)}
+          selectedPlan={effectivePlan}
+          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}`)}
         />
       </div>
     );
   }
 
-  const chooseIndividual = () => navigate(`/SignUp?plan=${encodeURIComponent(selectedPlan)}&type=individual`);
-  const chooseProfessional = () => navigate(`/ProfessionalSignup?plan=${encodeURIComponent(selectedPlan)}`);
+  const chooseIndividual = () => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}&type=individual`);
+  const chooseProfessional = () => navigate(`/ProfessionalSignup?plan=${encodeURIComponent(effectivePlan)}`);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
@@ -58,7 +59,7 @@ export default function SignUp() {
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{t.title}</h1>
           <p className="text-xl text-gray-600">{t.subtitle}</p>
           <div className="mt-5 inline-flex items-center rounded-full border border-purple-200 bg-white px-5 py-2 font-bold text-purple-800 shadow-sm">
-            {t.selectedPlan}: {selectedPlan} — {PLAN_PRICE[selectedPlan]}
+            {t.selectedPlan}: {effectivePlan} — {PLAN_PRICE[effectivePlan]}
           </div>
         </div>
 

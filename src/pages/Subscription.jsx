@@ -279,7 +279,7 @@ export default function Subscription() {
               {isAnonymous && (
                 <div className="mt-5 border-t border-gray-200 pt-4">
                   <div className="mb-2 inline-flex rounded-t-lg bg-purple-100 px-3 py-1 text-xs font-black tracking-wide text-purple-800">{previewCopy.signupTab}</div>
-                  <Button onClick={() => navigate('/SignUp?plan=Premiere&source=guest-preview')} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold">
+                  <Button onClick={() => navigate('/SignUp?plan=Premiere&type=individual&source=guest-preview')} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold">
                     {previewCopy.createAccount}
                   </Button>
                 </div>
