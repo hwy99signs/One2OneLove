@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:production": "printf '%s' \"$STRIPE_SECRET_KEY\" | npx wrangler secret put STRIPE_SECRET_KEY --config cloudflare/wrangler.production.jsonc && npx wrangler deploy --config cloudflare/wrangler.production.jsonc"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
