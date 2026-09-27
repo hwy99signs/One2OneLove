@@ -68,6 +68,11 @@ export async function handleFeatureUsageRequest(request, env, url) {
   const auth = await session(request, env);
   if (!auth) return json({ ok: false, error: { message: 'Authentication required.' } }, 401);
 
+  // Admin testing/navigation must never contaminate member feature analytics.
+  if (String(auth.user?.role || '').toLowerCase() === 'admin') {
+    return new Response(null, { status: 204 });
+  }
+
   const body = await request.json().catch(() => null);
   const feature = String(body?.feature || '').trim();
   const eventType = String(body?.eventType || 'view').trim().toLowerCase();
@@ -91,6 +96,7 @@ export async function handleFeatureUsageRequest(request, env, url) {
        WHERE NOT EXISTS (
          SELECT 1 FROM public.feature_usage_events
           WHERE user_id=$1::uuid AND feature=$2 AND event_type=$3
+            AND route IS NOT DISTINCT FROM $4
             AND created_at >= now() - interval '30 seconds'
        )`,
       [auth.user.id, feature, eventType, route],
