@@ -40,7 +40,7 @@ const COPY = {
   it: {
     processingTitle: 'Conferma dell’Abbonamento', processingBody: 'Attendi mentre One2OneLove conferma il tuo abbonamento con Stripe.',
     trialTitle: 'Periodo Gratuito Membro Fondatore Attivato!', activeTitle: 'Il Tuo Abbonamento È Attivo!',
-    trialWelcome: 'La prova di 7 giorni include accesso completo di livello Exclusive. Oggi non è stato addebitato il prezzo dell’abbonamento. Il primo invio SMS di una Nota d’Amore One2OneLove è GRATIS; ogni invio successivo costa US$0.29. Dopo 7 giorni, l’abbonamento continua con Premiere a US$9.99/mese salvo scelta di Exclusive o annullamento prima della fine della prova.', activeWelcome: 'Il tuo abbonamento One2OneLove è pronto da usare. Gli invii SMS di Note d’Amore dopo il primo invio gratuito costano US$0.29 ciascuno.',
+    trialWelcome: 'Il tuo periodo gratuito di 30 giorni come Membro Fondatore è attivo. Il piano Fondatore assegnato è mostrato qui sotto. Oggi non viene addebitato il prezzo dell’abbonamento; la carta registrata verrà usata al termine del periodo gratuito, salvo annullamento.', activeWelcome: 'Il tuo abbonamento One2OneLove è pronto da usare. Gli invii SMS di Note d’Amore dopo il primo invio gratuito costano US$0.29 ciascuno.',
     plan: 'Piano', status: 'Stato', fullAccess: 'Piano Membro Fondatore', foundingStatus: 'Periodo Gratuito Fondatore', next: 'Cosa Fare Ora?', profile: 'Vedi Il Mio Profilo', home: 'Vai alla Home',
     item1: 'Le funzioni incluse nel tuo abbonamento sono ora sbloccate.', item2: 'Stripe invierà via e-mail la conferma del checkout.', item3: 'Puoi rivedere o cambiare piano dalla pagina Abbonamento.',
     pendingTitle: 'Checkout Ricevuto — Attivazione in Corso', pendingBody: 'Stripe ti ha riportato su One2OneLove, ma l’aggiornamento non è ancora arrivato al tuo account. Potrebbero servire ancora alcuni secondi.', pendingAction: 'Controlla Stato Abbonamento',
@@ -48,8 +48,8 @@ const COPY = {
   },
   de: {
     processingTitle: 'Mitgliedschaft Wird Bestätigt', processingBody: 'Bitte warten Sie, während One2OneLove Ihre Mitgliedschaft mit Stripe bestätigt.',
-    trialTitle: '7-Tage-Test mit Vollzugriff Aktiviert!', activeTitle: 'Ihre Mitgliedschaft Ist Aktiv!',
-    trialWelcome: 'Ihr 7-Tage-Test umfasst vollständigen Exclusive-Zugriff. Der Abonnementpreis wurde heute nicht berechnet. Ihre erste One2OneLove-SMS-Liebesnachricht ist KOSTENLOS; jede weitere Sendung kostet US$0.29. Nach 7 Tagen läuft Ihre Mitgliedschaft mit Premiere für US$9.99/Monat weiter, sofern Sie nicht Exclusive wählen oder vor Testende kündigen.', activeWelcome: 'Ihre One2OneLove-Mitgliedschaft ist einsatzbereit. SMS-Liebesnachrichten nach Ihrer ersten kostenlosen Sendung kosten je US$0.29.',
+    trialTitle: 'Kostenloser Gründungszeitraum Aktiviert!', activeTitle: 'Ihre Mitgliedschaft Ist Aktiv!',
+    trialWelcome: 'Ihr 30-tägiger kostenloser Gründungszeitraum ist aktiv. Ihr zugewiesener Gründungstarif wird unten angezeigt. Der Mitgliedspreis wird heute nicht berechnet; die hinterlegte Karte wird nach dem kostenlosen Zeitraum belastet, sofern Sie nicht kündigen.', activeWelcome: 'Ihre One2OneLove-Mitgliedschaft ist einsatzbereit. SMS-Liebesnachrichten nach Ihrer ersten kostenlosen Sendung kosten je US$0.29.',
     plan: 'Plan', status: 'Status', fullAccess: 'Gründungsmitglied-Tarif', foundingStatus: 'Kostenloser Gründungszeitraum', next: 'Wie Geht Es Weiter?', profile: 'Mein Profil Anzeigen', home: 'Zur Startseite',
     item1: 'Die in Ihrer Mitgliedschaft enthaltenen Funktionen sind jetzt freigeschaltet.', item2: 'Stripe sendet Ihnen die Checkout-Bestätigung per E-Mail.', item3: 'Sie können Ihren Plan unter Abonnement prüfen oder ändern.',
     pendingTitle: 'Checkout Empfangen — Zugriff Wird Aktiviert', pendingBody: 'Stripe hat Sie zu One2OneLove zurückgeleitet, aber die Aktualisierung ist noch nicht in Ihrem Konto angekommen. Dies kann noch einige Sekunden dauern.', pendingAction: 'Abonnementstatus Prüfen',
