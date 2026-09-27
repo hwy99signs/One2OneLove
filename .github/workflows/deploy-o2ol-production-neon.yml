@@ -191,7 +191,7 @@ jobs:
               "datasets":[],
               "filterCombination":"and",
               "filters":[
-                {"key":"$metadata.service","operation":"eq","type":"string","value":"one2onelove-launch"}
+                {"key":"\$metadata.service","operation":"eq","type":"string","value":"one2onelove-launch"}
               ],
               "needle":{"value":"launch-signup","isRegex":false,"matchCase":false},
               "view":"events"
