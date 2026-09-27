@@ -26,7 +26,7 @@ export const createCheckoutSession = async (_priceId, planName, amount) => {
   }
 };
 
-export const changePlanDuringTrial = async (planName) => {
+export const changePlanDuringFoundingPeriod = async (planName) => {
   try {
     const payload = await apiRequest('/api/billing/change-plan', {
       method: 'POST',
@@ -36,21 +36,10 @@ export const changePlanDuringTrial = async (planName) => {
   } catch (error) {
     return {
       success: false,
-      error: error?.message || 'Failed to update trial plan',
+      error: error?.message || 'Failed to update Founding Member plan',
       code: error?.payload?.error?.code || null,
       status: error?.status || null,
     };
-  }
-};
-
-export const startPremierTrial = async () => {
-  try {
-    const payload = await apiRequest('/api/billing/trial', { method: 'POST', body: {} });
-    if (!payload?.url) throw new Error('No checkout URL received.');
-    window.location.href = payload.url;
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error?.message || 'Failed to start Premier trial' };
   }
 };
 
@@ -80,7 +69,7 @@ export const handleSubscriptionCheckout = async (plan) => {
         const current = await getUserSubscription();
         const status = String(current?.subscription_status || '').toLowerCase();
         if (status === 'trial' || status === 'trialing') {
-          return changePlanDuringTrial(planName);
+          return changePlanDuringFoundingPeriod(planName);
         }
         return {
           success: false,
@@ -144,8 +133,7 @@ export const hasFeatureAccess = (feature, user) => {
   if (!['active', 'trial', 'trialing'].includes(status)) return false;
   const stored = String(user.subscription_plan || '').toLowerCase();
   const storedPlan = stored === 'exclusive' ? 'Exclusive' : 'Premiere';
-  const effectivePlan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
-  return featureAccess[effectivePlan]?.includes(feature) || false;
+  return featureAccess[storedPlan]?.includes(feature) || false;
 };
 
 const premiere = [
