@@ -38,8 +38,8 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const planCopy = planData.plans[userPlan];
 
   const heading = isGuest ? t.guest : isTrial ? t.trial : planCopy.displayName;
-  const priceLabel = isGuest ? '24 hours' : isTrial ? '7 days' : `US$${planInfo.price}`;
-  const priceSub = isGuest ? 'view only · no card required' : isTrial ? 'subscription price not charged today' : t.perMonth;
+  const priceLabel = isGuest ? '24 hours' : isTrial ? '30 days' : `US$${planInfo.price}`;
+  const priceSub = isGuest ? 'view only · no card required' : isTrial ? 'Founding Member free period' : t.perMonth;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
