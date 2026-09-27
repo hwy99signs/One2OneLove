@@ -107,7 +107,8 @@ async function overview(db) {
              count(*) FILTER (WHERE p.id IS NOT NULL AND COALESCE(p.is_active,true)=false)::int AS inactive,
              count(*) FILTER (WHERE COALESCE(p.is_verified,a."emailVerified",false)=true)::int AS verified
         FROM neon_auth."user" a
-        FULL OUTER JOIN public.users p ON p.id=a.id`),
+        FULL OUTER JOIN public.users p ON p.id=a.id
+       WHERE COALESCE(a.role,'user') <> 'admin'`),
     db.query(`
       WITH desired(plan,sort_order) AS (
         VALUES ('Premiere'::text,1),('Exclusive'::text,2)
@@ -118,7 +119,9 @@ async function overview(db) {
                  ELSE 'Premiere'
                END AS plan,
                count(*)::int AS count
-          FROM public.users
+          FROM public.users u
+          LEFT JOIN neon_auth."user" a ON a.id=u.id
+         WHERE COALESCE(a.role,'user') <> 'admin'
          GROUP BY 1
       )
       SELECT desired.plan,COALESCE(counts.count,0)::int AS count
@@ -216,6 +219,7 @@ async function members(db) {
            (a.id IS NOT NULL) AS auth_ready
       FROM neon_auth."user" a
       FULL OUTER JOIN public.users u ON u.id=a.id
+     WHERE COALESCE(a.role,'user') <> 'admin'
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
@@ -465,7 +469,7 @@ async function system(db) {
   const [migrations, ai, authRoles] = await Promise.all([
     db.query(`SELECT migration_key,applied_at,notes FROM public.app_migrations ORDER BY applied_at DESC LIMIT 50`),
     db.query(`SELECT feature,count(*)::int AS uses,count(DISTINCT user_id)::int AS users FROM public.ai_usage_events WHERE created_at>=now()-interval '30 days' GROUP BY feature ORDER BY uses DESC,feature ASC`),
-    db.query(`SELECT COALESCE(role,'user') AS role,count(*)::int AS count FROM neon_auth."user" GROUP BY 1 ORDER BY 1`),
+    db.query(`SELECT COALESCE(role,'user') AS role,count(*)::int AS count FROM neon_auth."user" WHERE COALESCE(role,'user') <> 'admin' GROUP BY 1 ORDER BY 1`),
   ]);
   return { migrations: migrations.rows, aiUsage30d: ai.rows, authRoles: authRoles.rows };
 }
