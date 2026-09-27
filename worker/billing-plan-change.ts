@@ -13,7 +13,7 @@ function canonicalPlan(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (raw === 'basic') return 'Premiere';
   if (raw === 'premier' || raw === 'premiere') return 'Premiere';
-  if (raw === 'exclusive') return plan;
+  if (raw === 'exclusive') return 'Exclusive';
   return null;
 }
 function customerPlan(value) {
@@ -23,17 +23,17 @@ function customerPlan(value) {
 }
 function priceFor(plan) {
   if (plan === 'Premiere') return 9.99;
-  if (plan === plan) return 19.99;
+  if (plan === 'Exclusive') return 19.99;
   return 0;
 }
 function rank(plan) {
-  if (plan === plan) return 3;
+  if (plan === 'Exclusive') return 3;
   if (plan === 'Premiere') return 2;
   return 1;
 }
 function priceIdFor(env, plan) {
   if (plan === 'Premiere') return env.STRIPE_PRICE_PREMIERE || null;
-  if (plan === plan) return env.STRIPE_PRICE_EXCLUSIVE || null;
+  if (plan === 'Exclusive') return env.STRIPE_PRICE_EXCLUSIVE || null;
   return null;
 }
 async function session(request, env) {
@@ -78,7 +78,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
   try {
     const input = await readJson(request);
     const targetPlan = canonicalPlan(input?.planName || input?.plan_name || input?.plan);
-    if (!targetPlan || !['Premiere',plan].includes(targetPlan)) return fail('Choose Premiere or Exclusive.', 400, 'invalid_plan');
+    if (!targetPlan || !['Premiere','Exclusive'].includes(targetPlan)) return fail('Choose Premiere or Exclusive.', 400, 'invalid_plan');
     const targetPriceId = priceIdFor(env, targetPlan);
     if (!targetPriceId) return fail(`Stripe price is not configured for ${customerPlan(targetPlan)}.`, 503, 'billing_not_configured');
 
@@ -105,7 +105,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
       params.set('proration_behavior', 'none');
       params.set('metadata[user_id]', auth.user.id);
       params.set('metadata[plan_name]', targetPlan);
-      params.set('metadata[founding_plan_change]', plan);
+      params.set('metadata[founding_plan_change]', targetPlan);
       const updated = await stripeRequest(env, 'POST', `/subscriptions/${encodeURIComponent(user.stripe_subscription_id)}`, params);
 
       await db.query('BEGIN');
@@ -134,12 +134,12 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
         plan: customerPlan(targetPlan),
         storedPlan: targetPlan,
         subscriptionStatus: 'trial',
-        trialEntitlement: plan,
+        foundingPlanChange: targetPlan,
         stripeSubscriptionStatus: updated?.status || 'trialing',
       });
     });
   } catch (error) {
     console.error('Founding period plan change error:', error?.message || error);
-    return fail(error?.message || 'Unable to change your trial plan.', error?.status || 500, error?.code || 'plan_change_error');
+    return fail(error?.message || 'Unable to change your Founding Member plan.', error?.status || 500, error?.code || 'plan_change_error');
   }
 }
