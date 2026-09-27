@@ -466,7 +466,7 @@ export default function Admin() {
           </div>}
 
           {section==='members' && <div>
-            <Heading title="All Sign-ups" subtitle="Live member management. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
+            <Heading title="All Sign-ups" subtitle="Live member management, including pending email verification and profile-recovery states. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                 <Search size={17} className="text-slate-400"/>
@@ -488,12 +488,13 @@ export default function Admin() {
                 const busy=memberActionId===m.id;
                 const protectedAdmin=m.auth_role==='admin';
                 const selected=selectedMemberIds.includes(m.id);
+                const signupState = !m.auth_ready ? 'Authentication record missing' : !m.profile_ready ? 'Profile recovery pending' : !m.is_verified ? 'Email verification pending' : (!protectedAdmin && !m.phone_verified ? 'Phone verification pending' : null);
                 return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
                   <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
                   <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill>{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
-                  <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
+                  <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">

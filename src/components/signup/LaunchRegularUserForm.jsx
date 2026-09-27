@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, Globe2, Heart, Languages, Loader2, Lock, Mail, ShieldCheck, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/Layout';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { registerLaunchUser, resendLaunchVerification, verifyLaunchEmail } from '@/lib/launchSignupService';
+import { getLaunchSignupReadiness, registerLaunchUser, resendLaunchVerification, verifyLaunchEmail } from '@/lib/launchSignupService';
 import termsEn from '@/content/terms/en';
 import termsEs from '@/content/terms/es';
 import termsFr from '@/content/terms/fr';
@@ -28,10 +28,10 @@ const localeByLanguage = { en:'en-US', es:'es-ES', fr:'fr-FR', it:'it-IT', de:'d
 
 const translations = {
   en: {
-    title:'Create Your One2OneLove Account', subtitle:'Join One2OneLove and start using relationship tools, resources and community features.', fullName:'Your Name', fullNamePlaceholder:'Enter your name', email:'Email Address', emailPlaceholder:'Enter your email', password:'Password', passwordPlaceholder:'Create a password (minimum 8 characters)', showPassword:'Show password', hidePassword:'Hide password', showConfirmPassword:'Show confirmation password', hideConfirmPassword:'Hide confirmation password', confirmPassword:'Confirm Password', confirmPasswordPlaceholder:'Confirm your password', country:'Country', countryPlaceholder:'Select your country', language:'Preferred Language', languagePlaceholder:'Select your preferred language', termsRequired:'Terms acceptance is required.', termsExplain:'Open the full Terms of Service, scroll to the bottom, and accept them before creating your account.', readTerms:'Read Full Terms of Service', accepted:'Terms of Service accepted', createAccount:'Create Account', creating:'Creating Account…', back:'Back to One2OneLove Home', termsTitle:'One2OneLove Terms of Service', termsIntro:'Please read the complete Terms of Service. The Accept button becomes available after you reach the bottom.', scrollHint:'Scroll to the bottom to enable acceptance.', reachedBottom:'You reached the end. You may now accept the Terms of Service.', acceptTerms:'I Am 18+ and Accept the Terms of Service', close:'Close', mismatch:'Passwords do not match.', termsError:'You must read and accept the Terms of Service before creating an account.', fieldsError:'Please select your country and preferred language.', verifyTitle:'Verify Your Email', verifyBody:'We sent a 6-digit verification code to the email address below.', verifyNote:'Enter the code to verify your email. Verification codes expire, so request a new one if needed.', code:'6-digit verification code', verify:'Verify Email', verifying:'Verifying…', verifiedTitle:'Email Verified', verifiedBody:'Your email is verified. You can now sign in to One2OneLove.', resend:'Resend Code', resent:'A new verification code was sent.', resending:'Sending…', signIn:'Go to Sign In', invalidCode:'Enter the 6-digit code from your email.', registrationFailed:'Registration failed. Please try again.', resendFailed:'Unable to resend the verification code.', termsVersionLabel:'Terms version', privacyNote:'By accepting these Terms, you also acknowledge the One2OneLove Privacy Policy.'
+    title:'Create Your One2OneLove Account', subtitle:'Join One2OneLove and start using relationship tools, resources and community features.', fullName:'Your Name', fullNamePlaceholder:'Enter your name', email:'Email Address', emailPlaceholder:'Enter your email', password:'Password', passwordPlaceholder:'Create a password (minimum 8 characters)', showPassword:'Show password', hidePassword:'Hide password', showConfirmPassword:'Show confirmation password', hideConfirmPassword:'Hide confirmation password', confirmPassword:'Confirm Password', confirmPasswordPlaceholder:'Confirm your password', country:'Country', countryPlaceholder:'Select your country', language:'Preferred Language', languagePlaceholder:'Select your preferred language', termsRequired:'Terms acceptance is required.', termsExplain:'Open the full Terms of Service, scroll to the bottom, and accept them before creating your account.', readTerms:'Read Full Terms of Service', accepted:'Terms of Service accepted', createAccount:'Create Account', creating:'Creating Account…', checkingReadiness:'Checking secure registration…', readinessUnavailable:'Verified registration is temporarily unavailable. Please try again shortly.', back:'Back to One2OneLove Home', termsTitle:'One2OneLove Terms of Service', termsIntro:'Please read the complete Terms of Service. The Accept button becomes available after you reach the bottom.', scrollHint:'Scroll to the bottom to enable acceptance.', reachedBottom:'You reached the end. You may now accept the Terms of Service.', acceptTerms:'I Am 18+ and Accept the Terms of Service', close:'Close', mismatch:'Passwords do not match.', termsError:'You must read and accept the Terms of Service before creating an account.', fieldsError:'Please select your country and preferred language.', verifyTitle:'Verify Your Email', verifyBody:'We sent a 6-digit verification code to the email address below.', verifyNote:'Enter the code to verify your email. Verification codes expire, so request a new one if needed.', resumedNote:'This account was already waiting for verification. Use the password you created earlier; use password reset if you no longer have it.', code:'6-digit verification code', verify:'Verify Email', verifying:'Verifying…', verifiedTitle:'Email Verified', verifiedBody:'Your email is verified. You can now sign in to One2OneLove.', resend:'Resend Code', resent:'A new verification code was sent.', resending:'Sending…', signIn:'Go to Sign In', invalidCode:'Enter the 6-digit code from your email.', registrationFailed:'Registration failed. Please try again.', resendFailed:'Unable to resend the verification code.', termsVersionLabel:'Terms version', privacyNote:'By accepting these Terms, you also acknowledge the One2OneLove Privacy Policy.'
   },
   es: {
-    title:'Crea tu Cuenta de One2OneLove', subtitle:'Únete a One2OneLove y comienza a usar herramientas, recursos y funciones de comunidad.', fullName:'Tu Nombre', fullNamePlaceholder:'Ingresa tu nombre', email:'Correo Electrónico', emailPlaceholder:'Ingresa tu correo', password:'Contraseña', passwordPlaceholder:'Crea una contraseña (mínimo 8 caracteres)', showPassword:'Mostrar contraseña', hidePassword:'Ocultar contraseña', showConfirmPassword:'Mostrar contraseña de confirmación', hideConfirmPassword:'Ocultar contraseña de confirmación', confirmPassword:'Confirmar Contraseña', confirmPasswordPlaceholder:'Confirma tu contraseña', country:'País', countryPlaceholder:'Selecciona tu país', language:'Idioma Preferido', languagePlaceholder:'Selecciona tu idioma preferido', termsRequired:'Es obligatorio aceptar los Términos.', termsExplain:'Abre los Términos de Servicio completos, desplázate hasta el final y acéptalos antes de crear tu cuenta.', readTerms:'Leer los Términos de Servicio Completos', accepted:'Términos de Servicio aceptados', createAccount:'Crear Cuenta', creating:'Creando Cuenta…', back:'Volver al Inicio de One2OneLove', termsTitle:'Términos de Servicio de One2OneLove', termsIntro:'Lee los Términos de Servicio completos. El botón Aceptar se habilita cuando llegues al final.', scrollHint:'Desplázate hasta el final para habilitar la aceptación.', reachedBottom:'Has llegado al final. Ahora puedes aceptar los Términos.', acceptTerms:'Confirmo que tengo 18+ y Acepto los Términos de Servicio', close:'Cerrar', mismatch:'Las contraseñas no coinciden.', termsError:'Debes leer y aceptar los Términos antes de crear una cuenta.', fieldsError:'Selecciona tu país e idioma preferido.', verifyTitle:'Verifica tu Correo', verifyBody:'Enviamos un código de verificación de 6 dígitos a la dirección indicada.', verifyNote:'Ingresa el código para verificar tu correo. Los códigos caducan; solicita uno nuevo si es necesario.', code:'Código de verificación de 6 dígitos', verify:'Verificar Correo', verifying:'Verificando…', verifiedTitle:'Correo Verificado', verifiedBody:'Tu correo está verificado. Ahora puedes iniciar sesión en One2OneLove.', resend:'Reenviar Código', resent:'Se envió un nuevo código de verificación.', resending:'Enviando…', signIn:'Ir a Iniciar Sesión', invalidCode:'Ingresa el código de 6 dígitos de tu correo.', registrationFailed:'No se pudo completar el registro. Inténtalo de nuevo.', resendFailed:'No se pudo reenviar el código de verificación.', termsVersionLabel:'Versión de los Términos', privacyNote:'Al aceptar estos Términos, también reconoces la Política de Privacidad de One2OneLove.'
+    title:'Crea tu Cuenta de One2OneLove', subtitle:'Únete a One2OneLove y comienza a usar herramientas, recursos y funciones de comunidad.', fullName:'Tu Nombre', fullNamePlaceholder:'Ingresa tu nombre', email:'Correo Electrónico', emailPlaceholder:'Ingresa tu correo', password:'Contraseña', passwordPlaceholder:'Crea una contraseña (mínimo 8 caracteres)', showPassword:'Mostrar contraseña', hidePassword:'Ocultar contraseña', showConfirmPassword:'Mostrar contraseña de confirmación', hideConfirmPassword:'Ocultar contraseña de confirmación', confirmPassword:'Confirmar Contraseña', confirmPasswordPlaceholder:'Confirma tu contraseña', country:'País', countryPlaceholder:'Selecciona tu país', language:'Idioma Preferido', languagePlaceholder:'Selecciona tu idioma preferido', termsRequired:'Es obligatorio aceptar los Términos.', termsExplain:'Abre los Términos de Servicio completos, desplázate hasta el final y acéptalos antes de crear tu cuenta.', readTerms:'Leer los Términos de Servicio Completos', accepted:'Términos de Servicio aceptados', createAccount:'Crear Cuenta', creating:'Creando Cuenta…', checkingReadiness:'Comprobando el registro seguro…', readinessUnavailable:'El registro verificado no está disponible temporalmente. Inténtalo de nuevo en breve.', back:'Volver al Inicio de One2OneLove', termsTitle:'Términos de Servicio de One2OneLove', termsIntro:'Lee los Términos de Servicio completos. El botón Aceptar se habilita cuando llegues al final.', scrollHint:'Desplázate hasta el final para habilitar la aceptación.', reachedBottom:'Has llegado al final. Ahora puedes aceptar los Términos.', acceptTerms:'Confirmo que tengo 18+ y Acepto los Términos de Servicio', close:'Cerrar', mismatch:'Las contraseñas no coinciden.', termsError:'Debes leer y aceptar los Términos antes de crear una cuenta.', fieldsError:'Selecciona tu país e idioma preferido.', verifyTitle:'Verifica tu Correo', verifyBody:'Enviamos un código de verificación de 6 dígitos a la dirección indicada.', verifyNote:'Ingresa el código para verificar tu correo. Los códigos caducan; solicita uno nuevo si es necesario.', code:'Código de verificación de 6 dígitos', verify:'Verificar Correo', verifying:'Verificando…', verifiedTitle:'Correo Verificado', verifiedBody:'Tu correo está verificado. Ahora puedes iniciar sesión en One2OneLove.', resend:'Reenviar Código', resent:'Se envió un nuevo código de verificación.', resending:'Enviando…', signIn:'Ir a Iniciar Sesión', invalidCode:'Ingresa el código de 6 dígitos de tu correo.', registrationFailed:'No se pudo completar el registro. Inténtalo de nuevo.', resendFailed:'No se pudo reenviar el código de verificación.', termsVersionLabel:'Versión de los Términos', privacyNote:'Al aceptar estos Términos, también reconoces la Política de Privacidad de One2OneLove.'
   },
   fr: {
     title:'Créez Votre Compte One2OneLove', subtitle:'Rejoignez One2OneLove et utilisez des outils, ressources et fonctions communautaires.', fullName:'Votre Nom', fullNamePlaceholder:'Entrez votre nom', email:'Adresse E-mail', emailPlaceholder:'Entrez votre e-mail', password:'Mot de Passe', passwordPlaceholder:'Créez un mot de passe (8 caractères minimum)', showPassword:'Afficher le mot de passe', hidePassword:'Masquer le mot de passe', showConfirmPassword:'Afficher la confirmation du mot de passe', hideConfirmPassword:'Masquer la confirmation du mot de passe', confirmPassword:'Confirmer le Mot de Passe', confirmPasswordPlaceholder:'Confirmez votre mot de passe', country:'Pays', countryPlaceholder:'Sélectionnez votre pays', language:'Langue Préférée', languagePlaceholder:'Sélectionnez votre langue préférée', termsRequired:'L’acceptation des Conditions est obligatoire.', termsExplain:'Ouvrez les Conditions complètes, faites défiler jusqu’en bas puis acceptez-les avant de créer votre compte.', readTerms:'Lire les Conditions Complètes', accepted:'Conditions acceptées', createAccount:'Créer un Compte', creating:'Création du Compte…', back:'Retour à l’Accueil One2OneLove', termsTitle:'Conditions d’Utilisation de One2OneLove', termsIntro:'Lisez les Conditions complètes. Le bouton Accepter devient disponible après avoir atteint la fin.', scrollHint:'Faites défiler jusqu’en bas pour activer l’acceptation.', reachedBottom:'Vous avez atteint la fin. Vous pouvez maintenant accepter les Conditions.', acceptTerms:'Je Confirme Avoir 18+ et J’accepte les Conditions', close:'Fermer', mismatch:'Les mots de passe ne correspondent pas.', termsError:'Vous devez lire et accepter les Conditions avant de créer un compte.', fieldsError:'Sélectionnez votre pays et votre langue préférée.', verifyTitle:'Vérifiez Votre E-mail', verifyBody:'Nous avons envoyé un code de vérification à 6 chiffres à l’adresse ci-dessous.', verifyNote:'Saisissez le code pour vérifier votre e-mail. Les codes expirent ; demandez-en un nouveau si nécessaire.', code:'Code de vérification à 6 chiffres', verify:'Vérifier l’E-mail', verifying:'Vérification…', verifiedTitle:'E-mail Vérifié', verifiedBody:'Votre e-mail est vérifié. Vous pouvez maintenant vous connecter à One2OneLove.', resend:'Renvoyer le Code', resent:'Un nouveau code de vérification a été envoyé.', resending:'Envoi…', signIn:'Aller à la Connexion', invalidCode:'Saisissez le code à 6 chiffres reçu par e-mail.', registrationFailed:'L’inscription a échoué. Veuillez réessayer.', resendFailed:'Impossible de renvoyer le code de vérification.', termsVersionLabel:'Version des Conditions', privacyNote:'En acceptant ces Conditions, vous reconnaissez également la Politique de Confidentialité de One2OneLove.'
@@ -48,6 +48,10 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
+  const readinessCopy = {
+    checking: t.checkingReadiness || translations.en.checkingReadiness,
+    unavailable: t.readinessUnavailable || translations.en.readinessUnavailable,
+  };
   const terms = termsByLanguage[currentLanguage] || termsEn;
   const scrollRef = useRef(null);
 
@@ -73,6 +77,24 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [checkingReadiness, setCheckingReadiness] = useState(true);
+  const [signupReady, setSignupReady] = useState(false);
+  const [readinessError, setReadinessError] = useState('');
+  const [signupResumed, setSignupResumed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const check = async () => {
+      setCheckingReadiness(true);
+      const result = await getLaunchSignupReadiness();
+      if (!active) return;
+      setSignupReady(result.success === true);
+      setReadinessError(result.success ? '' : (result.error || readinessCopy.unavailable));
+      setCheckingReadiness(false);
+    };
+    check();
+    return () => { active = false; };
+  }, [readinessCopy.unavailable]);
 
   const goBack = () => onBack ? onBack() : navigate(createPageUrl('Home'));
   const openTerms = () => {
@@ -89,12 +111,24 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
     setTermsAcceptedAt(new Date().toISOString());
     setTermsOpen(false);
   };
+  const signupContext = () => ({
+    name: formData.fullName,
+    email: formData.email.trim().toLowerCase(),
+    country: formData.country,
+    preferredLanguage: formData.preferredLanguage,
+    termsAcceptedAt,
+    termsVersion: TERMS_VERSION,
+    privacyPolicyAcknowledged: true,
+    age18Confirmed: true,
+    selectedPlan,
+  });
 
   const handleSubmit = async event => {
     event.preventDefault();
     if (formData.password !== formData.confirmPassword) return toast.error(t.mismatch);
     if (!formData.country || !formData.preferredLanguage) return toast.error(t.fieldsError);
     if (!termsAcceptedAt) return toast.error(t.termsError);
+    if (!signupReady) return toast.error(readinessError || readinessCopy.unavailable);
 
     setIsLoading(true);
     try {
@@ -113,6 +147,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
       if (result?.success && result.emailVerificationRequired) {
         setSuccessEmail(formData.email.trim().toLowerCase());
         setOtp('');
+        setSignupResumed(result.resumed === true);
         toast.success(t.verifyTitle);
       } else toast.error(currentLanguage === 'en' ? (result?.error || t.registrationFailed) : t.registrationFailed);
     } catch (error) {
@@ -132,7 +167,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
     event.preventDefault();
     if (!/^\d{6}$/.test(otp)) return toast.error(t.invalidCode);
     setVerifyLoading(true);
-    const result = await verifyLaunchEmail(successEmail, otp);
+    const result = await verifyLaunchEmail(successEmail, otp, signupContext());
     if (result.success) {
       setVerified(true);
       toast.success(t.verifiedTitle);
@@ -154,6 +189,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
           {!verified ? (
             <>
               <div className="mb-5 rounded-xl border border-purple-200 bg-purple-50 p-4 text-sm text-purple-900">{t.verifyNote}</div>
+              {signupResumed && <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{t.resumedNote || translations.en.resumedNote}</div>}
               <form onSubmit={handleVerify} className="space-y-4">
                 <label htmlFor="signup-email-verification-code" className="block text-left text-sm font-semibold text-gray-700">{t.code}</label>
                 <Input
@@ -193,6 +229,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
+            {(checkingReadiness || !signupReady) && <div className={`rounded-xl border p-4 text-sm ${checkingReadiness ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>{checkingReadiness ? readinessCopy.checking : (readinessError || readinessCopy.unavailable)}</div>}
             <Field htmlFor="signup-full-name" label={`${t.fullName} *`} icon={<User size={20}/>}><Input id="signup-full-name" value={formData.fullName} onChange={e => setFormData({...formData,fullName:e.target.value})} placeholder={t.fullNamePlaceholder} className="pl-12" required/></Field>
             <Field htmlFor="signup-email" label={`${t.email} *`} icon={<Mail size={20}/>}><Input id="signup-email" type="email" value={formData.email} onChange={e => setFormData({...formData,email:e.target.value})} placeholder={t.emailPlaceholder} className="pl-12" required/></Field>
             <Field htmlFor="signup-password" label={`${t.password} *`} icon={<Lock size={20}/>}>
@@ -209,7 +246,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
 
             <div className={`rounded-xl border p-4 ${termsAcceptedAt?'border-green-300 bg-green-50':'border-gray-200 bg-gray-50'}`}><p className="mb-1 font-semibold text-gray-900">{t.termsRequired}</p><p className="mb-3 text-sm text-gray-600">{t.termsExplain}</p><button type="button" onClick={openTerms} className="text-sm font-bold text-blue-600 underline hover:text-blue-700">{t.readTerms}</button>{termsAcceptedAt && <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-green-700"><CheckCircle2 size={18}/>{t.accepted}</div>}</div>
 
-            <Button type="submit" disabled={isLoading || !termsAcceptedAt} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-lg font-semibold text-white disabled:opacity-50">{isLoading?<><Loader2 className="mr-2 h-5 w-5 animate-spin"/>{t.creating}</>:t.createAccount}</Button>
+            <Button type="submit" disabled={isLoading || checkingReadiness || !signupReady || !termsAcceptedAt} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-lg font-semibold text-white disabled:opacity-50">{isLoading?<><Loader2 className="mr-2 h-5 w-5 animate-spin"/>{t.creating}</>:t.createAccount}</Button>
           </form>
         </CardContent>
       </Card>

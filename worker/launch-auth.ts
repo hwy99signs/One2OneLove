@@ -120,20 +120,152 @@ async function launchReadiness(env) {
   });
 }
 
-async function launchReadinessResponse(request, env) {
-  if (request.method !== 'GET') return fail('Method not allowed.', 405, 'method_not_allowed');
-  const readiness = await launchReadiness(env);
-  const emailVerificationReady = Boolean(
+function launchIdentityReady(readiness, env) {
+  const emailReady = Boolean(
     readiness.consent_table_ready &&
     readiness.verification_required &&
     readiness.verification_email_on_signup &&
-    readiness.verification_method
+    readiness.verification_method &&
+    readiness.email_provider_type &&
+    readiness.email_provider_type !== 'shared'
   );
+  const phoneReady = Boolean(
+    readiness.phone_verification_schema_ready &&
+    env.TWILIO_ACCOUNT_SID &&
+    env.TWILIO_AUTH_TOKEN &&
+    env.TWILIO_VERIFY_SERVICE_SID
+  );
+  return { emailReady, phoneReady, ready: emailReady && phoneReady };
+}
+
+function registrationContext(body) {
+  const name = clean(body.name, 200, true);
+  const email = clean(body.email, 320, true)?.toLowerCase();
+  const country = clean(body.country, 2, true)?.toUpperCase();
+  const preferredLanguage = clean(body.preferredLanguage, 10, true)?.toLowerCase();
+  const termsVersion = clean(body.termsVersion, 100, true);
+  const termsAcceptedAt = clean(body.termsAcceptedAt, 100, true);
+  const privacyAcknowledged = body.privacyPolicyAcknowledged === true;
+  const age18Confirmed = body.age18Confirmed === true;
+  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Premiere';
+  const selectedPlan = selectedPlanRaw.toLowerCase() === 'exclusive'
+    ? 'Exclusive'
+    : ['premiere', 'premier'].includes(selectedPlanRaw.toLowerCase()) ? 'Premiere' : null;
+
+  if (!/^\S+@\S+\.\S+$/.test(email || '')) throw new Error('Please enter a valid email address.');
+  if (!/^[A-Z]{2}$/.test(country || '')) throw new Error('Please select a valid country.');
+  if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) throw new Error('Please select one of the supported One2OneLove languages.');
+  if (!privacyAcknowledged || !age18Confirmed) throw new Error('Privacy acknowledgement and 18+ confirmation are required.');
+  if (!selectedPlan) throw new Error('Please choose Premiere or Exclusive before creating an account.');
+
+  const acceptedDate = new Date(termsAcceptedAt);
+  if (Number.isNaN(acceptedDate.getTime())) throw new Error('Terms acceptance date is invalid.');
+
+  return {
+    name,
+    email,
+    country,
+    preferredLanguage,
+    termsVersion,
+    termsAcceptedAt: acceptedDate.toISOString(),
+    selectedPlan,
+    selectedPrice: selectedPlan === 'Exclusive' ? 19.99 : 9.99,
+  };
+}
+
+async function persistRegistration(db, user, registration) {
+  await db.query('BEGIN');
+  try {
+    await db.query(
+      `INSERT INTO public.signup_consents
+        (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
+         privacy_policy_acknowledged,age_18_confirmed,signup_source)
+       SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_launch'
+       FROM neon_auth."user" WHERE id=$1::uuid AND lower(email)=lower($2)
+       ON CONFLICT (user_id, terms_version) DO UPDATE SET
+         country=EXCLUDED.country,
+         preferred_language=EXCLUDED.preferred_language,
+         terms_accepted_at=EXCLUDED.terms_accepted_at,
+         privacy_policy_acknowledged=true,
+         age_18_confirmed=true`,
+      [user.id, registration.email, registration.country, registration.preferredLanguage, registration.termsVersion, registration.termsAcceptedAt],
+    );
+
+    // This write is idempotent. A retry after a slow Worker/Database response
+    // repairs the member profile without creating a duplicate account or a new
+    // Guest Preview timer.
+    await db.query(
+      `INSERT INTO public.users
+        (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
+       VALUES ($1::uuid,$2,$3,'regular',true,$4,$5,'inactive')
+       ON CONFLICT (id) DO UPDATE SET
+         email=EXCLUDED.email,
+         name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name),
+         user_type='regular',
+         is_active=COALESCE(public.users.is_active,true)`,
+      [user.id, registration.email, registration.name, registration.selectedPlan, registration.selectedPrice],
+    );
+    await db.query('COMMIT');
+    return true;
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => {});
+    throw error;
+  }
+}
+
+async function resumeUnverifiedRegistration(request, env, registration) {
+  // A browser can lose the first response after Auth creates the account. In
+  // that case, a second submit must take the member back to verification
+  // rather than suggesting they create a second account.
+  let user = null;
+  try {
+    user = await withDb(env, async db => {
+      const result = await db.query(
+        'SELECT id,email,name,"emailVerified" FROM neon_auth."user" WHERE lower(email)=lower($1) LIMIT 1',
+        [registration.email],
+      );
+      return result.rows[0] || null;
+    });
+  } catch (error) {
+    console.error('One2OneLove duplicate signup recovery lookup failed', error);
+    return null;
+  }
+
+  if (!user?.id || user.emailVerified === true) return null;
+
+  let profileReady = true;
+  try {
+    await withDb(env, db => persistRegistration(db, user, registration));
+  } catch (error) {
+    console.error('One2OneLove duplicate signup profile recovery deferred', error);
+    profileReady = false;
+  }
+
+  let resend;
+  try {
+    resend = await authPost(request, env, '/email-otp/send-verification-otp', {
+      email: registration.email,
+      type: 'email-verification',
+    });
+  } catch (error) {
+    console.error('One2OneLove duplicate signup verification resend failed', error);
+    return null;
+  }
+  if (!resend.ok) return null;
+
+  return { user, profileReady };
+}
+
+async function launchReadinessResponse(request, env) {
+  if (request.method !== 'GET') return fail('Method not allowed.', 405, 'method_not_allowed');
+  const readiness = await launchReadiness(env);
+  const identity = launchIdentityReady(readiness, env);
+  const emailVerificationReady = Boolean(readiness.consent_table_ready && readiness.verification_required && readiness.verification_email_on_signup && readiness.verification_method);
   const emailDeliveryReady = Boolean(readiness.email_provider_type && readiness.email_provider_type !== 'shared');
   const phoneVerificationProviderConfigured = Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_VERIFY_SERVICE_SID);
   const phoneVerificationSchemaReady = readiness.phone_verification_schema_ready === true;
-  const phoneVerificationReady = phoneVerificationProviderConfigured && phoneVerificationSchemaReady;
-  const publicLaunchIdentityGateReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
+  const phoneVerificationReady = identity.phoneReady;
+  const publicLaunchIdentityGateReady = identity.ready;
   const legacyEntitlementRows = Number(readiness.legacy_entitlement_rows || 0);
   const billingDefaultsReady = Boolean(
     readiness.premiere_default_ready &&
@@ -170,44 +302,45 @@ async function registerLaunchUser(request, env) {
   if (request.method !== 'POST') return fail('Method not allowed.', 405, 'method_not_allowed');
 
   const readiness = await launchReadiness(env);
-  const emailDeliveryReady = Boolean(readiness.email_provider_type && readiness.email_provider_type !== 'shared');
-  if (!readiness.consent_table_ready || !readiness.verification_required || !emailDeliveryReady) {
+  if (!launchIdentityReady(readiness, env).ready) {
     return fail('One2OneLove verified registration is not ready yet.', 503, 'registration_not_ready');
   }
 
   const body = await readJson(request);
-  const name = clean(body.name, 200, true);
-  const email = clean(body.email, 320, true)?.toLowerCase();
+  let registration;
+  try {
+    registration = registrationContext(body);
+  } catch (error) {
+    return fail(error?.message || 'Registration details are invalid.', 400, 'invalid_registration');
+  }
   const password = String(body.password || '');
-  const country = clean(body.country, 2, true)?.toUpperCase();
-  const preferredLanguage = clean(body.preferredLanguage, 10, true)?.toLowerCase();
-  const termsVersion = clean(body.termsVersion, 100, true);
-  const termsAcceptedAt = clean(body.termsAcceptedAt, 100, true);
-  const privacyAcknowledged = body.privacyPolicyAcknowledged === true;
-  const age18Confirmed = body.age18Confirmed === true;
-  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Premiere';
-  const selectedPlan = selectedPlanRaw.toLowerCase() === 'exclusive'
-    ? 'Exclusive'
-    : ['premiere', 'premier'].includes(selectedPlanRaw.toLowerCase()) ? 'Premiere' : null;
-  if (!selectedPlan) return fail('Please choose Premiere or Exclusive before creating an account.');
-  const selectedPrice = selectedPlan === 'Exclusive' ? 19.99 : 9.99;
-
-  if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
   if (password.length < 8) return fail('Password must contain at least 8 characters.');
-  if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) return fail('Please select one of the supported One2OneLove languages.');
-  if (!privacyAcknowledged || !age18Confirmed) return fail('Privacy acknowledgement and 18+ confirmation are required.');
-  const acceptedDate = new Date(termsAcceptedAt);
-  if (Number.isNaN(acceptedDate.getTime())) return fail('Terms acceptance date is invalid.');
 
   const upstream = await authPost(request, env, '/sign-up/email', {
-    email,
+    email: registration.email,
     password,
-    name,
+    name: registration.name,
     callbackURL: callbackFor(request),
   });
   const { payload } = await readUpstream(upstream);
 
   if (!upstream.ok) {
+    const resumed = await resumeUnverifiedRegistration(request, env, registration);
+    if (resumed) {
+      return json({
+        ok: true,
+        success: true,
+        user: { id: resumed.user.id, email: resumed.user.email || registration.email, emailVerified: false },
+        emailVerificationRequired: true,
+        verificationMethod: readiness.verification_method || 'otp',
+        verificationEmailExpected: true,
+        guestPreviewHours: 24,
+        selectedPlan: registration.selectedPlan,
+        profileReady: resumed.profileReady,
+        recoveryPending: !resumed.profileReady,
+        resumed: true,
+      }, 202);
+    }
     const message = payload?.message || payload?.error?.message || 'Account creation failed.';
     return fail(message, upstream.status, payload?.code || payload?.error?.code || 'signup_failed');
   }
@@ -215,52 +348,29 @@ async function registerLaunchUser(request, env) {
   const user = payload?.user || payload?.data?.user || null;
   if (!user?.id) return fail('Account creation did not return a user record.', 502, 'invalid_auth_response');
 
-  await withDb(env, async (db) => {
-    await db.query('BEGIN');
-    try {
-      await db.query(
-        `INSERT INTO public.signup_consents
-          (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
-           privacy_policy_acknowledged,age_18_confirmed,signup_source)
-         SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_launch'
-         FROM neon_auth."user" WHERE id=$1::uuid AND lower(email)=lower($2)
-         ON CONFLICT (user_id, terms_version) DO UPDATE SET
-           country=EXCLUDED.country,
-           preferred_language=EXCLUDED.preferred_language,
-           terms_accepted_at=EXCLUDED.terms_accepted_at,
-           privacy_policy_acknowledged=true,
-           age_18_confirmed=true`,
-        [user.id, email, country, preferredLanguage, termsVersion, acceptedDate.toISOString()],
-      );
-
-      // Newly registered members receive a 24-hour Guest Preview without a card.
-      // After that they must start the 7-day card-backed trial or subscribe.
-      await db.query(
-        `INSERT INTO public.users
-          (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-         VALUES ($1::uuid,$2,$3,'regular',true,$4,$5,'inactive')
-         ON CONFLICT (id) DO NOTHING`,
-        [user.id, email, name, selectedPlan, selectedPrice],
-      );
-      await db.query('COMMIT');
-    } catch (error) {
-      await db.query('ROLLBACK');
-      throw error;
-    }
-  });
+  let profileReady = true;
+  try {
+    await withDb(env, db => persistRegistration(db, user, registration));
+  } catch (error) {
+    // Authentication already accepted the account. Do not leave a member
+    // stranded or invite a duplicate submission: email verification retries
+    // the same idempotent profile/consent write with the verified email code.
+    console.error('One2OneLove signup profile write deferred', error);
+    profileReady = false;
+  }
 
   return json({
     ok: true,
     success: true,
-    user: { id: user.id, email: user.email || email, emailVerified: user.emailVerified === true },
+    user: { id: user.id, email: user.email || registration.email, emailVerified: user.emailVerified === true },
     emailVerificationRequired: true,
     verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
     guestPreviewHours: 24,
-    trialDays: 7,
-    trialDefaultPlan: selectedPlan,
-    selectedPlan,
-  }, 201);
+    selectedPlan: registration.selectedPlan,
+    profileReady,
+    recoveryPending: !profileReady,
+  }, profileReady ? 201 : 202);
 }
 
 async function resendVerification(request, env) {
@@ -289,6 +399,14 @@ async function verifyLaunchEmail(request, env) {
   const body = await readJson(request);
   const email = clean(body.email, 320, true)?.toLowerCase();
   const otp = String(body.otp || '').trim();
+  let registration = null;
+  if (body.signupContext && typeof body.signupContext === 'object') {
+    try {
+      registration = registrationContext({ ...body.signupContext, email });
+    } catch (error) {
+      return fail(error?.message || 'Registration details are invalid.', 400, 'invalid_registration');
+    }
+  }
   if (!/^\S+@\S+\.\S+$/.test(email || '')) return fail('Please enter a valid email address.');
   if (!/^\d{6}$/.test(otp)) return fail('Enter the 6-digit verification code.', 400, 'invalid_otp');
 
@@ -299,13 +417,25 @@ async function verifyLaunchEmail(request, env) {
     return fail(message, upstream.status === 429 ? 429 : 400, payload?.code || payload?.error?.code || 'invalid_otp');
   }
 
-  const verified = await withDb(env, async db => {
-    const result = await db.query('SELECT "emailVerified" FROM neon_auth."user" WHERE lower(email)=lower($1) LIMIT 1', [email]);
-    return result.rows[0]?.emailVerified === true;
-  });
+  let verified = false;
+  let profileReady = true;
+  try {
+    await withDb(env, async db => {
+      const result = await db.query('SELECT id,email,name,"emailVerified" FROM neon_auth."user" WHERE lower(email)=lower($1) LIMIT 1', [email]);
+      const user = result.rows[0] || null;
+      verified = user?.emailVerified === true;
+      if (!verified) return;
+      if (registration) await persistRegistration(db, user, registration);
+    });
+  } catch (error) {
+    // The email is already verified upstream. Sign-in remains a safe recovery
+    // path because the protected profile route backfills the base member row.
+    console.error('One2OneLove verified signup profile recovery deferred', error);
+    profileReady = false;
+  }
 
   if (!verified) return fail('Email verification did not complete. Request a new code and try again.', 409, 'verification_incomplete');
-  return json({ ok: true, success: true, verified: true });
+  return json({ ok: true, success: true, verified: true, profileReady, recoveryPending: !profileReady }, profileReady ? 200 : 202);
 }
 
 export async function handleLaunchAuthRequest(request, env, url) {

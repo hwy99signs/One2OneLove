@@ -218,7 +218,8 @@ async function members(db) {
            COALESCE(u.user_type,'regular') AS user_type,
            u.relationship_status,u.location,
            COALESCE(u.is_active,true) AS is_active,
-           COALESCE(u.is_verified,a."emailVerified",false) AS is_verified,
+           COALESCE(a."emailVerified",u.is_verified,false) AS is_verified,
+           COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
            CASE
              WHEN u.id IS NULL THEN 'Guest'
              WHEN u.stripe_subscription_id IS NULL
