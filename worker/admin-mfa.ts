@@ -132,7 +132,7 @@ async function createMfaToken(auth, env) {
   return { token: `${payload}.${signature}`, expiresAt };
 }
 
-async function readMfaToken(request, env, auth) {
+async function readSignedMfaPayload(request, env) {
   const token = cookieValue(request, COOKIE_NAME);
   if (!token) return null;
   const [payloadPart, signaturePart] = token.split('.');
@@ -150,9 +150,23 @@ async function readMfaToken(request, env, auth) {
   if (!decoded) return null;
   let payload;
   try { payload = JSON.parse(decoded); } catch { return null; }
-  if (payload?.v !== 2 || payload?.uid !== auth.user.id) return null;
+  if (payload?.v !== 2 || !payload?.uid) return null;
   if (!Number.isFinite(payload?.exp) || payload.exp <= Math.floor(Date.now() / 1000)) return null;
   return payload;
+}
+
+async function readMfaToken(request, env, auth) {
+  const payload = await readSignedMfaPayload(request, env);
+  if (!payload || payload.uid !== auth.user.id) return null;
+  return payload;
+}
+
+export async function getVerifiedAdminMfaIdentity(request, env) {
+  const payload = await readSignedMfaPayload(request, env);
+  if (!payload) return null;
+  const admin = await adminIdentity(env, payload.uid);
+  if (!admin) return null;
+  return { admin, payload };
 }
 
 function mfaCookie(token) {
@@ -185,11 +199,30 @@ async function betterAuthOtp(request, env, path, body) {
 
 export async function adminMfaStatus(request, env) {
   const auth = await getSession(request, env);
-  if (!auth) return { response: fail('Authentication required.', 401, 'unauthorized') };
-  const admin = await adminIdentity(env, auth.user.id);
-  if (!admin) return { response: fail('Administrator access required.', 403, 'forbidden') };
-  const token = await readMfaToken(request, env, auth);
-  return { auth, admin, verified: Boolean(token), expiresAt: token?.exp || null };
+  if (auth) {
+    const admin = await adminIdentity(env, auth.user.id);
+    if (!admin) return { response: fail('Administrator access required.', 403, 'forbidden') };
+    const token = await readMfaToken(request, env, auth);
+    return { auth, admin, verified: Boolean(token), expiresAt: token?.exp || null };
+  }
+
+  // A valid signed, HttpOnly Admin MFA cookie remains authoritative for the
+  // 12-hour Admin session even if Better Auth briefly returns a transient 401
+  // during a refresh. This prevents random dashboard logouts without weakening
+  // the Admin boundary: the token is signed, host-only, Secure, SameSite=Strict,
+  // time-limited, and its UID must still belong to an active admin in the DB.
+  const fallback = await getVerifiedAdminMfaIdentity(request, env);
+  if (fallback) {
+    return {
+      auth: { user: fallback.admin, session: { adminMfaFallback: true } },
+      admin: fallback.admin,
+      verified: true,
+      expiresAt: fallback.payload.exp,
+      fallback: true,
+    };
+  }
+
+  return { response: fail('Authentication required.', 401, 'unauthorized') };
 }
 
 export async function enforceAdminMfa(request, env) {
