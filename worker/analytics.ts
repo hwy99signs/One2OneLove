@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -261,11 +262,12 @@ export async function handleAnalyticsRequest(request, env, url) {
   if (request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
 
   const auth = await session(request, env);
-  if (!auth) return fail('Authentication required.',401,'unauthorized');
+  const mfaFallback = auth ? null : await getVerifiedAdminMfaIdentity(request, env);
+  if (!auth && !mfaFallback) return fail('Authentication required.',401,'unauthorized');
 
   try {
     return await withDb(env, async (db) => {
-      const admin = await requireAdmin(db, auth.user.id);
+      const admin = mfaFallback?.admin || await requireAdmin(db, auth.user.id);
       if (!admin) return fail('Administrator access required.',403,'forbidden');
       const data = await analytics(db, env);
       return json({ ok:true,admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
