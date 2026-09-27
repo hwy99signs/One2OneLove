@@ -267,6 +267,7 @@ export default function ContributorProfessionalApplication() {
         lastName: form.lastName,
         email: form.email,
         password: form.password,
+        selectedPlan: String(new URLSearchParams(window.location.search).get("plan") || "Premiere").toLowerCase() === "exclusive" ? "Exclusive" : "Premiere",
       }, application);
 
       if (!result.success) {
@@ -302,7 +303,7 @@ export default function ContributorProfessionalApplication() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-fuchsia-50 via-purple-50 to-blue-50 px-4 py-12">
       <div className="max-w-5xl mx-auto">
-        <Link to={`${createPageUrl("ProfessionalSignup")}?plan=${encodeURIComponent(new URLSearchParams(window.location.search).get("plan") || "Premiere")}`} className="inline-flex items-center text-gray-600 hover:text-purple-700 mb-7"><ArrowLeft className="w-5 h-5 mr-2" />{t.back}</Link>
+        <Link to={`${createPageUrl("ProfessionalSignup")}?plan=${encodeURIComponent(new URLSearchParams(window.location.search).get("plan") || "Premiere")}${new URLSearchParams(window.location.search).get("source") ? `&source=${encodeURIComponent(new URLSearchParams(window.location.search).get("source"))}` : ""}`} className="inline-flex items-center text-gray-600 hover:text-purple-700 mb-7"><ArrowLeft className="w-5 h-5 mr-2" />{t.back}</Link>
         <div className="text-center mb-9">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white flex items-center justify-center mx-auto mb-4 shadow-lg"><Mic2 className="w-8 h-8" /></div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-3">{t.title}</h1>
