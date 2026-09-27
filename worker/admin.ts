@@ -102,7 +102,7 @@ async function overview(db) {
              count(*) FILTER (WHERE p.id IS NOT NULL AND COALESCE(p.is_active,true)=false)::int AS inactive,
              count(*) FILTER (WHERE COALESCE(p.is_verified,a."emailVerified",false)=true)::int AS verified
         FROM neon_auth."user" a
-        LEFT JOIN public.users p ON p.id=a.id`),
+        FULL OUTER JOIN public.users p ON p.id=a.id`),
     db.query(`
       WITH desired(plan,sort_order) AS (
         VALUES ('Premiere'::text,1),('Exclusive'::text,2)
@@ -170,7 +170,7 @@ async function overview(db) {
 
 async function members(db) {
   const result = await db.query(`
-    SELECT a.id,
+    SELECT COALESCE(a.id,u.id) AS id,
            COALESCE(u.email,a.email) AS email,
            COALESCE(NULLIF(u.name,''),NULLIF(a.name,''),split_part(a.email,'@',1)) AS name,
            COALESCE(u.user_type,'regular') AS user_type,
@@ -202,9 +202,10 @@ async function members(db) {
            COALESCE(a.role,'user') AS auth_role,
            COALESCE(a.banned,false) AS banned,
            a."banReason" AS ban_reason,
-           (u.id IS NOT NULL) AS profile_ready
+           (u.id IS NOT NULL) AS profile_ready,
+           (a.id IS NOT NULL) AS auth_ready
       FROM neon_auth."user" a
-      LEFT JOIN public.users u ON u.id=a.id
+      FULL OUTER JOIN public.users u ON u.id=a.id
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
