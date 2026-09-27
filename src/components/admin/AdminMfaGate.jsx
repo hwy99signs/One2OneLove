@@ -3,36 +3,58 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminMfaStatus } from '@/lib/adminMfaService';
 
+const wait = (ms) => new Promise(resolve => window.setTimeout(resolve, ms));
+
 export default function AdminMfaGate({ children }) {
-  const { user, isAuthenticated, isLoading, refreshUserProfile } = useAuth();
+  const { refreshUserProfile } = useAuth();
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
     let active = true;
+
     (async () => {
-      let current = user;
-      if (!isAuthenticated || !current) current = await refreshUserProfile({ preserveOnNull: true }).catch(() => undefined);
-      if (!active) return;
-      if (!current) return window.location.replace('/SignIn');
-      if (String(current.role || '').toLowerCase() !== 'admin') return window.location.replace('/Home');
-      const phoneRequired = current.phone_verification_required === true;
-      const phoneVerified = current.phoneNumberVerified === true || current.phone_number_verified === true;
-      if (phoneRequired && !phoneVerified) return window.location.replace('/VerifyPhone');
-      try {
-        const status = await getAdminMfaStatus();
-        if (!active) return;
-        if (status?.verified) setAllowed(true);
-        else window.location.replace('/AdminAccess');
-      } catch (error) {
-        if (!active) return;
-        if (error?.status === 401) window.location.replace('/SignIn');
-        else if (error?.status === 403) window.location.replace('/Home');
-        else window.location.replace('/AdminAccess');
+      // The server-side Admin MFA endpoint is the source of truth on a hard
+      // refresh. Do not redirect based on the still-hydrating React auth state.
+      let lastError = null;
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const status = await getAdminMfaStatus();
+          if (!active) return;
+
+          if (status?.verified) {
+            setAllowed(true);
+            // Rehydrate the normal user context after access is already proven.
+            refreshUserProfile({ preserveOnNull: true }).catch(() => undefined);
+            return;
+          }
+
+          window.location.replace('/AdminAccess');
+          return;
+        } catch (error) {
+          lastError = error;
+          if (!active) return;
+
+          // A hard refresh can briefly race session hydration upstream. Give the
+          // secure cookie-backed session a moment before treating a 401/5xx as
+          // an actual logout.
+          if ([401, 429, 500, 502, 503, 504].includes(error?.status) && attempt < 2) {
+            await wait(350 * (attempt + 1));
+            continue;
+          }
+          break;
+        }
       }
+
+      if (!active) return;
+      if (lastError?.status === 403) window.location.replace('/Home');
+      else if (lastError?.status === 428) window.location.replace('/AdminAccess');
+      else if (lastError?.status === 401) window.location.replace('/SignIn');
+      else window.location.replace('/AdminAccess');
     })();
+
     return () => { active = false; };
-  }, [isLoading, isAuthenticated, user?.id, user?.role, user?.phone_verification_required, user?.phoneNumberVerified, user?.phone_number_verified]);
+  }, [refreshUserProfile]);
 
   if (!allowed) return (
     <div className="grid min-h-screen place-items-center bg-slate-50 p-4">
