@@ -6,17 +6,32 @@ export async function getCommunityChatRooms(scope = 'general') {
   return payload?.rooms || [];
 }
 
-export async function getCommunityChatMessages(roomId) {
-  const payload = await apiRequest(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/messages?limit=80`);
+export async function getCommunityChatMessages(roomId, topicId = null) {
+  const params = new URLSearchParams({ limit: '80' });
+  if (topicId) params.set('topic', topicId);
+  const payload = await apiRequest(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/messages?${params.toString()}`);
   return payload?.messages || [];
 }
 
-export async function sendCommunityChatMessage(roomId, content, replyToId = null) {
+export async function sendCommunityChatMessage(roomId, content, replyToId = null, topicId = null) {
   const payload = await apiRequest(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/messages`, {
     method: 'POST',
-    body: { content, reply_to_id: replyToId || null },
+    body: { content, reply_to_id: replyToId || null, topic_id: topicId || null },
   });
   return payload?.message || null;
+}
+
+export async function getCommunityChatTopics(roomId) {
+  const payload = await apiRequest(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/topics`);
+  return payload?.topics || [];
+}
+
+export async function createCommunityChatTopic(roomId, title, openingMessage = '') {
+  const payload = await apiRequest(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/topics`, {
+    method: 'POST',
+    body: { title, opening_message: openingMessage || '' },
+  });
+  return payload?.topic || null;
 }
 
 export async function touchCommunityChatPresence(roomId) {
