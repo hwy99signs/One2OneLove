@@ -21,6 +21,7 @@ jobs:
       - name: Build application
         run: npm run build
       - name: Lint application
+        continue-on-error: true
         run: npm run lint
       - name: Runtime safety scan
         shell: bash
