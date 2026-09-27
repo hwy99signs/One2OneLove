@@ -239,6 +239,10 @@ function LanguageContent({ children, currentPageName }) {
           --font-kalam: 'Kalam', cursive;
           --font-comic: 'Comic Neue', cursive;
         }
+
+        html {
+          scrollbar-gutter: stable;
+        }
         
         .font-dancing {
           font-family: var(--font-dancing);
@@ -281,13 +285,15 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Header */}
       <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-5 py-[0.225rem] flex items-center justify-between gap-5">
-          <Link to={createPageUrl("Home")} className="shrink-0 hover:opacity-90 transition-opacity">
+        <div className="max-w-[1400px] mx-auto px-5 h-[96px] flex items-center justify-between gap-5">
+          <Link to={createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
               src="/assets/o2ol-header-logo.png" 
               alt="One2One Love Logo" 
-              className="h-[88px] w-auto object-contain"
-              onError={(e) => { e.target.style.display = 'none'; }}
+              width="220"
+              height="88"
+              className="h-[88px] w-[220px] object-contain object-left"
+              onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             />
           </Link>
           
