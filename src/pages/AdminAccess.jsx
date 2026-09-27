@@ -4,180 +4,74 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { getAdminMfaStatus, requestAdminMfaCode, verifyAdminMfaCode } from '@/lib/adminMfaService';
 
-const SENT_AT_KEY = 'o2ol-admin-mfa-code-sent-at';
-const CODE_REUSE_MS = 4 * 60 * 1000;
-
 export default function AdminAccess() {
   const navigate = useNavigate();
-  const [otp, setOtp] = useState('');
-  const [email, setEmail] = useState('your admin email');
-  const [sending, setSending] = useState(true);
-  const [verifying, setVerifying] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [otp,setOtp] = useState('');
+  const [email,setEmail] = useState('your admin email');
+  const [loading,setLoading] = useState(true);
+  const [verifying,setVerifying] = useState(false);
+  const [sent,setSent] = useState(false);
 
-  const sendCode = async (showToast = true) => {
-    setSending(true);
-    const now = Date.now();
+  const sendCode = async (notify=false) => {
     try {
-      sessionStorage.setItem(SENT_AT_KEY, String(now));
       const result = await requestAdminMfaCode();
       setEmail(result?.email || 'your admin email');
       setSent(true);
-      setCooldown(30);
-      if (showToast) toast.success('A new administrator verification code was sent.');
+      if (notify) toast.success('A new administrator verification code was sent.');
     } catch (error) {
-      sessionStorage.removeItem(SENT_AT_KEY);
-      if (error?.status === 401) {
-        window.location.replace('/SignIn');
-        return;
-      }
-      if (error?.status === 403) {
-        toast.error('Administrator access is required.');
-        navigate('/Home', { replace: true });
-        return;
-      }
-      toast.error(error?.message || 'Unable to send the verification code.');
-    } finally {
-      setSending(false);
+      if (error?.status === 401) return window.location.replace('/SignIn');
+      if (error?.status === 403) return window.location.replace('/Home');
+      toast.error(error?.message || 'Unable to send the administrator verification code.');
     }
   };
 
   useEffect(() => {
-    let active = true;
-    (async () => {
+    let active=true;
+    (async()=>{
       try {
-        const status = await getAdminMfaStatus();
-        if (!active) return;
+        const status=await getAdminMfaStatus();
+        if(!active) return;
         setEmail(status?.email || 'your admin email');
-        if (status?.verified) {
-          window.location.replace('/Admin');
-          return;
-        }
-
-        const sentAt = Number(sessionStorage.getItem(SENT_AT_KEY) || 0);
-        if (sentAt && Date.now() - sentAt < CODE_REUSE_MS) {
-          setSent(true);
-          setSending(false);
-          return;
-        }
-
+        if(status?.verified) return window.location.replace('/Admin');
         await sendCode(false);
-      } catch (error) {
-        if (!active) return;
-        if (error?.status === 401) window.location.replace('/SignIn');
-        else if (error?.status === 403) window.location.replace('/Home');
-        else {
-          setSending(false);
-          toast.error(error?.message || 'Unable to verify administrator access.');
-        }
-      }
+      } catch(error) {
+        if(!active) return;
+        if(error?.status===401) window.location.replace('/SignIn');
+        else if(error?.status===403) window.location.replace('/Home');
+        else toast.error(error?.message || 'Unable to verify administrator access.');
+      } finally { if(active) setLoading(false); }
     })();
-    return () => { active = false; };
-  }, []);
+    return ()=>{active=false;};
+  },[]);
 
-  useEffect(() => {
-    if (!cooldown) return undefined;
-    const timer = window.setInterval(() => {
-      setCooldown(value => Math.max(0, value - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [cooldown]);
-
-  const verify = async (event) => {
+  const verify=async event=>{
     event.preventDefault();
-    const code = otp.trim();
-    if (!/^\d{6}$/.test(code)) {
-      toast.error('Enter the 6-digit code from your email.');
-      return;
-    }
-
+    if(!/^\d{6}$/.test(otp)) return toast.error('Enter the 6-digit code from your email.');
     setVerifying(true);
     try {
-      await verifyAdminMfaCode(code);
-      sessionStorage.removeItem(SENT_AT_KEY);
-      toast.success('Administrator verification complete.');
+      await verifyAdminMfaCode(otp);
       window.location.replace('/Admin');
-    } catch (error) {
+    } catch(error) {
       toast.error(error?.message || 'The verification code is invalid or expired.');
-    } finally {
-      setVerifying(false);
-    }
+    } finally { setVerifying(false); }
   };
 
-  const resend = async () => {
-    sessionStorage.removeItem(SENT_AT_KEY);
-    setOtp('');
-    await sendCode(true);
-  };
-
-  return (
-    <div className="min-h-[72vh] bg-gradient-to-br from-rose-50 via-white to-sky-50 px-4 py-12">
-      <div className="mx-auto max-w-md rounded-3xl border border-rose-200 bg-white p-7 shadow-xl sm:p-8">
-        <button
-          type="button"
-          onClick={() => navigate('/Home')}
-          className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
-        >
-          <ArrowLeft size={17}/>Back to One2OneLove
-        </button>
-
-        <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
-          <ShieldCheck size={30}/>
-        </div>
-        <h1 className="text-3xl font-black tracking-tight text-slate-900">Admin Verification</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          For added security, entering One2OneLove Admin requires a second verification step.
-        </p>
-
-        <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 p-4">
-          <div className="flex items-start gap-3">
-            <Mail className="mt-0.5 shrink-0 text-sky-600" size={19}/>
-            <div>
-              <p className="text-sm font-bold text-sky-900">Verification code {sent ? 'sent' : 'required'}</p>
-              <p className="mt-1 text-sm text-sky-800">Enter the 6-digit code sent to <strong>{email}</strong>.</p>
-              <p className="mt-1 text-xs text-sky-700">The code expires in about 5 minutes. Refreshing this page will no longer replace a still-valid code.</p>
-            </div>
-          </div>
-        </div>
-
-        <form onSubmit={verify} className="mt-6 space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">6-digit verification code</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={otp}
-              onChange={event => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000"
-              className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-center text-2xl font-black tracking-[0.35em] text-slate-900 outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-              disabled={sending || verifying}
-              maxLength={6}
-              autoFocus
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={sending || verifying || otp.length !== 6}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 px-5 font-bold text-white shadow-sm transition hover:from-rose-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {verifying ? <Loader2 size={18} className="animate-spin"/> : <ShieldCheck size={18}/>} {verifying ? 'Verifying…' : 'Enter Admin Dashboard'}
-          </button>
-        </form>
-
-        <div className="mt-5 border-t border-slate-200 pt-5 text-center">
-          <button
-            type="button"
-            onClick={resend}
-            disabled={sending || verifying || cooldown > 0}
-            className="text-sm font-semibold text-rose-600 hover:text-rose-700 disabled:cursor-not-allowed disabled:text-slate-400"
-          >
-            {sending ? 'Sending code…' : cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend verification code'}
-          </button>
-        </div>
+  return <main className="grid min-h-[78vh] place-items-center bg-slate-50 px-4 py-10">
+    <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+      <button type="button" onClick={()=>navigate('/Home')} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600"><ArrowLeft size={17}/>Back to One2OneLove</button>
+      <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600"><ShieldCheck size={30}/></div>
+      <h1 className="mt-4 text-3xl font-black text-slate-900">Admin Verification</h1>
+      <p className="mt-2 text-sm leading-6 text-slate-600">A verification code is required when an administrator signs in. After verification, the secure Admin session remains active for the session period.</p>
+      <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+        <div className="flex items-center gap-2 font-bold"><Mail size={17}/>{sent?'Verification code sent':'Preparing verification'}</div>
+        <div className="mt-1">Code sent to <strong>{email}</strong></div>
       </div>
-    </div>
-  );
+      <form onSubmit={verify} className="mt-6 space-y-5">
+        <div><label htmlFor="admin-otp" className="mb-2 block text-sm font-semibold text-slate-700">6-digit verification code</label>
+        <input id="admin-otp" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,'').slice(0,6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} disabled={loading||verifying} className="h-14 w-full rounded-xl border border-slate-300 text-center text-2xl font-black tracking-[0.35em] outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"/></div>
+        <button type="submit" disabled={loading||verifying||otp.length!==6} className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 font-bold text-white disabled:opacity-50">{verifying?<><Loader2 className="mr-2 h-5 w-5 animate-spin"/>Verifying…</>:'Enter Admin Dashboard'}</button>
+      </form>
+      <button type="button" disabled={loading||verifying} onClick={()=>{setOtp('');sendCode(true);}} className="mt-5 w-full text-sm font-bold text-rose-600 disabled:opacity-50">Send a new verification code</button>
+    </section>
+  </main>;
 }

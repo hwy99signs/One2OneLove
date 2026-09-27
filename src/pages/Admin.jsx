@@ -132,13 +132,6 @@ export default function Admin() {
   };
   useEffect(() => {
     load(false);
-    const interval = window.setInterval(() => load(true), 60000);
-    const onVisibility = () => { if (document.visibilityState === 'visible') load(true); };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
   }, []);
 
   const filteredMembers = useMemo(() => {

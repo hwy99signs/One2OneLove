@@ -8,7 +8,7 @@ const JSON_HEADERS = {
 };
 
 const COOKIE_NAME = '__Host-o2ol_admin_mfa';
-const MFA_TTL_SECONDS = 30 * 60;
+const MFA_TTL_SECONDS = 12 * 60 * 60;
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -217,7 +217,7 @@ export async function handleAdminMfaRequest(request, env, url) {
       ok: true,
       verified: status.verified,
       expiresAt: status.expiresAt,
-      idleTimeoutSeconds: MFA_TTL_SECONDS,
+      sessionTtlSeconds: MFA_TTL_SECONDS,
       email: maskedEmail(admin.email),
     });
   }
@@ -229,7 +229,7 @@ export async function handleAdminMfaRequest(request, env, url) {
       ok: true,
       verified: true,
       expiresAt: issued.expiresAt,
-      idleTimeoutSeconds: MFA_TTL_SECONDS,
+      sessionTtlSeconds: MFA_TTL_SECONDS,
     }, 200, { 'set-cookie': mfaCookie(issued.token) });
   }
 
@@ -240,7 +240,7 @@ export async function handleAdminMfaRequest(request, env, url) {
         sent: false,
         alreadyVerified: true,
         expiresAt: status.expiresAt,
-        idleTimeoutSeconds: MFA_TTL_SECONDS,
+        sessionTtlSeconds: MFA_TTL_SECONDS,
         email: maskedEmail(admin.email),
       });
     }
@@ -275,7 +275,7 @@ export async function handleAdminMfaRequest(request, env, url) {
       ok: true,
       verified: true,
       expiresAt: issued.expiresAt,
-      idleTimeoutSeconds: MFA_TTL_SECONDS,
+      sessionTtlSeconds: MFA_TTL_SECONDS,
       email: maskedEmail(admin.email),
     }, 200, { 'set-cookie': mfaCookie(issued.token) });
   }
