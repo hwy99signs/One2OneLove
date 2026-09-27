@@ -77,8 +77,8 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }} className="mt-12 mx-auto max-w-4xl rounded-2xl border border-purple-200 bg-white p-6 text-sm leading-6 text-gray-700">
           <p className="font-semibold text-gray-900">24-hour Guest Preview: no card required, VIEW ONLY.</p>
-          <p>Create an account to begin the 24-hour view-only preview. Then start 7 days of Full Access with a card. The subscription price is not charged when the trial begins. The trial includes full Exclusive-level access and automatically continues on Premiere at US$9.99/month unless you choose Exclusive or cancel before the trial ends.</p>
-          <p>Love Note SMS sending is unavailable during the view-only Guest Preview. During the 7-day Full Access trial, your first One2OneLove SMS Love Note send is FREE; every additional send is US$0.29 and is billed to your payment method on file. Usage charges may be grouped.</p>
+          <p>Create and verify an account to begin the 24-hour view-only preview. To use features, add a card. Eligible Founding Members automatically receive the Founding Member launch offer: #1–100 get Exclusive free for 30 days, then US$15.99/month while continuously subscribed; #101–200 get Premiere free for 30 days, then the regular Premiere monthly price.</p>
+          <p>Love Note SMS sending is unavailable during the view-only Guest Preview. Founding Member numbers are permanent and are not recycled.</p>
           <p className="text-xs text-gray-500">All prices are shown in U.S. dollars (US$). Cancel anytime; cancellation takes effect at the end of the current billing period. Love Note usage charges already incurred remain due.</p>
         </motion.div>
       </div>
