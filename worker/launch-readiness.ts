@@ -35,6 +35,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         COALESCE(pc.email_and_password->>'minPasswordLength','') AS min_password_length,
         COALESCE(pc.email_and_password->>'maxPasswordLength','') AS max_password_length,
         COALESCE(to_jsonb(pc)->'trusted_origins','[]'::jsonb) AS trusted_origins,
+        COALESCE(to_jsonb(pc)->>'project_id','') AS project_id_hint,
+        COALESCE(to_jsonb(pc)->'plugins','[]'::jsonb) AS auth_plugins,
+        (SELECT jsonb_agg(k ORDER BY k) FROM jsonb_object_keys(to_jsonb(pc)) AS k) AS project_config_keys,
         (
           EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number') AND
           EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='phone_number_verified')
@@ -147,6 +150,9 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           minPasswordLength: row.min_password_length || null,
           maxPasswordLength: row.max_password_length || null,
           trustedOrigins: row.trusted_origins || [],
+          projectIdHint: row.project_id_hint || null,
+          authPlugins: row.auth_plugins || [],
+          projectConfigKeys: row.project_config_keys || [],
           phoneVerificationProviderConfigured,
           phoneVerificationSchemaReady,
           requiredIdentityReady: identityReady,
