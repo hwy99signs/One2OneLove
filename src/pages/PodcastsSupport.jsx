@@ -9,6 +9,7 @@ import { launchPodcastLibrary, podcastLanguages, podcastLanguageByUiLanguage, po
 import { podcastCopy, podcastLocaleByLanguage } from "@/data/podcastCopy";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import { trackFeatureAction } from "@/lib/featureUsageService";
 
 const focusDefinitions = (t) => [
   { id: "all", name: t.categories.all, icon: Mic },
@@ -37,6 +38,7 @@ function PodcastLibraryPage() {
   }, [location.key]);
 
   const openPodcastDetail = (podcast) => {
+    trackFeatureAction('Podcasts', `podcast:${podcast.title}`);
     navigate(location.pathname + location.search, {
       state: { ...(location.state || {}), relationshipSubview: 'podcast' },
     });
