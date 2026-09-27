@@ -59,6 +59,21 @@ async function session(request, env) {
   return { user, session: active };
 }
 
+async function phoneAlreadyUsedByAnotherMember(db, userId, phoneNumber) {
+  const result = await db.query(
+    `SELECT 1
+       FROM public.users u
+       JOIN neon_auth."user" a ON a.id=u.id
+      WHERE u.id<>$1::uuid
+        AND u.phone_number=$2
+        AND COALESCE(u.phone_number_verified,false)=true
+        AND COALESCE(a.role,'user')<>'admin'
+      LIMIT 1`,
+    [userId, phoneNumber],
+  );
+  return result.rowCount > 0;
+}
+
 async function readJson(request) {
   const type = request.headers.get('content-type') || '';
   if (!type.includes('application/json')) throw new Error('Expected application/json body.');
@@ -127,6 +142,10 @@ async function sendVerification(request, env, auth) {
     );
     if (!row.rows[0]) return fail('Member profile was not found.', 409, 'profile_not_ready');
 
+    if (String(auth.user.role || '').toLowerCase() !== 'admin' && await phoneAlreadyUsedByAnotherMember(db, auth.user.id, phoneNumber)) {
+      return fail('This mobile number is already verified on another One2OneLove member account. Use the existing account or a different mobile number.', 409, 'phone_already_in_use');
+    }
+
     const lastSent = row.rows[0].last_sent_at ? new Date(row.rows[0].last_sent_at).getTime() : 0;
     if (lastSent && Date.now() - lastSent < SEND_COOLDOWN_SECONDS * 1000) {
       return fail('Please wait before requesting another verification code.', 429, 'verification_cooldown');
@@ -168,19 +187,37 @@ async function verifyCode(request, env, auth) {
       return fail('The verification code is invalid or expired.', 400, 'invalid_code');
     }
 
-    const updated = await db.query(
-      `UPDATE public.users
-          SET phone_number=$2,
-              phone_number_verified=true,
-              phone_verified_at=now(),
-              updated_at=now()
-        WHERE id=$1::uuid
-        RETURNING id,phone_number,phone_number_verified,phone_verified_at`,
-      [auth.user.id, phoneNumber],
-    );
-    if (!updated.rows[0]) return fail('Member profile was not found.', 409, 'profile_not_ready');
+    await db.query('BEGIN');
+    try {
+      await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [phoneNumber]);
+      if (String(auth.user.role || '').toLowerCase() !== 'admin' && await phoneAlreadyUsedByAnotherMember(db, auth.user.id, phoneNumber)) {
+        await db.query('ROLLBACK');
+        return fail('This mobile number is already verified on another One2OneLove member account. Use the existing account or a different mobile number.', 409, 'phone_already_in_use');
+      }
 
-    return json({ ok: true, success: true, verified: true });
+      const updated = await db.query(
+        `UPDATE public.users
+            SET phone_number=$2,
+                phone_number_verified=true,
+                phone_verified_at=now(),
+                updated_at=now()
+          WHERE id=$1::uuid
+          RETURNING id,phone_number,phone_number_verified,phone_verified_at`,
+        [auth.user.id, phoneNumber],
+      );
+      if (!updated.rows[0]) {
+        await db.query('ROLLBACK');
+        return fail('Member profile was not found.', 409, 'profile_not_ready');
+      }
+      await db.query('COMMIT');
+      return json({ ok: true, success: true, verified: true });
+    } catch (error) {
+      await db.query('ROLLBACK').catch(() => {});
+      if (error?.code === '23505') {
+        return fail('This mobile number is already verified on another One2OneLove member account. Use the existing account or a different mobile number.', 409, 'phone_already_in_use');
+      }
+      throw error;
+    }
   });
 }
 
