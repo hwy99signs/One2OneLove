@@ -192,6 +192,10 @@ function LanguageContent({ children, currentPageName }) {
 
   const normalizedShareRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
   const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
+  const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq';
+  const mmiqHeaderButton = (gradient) => isMyMatchIQPage
+    ? `inline-flex items-center whitespace-nowrap rounded-full border border-white/25 bg-gradient-to-r ${gradient} px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`
+    : 'hover:text-yellow-200';
 
 
 
@@ -337,21 +341,21 @@ function LanguageContent({ children, currentPageName }) {
       )}
 
       {/* Header */}
-      <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md sticky top-0 z-50">
+      <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
         <div className="max-w-[1400px] mx-auto px-5 h-[96px] flex items-center justify-between gap-5">
           <Link to={createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
-              src="/assets/o2ol-header-logo.png" 
-              alt="One2One Love Logo" 
+              src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
+              alt={isMyMatchIQPage ? 'MyMatchIQ Logo' : 'One2One Love Logo'}
               width="220"
               height="88"
-              className="h-[88px] w-[220px] object-contain object-left"
+              className={isMyMatchIQPage ? 'h-[72px] w-[220px] object-contain object-left' : 'h-[88px] w-[220px] object-contain object-left'}
               onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             />
           </Link>
           
-          <nav className="hidden lg:flex items-center gap-6 font-bold text-lg shrink-0">
-            <Link to={createPageUrl("Home")} className="hover:text-yellow-200">⌂ {t.nav.home}</Link>
+          <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
+            <Link to={createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
             <div
               className="relative"
@@ -367,7 +371,7 @@ function LanguageContent({ children, currentPageName }) {
                 aria-expanded={actionOpen}
                 aria-controls="desktop-action-menu"
                 onClick={() => setActionOpen((open) => !open)}
-                className="hover:text-yellow-200"
+                className={mmiqHeaderButton('from-violet-500 to-fuchsia-600')}
               >
                 ♡ {t.nav.action} ▾
               </button>
@@ -388,7 +392,7 @@ function LanguageContent({ children, currentPageName }) {
 
             {isAuthenticated ? (
               <>
-                <Link to={createPageUrl("Chat")} className="hover:text-yellow-200 relative">
+                <Link to={createPageUrl("Chat")} className={`${mmiqHeaderButton('from-cyan-500 to-blue-700')} relative`}>
                   💬 {t.nav.chat}
                   {totalUnreadCount > 0 && (
                     <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
@@ -396,20 +400,20 @@ function LanguageContent({ children, currentPageName }) {
                     </span>
                   )}
                 </Link>
-                <Link to={createPageUrl("Profile")} className="hover:text-yellow-200">👤 {t.nav.profile}</Link>
-                <button onClick={handleSignOut} className="hover:text-yellow-200">{t.nav.signOut}</button>
+                <Link to={createPageUrl("Profile")} className={mmiqHeaderButton('from-indigo-500 to-violet-700')}>👤 {t.nav.profile}</Link>
+                <button onClick={handleSignOut} className={mmiqHeaderButton('from-slate-600 to-slate-800')}>{t.nav.signOut}</button>
               </>
             ) : (
               <>
-                <Link to={createPageUrl("Invite")} className="hover:text-yellow-200">{t.nav.invite}</Link>
-                <button onClick={handleSignIn} className="hover:text-yellow-200">{t.nav.signIn}</button>
-                <button onClick={handleSignUp} className="text-yellow-300 text-xl hover:text-yellow-100">{t.nav.signUp}</button>
+                <Link to={createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
+                <button onClick={handleSignIn} className={mmiqHeaderButton('from-blue-500 to-indigo-700')}>{t.nav.signIn}</button>
+                <button onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>
               </>
             )}
 
             <div className="relative">
               <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className="w-36 rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300 h-auto font-bold text-lg">
+                <SelectTrigger className={isMyMatchIQPage ? 'h-auto w-36 rounded-full border border-white/25 bg-gradient-to-r from-amber-400 to-orange-500 px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)]' : 'w-36 rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300 h-auto font-bold text-lg'}>
                   <SelectValue placeholder={t.nav.language} />
                 </SelectTrigger>
                 <SelectContent>
@@ -432,7 +436,7 @@ function LanguageContent({ children, currentPageName }) {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto">
+            <div className={`lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 ${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto`}>
               <nav className="flex flex-col gap-2">
                 <Link
                   to={createPageUrl("Home")}
