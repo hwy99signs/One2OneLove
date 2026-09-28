@@ -79,7 +79,7 @@ export default function MyMatchIQ() {
   const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
-  const openMembership = (intent) => navigate(`/Subscription?source=my-matchiq&intent=${intent}`);
+  const openMembership = () => navigate('/MyMatchIQ/Assessment');
 
   return (
     <main className="min-h-screen bg-[#070312] px-3 py-4 sm:px-5 sm:py-6">
@@ -95,7 +95,7 @@ export default function MyMatchIQ() {
             <button
               type="button"
               aria-label={t.assessment}
-              onClick={() => openMembership('assessment')}
+              onClick={openMembership}
               className="mx-auto flex w-full max-w-[78%] items-center justify-center gap-5 rounded-full border-2 border-pink-200/70 bg-gradient-to-r from-fuchsia-600 via-pink-500 to-fuchsia-600 px-7 py-4 text-xl font-black uppercase tracking-wide text-white shadow-[0_0_32px_rgba(236,72,153,0.85)] transition hover:scale-[1.015] hover:brightness-110 focus-visible:outline focus-visible:outline-4 focus-visible:outline-white sm:text-2xl"
             >
               {t.assessment}<span aria-hidden="true" className="text-3xl leading-none">›</span>

@@ -192,7 +192,7 @@ function LanguageContent({ children, currentPageName }) {
 
   const normalizedShareRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
   const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
-  const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq';
+  const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq' || normalizedShareRoute.startsWith('/mymatchiq/');
   const mmiqHeaderButton = (gradient) => isMyMatchIQPage
     ? `inline-flex items-center whitespace-nowrap rounded-full border border-white/25 bg-gradient-to-r ${gradient} px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`
     : 'hover:text-yellow-200';
@@ -235,11 +235,11 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignIn = () => {
-    navigate(createPageUrl("SignIn"));
+    navigate(isMyMatchIQPage ? '/MyMatchIQ/SignIn' : createPageUrl("SignIn"));
   };
 
   const handleSignUp = () => {
-    navigate("/Subscription?signup=1");
+    navigate(isMyMatchIQPage ? '/MyMatchIQ/SignUp' : "/Subscription?signup=1");
   };
 
   const handleSignOut = async (e) => {
@@ -343,7 +343,7 @@ function LanguageContent({ children, currentPageName }) {
       {/* Header */}
       <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
         <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-5'} h-[96px] flex items-center justify-between gap-5`}>
-          <Link to={createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
+          <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
               src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
               alt={isMyMatchIQPage ? 'MyMatchIQ Logo' : 'One2One Love Logo'}
@@ -360,7 +360,7 @@ function LanguageContent({ children, currentPageName }) {
                 <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] scale-[1.2] object-contain" />
               </Link>
             )}
-            <Link to={createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
+            <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
             <div
               className="relative"
@@ -380,7 +380,15 @@ function LanguageContent({ children, currentPageName }) {
               >
                 ♡ {t.nav.action} ▾
               </button>
-              {actionOpen && (
+              {actionOpen && isMyMatchIQPage && (
+                <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 rounded-xl bg-white p-2 text-sm font-normal text-slate-800 shadow-xl z-50">
+                  <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ</Link>
+                  <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧠 Compatibility Passport</Link>
+                  <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>✦ MyMatchIQ Dashboard</Link>
+                  <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>💌 Invite with intention</Link>
+                </div>
+              )}
+              {actionOpen && !isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
                   <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
                   <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
@@ -410,7 +418,7 @@ function LanguageContent({ children, currentPageName }) {
               </>
             ) : (
               <>
-                <Link to={createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
+                <Link to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
                 <button onClick={handleSignIn} className={mmiqHeaderButton('from-blue-500 to-indigo-700')}>{t.nav.signIn}</button>
                 <button onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>
               </>
@@ -449,7 +457,7 @@ function LanguageContent({ children, currentPageName }) {
                   </Link>
                 )}
                 <Link
-                  to={createPageUrl("Home")}
+                  to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")}
                   className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -475,7 +483,7 @@ function LanguageContent({ children, currentPageName }) {
                   {mobileActionOpen && (
                     <div className="mt-1 bg-white/10 rounded-lg overflow-hidden">
                       <Link
-                        to={createPageUrl("MyMatchIQ")}
+                      to={isMyMatchIQPage ? '/MyMatchIQ/Actions' : createPageUrl("MyMatchIQ")}
                         className="flex items-center gap-2 bg-gradient-to-r from-indigo-950/90 via-violet-800/90 to-fuchsia-700/90 px-4 py-3 font-black text-white transition-all hover:from-indigo-950 hover:to-fuchsia-600"
                         onClick={() => {
                           setMobileMenuOpen(false);
@@ -655,7 +663,7 @@ function LanguageContent({ children, currentPageName }) {
                 {!isAuthenticated && (
                   <>
                     <Link
-                      to={createPageUrl("Invite")}
+                      to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")}
                       className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
                       onClick={() => setMobileMenuOpen(false)}
                     >

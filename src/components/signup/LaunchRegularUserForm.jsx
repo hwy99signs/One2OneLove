@@ -44,10 +44,18 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere' }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere', product = 'o2ol' }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
+  const isMyMatchIQ = product === 'mymatchiq';
+  const brand = {
+    en: { title:'Create Your MyMatchIQ Account', subtitle:'Start with compatibility. Add One2OneLove when you want relationship-growth tools.', back:'Back to MyMatchIQ', verified:'Your email is verified. You can now sign in to MyMatchIQ.' },
+    es: { title:'Crea tu Cuenta MyMatchIQ', subtitle:'Comienza con compatibilidad. Añade One2OneLove cuando quieras herramientas para crecer en tu relación.', back:'Volver a MyMatchIQ', verified:'Tu correo está verificado. Ahora puedes iniciar sesión en MyMatchIQ.' },
+    fr: { title:'Créez Votre Compte MyMatchIQ', subtitle:'Commencez par la compatibilité. Ajoutez One2OneLove lorsque vous souhaitez des outils pour votre relation.', back:'Retour à MyMatchIQ', verified:'Votre e-mail est vérifié. Vous pouvez maintenant vous connecter à MyMatchIQ.' },
+    it: { title:'Crea il Tuo Account MyMatchIQ', subtitle:'Inizia dalla compatibilità. Aggiungi One2OneLove quando desideri strumenti per far crescere la relazione.', back:'Torna a MyMatchIQ', verified:'La tua e-mail è verificata. Ora puoi accedere a MyMatchIQ.' },
+    de: { title:'Erstellen Sie Ihr MyMatchIQ-Konto', subtitle:'Beginnen Sie mit Kompatibilität. Fügen Sie One2OneLove hinzu, wenn Sie Beziehungstools möchten.', back:'Zurück zu MyMatchIQ', verified:'Ihre E-Mail ist bestätigt. Sie können sich jetzt bei MyMatchIQ anmelden.' },
+  }[currentLanguage] || { title:'Create Your MyMatchIQ Account', subtitle:'Start with compatibility.', back:'Back to MyMatchIQ', verified:'Your email is verified. You can now sign in to MyMatchIQ.' };
   const readinessCopy = {
     checking: t.checkingReadiness || translations.en.checkingReadiness,
     unavailable: t.readinessUnavailable || translations.en.readinessUnavailable,
@@ -96,7 +104,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
     return () => { active = false; };
   }, [readinessCopy.unavailable]);
 
-  const goBack = () => onBack ? onBack() : navigate(createPageUrl('Home'));
+  const goBack = () => onBack ? onBack() : navigate(isMyMatchIQ ? '/MyMatchIQ' : createPageUrl('Home'));
   const openTerms = () => {
     setTermsScrolled(false);
     setTermsOpen(true);
@@ -183,7 +191,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
             {verified ? <CheckCircle2 className="h-9 w-9 text-green-600"/> : <Mail className="h-9 w-9 text-purple-600"/>}
           </div>
           <h1 className="mb-3 text-3xl font-bold text-gray-900">{verified ? t.verifiedTitle : t.verifyTitle}</h1>
-          <p className="mb-3 text-gray-600">{verified ? t.verifiedBody : t.verifyBody}</p>
+          <p className="mb-3 text-gray-600">{verified ? (isMyMatchIQ ? brand.verified : t.verifiedBody) : t.verifyBody}</p>
           <p className="mb-5 break-all font-semibold text-gray-800">{successEmail}</p>
 
           {!verified ? (
@@ -212,7 +220,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
               </Button>
             </>
           ) : (
-            <Button type="button" onClick={() => navigate(createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
+            <Button type="button" onClick={() => navigate(isMyMatchIQ ? '/MyMatchIQ/SignIn' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
           )}
         </CardContent>
       </Card>
@@ -223,9 +231,9 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
     <>
       <Card className="mx-auto max-w-xl shadow-2xl">
         <CardHeader>
-          <button type="button" onClick={goBack} className="mb-4 inline-flex items-center text-gray-600 transition-colors hover:text-gray-800"><ArrowLeft size={20} className="mr-2"/>{t.back}</button>
-          <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><CardTitle className="text-3xl">{t.title}</CardTitle></div>
-          <p className="text-gray-600">{t.subtitle}</p>
+          <button type="button" onClick={goBack} className="mb-4 inline-flex items-center text-gray-600 transition-colors hover:text-gray-800"><ArrowLeft size={20} className="mr-2"/>{isMyMatchIQ ? brand.back : t.back}</button>
+          <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><CardTitle className="text-3xl">{isMyMatchIQ ? brand.title : t.title}</CardTitle></div>
+          <p className="text-gray-600">{isMyMatchIQ ? brand.subtitle : t.subtitle}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">

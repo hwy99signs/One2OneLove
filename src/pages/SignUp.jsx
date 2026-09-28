@@ -30,7 +30,9 @@ export default function SignUp() {
   const t = COPY[currentLanguage] || COPY.en;
   const selectedPlan = canonicalPlan(searchParams.get("plan"));
   const signupType = String(searchParams.get("type") || "").toLowerCase();
-  const fromMyMatchIQ = String(searchParams.get("source") || "").toLowerCase() === "mymatchiq-o2ol";
+  const signupSource = String(searchParams.get("source") || "").toLowerCase();
+  const fromMyMatchIQ = signupSource === "mymatchiq-o2ol";
+  const myMatchIQSignup = signupSource === "mymatchiq";
 
   const effectivePlan = selectedPlan || 'Premiere';
   const directGuestSignup = String(searchParams.get("source") || "").toLowerCase() === "guest-preview";
@@ -40,7 +42,8 @@ export default function SignUp() {
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
         <LaunchRegularUserForm
           selectedPlan={effectivePlan}
-          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}`)}
+          product={myMatchIQSignup ? 'mymatchiq' : 'o2ol'}
+          onBack={() => navigate(myMatchIQSignup ? '/MyMatchIQ' : `/SignUp?plan=${encodeURIComponent(effectivePlan)}`)}
         />
       </div>
     );
