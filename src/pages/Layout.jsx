@@ -248,7 +248,7 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignUp = () => {
-    navigate(isMyMatchIQPage ? '/MyMatchIQ/SignUp' : "/Subscription?signup=1");
+    navigate(isMyMatchIQPage ? '/MyMatchIQ/Subscription' : "/Subscription?signup=1");
   };
 
   const handleSignOut = async (e) => {

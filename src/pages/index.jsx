@@ -183,6 +183,7 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Subscription" element={<Subscription />} />
+          <Route path="/MyMatchIQ/Subscription" element={<Subscription product="mymatchiq" />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />

@@ -8,7 +8,7 @@ const PUBLIC_ROUTES = new Set([
   '/reviews', '/leavereview', '/suggestions', '/subscription',
   '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
   '/mymatchiq', '/mymatchiq/assessment', '/mymatchiq/actions', '/mymatchiq/dashboard',
-  '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup',
+  '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
 ]);
 
 const PLAN_LEVEL = {
