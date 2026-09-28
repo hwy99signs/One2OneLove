@@ -5,6 +5,7 @@ import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
+const MYMATCHIQ_LABELS = { en: 'Compatibility', es: 'Compatibilidad', fr: 'Compatibilité', it: 'Compatibilità', de: 'Kompatibilität' };
 
 const COPY = {
   en: {
@@ -30,6 +31,7 @@ const COPY = {
 };
 
 const TOOLS = [
+  ['✦','MyMatchIQ','MyMatchIQ','from-slate-950 via-indigo-800 to-fuchsia-700','matchiq'],
   ['💗','loveNotes','LoveNotes','from-rose-500 to-pink-600'],
   ['💬','loveLanguage','LoveLanguageQuiz','from-violet-600 to-purple-600'],
   ['🗓️','dateIdeas','DateIdeas','from-cyan-500 to-blue-600'],
@@ -48,6 +50,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
+  const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const [selectedTool, setSelectedTool] = useState(0);
   const [publicStats, setPublicStats] = useState(null);
   const go = page => navigate(createPageUrl(page));
@@ -85,6 +88,7 @@ export default function Home() {
             <button onClick={() => go('LoveNotes')} className="rounded-2xl bg-white px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold text-pink-600 shadow-xl hover:bg-slate-50">♡ {t.toolLabels.loveNotes}</button>
             <button onClick={() => go('PodcastsSupport')} className="rounded-2xl bg-orange-500 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-orange-600">🎙 {t.podcast}</button>
             <button onClick={() => go('DateIdeas')} className="rounded-2xl bg-teal-600 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-teal-700">▣ {t.toolLabels.dateIdeas}</button>
+            <button onClick={() => go('MyMatchIQ')} className="relative overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-slate-950 via-indigo-800 to-fuchsia-700 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold text-white shadow-2xl transition hover:scale-[1.02] hover:from-indigo-950 hover:to-fuchsia-600 md:col-span-2"><span className="absolute right-4 top-1 text-[0.6rem] font-black tracking-[0.22em] text-fuchsia-200">NEW</span>✦ MyMatchIQ <span className="text-base font-bold text-violet-100">· {matchIQLabel}</span></button>
           </div>
 
           {showHeroStats && (
@@ -115,10 +119,11 @@ export default function Home() {
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {TOOLS.map(([icon,labelKey,page,gradient,badge],index) => (
-              <button key={page} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
-                {badge&&<span className="absolute right-2 top-2 rounded-full bg-emerald-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-emerald-950">{t.onboarding||COPY.en.onboarding}</span>}
-                <span>{icon} {t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey]}</span>
+            {TOOLS.map(([icon,labelKey,page,gradient,tag],index) => (
+              <button key={page} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${tag === 'matchiq' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
+                {tag === 'matchiq' && <span className="absolute right-4 top-3 rounded-full bg-white/15 px-2 py-0.5 text-[0.62rem] font-black tracking-[0.18em] text-fuchsia-100">{matchIQLabel.toUpperCase()}</span>}
+                {tag === 'onboarding' && <span className="absolute right-2 top-2 rounded-full bg-emerald-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-emerald-950">{t.onboarding || COPY.en.onboarding}</span>}
+                <span>{icon} {labelKey === 'MyMatchIQ' ? 'MyMatchIQ' : (t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey])}</span>
               </button>
             ))}
           </div>

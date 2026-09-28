@@ -48,6 +48,7 @@ import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
+import MyMatchIQ from './MyMatchIQ';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
@@ -59,7 +60,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -92,6 +93,7 @@ const FEATURE_BY_ROUTE = {
   '/lgbtqsupport': 'LGBTQ+ Support',
   '/chat': 'Community Chat',
   '/subscription': 'Subscription / Billing',
+  '/mymatchiq': 'MyMatchIQ',
 };
 
 function _getCurrentPage(url) {
@@ -185,6 +187,7 @@ function PagesContent() {
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
+          <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
