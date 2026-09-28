@@ -62,7 +62,7 @@ export default function MyMatchIQWorkspace({ page = 'assessment' }) {
   const body = isDashboard ? t.dashboardBody : isInvite ? t.inviteBody : isSignIn ? t.signInBody : isSignUp ? t.signUpBody : page === 'actions' ? t.actionBody : t.assessmentBody;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,#5b126f_0%,transparent_32%),radial-gradient(circle_at_80%_16%,#162e78_0%,transparent_30%),#070312] px-4 py-10 sm:px-6">
+    <main className="min-h-screen bg-[#070312] px-4 py-10 sm:px-6" style={{ backgroundImage: 'radial-gradient(circle at 20% 0%, #5b126f 0%, transparent 32%), radial-gradient(circle at 80% 16%, #162e78 0%, transparent 30%)' }}>
       <section className="mx-auto max-w-6xl">
         <p className="text-center text-xs font-black uppercase tracking-[0.24em] text-fuchsia-200">{t.eyebrow}</p>
         <h1 className="mx-auto mt-4 max-w-3xl text-center text-4xl font-black text-white sm:text-5xl">{title}</h1>
