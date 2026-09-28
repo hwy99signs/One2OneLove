@@ -5,6 +5,8 @@ import { useLanguage } from './Layout';
 const COPY = {
   en: {
     assessment: 'Take the assessment',
+    heroAlt: 'MyMatchIQ — When the intention is real, the connection follows.',
+    benefitsLabel: 'MyMatchIQ relationship benefits',
     features: [
       { title: 'Discover Compatibility', body: 'Understand what brings you closer.' },
       { title: 'Gain Deeper Insights', body: 'See beyond the surface.' },
@@ -14,6 +16,8 @@ const COPY = {
   },
   es: {
     assessment: 'Realizar la evaluación',
+    heroAlt: 'MyMatchIQ — Cuando la intención es real, la conexión sigue.',
+    benefitsLabel: 'Beneficios relacionales de MyMatchIQ',
     features: [
       { title: 'Descubre compatibilidad', body: 'Comprende lo que los acerca.' },
       { title: 'Obtén mayor claridad', body: 'Ve más allá de la superficie.' },
@@ -23,6 +27,8 @@ const COPY = {
   },
   fr: {
     assessment: 'Faire l’évaluation',
+    heroAlt: 'MyMatchIQ — Quand l’intention est réelle, la connexion suit.',
+    benefitsLabel: 'Avantages relationnels de MyMatchIQ',
     features: [
       { title: 'Découvrez la compatibilité', body: 'Comprenez ce qui vous rapproche.' },
       { title: 'Obtenez plus de clarté', body: 'Voyez au-delà de la surface.' },
@@ -32,6 +38,8 @@ const COPY = {
   },
   it: {
     assessment: 'Fai la valutazione',
+    heroAlt: 'MyMatchIQ — Quando l’intenzione è reale, la connessione segue.',
+    benefitsLabel: 'Benefici relazionali di MyMatchIQ',
     features: [
       { title: 'Scopri la compatibilità', body: 'Capisci cosa vi avvicina.' },
       { title: 'Ottieni più chiarezza', body: 'Guarda oltre la superficie.' },
@@ -41,6 +49,8 @@ const COPY = {
   },
   de: {
     assessment: 'Assessment starten',
+    heroAlt: 'MyMatchIQ — Wenn die Absicht echt ist, folgt die Verbindung.',
+    benefitsLabel: 'Beziehungsvorteile von MyMatchIQ',
     features: [
       { title: 'Kompatibilität entdecken', body: 'Verstehe, was euch näher zusammenbringt.' },
       { title: 'Tiefere Einblicke gewinnen', body: 'Sieh über die Oberfläche hinaus.' },
@@ -51,6 +61,13 @@ const COPY = {
 };
 
 const FEATURE_ICONS = [Heart, BrainCircuit, ShieldCheck, UsersRound];
+const HERO_IMAGES = {
+  en: '/assets/mymatchiq-hero-v3-top.webp',
+  es: '/assets/mymatchiq-hero-v3-top-es.webp',
+  fr: '/assets/mymatchiq-hero-v3-top-fr.webp',
+  it: '/assets/mymatchiq-hero-v3-top-it.webp',
+  de: '/assets/mymatchiq-hero-v3-top-de.webp',
+};
 const FEATURE_STYLES = [
   'border-fuchsia-300/70 shadow-[0_0_28px_rgba(236,72,153,0.25)] text-fuchsia-300',
   'border-cyan-300/70 shadow-[0_0_28px_rgba(34,211,238,0.22)] text-cyan-300',
@@ -70,8 +87,8 @@ export default function MyMatchIQ() {
         <h1 className="sr-only">MyMatchIQ</h1>
         <div className="relative">
           <img
-            src="/assets/mymatchiq-hero-v3-top.webp"
-            alt="MyMatchIQ — When the intention is real, the connection follows."
+            src={HERO_IMAGES[currentLanguage] || HERO_IMAGES.en}
+            alt={t.heroAlt}
             className="block h-auto w-full"
           />
           <div className="bg-[radial-gradient(ellipse_at_center,rgba(112,12,114,0.55),transparent_65%),linear-gradient(180deg,#100319_0%,#06020c_100%)] px-5 pb-7 pt-5 sm:px-10 sm:pb-10 sm:pt-7">
@@ -87,7 +104,7 @@ export default function MyMatchIQ() {
         </div>
       </section>
 
-      <section aria-label="MyMatchIQ relationship benefits" className="mx-auto mt-5 max-w-[1800px] rounded-[1.5rem] border border-violet-300/25 bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.22),transparent_40%),linear-gradient(145deg,#100319,#05020c)] p-4 shadow-[0_0_45px_rgba(139,92,246,0.14)] sm:rounded-[2rem] sm:p-6">
+      <section aria-label={t.benefitsLabel} className="mx-auto mt-5 max-w-[1800px] rounded-[1.5rem] border border-violet-300/25 bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.22),transparent_40%),linear-gradient(145deg,#100319,#05020c)] p-4 shadow-[0_0_45px_rgba(139,92,246,0.14)] sm:rounded-[2rem] sm:p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
           {t.features.map((feature, index) => {
             const Icon = FEATURE_ICONS[index];
