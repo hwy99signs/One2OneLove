@@ -356,8 +356,8 @@ function LanguageContent({ children, currentPageName }) {
           
           <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
             {isMyMatchIQPage && (
-              <Link to="/SignUp?source=mymatchiq-o2ol" className={`${mmiqHeaderButton('from-rose-500 to-pink-600')} mr-2 border-r border-white/30 pr-4`}>
-                ♥ O2OL
+              <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
+                <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] object-contain" />
               </Link>
             )}
             <Link to={createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
@@ -444,8 +444,8 @@ function LanguageContent({ children, currentPageName }) {
             <div className={`lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 ${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto`}>
               <nav className="flex flex-col gap-2">
                 {isMyMatchIQPage && (
-                  <Link to="/SignUp?source=mymatchiq-o2ol" className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 font-black text-white shadow-sm" onClick={() => setMobileMenuOpen(false)}>
-                    ♥ O2OL
+                  <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="flex h-14 w-[104px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
+                    <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-11 w-[92px] object-contain" />
                   </Link>
                 )}
                 <Link
