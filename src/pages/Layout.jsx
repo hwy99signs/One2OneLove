@@ -357,7 +357,7 @@ function LanguageContent({ children, currentPageName }) {
           <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
             {isMyMatchIQPage && (
               <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
-                <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] object-contain" />
+                <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] scale-[1.2] object-contain" />
               </Link>
             )}
             <Link to={createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
@@ -445,7 +445,7 @@ function LanguageContent({ children, currentPageName }) {
               <nav className="flex flex-col gap-2">
                 {isMyMatchIQPage && (
                   <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="flex h-14 w-[104px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
-                    <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-11 w-[92px] object-contain" />
+                    <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-11 w-[92px] scale-[1.2] object-contain" />
                   </Link>
                 )}
                 <Link
