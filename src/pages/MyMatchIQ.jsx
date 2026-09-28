@@ -2,11 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './Layout';
 
 const COPY = {
-  en: { assessment: 'Take the assessment', plans: 'View plans', learn: 'Learn more' },
-  es: { assessment: 'Realizar la evaluación', plans: 'Ver planes', learn: 'Más información' },
-  fr: { assessment: 'Faire l’évaluation', plans: 'Voir les formules', learn: 'En savoir plus' },
-  it: { assessment: 'Fai la valutazione', plans: 'Visualizza i piani', learn: 'Scopri di più' },
-  de: { assessment: 'Assessment starten', plans: 'Pläne ansehen', learn: 'Mehr erfahren' },
+  en: { assessment: 'Take the assessment' },
+  es: { assessment: 'Realizar la evaluación' },
+  fr: { assessment: 'Faire l’évaluation' },
+  it: { assessment: 'Fai la valutazione' },
+  de: { assessment: 'Assessment starten' },
 };
 
 export default function MyMatchIQ() {
@@ -21,7 +21,7 @@ export default function MyMatchIQ() {
         <h1 className="sr-only">MyMatchIQ</h1>
         <div className="relative aspect-[16/9]">
           <img
-            src="/assets/mymatchiq-home-hero.webp"
+            src="/assets/mymatchiq-hero-v3.webp"
             alt="MyMatchIQ — When the intention is real, the connection follows."
             className="h-full w-full object-cover"
           />
@@ -30,19 +30,7 @@ export default function MyMatchIQ() {
             type="button"
             aria-label={t.assessment}
             onClick={() => openMembership('assessment')}
-            className="absolute bottom-[10.5%] left-[13.4%] h-[8%] w-[30.4%] rounded-full focus-visible:outline focus-visible:outline-4 focus-visible:outline-white hover:bg-white/10"
-          />
-          <button
-            type="button"
-            aria-label={t.plans}
-            onClick={() => openMembership('plans')}
-            className="absolute bottom-[10.5%] left-[45.9%] h-[8%] w-[18.4%] rounded-full focus-visible:outline focus-visible:outline-4 focus-visible:outline-white hover:bg-white/10"
-          />
-          <button
-            type="button"
-            aria-label={t.learn}
-            onClick={() => openMembership('learn-more')}
-            className="absolute bottom-[10.5%] left-[65.8%] h-[8%] w-[20.8%] rounded-full focus-visible:outline focus-visible:outline-4 focus-visible:outline-white hover:bg-white/10"
+            className="absolute bottom-[5.8%] left-[12.4%] h-[9.9%] w-[75.2%] rounded-full focus-visible:outline focus-visible:outline-4 focus-visible:outline-white hover:bg-white/10"
           />
         </div>
       </section>
