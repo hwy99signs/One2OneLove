@@ -193,8 +193,8 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
-          <Route path="/MyMatchIQ/SignIn" element={<MyMatchIQWorkspace page="signin" />} />
-          <Route path="/MyMatchIQ/SignUp" element={<MyMatchIQWorkspace page="signup" />} />
+          <Route path="/MyMatchIQ/SignIn" element={<SignIn product="mymatchiq" />} />
+          <Route path="/MyMatchIQ/SignUp" element={<SignUp product="mymatchiq" />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />

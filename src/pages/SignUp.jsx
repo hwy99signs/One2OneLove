@@ -23,7 +23,7 @@ function canonicalPlan(value) {
   return null;
 }
 
-export default function SignUp() {
+export default function SignUp({ product = 'o2ol' }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentLanguage } = useLanguage();
@@ -32,14 +32,14 @@ export default function SignUp() {
   const signupType = String(searchParams.get("type") || "").toLowerCase();
   const signupSource = String(searchParams.get("source") || "").toLowerCase();
   const fromMyMatchIQ = signupSource === "mymatchiq-o2ol";
-  const myMatchIQSignup = signupSource === "mymatchiq";
+  const myMatchIQSignup = product === 'mymatchiq' || signupSource === "mymatchiq";
 
   const effectivePlan = selectedPlan || 'Premiere';
   const directGuestSignup = String(searchParams.get("source") || "").toLowerCase() === "guest-preview";
 
-  if (signupType === "individual" || directGuestSignup) {
+  if (signupType === "individual" || directGuestSignup || myMatchIQSignup) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
+      <div className={myMatchIQSignup ? 'min-h-screen bg-[#070312] px-4 py-12' : 'min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12'} style={myMatchIQSignup ? { backgroundImage: 'radial-gradient(circle at 18% 0%, #5b126f 0%, transparent 32%), radial-gradient(circle at 82% 12%, #162e78 0%, transparent 30%)' } : undefined}>
         <LaunchRegularUserForm
           selectedPlan={effectivePlan}
           product={myMatchIQSignup ? 'mymatchiq' : 'o2ol'}

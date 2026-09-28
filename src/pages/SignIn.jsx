@@ -17,7 +17,7 @@ const translations = {
   de: { signIn: { title:'Anmelden', subtitle:'Melden Sie sich an, um Ihre One2OneLove-Beziehungstools zu nutzen.', email:'E-Mail-Adresse', password:'Passwort', emailPlaceholder:'E-Mail eingeben', passwordPlaceholder:'Passwort eingeben', showPassword:'Passwort anzeigen', hidePassword:'Passwort ausblenden', close:'Schließen', signInButton:'Anmelden', signingIn:'Anmeldung…', forgotPassword:'Passwort vergessen?', invite:'Freunde Einladen', verifyTitle:'E-Mail Bestätigen', verifySubtitle:'Wir haben einen 6-stelligen Bestätigungscode gesendet an', codeLabel:'Bestätigungscode', codePlaceholder:'6-stelligen Code eingeben', verifyButton:'E-Mail Bestätigen', verifying:'Wird Bestätigt…', resendCode:'Code Erneut Senden', resendSent:'Ein neuer Bestätigungscode wurde gesendet.', codeHelp:'Der Code läuft nach etwa 5 Minuten ab.', invalidCode:'Geben Sie den 6-stelligen Code aus Ihrer E-Mail ein.', backToSignIn:'Zurück zur Anmeldung', required:'Geben Sie E-Mail und Passwort ein.', success:'Erfolgreich angemeldet!', rateLimited:'Ihre Anmeldung wurde akzeptiert, aber es wurden zu viele Anfragen in kurzer Zeit gesendet. Warten Sie einige Sekunden und versuchen Sie es nur einmal erneut, falls keine Weiterleitung erfolgt.', emailVerificationRequired:'Eine E-Mail-Bestätigung ist erforderlich.', invalidCredentials:'E-Mail-Adresse oder Passwort ist ungültig. Bitte versuchen Sie es erneut.', genericError:'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', resendError:'Der Bestätigungscode konnte nicht erneut gesendet werden.', timeout:'Die Anmeldung hat zu lange gedauert. Bitte versuchen Sie es erneut.' } },
 };
 
-export default function SignIn() {
+export default function SignIn({ product = 'o2ol' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +26,16 @@ export default function SignIn() {
   const [verificationCode, setVerificationCode] = useState('');
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const isMyMatchIQ = product === 'mymatchiq';
+  const brand = ({
+    en: { title: 'Sign In to MyMatchIQ', subtitle: 'Continue your compatibility journey with MyMatchIQ.', verifyTitle: 'Verify Your MyMatchIQ Email', back: 'Back to MyMatchIQ' },
+    es: { title: 'Inicia Sesión en MyMatchIQ', subtitle: 'Continúa tu camino de compatibilidad con MyMatchIQ.', verifyTitle: 'Verifica Tu Correo de MyMatchIQ', back: 'Volver a MyMatchIQ' },
+    fr: { title: 'Connectez-vous à MyMatchIQ', subtitle: 'Poursuivez votre parcours de compatibilité avec MyMatchIQ.', verifyTitle: 'Vérifiez Votre E-mail MyMatchIQ', back: 'Retour à MyMatchIQ' },
+    it: { title: 'Accedi a MyMatchIQ', subtitle: 'Continua il tuo percorso di compatibilità con MyMatchIQ.', verifyTitle: 'Verifica la Tua E-mail MyMatchIQ', back: 'Torna a MyMatchIQ' },
+    de: { title: 'Bei MyMatchIQ Anmelden', subtitle: 'Setzen Sie Ihre Kompatibilitätsreise mit MyMatchIQ fort.', verifyTitle: 'Bestätigen Sie Ihre MyMatchIQ-E-Mail', back: 'Zurück zu MyMatchIQ' },
+  }[currentLanguage] || { title: 'Sign In to MyMatchIQ', subtitle: 'Continue your compatibility journey with MyMatchIQ.', verifyTitle: 'Verify Your MyMatchIQ Email', back: 'Back to MyMatchIQ' });
+  const shellClass = isMyMatchIQ ? 'bg-[#070312] p-4' : 'bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4';
+  const cardClass = isMyMatchIQ ? 'border border-fuchsia-200/30 bg-white shadow-[0_24px_65px_rgba(12,2,29,0.55)]' : 'bg-white shadow-2xl';
 
   const finishLogin = async () => {
     const result = await verifiedEmailLogin(email, password);
@@ -42,7 +52,9 @@ export default function SignIn() {
         ? '/VerifyPhone'
         : role === 'admin'
           ? '/AdminAccess'
-          : createPageUrl('Home');
+          : isMyMatchIQ
+            ? '/MyMatchIQ/Dashboard'
+            : createPageUrl('Home');
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
     }
@@ -111,10 +123,10 @@ export default function SignIn() {
 
   if (verificationMode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
-        <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+      <div className={`flex min-h-screen items-center justify-center ${shellClass}`}>
+        <div className={`relative w-full max-w-md rounded-3xl p-8 ${cardClass}`}>
           <button type="button" onClick={() => { setVerificationMode(false); setVerificationCode(''); }} className="mb-6 inline-flex items-center text-gray-600 transition-colors hover:text-gray-800"><ArrowLeft size={20} className="mr-2"/>{t.signIn.backToSignIn}</button>
-          <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-lg"><ShieldCheck className="h-6 w-6 text-white"/></div><h1 className="text-3xl font-bold text-gray-900">{t.signIn.verifyTitle}</h1></div>
+          <div className="mb-2 flex items-center gap-3">{isMyMatchIQ ? <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-12 w-20 object-contain object-left" /> : <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-lg"><ShieldCheck className="h-6 w-6 text-white"/></div>}<h1 className="text-3xl font-bold text-gray-900">{isMyMatchIQ ? brand.verifyTitle : t.signIn.verifyTitle}</h1></div>
           <p className="mb-2 text-gray-600">{t.signIn.verifySubtitle}</p><p className="mb-8 break-all font-semibold text-gray-900">{email}</p>
           <form onSubmit={handleVerify} className="space-y-5">
             <div><label htmlFor="signin-verification-code" className="mb-2 block text-sm font-medium text-gray-700">{t.signIn.codeLabel}</label><input id="signin-verification-code" type="text" inputMode="numeric" autoComplete="one-time-code" value={verificationCode} onChange={event => setVerificationCode(event.target.value.replace(/\D/g,'').slice(0,6))} placeholder={t.signIn.codePlaceholder} className="w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-xl font-semibold tracking-[0.35em] text-gray-900 outline-none focus:border-transparent focus:ring-2 focus:ring-pink-400" maxLength={6} required disabled={isLoading}/><p className="mt-2 text-xs text-gray-500">{t.signIn.codeHelp}</p></div>
@@ -127,11 +139,11 @@ export default function SignIn() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
-      <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
-        <Link to={createPageUrl('Home')} aria-label={t.signIn.close} className="absolute right-6 top-6 text-gray-400 transition-colors hover:text-gray-600"><X size={24}/></Link>
-        <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><h1 className="text-3xl font-bold text-gray-900">{t.signIn.title}</h1></div>
-        <p className="mb-8 text-center text-gray-600">{t.signIn.subtitle}</p>
+    <div className={`flex min-h-screen items-center justify-center ${shellClass}`}>
+      <div className={`relative w-full max-w-md rounded-3xl p-8 ${cardClass}`}>
+        <Link to={isMyMatchIQ ? '/MyMatchIQ' : createPageUrl('Home')} aria-label={t.signIn.close} className="absolute right-6 top-6 text-gray-400 transition-colors hover:text-gray-600"><X size={24}/></Link>
+        <div className="mb-2 flex items-center gap-3">{isMyMatchIQ ? <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-12 w-20 object-contain object-left" /> : <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div>}<h1 className="text-3xl font-bold text-gray-900">{isMyMatchIQ ? brand.title : t.signIn.title}</h1></div>
+        <p className="mb-8 text-center text-gray-600">{isMyMatchIQ ? brand.subtitle : t.signIn.subtitle}</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div><label htmlFor="signin-email" className="mb-2 block text-sm font-medium text-gray-700">{t.signIn.email} *</label><div className="relative"><Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input id="signin-email" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder={t.signIn.emailPlaceholder} className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 text-gray-700 outline-none placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-pink-400" required autoComplete="email"/></div></div>
@@ -140,7 +152,7 @@ export default function SignIn() {
           <Button type="submit" disabled={isLoading} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-lg font-semibold text-white shadow-lg transition-all hover:from-pink-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50">{isLoading?<><Loader2 className="mr-2 h-5 w-5 animate-spin"/>{t.signIn.signingIn}</>:t.signIn.signInButton}</Button>
         </form>
 
-        <div className="mt-6 border-t border-gray-200 pt-6"><Link to={createPageUrl('Invite')}><Button variant="outline" className="w-full rounded-xl border-2 border-pink-300 py-3 font-semibold text-pink-600 hover:bg-pink-50"><UserCheck className="mr-2 h-5 w-5"/>{t.signIn.invite}</Button></Link></div>
+        <div className="mt-6 border-t border-gray-200 pt-6"><Link to={isMyMatchIQ ? '/MyMatchIQ/Invite' : createPageUrl('Invite')}><Button variant="outline" className="w-full rounded-xl border-2 border-pink-300 py-3 font-semibold text-pink-600 hover:bg-pink-50"><UserCheck className="mr-2 h-5 w-5"/>{t.signIn.invite}</Button></Link></div>
       </div>
     </div>
   );

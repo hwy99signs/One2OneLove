@@ -183,9 +183,11 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
     setVerifyLoading(false);
   };
 
+  const cardClass = isMyMatchIQ ? 'mx-auto max-w-xl border border-fuchsia-200/30 bg-white shadow-[0_24px_65px_rgba(12,2,29,0.55)]' : 'mx-auto max-w-xl shadow-2xl';
+
   if (successEmail) {
     return (
-      <Card className="mx-auto max-w-xl shadow-2xl">
+      <Card className={cardClass}>
         <CardContent className="p-8 text-center">
           <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${verified ? 'bg-green-100' : 'bg-purple-100'}`}>
             {verified ? <CheckCircle2 className="h-9 w-9 text-green-600"/> : <Mail className="h-9 w-9 text-purple-600"/>}
@@ -229,10 +231,10 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
 
   return (
     <>
-      <Card className="mx-auto max-w-xl shadow-2xl">
+      <Card className={cardClass}>
         <CardHeader>
           <button type="button" onClick={goBack} className="mb-4 inline-flex items-center text-gray-600 transition-colors hover:text-gray-800"><ArrowLeft size={20} className="mr-2"/>{isMyMatchIQ ? brand.back : t.back}</button>
-          <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><CardTitle className="text-3xl">{isMyMatchIQ ? brand.title : t.title}</CardTitle></div>
+          <div className="mb-2 flex items-center gap-3">{isMyMatchIQ ? <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-14 w-24 object-contain object-left" /> : <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div>}<CardTitle className="text-3xl">{isMyMatchIQ ? brand.title : t.title}</CardTitle></div>
           <p className="text-gray-600">{isMyMatchIQ ? brand.subtitle : t.subtitle}</p>
         </CardHeader>
         <CardContent>
