@@ -34,7 +34,9 @@ const MMIQ_COPY={
  de:{title:'Wählen Sie Ihre MyMatchIQ-Mitgliedschaft',subtitle:'Wählen Sie das Kompatibilitätserlebnis, das zu Ihrem Weg passt.',guest:'24-Stunden-Kompatibilitätsvorschau',guestPrice:'KOSTENLOS',guestBadge:'KEINE KARTE',guestBody:'Erstellen und bestätigen Sie Ihr Konto, um MyMatchIQ 24 Stunden lang zu erkunden, bevor Sie eine Mitgliedschaft wählen.',guestButton:'MyMatchIQ-Konto Erstellen — Vorschau Starten',guestActive:'Kompatibilitätsvorschau Aktiv',guestUsed:'Vorschau Verbraucht — Mitgliedschaft Wählen',premiere:'Premiere',premierePrice:'US$9.99 / Monat',exclusive:'Exclusive',exclusivePrice:'US$19.99 / Monat',premiereFeatures:['Kompatibilitäts-Pass','Persönliche Kompatibilitäts-Einblicke','Leitfaden zu Warnsignalen','Tools für bewusste Verbindungen'],exclusiveFeatures:['Alles in Premiere','Tiefere Kompatibilitäts-Einblicke','Erweiterte Verbindungstools','Vorrangige Premium-Erlebnisse'],createPremiere:'Premiere Wählen',createExclusive:'Exclusive Wählen',starting:'MyMatchIQ wird geöffnet…',current:'Aktuelle MyMatchIQ-Mitgliedschaft',loading:'Mitgliedschaft wird geprüft…',trial:'Wählen Sie Ihre MyMatchIQ-Mitgliedschaft und erstellen und bestätigen Sie dann Ihr MyMatchIQ-Konto.',setup:'Schließen Sie die Einrichtung Ihrer MyMatchIQ-Mitgliedschaft ab, um fortzufahren.',foundingTitle:'MyMatchIQ-Gründungsmitglieder-Startangebot',membershipNote:'Ihre MyMatchIQ-Mitgliedschaft konzentriert sich auf Kompatibilitätstools. One2OneLove-Tools für Beziehungswachstum bleiben über eine separate One2OneLove-Mitgliedschaft verfügbar.'},
 };
 
-function PlanCard({plan,t,planCopy,busy,onChoose,isMyMatchIQ}){
+const ADD_CREDITS_LABEL={en:'Add Credits',es:'Agregar créditos',fr:'Ajouter des crédits',it:'Aggiungi crediti',de:'Credits hinzufügen'};
+
+function PlanCard({plan,t,planCopy,busy,onChoose,onAddCredits,isMyMatchIQ,addCreditsLabel}){
  const features=isMyMatchIQ ? (plan.name==='Exclusive'?t.exclusiveFeatures:t.premiereFeatures) : planCopy.plans[plan.name].features;
  const price=plan.name==='Exclusive'?t.exclusivePrice:t.premierePrice;
  const create=plan.name==='Exclusive'?t.createExclusive:t.createPremiere;
@@ -44,6 +46,7 @@ function PlanCard({plan,t,planCopy,busy,onChoose,isMyMatchIQ}){
    <div className="mt-2 text-2xl font-black text-slate-800">{price}</div>
    <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-sm leading-6 text-slate-700"><Check className="mt-1 h-4 w-4 shrink-0 text-emerald-600"/><span>{item}</span></li>)}</ul>
    <Button disabled={busy} onClick={()=>onChoose(plan)} className="mt-7 w-full py-6 text-base font-bold">{busy?t.starting:create}</Button>
+   {isMyMatchIQ&&<Button type="button" variant="outline" onClick={()=>onAddCredits(plan)} className="mt-3 w-full border-fuchsia-300/60 bg-fuchsia-50 text-fuchsia-800 hover:bg-fuchsia-100">{addCreditsLabel}</Button>}
  </section>;
 }
 
@@ -57,6 +60,7 @@ export default function Subscription({ product='o2ol' }){
  const planCopy=subscriptionPlanCopy[currentLanguage]||subscriptionPlanCopy.en;
  const founding=FOUNDING[currentLanguage]||FOUNDING.en;
  const [busy,setBusy]=useState('');
+ const addCredits=plan=>navigate('/MyMatchIQ/Credits?source=tier&plan='+encodeURIComponent(plan.name));
 
  const choose=async plan=>{
   if(isMyMatchIQ){ navigate('/MyMatchIQ/SignUp?plan='+encodeURIComponent(plan.name)); return; }
@@ -89,7 +93,7 @@ export default function Subscription({ product='o2ol' }){
    </div>
    <div className="mt-8 grid gap-6 lg:grid-cols-3">
     <section className={`flex min-h-[430px] flex-col rounded-3xl border-2 bg-white p-7 shadow-sm ${guestPreviewExpired?'border-slate-300 opacity-70':'border-emerald-200'}`}><div className="flex items-center justify-between"><ShieldCheck className={`h-8 w-8 ${guestPreviewExpired?'text-slate-400':'text-emerald-600'}`}/><span className={`rounded-full px-3 py-1 text-xs font-black ${guestPreviewExpired?'bg-slate-200 text-slate-700':'bg-emerald-100 text-emerald-800'}`}>{guestPreviewExpired?t.guestUsed:t.guestBadge}</span></div><h2 className="mt-4 text-3xl font-black text-slate-900">{t.guest}</h2><div className={`mt-2 text-2xl font-black ${guestPreviewExpired?'text-slate-500':'text-emerald-700'}`}>{t.guestPrice}</div><p className="mt-6 flex-1 text-sm leading-7 text-slate-700">{t.guestBody}</p><Button disabled={guestPreviewKnown} onClick={()=>navigate(isMyMatchIQ?'/MyMatchIQ/SignUp?plan=Premiere&source=guest-preview':'/SignUp?plan=Premiere&type=individual&source=guest-preview')} className={`mt-7 h-auto min-h-12 w-full whitespace-normal px-4 py-3 text-center text-sm font-bold leading-5 text-white sm:text-base ${guestPreviewKnown?'cursor-not-allowed bg-slate-400':'bg-emerald-600 hover:bg-emerald-700'}`}>{guestButtonLabel}</Button></section>
-    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} onChoose={choose} isMyMatchIQ={isMyMatchIQ}/>) }
+    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} onChoose={choose} onAddCredits={addCredits} isMyMatchIQ={isMyMatchIQ} addCreditsLabel={ADD_CREDITS_LABEL[currentLanguage]||ADD_CREDITS_LABEL.en}/>) }
    </div>
    {isMyMatchIQ ? <div className="mt-8 rounded-2xl border border-fuchsia-200/30 bg-white/10 p-6 text-sm leading-6 text-white/80"><p>{t.trial}</p><p className="mt-3">{t.membershipNote}</p></div> : <><div className="mt-8 space-y-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-sm leading-6 text-slate-700"><h3 className="text-xl font-black text-slate-900">{founding.title}</h3><p><strong>{founding.first}</strong></p><p><strong>{founding.second}</strong></p><p>{founding.terms}</p></div><div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600"><p>{planCopy.terms.guest}</p><p>{planCopy.terms.trial}</p><p>{planCopy.terms.loveNotes}</p><p>{planCopy.terms.cancel}</p></div></>}
   </div>
