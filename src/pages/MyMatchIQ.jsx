@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, Heart, ShieldCheck, UsersRound } from 'lucide-react';
+import { BrainCircuit, Heart, ShieldCheck, UsersRound, Sparkles, WalletCards } from 'lucide-react';
 import { useLanguage } from './Layout';
 
 const COPY = {
   en: {
     assessment: 'Take the assessment',
     meetMembers: 'Meet intentional members',
+    biancaEyebrow: 'Meet Bianca — your MyMatchIQ guide',
+    biancaTitle: 'Hi, I’m Bianca.',
+    biancaBody: 'I will guide you through thoughtful questions and help you turn your answers into a private Personality & Relationship Pattern Report.',
+    biancaNote: 'For self-reflection only — not therapy, diagnosis, or a guarantee of compatibility.',
+    biancaStart: 'Start with Bianca',
+    biancaCredits: 'Explore credits',
     heroAlt: 'MyMatchIQ — When the intention is real, the connection follows.',
     benefitsLabel: 'MyMatchIQ relationship benefits',
     features: [
@@ -18,6 +24,7 @@ const COPY = {
   es: {
     assessment: 'Realizar la evaluación',
     meetMembers: 'Conoce miembros intencionales',
+    biancaEyebrow: 'Conoce a Bianca — tu guía MyMatchIQ', biancaTitle: 'Hola, soy Bianca.', biancaBody: 'Te guiaré con preguntas reflexivas y te ayudaré a convertir tus respuestas en un Informe Privado de Patrones de Personalidad y Relaciones.', biancaNote: 'Solo para autorreflexión; no es terapia, diagnóstico ni garantía de compatibilidad.', biancaStart: 'Comenzar con Bianca', biancaCredits: 'Explorar créditos',
     heroAlt: 'MyMatchIQ — Cuando la intención es real, la conexión sigue.',
     benefitsLabel: 'Beneficios relacionales de MyMatchIQ',
     features: [
@@ -30,6 +37,7 @@ const COPY = {
   fr: {
     assessment: 'Faire l’évaluation',
     meetMembers: 'Rencontrer des membres intentionnels',
+    biancaEyebrow: 'Rencontrez Bianca — votre guide MyMatchIQ', biancaTitle: 'Bonjour, je suis Bianca.', biancaBody: 'Je vous guiderai avec des questions réfléchies et vous aiderai à transformer vos réponses en un Rapport Privé sur vos Schémas de Personnalité et de Relation.', biancaNote: 'Pour l’autoréflexion uniquement — ce n’est ni une thérapie, ni un diagnostic, ni une garantie de compatibilité.', biancaStart: 'Commencer avec Bianca', biancaCredits: 'Découvrir les crédits',
     heroAlt: 'MyMatchIQ — Quand l’intention est réelle, la connexion suit.',
     benefitsLabel: 'Avantages relationnels de MyMatchIQ',
     features: [
@@ -42,6 +50,7 @@ const COPY = {
   it: {
     assessment: 'Fai la valutazione',
     meetMembers: 'Incontra membri intenzionali',
+    biancaEyebrow: 'Conosci Bianca — la tua guida MyMatchIQ', biancaTitle: 'Ciao, sono Bianca.', biancaBody: 'Ti guiderò attraverso domande ponderate e ti aiuterò a trasformare le risposte in un Rapporto Privato sui Pattern di Personalità e Relazione.', biancaNote: 'Solo per autoriflessione: non è terapia, diagnosi né una garanzia di compatibilità.', biancaStart: 'Inizia con Bianca', biancaCredits: 'Scopri i crediti',
     heroAlt: 'MyMatchIQ — Quando l’intenzione è reale, la connessione segue.',
     benefitsLabel: 'Benefici relazionali di MyMatchIQ',
     features: [
@@ -54,6 +63,7 @@ const COPY = {
   de: {
     assessment: 'Assessment starten',
     meetMembers: 'Absichtsvolle Mitglieder treffen',
+    biancaEyebrow: 'Lernen Sie Bianca kennen — Ihre MyMatchIQ-Begleiterin', biancaTitle: 'Hallo, ich bin Bianca.', biancaBody: 'Ich führe Sie durch durchdachte Fragen und helfe Ihnen, Ihre Antworten in einen privaten Bericht über Persönlichkeits- und Beziehungsmuster zu verwandeln.', biancaNote: 'Nur zur Selbstreflexion — keine Therapie, Diagnose oder Garantie für Kompatibilität.', biancaStart: 'Mit Bianca beginnen', biancaCredits: 'Credits entdecken',
     heroAlt: 'MyMatchIQ — Wenn die Absicht echt ist, folgt die Verbindung.',
     benefitsLabel: 'Beziehungsvorteile von MyMatchIQ',
     features: [
@@ -86,6 +96,7 @@ export default function MyMatchIQ() {
   const t = COPY[currentLanguage] || COPY.en;
   const openAssessment = () => navigate('/MyMatchIQ/Assessment');
   const openMeetMembers = () => navigate('/MyMatchIQ/Meet');
+  const openCredits = () => navigate('/MyMatchIQ/Credits');
 
   return (
     <main className="min-h-screen bg-[#070312] px-3 py-4 sm:px-5 sm:py-6">
@@ -132,6 +143,22 @@ export default function MyMatchIQ() {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="mx-auto mt-5 grid max-w-[1800px] overflow-hidden rounded-[1.5rem] border border-fuchsia-300/30 bg-[radial-gradient(circle_at_15%_30%,rgba(217,70,239,0.22),transparent_36%),linear-gradient(120deg,#100319,#111b50)] shadow-[0_0_45px_rgba(139,92,246,0.18)] md:grid-cols-[0.82fr_1.18fr] sm:rounded-[2rem]">
+        <div className="relative min-h-[340px] overflow-hidden bg-[radial-gradient(circle_at_50%_20%,rgba(217,70,239,0.2),transparent_55%)]">
+          <img src="/assets/bianca-mymatchiq-guide-v1.png" alt="Bianca, MyMatchIQ virtual guide" className="absolute inset-x-0 bottom-0 mx-auto h-[390px] w-auto max-w-full object-contain object-bottom sm:h-[455px]" />
+        </div>
+        <div className="flex flex-col justify-center px-6 py-9 text-white sm:px-10 sm:py-12">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-200">{t.biancaEyebrow}</p>
+          <h2 className="mt-3 text-4xl font-black sm:text-5xl">{t.biancaTitle}</h2>
+          <p className="mt-4 max-w-2xl text-lg leading-8 text-white/85">{t.biancaBody}</p>
+          <div className="mt-5 flex items-start gap-2 text-sm leading-6 text-cyan-100"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />{t.biancaNote}</div>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <button type="button" onClick={openAssessment} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-violet-600 px-5 py-3 text-sm font-black shadow-lg transition hover:-translate-y-0.5 hover:brightness-110"><Sparkles className="h-4 w-4" aria-hidden="true" />{t.biancaStart}</button>
+            <button type="button" onClick={openCredits} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/50 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20"><WalletCards className="h-4 w-4" aria-hidden="true" />{t.biancaCredits}</button>
+          </div>
         </div>
       </section>
     </main>

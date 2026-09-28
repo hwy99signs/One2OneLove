@@ -7,7 +7,7 @@ const PUBLIC_ROUTES = new Set([
   '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
   '/reviews', '/leavereview', '/suggestions', '/subscription',
   '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
-  '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/actions', '/mymatchiq/dashboard',
+  '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/credits', '/mymatchiq/actions', '/mymatchiq/dashboard',
   '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
 ]);
 
