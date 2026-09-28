@@ -148,7 +148,7 @@ export default function MyMatchIQ() {
 
       <section className="mx-auto mt-5 grid max-w-[1800px] overflow-hidden rounded-[1.5rem] border border-fuchsia-300/30 bg-[radial-gradient(circle_at_15%_30%,rgba(217,70,239,0.22),transparent_36%),linear-gradient(120deg,#100319,#111b50)] shadow-[0_0_45px_rgba(139,92,246,0.18)] md:grid-cols-[0.82fr_1.18fr] sm:rounded-[2rem]">
         <div className="flex items-center justify-center bg-[radial-gradient(circle_at_44%_20%,rgba(255,255,255,0.25),transparent_32%),linear-gradient(145deg,#8c267e_0%,#4c226f_52%,#152869_100%)] p-6 sm:p-8">
-          <img src="/assets/bianca-mymatchiq-portrait-v2.png" alt="Bianca, MyMatchIQ virtual guide" className="block h-auto w-full max-w-[460px] rounded-[1.5rem] border border-white/25 object-contain shadow-[0_20px_42px_rgba(18,5,35,0.48)]" />
+          <img src="/assets/bianca-mymatchiq-portrait-v2.webp" alt="Bianca, MyMatchIQ virtual guide" className="block h-auto w-full max-w-[460px] rounded-[1.5rem] border border-white/25 object-contain shadow-[0_20px_42px_rgba(18,5,35,0.48)]" />
         </div>
         <div className="flex flex-col justify-center px-6 py-9 text-white sm:px-10 sm:py-12">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-200">{t.biancaEyebrow}</p>
