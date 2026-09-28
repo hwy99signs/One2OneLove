@@ -90,6 +90,14 @@ const FOOTER_COPY = {
   }
 };
 
+const MMIQ_FOOTER_COPY = {
+  en: { tagline:'Compatibility. Insights. Stronger Relationships.', body:'MyMatchIQ helps people explore compatibility, gain clarity, recognize red flags earlier, and make more intentional relationship decisions.', support:'Support', explore:'Explore MyMatchIQ', home:'MyMatchIQ Home', passport:'Compatibility Passport', insights:'Compatibility Insights', help:'Help Center', contact:'Contact Us', privacy:'Privacy Policy', terms:'Terms of Service', copyright:'© 2026 MyMatchIQ. Compatibility intelligence for more intentional connections.' },
+  es: { tagline:'Compatibilidad. Claridad. Relaciones Más Fuertes.', body:'MyMatchIQ ayuda a explorar la compatibilidad, ganar claridad, reconocer señales de alerta antes y tomar decisiones relacionales más intencionales.', support:'Soporte', explore:'Explora MyMatchIQ', home:'Inicio MyMatchIQ', passport:'Pasaporte de Compatibilidad', insights:'Insights de Compatibilidad', help:'Centro de Ayuda', contact:'Contáctanos', privacy:'Política de Privacidad', terms:'Términos de Servicio', copyright:'© 2026 MyMatchIQ. Inteligencia de compatibilidad para conexiones más intencionales.' },
+  fr: { tagline:'Compatibilité. Clarté. Relations Plus Fortes.', body:'MyMatchIQ vous aide à explorer la compatibilité, gagner en clarté, reconnaître les signaux d’alerte plus tôt et prendre des décisions relationnelles plus intentionnelles.', support:'Assistance', explore:'Explorer MyMatchIQ', home:'Accueil MyMatchIQ', passport:'Passeport de Compatibilité', insights:'Insights de Compatibilité', help:'Centre d’Aide', contact:'Nous Contacter', privacy:'Politique de Confidentialité', terms:'Conditions d’Utilisation', copyright:'© 2026 MyMatchIQ. L’intelligence de compatibilité pour des liens plus intentionnels.' },
+  it: { tagline:'Compatibilità. Chiarezza. Relazioni Più Forti.', body:'MyMatchIQ aiuta a esplorare la compatibilità, ottenere chiarezza, riconoscere prima i segnali di allarme e prendere decisioni relazionali più intenzionali.', support:'Supporto', explore:'Esplora MyMatchIQ', home:'Home MyMatchIQ', passport:'Passaporto di Compatibilità', insights:'Insight di Compatibilità', help:'Centro Assistenza', contact:'Contattaci', privacy:'Informativa sulla Privacy', terms:'Termini di Servizio', copyright:'© 2026 MyMatchIQ. Intelligenza di compatibilità per connessioni più intenzionali.' },
+  de: { tagline:'Kompatibilität. Klarheit. Stärkere Beziehungen.', body:'MyMatchIQ hilft dabei, Kompatibilität zu erkunden, Klarheit zu gewinnen, Warnsignale früher zu erkennen und bewusstere Beziehungsentscheidungen zu treffen.', support:'Support', explore:'MyMatchIQ Entdecken', home:'MyMatchIQ Startseite', passport:'Kompatibilitäts-Pass', insights:'Kompatibilitäts-Einblicke', help:'Hilfe-Center', contact:'Kontakt', privacy:'Datenschutz', terms:'Nutzungsbedingungen', copyright:'© 2026 MyMatchIQ. Kompatibilitätsintelligenz für bewusstere Verbindungen.' },
+};
+
 const FacebookIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 hover:text-yellow-200 transition-colors"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>);
 const InstagramIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 hover:text-yellow-200 transition-colors"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>);
 const XIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 hover:text-yellow-200 transition-colors"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>);
@@ -153,6 +161,7 @@ function LanguageContent({ children, currentPageName }) {
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
+  const mT = MMIQ_FOOTER_COPY[currentLanguage] || MMIQ_FOOTER_COPY.en;
   const closeTimeoutRef = useRef(null);
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
@@ -730,30 +739,63 @@ function LanguageContent({ children, currentPageName }) {
       <main>{children}</main>
 
       {/* Footer */}
-      <section className="bg-white text-center px-5 py-5 border-t">
-        <h3 className="font-black text-lg">{fT.loveGrow}</h3>
-        <p className="text-slate-600 max-w-5xl mx-auto mt-1">{fT.footerBody}</p>
-      </section>
-
-      <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
-          <div>
-            <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-28 w-auto" />
-            <div className="text-lg mt-2">{fT.loveGrow}</div>
-            <div className="flex gap-4 mt-5 text-2xl">
-              <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
-              <a href="https://www.facebook.com/one2onelove" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon /></a>
-              <a href="https://www.instagram.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon /></a>
-              <a href="https://x.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><XIcon /></a>
-              <a href="https://www.threads.net/@one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Threads"><ThreadsIcon /></a>
-              <a href="https://www.pinterest.com/One2onelovers" target="_blank" rel="noopener noreferrer" aria-label="Pinterest"><PinterestIcon /></a>
+      {isMyMatchIQPage ? (
+        <>
+          <section className="border-t border-fuchsia-300/20 bg-[#0d0516] px-5 py-6 text-center text-white">
+            <h3 className="text-lg font-black">{mT.tagline}</h3>
+            <p className="mx-auto mt-2 max-w-4xl text-white/75">{mT.body}</p>
+          </section>
+          <footer className="bg-gradient-to-r from-[#240432] via-[#5d146f] to-[#172c70] px-6 py-10 text-white">
+            <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[1.3fr_1fr_1fr]">
+              <div>
+                <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-20 w-auto object-contain object-left" />
+                <div className="mt-3 text-lg font-semibold">{mT.tagline}</div>
+                <p className="mt-3 max-w-md text-sm leading-6 text-white/80">{mT.body}</p>
+              </div>
+              <div>
+                <h4 className="mb-4 text-xl font-black">{mT.explore}</h4>
+                <FooterLink onClick={() => navigate('/MyMatchIQ')}>{mT.home}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Assessment')}>{mT.passport}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Actions')}>{mT.insights}</FooterLink>
+              </div>
+              <div>
+                <h4 className="mb-4 text-xl font-black">{mT.support}</h4>
+                <FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{mT.help}</FooterLink>
+                <FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{mT.contact}</FooterLink>
+                <FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{mT.privacy}</FooterLink>
+                <FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{mT.terms}</FooterLink>
+              </div>
             </div>
-          </div>
-          <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-          <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
-        </div>
-        <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
-      </footer>
+            <div className="mx-auto mt-8 max-w-7xl border-t border-white/25 pt-4 text-center text-sm">{mT.copyright}</div>
+          </footer>
+        </>
+      ) : (
+        <>
+          <section className="bg-white text-center px-5 py-5 border-t">
+            <h3 className="font-black text-lg">{fT.loveGrow}</h3>
+            <p className="text-slate-600 max-w-5xl mx-auto mt-1">{fT.footerBody}</p>
+          </section>
+          <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
+            <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
+              <div>
+                <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-28 w-auto" />
+                <div className="text-lg mt-2">{fT.loveGrow}</div>
+                <div className="flex gap-4 mt-5 text-2xl">
+                  <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
+                  <a href="https://www.facebook.com/one2onelove" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon /></a>
+                  <a href="https://www.instagram.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon /></a>
+                  <a href="https://x.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><XIcon /></a>
+                  <a href="https://www.threads.net/@one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Threads"><ThreadsIcon /></a>
+                  <a href="https://www.pinterest.com/One2onelovers" target="_blank" rel="noopener noreferrer" aria-label="Pinterest"><PinterestIcon /></a>
+                </div>
+              </div>
+              <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
+            </div>
+            <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
+          </footer>
+        </>
+      )}
     </div>
   );
 }
