@@ -355,6 +355,11 @@ function LanguageContent({ children, currentPageName }) {
           </Link>
           
           <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
+            {isMyMatchIQPage && (
+              <Link to="/SignUp?source=mymatchiq-o2ol" className={`${mmiqHeaderButton('from-rose-500 to-pink-600')} mr-2 border-r border-white/30 pr-4`}>
+                ♥ O2OL
+              </Link>
+            )}
             <Link to={createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
             <div
@@ -438,6 +443,11 @@ function LanguageContent({ children, currentPageName }) {
           {mobileMenuOpen && (
             <div className={`lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 ${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto`}>
               <nav className="flex flex-col gap-2">
+                {isMyMatchIQPage && (
+                  <Link to="/SignUp?source=mymatchiq-o2ol" className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 font-black text-white shadow-sm" onClick={() => setMobileMenuOpen(false)}>
+                    ♥ O2OL
+                  </Link>
+                )}
                 <Link
                   to={createPageUrl("Home")}
                   className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
