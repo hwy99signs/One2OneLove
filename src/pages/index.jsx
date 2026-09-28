@@ -49,6 +49,7 @@ import ProfessionalSignup from './ProfessionalSignup';
 import TherapistSignup from './TherapistSignup';
 import InfluencerSignup from './InfluencerSignup';
 import MyMatchIQ from './MyMatchIQ';
+import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,7 +62,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQWorkspace,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQMeet, MyMatchIQWorkspace,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -190,6 +191,7 @@ function PagesContent() {
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
           <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
+          <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQWorkspace page="assessment" />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />

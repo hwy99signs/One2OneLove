@@ -398,6 +398,7 @@ function LanguageContent({ children, currentPageName }) {
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 rounded-xl bg-white p-2 text-sm font-normal text-slate-800 shadow-xl z-50">
                   <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ</Link>
                   <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧠 Compatibility Passport</Link>
+                  <Link to="/MyMatchIQ/Meet" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🤝 Meet Intentional Members</Link>
                   <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>✦ MyMatchIQ Dashboard</Link>
                   <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>💌 Invite with intention</Link>
                 </div>
