@@ -342,7 +342,7 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Header */}
       <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
-        <div className="max-w-[1400px] mx-auto px-5 h-[96px] flex items-center justify-between gap-5">
+        <div className={`${isMyMatchIQPage ? 'w-full px-6 xl:px-10' : 'max-w-[1400px] mx-auto px-5'} h-[96px] flex items-center justify-between gap-5`}>
           <Link to={createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
               src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
