@@ -35,7 +35,7 @@ const UI = {
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
     inviteToPlay:'Invite to Play', block:'Block', report:'Report', score:'Like-Minded Score', matches:'matches',
-    talk:'Talk About It', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
+    talk:'Talk About It', talkPrompt:'What made each of you choose that answer?', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
     category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.',
     categoriesList:['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']
   },
@@ -62,7 +62,7 @@ const UI = {
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
     inviteToPlay:'Invitar a Jugar', block:'Bloquear', report:'Reportar', score:'Puntuación Like-Minded', matches:'coincidencias',
-    talk:'Hablar de Esto', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
+    talk:'Hablar de Esto', talkPrompt:'¿Qué hizo que cada uno eligiera esa respuesta?', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
     category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.',
     categoriesList:['Metas de Relación','Comunicación','Valores','Familia','Estilo de Vida','Dinero y Ambición','Límites','Prioridades Futuras','Escenarios Divertidos','Humor','Actividades','Comida y Viajes','Entretenimiento','Preferencias Diarias','Comodín']
   },
@@ -89,7 +89,7 @@ const UI = {
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
-    talk:'En Parler', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
+    talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
     category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
@@ -116,7 +116,7 @@ const UI = {
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
-    talk:'Parlatene', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
+    talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
     category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
@@ -143,7 +143,7 @@ const UI = {
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
-    talk:'Darüber Reden', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
+    talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
     category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
@@ -295,12 +295,29 @@ export default function LikeMinded() {
   const [lobbyUsers,setLobbyUsers] = useState([]);
   const [lobbyInvites,setLobbyInvites] = useState([]);
   const [inLobby,setInLobby] = useState(false);
+  const [available,setAvailable] = useState(false);
+  const [showTalk,setShowTalk] = useState(false);
 
   const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
   const activeCanonicalCategory = CANONICAL_CATEGORIES[(categoryIndex + questionNo - 1) % CANONICAL_CATEGORIES.length];
   const questionText = QUESTIONS[activeCanonicalCategory]?.[depthKey(depth)]?.[lang] || QUESTIONS[activeCanonicalCategory]?.real?.en;
   const answers = ANSWERS[lang] || ANSWERS.en;
   const displayCategory = t.categoriesList[CANONICAL_CATEGORIES.indexOf(activeCanonicalCategory)] || activeCanonicalCategory;
+
+  useEffect(() => {
+    const pending = new URLSearchParams(window.location.search).get('room');
+    if (pending) {
+      setRoomCode(pending.toUpperCase());
+      setScreen('invite');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api('/api/like-minded/settings', { method:'GET', headers:{} })
+      .then(data => setAvailable(Boolean(data.settings?.available)))
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!room?.code) return;
@@ -409,7 +426,7 @@ export default function LikeMinded() {
     try {
       const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code) + '/next', { method:'POST', body:'{}' });
       setRoomState(data.room); setQuestionNo(data.room?.current_question_no || questionNo + 1);
-      setSelected(null); setLocked(false);
+      setSelected(null); setLocked(false); setShowTalk(false);
     } catch (err) { setApiError(err.message); }
   };
 
@@ -419,6 +436,16 @@ export default function LikeMinded() {
     setCopied(true); setTimeout(() => setCopied(false), 1500);
   };
 
+  const toggleAvailability = async () => {
+    if (!isAuthenticated || inLobby) return;
+    setApiError('');
+    try {
+      const next=!available;
+      const data=await api('/api/like-minded/settings',{method:'POST',body:JSON.stringify({available:next,language:lang})});
+      setAvailable(Boolean(data.available));
+    } catch (err) { setApiError(err.message); }
+  };
+
   const enterLobby = async () => {
     setApiError('');
     try {
@@ -426,7 +453,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ available:true, inLobby:true, city, stateRegion, country }),
       });
-      setInLobby(true);
+      setInLobby(true); setAvailable(true);
     } catch (err) { setApiError(err.message); }
   };
 
@@ -629,8 +656,14 @@ export default function LikeMinded() {
                 <div className={"rounded-2xl p-5 " + (match ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900')}>
                   <div className="text-lg font-black">{match ? t.match : t.difference}</div>
                   <div className="mt-1 text-sm">{t.score}: {current.matches || 0}/{current.total_answered || 0}</div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-xl bg-white/70 p-3"><div className="text-[11px] font-black uppercase opacity-60">{t.yourAnswer}</div><div className="mt-1 font-black">{answers[current.my_answer_id] || '—'}</div></div>
+                    <div className="rounded-xl bg-white/70 p-3"><div className="text-[11px] font-black uppercase opacity-60">Player 2</div><div className="mt-1 font-black">{answers[current.other_answer_id] || '—'}</div></div>
+                  </div>
+                  {current.category_scores?.[activeCanonicalCategory] && <div className="mt-3 text-xs font-bold opacity-75">{displayCategory}: {current.category_scores[activeCanonicalCategory].matches}/{current.category_scores[activeCanonicalCategory].total} {t.matches}</div>}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2"><button className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800"><MessageCircle className="mr-2 inline h-5 w-5"/>{t.talk}</button><button onClick={nextRoomQuestion} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion}<ChevronRight className="ml-2 inline h-5 w-5"/></button></div>
+                {showTalk && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-center font-bold text-violet-950">{t.talkPrompt}</div>}
+                <div className="grid gap-3 sm:grid-cols-2"><button onClick={()=>setShowTalk(v=>!v)} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800"><MessageCircle className="mr-2 inline h-5 w-5"/>{t.talk}</button><button onClick={nextRoomQuestion} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion}<ChevronRight className="ml-2 inline h-5 w-5"/></button></div>
               </div>}
             {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
           </div>
@@ -692,7 +725,15 @@ export default function LikeMinded() {
               <p className="mt-4 bg-gradient-to-r from-fuchsia-300 via-violet-200 to-cyan-200 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">{t.tagline}</p>
               <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">{t.intro}</p>
 
-              <div className="mt-9 grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+              {isAuthenticated && <div className="mt-7 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm">
+                <button onClick={toggleAvailability} disabled={inLobby} className={"relative h-7 w-12 rounded-full transition " + (available?'bg-emerald-500':'bg-slate-600') + (inLobby?' cursor-not-allowed opacity-70':'')}>
+                  <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition " + (available?'left-6':'left-1')} />
+                </button>
+                <span className="font-black">{available ? t.available : 'Unavailable'}</span>
+                <span className="text-slate-400">· Solo play does not change this setting.</span>
+              </div>}
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                 <ModeCard icon={UserRound} title={t.solo} body={t.soloBody} onClick={startSolo} accent="bg-gradient-to-br from-fuchsia-500 to-rose-500"/>
                 <ModeCard icon={Users} title={t.invite} body={t.inviteBody} onClick={()=>setScreen('invite')} accent="bg-gradient-to-br from-violet-500 to-indigo-500"/>
                 <ModeCard icon={Radio} title={t.lobby} body={t.lobbyBody} onClick={()=>setScreen('lobby')} accent="bg-gradient-to-br from-cyan-500 to-blue-500"/>
