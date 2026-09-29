@@ -338,14 +338,14 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Header */}
       <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-5 h-[96px] flex items-center justify-between gap-5">
-          <Link to={createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-5 h-[96px] flex items-center justify-between gap-2 sm:gap-5">
+          <Link to={createPageUrl("Home")} className="w-[168px] sm:w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
               src="/assets/o2ol-header-logo.png" 
               alt="One2One Love Logo" 
               width="220"
               height="88"
-              className="h-[88px] w-[220px] object-contain object-left"
+              className="h-[88px] w-[168px] sm:w-[220px] object-contain object-left"
               onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             />
           </Link>
@@ -422,8 +422,23 @@ function LanguageContent({ children, currentPageName }) {
             </div>
           </nav>
           
-          {/* Mobile menu button */}
-          <div className="flex items-center gap-2 lg:hidden">
+          {/* Mobile header controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+            <Select value={currentLanguage} onValueChange={changeLanguage}>
+              <SelectTrigger
+                aria-label={t.nav.language}
+                className="w-[76px] sm:w-[112px] rounded-xl bg-white/15 border border-white/30 px-2.5 sm:px-3 py-2 text-yellow-300 h-auto font-black text-sm sm:text-base"
+              >
+                <SelectValue placeholder={t.nav.language} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">EN English</SelectItem>
+                <SelectItem value="es">ES Español</SelectItem>
+                <SelectItem value="fr">FR Français</SelectItem>
+                <SelectItem value="it">IT Italiano</SelectItem>
+                <SelectItem value="de">DE Deutsch</SelectItem>
+              </SelectContent>
+            </Select>
             <button type="button" aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
