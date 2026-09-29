@@ -306,11 +306,30 @@ export default function LikeMinded() {
 
   useEffect(() => {
     const pending = new URLSearchParams(window.location.search).get('room');
-    if (pending) {
-      setRoomCode(pending.toUpperCase());
+    if (!pending) return;
+    const normalized=pending.toUpperCase();
+    setRoomCode(normalized);
+    if (!isAuthenticated) {
       setScreen('invite');
+      return;
     }
-  }, []);
+    let active=true;
+    api('/api/like-minded/rooms/join', {
+      method:'POST',
+      body:JSON.stringify({ code:normalized, language:lang }),
+    }).then(data => {
+      if (!active) return;
+      setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
+      if (data.room?.category) setCategory(data.room.category);
+      if (data.room?.depth) setDepth(data.room.depth);
+      if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
+      setLocked(Boolean(data.room?.my_locked));
+      setScreen('room');
+    }).catch(err => {
+      if (active) { setApiError(err.message); setScreen('invite'); }
+    });
+    return () => { active=false; };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -361,6 +380,17 @@ export default function LikeMinded() {
 
   const selectDepth = (value) => setDepth(value);
 
+  const setRoomUrl = (code) => {
+    if (!code) return;
+    const target=createPageUrl('LikeMinded')+'?room='+encodeURIComponent(code);
+    window.history.replaceState({},'',target);
+  };
+
+  const goHome = () => {
+    window.history.replaceState({},'',createPageUrl('LikeMinded'));
+    setRoom(null); setRoomState(null); setRoomCode(''); setSelected(null); setLocked(false); setShowTalk(false); setScreen('home');
+  };
+
   const startSolo = () => {
     setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
   };
@@ -384,7 +414,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ category, depth, language:lang }),
       });
-      setRoom(data.room); setRoomState(data.room);
+      setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
       if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
@@ -399,7 +429,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ code:roomCode.trim().toUpperCase(), language:lang }),
       });
-      setRoom(data.room); setRoomState(data.room);
+      setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
       if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
@@ -501,13 +531,13 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ category, depth, language:lang, invitedUserId:playerId }),
       });
-      setRoom(data.room); setRoomState(data.room); setScreen('room');
+      setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code); setScreen('room');
     } catch (err) { setApiError(err.message); }
   };
 
   const modeHeader = (
     <div className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-      <button onClick={() => setScreen('home')} className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> {t.back}</button>
+      <button onClick={goHome} className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> {t.back}</button>
       <div className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black tracking-wide text-white">LIKE MINDED?</div>
     </div>
   );
@@ -594,7 +624,7 @@ export default function LikeMinded() {
               {!isAuthenticated ? (
                 <>
                   <h2 className="text-2xl font-black text-slate-950">{t.signin}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{t.signinBody}</p>
-                  <Link to={createPageUrl('SignIn')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.signin}</Link>
+                  <Link to={createPageUrl('SignIn') + (roomCode ? ('?redirect=' + encodeURIComponent(createPageUrl('LikeMinded') + '?room=' + roomCode)) : '')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.signin}</Link>
                 </>
               ) : (
                 <>
