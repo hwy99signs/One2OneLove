@@ -137,6 +137,23 @@ async function roomState(db,room,userId){
     [room.id]
   );
 
+  const byCategory=await db.query(
+    `SELECT category,
+            count(*) FILTER (WHERE player_count=2)::int AS total,
+            count(*) FILTER (WHERE player_count=2 AND min_answer=max_answer)::int AS matches
+       FROM (
+         SELECT split_part(question_id,':',1) AS category,set_number,question_no,
+                count(*)::int AS player_count,min(answer_id)::int AS min_answer,max(answer_id)::int AS max_answer
+           FROM public.like_minded_answers
+          WHERE room_id=$1::uuid
+          GROUP BY split_part(question_id,':',1),set_number,question_no
+       ) s
+      GROUP BY category`,
+    [room.id]
+  );
+  const categoryScores={};
+  for(const row of byCategory.rows) categoryScores[row.category]={matches:row.matches||0,total:row.total||0};
+
   return {
     id:room.id,code:room.code,host_user_id:room.host_user_id,guest_user_id:room.guest_user_id,
     invited_user_id:room.invited_user_id,category:room.category,depth:room.depth,status:room.status,
@@ -147,6 +164,7 @@ async function roomState(db,room,userId){
     current_match:bothLocked?mine.answer_id===other.answer_id:null,
     question_id:mine?.question_id||other?.question_id||null,
     matches:score.rows[0]?.matches||0,total_answered:score.rows[0]?.total_answered||0,
+    category_scores:categoryScores,
     created_at:room.created_at,updated_at:room.updated_at,
   };
 }
@@ -167,6 +185,26 @@ export async function handleLikeMindedRequest(request,env,url){
     return await withDb(env,async(db)=>{
       await ensureSchema(db);
       const body=['POST','PATCH','PUT'].includes(request.method)?await readJson(request):{};
+
+      if(url.pathname==='/api/like-minded/settings'){
+        const current=await db.query('SELECT * FROM public.like_minded_player_settings WHERE user_id=$1::uuid',[auth.user.id]);
+        const row=current.rows[0]||null;
+        if(request.method==='GET'){
+          return json({ok:true,settings:row||{user_id:auth.user.id,available:false,in_lobby:false,city:null,state_region:null,country:null,language:'en'}});
+        }
+        if(request.method==='POST'||request.method==='PATCH'){
+          if(row?.in_lobby===true&&body.available===false) return fail('Availability stays ON while you are inside the Player Lobby.',409,'lobby_availability_locked');
+          const available=body.available===undefined?Boolean(row?.available):Boolean(body.available);
+          await db.query(
+            `INSERT INTO public.like_minded_player_settings(user_id,available,in_lobby,language,updated_at)
+             VALUES($1::uuid,$2,false,$3,now())
+             ON CONFLICT(user_id) DO UPDATE SET available=excluded.available,language=excluded.language,updated_at=now()`,
+            [auth.user.id,available,['en','es','fr','it','de'].includes(body.language)?body.language:(row?.language||'en')]
+          );
+          return json({ok:true,available});
+        }
+        return fail('Method not allowed.',405,'method_not_allowed');
+      }
 
       if(url.pathname==='/api/like-minded/lobby'){
         if(request.method==='POST'){
