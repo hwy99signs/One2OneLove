@@ -293,6 +293,7 @@ export default function LikeMinded() {
   const [stateRegion,setStateRegion] = useState('');
   const [country,setCountry] = useState('');
   const [lobbyUsers,setLobbyUsers] = useState([]);
+  const [lobbyInvites,setLobbyInvites] = useState([]);
   const [inLobby,setInLobby] = useState(false);
 
   const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
@@ -307,7 +308,12 @@ export default function LikeMinded() {
     const load = async () => {
       try {
         const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code), { method:'GET', headers:{} });
-        if (active) setRoomState(data.room);
+        if (active) {
+          setRoomState(data.room);
+          if (data.room?.category) setCategory(data.room.category);
+          if (data.room?.depth) setDepth(data.room.depth);
+          if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
+        }
       } catch (err) {
         if (active) setApiError(err.message);
       }
@@ -323,7 +329,10 @@ export default function LikeMinded() {
     const load = async () => {
       try {
         const data = await api('/api/like-minded/lobby', { method:'GET', headers:{} });
-        if (active) setLobbyUsers(data.players || []);
+        if (active) {
+          setLobbyUsers(data.players || []);
+          setLobbyInvites(data.invites || []);
+        }
       } catch (err) {
         if (active) setApiError(err.message);
       }
@@ -358,7 +367,11 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ category, depth, language:lang }),
       });
-      setRoom(data.room); setRoomState(data.room); setScreen('room');
+      setRoom(data.room); setRoomState(data.room);
+      if (data.room?.category) setCategory(data.room.category);
+      if (data.room?.depth) setDepth(data.room.depth);
+      if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
+      setScreen('room');
     } catch (err) { setApiError(err.message); }
   };
 
@@ -369,7 +382,11 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ code:roomCode.trim().toUpperCase(), language:lang }),
       });
-      setRoom(data.room); setRoomState(data.room); setScreen('room');
+      setRoom(data.room); setRoomState(data.room);
+      if (data.room?.category) setCategory(data.room.category);
+      if (data.room?.depth) setDepth(data.room.depth);
+      if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
+      setScreen('room');
     } catch (err) { setApiError(err.message); }
   };
 
@@ -418,6 +435,36 @@ export default function LikeMinded() {
       await api('/api/like-minded/lobby', { method:'POST', body:JSON.stringify({ inLobby:false }) });
     } catch {}
     setInLobby(false); setScreen('home');
+  };
+
+  const joinInvite = async (code) => {
+    setRoomCode(code);
+    setApiError('');
+    try {
+      const data = await api('/api/like-minded/rooms/join', {
+        method:'POST',
+        body:JSON.stringify({ code, language:lang }),
+      });
+      setRoom(data.room); setRoomState(data.room);
+      if (data.room?.category) setCategory(data.room.category);
+      if (data.room?.depth) setDepth(data.room.depth);
+      if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
+      setScreen('room');
+    } catch (err) { setApiError(err.message); }
+  };
+
+  const blockPlayer = async (playerId) => {
+    try {
+      await api('/api/like-minded/blocks', { method:'POST', body:JSON.stringify({ userId:playerId }) });
+      setLobbyUsers(list => list.filter(p => p.user_id !== playerId));
+    } catch (err) { setApiError(err.message); }
+  };
+
+  const reportPlayer = async (playerId) => {
+    try {
+      await api('/api/like-minded/reports', { method:'POST', body:JSON.stringify({ userId:playerId, context:'Reported from Like Minded Player Lobby' }) });
+      setLobbyUsers(list => list.filter(p => p.user_id !== playerId));
+    } catch (err) { setApiError(err.message); }
   };
 
   const invitePlayer = async (playerId) => {
@@ -609,11 +656,15 @@ export default function LikeMinded() {
           ) : (
             <>
               <div className="mb-5 flex items-center justify-between gap-3"><div><h1 className="text-3xl font-black">{t.available}</h1><p className="text-sm text-slate-500">{lobbyUsers.length} online</p></div><button onClick={leaveLobby} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black">{t.leaveLobby}</button></div>
+              {lobbyInvites.length > 0 && <div className="mb-5 rounded-[28px] border border-fuchsia-200 bg-fuchsia-50 p-5 text-slate-950">
+                <div className="text-sm font-black uppercase tracking-[.16em] text-fuchsia-700">Game invitations</div>
+                <div className="mt-3 grid gap-2">{lobbyInvites.map(inv => <button key={inv.code} onClick={()=>joinInvite(inv.code)} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left shadow-sm"><span><strong>{inv.host_first_name}</strong><span className="ml-2 text-sm text-slate-500">{inv.category} · {inv.depth}</span></span><span className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">{t.join}</span></button>)}</div>
+              </div>}
               <div className="grid gap-4 md:grid-cols-2">
                 {lobbyUsers.length===0 ? <div className="rounded-[28px] bg-white p-8 text-center text-slate-500 shadow">{t.lobbyEmpty}</div> : lobbyUsers.map((p)=>(
                   <div key={p.user_id} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg">
                     <div className="flex items-center gap-4"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xl font-black text-white">{(p.first_name||'?').slice(0,1).toUpperCase()}</div><div><div className="font-black text-slate-950">{p.first_name}</div><div className="text-sm text-slate-500">{[p.city,p.state_region,p.country].filter(Boolean).join(', ')}</div></div></div>
-                    <div className="mt-5 grid grid-cols-3 gap-2"><button onClick={()=>invitePlayer(p.user_id)} className="col-span-2 rounded-xl bg-slate-950 px-3 py-3 text-sm font-black text-white">{t.inviteToPlay}</button><button className="rounded-xl border border-slate-200 px-2 text-xs font-black">{t.report}</button></div>
+                    <div className="mt-5 grid grid-cols-4 gap-2"><button onClick={()=>invitePlayer(p.user_id)} className="col-span-2 rounded-xl bg-slate-950 px-3 py-3 text-sm font-black text-white">{t.inviteToPlay}</button><button onClick={()=>blockPlayer(p.user_id)} className="rounded-xl border border-slate-200 px-2 text-xs font-black">{t.block}</button><button onClick={()=>reportPlayer(p.user_id)} className="rounded-xl border border-slate-200 px-2 text-xs font-black">{t.report}</button></div>
                   </div>
                 ))}
               </div>
