@@ -35,6 +35,7 @@ import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
+import { handleLikeMindedRequest } from './like-minded';
 
 
 const SOCIAL_PAGE_META = {
@@ -171,6 +172,11 @@ export default {
 
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;
+
+    if (url.pathname.startsWith('/api/like-minded')) {
+      const response = await handleLikeMindedRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname === '/api/games/scratch/launch') {
       const response = await handleGameAccessRequest(request, env, url);
