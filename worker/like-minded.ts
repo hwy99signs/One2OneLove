@@ -208,7 +208,23 @@ export async function handleLikeMindedRequest(request,env,url){
               LIMIT 100`,
             [auth.user.id]
           );
-          return json({ok:true,players:result.rows});
+          const invites=await db.query(
+            `SELECT r.code,r.category,r.depth,COALESCE(NULLIF(split_part(u.name,' ',1),''),'Player') AS host_first_name,r.created_at
+               FROM public.like_minded_rooms r
+               JOIN public.users u ON u.id=r.host_user_id
+              WHERE r.invited_user_id=$1::uuid
+                AND r.guest_user_id IS NULL
+                AND r.status='waiting'
+                AND r.created_at>now()-interval '30 minutes'
+                AND NOT EXISTS(
+                  SELECT 1 FROM public.like_minded_blocks b
+                   WHERE (b.blocker_user_id=$1::uuid AND b.blocked_user_id=r.host_user_id)
+                      OR (b.blocker_user_id=r.host_user_id AND b.blocked_user_id=$1::uuid)
+                )
+              ORDER BY r.created_at DESC LIMIT 20`,
+            [auth.user.id]
+          );
+          return json({ok:true,players:result.rows,invites:invites.rows});
         }
         return fail('Method not allowed.',405,'method_not_allowed');
       }
