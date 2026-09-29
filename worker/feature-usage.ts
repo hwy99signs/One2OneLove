@@ -29,6 +29,7 @@ const TRACKABLE_FEATURES = new Set([
   'Friend Requests',
   'Member Profile',
   'Subscription / Billing',
+  'Like Minded?',
 ]);
 
 async function session(request, env) {
