@@ -29,6 +29,7 @@ import CoupleActivities from './CoupleActivities';
 import CooperativeGames from './CooperativeGames';
 import WhatShouldTheyDo from './WhatShouldTheyDo';
 import ScratchGame from './ScratchGame';
+import LikeMinded from './LikeMinded';
 import SharedJournals from './SharedJournals';
 import CouplesDashboard from './CouplesDashboard';
 import CouplesCalendar from './CouplesCalendar';
@@ -61,7 +62,7 @@ const PAGES = {
   Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
-  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, SharedJournals, CouplesDashboard,
+  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
   Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace,
@@ -91,6 +92,7 @@ const FEATURE_BY_ROUTE = {
   '/whatshouldtheydo': 'What Should They Do?',
   '/games': 'What Should They Do?',
   '/scratchgame': 'Scratch Game',
+  '/likeminded': 'Like Minded?',
   '/sharedjournals': 'Shared Journals',
   '/couplesdashboard': 'Couples Dashboard',
   '/couplescalendar': 'Couples Calendar',
@@ -171,6 +173,7 @@ function PagesContent() {
           <Route path="/WhatShouldTheyDo" element={<WhatShouldTheyDo />} />
           <Route path="/Games" element={<WhatShouldTheyDo />} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
+          <Route path="/LikeMinded" element={<LikeMinded />} />
           <Route path="/SharedJournals" element={<SharedJournals />} />
           <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
           <Route path="/CouplesCalendar" element={<CouplesCalendar />} />

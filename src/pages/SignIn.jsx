@@ -26,6 +26,13 @@ export default function SignIn({ product = 'o2ol' }) {
   const [verificationCode, setVerificationCode] = useState('');
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+
+  const safeRedirect = (() => {
+    try {
+      const value = new URLSearchParams(window.location.search).get('redirect');
+      return value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+    } catch { return null; }
+  })();
   const isMyMatchIQ = product === 'mymatchiq';
   const brand = ({
     en: { title: 'Sign In to MyMatchIQ', subtitle: 'Continue your compatibility journey with MyMatchIQ.', verifyTitle: 'Verify Your MyMatchIQ Email', back: 'Back to MyMatchIQ' },
@@ -52,9 +59,9 @@ export default function SignIn({ product = 'o2ol' }) {
         ? '/VerifyPhone'
         : role === 'admin'
           ? '/AdminAccess'
-          : isMyMatchIQ
+          : safeRedirect || (isMyMatchIQ
             ? '/MyMatchIQ/Dashboard'
-            : createPageUrl('Home');
+            : createPageUrl('Home'));
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
     }
