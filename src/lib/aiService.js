@@ -136,3 +136,36 @@ export async function updateMyMatchIQAutoReplenish({ enabled, packageCode, trigg
 export async function createMyMatchIQSetupIntent() {
   return apiRequest('/api/mymatchiq/credits/setup-intent', { method:'POST', body:{} });
 }
+
+
+export async function getMyMatchIQMemberProfile() {
+  const payload = await apiRequest('/api/mymatchiq/members/profile');
+  return payload?.profile || null;
+}
+export async function updateMyMatchIQMemberProfile(profile) {
+  const payload = await apiRequest('/api/mymatchiq/members/profile', { method:'PUT', body:profile });
+  return payload?.profile || null;
+}
+export async function discoverMyMatchIQMembers() {
+  const payload = await apiRequest('/api/mymatchiq/members/discover');
+  return payload?.members || [];
+}
+export async function listMyMatchIQInvitations() {
+  const payload = await apiRequest('/api/mymatchiq/members/invitations');
+  return payload?.invitations || [];
+}
+export async function sendMyMatchIQInvitation(data) {
+  const payload = await apiRequest('/api/mymatchiq/members/invitations', { method:'POST', body:data });
+  return payload?.invitation || null;
+}
+export async function respondMyMatchIQInvitation(invitationId,status) {
+  const payload = await apiRequest(`/api/mymatchiq/members/invitations/${encodeURIComponent(invitationId)}`, { method:'PATCH', body:{status} });
+  return payload?.invitation || null;
+}
+export async function blockMyMatchIQMember(userId) {
+  return apiRequest('/api/mymatchiq/members/block', { method:'POST', body:{userId} });
+}
+export async function reportMyMatchIQMember({reportedUserId,category='other',details=''}) {
+  const payload = await apiRequest('/api/mymatchiq/members/report', { method:'POST', body:{reportedUserId,category,details} });
+  return payload?.report || null;
+}
