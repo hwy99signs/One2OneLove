@@ -55,6 +55,7 @@ import MyMatchIQBianca from './MyMatchIQBianca';
 import MyMatchIQCredits from './MyMatchIQCredits';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
+import MyMatchIQPassport from './MyMatchIQPassport';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
@@ -199,6 +200,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
           <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
+          <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
           <Route path="/MyMatchIQ/Credits" element={<MyMatchIQCredits />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
