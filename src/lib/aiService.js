@@ -58,6 +58,15 @@ export async function listBiancaMessages(conversationId) {
   return payload?.messages || [];
 }
 
+export async function deleteBiancaConversation(conversationId) {
+  await apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}`, { method: 'DELETE' });
+}
+
+export async function resetBiancaPersonalization() {
+  const payload = await apiRequest('/api/mymatchiq/bianca/profile/reset', { method: 'POST', body: {} });
+  return payload?.profile || null;
+}
+
 export async function sendBiancaMessage(conversationId, message, language = 'en') {
   return apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
