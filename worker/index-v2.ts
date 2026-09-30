@@ -237,7 +237,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname.startsWith('/api/mymatchiq/bianca') || url.pathname.startsWith('/api/mymatchiq/assessment')) {
+    if (url.pathname === '/api/mymatchiq/access' || url.pathname.startsWith('/api/mymatchiq/bianca') || url.pathname.startsWith('/api/mymatchiq/assessment')) {
       const response = await handleMyMatchIQAiRequest(request, env, url);
       if (response) return response;
     }
