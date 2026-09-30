@@ -256,15 +256,21 @@ function api(path, options={}) {
   });
 }
 
-function ModeCard({ icon:Icon, title, body, onClick, accent }) {
+function ModeCard({ icon:Icon, title, body, onClick, accent, surface }) {
   return (
-    <button onClick={onClick} className="group text-left rounded-[28px] border border-white/15 bg-white/[0.08] p-6 sm:p-7 backdrop-blur transition hover:-translate-y-1 hover:bg-white/[0.12] hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-fuchsia-300">
-      <div className={"mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl " + accent}>
+    <button
+      onClick={onClick}
+      className={"group relative flex min-h-[210px] flex-col items-center overflow-hidden rounded-[24px] border p-4 text-center shadow-xl transition hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-white/80 sm:min-h-[230px] sm:p-5 " + surface}
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-transparent to-black/12" />
+      <div className={"relative z-10 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/35 shadow-lg " + accent}>
         <Icon className="h-7 w-7 text-white" />
       </div>
-      <h3 className="text-xl font-black text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-200">{body}</p>
-      <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-fuchsia-200">Open <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
+      <h3 className="relative z-10 mt-4 text-[17px] font-black leading-[1.08] text-white sm:text-xl">{title}</h3>
+      <p className="relative z-10 mt-3 text-[12px] font-medium leading-[1.35] text-white/90 sm:text-sm">{body}</p>
+      <span className="relative z-10 mt-auto inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-900 shadow-lg transition group-hover:translate-x-1">
+        <ChevronRight className="h-5 w-5" />
+      </span>
     </button>
   );
 }
@@ -739,73 +745,160 @@ export default function LikeMinded() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#090b17] text-white">
-      <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_18%_20%,rgba(217,70,239,.30),transparent_28%),radial-gradient(circle_at_80%_18%,rgba(56,189,248,.22),transparent_28%),radial-gradient(circle_at_60%_80%,rgba(124,58,237,.28),transparent_32%)]" />
-        <div className="absolute -left-24 top-40 -z-10 h-64 w-64 rounded-full bg-fuchsia-500/15 blur-3xl" />
-        <div className="absolute -right-20 top-12 -z-10 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-
-        <div className="mx-auto max-w-7xl px-4 pb-20 pt-10 sm:px-6 lg:pb-28 lg:pt-16">
-          <Link to={createPageUrl('CooperativeGames')} className="mb-10 inline-flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-white"><ArrowLeft className="h-4 w-4"/>{t.back}</Link>
-
-          <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_.92fr]">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-fuchsia-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-fuchsia-200"><Sparkles className="h-4 w-4"/>{t.eyebrow}</div>
-              <h1 className="mt-6 text-5xl font-black tracking-tight sm:text-7xl lg:text-8xl">{t.title}</h1>
-              <p className="mt-4 bg-gradient-to-r from-fuchsia-300 via-violet-200 to-cyan-200 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">{t.tagline}</p>
-              <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">{t.intro}</p>
-
-              {isAuthenticated && <div className="mt-7 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm">
-                <button onClick={toggleAvailability} disabled={inLobby} className={"relative h-7 w-12 rounded-full transition " + (available?'bg-emerald-500':'bg-slate-600') + (inLobby?' cursor-not-allowed opacity-70':'')}>
-                  <span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition " + (available?'left-6':'left-1')} />
-                </button>
-                <span className="font-black">{available ? t.available : 'Unavailable'}</span>
-                <span className="text-slate-400">· Solo play does not change this setting.</span>
-              </div>}
-
-              <div className="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                <ModeCard icon={UserRound} title={t.solo} body={t.soloBody} onClick={startSolo} accent="bg-gradient-to-br from-fuchsia-500 to-rose-500"/>
-                <ModeCard icon={Users} title={t.invite} body={t.inviteBody} onClick={()=>setScreen('invite')} accent="bg-gradient-to-br from-violet-500 to-indigo-500"/>
-                <ModeCard icon={Radio} title={t.lobby} body={t.lobbyBody} onClick={()=>setScreen('lobby')} accent="bg-gradient-to-br from-cyan-500 to-blue-500"/>
-              </div>
+    <div className="min-h-screen bg-[#07112f] text-white">
+      <section className="relative flex min-h-[calc(100svh-96px)] flex-col overflow-hidden bg-[#07112f]">
+        <div className="relative h-[40svh] min-h-[320px] max-h-[520px] overflow-hidden">
+          <div className="absolute inset-0 grid grid-cols-2">
+            <div className="relative overflow-hidden">
+              <img
+                src="/assets/o2ol-hero.png"
+                alt=""
+                className="h-full w-full scale-[1.65] object-cover"
+                style={{objectPosition:'72% 48%'}}
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-950/25 via-blue-600/5 to-transparent" />
             </div>
+            <div className="relative overflow-hidden">
+              <img
+                src="/assets/o2ol-hero.png"
+                alt=""
+                className="h-full w-full scale-[1.65] object-cover"
+                style={{objectPosition:'28% 48%'}}
+              />
+              <div className="absolute inset-0 bg-gradient-to-bl from-fuchsia-950/25 via-rose-500/5 to-transparent" />
+            </div>
+          </div>
 
-            <div className="relative mx-auto w-full max-w-xl">
-              <div className="absolute -inset-5 rounded-[40px] bg-gradient-to-br from-fuchsia-500/20 via-violet-500/10 to-cyan-500/20 blur-2xl" />
-              <div className="relative overflow-hidden rounded-[34px] border border-white/15 bg-white/[0.08] p-5 shadow-2xl backdrop-blur-xl sm:p-7">
-                <div className="flex items-center justify-between"><div><div className="text-xs font-black uppercase tracking-[.18em] text-fuchsia-200">LIVE QUESTION</div><div className="mt-1 text-sm text-white/60">Communication · Real</div></div><div className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-200">2 PLAYERS</div></div>
-                <div className="mt-6 rounded-[26px] bg-white p-6 text-slate-950 shadow-xl">
-                  <div className="text-xl font-black sm:text-2xl">When something bothers you, when do you prefer to talk about it?</div>
-                  <div className="mt-5 grid gap-2">
-                    {['Right away','After I cool down','When the timing feels right','Only if it still matters'].map((a,i)=><div key={a} className={"rounded-xl border p-3 text-sm font-bold " + (i===1?'border-violet-400 bg-violet-50':'border-slate-200')}>{String.fromCharCode(65+i)}. {a}</div>)}
-                  </div>
-                  <div className="mt-5 rounded-xl bg-slate-950 p-3 text-center text-sm font-black text-white"><LockKeyhole className="mr-2 inline h-4 w-4"/>Answer privately. Reveal together.</div>
-                </div>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-white/10 p-4"><div className="text-xs font-bold text-white/55">CURRENT SCORE</div><div className="mt-1 text-3xl font-black">82%</div></div>
-                  <div className="rounded-2xl bg-white/10 p-4"><div className="text-xs font-bold text-white/55">MATCHES</div><div className="mt-1 text-3xl font-black">9/11</div></div>
-                </div>
+          <div className="pointer-events-none absolute left-1/2 top-[-12%] h-[128%] w-[4px] -translate-x-1/2 rotate-[18deg] bg-white/95 shadow-[0_0_18px_rgba(255,255,255,.65)]" />
+          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#07112f] via-[#07112f]/60 to-transparent" />
+
+          <Link
+            to={createPageUrl('CooperativeGames')}
+            aria-label={t.back}
+            className="absolute left-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition hover:bg-black/50"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+
+          <div className="absolute inset-x-0 bottom-[-18px] z-10 flex justify-center px-4">
+            <div className="select-none text-center [filter:drop-shadow(0_10px_18px_rgba(0,0,0,.55))]">
+              <div className="leading-[.76]">
+                <span
+                  className="block text-[74px] font-black tracking-[-.07em] text-yellow-300 sm:text-[96px]"
+                  style={{WebkitTextStroke:'4px #07112f', textShadow:'0 0 0 #07112f, 0 5px 0 #f59e0b'}}
+                >
+                  Like
+                </span>
+                <span
+                  className="block text-[68px] font-black tracking-[-.065em] text-white sm:text-[90px]"
+                  style={{WebkitTextStroke:'4px #07112f', textShadow:'0 4px 0 #dbeafe'}}
+                >
+                  Minded<span className="text-yellow-300">?</span>
+                </span>
+              </div>
+              <div className="mt-3 flex justify-center gap-2">
+                <span className="relative inline-flex h-11 w-14 items-center justify-center rounded-[18px] rounded-bl-[5px] bg-cyan-400 shadow-[0_0_0_4px_#07112f]">
+                  <span className="text-xl text-[#07112f]">♥</span>
+                </span>
+                <span className="relative inline-flex h-11 w-14 items-center justify-center rounded-[18px] rounded-br-[5px] bg-pink-500 shadow-[0_0_0_4px_#07112f]">
+                  <span className="text-xl text-[#07112f]">♥</span>
+                </span>
               </div>
             </div>
           </div>
         </div>
+
+        <div className="flex flex-1 flex-col px-3 pb-5 pt-12 sm:px-5 sm:pb-7 sm:pt-16">
+          <div className="mx-auto w-full max-w-5xl text-center">
+            <h1 className="text-[31px] font-black leading-[1.08] tracking-tight text-white sm:text-4xl">
+              {t.tagline.split('. ').map((part,i,arr) => (
+                <React.Fragment key={part}>
+                  <span className={i===1 ? 'text-yellow-300' : 'text-white'}>{part}{i < arr.length-1 ? '.' : ''}</span>
+                  {i < arr.length-1 && <br />}
+                </React.Fragment>
+              ))}
+            </h1>
+            <p className="mx-auto mt-3 hidden max-w-2xl text-sm leading-6 text-slate-300 sm:block">{t.intro}</p>
+          </div>
+
+          {isAuthenticated && (
+            <div className="mx-auto mt-3 flex max-w-3xl items-center justify-center gap-2 text-xs text-slate-300">
+              <button
+                onClick={toggleAvailability}
+                disabled={inLobby}
+                aria-label={available ? 'Set unavailable' : 'Set available'}
+                className={"relative h-6 w-11 rounded-full transition " + (available ? 'bg-emerald-500' : 'bg-slate-600') + (inLobby ? ' cursor-not-allowed opacity-70' : '')}
+              >
+                <span className={"absolute top-1 h-4 w-4 rounded-full bg-white transition " + (available ? 'left-6' : 'left-1')} />
+              </button>
+              <span className="font-bold">{available ? t.available : 'Unavailable'}</span>
+            </div>
+          )}
+
+          <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-3 gap-2.5 sm:mt-6 sm:gap-4">
+            <ModeCard
+              icon={UserRound}
+              title={t.solo}
+              body={t.soloBody}
+              onClick={startSolo}
+              accent="bg-blue-500/95"
+              surface="border-cyan-300/55 bg-gradient-to-b from-sky-500 via-blue-600 to-blue-800"
+            />
+            <ModeCard
+              icon={HeartHandshake}
+              title={t.invite}
+              body={t.inviteBody}
+              onClick={()=>setScreen('invite')}
+              accent="bg-pink-500/95"
+              surface="border-pink-300/55 bg-gradient-to-b from-pink-500 via-fuchsia-600 to-pink-800"
+            />
+            <ModeCard
+              icon={Users}
+              title={t.lobby}
+              body={t.lobbyBody}
+              onClick={()=>setScreen('lobby')}
+              accent="bg-amber-400/95"
+              surface="border-amber-200/60 bg-gradient-to-b from-amber-400 via-orange-500 to-amber-700"
+            />
+          </div>
+        </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.04]">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <div className="text-center"><div className="text-sm font-black uppercase tracking-[.2em] text-fuchsia-300">{t.how}</div><h2 className="mt-2 text-3xl font-black sm:text-4xl">{t.tagline}</h2></div>
-          <div className="mt-10 grid gap-4 md:grid-cols-4">
+      <section className="border-t border-white/10 bg-white text-slate-950">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:py-20">
+          <div className="text-center">
+            <h2 className="text-4xl font-black tracking-tight sm:text-5xl">{t.how}</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600">{t.intro}</p>
+          </div>
+          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
             {[[Sparkles,t.choose,t.how1],[LockKeyhole,t.lock,t.how2],[CheckCircle2,t.reveal,t.how3],[HeartHandshake,t.connect,t.how4]].map(([Icon,title,body],i)=>(
-              <div key={title} className="rounded-[26px] border border-white/10 bg-white/[0.06] p-6"><div className="mb-4 flex items-center justify-between"><Icon className="h-7 w-7 text-fuchsia-300"/><span className="text-3xl font-black text-white/10">0{i+1}</span></div><h3 className="text-xl font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-300">{body}</p></div>
+              <div key={title} className="rounded-[26px] border border-slate-200 bg-slate-50 p-5 text-center shadow-sm">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#07112f] text-white shadow-md">
+                  <Icon className="h-7 w-7" />
+                </div>
+                <div className="mt-4 text-xs font-black uppercase tracking-[.18em] text-violet-600">0{i+1}</div>
+                <h3 className="mt-1 text-xl font-black">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-16 sm:px-6 lg:grid-cols-2">
-        <div className="rounded-[30px] border border-white/10 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/10 p-7"><ShieldCheck className="h-9 w-9 text-fuchsia-300"/><h3 className="mt-4 text-2xl font-black">{t.mature}</h3><p className="mt-3 leading-7 text-slate-300">{t.matureBody}</p></div>
-        <div className="rounded-[30px] border border-white/10 bg-gradient-to-br from-cyan-500/15 to-indigo-500/10 p-7"><Globe2 className="h-9 w-9 text-cyan-300"/><h3 className="mt-4 text-2xl font-black">{t.multilingual}</h3><p className="mt-3 leading-7 text-slate-300">{t.multilingualBody}</p></div>
+      <section className="bg-[#07112f]">
+        <div className="mx-auto grid max-w-6xl gap-5 px-5 py-14 md:grid-cols-2">
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.06] p-7">
+            <ShieldCheck className="h-9 w-9 text-pink-300"/>
+            <h3 className="mt-4 text-2xl font-black">{t.mature}</h3>
+            <p className="mt-3 leading-7 text-slate-300">{t.matureBody}</p>
+          </div>
+          <div className="rounded-[28px] border border-white/10 bg-white/[0.06] p-7">
+            <Globe2 className="h-9 w-9 text-cyan-300"/>
+            <h3 className="mt-4 text-2xl font-black">{t.multilingual}</h3>
+            <p className="mt-3 leading-7 text-slate-300">{t.multilingualBody}</p>
+          </div>
+        </div>
       </section>
     </div>
   );
-}
+}}
