@@ -84,6 +84,11 @@ export async function getLatestBiancaReport() {
   return payload?.report || null;
 }
 
+export async function listBiancaReports() {
+  const payload = await apiRequest('/api/mymatchiq/bianca/reports');
+  return payload?.reports || [];
+}
+
 
 export async function createMyMatchIQAssessmentSession({ language='en', tier='Elite' }={}) {
   const payload = await apiRequest('/api/mymatchiq/assessment/sessions', { method:'POST', body:{ language, tier } });
