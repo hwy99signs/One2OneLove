@@ -32,6 +32,7 @@ import { handleAiRequest } from './ai';
 import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
 import { handleMyMatchIQCreditsRequest } from './mymatchiq-credits';
 import { handleMyMatchIQMembersRequest } from './mymatchiq-members';
+import { handleMyMatchIQLegacyRequest } from './mymatchiq-legacy';
 import { handleMyMatchIQCoreRequest } from './mymatchiq-core';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
@@ -228,6 +229,11 @@ export default {
 
     if (url.pathname.startsWith('/api/mymatchiq/members')) {
       const response = await handleMyMatchIQMembersRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/legacy')) {
+      const response = await handleMyMatchIQLegacyRequest(request, env, url);
       if (response) return response;
     }
 
