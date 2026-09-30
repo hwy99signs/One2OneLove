@@ -121,7 +121,7 @@ export async function enforceApiEntitlement(request, env, url) {
     const active = ['active', 'trial', 'trialing'].includes(status);
 
     if (!guestPreview && (!active || (!row.stripe_subscription_id && !adminAccess))) {
-      return json({ ok: false, error: { code: 'billing_required', message: 'Your 24-hour Guest Preview has ended. Start the 7-day Full Access trial or subscribe to continue.' } }, 402);
+      return json({ ok: false, error: { code: 'billing_required', message: 'Your 24-hour Guest Preview has ended. Choose an available membership option to continue using One2OneLove features.' } }, 402);
     }
 
     if (guestPreview && !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())) {
@@ -129,7 +129,7 @@ export async function enforceApiEntitlement(request, env, url) {
         ok: false,
         error: {
           code: 'guest_preview_read_only',
-          message: 'The 24-hour Guest Preview is view-only. Start the 7-day Full Access trial to use One2OneLove features.',
+          message: 'The 24-hour Guest Preview is view-only. Choose an available membership option to use One2OneLove features.',
         },
       }, 403);
     }
