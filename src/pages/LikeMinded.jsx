@@ -901,4 +901,4 @@ export default function LikeMinded() {
       </section>
     </div>
   );
-}}
+}
