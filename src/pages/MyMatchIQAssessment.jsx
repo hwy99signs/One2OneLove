@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { BrainCircuit, ChevronRight, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from './Layout';
-import { completeMyMatchIQAssessmentSession, createMyMatchIQAssessmentSession, getMyMatchIQLatestAssessmentSession, saveMyMatchIQAssessmentProgress } from '@/lib/aiService';
+import { completeMyMatchIQAssessmentSession, createMyMatchIQAssessmentSession, getMyMatchIQAccess, getMyMatchIQLatestAssessmentSession, saveMyMatchIQAssessmentProgress } from '@/lib/aiService';
 import { getAssessmentQuestions, MMIQ_DIMENSIONS, scoreAssessment } from '@/lib/mymatchiqAssessment';
 
 const COPY={
@@ -14,18 +14,18 @@ const COPY={
  de:{eyebrow:'Biancas geführte Reflexion',title:'Assessment zu Persönlichkeits- und Beziehungsmustern',intro:'Antworten Sie in Ihrem eigenen Tempo. Das Assessment verbindet strukturierte Reflexion mit Ihren laufenden Gesprächen mit Bianca, um einen stärker personalisierten Bericht zu erstellen.',accuracy:'Je häufiger Sie mit Bianca sprechen, desto mehr Kontext hat sie. Das kann die Genauigkeit und Personalisierung Ihrer Berichte verbessern.',casual:'Lockeres Gespräch mit Bianca',start:'Assessment beginnen',resume:'Assessment fortsetzen',restart:'Neu beginnen',progress:'Frage {current} von {total}',tier:'Assessment-Zugang',saving:'Speichern…',saved:'Fortschritt gespeichert',local:'Vorschauantworten bleiben nur in dieser Browsersitzung, bis Sie sich anmelden.',reportEyebrow:'Ihr strukturierter Ausgangspunkt',reportTitle:'Assessment abgeschlossen',reportBody:'Diese Werte fassen nur Ihre strukturierten Antworten zusammen. Bianca kann sie mit Ihren Gesprächen verbinden, um einen tieferen, evidenzbasierten Bericht zu erstellen.',talk:'Mit Bianca fortfahren',credits:'MyMatchIQ-Credits ansehen',privacy:'Nur zur Selbstreflexion. Keine Therapie, Diagnose, medizinische Beratung oder Kompatibilitätsgarantie.',error:'Ihre Antwort bleibt sichtbar, aber der Fortschritt konnte nicht gespeichert werden.'}
 };
 
-function resolveTier(user){
- const raw=String(user?.mymatchiqTier||user?.mymatchiq_tier||user?.tier||user?.plan||'Free').toLowerCase();
- if(raw.includes('elite')||raw.includes('exclusive'))return 'Elite';
- if(raw.includes('premier')||raw.includes('premiere'))return 'Premier';
+function normalizeTier(value){
+ const raw=String(value||'free').toLowerCase();
+ if(raw==='elite')return 'Elite';
+ if(raw==='premier')return 'Premier';
  return 'Free';
 }
 
 export default function MyMatchIQAssessment(){
  const {currentLanguage}=useLanguage();
- const {isAuthenticated,user}=useAuth();
+ const {isAuthenticated}=useAuth();
  const t=COPY[currentLanguage]||COPY.en;
- const tier=resolveTier(user);
+ const [tier,setTier]=useState('Free');
  const questions=useMemo(()=>getAssessmentQuestions({language:currentLanguage,tier}),[currentLanguage,tier]);
  const [started,setStarted]=useState(false);
  const [sessionId,setSessionId]=useState(null);
@@ -35,6 +35,8 @@ export default function MyMatchIQAssessment(){
  const complete=started&&answers.length>=questions.length;
  const scores=useMemo(()=>scoreAssessment(answers),[answers]);
  const dimensionMap=useMemo(()=>Object.fromEntries(MMIQ_DIMENSIONS.map(d=>[d.id,d.label[currentLanguage]||d.label.en])),[currentLanguage]);
+
+ useEffect(()=>{ if(!isAuthenticated){setTier('Free');return;} let cancelled=false; getMyMatchIQAccess().then(access=>{if(!cancelled)setTier(normalizeTier(access?.tier));}).catch(()=>{if(!cancelled)setTier('Free');}); return()=>{cancelled=true}; },[isAuthenticated]);
 
  useEffect(()=>{ if(!isAuthenticated)return; let cancelled=false; (async()=>{ try{ const session=await getMyMatchIQLatestAssessmentSession(); if(cancelled||!session||session.status!=='in_progress')return; const existing=Array.isArray(session.answers)?session.answers:[]; if(existing.length<=questions.length){setSessionId(session.id);setAnswers(existing);setStarted(existing.length>0);} }catch{} })(); return()=>{cancelled=true}; },[isAuthenticated,questions.length]);
 
