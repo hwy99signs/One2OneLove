@@ -6,6 +6,7 @@ on:
       - o2ol-password-reset-preview
       - feature/bianca-conversation-intelligence-20260930
       - feature/mymatchiq-*
+      - qa/o2ol-combined-prelaunch-20260930
     paths:
       - "src/**"
       - "worker/**"
