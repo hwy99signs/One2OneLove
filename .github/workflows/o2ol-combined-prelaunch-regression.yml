@@ -1,0 +1,108 @@
+name: O2OL Combined Prelaunch Regression
+
+on:
+  push:
+    branches:
+      - qa/o2ol-combined-prelaunch-20260930
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "neon-migrations/**"
+      - ".github/workflows/o2ol-combined-prelaunch-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    env:
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build consolidated Prelaunch
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Static combined-feature security checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'path="/MyMatchIQ/Bianca"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Assessment"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Passport"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Credits"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Meet"' src/pages/index.jsx
+          grep -F 'path="/LikeMinded"' src/pages/index.jsx
+          grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
+          grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
+          grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
+          grep -F "email_mismatch" worker/mymatchiq-legacy.ts
+          ! grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
+          grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
+          ! grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml
+
+      - name: Prepare browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Browser smoke combined O2OL MyMatchIQ Bianca Like Minded
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright-core';
+          const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
+          const routes=['/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const langs=['en','es','fr','it','de'];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
+          const failures=[];
+          try{
+            for(const lang of langs){
+              for(const route of routes){
+                const context=await browser.newContext({viewport:{width:390,height:844}});
+                await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
+                await context.route('**/api/auth/get-session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:{id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',emailVerified:true,email_verified:true,name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phoneNumberVerified:true},session:{id:'qa-session',userId:'00000000-0000-4000-8000-000000000001'}})}));
+                await context.route('**/api/profile',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true}})}));
+                await context.route('**/api/mymatchiq/**',async r=>{
+                  const u=new URL(r.request().url()), p=u.pathname;
+                  let body={ok:true};
+                  if(p.endsWith('/access')) body={ok:true,access:{tier:'Elite',source:'qa',grandfathered:false}};
+                  else if(p.endsWith('/bianca/profile')) body={ok:true,profile:{interaction_count:12,conversation_count:3,common_phrases:['you know'],context_depth_score:35}};
+                  else if(p.endsWith('/bianca/conversations')) body={ok:true,conversations:[]};
+                  else if(p.endsWith('/bianca/reports')) body={ok:true,reports:[]};
+                  else if(p.includes('/assessment/sessions/latest')) body={ok:true,session:null};
+                  else if(p.includes('/credits/wallet')) body={ok:true,wallet:{balance:0,auto_replenish_enabled:false}};
+                  else if(p.includes('/members')) body={ok:true,members:[],profile:null,invitations:[]};
+                  await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+                });
+                await context.route('**/api/like-minded/**',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,rooms:[],session:null})}));
+                const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
+                let res=null; try{res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForTimeout(700);}catch(e){errors.push(String(e.message||e));}
+                const dom=await page.evaluate(()=>({text:(document.querySelector('main')?.innerText||document.body?.innerText||'').replace(/\s+/g,' ').trim(),overflow:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth,broken:[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src)})).catch(()=>({text:'',overflow:0,broken:[]}));
+                if(!res||res.status()!==200) failures.push({route,lang,kind:'status',status:res?.status()});
+                if(errors.length) failures.push({route,lang,kind:'pageerror',errors});
+                if(dom.text.length<20) failures.push({route,lang,kind:'empty'});
+                if(dom.overflow>6) failures.push({route,lang,kind:'overflow',pixels:dom.overflow});
+                if(dom.broken.length) failures.push({route,lang,kind:'broken-images',count:dom.broken.length});
+                if(/undefined|\[object Object\]|NaN/.test(dom.text)) failures.push({route,lang,kind:'suspicious-text'});
+                await context.close();
+              }
+            }
+          } finally { await browser.close(); }
+          if(failures.length){ console.error(JSON.stringify(failures,null,2)); process.exit(1); }
+          console.log('COMBINED_PRELAUNCH_BROWSER_REGRESSION=PASS');
+          NODE
