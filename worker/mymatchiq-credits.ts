@@ -96,16 +96,20 @@ async function createCheckout(request,env,auth,input){
   });
   return json({ok:true,checkout:{id:checkout.id,url:checkout.url,package:pkg}});
 }
-async function createSetupIntent(db,env,auth){
+async function createSetupIntent(db,env,auth,request){
   const customer=await ensureStripeCustomer(db,env,auth);
-  const setup=await stripeRequest(env,'/setup_intents',{
-    usage:'off_session',
+  const origin=new URL(request.url).origin;
+  const setup=await stripeRequest(env,'/checkout/sessions',{
+    mode:'setup',
     customer,
-    'payment_method_types[0]':'card',
+    success_url:`${origin}/MyMatchIQ/Credits?payment_method=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url:`${origin}/MyMatchIQ/Credits?payment_method=cancelled`,
+    'setup_intent_data[metadata][user_id]':auth.user.id,
+    'setup_intent_data[metadata][purpose]':'mmiq_auto_replenish',
     'metadata[user_id]':auth.user.id,
     'metadata[purpose]':'mmiq_auto_replenish',
   });
-  return json({ok:true,setupIntent:{id:setup.id,client_secret:setup.client_secret,customer}});
+  return json({ok:true,setupIntent:{id:setup.id,url:setup.url,customer}});
 }
 async function updateAuto(db,userId,input){
   const packageCode=String(input?.packageCode||'six');
@@ -192,7 +196,7 @@ export async function handleMyMatchIQCreditsRequest(request,env,url){
   try{
     if(url.pathname==='/api/mymatchiq/credits/checkout'&&request.method==='POST')return createCheckout(request,env,auth,await readJson(request));
     return await withDb(env,async db=>{
-      if(url.pathname==='/api/mymatchiq/credits/setup-intent'&&request.method==='POST')return createSetupIntent(db,env,auth);
+      if(url.pathname==='/api/mymatchiq/credits/setup-intent'&&request.method==='POST')return createSetupIntent(db,env,auth,request);
       if(url.pathname==='/api/mymatchiq/credits/wallet'&&request.method==='GET'){const state=await ensureWallet(db,auth.user.id);return json({ok:true,...state,transactions:await recentTransactions(db,auth.user.id),packages:PACKAGES});}
       if(url.pathname==='/api/mymatchiq/credits/auto-replenish'&&request.method==='PUT')return json({ok:true,settings:await updateAuto(db,auth.user.id,await readJson(request))});
       if(url.pathname==='/api/mymatchiq/credits/payment-method'&&request.method==='POST')return json({ok:true,settings:await attachPaymentMethod(db,auth.user.id,await readJson(request))});
