@@ -169,3 +169,19 @@ export async function reportMyMatchIQMember({reportedUserId,category='other',det
   const payload = await apiRequest('/api/mymatchiq/members/report', { method:'POST', body:{reportedUserId,category,details} });
   return payload?.report || null;
 }
+
+
+export async function getMyMatchIQAccess() {
+  const payload = await apiRequest('/api/mymatchiq/access');
+  return payload?.access || { tier:'free' };
+}
+
+export async function getMyMatchIQLegacyMigrationStatus() {
+  const payload = await apiRequest('/api/mymatchiq/legacy/status');
+  return payload?.migration || { eligible:false,status:'none' };
+}
+
+export async function claimMyMatchIQLegacyMigration() {
+  const payload = await apiRequest('/api/mymatchiq/legacy/claim', { method:'POST', body:{} });
+  return payload?.migration || null;
+}
