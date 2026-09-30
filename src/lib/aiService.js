@@ -115,3 +115,24 @@ export async function completeMyMatchIQAssessmentSession(sessionId, { answers=[]
   });
   return payload?.session || null;
 }
+
+
+export async function getMyMatchIQCreditWallet() {
+  return apiRequest('/api/mymatchiq/credits/wallet');
+}
+
+export async function createMyMatchIQCreditCheckout(packageCode) {
+  return apiRequest('/api/mymatchiq/credits/checkout', { method:'POST', body:{ packageCode } });
+}
+
+export async function updateMyMatchIQAutoReplenish({ enabled, packageCode, triggerBalance }) {
+  const payload = await apiRequest('/api/mymatchiq/credits/auto-replenish', {
+    method:'PUT',
+    body:{ enabled, packageCode, triggerBalance },
+  });
+  return payload?.settings || null;
+}
+
+export async function createMyMatchIQSetupIntent() {
+  return apiRequest('/api/mymatchiq/credits/setup-intent', { method:'POST', body:{} });
+}
