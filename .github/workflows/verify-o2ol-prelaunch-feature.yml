@@ -1,0 +1,39 @@
+name: Verify O2OL Prelaunch Feature Build
+
+on:
+  push:
+    branches:
+      - feature/bianca-conversation-intelligence-20260930
+      - feature/mymatchiq-*
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "neon-migrations/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/verify-o2ol-prelaunch-feature.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Verify Bianca route wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "MyMatchIQBianca" src/pages/index.jsx
+          grep -F "/api/mymatchiq/bianca" worker/index-v2.ts
+          grep -F "Casual talk with Bianca" src/pages/MyMatchIQBianca.jsx
