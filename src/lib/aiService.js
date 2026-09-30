@@ -83,3 +83,30 @@ export async function getLatestBiancaReport() {
   const payload = await apiRequest('/api/mymatchiq/bianca/report');
   return payload?.report || null;
 }
+
+
+export async function createMyMatchIQAssessmentSession({ language='en', tier='Elite' }={}) {
+  const payload = await apiRequest('/api/mymatchiq/assessment/sessions', { method:'POST', body:{ language, tier } });
+  return payload?.session || null;
+}
+
+export async function getMyMatchIQLatestAssessmentSession() {
+  const payload = await apiRequest('/api/mymatchiq/assessment/sessions/latest');
+  return payload?.session || null;
+}
+
+export async function saveMyMatchIQAssessmentProgress(sessionId, { answers=[], dimensionScores={}, questionCount=0 }={}) {
+  const payload = await apiRequest(`/api/mymatchiq/assessment/sessions/${encodeURIComponent(sessionId)}`, {
+    method:'PATCH',
+    body:{ answers, dimensionScores, questionCount },
+  });
+  return payload?.session || null;
+}
+
+export async function completeMyMatchIQAssessmentSession(sessionId, { answers=[], dimensionScores={}, questionCount=0 }={}) {
+  const payload = await apiRequest(`/api/mymatchiq/assessment/sessions/${encodeURIComponent(sessionId)}/complete`, {
+    method:'POST',
+    body:{ answers, dimensionScores, questionCount },
+  });
+  return payload?.session || null;
+}
