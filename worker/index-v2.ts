@@ -30,6 +30,7 @@ import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
 import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
+import { handleMyMatchIQCreditsRequest } from './mymatchiq-credits';
 import { handleMyMatchIQCoreRequest } from './mymatchiq-core';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
@@ -219,7 +220,12 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname.startsWith('/api/mymatchiq/bianca')) {
+    if (url.pathname.startsWith('/api/mymatchiq/credits')) {
+      const response = await handleMyMatchIQCreditsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/bianca') || url.pathname.startsWith('/api/mymatchiq/assessment')) {
       const response = await handleMyMatchIQAiRequest(request, env, url);
       if (response) return response;
     }
