@@ -29,6 +29,7 @@ import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
+import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
@@ -214,6 +215,11 @@ export default {
 
     if (url.pathname === '/api/feature-usage') {
       const response = await handleFeatureUsageRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/bianca')) {
+      const response = await handleMyMatchIQAiRequest(request, env, url);
       if (response) return response;
     }
 

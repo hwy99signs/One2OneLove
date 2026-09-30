@@ -37,3 +37,40 @@ export async function generateRelationshipContent(data) {
   });
   return payload?.content || '';
 }
+
+export async function getBiancaProfile() {
+  const payload = await apiRequest('/api/mymatchiq/bianca/profile');
+  return payload?.profile || null;
+}
+
+export async function listBiancaConversations() {
+  const payload = await apiRequest('/api/mymatchiq/bianca/conversations');
+  return payload?.conversations || [];
+}
+
+export async function createBiancaConversation() {
+  const payload = await apiRequest('/api/mymatchiq/bianca/conversations', { method: 'POST', body: {} });
+  return payload?.conversation || null;
+}
+
+export async function listBiancaMessages(conversationId) {
+  const payload = await apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}/messages`);
+  return payload?.messages || [];
+}
+
+export async function sendBiancaMessage(conversationId, message, language = 'en') {
+  return apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}/messages`, {
+    method: 'POST',
+    body: { message, language },
+  });
+}
+
+export async function generateBiancaReport(language = 'en') {
+  const payload = await apiRequest('/api/mymatchiq/bianca/report', { method: 'POST', body: { language } });
+  return payload?.report || null;
+}
+
+export async function getLatestBiancaReport() {
+  const payload = await apiRequest('/api/mymatchiq/bianca/report');
+  return payload?.report || null;
+}

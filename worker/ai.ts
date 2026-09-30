@@ -133,7 +133,7 @@ async function openAiText(env, { instructions, input, maxOutputTokens = 900 }) {
 async function requireConversation(db, conversationId, userId) {
   if (!UUID.test(String(conversationId || ''))) throw Object.assign(new Error('Invalid conversation ID.'), { status: 400, code: 'bad_request' });
   const result = await db.query(
-    'SELECT * FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid',
+    "SELECT * FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='o2ol'",
     [conversationId, userId],
   );
   if (!result.rows[0]) throw Object.assign(new Error('Coaching conversation not found.'), { status: 404, code: 'not_found' });
@@ -144,7 +144,7 @@ async function listConversations(db, userId) {
     `SELECT c.id,c.title,c.created_at,c.updated_at,
             (SELECT content FROM public.ai_coach_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message
        FROM public.ai_coach_conversations c
-      WHERE c.user_id=$1::uuid
+      WHERE c.user_id=$1::uuid AND c.product='o2ol'
       ORDER BY c.updated_at DESC,c.created_at DESC`,
     [userId],
   );
@@ -269,7 +269,7 @@ export async function handleAiRequest(request, env, url) {
           const e = await entitlement(db, auth.user.id, 'relationship_coach');
           if (!e.allowed) return fail(e.reason, 403, 'feature_not_available');
           const result = await db.query(
-            `INSERT INTO public.ai_coach_conversations(user_id) VALUES($1::uuid)
+            `INSERT INTO public.ai_coach_conversations(user_id,product,mode) VALUES($1::uuid,'o2ol','coach')
              RETURNING id,title,created_at,updated_at`,
             [auth.user.id],
           );
@@ -282,7 +282,7 @@ export async function handleAiRequest(request, env, url) {
       if (conversationMatch) {
         if (request.method !== 'DELETE') return fail('Method not allowed.', 405, 'method_not_allowed');
         const result = await db.query(
-          'DELETE FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid RETURNING id',
+          "DELETE FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='o2ol' RETURNING id",
           [conversationMatch[1], auth.user.id],
         );
         return result.rowCount ? json({ ok: true }) : fail('Conversation not found.', 404, 'not_found');
