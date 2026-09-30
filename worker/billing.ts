@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { handleMyMatchIQCreditStripeEvent } from './mymatchiq-credits';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -310,6 +311,7 @@ async function recordPayment(db, invoice, subscription, succeeded) {
   }
 }
 async function handleWebhookEvent(db, env, event) {
+  if (await handleMyMatchIQCreditStripeEvent(db, env, event)) return;
   const object = event?.data?.object || {};
   switch (event?.type) {
     case 'checkout.session.completed': {

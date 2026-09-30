@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, HeartHandshake, LockKeyhole, RefreshCw, Sparkles, WalletCards } from 'lucide-react';
+import { Check, HeartHandshake, Loader2, LockKeyhole, RefreshCw, ShoppingCart, Sparkles, WalletCards } from 'lucide-react';
 import { useLanguage } from './Layout';
+import { useAuth } from '@/contexts/AuthContext';
+import { getCreditConfig, getCreditWallet, saveAutoReplenish, startCreditCheckout } from '@/lib/mymatchiqCreditsService';
 
 const COPY = {
   en:{ eyebrow:'MyMatchIQ wallet', title:'Use credits only when something meaningful begins.', body:'MyMatchIQ is free to join. Credits unlock private insight and intentional two-person experiences without forcing a monthly subscription.', balance:'Your credit balance', balanceValue:'0 credits', balanceNote:'Create and verify an account to use and track credits.', personalTitle:'Private insight', personalBody:'Use an Insight Credit for a full Compatibility Passport or a deeper Personality & Relationship Pattern Report.', playTitle:'Mutual Let’s Play', playBody:'Each person uses one $1.99 Play Credit only after both accept the invitation. Nothing is consumed while an invitation is waiting.', controlTitle:'You stay in control', controlBody:'Your credit wallet is separate from membership. Auto Replenish is always optional and can be turned off anytime.', choiceTitle:'Credit choices', one:'Single Play Credit', bundle:'Six-credit bundle', reserve:'Twelve-credit bundle', onePrice:'US$1.99', bundlePrice:'US$9.99', reservePrice:'US$19.99', oneNote:'One person, one intentional Play session.', bundleNote:'Six credits for private insights or Play sessions.', reserveNote:'Twelve credits for members who want a ready credit balance.', autoTitle:'Auto Replenish', autoBody:'Choose the credit package and the minimum balance that should trigger a refill.', enable:'Enable Auto Replenish', refillAmount:'Refill amount', minimumBalance:'Refill when balance reaches', minimumZero:'0 credits', minimumOne:'1 credit', minimumTwo:'2 credits', autoPreview:'Prelaunch preview: Auto Replenish is off and cannot charge your account. Before launch it will require a verified payment method and your explicit confirmation.', noCharge:'Prelaunch pricing preview — checkout is not active and no payment can be collected here.', assessment:'Start Bianca’s assessment', member:'Create a free MyMatchIQ account', included:['Transparent credit balance','No automatic per-feature charge','Clear consent before Mutual Play'] },
@@ -11,24 +13,89 @@ const COPY = {
   de:{ eyebrow:'MyMatchIQ-Wallet', title:'Verwenden Sie Credits nur, wenn etwas Sinnvolles beginnt.', body:'Der Beitritt zu MyMatchIQ ist kostenlos. Credits schalten private Erkenntnisse und bewusste Erlebnisse für zwei Personen frei, ohne ein Monatsabonnement zu erzwingen.', balance:'Ihr Credit-Guthaben', balanceValue:'0 Credits', balanceNote:'Erstellen und verifizieren Sie ein Konto, um Credits zu nutzen und nachzuverfolgen.', personalTitle:'Private Erkenntnisse', personalBody:'Nutzen Sie einen Insight-Credit für einen vollständigen Kompatibilitäts-Pass oder einen tieferen Bericht zu Persönlichkeits- und Beziehungsmustern.', playTitle:'Gegenseitiges Let’s Play', playBody:'Jede Person verwendet einen Play-Credit für 1,99 US$ erst, nachdem beide die Einladung akzeptiert haben. Solange eine Einladung wartet, wird nichts verbraucht.', controlTitle:'Sie behalten die Kontrolle', controlBody:'Ihr Credit-Wallet ist von der Mitgliedschaft getrennt. Automatisches Auffüllen ist immer optional und kann jederzeit ausgeschaltet werden.', choiceTitle:'Credit-Optionen', one:'Einzelner Play-Credit', bundle:'Sechs-Credit-Paket', reserve:'Zwölf-Credit-Paket', onePrice:'1,99 US$', bundlePrice:'9,99 US$', reservePrice:'19,99 US$', oneNote:'Eine Person, eine bewusste Play-Sitzung.', bundleNote:'Sechs Credits für private Erkenntnisse oder Play-Sitzungen.', reserveNote:'Zwölf Credits für Mitglieder, die ein verfügbares Guthaben wünschen.', autoTitle:'Automatisch auffüllen', autoBody:'Wählen Sie das Credit-Paket und den Mindeststand, der eine Auffüllung auslöst.', enable:'Automatisches Auffüllen aktivieren', refillAmount:'Auffüllbetrag', minimumBalance:'Auffüllen, wenn das Guthaben erreicht', minimumZero:'0 Credits', minimumOne:'1 Credit', minimumTwo:'2 Credits', autoPreview:'Prelaunch-Vorschau: Automatisches Auffüllen ist ausgeschaltet und kann Ihr Konto nicht belasten. Vor dem Launch sind eine verifizierte Zahlungsmethode und Ihre ausdrückliche Bestätigung erforderlich.', noCharge:'Prelaunch-Preisvorschau: Checkout ist nicht aktiv und hier kann keine Zahlung erhoben werden.', assessment:'Biancas Assessment starten', member:'Kostenloses MyMatchIQ-Konto erstellen', included:['Transparentes Credit-Guthaben','Keine automatische Gebühr pro Funktion','Klare Einwilligung vor gegenseitigem Play'] },
 };
 
+const ACTION_COPY = {
+  en:{add:'Add credits',save:'Save Auto Replenish',saved:'Auto Replenish settings saved.',signIn:'Sign in to add credits',credit:'credits',unavailable:'Checkout remains disabled in this Prelaunch environment.',walletError:'The live wallet is staged but not available from this visual preview.'},
+  es:{add:'Agregar créditos',save:'Guardar Recarga Automática',saved:'Configuración de Recarga Automática guardada.',signIn:'Inicia sesión para agregar créditos',credit:'créditos',unavailable:'El checkout permanece desactivado en este entorno Prelaunch.',walletError:'La billetera en vivo está preparada, pero no está disponible desde esta vista previa visual.'},
+  fr:{add:'Ajouter des crédits',save:'Enregistrer la Recharge Automatique',saved:'Paramètres de Recharge Automatique enregistrés.',signIn:'Connectez-vous pour ajouter des crédits',credit:'crédits',unavailable:'Le paiement reste désactivé dans cet environnement Prelaunch.',walletError:'Le portefeuille en direct est prêt mais indisponible dans cet aperçu visuel.'},
+  it:{add:'Aggiungi crediti',save:'Salva Ricarica Automatica',saved:'Impostazioni di Ricarica Automatica salvate.',signIn:'Accedi per aggiungere crediti',credit:'crediti',unavailable:'Il checkout rimane disattivato in questo ambiente Prelaunch.',walletError:'Il portafoglio live è pronto ma non disponibile in questa anteprima visiva.'},
+  de:{add:'Credits hinzufügen',save:'Automatisches Auffüllen speichern',saved:'Einstellungen zum automatischen Auffüllen gespeichert.',signIn:'Anmelden, um Credits hinzuzufügen',credit:'Credits',unavailable:'Checkout bleibt in dieser Prelaunch-Umgebung deaktiviert.',walletError:'Das Live-Wallet ist vorbereitet, aber in dieser visuellen Vorschau nicht verfügbar.'}
+};
+
 export default function MyMatchIQCredits() {
   const { currentLanguage } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const t = COPY[currentLanguage] || COPY.en;
+  const a = ACTION_COPY[currentLanguage] || ACTION_COPY.en;
   const [autoReplenish, setAutoReplenish] = useState(false);
   const [refillAmount, setRefillAmount] = useState('9.99');
   const [minimumBalance, setMinimumBalance] = useState('1');
-  const choices = [[t.one,t.onePrice,t.oneNote,'border-fuchsia-300/40'],[t.bundle,t.bundlePrice,t.bundleNote,'border-cyan-300/40'],[t.reserve,t.reservePrice,t.reserveNote,'border-amber-300/40']];
+  const [balance, setBalance] = useState(0);
+  const [billingEnabled, setBillingEnabled] = useState(false);
+  const [paymentMethodReady, setPaymentMethodReady] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const choices = [['single',t.one,t.onePrice,t.oneNote,'border-fuchsia-300/40'],['six',t.bundle,t.bundlePrice,t.bundleNote,'border-cyan-300/40'],['twelve',t.reserve,t.reservePrice,t.reserveNote,'border-amber-300/40']];
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        const [config, wallet] = await Promise.all([getCreditConfig(), getCreditWallet()]);
+        setBillingEnabled(Boolean(config?.billingEnabled));
+        setBalance(Number(wallet?.wallet?.balance || 0));
+        const settings = wallet?.settings || {};
+        setAutoReplenish(Boolean(settings.enabled));
+        setPaymentMethodReady(Boolean(settings.payment_method_ready));
+        setRefillAmount(String(Number(settings.refill_package_cents || 999) / 100));
+        setMinimumBalance(String(settings.threshold_credits ?? 1));
+      } catch (e) {
+        setError(e?.message || a.walletError);
+      }
+    })();
+  }, [isAuthenticated, currentLanguage]);
+
+  async function buy(packageCode) {
+    if (!isAuthenticated) {
+      window.location.assign('/MyMatchIQ/SignIn');
+      return;
+    }
+    setLoading(true); setError(''); setMessage('');
+    try {
+      const result = await startCreditCheckout(packageCode);
+      if (result?.url) window.location.assign(result.url);
+    } catch (e) {
+      setError(e?.message || a.unavailable);
+    } finally { setLoading(false); }
+  }
+
+  async function saveSettings() {
+    if (!isAuthenticated) return window.location.assign('/MyMatchIQ/SignIn');
+    setLoading(true); setError(''); setMessage('');
+    try {
+      const settings = await saveAutoReplenish({
+        enabled: autoReplenish,
+        refillPackageCents: Math.round(Number(refillAmount) * 100),
+        thresholdCredits: Number(minimumBalance),
+      });
+      setAutoReplenish(Boolean(settings?.enabled));
+      setPaymentMethodReady(Boolean(settings?.payment_method_ready));
+      setMessage(a.saved);
+    } catch (e) {
+      setError(e?.message || a.unavailable);
+    } finally { setLoading(false); }
+  }
   const refillOptions = [{ value:'1.99', label:t.onePrice }, { value:'9.99', label:t.bundlePrice }, { value:'19.99', label:t.reservePrice }];
   const thresholdOptions = [{ value:'0', label:t.minimumZero }, { value:'1', label:t.minimumOne }, { value:'2', label:t.minimumTwo }];
 
   return <main className="min-h-screen bg-[#070312] px-4 py-10 text-white sm:px-6" style={{ backgroundImage:'radial-gradient(circle at 12% 0%, #5b126f 0%, transparent 30%), radial-gradient(circle at 90% 24%, #162e78 0%, transparent 32%)' }}>
     <section className="mx-auto max-w-6xl">
       <p className="text-center text-xs font-black uppercase tracking-[0.22em] text-fuchsia-200">{t.eyebrow}</p><h1 className="mx-auto mt-4 max-w-4xl text-center text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mx-auto mt-4 max-w-3xl text-center text-lg leading-8 text-white/80">{t.body}</p>
-      <section className="mx-auto mt-8 max-w-3xl rounded-3xl border border-fuchsia-200/30 bg-black/35 p-6 text-center shadow-xl backdrop-blur"><WalletCards className="mx-auto h-9 w-9 text-fuchsia-200" /><p className="mt-3 text-sm font-bold text-fuchsia-100">{t.balance}</p><h2 className="mt-1 text-3xl font-black">{t.balanceValue}</h2><p className="mt-2 text-sm text-white/70">{t.balanceNote}</p></section>
+      <section className="mx-auto mt-8 max-w-3xl rounded-3xl border border-fuchsia-200/30 bg-black/35 p-6 text-center shadow-xl backdrop-blur"><WalletCards className="mx-auto h-9 w-9 text-fuchsia-200" /><p className="mt-3 text-sm font-bold text-fuchsia-100">{t.balance}</p><h2 className="mt-1 text-3xl font-black">{isAuthenticated ? `${balance} ${a.credit}` : t.balanceValue}</h2><p className="mt-2 text-sm text-white/70">{t.balanceNote}</p></section>
       <section className="mt-7 grid gap-5 md:grid-cols-3">{[[Sparkles,t.personalTitle,t.personalBody],[HeartHandshake,t.playTitle,t.playBody],[LockKeyhole,t.controlTitle,t.controlBody]].map(([Icon,title,body])=><article key={title} className="rounded-3xl border border-white/15 bg-white/[0.06] p-6 shadow-xl backdrop-blur"><Icon className="h-9 w-9 text-cyan-200" /><h2 className="mt-4 text-xl font-black">{title}</h2><p className="mt-3 text-sm leading-6 text-white/75">{body}</p></article>)}</section>
-      <h2 className="mt-12 text-center text-2xl font-black">{t.choiceTitle}</h2><section className="mt-5 grid gap-5 md:grid-cols-3">{choices.map(([title,price,note,border])=><article key={title} className={`rounded-3xl border ${border} bg-black/35 p-6 text-center shadow-xl`}><h3 className="text-xl font-black">{title}</h3><p className="mt-4 text-3xl font-black text-fuchsia-100">{price}</p><p className="mt-4 text-sm leading-6 text-white/75">{note}</p></article>)}</section>
-      <section className="mx-auto mt-8 max-w-4xl rounded-3xl border border-cyan-200/35 bg-cyan-950/20 p-6 shadow-xl backdrop-blur"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><div className="flex items-center gap-3"><RefreshCw className="h-7 w-7 text-cyan-200"/><h2 className="text-2xl font-black">{t.autoTitle}</h2></div><p className="mt-3 max-w-2xl text-sm leading-6 text-cyan-50/85">{t.autoBody}</p></div><button type="button" aria-pressed={autoReplenish} onClick={()=>setAutoReplenish(value=>!value)} className={`inline-flex min-w-[148px] items-center justify-center rounded-full border px-4 py-3 text-sm font-black transition ${autoReplenish?'border-fuchsia-200 bg-fuchsia-500 text-white':'border-cyan-100/40 bg-white/10 text-cyan-50 hover:bg-white/20'}`}>{autoReplenish?'✓ ':''}{t.enable}</button></div><div className="mt-6 grid gap-4 sm:grid-cols-2"><label className="text-sm font-black text-cyan-50"><span className="mb-2 block">{t.refillAmount}</span><select value={refillAmount} onChange={event=>setRefillAmount(event.target.value)} className="w-full rounded-xl border border-cyan-100/30 bg-slate-950 px-4 py-3 font-semibold text-white">{refillOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="text-sm font-black text-cyan-50"><span className="mb-2 block">{t.minimumBalance}</span><select value={minimumBalance} onChange={event=>setMinimumBalance(event.target.value)} className="w-full rounded-xl border border-cyan-100/30 bg-slate-950 px-4 py-3 font-semibold text-white">{thresholdOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div><p className="mt-5 rounded-2xl border border-amber-200/25 bg-amber-950/25 p-4 text-sm leading-6 text-amber-50">{t.autoPreview}</p></section>
-      <div className="mt-7 rounded-2xl border border-amber-200/25 bg-amber-950/25 p-4 text-center text-sm leading-6 text-amber-50">{t.noCharge}</div><ul className="mx-auto mt-7 max-w-2xl space-y-3 text-sm text-white/80">{t.included.map(item=><li key={item} className="flex items-center gap-3"><Check className="h-5 w-5 shrink-0 text-cyan-200" />{item}</li>)}</ul><div className="mt-8 flex flex-wrap justify-center gap-3"><Link to="/MyMatchIQ/Assessment" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black shadow-lg">{t.assessment}</Link><Link to="/MyMatchIQ/SignUp" className="rounded-full border border-white/30 bg-white/10 px-5 py-3 text-sm font-black transition hover:bg-white/20">{t.member}</Link></div>
+      <h2 className="mt-12 text-center text-2xl font-black">{t.choiceTitle}</h2><section className="mt-5 grid gap-5 md:grid-cols-3">{choices.map(([code,title,price,note,border])=><article key={code} className={`rounded-3xl border ${border} bg-black/35 p-6 text-center shadow-xl`}><h3 className="text-xl font-black">{title}</h3><p className="mt-4 text-3xl font-black text-fuchsia-100">{price}</p><p className="mt-4 text-sm leading-6 text-white/75">{note}</p><button type="button" onClick={()=>buy(code)} disabled={loading || (isAuthenticated && !billingEnabled)} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-4 py-3 text-sm font-black disabled:cursor-not-allowed disabled:opacity-45">{loading?<Loader2 className="h-4 w-4 animate-spin"/>:<ShoppingCart className="h-4 w-4"/>}{isAuthenticated?a.add:a.signIn}</button></article>)}</section>
+      <section className="mx-auto mt-8 max-w-4xl rounded-3xl border border-cyan-200/35 bg-cyan-950/20 p-6 shadow-xl backdrop-blur"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><div className="flex items-center gap-3"><RefreshCw className="h-7 w-7 text-cyan-200"/><h2 className="text-2xl font-black">{t.autoTitle}</h2></div><p className="mt-3 max-w-2xl text-sm leading-6 text-cyan-50/85">{t.autoBody}</p></div><button type="button" aria-pressed={autoReplenish} onClick={()=>setAutoReplenish(value=>!value)} disabled={!isAuthenticated || loading} className={`inline-flex min-w-[148px] items-center justify-center rounded-full border px-4 py-3 text-sm font-black transition disabled:opacity-45 ${autoReplenish?'border-fuchsia-200 bg-fuchsia-500 text-white':'border-cyan-100/40 bg-white/10 text-cyan-50 hover:bg-white/20'}`}>{autoReplenish?'✓ ':''}{t.enable}</button></div><div className="mt-6 grid gap-4 sm:grid-cols-2"><label className="text-sm font-black text-cyan-50"><span className="mb-2 block">{t.refillAmount}</span><select value={refillAmount} onChange={event=>setRefillAmount(event.target.value)} className="w-full rounded-xl border border-cyan-100/30 bg-slate-950 px-4 py-3 font-semibold text-white">{refillOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="text-sm font-black text-cyan-50"><span className="mb-2 block">{t.minimumBalance}</span><select value={minimumBalance} onChange={event=>setMinimumBalance(event.target.value)} className="w-full rounded-xl border border-cyan-100/30 bg-slate-950 px-4 py-3 font-semibold text-white">{thresholdOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div><p className="mt-5 rounded-2xl border border-amber-200/25 bg-amber-950/25 p-4 text-sm leading-6 text-amber-50">{billingEnabled ? (paymentMethodReady ? t.autoBody : t.autoPreview) : a.unavailable}</p><button type="button" onClick={saveSettings} disabled={!isAuthenticated || loading} className="mt-5 inline-flex items-center justify-center gap-2 rounded-full border border-cyan-100/35 bg-white/10 px-5 py-3 text-sm font-black disabled:opacity-45">{loading?<Loader2 className="h-4 w-4 animate-spin"/>:<RefreshCw className="h-4 w-4"/>}{a.save}</button></section>
+      <div className="mt-7 rounded-2xl border border-amber-200/25 bg-amber-950/25 p-4 text-center text-sm leading-6 text-amber-50">{billingEnabled ? t.controlBody : a.unavailable}</div>{(error||message)&&<div className={`mx-auto mt-4 max-w-3xl rounded-2xl border p-4 text-center text-sm ${error?'border-rose-200/30 bg-rose-950/30 text-rose-50':'border-emerald-200/30 bg-emerald-950/30 text-emerald-50'}`}>{error||message}</div>}<ul className="mx-auto mt-7 max-w-2xl space-y-3 text-sm text-white/80">{t.included.map(item=><li key={item} className="flex items-center gap-3"><Check className="h-5 w-5 shrink-0 text-cyan-200" />{item}</li>)}</ul><div className="mt-8 flex flex-wrap justify-center gap-3"><Link to="/MyMatchIQ/Assessment" className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-3 text-sm font-black shadow-lg">{t.assessment}</Link><Link to="/MyMatchIQ/SignUp" className="rounded-full border border-white/30 bg-white/10 px-5 py-3 text-sm font-black transition hover:bg-white/20">{t.member}</Link></div>
     </section>
   </main>;
 }
