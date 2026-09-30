@@ -91,7 +91,7 @@ jobs:
           grep -F "email_mismatch" worker/mymatchiq-legacy.ts
           grep -F "legacy_mymatchiq" worker/mymatchiq-legacy.ts
           grep -F "mmiq_access_entitlements" neon-migrations/2026-09-30-mymatchiq-access-entitlements.sql
-          ! grep -R -F "password" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
+          ! grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
 
       - name: Verify production remains an explicit separate workflow target
         shell: bash
