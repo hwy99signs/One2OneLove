@@ -10,7 +10,7 @@ const HEADERS = {
 const CATEGORY_LIST=['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card'];
 const CATEGORIES=new Set(CATEGORY_LIST);
 const DEPTHS=new Set(['Easy','Real','Deep']);
-const DAILY_LIMITS={Free:10,Premiere:63,Exclusive:null};
+const DAILY_LIMITS={Premiere:null,Exclusive:null};
 const MAX_ROOM_QUESTIONS=42;
 
 function json(data,status=200){ return new Response(JSON.stringify(data),{status,headers:HEADERS}); }
@@ -188,17 +188,15 @@ async function memberAccess(db,userId){
   if(!row)throw Object.assign(new Error('One2OneLove member profile was not found.'),{status:404,code:'profile_not_found'});
   if(row.banned||row.is_active===false)throw Object.assign(new Error('Account access is unavailable.'),{status:403,code:'forbidden'});
   if(row.phone_verified!==true)throw Object.assign(new Error('Phone verification is required for Like Minded multiplayer and tracked play.'),{status:428,code:'phone_verification_required'});
-  let plan='Free';
+  let plan='Premiere';
   if(row.role==='admin') plan='Exclusive';
   else {
     const status=String(row.subscription_status||'').toLowerCase();
-    const rawPlan=String(row.subscription_plan||'').trim().toLowerCase();
     const adminUntil=row.subscription_end_date?new Date(row.subscription_end_date):null;
     const adminAccess=Boolean(adminUntil&&!Number.isNaN(adminUntil.getTime())&&adminUntil.getTime()>Date.now());
     const paid=adminAccess||(['active','trial','trialing'].includes(status)&&Boolean(row.stripe_subscription_id));
-    if(paid)plan=planName(row.subscription_plan);
-    else if(rawPlan==='free')plan='Free';
-    else throw Object.assign(new Error('Like Minded tracked play is available after Free membership activation or with an active paid membership.'),{status:402,code:'free_membership_required'});
+    if(!paid)throw Object.assign(new Error('An active One2OneLove membership is required to play Like Minded.'),{status:402,code:'membership_required'});
+    plan=planName(row.subscription_plan);
   }
   return {plan,dailyLimit:DAILY_LIMITS[plan]};
 }
