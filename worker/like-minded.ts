@@ -500,7 +500,16 @@ export async function handleLikeMindedRequest(request,env,url){
         const blocked=await db.query(`SELECT 1 FROM public.like_minded_blocks WHERE (blocker_user_id=$1::uuid AND blocked_user_id=$2::uuid) OR (blocker_user_id=$2::uuid AND blocked_user_id=$1::uuid)`,[auth.user.id,room.host_user_id]);
         if(blocked.rowCount)return fail('This game is unavailable.',403,'player_unavailable');
         const language=['en','es','fr','it','de'].includes(body.language)?body.language:'en';
-        const updated=await db.query(`UPDATE public.like_minded_rooms SET guest_user_id=$2::uuid,guest_language=$3,status='active',updated_at=now() WHERE id=$1::uuid RETURNING *`,[room.id,auth.user.id,language]);
+        const updated=await db.query(
+          `UPDATE public.like_minded_rooms
+              SET guest_user_id=$2::uuid,guest_language=$3,status='active',updated_at=now()
+            WHERE id=$1::uuid
+              AND status IN ('waiting','active')
+              AND (guest_user_id IS NULL OR guest_user_id=$2::uuid)
+            RETURNING *`,
+          [room.id,auth.user.id,language]
+        );
+        if(!updated.rowCount)return fail('This game room already has two players.',409,'room_full');
         return json({ok:true,room:await roomState(db,updated.rows[0],auth.user.id),access:await accessSnapshot(db,auth.user.id)});
       }
 
