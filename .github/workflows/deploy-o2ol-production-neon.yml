@@ -118,14 +118,12 @@ jobs:
           grep -F "aiPersonalizationReady" src/pages/LoveNotes.jsx >/dev/null
           grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
           grep -F "const plan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;" worker/ai.ts >/dev/null
-          grep -F "guest_preview_expires_at" worker/billing.ts >/dev/null
-          grep -F "24-Hour Guest Preview" src/pages/Subscription.jsx >/dev/null
-          grep -F "Email and mobile-number verification are required." src/pages/Subscription.jsx >/dev/null
+          if grep -RInEi 'guest[ _-]?preview|24-hour Guest Preview|24 hour Guest Preview|guestPreviewHours|guest_preview' src worker 2>/dev/null; then
+            echo 'Retired 24-hour Guest Preview found in active production runtime.' >&2
+            exit 1
+          fi
           ! grep -F "setInterval(" src/pages/Subscription.jsx >/dev/null
-          grep -F "guest_preview_read_only" worker/api-entitlements.ts >/dev/null
-          grep -F "if (guestPreview) return children;" src/components/launch/LaunchAccessGate.jsx >/dev/null
           ! grep -F "pointer-events-none" src/components/launch/LaunchAccessGate.jsx >/dev/null
-          ! grep -F "PreviewReadOnly" src/components/launch/LaunchAccessGate.jsx >/dev/null
 
       - name: Verify production deployment configuration
         shell: bash
