@@ -110,7 +110,11 @@ jobs:
                 session:{id:'qa-session',userId:self}
               })})});
               await context.route(/\/api\/profile(?:\?|$)/,r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{
-                id:self,email:'qa@example.invalid',name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true
+                id:self,email:'qa@example.invalid',name:'QA Member',role:'user',
+                subscription_plan:'Exclusive',subscription_status:'active',subscription_price:19.99,
+                stripe_customer_id:'cus_like_minded_qa',stripe_subscription_id:'sub_like_minded_qa',
+                phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true,
+                preferred_language:'en',created_at:'2026-09-01T00:00:00.000Z'
               }})}));
               await context.route(/\/api\/like-minded(?:\/|$)/,r=>{
                 likeHits++;
@@ -130,7 +134,7 @@ jobs:
                 await page.getByText(/Unlimited play/i).first().waitFor({state:'visible',timeout:10000});
               }catch{
                 const debug=(await page.locator('body').innerText()).replace(/\s+/g,' ').slice(0,3000);
-                throw new Error('Authenticated Like Minded state did not load; authHits='+authHits+' likeHits='+likeHits+' body='+debug);
+                throw new Error('Authenticated Like Minded state did not load; authHits='+authHits+' likeHits='+likeHits+' errors='+errors.join(' | ')+' body='+debug);
               }
               const resume=page.getByRole('button',{name:/Resume game/i}).first();
               await resume.waitFor({state:'visible',timeout:10000});
