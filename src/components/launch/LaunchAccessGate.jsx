@@ -129,12 +129,16 @@ export default function LaunchAccessGate({ pathname, children }) {
   const hasAdminAccess = adminAccessActive(user);
   const guestPreview = previewActive(user);
 
-  if (!guestPreview && (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess))) {
+  // The 24-hour Guest Preview is browse-only. It must never unlock member features.
+  if (guestPreview) {
+    return <Navigate to="/Subscription?guest-preview=view-only" replace />;
+  }
+
+  if (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess)) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
 
-  // Guest Preview is strictly view-only. Trial members may use the platform.
-  if (guestPreview) return children;
+  // Founding-member/full-access trial accounts are real member access, not Guest Preview.
   if (status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
