@@ -52,18 +52,11 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
-const PREVIEW_MS = 24 * 60 * 60 * 1000;
 
 function adminAccessActive(user) {
   if (!user?.subscription_end_date) return false;
   const end = new Date(user.subscription_end_date);
   return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
-}
-
-function previewActive(user) {
-  if (user?.stripe_subscription_id || adminAccessActive(user)) return false;
-  const created = user?.created_at ? new Date(user.created_at) : null;
-  return Boolean(created && !Number.isNaN(created.getTime()) && created.getTime() + PREVIEW_MS > Date.now());
 }
 
 function currentPlanFor(user) {
@@ -127,12 +120,6 @@ export default function LaunchAccessGate({ pathname, children }) {
   const status = String(user.subscription_status || '').toLowerCase();
   const hasStripeSubscription = Boolean(user.stripe_subscription_id);
   const hasAdminAccess = adminAccessActive(user);
-  const guestPreview = previewActive(user);
-
-  // The 24-hour Guest Preview is browse-only. It must never unlock member features.
-  if (guestPreview) {
-    return <Navigate to="/Subscription?guest-preview=view-only" replace />;
-  }
 
   if (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess)) {
     return <Navigate to="/Subscription?setup=required" replace />;
