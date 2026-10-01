@@ -7,7 +7,8 @@ const HEADERS = {
   'x-content-type-options':'nosniff',
 };
 
-const CATEGORIES=new Set(['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']);
+const CATEGORY_LIST=['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card'];
+const CATEGORIES=new Set(CATEGORY_LIST);
 const DEPTHS=new Set(['Easy','Real','Deep']);
 const DAILY_LIMITS={Free:10,Premiere:63,Exclusive:null};
 const MAX_ROOM_QUESTIONS=42;
@@ -57,6 +58,28 @@ function validQuestionId(value){
   const depth=parts.pop();
   const category=parts.join(':');
   return Boolean(variant)&&CATEGORIES.has(category)&&['easy','real','deep'].includes(depth);
+}
+
+function depthKey(value){ return value==='Easy'?'easy':value==='Deep'?'deep':'real'; }
+function expectedQuestionId(room){
+  const start=Math.max(0,CATEGORY_LIST.indexOf(room.category));
+  const absolute=Math.max(0,(Number(room.set_number||1)-1)*21+(Number(room.current_question_no||1)-1));
+  const variant=Math.floor(absolute/CATEGORY_LIST.length)%3;
+  const within=absolute%CATEGORY_LIST.length;
+  const category=CATEGORY_LIST[(start+within+variant*5)%CATEGORY_LIST.length];
+  return category+':'+depthKey(room.depth)+':v'+(variant+1);
+}
+function generalLocation(value,label,max=120){
+  const text=clean(value,max);
+  if(!text)return '';
+  if(/[0-9@]/.test(text)||/https?:\/\//i.test(text))throw Object.assign(new Error(label+' must be a general location, not an address or contact detail.'),{status:400,code:'general_location_required'});
+  return text;
+}
+async function enforceRoomCreateRate(db,userId){
+  const recent=(await db.query(`SELECT count(*)::int AS count FROM public.like_minded_rooms WHERE host_user_id=$1::uuid AND created_at>now()-interval '1 hour'`,[userId])).rows[0]?.count||0;
+  if(recent>=20)throw Object.assign(new Error('Too many Like Minded game rooms were created recently. Try again later.'),{status:429,code:'rate_limited'});
+  const open=(await db.query(`SELECT count(*)::int AS count FROM public.like_minded_rooms WHERE host_user_id=$1::uuid AND status='waiting' AND updated_at>now()-interval '24 hours'`,[userId])).rows[0]?.count||0;
+  if(open>=5)throw Object.assign(new Error('Finish or reuse an existing invitation before creating another game room.'),{status:409,code:'open_room_limit'});
 }
 
 async function ensureSchema(db){
@@ -357,9 +380,9 @@ export async function handleLikeMindedRequest(request,env,url){
           const previous=existing.rows[0]||{};
           const inLobby=body.inLobby===undefined?Boolean(previous.in_lobby):Boolean(body.inLobby);
           const available=inLobby?true:(body.available===undefined?Boolean(previous.available):Boolean(body.available));
-          const city=body.city===undefined?previous.city:clean(body.city,120);
-          const stateRegion=body.stateRegion===undefined?previous.state_region:clean(body.stateRegion,120);
-          const country=body.country===undefined?previous.country:clean(body.country,120);
+          const city=body.city===undefined?previous.city:generalLocation(body.city,'City',120);
+          const stateRegion=body.stateRegion===undefined?previous.state_region:generalLocation(body.stateRegion,'State / region',120);
+          const country=body.country===undefined?previous.country:generalLocation(body.country,'Country',120);
           const language=['en','es','fr','it','de'].includes(body.language)?body.language:(previous.language||'en');
           if(inLobby&&(!city||!country))return fail('City and country are required to enter the Player Lobby.');
           await db.query(
@@ -427,6 +450,7 @@ export async function handleLikeMindedRequest(request,env,url){
 
       if(url.pathname==='/api/like-minded/rooms'&&request.method==='POST'){
         await memberAccess(db,auth.user.id);
+        await enforceRoomCreateRate(db,auth.user.id);
         const category=CATEGORIES.has(body.category)?body.category:'Relationship Goals';
         const depth=DEPTHS.has(body.depth)?body.depth:'Real';
         const language=['en','es','fr','it','de'].includes(body.language)?body.language:'en';
@@ -495,6 +519,8 @@ export async function handleLikeMindedRequest(request,env,url){
         if(!Number.isInteger(answerId)||answerId<0||answerId>3)return fail('Choose a valid answer.');
         const questionId=clean(body.questionId,180);
         if(!validQuestionId(questionId))return fail('Question ID is invalid.',400,'invalid_question');
+        const expected=expectedQuestionId(room);
+        if(questionId!==expected)return fail('This answer does not match the current Like Minded question.',409,'question_mismatch',{expectedQuestionId:expected});
         const usageKey=`room:${room.id}:set:${room.set_number}:q:${room.current_question_no}`;
         const access=await consumeUsage(db,auth.user.id,usageKey,'multiplayer',questionId);
         await db.query(`INSERT INTO public.like_minded_answers(room_id,set_number,question_no,question_id,user_id,answer_id)
