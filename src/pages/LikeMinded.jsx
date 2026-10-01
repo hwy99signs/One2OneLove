@@ -9,7 +9,6 @@ import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import {
-  LIKE_MINDED_PREVIEW_LIMIT,
   buildLikeMindedSlot,
   getLikeMindedAnswerChoices,
 } from '@/lib/likeMindedGame';
@@ -37,7 +36,7 @@ const UI = {
     keepPlaying:'Keep Playing', finish:'Finish Self-Check', yourAnswer:'Your answer', waiting:'Waiting for the other player…',
     room:'Game Room', roomCode:'Room code', copyInvite:'Copy Invite Link', copied:'Copied', player2:'Waiting for Player 2',
     createRoom:'Create Invitation', joinRoom:'Join a Room', join:'Join', codePlaceholder:'Enter room code',
-    signin:'Sign in to use multiplayer', signinBody:'Try 5 Solo Self-Check questions without an account. Full tracked play, invitations and the live Player Lobby use your verified O2OL account.',
+    signin:'Sign in to play', signinBody:'Try 5 Solo Self-Check questions without an account. Full tracked play, invitations and the live Player Lobby use your verified O2OL account.',
     available:'Available now', lobbyEmpty:'No other players are available right now.', leaveLobby:'Leave Player Lobby',
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
@@ -64,7 +63,7 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'Prueba 5 preguntas de autoevaluación sin cuenta. El juego completo, las invitaciones y la sala usan tu cuenta O2OL verificada.',
+    signin:'Inicia sesión para jugar', signinBody:'Prueba 5 preguntas de autoevaluación sin cuenta. El juego completo, las invitaciones y la sala usan tu cuenta O2OL verificada.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
@@ -91,7 +90,7 @@ const UI = {
     keepPlaying:'Continuer', finish:'Terminer', yourAnswer:'Votre réponse', waiting:'En attente de l’autre joueur…',
     room:'Salle de Jeu', roomCode:'Code', copyInvite:'Copier le Lien', copied:'Copié', player2:'En attente du Joueur 2',
     createRoom:'Créer une Invitation', joinRoom:'Rejoindre une Salle', join:'Rejoindre', codePlaceholder:'Entrez le code',
-    signin:'Connectez-vous pour le multijoueur', signinBody:'Essayez 5 questions d’auto-évaluation sans compte. Le jeu complet, les invitations et le salon utilisent votre compte O2OL vérifié.',
+    signin:'Connectez-vous pour jouer', signinBody:'Essayez 5 questions d’auto-évaluation sans compte. Le jeu complet, les invitations et le salon utilisent votre compte O2OL vérifié.',
     available:'Disponibles maintenant', lobbyEmpty:'Aucun autre joueur n’est disponible.', leaveLobby:'Quitter le Salon',
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
@@ -118,7 +117,7 @@ const UI = {
     keepPlaying:'Continua', finish:'Termina', yourAnswer:'La tua risposta', waiting:'In attesa dell’altro giocatore…',
     room:'Stanza di Gioco', roomCode:'Codice', copyInvite:'Copia Link', copied:'Copiato', player2:'In attesa del Giocatore 2',
     createRoom:'Crea Invito', joinRoom:'Entra in una Stanza', join:'Entra', codePlaceholder:'Inserisci il codice',
-    signin:'Accedi per il multigiocatore', signinBody:'Prova 5 domande di auto-valutazione senza account. Il gioco completo, gli inviti e la lobby usano il tuo account O2OL verificato.',
+    signin:'Accedi per giocare', signinBody:'Prova 5 domande di auto-valutazione senza account. Il gioco completo, gli inviti e la lobby usano il tuo account O2OL verificato.',
     available:'Disponibili ora', lobbyEmpty:'Nessun altro giocatore è disponibile.', leaveLobby:'Esci dalla Lobby',
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
@@ -145,7 +144,7 @@ const UI = {
     keepPlaying:'Weiterspielen', finish:'Selbst-Check Beenden', yourAnswer:'Deine Antwort', waiting:'Warte auf die andere Person…',
     room:'Spielraum', roomCode:'Raumcode', copyInvite:'Einladungslink Kopieren', copied:'Kopiert', player2:'Warte auf Spieler 2',
     createRoom:'Einladung Erstellen', joinRoom:'Raum Beitreten', join:'Beitreten', codePlaceholder:'Raumcode eingeben',
-    signin:'Für Mehrspieler anmelden', signinBody:'Teste 5 Selbst-Check-Fragen ohne Konto. Vollständiges Spielen, Einladungen und Lobby nutzen dein verifiziertes O2OL-Konto.',
+    signin:'Zum Spielen anmelden', signinBody:'Teste 5 Selbst-Check-Fragen ohne Konto. Vollständiges Spielen, Einladungen und Lobby nutzen dein verifiziertes O2OL-Konto.',
     available:'Jetzt verfügbar', lobbyEmpty:'Zurzeit sind keine anderen Spieler verfügbar.', leaveLobby:'Lobby Verlassen',
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
@@ -157,11 +156,11 @@ const UI = {
 };
 
 const LAUNCH = {
-  en:{resume:'Resume game',recent:'Recent games',remaining:'questions left today',unlimited:'Unlimited play',preview:'5-question preview',previewUsed:'Free preview complete. Sign in to keep playing.',complete:'Game complete',completeBody:'You finished this Like Minded game.',finishGame:'Finish game',historyEmpty:'No completed games yet.',opponent:'Other player',autoRotate:'Questions rotate automatically across categories and depths to prevent repetition.',or:'OR',unavailableNow:'Unavailable',online:'online',gameInvitations:'Game invitations',statuses:{waiting:'Waiting',active:'Active',finished:'Finished',abandoned:'Expired',blocked:'Blocked'}},
-  es:{resume:'Reanudar juego',recent:'Juegos recientes',remaining:'preguntas restantes hoy',unlimited:'Juego ilimitado',preview:'Vista previa de 5 preguntas',previewUsed:'La vista previa gratuita terminó. Inicia sesión para seguir jugando.',complete:'Juego completado',completeBody:'Terminaste esta partida de Like Minded.',finishGame:'Finalizar juego',historyEmpty:'Aún no hay juegos completados.',opponent:'Otro jugador',autoRotate:'Las preguntas rotan automáticamente entre categorías y niveles para evitar repeticiones.',or:'O',unavailableNow:'No disponible',online:'en línea',gameInvitations:'Invitaciones de juego',statuses:{waiting:'Esperando',active:'Activo',finished:'Finalizado',abandoned:'Vencido',blocked:'Bloqueado'}},
-  fr:{resume:'Reprendre la partie',recent:'Parties récentes',remaining:'questions restantes aujourd’hui',unlimited:'Jeu illimité',preview:'Aperçu de 5 questions',previewUsed:'L’aperçu gratuit est terminé. Connectez-vous pour continuer.',complete:'Partie terminée',completeBody:'Vous avez terminé cette partie Like Minded.',finishGame:'Terminer la partie',historyEmpty:'Aucune partie terminée pour le moment.',opponent:'Autre joueur',autoRotate:'Les questions tournent automatiquement entre catégories et niveaux pour éviter les répétitions.',or:'OU',unavailableNow:'Indisponible',online:'en ligne',gameInvitations:'Invitations de jeu',statuses:{waiting:'En attente',active:'Actif',finished:'Terminé',abandoned:'Expiré',blocked:'Bloqué'}},
-  it:{resume:'Riprendi partita',recent:'Partite recenti',remaining:'domande rimaste oggi',unlimited:'Gioco illimitato',preview:'Anteprima di 5 domande',previewUsed:'L’anteprima gratuita è terminata. Accedi per continuare.',complete:'Partita completata',completeBody:'Hai completato questa partita Like Minded.',finishGame:'Termina partita',historyEmpty:'Nessuna partita completata.',opponent:'Altro giocatore',autoRotate:'Le domande ruotano automaticamente tra categorie e livelli per evitare ripetizioni.',or:'OPPURE',unavailableNow:'Non disponibile',online:'online',gameInvitations:'Inviti di gioco',statuses:{waiting:'In attesa',active:'Attivo',finished:'Terminato',abandoned:'Scaduto',blocked:'Bloccato'}},
-  de:{resume:'Spiel fortsetzen',recent:'Letzte Spiele',remaining:'Fragen heute übrig',unlimited:'Unbegrenztes Spielen',preview:'5-Fragen-Vorschau',previewUsed:'Die kostenlose Vorschau ist beendet. Melde dich an, um weiterzuspielen.',complete:'Spiel abgeschlossen',completeBody:'Du hast dieses Like-Minded-Spiel beendet.',finishGame:'Spiel beenden',historyEmpty:'Noch keine abgeschlossenen Spiele.',opponent:'Andere Person',autoRotate:'Fragen wechseln automatisch zwischen Kategorien und Tiefen, damit sich nichts wiederholt.',or:'ODER',unavailableNow:'Nicht verfügbar',online:'online',gameInvitations:'Spieleinladungen',statuses:{waiting:'Wartet',active:'Aktiv',finished:'Beendet',abandoned:'Abgelaufen',blocked:'Blockiert'}},
+  en:{resume:'Resume game',recent:'Recent games',remaining:'questions left today',unlimited:'Member play enabled',browseOnly:'Browse-only preview',memberRequired:'An active One2OneLove membership is required to play Like Minded.',membershipCta:'View Membership',complete:'Game complete',completeBody:'You finished this Like Minded game.',finishGame:'Finish game',historyEmpty:'No completed games yet.',opponent:'Other player',autoRotate:'Questions rotate automatically across categories and depths to prevent repetition.',or:'OR',unavailableNow:'Unavailable',online:'online',gameInvitations:'Game invitations',statuses:{waiting:'Waiting',active:'Active',finished:'Finished',abandoned:'Expired',blocked:'Blocked'}},
+  es:{resume:'Reanudar juego',recent:'Juegos recientes',remaining:'preguntas restantes hoy',unlimited:'Juego para miembros habilitado',browseOnly:'Vista previa solo para navegar',memberRequired:'Se requiere una membresía activa de One2OneLove para jugar Like Minded.',membershipCta:'Ver Membresía',complete:'Juego completado',completeBody:'Terminaste esta partida de Like Minded.',finishGame:'Finalizar juego',historyEmpty:'Aún no hay juegos completados.',opponent:'Otro jugador',autoRotate:'Las preguntas rotan automáticamente entre categorías y niveles para evitar repeticiones.',or:'O',unavailableNow:'No disponible',online:'en línea',gameInvitations:'Invitaciones de juego',statuses:{waiting:'Esperando',active:'Activo',finished:'Finalizado',abandoned:'Vencido',blocked:'Bloqueado'}},
+  fr:{resume:'Reprendre la partie',recent:'Parties récentes',remaining:'questions restantes aujourd’hui',unlimited:'Jeu membre activé',browseOnly:'Aperçu en consultation uniquement',memberRequired:'Un abonnement One2OneLove actif est requis pour jouer à Like Minded.',membershipCta:'Voir l’Abonnement',complete:'Partie terminée',completeBody:'Vous avez terminé cette partie Like Minded.',finishGame:'Terminer la partie',historyEmpty:'Aucune partie terminée pour le moment.',opponent:'Autre joueur',autoRotate:'Les questions tournent automatiquement entre catégories et niveaux pour éviter les répétitions.',or:'OU',unavailableNow:'Indisponible',online:'en ligne',gameInvitations:'Invitations de jeu',statuses:{waiting:'En attente',active:'Actif',finished:'Terminé',abandoned:'Expiré',blocked:'Bloqué'}},
+  it:{resume:'Riprendi partita',recent:'Partite recenti',remaining:'domande rimaste oggi',unlimited:'Gioco membri attivo',browseOnly:'Anteprima solo consultazione',memberRequired:'Per giocare a Like Minded è richiesta un’iscrizione One2OneLove attiva.',membershipCta:'Vedi Iscrizione',complete:'Partita completata',completeBody:'Hai completato questa partita Like Minded.',finishGame:'Termina partita',historyEmpty:'Nessuna partita completata.',opponent:'Altro giocatore',autoRotate:'Le domande ruotano automaticamente tra categorie e livelli per evitare ripetizioni.',or:'OPPURE',unavailableNow:'Non disponibile',online:'online',gameInvitations:'Inviti di gioco',statuses:{waiting:'In attesa',active:'Attivo',finished:'Terminato',abandoned:'Scaduto',blocked:'Bloccato'}},
+  de:{resume:'Spiel fortsetzen',recent:'Letzte Spiele',remaining:'Fragen heute übrig',unlimited:'Mitgliederspiel aktiviert',browseOnly:'Nur-Lese-Vorschau',memberRequired:'Zum Spielen von Like Minded ist eine aktive One2OneLove-Mitgliedschaft erforderlich.',membershipCta:'Mitgliedschaft Ansehen',complete:'Spiel abgeschlossen',completeBody:'Du hast dieses Like-Minded-Spiel beendet.',finishGame:'Spiel beenden',historyEmpty:'Noch keine abgeschlossenen Spiele.',opponent:'Andere Person',autoRotate:'Fragen wechseln automatisch zwischen Kategorien und Tiefen, damit sich nichts wiederholt.',or:'ODER',unavailableNow:'Nicht verfügbar',online:'online',gameInvitations:'Spieleinladungen',statuses:{waiting:'Wartet',active:'Aktiv',finished:'Beendet',abandoned:'Abgelaufen',blocked:'Blockiert'}},
 };
 
 
@@ -299,7 +298,6 @@ export default function LikeMinded() {
   const [access,setAccess] = useState(null);
   const [activeRoom,setActiveRoom] = useState(null);
   const [recentGames,setRecentGames] = useState([]);
-  const [previewUsed,setPreviewUsed] = useState(() => Number(localStorage.getItem('o2ol_like_minded_preview_used') || 0));
   const [soloSessionId] = useState(() => crypto.randomUUID());
 
   const effectiveSetNo = roomState?.set_number || room?.set_number || setNo;
@@ -416,25 +414,29 @@ export default function LikeMinded() {
     setRoom(null); setRoomState(null); setRoomCode(''); setSelected(null); setLocked(false); setShowTalk(false); setScreen('home');
   };
 
-  const startSolo = () => {
-    trackFeatureAction('Like Minded?','solo:start');
-    setApiError(''); setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
+  const startSolo = async () => {
+    setApiError('');
+    if (!isAuthenticated) { setScreen('signin'); return; }
+    try {
+      const gate=await api('/api/like-minded/access',{method:'GET',headers:{}});
+      setAccess(gate.access||access);
+      trackFeatureAction('Like Minded?','solo:start');
+      setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
+    } catch (err) {
+      setApiError(err.message || x.memberRequired);
+      setScreen('signin');
+    }
   };
 
   const lockSolo = async () => {
     if (selected == null) return;
     setApiError('');
     try {
-      if (isAuthenticated) {
-        const data=await api('/api/like-minded/solo/use',{
-          method:'POST',
-          body:JSON.stringify({usageKey:'solo:'+soloSessionId+':'+activeSlot.absoluteIndex,questionId:activeSlot.questionId}),
-        });
-        setAccess(data.access||access);
-      } else {
-        if (previewUsed >= LIKE_MINDED_PREVIEW_LIMIT) { setApiError(x.previewUsed); return; }
-        const next=previewUsed+1; localStorage.setItem('o2ol_like_minded_preview_used',String(next)); setPreviewUsed(next);
-      }
+      const data=await api('/api/like-minded/solo/use',{
+        method:'POST',
+        body:JSON.stringify({usageKey:'solo:'+soloSessionId+':'+activeSlot.absoluteIndex,questionId:activeSlot.questionId}),
+      });
+      setAccess(data.access||access);
       setLocked(true);
     } catch (err) { setApiError(err.message); }
   };
@@ -617,6 +619,24 @@ export default function LikeMinded() {
       <div className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black tracking-wide text-white">LIKE MINDED?</div>
     </div>
   );
+
+  if (screen === 'signin') {
+    return (
+      <div className="min-h-screen bg-[#f7f4ff] py-8">
+        {modeHeader}
+        <div className="mx-auto max-w-xl px-4 sm:px-6">
+          <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-xl">
+            <LockKeyhole className="mx-auto h-12 w-12 text-violet-600" />
+            <h1 className="mt-4 text-3xl font-black text-slate-950">{isAuthenticated ? x.membershipCta : t.signin}</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{isAuthenticated ? (apiError || x.memberRequired) : t.signinBody}</p>
+            <Link to={isAuthenticated ? createPageUrl('Subscription') : createPageUrl('SignIn')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">
+              {isAuthenticated ? x.membershipCta : t.signin}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (screen === 'solo') {
     return (
@@ -913,7 +933,7 @@ export default function LikeMinded() {
           </div>
 
           <div className="mx-auto mt-4 flex max-w-3xl flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-300">
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">{isAuthenticated ? (access?.dailyLimit==null ? x.unlimited : ((access?.remaining ?? '—')+' '+x.remaining)) : ((LIKE_MINDED_PREVIEW_LIMIT-previewUsed)+' / '+LIKE_MINDED_PREVIEW_LIMIT+' '+x.preview)}</span>
+            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">{isAuthenticated ? x.unlimited : x.browseOnly}</span>
             {activeRoom && <button onClick={()=>resumeRoom(activeRoom)} className="rounded-full bg-yellow-300 px-3 py-1.5 font-black text-slate-950">{x.resume}: {activeRoom.code}</button>}
           </div>
 
