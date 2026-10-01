@@ -138,7 +138,7 @@ async function loveNoteWriteAccess(db, auth) {
   }
 
   const result = await db.query(
-    `SELECT is_active,subscription_status,stripe_subscription_id,subscription_end_date,created_at
+    `SELECT is_active,subscription_status,stripe_subscription_id,subscription_end_date
        FROM public.users WHERE id=$1::uuid LIMIT 1`,
     [auth.user.id],
   );
@@ -147,22 +147,6 @@ async function loveNoteWriteAccess(db, auth) {
   const hasStripeSubscription = Boolean(row.stripe_subscription_id);
   const endAt = row.subscription_end_date ? new Date(row.subscription_end_date) : null;
   const hasAdminAccess = Boolean(endAt && !Number.isNaN(endAt.getTime()) && endAt.getTime() > Date.now());
-  const createdAt = row.created_at ? new Date(row.created_at) : null;
-  const guestPreview = Boolean(
-    !hasStripeSubscription &&
-    !hasAdminAccess &&
-    createdAt &&
-    !Number.isNaN(createdAt.getTime()) &&
-    createdAt.getTime() + (24 * 60 * 60 * 1000) > Date.now()
-  );
-
-  if (guestPreview) {
-    return {
-      allowed: false,
-      reason: 'guest_preview_view_only',
-      message: 'Your 24-hour Guest Preview is view-only. Choose a plan before using Love Notes sending features.',
-    };
-  }
 
   const activePaidAccess =
     row.is_active !== false &&
