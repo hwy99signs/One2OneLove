@@ -93,23 +93,26 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import re
           from pathlib import Path
-          text=Path('src/pages/LikeMinded.jsx').read_text(encoding='utf-8')
-          start=text.index('const QUESTIONS = {')
-          end=text.index('function ModeCard',start)
-          assert end>start, end
-          block=text[start:end]
-          rows=[line.strip() for line in block.splitlines() if re.match(r'^(easy|real|deep):\\{en:',line.strip())]
+          page=Path('src/pages/LikeMinded.jsx').read_text(encoding='utf-8')
+          start=page.index('const QUESTIONS = {')
+          end=page.index('function ModeCard',start)
+          block=page[start:end]
+          rows=[
+              line.strip() for line in block.splitlines()
+              if line.strip().startswith(('easy:{en:', 'real:{en:', 'deep:{en:'))
+          ]
           assert len(rows)==45, len(rows)
           for i,row in enumerate(rows,1):
               for lang in ['es','fr','it','de']:
                   assert f",{lang}:'" in row, (i,lang,row)
-          assert 'const ANSWERS =' not in text
+          assert 'const ANSWERS =' not in page
+
           extra=Path('src/lib/likeMindedQuestionVariants.js').read_text(encoding='utf-8')
-          assert extra.count("q(") >= 90, extra.count("q(")
-          for lang in ["en","es","fr","it","de"]:
-              assert lang in extra
+          prompt_calls=extra.count('      q(') + extra.count('      q("')
+          assert prompt_calls==90, prompt_calls
+          for lang in ['en','es','fr','it','de']:
+              assert f'{lang}' in extra
           print('LIKE_MINDED_135_PROMPTS_X_5_LANGUAGES=PASS')
           PY
 
