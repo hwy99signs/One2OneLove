@@ -545,7 +545,7 @@ async function moderation(db) {
              r.status,
              concat('Reporter: ',COALESCE(reporter.email,'unknown'),CASE WHEN room.code IS NULL THEN '' ELSE ' · Room: '||room.code END),
              r.created_at,
-             r.created_at
+             COALESCE(r.reviewed_at,r.created_at)
         FROM public.like_minded_reports r
         LEFT JOIN public.users u ON u.id=r.reported_user_id
         LEFT JOIN public.users reporter ON reporter.id=r.reporting_user_id
@@ -839,6 +839,20 @@ async function system(db) {
   return { migrations: migrations.rows, aiUsage30d: ai.rows, authRoles: authRoles.rows };
 }
 
+async function resolveLikeMindedReport(db, admin, reportId) {
+  const ready=(await db.query(`SELECT to_regclass('public.like_minded_reports') IS NOT NULL AS ready`)).rows[0]?.ready===true;
+  if(!ready) throw Object.assign(new Error('Like Minded reporting is not available yet.'),{status:404,code:'not_found'});
+  const result=await db.query(
+    `UPDATE public.like_minded_reports
+        SET status='resolved',reviewed_at=now(),reviewed_by=$2::uuid
+      WHERE id=$1::uuid AND status<>'resolved'
+      RETURNING id,status,reviewed_at,reviewed_by`,
+    [reportId,admin.id],
+  );
+  if(!result.rowCount) throw Object.assign(new Error('Like Minded report was not found or is already resolved.'),{status:404,code:'report_not_found'});
+  return result.rows[0];
+}
+
 async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
   const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,systemData] = await Promise.all([
@@ -892,6 +906,12 @@ export async function handleAdminRequest(request, env, url) {
         const body = await request.json().catch(() => ({}));
         const result = await manageMemberAccount(db, admin, memberMatch[1], memberMatch[2].toLowerCase(), body?.reason || '');
         return json({ ok:true, member:result });
+      }
+
+      const likeMindedReportMatch = url.pathname.match(/^\/api\/admin\/moderation\/like-minded-report\/([0-9a-f-]{36})\/resolve$/i);
+      if (request.method === 'POST' && likeMindedReportMatch) {
+        const result = await resolveLikeMindedReport(db, admin, likeMindedReportMatch[1]);
+        return json({ ok:true, report:result });
       }
 
       if (!['GET','POST'].includes(request.method)) return fail('Method not allowed.',405,'method_not_allowed');
