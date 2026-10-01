@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, ChevronRight, Copy, Globe2, HeartHandshake,
@@ -404,8 +404,6 @@ export default function LikeMinded() {
     const id = setInterval(load, 4000);
     return () => { active=false; clearInterval(id); };
   }, [screen,inLobby]);
-
-  const selectDepth = (value) => setDepth(value);
 
   const setRoomUrl = (code) => {
     if (!code) return;
