@@ -2,27 +2,26 @@ export const LIKE_MINDED_PREVIEW_LIMIT = 5;
 export const LIKE_MINDED_DAILY_LIMITS = Object.freeze({ Free: 10, Premiere: 63, Exclusive: null });
 export const LIKE_MINDED_MAX_ROOM_QUESTIONS = 42;
 
-const DEPTH_ORDER = {
-  Easy: ['Easy','Real','Deep'],
-  Real: ['Real','Deep','Easy'],
-  Deep: ['Deep','Real','Easy'],
-};
-
 export function depthKey(depth) {
   return depth === 'Easy' ? 'easy' : depth === 'Deep' ? 'deep' : 'real';
 }
 
 export function buildLikeMindedSlot(categories, startCategory, startDepth, setNo = 1, questionNo = 1) {
   const list = Array.isArray(categories) && categories.length ? categories : [];
-  if (!list.length) return { category: startCategory, depth: startDepth || 'Real', questionId: '' };
+  const depth = ['Easy','Real','Deep'].includes(startDepth) ? startDepth : 'Real';
+  if (!list.length) return { category: startCategory, depth, variant: 0, questionId: '', absoluteIndex: 0 };
   const start = Math.max(0, list.indexOf(startCategory));
   const absolute = Math.max(0, (Number(setNo || 1) - 1) * 21 + (Number(questionNo || 1) - 1));
-  const round = Math.floor(absolute / list.length) % 3;
+  const variant = Math.floor(absolute / list.length) % 3;
   const within = absolute % list.length;
-  const depthOrder = DEPTH_ORDER[startDepth] || DEPTH_ORDER.Real;
-  const depth = depthOrder[round];
-  const category = list[(start + within + round * 5) % list.length];
-  return { category, depth, questionId: category + ':' + depthKey(depth), absoluteIndex: absolute };
+  const category = list[(start + within + variant * 5) % list.length];
+  return {
+    category,
+    depth,
+    variant,
+    questionId: category + ':' + depthKey(depth) + ':v' + (variant + 1),
+    absoluteIndex: absolute,
+  };
 }
 
 const TEXT = {
