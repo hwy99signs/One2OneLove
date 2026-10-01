@@ -8,6 +8,13 @@ import {
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
+import {
+  LIKE_MINDED_PREVIEW_LIMIT,
+  LIKE_MINDED_MAX_ROOM_QUESTIONS,
+  buildLikeMindedSlot,
+  depthKey,
+  getLikeMindedAnswerChoices,
+} from '@/lib/likeMindedGame';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -30,7 +37,7 @@ const UI = {
     keepPlaying:'Keep Playing', finish:'Finish Self-Check', yourAnswer:'Your answer', waiting:'Waiting for the other player…',
     room:'Game Room', roomCode:'Room code', copyInvite:'Copy Invite Link', copied:'Copied', player2:'Waiting for Player 2',
     createRoom:'Create Invitation', joinRoom:'Join a Room', join:'Join', codePlaceholder:'Enter room code',
-    signin:'Sign in to use multiplayer', signinBody:'Solo Self-Check works without an account. Invitations and the live Player Lobby use your verified O2OL account.',
+    signin:'Sign in to use multiplayer', signinBody:'Try 5 Solo Self-Check questions without an account. Full tracked play, invitations and the live Player Lobby use your verified O2OL account.',
     available:'Available now', lobbyEmpty:'No other players are available right now.', leaveLobby:'Leave Player Lobby',
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
@@ -57,7 +64,7 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'La autoevaluación funciona sin cuenta. Las invitaciones y la sala usan tu cuenta O2OL verificada.',
+    signin:'Inicia sesión para multijugador', signinBody:'Prueba 5 preguntas de autoevaluación sin cuenta. El juego completo, las invitaciones y la sala usan tu cuenta O2OL verificada.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
@@ -84,7 +91,7 @@ const UI = {
     keepPlaying:'Continuer', finish:'Terminer', yourAnswer:'Votre réponse', waiting:'En attente de l’autre joueur…',
     room:'Salle de Jeu', roomCode:'Code', copyInvite:'Copier le Lien', copied:'Copié', player2:'En attente du Joueur 2',
     createRoom:'Créer une Invitation', joinRoom:'Rejoindre une Salle', join:'Rejoindre', codePlaceholder:'Entrez le code',
-    signin:'Connectez-vous pour le multijoueur', signinBody:'L’auto-évaluation fonctionne sans compte. Les invitations et le salon utilisent votre compte O2OL vérifié.',
+    signin:'Connectez-vous pour le multijoueur', signinBody:'Essayez 5 questions d’auto-évaluation sans compte. Le jeu complet, les invitations et le salon utilisent votre compte O2OL vérifié.',
     available:'Disponibles maintenant', lobbyEmpty:'Aucun autre joueur n’est disponible.', leaveLobby:'Quitter le Salon',
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
@@ -111,7 +118,7 @@ const UI = {
     keepPlaying:'Continua', finish:'Termina', yourAnswer:'La tua risposta', waiting:'In attesa dell’altro giocatore…',
     room:'Stanza di Gioco', roomCode:'Codice', copyInvite:'Copia Link', copied:'Copiato', player2:'In attesa del Giocatore 2',
     createRoom:'Crea Invito', joinRoom:'Entra in una Stanza', join:'Entra', codePlaceholder:'Inserisci il codice',
-    signin:'Accedi per il multigiocatore', signinBody:'L’auto-valutazione funziona senza account. Inviti e lobby usano il tuo account O2OL verificato.',
+    signin:'Accedi per il multigiocatore', signinBody:'Prova 5 domande di auto-valutazione senza account. Il gioco completo, gli inviti e la lobby usano il tuo account O2OL verificato.',
     available:'Disponibili ora', lobbyEmpty:'Nessun altro giocatore è disponibile.', leaveLobby:'Esci dalla Lobby',
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
@@ -138,7 +145,7 @@ const UI = {
     keepPlaying:'Weiterspielen', finish:'Selbst-Check Beenden', yourAnswer:'Deine Antwort', waiting:'Warte auf die andere Person…',
     room:'Spielraum', roomCode:'Raumcode', copyInvite:'Einladungslink Kopieren', copied:'Kopiert', player2:'Warte auf Spieler 2',
     createRoom:'Einladung Erstellen', joinRoom:'Raum Beitreten', join:'Beitreten', codePlaceholder:'Raumcode eingeben',
-    signin:'Für Mehrspieler anmelden', signinBody:'Der Selbst-Check funktioniert ohne Konto. Einladungen und Lobby nutzen dein verifiziertes O2OL-Konto.',
+    signin:'Für Mehrspieler anmelden', signinBody:'Teste 5 Selbst-Check-Fragen ohne Konto. Vollständiges Spielen, Einladungen und Lobby nutzen dein verifiziertes O2OL-Konto.',
     available:'Jetzt verfügbar', lobbyEmpty:'Zurzeit sind keine anderen Spieler verfügbar.', leaveLobby:'Lobby Verlassen',
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
@@ -148,6 +155,15 @@ const UI = {
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };
+
+const LAUNCH = {
+  en:{resume:'Resume game',recent:'Recent games',remaining:'questions left today',unlimited:'Unlimited play',preview:'5-question preview',previewUsed:'Free preview complete. Sign in to keep playing.',complete:'Game complete',completeBody:'You finished this Like Minded game.',finishGame:'Finish game',historyEmpty:'No completed games yet.',opponent:'Other player',autoRotate:'Questions rotate automatically across categories and depths to prevent repetition.'},
+  es:{resume:'Reanudar juego',recent:'Juegos recientes',remaining:'preguntas restantes hoy',unlimited:'Juego ilimitado',preview:'Vista previa de 5 preguntas',previewUsed:'La vista previa gratuita terminó. Inicia sesión para seguir jugando.',complete:'Juego completado',completeBody:'Terminaste esta partida de Like Minded.',finishGame:'Finalizar juego',historyEmpty:'Aún no hay juegos completados.',opponent:'Otro jugador',autoRotate:'Las preguntas rotan automáticamente entre categorías y niveles para evitar repeticiones.'},
+  fr:{resume:'Reprendre la partie',recent:'Parties récentes',remaining:'questions restantes aujourd’hui',unlimited:'Jeu illimité',preview:'Aperçu de 5 questions',previewUsed:'L’aperçu gratuit est terminé. Connectez-vous pour continuer.',complete:'Partie terminée',completeBody:'Vous avez terminé cette partie Like Minded.',finishGame:'Terminer la partie',historyEmpty:'Aucune partie terminée pour le moment.',opponent:'Autre joueur',autoRotate:'Les questions tournent automatiquement entre catégories et niveaux pour éviter les répétitions.'},
+  it:{resume:'Riprendi partita',recent:'Partite recenti',remaining:'domande rimaste oggi',unlimited:'Gioco illimitato',preview:'Anteprima di 5 domande',previewUsed:'L’anteprima gratuita è terminata. Accedi per continuare.',complete:'Partita completata',completeBody:'Hai completato questa partita Like Minded.',finishGame:'Termina partita',historyEmpty:'Nessuna partita completata.',opponent:'Altro giocatore',autoRotate:'Le domande ruotano automaticamente tra categorie e livelli per evitare ripetizioni.'},
+  de:{resume:'Spiel fortsetzen',recent:'Letzte Spiele',remaining:'Fragen heute übrig',unlimited:'Unbegrenztes Spielen',preview:'5-Fragen-Vorschau',previewUsed:'Die kostenlose Vorschau ist beendet. Melde dich an, um weiterzuspielen.',complete:'Spiel abgeschlossen',completeBody:'Du hast dieses Like-Minded-Spiel beendet.',finishGame:'Spiel beenden',historyEmpty:'Noch keine abgeschlossenen Spiele.',opponent:'Andere Person',autoRotate:'Fragen wechseln automatisch zwischen Kategorien und Tiefen, damit sich nichts wiederholt.'},
+};
+
 
 const CANONICAL_CATEGORIES = [
   'Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries',
@@ -240,22 +256,6 @@ const ANSWERS = {
   de:['Ganz ich','Eher ich','Kommt darauf an','Eher nicht ich']
 };
 
-function depthKey(depth) {
-  return depth === 'Easy' ? 'easy' : depth === 'Deep' ? 'deep' : 'real';
-}
-
-function api(path, options={}) {
-  return fetch(path, {
-    credentials:'include',
-    headers:{ 'content-type':'application/json', ...(options.headers||{}) },
-    ...options,
-  }).then(async (res) => {
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error?.message || data?.message || 'Request failed');
-    return data;
-  });
-}
-
 function ModeCard({ icon:Icon, title, body, onClick, accent, surface }) {
   return (
     <button
@@ -280,6 +280,7 @@ export default function LikeMinded() {
   const { isAuthenticated, user } = useAuth();
   const lang = LANGS.includes(currentLanguage) ? currentLanguage : 'en';
   const t = UI[lang] || UI.en;
+  const x = LAUNCH[lang] || LAUNCH.en;
 
   const [screen,setScreen] = useState('home');
   const [category,setCategory] = useState('Relationship Goals');
@@ -303,12 +304,34 @@ export default function LikeMinded() {
   const [inLobby,setInLobby] = useState(false);
   const [available,setAvailable] = useState(false);
   const [showTalk,setShowTalk] = useState(false);
+  const [access,setAccess] = useState(null);
+  const [activeRoom,setActiveRoom] = useState(null);
+  const [recentGames,setRecentGames] = useState([]);
+  const [previewUsed,setPreviewUsed] = useState(() => Number(localStorage.getItem('o2ol_like_minded_preview_used') || 0));
+  const [soloSessionId] = useState(() => crypto.randomUUID());
 
-  const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
-  const activeCanonicalCategory = CANONICAL_CATEGORIES[(categoryIndex + questionNo - 1) % CANONICAL_CATEGORIES.length];
-  const questionText = QUESTIONS[activeCanonicalCategory]?.[depthKey(depth)]?.[lang] || QUESTIONS[activeCanonicalCategory]?.real?.en;
-  const answers = ANSWERS[lang] || ANSWERS.en;
+  const effectiveSetNo = roomState?.set_number || room?.set_number || setNo;
+  const effectiveQuestionNo = roomState?.current_question_no || room?.current_question_no || questionNo;
+  const activeSlot = buildLikeMindedSlot(CANONICAL_CATEGORIES, category, depth, effectiveSetNo, effectiveQuestionNo);
+  const activeCanonicalCategory = activeSlot.category;
+  const activeDepth = activeSlot.depth;
+  const questionText = QUESTIONS[activeCanonicalCategory]?.[depthKey(activeDepth)]?.[lang] || QUESTIONS[activeCanonicalCategory]?.real?.en;
+  const answers = getLikeMindedAnswerChoices(activeCanonicalCategory, activeDepth, lang);
   const displayCategory = t.categoriesList[CANONICAL_CATEGORIES.indexOf(activeCanonicalCategory)] || activeCanonicalCategory;
+
+  useEffect(() => {
+    if (!isAuthenticated) { setAccess(null); setActiveRoom(null); setRecentGames([]); return; }
+    let active=true;
+    Promise.all([
+      api('/api/like-minded/access',{method:'GET',headers:{}}),
+      api('/api/like-minded/rooms/active',{method:'GET',headers:{}}),
+      api('/api/like-minded/history',{method:'GET',headers:{}}),
+    ]).then(([a,r,h])=>{
+      if(!active)return;
+      setAccess(a.access||null); setActiveRoom(r.room||null); setRecentGames(h.games||[]);
+    }).catch(()=>{});
+    return()=>{active=false};
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const pending = new URLSearchParams(window.location.search).get('room');
@@ -398,17 +421,29 @@ export default function LikeMinded() {
   };
 
   const startSolo = () => {
-    setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
+    setApiError(''); setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
   };
 
-  const lockSolo = () => {
+  const lockSolo = async () => {
     if (selected == null) return;
-    setLocked(true);
+    setApiError('');
+    try {
+      if (isAuthenticated) {
+        const data=await api('/api/like-minded/solo/use',{
+          method:'POST',
+          body:JSON.stringify({usageKey:'solo:'+soloSessionId+':'+activeSlot.absoluteIndex,questionId:activeSlot.questionId}),
+        });
+        setAccess(data.access||access);
+      } else {
+        if (previewUsed >= LIKE_MINDED_PREVIEW_LIMIT) { setApiError(x.previewUsed); return; }
+        const next=previewUsed+1; localStorage.setItem('o2ol_like_minded_preview_used',String(next)); setPreviewUsed(next);
+      }
+      setLocked(true);
+    } catch (err) { setApiError(err.message); }
   };
 
   const advanceSolo = () => {
     if (questionNo >= 21) { setCheckpoint(true); return; }
-    setCategory(nextCategory || category);
     setQuestionNo((n) => n + 1);
     setSelected(null); setLocked(false);
   };
@@ -449,7 +484,7 @@ export default function LikeMinded() {
     try {
       const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code) + '/answer', {
         method:'POST',
-        body:JSON.stringify({ answerId:selected, questionId:activeCanonicalCategory + ':' + depthKey(depth) }),
+        body:JSON.stringify({ answerId:selected, questionId:activeSlot.questionId }),
       });
       setLocked(true);
       setRoomState(data.room || roomState);
@@ -462,8 +497,40 @@ export default function LikeMinded() {
     try {
       const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code) + '/next', { method:'POST', body:'{}' });
       setRoomState(data.room); setQuestionNo(data.room?.current_question_no || questionNo + 1);
+      if(data.finished){ setActiveRoom(null); setRecentGames(await api('/api/like-minded/history',{method:'GET',headers:{}}).then(v=>v.games||[]).catch(()=>recentGames)); }
       setSelected(null); setLocked(false); setShowTalk(false);
     } catch (err) { setApiError(err.message); }
+  };
+
+  const resumeRoom = (saved) => {
+    if(!saved)return;
+    setRoom(saved); setRoomState(saved); setRoomCode(saved.code||'');
+    if(saved.category)setCategory(saved.category); if(saved.depth)setDepth(saved.depth);
+    if(saved.current_question_no)setQuestionNo(saved.current_question_no);
+    setLocked(Boolean(saved.my_locked)); setSelected(saved.my_answer_id ?? null); setRoomUrl(saved.code); setScreen('room');
+  };
+
+  const finishRoom = async () => {
+    if(!room?.code)return;
+    setApiError('');
+    try{
+      const data=await api('/api/like-minded/rooms/'+encodeURIComponent(room.code)+'/finish',{method:'POST',body:'{}'});
+      setRoomState(data.room); setActiveRoom(null);
+      const h=await api('/api/like-minded/history',{method:'GET',headers:{}}).catch(()=>({games:recentGames}));
+      setRecentGames(h.games||[]);
+    }catch(err){setApiError(err.message);}
+  };
+
+  const blockOpponent = async (current) => {
+    if(!current?.opponent_user_id)return;
+    await blockPlayer(current.opponent_user_id); setRoomState({...current,status:'blocked'}); setActiveRoom(null);
+  };
+
+  const reportOpponent = async (current) => {
+    if(!current?.opponent_user_id)return;
+    try{
+      await api('/api/like-minded/reports',{method:'POST',body:JSON.stringify({userId:current.opponent_user_id,roomId:current.id,context:'Reported from active Like Minded game'})});
+    }catch(err){setApiError(err.message);}
   };
 
   const copyInvite = async () => {
@@ -569,7 +636,7 @@ export default function LikeMinded() {
 
             <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 p-6 text-white sm:p-9">
               <div className="mb-4 flex items-center justify-between gap-3 text-xs font-bold text-white/65">
-                <span>{t.category}: {displayCategory}</span><span>{t.questionDepth}: {depth}</span>
+                <span>{t.category}: {displayCategory}</span><span>{t.questionDepth}: {activeDepth}</span>
               </div>
               <h2 className="text-2xl font-black leading-tight sm:text-4xl">{questionText}</h2>
             </div>
@@ -589,12 +656,7 @@ export default function LikeMinded() {
             ) : (
               <div className="mt-6 space-y-5">
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"><CheckCircle2 className="mr-2 inline h-5 w-5" /><strong>{t.locked}</strong> · {t.yourAnswer}: {answers[selected]}</div>
-                <div>
-                  <div className="mb-2 text-sm font-black text-slate-900">{t.nextCategory}</div>
-                  <div className="flex flex-wrap gap-2">
-                    {CANONICAL_CATEGORIES.map((c,i) => <button key={c} onClick={() => setNextCategory(c)} className={"rounded-full px-3 py-2 text-xs font-bold " + (nextCategory===c ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700')}>{t.categoriesList[i]}</button>)}
-                  </div>
-                </div>
+                <div className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-600">{x.autoRotate}</div>
                 <button onClick={advanceSolo} className="w-full rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion} <ChevronRight className="ml-2 inline h-5 w-5" /></button>
               </div>
             )}
@@ -606,8 +668,8 @@ export default function LikeMinded() {
             <div className="w-full max-w-md rounded-[32px] bg-white p-8 text-center shadow-2xl">
               <Trophy className="mx-auto h-12 w-12 text-amber-500" /><h2 className="mt-4 text-3xl font-black">{t.checkpoint}</h2><p className="mt-2 text-slate-600">{t.checkpointBody}</p>
               <div className="mt-6 grid gap-3">
-                <button onClick={() => {setSetNo(n=>n+1);setQuestionNo(1);setSelected(null);setLocked(false);setCheckpoint(false);}} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.keepPlaying}</button>
-                <button onClick={() => {setCheckpoint(false);setScreen('home');}} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800">{t.finish}</button>
+                {setNo < 2 && <button onClick={() => {setSetNo(n=>n+1);setQuestionNo(1);setSelected(null);setLocked(false);setCheckpoint(false);}} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.keepPlaying}</button>}
+                <button onClick={() => {setCheckpoint(false);setScreen('home');setSelected(null);setLocked(false);}} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800">{t.finish}</button>
               </div>
             </div>
           </div>
@@ -660,6 +722,21 @@ export default function LikeMinded() {
     const bothLocked = Boolean(current.both_locked);
     const match = current.current_match;
     const myLocked = Boolean(current.my_locked) || locked;
+    if(['finished','blocked','abandoned'].includes(current.status)){
+      return (
+        <div className="min-h-screen bg-[#f7f4ff] py-8">
+          {modeHeader}
+          <div className="mx-auto max-w-xl px-4 sm:px-6">
+            <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-xl">
+              <Trophy className="mx-auto h-12 w-12 text-amber-500"/><h1 className="mt-4 text-3xl font-black">{x.complete}</h1>
+              <p className="mt-2 text-slate-600">{x.completeBody}</p>
+              <div className="mt-5 text-lg font-black text-slate-900">{t.score}: {current.matches||0}/{current.total_answered||0}</div>
+              <button onClick={goHome} className="mt-6 w-full rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.back}</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-[#f7f4ff] py-8">
         {modeHeader}
@@ -678,7 +755,7 @@ export default function LikeMinded() {
             )}
 
             <div className="mt-6 rounded-[28px] bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 p-6 text-white sm:p-9">
-              <div className="mb-3 text-xs font-bold text-white/60">{displayCategory} · {depth}</div>
+              <div className="mb-3 text-xs font-bold text-white/60">{displayCategory} · {activeDepth}</div>
               <h2 className="text-2xl font-black leading-tight sm:text-4xl">{questionText}</h2>
             </div>
 
@@ -700,6 +777,7 @@ export default function LikeMinded() {
                 </div>
                 {showTalk && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-center font-bold text-violet-950">{t.talkPrompt}</div>}
                 <div className="grid gap-3 sm:grid-cols-2"><button onClick={()=>setShowTalk(v=>!v)} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800"><MessageCircle className="mr-2 inline h-5 w-5"/>{t.talk}</button><button onClick={nextRoomQuestion} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion}<ChevronRight className="ml-2 inline h-5 w-5"/></button></div>
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4"><button onClick={finishRoom} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700">{x.finishGame}</button><button onClick={()=>blockOpponent(current)} disabled={!current.opponent_user_id} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-40">{t.block}</button><button onClick={()=>reportOpponent(current)} disabled={!current.opponent_user_id} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-40">{t.report}</button></div>
               </div>}
             {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
           </div>
@@ -821,6 +899,11 @@ export default function LikeMinded() {
             <p className="mx-auto mt-3 hidden max-w-2xl text-sm leading-6 text-slate-300 sm:block">{t.intro}</p>
           </div>
 
+          <div className="mx-auto mt-4 flex max-w-3xl flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-300">
+            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">{isAuthenticated ? (access?.dailyLimit==null ? x.unlimited : ((access?.remaining ?? '—')+' '+x.remaining)) : ((LIKE_MINDED_PREVIEW_LIMIT-previewUsed)+' / '+LIKE_MINDED_PREVIEW_LIMIT+' '+x.preview)}</span>
+            {activeRoom && <button onClick={()=>resumeRoom(activeRoom)} className="rounded-full bg-yellow-300 px-3 py-1.5 font-black text-slate-950">{x.resume}: {activeRoom.code}</button>}
+          </div>
+
           {isAuthenticated && (
             <div className="mx-auto mt-3 flex max-w-3xl items-center justify-center gap-2 text-xs text-slate-300">
               <button
@@ -861,6 +944,11 @@ export default function LikeMinded() {
               surface="border-amber-200/60 bg-gradient-to-b from-amber-400 via-orange-500 to-amber-700"
             />
           </div>
+
+          {isAuthenticated && recentGames.length>0 && <div className="mx-auto mt-5 w-full max-w-5xl rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left">
+            <div className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{x.recent}</div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">{recentGames.slice(0,3).map(g=><button key={g.id} onClick={()=>['waiting','active'].includes(g.status)&&resumeRoom(g)} disabled={!['waiting','active'].includes(g.status)} className="rounded-xl bg-white/10 p-3 text-left disabled:cursor-default"><div className="font-black text-white">{g.opponent_first_name||x.opponent}</div><div className="mt-1 text-xs text-slate-300">{g.matches||0}/{g.total_answered||0} {t.matches} · {String(g.status||'').replaceAll('_',' ')}</div></button>)}</div>
+          </div>}
         </div>
       </section>
 
