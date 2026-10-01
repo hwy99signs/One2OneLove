@@ -345,7 +345,7 @@ export default function LikeMinded() {
       body:JSON.stringify({ code:normalized, language:lang }),
     }).then(data => {
       if (!active) return;
-      trackFeatureAction('Like Minded?','multiplayer:room-created');
+      trackFeatureAction('Like Minded?','multiplayer:room-joined');
       setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
@@ -454,6 +454,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ category, depth, language:lang }),
       });
+      trackFeatureAction('Like Minded?','multiplayer:room-created');
       setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
@@ -577,6 +578,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ code, language:lang }),
       });
+      trackFeatureAction('Like Minded?','multiplayer:room-joined');
       setRoom(data.room); setRoomState(data.room);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
@@ -606,6 +608,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ category, depth, language:lang, invitedUserId:playerId }),
       });
+      trackFeatureAction('Like Minded?','multiplayer:room-created');
       setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code); setScreen('room');
     } catch (err) { setApiError(err.message); }
   };
