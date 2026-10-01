@@ -213,15 +213,29 @@ async function accessSnapshot(db,userId){
 async function consumeUsage(db,userId,usageKey,mode,questionId){
   const key=clean(usageKey,220);
   if(!key||!['solo','multiplayer'].includes(mode)||!validQuestionId(questionId))throw Object.assign(new Error('Invalid Like Minded usage record.'),{status:400,code:'invalid_usage'});
-  const existing=await db.query('SELECT 1 FROM public.like_minded_usage WHERE user_id=$1::uuid AND usage_key=$2',[userId,key]);
-  if(existing.rowCount)return accessSnapshot(db,userId);
-  const snapshot=await accessSnapshot(db,userId);
-  if(snapshot.dailyLimit!=null&&snapshot.usedToday>=snapshot.dailyLimit){
-    throw Object.assign(new Error(`${snapshot.plan} Like Minded daily play limit reached.`),{status:403,code:'like_minded_daily_limit',extra:snapshot});
+  await db.query('BEGIN');
+  try{
+    // Serialize usage decisions per member so concurrent tabs/devices cannot race past a daily cap.
+    await db.query('SELECT id FROM public.users WHERE id=$1::uuid FOR UPDATE',[userId]);
+    const existing=await db.query('SELECT 1 FROM public.like_minded_usage WHERE user_id=$1::uuid AND usage_key=$2',[userId,key]);
+    if(existing.rowCount){
+      const snapshot=await accessSnapshot(db,userId);
+      await db.query('COMMIT');
+      return snapshot;
+    }
+    const snapshot=await accessSnapshot(db,userId);
+    if(snapshot.dailyLimit!=null&&snapshot.usedToday>=snapshot.dailyLimit){
+      throw Object.assign(new Error(`${snapshot.plan} Like Minded daily play limit reached.`),{status:403,code:'like_minded_daily_limit',extra:snapshot});
+    }
+    await db.query(`INSERT INTO public.like_minded_usage(user_id,usage_key,mode,question_id)
+                     VALUES($1::uuid,$2,$3,$4) ON CONFLICT(user_id,usage_key) DO NOTHING`,[userId,key,mode,questionId]);
+    const updated=await accessSnapshot(db,userId);
+    await db.query('COMMIT');
+    return updated;
+  }catch(err){
+    await db.query('ROLLBACK').catch(()=>{});
+    throw err;
   }
-  await db.query(`INSERT INTO public.like_minded_usage(user_id,usage_key,mode,question_id)
-                   VALUES($1::uuid,$2,$3,$4) ON CONFLICT(user_id,usage_key) DO NOTHING`,[userId,key,mode,questionId]);
-  return accessSnapshot(db,userId);
 }
 
 async function roomState(db,room,userId){
