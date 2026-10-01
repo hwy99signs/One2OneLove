@@ -14,6 +14,7 @@ import {
   getLikeMindedAnswerChoices,
 } from '@/lib/likeMindedGame';
 import { getLikeMindedPrompt } from '@/lib/likeMindedQuestionVariants';
+import { trackFeatureAction } from '@/lib/featureUsageService';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -344,6 +345,7 @@ export default function LikeMinded() {
       body:JSON.stringify({ code:normalized, language:lang }),
     }).then(data => {
       if (!active) return;
+      trackFeatureAction('Like Minded?','multiplayer:room-created');
       setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
@@ -417,6 +419,7 @@ export default function LikeMinded() {
   };
 
   const startSolo = () => {
+    trackFeatureAction('Like Minded?','solo:start');
     setApiError(''); setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
   };
 
@@ -466,6 +469,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ code:roomCode.trim().toUpperCase(), language:lang }),
       });
+      trackFeatureAction('Like Minded?','multiplayer:room-joined');
       setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
       if (data.room?.category) setCategory(data.room.category);
       if (data.room?.depth) setDepth(data.room.depth);
@@ -511,6 +515,7 @@ export default function LikeMinded() {
     setApiError('');
     try{
       const data=await api('/api/like-minded/rooms/'+encodeURIComponent(room.code)+'/finish',{method:'POST',body:'{}'});
+      trackFeatureAction('Like Minded?','multiplayer:finished');
       setRoomState(data.room); setActiveRoom(null);
       const h=await api('/api/like-minded/history',{method:'GET',headers:{}}).catch(()=>({games:recentGames}));
       setRecentGames(h.games||[]);
@@ -552,6 +557,7 @@ export default function LikeMinded() {
         method:'POST',
         body:JSON.stringify({ available:true, inLobby:true, city, stateRegion, country }),
       });
+      trackFeatureAction('Like Minded?','lobby:entered');
       setInLobby(true); setAvailable(true);
     } catch (err) { setApiError(err.message); }
   };
