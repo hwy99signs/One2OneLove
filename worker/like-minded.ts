@@ -166,7 +166,9 @@ async function ensureSchema(db){
 
 async function cleanup(db){
   await db.query(`UPDATE public.like_minded_rooms SET status='abandoned',updated_at=now()
-                    WHERE status IN ('waiting','active') AND updated_at<now()-interval '24 hours'`);
+                    WHERE status='waiting' AND updated_at<now()-interval '24 hours'`);
+  await db.query(`UPDATE public.like_minded_rooms SET status='abandoned',updated_at=now()
+                    WHERE status='active' AND updated_at<now()-interval '7 days'`);
   await db.query(`DELETE FROM public.like_minded_rooms WHERE updated_at<now()-interval '30 days'`);
   await db.query(`DELETE FROM public.like_minded_usage WHERE used_at<now()-interval '90 days'`);
   await db.query(`UPDATE public.like_minded_player_settings SET available=false,in_lobby=false
@@ -317,8 +319,11 @@ async function activeRoom(db,userId){
   const r=await db.query(`
     SELECT * FROM public.like_minded_rooms
      WHERE (host_user_id=$1::uuid OR guest_user_id=$1::uuid)
-       AND status IN ('waiting','active')
-       AND updated_at>now()-interval '24 hours'
+       AND (
+         (status='waiting' AND updated_at>now()-interval '24 hours')
+         OR
+         (status='active' AND updated_at>now()-interval '7 days')
+       )
      ORDER BY updated_at DESC LIMIT 1`,[userId]);
   return r.rows[0]?roomState(db,r.rows[0],userId):null;
 }
