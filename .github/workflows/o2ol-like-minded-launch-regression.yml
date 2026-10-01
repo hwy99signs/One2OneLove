@@ -1,0 +1,100 @@
+name: O2OL Like Minded Launch Regression
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - "src/pages/LikeMinded.jsx"
+      - "src/lib/likeMindedGame.js"
+      - "src/lib/activityService.js"
+      - "worker/like-minded.ts"
+      - "neon-migrations/2026-10-01-like-minded-launch-hardening.sql"
+      - ".github/workflows/o2ol-like-minded-launch-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  like-minded:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and build
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Verify launch rules and non-repeating sequence
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {
+            LIKE_MINDED_PREVIEW_LIMIT,
+            LIKE_MINDED_DAILY_LIMITS,
+            LIKE_MINDED_MAX_ROOM_QUESTIONS,
+            buildLikeMindedSlot,
+            getLikeMindedAnswerChoices
+          } from './src/lib/likeMindedGame.js';
+
+          const categories=['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card'];
+          if(LIKE_MINDED_PREVIEW_LIMIT!==5) throw new Error('Anonymous preview limit changed');
+          if(LIKE_MINDED_DAILY_LIMITS.Free!==10) throw new Error('Free limit changed');
+          if(LIKE_MINDED_DAILY_LIMITS.Premiere!==63) throw new Error('Premiere limit changed');
+          if(LIKE_MINDED_DAILY_LIMITS.Exclusive!==null) throw new Error('Exclusive must remain unlimited');
+          if(LIKE_MINDED_MAX_ROOM_QUESTIONS!==42) throw new Error('Room question cap changed');
+
+          for(const startingDepth of ['Easy','Real','Deep']){
+            const ids=[];
+            for(let setNo=1;setNo<=2;setNo++){
+              for(let questionNo=1;questionNo<=21;questionNo++){
+                ids.push(buildLikeMindedSlot(categories,'Relationship Goals',startingDepth,setNo,questionNo).questionId);
+              }
+            }
+            if(new Set(ids).size!==42) throw new Error('Repeated question slot for '+startingDepth);
+          }
+
+          for(const lang of ['en','es','fr','it','de']){
+            for(const category of categories){
+              for(const depth of ['Easy','Real','Deep']){
+                const choices=getLikeMindedAnswerChoices(category,depth,lang);
+                if(!Array.isArray(choices)||choices.length!==4||choices.some(x=>!String(x).trim())) throw new Error('Bad answer set '+lang+' '+category+' '+depth);
+              }
+            }
+          }
+          console.log('LIKE_MINDED_SEQUENCE=PASS');
+          console.log('LIKE_MINDED_ANSWER_LOCALIZATION=PASS');
+          NODE
+
+      - name: Verify backend launch controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "phone_verified!==true" worker/like-minded.ts
+          grep -F "DAILY_LIMITS={Free:10,Premiere:63,Exclusive:null}" worker/like-minded.ts
+          grep -F "/api/like-minded/solo/use" worker/like-minded.ts
+          grep -F "/api/like-minded/rooms/active" worker/like-minded.ts
+          grep -F "/api/like-minded/history" worker/like-minded.ts
+          grep -F "/finish" worker/like-minded.ts
+          grep -F "status='blocked'" worker/like-minded.ts
+          grep -F "status='abandoned'" worker/like-minded.ts
+          grep -F "MAX_ROOM_QUESTIONS=42" worker/like-minded.ts
+          grep -F "UNIQUE(user_id,usage_key)" worker/like-minded.ts
+
+      - name: Verify UI launch controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "LIKE_MINDED_PREVIEW_LIMIT" src/pages/LikeMinded.jsx
+          grep -F "resumeRoom" src/pages/LikeMinded.jsx
+          grep -F "recentGames" src/pages/LikeMinded.jsx
+          grep -F "blockOpponent" src/pages/LikeMinded.jsx
+          grep -F "reportOpponent" src/pages/LikeMinded.jsx
+          grep -F "activeSlot.questionId" src/pages/LikeMinded.jsx
+          grep -F "/api/like-minded/history" src/lib/activityService.js
