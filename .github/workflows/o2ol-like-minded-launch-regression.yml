@@ -54,43 +54,30 @@ jobs:
           const BASE='http://127.0.0.1:4173/LikeMinded';
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           try{
-            // Anonymous 5-question preview on a mobile viewport.
+            // Guest Preview is browse-only.
             {
               const context=await browser.newContext({viewport:{width:390,height:844}});
-              await context.route('**/api/auth/get-session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:null,session:null})}));
+              await context.route('**/api/auth/get-session',r=>r.fulfill({
+                status:200,contentType:'application/json',body:JSON.stringify({user:null,session:null})
+              }));
               const page=await context.newPage();
               const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
               const res=await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000});
               if(res?.status()!==200)throw new Error('Anonymous Like Minded page status '+res?.status());
+              await page.getByText(/Browse-only preview/i).first().waitFor({state:'visible'});
+              if(await page.locator('[data-testid="like-minded-prompt"]').count())throw new Error('Guest Preview exposed a playable question before user action');
               await page.getByRole('button',{name:/Solo Self-Check/i}).first().click();
-              const prompts=[];
-              for(let i=0;i<5;i++){
-                const prompt=(await page.locator('[data-testid="like-minded-prompt"]').textContent())?.trim();
-                if(!prompt)throw new Error('Missing Solo prompt '+(i+1));
-                prompts.push(prompt);
-                const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
-                if(!body.includes('Depth: Real'))throw new Error('Selected Real depth drifted during Solo preview');
-                await page.locator('[data-testid="like-minded-answer-0"]').click();
-                await page.locator('[data-testid="like-minded-lock"]').click();
-                await page.locator('[data-testid="like-minded-next"]').waitFor({state:'visible'});
-                await page.locator('[data-testid="like-minded-next"]').click();
-              }
-              if(new Set(prompts).size!==5)throw new Error('Anonymous Solo preview repeated a prompt');
-              await page.locator('[data-testid="like-minded-answer-0"]').click();
-              await page.locator('[data-testid="like-minded-lock"]').click();
-              const alert=page.locator('[role="alert"]');
-              await alert.waitFor({state:'visible'});
-              const alertText=(await alert.innerText()).trim();
-              if(!/preview|sign in/i.test(alertText))throw new Error('Preview-limit message is not actionable: '+alertText);
-              const used=await page.evaluate(()=>localStorage.getItem('o2ol_like_minded_preview_used'));
-              if(used!=='5')throw new Error('Preview meter expected 5, got '+used);
+              await page.getByText(/Sign in to play/i).first().waitFor({state:'visible'});
+              if(await page.locator('[data-testid="like-minded-prompt"]').count())throw new Error('Guest Preview exposed a playable Solo question');
+              const legacyPreview=await page.evaluate(()=>localStorage.getItem('o2ol_like_minded_preview_used'));
+              if(legacyPreview!==null)throw new Error('Guest Preview wrote obsolete game-usage state');
               const overflow=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth);
-              if(overflow>6)throw new Error('Mobile horizontal overflow '+overflow+'px');
+              if(overflow>6)throw new Error('Mobile guest horizontal overflow '+overflow+'px');
               if(errors.length)throw new Error('Anonymous page errors: '+errors.join(' | '));
               await context.close();
             }
 
-            // Signed-in resume/safety state.
+            // Active member: Solo works, depth stays fixed, prompts are unique, and active room resumes safely.
             {
               const context=await browser.newContext({viewport:{width:390,height:844}});
               const self='00000000-0000-4000-8000-000000000001';
@@ -105,38 +92,61 @@ jobs:
                 opponent_user_id:other,opponent_first_name:'Jordan',
                 created_at:new Date().toISOString(),updated_at:new Date().toISOString()
               };
-              let authHits=0,likeHits=0;
-              await context.route(/\/api\/auth\/get-session(?:\?|$)/,r=>{authHits++;return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-                user:{id:self,email:'qa@example.invalid',emailVerified:true,name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phoneNumberVerified:true},
-                session:{id:'qa-session',userId:self}
-              })})});
-              await context.route(/\/api\/profile(?:\?|$)/,r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{
-                id:self,email:'qa@example.invalid',name:'QA Member',role:'user',
-                subscription_plan:'Exclusive',subscription_status:'active',subscription_price:19.99,
-                stripe_customer_id:'cus_like_minded_qa',stripe_subscription_id:'sub_like_minded_qa',
-                phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true,
-                preferred_language:'en',created_at:'2026-09-01T00:00:00.000Z'
-              }})}));
-              await context.route(/\/api\/like-minded(?:\/|$)/,r=>{
+              let authHits=0,profileHits=0,likeHits=0;
+              await context.route('**/api/auth/get-session',r=>{authHits++;return r.fulfill({
+                status:200,contentType:'application/json',body:JSON.stringify({
+                  user:{id:self,email:'qa@example.invalid',emailVerified:true,name:'QA Member',role:'user',phoneNumberVerified:true},
+                  session:{id:'qa-session',userId:self}
+                })
+              })});
+              await context.route('**/api/profile',r=>{profileHits++;return r.fulfill({
+                status:200,contentType:'application/json',body:JSON.stringify({profile:{
+                  id:self,email:'qa@example.invalid',name:'QA Member',role:'user',
+                  subscription_plan:'Exclusive',subscription_status:'active',subscription_price:19.99,
+                  stripe_customer_id:'cus_like_minded_qa',stripe_subscription_id:'sub_like_minded_qa',
+                  phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true,
+                  preferred_language:'en',created_at:'2026-09-01T00:00:00.000Z'
+                }})
+              })});
+              await context.route('**/api/feature-usage',r=>r.fulfill({status:204,body:''}));
+              await context.route('**/api/like-minded/**',r=>{
                 likeHits++;
                 const p=new URL(r.request().url()).pathname;
                 let body={ok:true};
-                if(p==='/api/like-minded/access')body={ok:true,access:{plan:'Exclusive',dailyLimit:null,usedToday:3,remaining:null}};
+                if(p==='/api/like-minded/access')body={ok:true,access:{plan:'Exclusive',dailyLimit:null,usedToday:0,remaining:null}};
                 else if(p==='/api/like-minded/rooms/active')body={ok:true,room};
                 else if(p==='/api/like-minded/history')body={ok:true,games:[room]};
                 else if(p==='/api/like-minded/settings')body={ok:true,settings:{available:false,in_lobby:false,language:'en'}};
-                else if(p==='/api/like-minded/rooms/ABC123')body={ok:true,room,access:{plan:'Exclusive',dailyLimit:null,usedToday:3,remaining:null}};
+                else if(p==='/api/like-minded/solo/use')body={ok:true,access:{plan:'Exclusive',dailyLimit:null,usedToday:1,remaining:null}};
+                else if(p==='/api/like-minded/rooms/ABC123')body={ok:true,room,access:{plan:'Exclusive',dailyLimit:null,usedToday:1,remaining:null}};
                 return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
               });
               const page=await context.newPage();
               const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
               await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000});
               try{
-                await page.getByText(/Unlimited play/i).first().waitFor({state:'visible',timeout:10000});
+                await page.getByText(/Member play enabled/i).first().waitFor({state:'visible',timeout:10000});
               }catch{
                 const debug=(await page.locator('body').innerText()).replace(/\s+/g,' ').slice(0,3000);
-                throw new Error('Authenticated Like Minded state did not load; authHits='+authHits+' likeHits='+likeHits+' errors='+errors.join(' | ')+' body='+debug);
+                throw new Error('Authenticated Like Minded state did not load; authHits='+authHits+' profileHits='+profileHits+' likeHits='+likeHits+' errors='+errors.join(' | ')+' body='+debug);
               }
+
+              await page.getByRole('button',{name:/Solo Self-Check/i}).first().click();
+              const prompts=[];
+              for(let i=0;i<3;i++){
+                const prompt=(await page.locator('[data-testid="like-minded-prompt"]').textContent())?.trim();
+                if(!prompt)throw new Error('Missing member Solo prompt '+(i+1));
+                prompts.push(prompt);
+                const body=(await page.locator('body').innerText()).replace(/\s+/g,' ');
+                if(!body.includes('Depth: Real'))throw new Error('Selected Real depth drifted during member Solo');
+                await page.locator('[data-testid="like-minded-answer-0"]').click();
+                await page.locator('[data-testid="like-minded-lock"]').click();
+                await page.locator('[data-testid="like-minded-next"]').waitFor({state:'visible'});
+                await page.locator('[data-testid="like-minded-next"]').click();
+              }
+              if(new Set(prompts).size!==3)throw new Error('Signed-in Solo repeated a prompt');
+              await page.getByRole('button',{name:/Back to Relationship Games/i}).first().click();
+
               const resume=page.getByRole('button',{name:/Resume game/i}).first();
               await resume.waitFor({state:'visible',timeout:10000});
               await resume.click();
@@ -159,7 +169,6 @@ jobs:
           set -euo pipefail
           node --input-type=module <<'NODE'
           import {
-            LIKE_MINDED_PREVIEW_LIMIT,
             LIKE_MINDED_DAILY_LIMITS,
             LIKE_MINDED_MAX_ROOM_QUESTIONS,
             buildLikeMindedSlot,
@@ -168,9 +177,7 @@ jobs:
           import { LIKE_MINDED_EXTRA_QUESTIONS } from './src/lib/likeMindedQuestionVariants.js';
 
           const categories=['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card'];
-          if(LIKE_MINDED_PREVIEW_LIMIT!==5) throw new Error('Anonymous preview limit changed');
-          if(LIKE_MINDED_DAILY_LIMITS.Free!==10) throw new Error('Free limit changed');
-          if(LIKE_MINDED_DAILY_LIMITS.Premiere!==63) throw new Error('Premiere limit changed');
+          if(LIKE_MINDED_DAILY_LIMITS.Premiere!==null) throw new Error('Premiere should not have an invented Like Minded daily cap');
           if(LIKE_MINDED_DAILY_LIMITS.Exclusive!==null) throw new Error('Exclusive must remain unlimited');
           if(LIKE_MINDED_MAX_ROOM_QUESTIONS!==42) throw new Error('Room question cap changed');
 
@@ -243,7 +250,8 @@ jobs:
         run: |
           set -euo pipefail
           grep -F "phone_verified!==true" worker/like-minded.ts
-          grep -F "DAILY_LIMITS={Free:10,Premiere:63,Exclusive:null}" worker/like-minded.ts
+          grep -F "DAILY_LIMITS={Premiere:null,Exclusive:null}" worker/like-minded.ts
+          grep -F "code:'membership_required'" worker/like-minded.ts
           grep -F "/api/like-minded/solo/use" worker/like-minded.ts
           grep -F "/api/like-minded/rooms/active" worker/like-minded.ts
           grep -F "/api/like-minded/history" worker/like-minded.ts
@@ -261,7 +269,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "LIKE_MINDED_PREVIEW_LIMIT" src/pages/LikeMinded.jsx
+          ! grep -F "LIKE_MINDED_PREVIEW_LIMIT" src/pages/LikeMinded.jsx
+          grep -F "Browse-only preview" src/pages/LikeMinded.jsx
+          grep -F "memberRequired" src/pages/LikeMinded.jsx
           grep -F "resumeRoom" src/pages/LikeMinded.jsx
           grep -F "recentGames" src/pages/LikeMinded.jsx
           grep -F "blockOpponent" src/pages/LikeMinded.jsx
