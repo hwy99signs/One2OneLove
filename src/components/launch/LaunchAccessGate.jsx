@@ -98,12 +98,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     return isPublicRoute ? children : <Navigate to="/SignIn" replace />;
   }
 
-  const guestPreviewForPublicRoute = previewActive(user);
-  const previewSetupRoute = ['/subscription', '/signin', '/login', '/signup', '/forgotpassword'].includes(route);
-  if (isPublicRoute) {
-    if (guestPreviewForPublicRoute && !previewSetupRoute) return children;
-    return children;
-  }
+  if (isPublicRoute) return children;
 
   if (route === '/verifyphone') return children;
 
@@ -125,7 +120,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
 
-  // Founding-member/full-access trial accounts are real member access, not Guest Preview.
+  // Founding-member/full-access trial accounts are real member access.
   if (status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
