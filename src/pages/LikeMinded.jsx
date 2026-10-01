@@ -14,8 +14,18 @@ import {
 } from '@/lib/likeMindedGame';
 import { getLikeMindedPrompt } from '@/lib/likeMindedQuestionVariants';
 import { trackFeatureAction } from '@/lib/featureUsageService';
+import { apiRequest } from '@/lib/apiClient';
 
 const LANGS = ['en','es','fr','it','de'];
+
+async function api(path, options = {}) {
+  const { body, ...rest } = options;
+  let parsedBody = body;
+  if (typeof body === 'string') {
+    try { parsedBody = JSON.parse(body); } catch { parsedBody = body; }
+  }
+  return apiRequest(path, body === undefined ? rest : { ...rest, body: parsedBody });
+}
 
 const UI = {
   en: {
@@ -299,6 +309,7 @@ export default function LikeMinded() {
   const [activeRoom,setActiveRoom] = useState(null);
   const [recentGames,setRecentGames] = useState([]);
   const [soloSessionId] = useState(() => crypto.randomUUID());
+  const canPlay = Boolean(access);
 
   const effectiveSetNo = roomState?.set_number || room?.set_number || setNo;
   const effectiveQuestionNo = roomState?.current_question_no || room?.current_question_no || questionNo;
@@ -414,18 +425,29 @@ export default function LikeMinded() {
     setRoom(null); setRoomState(null); setRoomCode(''); setSelected(null); setLocked(false); setShowTalk(false); setScreen('home');
   };
 
-  const startSolo = async () => {
+  const requirePlayAccess = async (nextScreen, activity = null) => {
     setApiError('');
-    if (!isAuthenticated) { setScreen('signin'); return; }
+    if (!isAuthenticated) {
+      setScreen('signin');
+      return false;
+    }
     try {
-      const gate=await api('/api/like-minded/access',{method:'GET',headers:{}});
-      setAccess(gate.access||access);
-      trackFeatureAction('Like Minded?','solo:start');
-      setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
+      const gate = access ? { access } : await api('/api/like-minded/access',{method:'GET',headers:{}});
+      setAccess(gate.access || access);
+      if (activity) trackFeatureAction('Like Minded?', activity);
+      setScreen(nextScreen);
+      return true;
     } catch (err) {
       setApiError(err.message || x.memberRequired);
       setScreen('signin');
+      return false;
     }
+  };
+
+  const startSolo = async () => {
+    const allowed = await requirePlayAccess('solo','solo:start');
+    if (!allowed) return;
+    setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
   };
 
   const lockSolo = async () => {
@@ -712,10 +734,10 @@ export default function LikeMinded() {
               <div className="mt-6 rounded-2xl border border-white/15 bg-white/10 p-4 text-sm text-slate-100"><LockKeyhole className="mr-2 inline h-4 w-4" />{t.matureBody}</div>
             </div>
             <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-xl">
-              {!isAuthenticated ? (
+              {!canPlay ? (
                 <>
-                  <h2 className="text-2xl font-black text-slate-950">{t.signin}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{t.signinBody}</p>
-                  <Link to={createPageUrl('SignIn') + (roomCode ? ('?redirect=' + encodeURIComponent(createPageUrl('LikeMinded') + '?room=' + roomCode)) : '')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.signin}</Link>
+                  <h2 className="text-2xl font-black text-slate-950">{isAuthenticated ? x.membershipCta : t.signin}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{isAuthenticated ? (apiError || x.memberRequired) : t.signinBody}</p>
+                  <Link to={isAuthenticated ? createPageUrl('Subscription') : createPageUrl('SignIn') + (roomCode ? ('?redirect=' + encodeURIComponent(createPageUrl('LikeMinded') + '?room=' + roomCode)) : '')} className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{isAuthenticated ? x.membershipCta : t.signin}</Link>
                 </>
               ) : (
                 <>
@@ -824,8 +846,8 @@ export default function LikeMinded() {
       <div className="min-h-screen bg-[#f7f4ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          {!isAuthenticated ? (
-            <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-xl"><UserRound className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-2xl font-black">{t.signin}</h1><p className="mt-2 text-slate-600">{t.signinBody}</p><Link to={createPageUrl('SignIn')} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-4 font-black text-white">{t.signin}</Link></div>
+          {!canPlay ? (
+            <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 text-center shadow-xl"><UserRound className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-2xl font-black">{isAuthenticated ? x.membershipCta : t.signin}</h1><p className="mt-2 text-slate-600">{isAuthenticated ? (apiError || x.memberRequired) : t.signinBody}</p><Link to={isAuthenticated ? createPageUrl('Subscription') : createPageUrl('SignIn')} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-4 font-black text-white">{isAuthenticated ? x.membershipCta : t.signin}</Link></div>
           ) : !inLobby ? (
             <div className="mx-auto max-w-xl rounded-[30px] bg-white p-8 shadow-xl">
               <Users className="h-10 w-10 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.lobby}</h1><p className="mt-2 text-slate-600">{t.locationNote}</p>
@@ -933,11 +955,11 @@ export default function LikeMinded() {
           </div>
 
           <div className="mx-auto mt-4 flex max-w-3xl flex-wrap items-center justify-center gap-2 text-xs font-bold text-slate-300">
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">{isAuthenticated ? x.unlimited : x.browseOnly}</span>
+            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">{canPlay ? x.unlimited : x.browseOnly}</span>
             {activeRoom && <button onClick={()=>resumeRoom(activeRoom)} className="rounded-full bg-yellow-300 px-3 py-1.5 font-black text-slate-950">{x.resume}: {activeRoom.code}</button>}
           </div>
 
-          {isAuthenticated && (
+          {canPlay && (
             <div className="mx-auto mt-3 flex max-w-3xl items-center justify-center gap-2 text-xs text-slate-300">
               <button
                 onClick={toggleAvailability}
@@ -964,7 +986,7 @@ export default function LikeMinded() {
               icon={HeartHandshake}
               title={t.invite}
               body={t.inviteBody}
-              onClick={()=>setScreen('invite')}
+              onClick={()=>requirePlayAccess('invite')}
               accent="bg-pink-500/95"
               surface="border-pink-300/55 bg-gradient-to-b from-pink-500 via-fuchsia-600 to-pink-800"
             />
@@ -972,7 +994,7 @@ export default function LikeMinded() {
               icon={Users}
               title={t.lobby}
               body={t.lobbyBody}
-              onClick={()=>setScreen('lobby')}
+              onClick={()=>requirePlayAccess('lobby')}
               accent="bg-amber-400/95"
               surface="border-amber-200/60 bg-gradient-to-b from-amber-400 via-orange-500 to-amber-700"
             />
