@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk, resolveLikeMindedReport } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 
 const sections = [
@@ -127,6 +127,7 @@ export default function Admin() {
   const [memberActionId,setMemberActionId] = useState(null);
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
+  const [moderationActionId,setModerationActionId] = useState(null);
 
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -209,6 +210,20 @@ export default function Admin() {
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
 
   const openAnalytics = () => window.location.assign('/Analytics');
+
+  const handleResolveLikeMindedReport = async (item) => {
+    if (!item?.id || item.content_type !== 'like_minded_report') return;
+    if (!window.confirm('Mark this Like Minded member report as reviewed?')) return;
+    setModerationActionId(item.id);
+    try {
+      await resolveLikeMindedReport(item.id);
+      await load(true);
+    } catch (err) {
+      window.alert(err?.message || 'Unable to mark this Like Minded report as reviewed.');
+    } finally {
+      setModerationActionId(null);
+    }
+  };
 
   const handleMemberAction = async (member, action) => {
     if (member.auth_role === 'admin') return;
@@ -540,7 +555,7 @@ export default function Admin() {
 
           {section==='applications' && <div><Heading title="Professional Applications" subtitle="Licensed professionals, relationship professionals and contributors."/>{applications.length?<div className="grid gap-4 lg:grid-cols-2">{applications.map(item=><div key={`${item.application_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.applicant_name||'Unnamed applicant'}</p><p className="text-sm text-slate-500">{item.email||'No email'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div><div className="mt-3 text-sm text-slate-600"><div>Type: {String(item.application_type||'').replaceAll('_',' ')}</div><div>Submitted: {date(item.created_at)}</div>{item.rejection_reason&&<div className="mt-2 rounded-lg bg-rose-50 p-2 text-rose-700">{item.rejection_reason}</div>}</div></div>)}</div>:<Empty>No professional applications yet.</Empty>}</div>}
 
-          {section==='moderation' && <div><Heading title="Moderation Queue" subtitle="Pending community content, reviews, chat reports and Like Minded member reports in one place."/>{moderation.length?<div className="space-y-3">{moderation.map(item=><div key={`${item.content_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-slate-400">{String(item.content_type||'').replaceAll('_',' ')}</p><p className="mt-1 font-bold">{item.title||'Untitled content'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div>{item.excerpt&&<p className="mt-3 text-sm leading-6 text-slate-600">{item.excerpt}</p>}<p className="mt-3 text-xs text-slate-400">Submitted {date(item.created_at)}</p></div>)}</div>:<Empty>No items waiting in moderation.</Empty>}</div>}
+          {section==='moderation' && <div><Heading title="Moderation Queue" subtitle="Pending community content, reviews, chat reports and Like Minded member reports in one place."/>{moderation.length?<div className="space-y-3">{moderation.map(item=><div key={`${item.content_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-slate-400">{String(item.content_type||'').replaceAll('_',' ')}</p><p className="mt-1 font-bold">{item.title||'Untitled content'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div>{item.excerpt&&<p className="mt-3 text-sm leading-6 text-slate-600">{item.excerpt}</p>}{item.notes&&<p className="mt-2 text-xs leading-5 text-slate-500">{item.notes}</p>}<div className="mt-3 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-400">Submitted {date(item.created_at)}</p>{item.content_type==='like_minded_report'&&<button onClick={()=>handleResolveLikeMindedReport(item)} disabled={moderationActionId===item.id} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 disabled:opacity-50">{moderationActionId===item.id?'Saving…':'Mark Reviewed'}</button>}</div></div>)}</div>:<Empty>No items waiting in moderation.</Empty>}</div>}
 
           {section==='system' && <div><Heading title="System" subtitle="Administrator roles, AI usage and migration history. Secrets and credentials are never displayed."/><div className="grid gap-6 lg:grid-cols-3"><Panel title="AI Usage — 30 Days" className="lg:col-span-2">{(data?.system?.aiUsage30d||[]).length?<div className="space-y-2">{data.system.aiUsage30d.map(item=><div key={item.feature} className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="font-semibold">{item.feature}</span><span className="text-sm text-slate-500">{number(item.uses)} uses · {number(item.users)} users</span></div>)}</div>:<Empty>No AI usage recorded.</Empty>}</Panel><Panel title="Auth Roles">{(data?.system?.authRoles||[]).map(item=><div key={item.role} className="mb-2 flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="capitalize">{item.role}</span><strong>{number(item.count)}</strong></div>)}</Panel></div><Panel title="Migration History" className="mt-6">{(data?.system?.migrations||[]).length?<div className="space-y-2">{data.system.migrations.map(item=><div key={`${item.migration_key}-${item.applied_at}`} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><span className="font-mono text-sm font-semibold">{item.migration_key}</span><span className="text-xs text-slate-400">{date(item.applied_at)}</span></div>{item.notes&&<p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div>)}</div>:<Empty>No migration records found.</Empty>}</Panel></div>}
         </div>
