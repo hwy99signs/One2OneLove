@@ -743,6 +743,16 @@ export default function LikeMinded() {
               <div className="text-right"><div className="text-xs font-bold text-slate-500">{t.roomCode}</div><div className="font-mono text-xl font-black tracking-[0.2em]">{current.code || room?.code}</div></div>
             </div>
 
+            {current.opponent_user_id && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="text-sm font-bold text-slate-700">{current.opponent_first_name || x.opponent}</div>
+                <div className="flex gap-2">
+                  <button onClick={()=>blockOpponent(current)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700">{t.block}</button>
+                  <button onClick={()=>reportOpponent(current)} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-800">{t.report}</button>
+                </div>
+              </div>
+            )}
+
             {!current.guest_user_id && (
               <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                 <div className="font-black text-amber-900">{t.player2}</div>
@@ -773,7 +783,7 @@ export default function LikeMinded() {
                 </div>
                 {showTalk && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-center font-bold text-violet-950">{t.talkPrompt}</div>}
                 <div className="grid gap-3 sm:grid-cols-2"><button onClick={()=>setShowTalk(v=>!v)} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800"><MessageCircle className="mr-2 inline h-5 w-5"/>{t.talk}</button><button onClick={nextRoomQuestion} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion}<ChevronRight className="ml-2 inline h-5 w-5"/></button></div>
-                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4"><button onClick={finishRoom} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700">{x.finishGame}</button><button onClick={()=>blockOpponent(current)} disabled={!current.opponent_user_id} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-40">{t.block}</button><button onClick={()=>reportOpponent(current)} disabled={!current.opponent_user_id} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-40">{t.report}</button></div>
+                <button onClick={finishRoom} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-xs font-black text-slate-700">{x.finishGame}</button>
               </div>}
             {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
           </div>
