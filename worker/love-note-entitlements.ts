@@ -131,6 +131,54 @@ async function planForUser(db, userId) {
   const effective = trial ? 'Exclusive' : stored;
   return { storedPlan: stored, effectivePlan: effective, subscriptionStatus: row.subscription_status || 'inactive' };
 }
+
+async function loveNoteWriteAccess(db, auth) {
+  if (String(auth?.user?.role || '').toLowerCase() === 'admin') {
+    return { allowed: true, reason: 'admin' };
+  }
+
+  const result = await db.query(
+    `SELECT is_active,subscription_status,stripe_subscription_id,subscription_end_date,created_at
+       FROM public.users WHERE id=$1::uuid LIMIT 1`,
+    [auth.user.id],
+  );
+  const row = result.rows[0] || {};
+  const status = String(row.subscription_status || '').toLowerCase();
+  const hasStripeSubscription = Boolean(row.stripe_subscription_id);
+  const endAt = row.subscription_end_date ? new Date(row.subscription_end_date) : null;
+  const hasAdminAccess = Boolean(endAt && !Number.isNaN(endAt.getTime()) && endAt.getTime() > Date.now());
+  const createdAt = row.created_at ? new Date(row.created_at) : null;
+  const guestPreview = Boolean(
+    !hasStripeSubscription &&
+    !hasAdminAccess &&
+    createdAt &&
+    !Number.isNaN(createdAt.getTime()) &&
+    createdAt.getTime() + (24 * 60 * 60 * 1000) > Date.now()
+  );
+
+  if (guestPreview) {
+    return {
+      allowed: false,
+      reason: 'guest_preview_view_only',
+      message: 'Your 24-hour Guest Preview is view-only. Choose a plan before using Love Notes sending features.',
+    };
+  }
+
+  const activePaidAccess =
+    row.is_active !== false &&
+    ['active', 'trial', 'trialing'].includes(status) &&
+    (hasStripeSubscription || hasAdminAccess);
+
+  if (!activePaidAccess) {
+    return {
+      allowed: false,
+      reason: 'subscription_required',
+      message: 'An active One2OneLove membership is required to use Love Notes sending features.',
+    };
+  }
+
+  return { allowed: true, reason: 'member' };
+}
 async function categoryPreferenceForDate(db, userId, quotaDate) {
   const plan = await planForUser(db, userId);
   const quotaMonth = monthStart(quotaDate);
@@ -412,6 +460,18 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
   try {
     return await withDb(env, async db => {
       await ensureProfile(db, auth);
+
+      if (request.method !== 'GET') {
+        const writeAccess = await loveNoteWriteAccess(db, auth);
+        if (!writeAccess.allowed) {
+          return fail(
+            writeAccess.message || 'Love Notes sending is unavailable for this account.',
+            403,
+            writeAccess.reason || 'love_notes_access_denied'
+          );
+        }
+      }
+
       if (url.pathname === '/api/love-notes/usage' && request.method === 'GET') {
         const quotaDate = dateForTimezone(url.searchParams.get('tz') || 'UTC');
         return json({ ok: true, usage: await usageForDate(db, auth.user.id, quotaDate) });
