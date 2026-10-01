@@ -216,8 +216,8 @@ export default function RegularUserForm({ onBack }) {
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
         partnerEmail: formData.partnerEmail,
-        subscriptionPlan: 'Premiere', // Guest Preview defaults to the Premiere path after 24 hours
-        subscriptionPrice: 9.99, // Charged only after the 7-day Full Access trial unless cancelled or changed
+        subscriptionPlan: 'Premiere',
+        subscriptionPrice: 9.99,
       });
 
       console.log('Register result:', result);
