@@ -11,6 +11,9 @@ on:
       - "src/lib/activityService.js"
       - "worker/like-minded.ts"
       - "worker/mymatchiq-functional-prelaunch.ts"
+      - "src/lib/adminService.js"
+      - "src/pages/Admin.jsx"
+      - "worker/admin.ts"
       - "neon-migrations/2026-10-01-like-minded-launch-hardening.sql"
       - ".github/workflows/o2ol-like-minded-launch-regression.yml"
   workflow_dispatch:
@@ -147,8 +150,16 @@ jobs:
               if(new Set(prompts).size!==3)throw new Error('Signed-in Solo repeated a prompt');
               await page.getByRole('button',{name:/Back to Relationship Games/i}).first().click();
 
+              // Simulate returning to Like Minded later; active room state must be restored from the API.
+              await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000});
+              await page.getByText(/Member play enabled/i).first().waitFor({state:'visible',timeout:10000});
               const resume=page.getByRole('button',{name:/Resume game/i}).first();
-              await resume.waitFor({state:'visible',timeout:10000});
+              try{
+                await resume.waitFor({state:'visible',timeout:10000});
+              }catch{
+                const debug=(await page.locator('body').innerText()).replace(/\s+/g,' ').slice(0,3000);
+                throw new Error('Persisted active room did not restore; likeHits='+likeHits+' body='+debug);
+              }
               await resume.click();
               await page.getByRole('button',{name:'Block',exact:true}).waitFor({state:'visible'});
               await page.getByRole('button',{name:'Report',exact:true}).waitFor({state:'visible'});
@@ -264,6 +275,9 @@ jobs:
           grep -F "question_mismatch" worker/like-minded.ts
           grep -F "general_location_required" worker/like-minded.ts
           grep -F "enforceRoomCreateRate" worker/like-minded.ts
+          grep -F "guest_user_id IS NULL OR guest_user_id=\$2::uuid" worker/like-minded.ts
+          grep -F "created_at>now()-interval '24 hours'" worker/like-minded.ts
+          grep -F "reviewed_at timestamptz" worker/like-minded.ts
 
       - name: Verify UI launch controls
         shell: bash
@@ -272,6 +286,11 @@ jobs:
           ! grep -F "LIKE_MINDED_PREVIEW_LIMIT" src/pages/LikeMinded.jsx
           grep -F "Browse-only preview" src/pages/LikeMinded.jsx
           grep -F "memberRequired" src/pages/LikeMinded.jsx
+          grep -F "apiRequest" src/pages/LikeMinded.jsx
+          grep -F "reportReasonPrompt" src/pages/LikeMinded.jsx
+          grep -F "like_minded_report" worker/admin.ts
+          grep -F "like_minded_reports_pending" worker/admin.ts
+          grep -F "resolveLikeMindedReport" src/pages/Admin.jsx
           grep -F "resumeRoom" src/pages/LikeMinded.jsx
           grep -F "recentGames" src/pages/LikeMinded.jsx
           grep -F "blockOpponent" src/pages/LikeMinded.jsx
