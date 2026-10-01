@@ -84,8 +84,11 @@ export async function getActivityPreferences() {
 }
 
 export async function getCooperativeGameHistory() {
-  const payload = await safeRequest('/api/engagement/points', { points: [] });
-  return (payload?.points || [])
+  const [payload, likeMindedPayload] = await Promise.all([
+    safeRequest('/api/engagement/points', { points: [] }),
+    safeRequest('/api/like-minded/history', { games: [] }),
+  ]);
+  const legacy = (payload?.points || [])
     .filter((row) => String(row?.activity_type || '').toLowerCase().includes('game'))
     .map((row) => ({
       id: row.id,
@@ -94,6 +97,23 @@ export async function getCooperativeGameHistory() {
       created_at: row.created_at,
       activity_type: row.activity_type,
     }));
+  const likeMinded = (likeMindedPayload?.games || []).map((game) => {
+    const started = game?.created_at ? new Date(game.created_at).getTime() : NaN;
+    const ended = game?.updated_at ? new Date(game.updated_at).getTime() : NaN;
+    const duration = Number.isFinite(started) && Number.isFinite(ended)
+      ? Math.max(0, Math.min(240, Math.round((ended - started) / 60000)))
+      : 0;
+    return {
+      id: 'like-minded-' + game.id,
+      score: Number(game.matches || 0),
+      duration_minutes: duration,
+      created_at: game.created_at,
+      activity_type: 'game_like_minded',
+      questions_answered: Number(game.total_answered || 0),
+      status: game.status,
+    };
+  });
+  return [...likeMinded, ...legacy].sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 }
 
 export default { getActivityProgress, getActivityPreferences, getCooperativeGameHistory };
