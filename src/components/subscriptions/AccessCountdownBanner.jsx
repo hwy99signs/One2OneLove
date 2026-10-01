@@ -4,15 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getUserSubscription } from '@/lib/stripeService';
 import { useQuery } from '@tanstack/react-query';
 
-const HOUR = 60 * 60 * 1000;
-const DAY = 24 * HOUR;
-
 const COPY = {
-  en: { guest: 'Guest Preview — View Only', trial: 'Full Access Trial', ends: 'remaining', action: 'View Subscription' },
-  es: { guest: 'Vista Previa — Solo Ver', trial: 'Prueba de Acceso Completo', ends: 'restantes', action: 'Ver Suscripción' },
-  fr: { guest: 'Aperçu Invité — Consultation Uniquement', trial: 'Essai Accès Complet', ends: 'restant', action: 'Voir l’Abonnement' },
-  it: { guest: 'Anteprima Ospite — Solo Visualizzazione', trial: 'Prova Accesso Completo', ends: 'rimanenti', action: 'Vedi Abbonamento' },
-  de: { guest: 'Gastvorschau — Nur Ansehen', trial: 'Vollzugriff-Test', ends: 'verbleibend', action: 'Abonnement Anzeigen' },
+  en: { trial: 'Full Access Trial', ends: 'remaining', action: 'View Subscription' },
+  es: { trial: 'Prueba de Acceso Completo', ends: 'restantes', action: 'Ver Suscripción' },
+  fr: { trial: 'Essai Accès Complet', ends: 'restant', action: 'Voir l’Abonnement' },
+  it: { trial: 'Prova Accesso Completo', ends: 'rimanenti', action: 'Vedi Abbonamento' },
+  de: { trial: 'Vollzugriff-Test', ends: 'verbleibend', action: 'Abonnement Anzeigen' },
 };
 
 function language() {
@@ -69,22 +66,11 @@ export default function AccessCountdownBanner() {
       return { type: 'trial', label: t.trial, end: trialEnd, includeDays: true };
     }
 
-    const hasStripeSubscription = Boolean(subscription?.stripe_subscription_id || user.stripe_subscription_id);
-    if (hasStripeSubscription) return null;
-
-    const createdRaw = subscription?.created_at || user.created_at;
-    const created = createdRaw ? new Date(createdRaw).getTime() : NaN;
-    if (!Number.isFinite(created)) return null;
-    const end = created + DAY;
-    return { type: 'guest', label: t.guest, end, includeDays: false };
-  }, [isAuthenticated, user, subscription, t.guest, t.trial]);
+    return null;
+  }, [isAuthenticated, user, subscription, t.trial]);
 
   useEffect(() => {
     if (!state || now < state.end) return;
-    if (state.type === 'guest') {
-      window.location.assign('/Subscription?setup=required');
-      return;
-    }
     refetch().finally(() => {
       window.setTimeout(() => window.location.assign('/Subscription'), 500);
     });
