@@ -81,7 +81,8 @@ jobs:
           from pathlib import Path
           text=Path('src/pages/LikeMinded.jsx').read_text(encoding='utf-8')
           start=text.index('const QUESTIONS = {')
-          end=text.index('\n};\n\nfunction ModeCard',start)
+          end=text.index('function ModeCard',start)
+          assert end>start, end
           block=text[start:end]
           rows=[line.strip() for line in block.splitlines() if re.match(r'^(easy|real|deep):\\{en:',line.strip())]
           assert len(rows)==45, len(rows)
