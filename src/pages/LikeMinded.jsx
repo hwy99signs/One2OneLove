@@ -634,12 +634,12 @@ export default function LikeMinded() {
               <div className="mb-4 flex items-center justify-between gap-3 text-xs font-bold text-white/65">
                 <span>{t.category}: {displayCategory}</span><span>{t.questionDepth}: {localDepth(activeDepth)}</span>
               </div>
-              <h2 className="text-2xl font-black leading-tight sm:text-4xl">{questionText}</h2>
+              <h2 data-testid="like-minded-prompt" className="text-2xl font-black leading-tight sm:text-4xl">{questionText}</h2>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {answers.map((answer,index) => (
-                <button key={answer} disabled={locked} onClick={() => setSelected(index)} className={"rounded-2xl border-2 p-4 text-left text-sm font-bold transition " + (selected===index ? 'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-950 shadow-md' : 'border-slate-200 bg-white text-slate-800 hover:border-violet-300')}>
+                <button data-testid={"like-minded-answer-"+index} key={answer} disabled={locked} onClick={() => setSelected(index)} className={"rounded-2xl border-2 p-4 text-left text-sm font-bold transition " + (selected===index ? 'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-950 shadow-md' : 'border-slate-200 bg-white text-slate-800 hover:border-violet-300')}>
                   <span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs">{String.fromCharCode(65+index)}</span>{answer}
                 </button>
               ))}
@@ -647,14 +647,14 @@ export default function LikeMinded() {
 
             {apiError && <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
             {!locked ? (
-              <button onClick={lockSolo} disabled={selected==null} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 text-base font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40">
+              <button data-testid="like-minded-lock" onClick={lockSolo} disabled={selected==null} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 text-base font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40">
                 <LockKeyhole className="mr-2 inline h-5 w-5" />{selected==null ? t.chooseAnswer : t.lockAnswer}
               </button>
             ) : (
               <div className="mt-6 space-y-5">
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"><CheckCircle2 className="mr-2 inline h-5 w-5" /><strong>{t.locked}</strong> · {t.yourAnswer}: {answers[selected]}</div>
                 <div className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-600">{x.autoRotate}</div>
-                <button onClick={advanceSolo} className="w-full rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion} <ChevronRight className="ml-2 inline h-5 w-5" /></button>
+                <button data-testid="like-minded-next" onClick={advanceSolo} className="w-full rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion} <ChevronRight className="ml-2 inline h-5 w-5" /></button>
               </div>
             )}
           </div>
