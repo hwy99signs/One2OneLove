@@ -10,6 +10,7 @@ on:
       - "src/lib/likeMindedQuestionVariants.js"
       - "src/lib/activityService.js"
       - "worker/like-minded.ts"
+      - "worker/mymatchiq-functional-prelaunch.ts"
       - "neon-migrations/2026-10-01-like-minded-launch-hardening.sql"
       - ".github/workflows/o2ol-like-minded-launch-regression.yml"
   workflow_dispatch:
@@ -268,3 +269,7 @@ jobs:
           grep -F "activeSlot.questionId" src/pages/LikeMinded.jsx
           grep -F "getLikeMindedPrompt" src/pages/LikeMinded.jsx
           grep -F "/api/like-minded/history" src/lib/activityService.js
+          grep -F "url.pathname.startsWith('/api/auth/')" worker/mymatchiq-functional-prelaunch.ts
+          grep -F "url.pathname==='/api/profile'" worker/mymatchiq-functional-prelaunch.ts
+          grep -F "url.pathname==='/api/feature-usage'" worker/mymatchiq-functional-prelaunch.ts
+          grep -F "prelaunch_api_blocked" worker/mymatchiq-functional-prelaunch.ts
