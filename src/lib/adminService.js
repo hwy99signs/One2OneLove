@@ -70,3 +70,14 @@ export async function changeMemberTier(memberId, plan) {
   });
   return parseJson(response);
 }
+
+
+export async function resolveLikeMindedReport(reportId) {
+  const response = await fetch(`/api/admin/moderation/like-minded-report/${encodeURIComponent(reportId)}/resolve`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: '{}',
+  });
+  return parseJson(response);
+}
