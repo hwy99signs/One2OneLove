@@ -141,9 +141,13 @@ async function ensureSchema(db){
       room_id uuid REFERENCES public.like_minded_rooms(id) ON DELETE SET NULL,
       context text,
       status varchar(20) NOT NULL DEFAULT 'open',
-      created_at timestamptz NOT NULL DEFAULT now()
+      created_at timestamptz NOT NULL DEFAULT now(),
+      reviewed_at timestamptz,
+      reviewed_by uuid
     )
   `);
+  await db.query('ALTER TABLE public.like_minded_reports ADD COLUMN IF NOT EXISTS reviewed_at timestamptz');
+  await db.query('ALTER TABLE public.like_minded_reports ADD COLUMN IF NOT EXISTS reviewed_by uuid');
   await db.query(`
     CREATE TABLE IF NOT EXISTS public.like_minded_usage(
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
