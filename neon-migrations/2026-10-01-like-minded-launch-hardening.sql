@@ -57,8 +57,16 @@ CREATE TABLE IF NOT EXISTS public.like_minded_reports (
   context text,
   status varchar(20) NOT NULL DEFAULT 'open',
   created_at timestamptz NOT NULL DEFAULT now(),
+  reviewed_at timestamptz,
+  reviewed_by uuid,
   CHECK (reporting_user_id <> reported_user_id)
 );
+
+ALTER TABLE public.like_minded_reports
+  ADD COLUMN IF NOT EXISTS reviewed_at timestamptz;
+
+ALTER TABLE public.like_minded_reports
+  ADD COLUMN IF NOT EXISTS reviewed_by uuid;
 
 CREATE TABLE IF NOT EXISTS public.like_minded_usage (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
