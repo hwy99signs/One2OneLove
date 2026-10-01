@@ -130,6 +130,10 @@ jobs:
           grep -F "status='abandoned'" worker/like-minded.ts
           grep -F "MAX_ROOM_QUESTIONS=42" worker/like-minded.ts
           grep -F "UNIQUE(user_id,usage_key)" worker/like-minded.ts
+          grep -F "expectedQuestionId(room)" worker/like-minded.ts
+          grep -F "question_mismatch" worker/like-minded.ts
+          grep -F "general_location_required" worker/like-minded.ts
+          grep -F "enforceRoomCreateRate" worker/like-minded.ts
 
       - name: Verify UI launch controls
         shell: bash
