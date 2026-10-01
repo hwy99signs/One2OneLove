@@ -645,6 +645,7 @@ export default function LikeMinded() {
               ))}
             </div>
 
+            {apiError && <div role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
             {!locked ? (
               <button onClick={lockSolo} disabled={selected==null} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 text-base font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40">
                 <LockKeyhole className="mr-2 inline h-5 w-5" />{selected==null ? t.chooseAnswer : t.lockAnswer}
