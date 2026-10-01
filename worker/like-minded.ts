@@ -166,10 +166,13 @@ async function memberAccess(db,userId){
   if(row.role==='admin') plan='Exclusive';
   else {
     const status=String(row.subscription_status||'').toLowerCase();
+    const rawPlan=String(row.subscription_plan||'').trim().toLowerCase();
     const adminUntil=row.subscription_end_date?new Date(row.subscription_end_date):null;
     const adminAccess=Boolean(adminUntil&&!Number.isNaN(adminUntil.getTime())&&adminUntil.getTime()>Date.now());
     const paid=adminAccess||(['active','trial','trialing'].includes(status)&&Boolean(row.stripe_subscription_id));
     if(paid)plan=planName(row.subscription_plan);
+    else if(rawPlan==='free')plan='Free';
+    else throw Object.assign(new Error('Like Minded tracked play is available after Free membership activation or with an active paid membership.'),{status:402,code:'free_membership_required'});
   }
   return {plan,dailyLimit:DAILY_LIMITS[plan]};
 }
