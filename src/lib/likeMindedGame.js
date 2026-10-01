@@ -1,5 +1,4 @@
-export const LIKE_MINDED_PREVIEW_LIMIT = 5;
-export const LIKE_MINDED_DAILY_LIMITS = Object.freeze({ Free: 10, Premiere: 63, Exclusive: null });
+export const LIKE_MINDED_DAILY_LIMITS = Object.freeze({ Premiere: null, Exclusive: null });
 export const LIKE_MINDED_MAX_ROOM_QUESTIONS = 42;
 
 export function depthKey(depth) {
@@ -284,6 +283,5 @@ export function getLikeMindedAnswerChoices(category, depth, language = 'en') {
 export function normalizeLikeMindedTier(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (raw === 'exclusive' || raw === 'elite') return 'Exclusive';
-  if (raw === 'premiere' || raw === 'premier') return 'Premiere';
-  return 'Free';
+  return 'Premiere';
 }
