@@ -72,11 +72,6 @@ function adminAccessActive(row) {
   return !Number.isNaN(end.getTime()) && end.getTime() > Date.now();
 }
 
-function guestPreviewActive(row) {
-  if (row?.stripe_subscription_id || adminAccessActive(row)) return false;
-  const created = row?.created_at ? new Date(row.created_at) : null;
-  return Boolean(created && !Number.isNaN(created.getTime()) && Date.now() - created.getTime() < 24 * 60 * 60 * 1000);
-}
 
 export async function enforceApiEntitlement(request, env, url) {
   const required = requiredPlan(url.pathname);
@@ -92,7 +87,7 @@ export async function enforceApiEntitlement(request, env, url) {
   try {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
-              p.subscription_plan,p.subscription_status,p.subscription_end_date,p.stripe_subscription_id,p.created_at,
+              p.subscription_plan,p.subscription_status,p.subscription_end_date,p.stripe_subscription_id,
               COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
          LEFT JOIN public.users p ON p.id=u.id
@@ -116,27 +111,15 @@ export async function enforceApiEntitlement(request, env, url) {
     if (row.role === 'admin') return null;
 
     const status = String(row.subscription_status || '').toLowerCase();
-    const guestPreview = guestPreviewActive(row);
     const adminAccess = adminAccessActive(row);
     const active = ['active', 'trial', 'trialing'].includes(status);
 
-    if (!guestPreview && (!active || (!row.stripe_subscription_id && !adminAccess))) {
-      return json({ ok: false, error: { code: 'billing_required', message: 'Your 24-hour Guest Preview has ended. Start the 7-day Full Access trial or subscribe to continue.' } }, 402);
+    if (!active || (!row.stripe_subscription_id && !adminAccess)) {
+      return json({ ok: false, error: { code: 'billing_required', message: 'An active One2OneLove membership is required.' } }, 402);
     }
 
-    if (guestPreview && !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())) {
-      return json({
-        ok: false,
-        error: {
-          code: 'guest_preview_read_only',
-          message: 'The 24-hour Guest Preview is view-only. Start the 7-day Full Access trial to use One2OneLove features.',
-        },
-      }, 403);
-    }
 
-    const effectiveLevel = guestPreview || ['trial', 'trialing'].includes(status)
-      ? 2
-      : planLevel(row.subscription_plan);
+    const effectiveLevel = ['trial', 'trialing'].includes(status) ? 2 : planLevel(row.subscription_plan);
 
     if (effectiveLevel < planLevel(required)) {
       return json({ ok: false, error: { code: 'plan_upgrade_required', message: `${required} membership or higher is required.` } }, 403);
