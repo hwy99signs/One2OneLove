@@ -134,6 +134,10 @@ async function ensureChatModerationSchema(db) {
 }
 
 async function overview(db) {
+  const likeMindedReady = (await db.query(`SELECT to_regclass('public.like_minded_reports') IS NOT NULL AS ready`)).rows[0]?.ready === true;
+  const likeMindedPendingSql = likeMindedReady
+    ? `(SELECT count(*) FROM public.like_minded_reports WHERE status='open')::int`
+    : `0::int`;
   const [users, plans, applications, moderation, payments, loveNotes, communities] = await Promise.all([
     db.query(`
       SELECT count(*)::int AS total,
@@ -172,7 +176,8 @@ async function overview(db) {
         (SELECT count(*) FROM public.community_posts WHERE moderation_status='pending')::int AS posts_pending,
         (SELECT count(*) FROM public.post_comments WHERE moderation_status='pending')::int AS comments_pending,
         (SELECT count(*) FROM public.reviews WHERE COALESCE(is_published,false)=false)::int AS reviews_unpublished,
-        (SELECT count(*) FROM public.chat_room_reports WHERE status='pending')::int AS chat_reports_pending`),
+        (SELECT count(*) FROM public.chat_room_reports WHERE status='pending')::int AS chat_reports_pending,
+        ${likeMindedPendingSql} AS like_minded_reports_pending`),
     db.query(`
       SELECT count(*)::int AS recorded_payments,
              count(*) FILTER (WHERE created_at >= date_trunc('month',now()))::int AS payments_this_month,
@@ -203,7 +208,7 @@ async function overview(db) {
     users: users.rows[0] || {},
     plans: plans.rows,
     applications: { ...app, pending_total: Number(app.licensed_pending || 0) + Number(app.professional_pending || 0) + Number(app.contributor_pending || 0) },
-    moderation: { ...mod, pending_total: Number(mod.stories_pending || 0) + Number(mod.posts_pending || 0) + Number(mod.comments_pending || 0) + Number(mod.reviews_unpublished || 0) + Number(mod.chat_reports_pending || 0) },
+    moderation: { ...mod, pending_total: Number(mod.stories_pending || 0) + Number(mod.posts_pending || 0) + Number(mod.comments_pending || 0) + Number(mod.reviews_unpublished || 0) + Number(mod.chat_reports_pending || 0) + Number(mod.like_minded_reports_pending || 0) },
     payments: payments.rows[0] || {},
     loveNotes: loveNotes.rows[0] || {},
     community: communities.rows[0] || {},
@@ -531,6 +536,22 @@ async function applications(db) {
 }
 
 async function moderation(db) {
+  const likeMindedReady = (await db.query(`SELECT to_regclass('public.like_minded_reports') IS NOT NULL AS ready`)).rows[0]?.ready === true;
+  const likeMindedUnion = likeMindedReady ? `
+      UNION ALL
+      SELECT 'like_minded_report'::text,r.id,r.reported_user_id,
+             concat('Reported Like Minded player',CASE WHEN u.email IS NULL THEN '' ELSE ' — '||u.email END)::text,
+             left(COALESCE(NULLIF(r.context,''),'Player report submitted from Like Minded'),500),
+             r.status,
+             concat('Reporter: ',COALESCE(reporter.email,'unknown'),CASE WHEN room.code IS NULL THEN '' ELSE ' · Room: '||room.code END),
+             r.created_at,
+             r.created_at
+        FROM public.like_minded_reports r
+        LEFT JOIN public.users u ON u.id=r.reported_user_id
+        LEFT JOIN public.users reporter ON reporter.id=r.reporting_user_id
+        LEFT JOIN public.like_minded_rooms room ON room.id=r.room_id
+       WHERE r.status <> 'resolved'
+  ` : '';
   const result = await db.query(`
     SELECT * FROM (
       SELECT 'success_story'::text AS content_type,id,user_id AS author_id,title,left(content,500) AS excerpt,moderation_status AS status,moderation_notes AS notes,created_at,updated_at
@@ -555,6 +576,7 @@ async function moderation(db) {
         FROM public.chat_room_reports r
         JOIN public.chat_room_messages m ON m.id=r.message_id
        WHERE r.status <> 'resolved'
+      ${likeMindedUnion}
     ) queue
     ORDER BY created_at DESC
     LIMIT 250`);
