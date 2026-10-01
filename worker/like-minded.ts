@@ -465,8 +465,25 @@ export async function handleLikeMindedRequest(request,env,url){
         const reported=clean(body.userId,80);
         if(!/^[0-9a-f-]{36}$/i.test(reported)||reported===auth.user.id)return fail('Invalid player.');
         const roomId=/^[0-9a-f-]{36}$/i.test(clean(body.roomId,80))?clean(body.roomId,80):null;
-        await db.query('INSERT INTO public.like_minded_reports(id,reporting_user_id,reported_user_id,room_id,context) VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5)',[crypto.randomUUID(),auth.user.id,reported,roomId,clean(body.context,1000)||null]);
-        return json({ok:true});
+        const context=clean(body.context,1000)||null;
+        const existing=await db.query(
+          `SELECT id,status,created_at
+             FROM public.like_minded_reports
+            WHERE reporting_user_id=$1::uuid
+              AND reported_user_id=$2::uuid
+              AND room_id IS NOT DISTINCT FROM $3::uuid
+              AND status<>'resolved'
+              AND created_at>now()-interval '24 hours'
+            ORDER BY created_at DESC LIMIT 1`,
+          [auth.user.id,reported,roomId]
+        );
+        if(existing.rowCount)return json({ok:true,duplicate:true,report:existing.rows[0]});
+        const id=crypto.randomUUID();
+        const inserted=await db.query(
+          'INSERT INTO public.like_minded_reports(id,reporting_user_id,reported_user_id,room_id,context) VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5) RETURNING id,status,created_at',
+          [id,auth.user.id,reported,roomId,context]
+        );
+        return json({ok:true,duplicate:false,report:inserted.rows[0]});
       }
 
       if(url.pathname==='/api/like-minded/rooms'&&request.method==='POST'){
