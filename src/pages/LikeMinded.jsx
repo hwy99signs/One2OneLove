@@ -631,9 +631,8 @@ export default function LikeMinded() {
                 <div className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-600">{t.set} {setNo} · {t.question} {questionNo}/21</div>
                 <h1 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{displayCategory}</h1>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => selectDepth(depth === 'Deep' ? 'Real' : 'Easy')} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">{t.ease}</button>
-                <button onClick={() => selectDepth(depth === 'Easy' ? 'Real' : 'Deep')} className="rounded-full bg-slate-900 px-3 py-2 text-xs font-bold text-white">{t.turnUp}</button>
+              <div className="rounded-full border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black text-violet-800">
+                {t.questionDepth}: {localDepth(activeDepth)}
               </div>
             </div>
 
