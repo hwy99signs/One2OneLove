@@ -80,17 +80,12 @@ function planUsage(plan) {
 function decorateSubscription(user) {
   const storedPlan = canonicalPlan(user?.subscription_plan) || 'Premiere';
   const effectivePlan = user?.subscription_status === 'trial' ? 'Exclusive' : storedPlan;
-  const created = user?.created_at ? new Date(user.created_at) : null;
-  const guestPreviewExpiresAt = created && !Number.isNaN(created.getTime())
-    ? new Date(created.getTime() + 24 * 60 * 60 * 1000).toISOString()
-    : null;
   return {
     ...user,
     effective_plan: effectivePlan,
     trial_entitlement: user?.subscription_status === 'trial' ? 'Exclusive' : null,
     usage_limits: planUsage(effectivePlan),
     server_now: new Date().toISOString(),
-    guest_preview_expires_at: guestPreviewExpiresAt,
     trial_expires_at: user?.trial_end_date || null,
   };
 }
