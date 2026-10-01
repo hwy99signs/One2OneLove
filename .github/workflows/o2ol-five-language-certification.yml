@@ -74,7 +74,7 @@ jobs:
             '/MemoryLane','/LoveNotes','/SendCredits','/CoupleSupport','/LoveLanguageQuiz',
             '/DateIdeas','/Profile','/PodcastsSupport','/ArticlesSupport','/RelationshipQuizzes',
             '/AnniversaryTracker','/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice',
-            '/CouplesProfile','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/Games',
+            '/CouplesProfile','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/LikeMinded','/Games',
             '/ScratchGame','/SharedJournals','/CouplesDashboard','/CouplesCalendar','/LGBTQSupport',
             '/Chat','/PaymentSuccess','/Subscription','/VerifyPhone'
           ];
@@ -120,6 +120,16 @@ jobs:
                   }})});
                 }
                 return r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:{code:'qa_read_only'}})});
+              });
+              await context.route('**/api/like-minded/**',async r=>{
+                const p=new URL(r.request().url()).pathname;
+                let body={ok:true};
+                if(p==='/api/like-minded/access') body={ok:true,access:{plan:'Exclusive',dailyLimit:null,usedToday:0,remaining:null}};
+                else if(p==='/api/like-minded/rooms/active') body={ok:true,room:null};
+                else if(p==='/api/like-minded/history') body={ok:true,games:[]};
+                else if(p==='/api/like-minded/settings') body={ok:true,settings:{available:false,in_lobby:false,language:'en'}};
+                else if(p==='/api/like-minded/lobby') body={ok:true,players:[],invites:[]};
+                return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
               });
             }
           }
