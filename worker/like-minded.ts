@@ -51,11 +51,12 @@ function planName(value){
 }
 function validQuestionId(value){
   const raw=clean(value,180);
-  const cut=raw.lastIndexOf(':');
-  if(cut<1)return false;
-  const category=raw.slice(0,cut);
-  const depth=raw.slice(cut+1);
-  return CATEGORIES.has(category)&&['easy','real','deep'].includes(depth);
+  const parts=raw.split(':');
+  let variant='v1';
+  if(/^v[1-3]$/.test(parts[parts.length-1]||''))variant=parts.pop();
+  const depth=parts.pop();
+  const category=parts.join(':');
+  return Boolean(variant)&&CATEGORIES.has(category)&&['easy','real','deep'].includes(depth);
 }
 
 async function ensureSchema(db){
