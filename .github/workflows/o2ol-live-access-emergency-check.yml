@@ -1,0 +1,102 @@
+name: O2OL Live Access Emergency Check
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/o2ol-live-access-emergency-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live-access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Verify anonymous live routes are locked
+        shell: bash
+        env:
+          LIVE_URL: https://one2onelove.com
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import { chromium } from 'playwright-core';
+
+          const BASE=process.env.LIVE_URL.replace(/\/$/,'');
+          const protectedRoutes=[
+            '/LoveNotes',
+            '/DateIdeas',
+            '/Community',
+            '/MemoryLane',
+            '/CoupleSupport',
+            '/Games',
+            '/SharedJournals'
+          ];
+
+          const browser=await chromium.launch({
+            headless:true,
+            executablePath:process.env.CHROME_BIN,
+            args:['--no-sandbox']
+          });
+
+          try {
+            for (const route of protectedRoutes) {
+              const context=await browser.newContext({
+                viewport:{width:390,height:844},
+                ignoreHTTPSErrors:false
+              });
+              const page=await context.newPage();
+              const response=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(1200);
+              const finalUrl=new URL(page.url());
+              const finalPath=finalUrl.pathname.toLowerCase();
+              const text=(await page.locator('body').innerText().catch(()=>'' )).replace(/\s+/g,' ').trim();
+              console.log(JSON.stringify({
+                requested:route,
+                status:response?.status()??null,
+                finalPath,
+                body:text.slice(0,180)
+              }));
+              if (!['/signin','/login'].includes(finalPath)) {
+                throw new Error(route+' is open to an anonymous browser; final path='+finalPath);
+              }
+              await context.close();
+            }
+
+            const context=await browser.newContext({viewport:{width:390,height:844}});
+            const page=await context.newPage();
+            await page.goto(BASE+'/SignIn',{waitUntil:'domcontentloaded',timeout:30000});
+            await page.waitForTimeout(700);
+            const body=(await page.locator('body').innerText()).replace(/\s+/g,' ').trim();
+            if (!/Sign Up/i.test(body)) throw new Error('Sign In page is missing the Sign Up path.');
+            await context.close();
+          } finally {
+            await browser.close();
+          }
+          NODE
+
+      - name: Verify anonymous Love Notes API is locked
+        shell: bash
+        run: |
+          set -euo pipefail
+          CODE=$(curl -sS -o /tmp/love-note.json -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST 'https://one2onelove.com/api/love-notes/send-sms' \
+            --data '{"note_title":"Access test","note_content":"Access test","recipient_phone":"+15555550123"}')
+          cat /tmp/love-note.json
+          echo
+          echo "HTTP=$CODE"
+          test "$CODE" = "401"
+          grep -F '"unauthorized"' /tmp/love-note.json >/dev/null
