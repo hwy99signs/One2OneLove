@@ -156,11 +156,11 @@ const UI = {
 };
 
 const LAUNCH = {
-  en:{resume:'Resume game',recent:'Recent games',remaining:'questions left today',unlimited:'Unlimited play',preview:'5-question preview',previewUsed:'Free preview complete. Sign in to keep playing.',complete:'Game complete',completeBody:'You finished this Like Minded game.',finishGame:'Finish game',historyEmpty:'No completed games yet.',opponent:'Other player',autoRotate:'Questions rotate automatically across categories and depths to prevent repetition.'},
-  es:{resume:'Reanudar juego',recent:'Juegos recientes',remaining:'preguntas restantes hoy',unlimited:'Juego ilimitado',preview:'Vista previa de 5 preguntas',previewUsed:'La vista previa gratuita terminó. Inicia sesión para seguir jugando.',complete:'Juego completado',completeBody:'Terminaste esta partida de Like Minded.',finishGame:'Finalizar juego',historyEmpty:'Aún no hay juegos completados.',opponent:'Otro jugador',autoRotate:'Las preguntas rotan automáticamente entre categorías y niveles para evitar repeticiones.'},
-  fr:{resume:'Reprendre la partie',recent:'Parties récentes',remaining:'questions restantes aujourd’hui',unlimited:'Jeu illimité',preview:'Aperçu de 5 questions',previewUsed:'L’aperçu gratuit est terminé. Connectez-vous pour continuer.',complete:'Partie terminée',completeBody:'Vous avez terminé cette partie Like Minded.',finishGame:'Terminer la partie',historyEmpty:'Aucune partie terminée pour le moment.',opponent:'Autre joueur',autoRotate:'Les questions tournent automatiquement entre catégories et niveaux pour éviter les répétitions.'},
-  it:{resume:'Riprendi partita',recent:'Partite recenti',remaining:'domande rimaste oggi',unlimited:'Gioco illimitato',preview:'Anteprima di 5 domande',previewUsed:'L’anteprima gratuita è terminata. Accedi per continuare.',complete:'Partita completata',completeBody:'Hai completato questa partita Like Minded.',finishGame:'Termina partita',historyEmpty:'Nessuna partita completata.',opponent:'Altro giocatore',autoRotate:'Le domande ruotano automaticamente tra categorie e livelli per evitare ripetizioni.'},
-  de:{resume:'Spiel fortsetzen',recent:'Letzte Spiele',remaining:'Fragen heute übrig',unlimited:'Unbegrenztes Spielen',preview:'5-Fragen-Vorschau',previewUsed:'Die kostenlose Vorschau ist beendet. Melde dich an, um weiterzuspielen.',complete:'Spiel abgeschlossen',completeBody:'Du hast dieses Like-Minded-Spiel beendet.',finishGame:'Spiel beenden',historyEmpty:'Noch keine abgeschlossenen Spiele.',opponent:'Andere Person',autoRotate:'Fragen wechseln automatisch zwischen Kategorien und Tiefen, damit sich nichts wiederholt.'},
+  en:{resume:'Resume game',recent:'Recent games',remaining:'questions left today',unlimited:'Unlimited play',preview:'5-question preview',previewUsed:'Free preview complete. Sign in to keep playing.',complete:'Game complete',completeBody:'You finished this Like Minded game.',finishGame:'Finish game',historyEmpty:'No completed games yet.',opponent:'Other player',autoRotate:'Questions rotate automatically across categories and depths to prevent repetition.',or:'OR',unavailableNow:'Unavailable',online:'online',gameInvitations:'Game invitations',statuses:{waiting:'Waiting',active:'Active',finished:'Finished',abandoned:'Expired',blocked:'Blocked'}},
+  es:{resume:'Reanudar juego',recent:'Juegos recientes',remaining:'preguntas restantes hoy',unlimited:'Juego ilimitado',preview:'Vista previa de 5 preguntas',previewUsed:'La vista previa gratuita terminó. Inicia sesión para seguir jugando.',complete:'Juego completado',completeBody:'Terminaste esta partida de Like Minded.',finishGame:'Finalizar juego',historyEmpty:'Aún no hay juegos completados.',opponent:'Otro jugador',autoRotate:'Las preguntas rotan automáticamente entre categorías y niveles para evitar repeticiones.',or:'O',unavailableNow:'No disponible',online:'en línea',gameInvitations:'Invitaciones de juego',statuses:{waiting:'Esperando',active:'Activo',finished:'Finalizado',abandoned:'Vencido',blocked:'Bloqueado'}},
+  fr:{resume:'Reprendre la partie',recent:'Parties récentes',remaining:'questions restantes aujourd’hui',unlimited:'Jeu illimité',preview:'Aperçu de 5 questions',previewUsed:'L’aperçu gratuit est terminé. Connectez-vous pour continuer.',complete:'Partie terminée',completeBody:'Vous avez terminé cette partie Like Minded.',finishGame:'Terminer la partie',historyEmpty:'Aucune partie terminée pour le moment.',opponent:'Autre joueur',autoRotate:'Les questions tournent automatiquement entre catégories et niveaux pour éviter les répétitions.',or:'OU',unavailableNow:'Indisponible',online:'en ligne',gameInvitations:'Invitations de jeu',statuses:{waiting:'En attente',active:'Actif',finished:'Terminé',abandoned:'Expiré',blocked:'Bloqué'}},
+  it:{resume:'Riprendi partita',recent:'Partite recenti',remaining:'domande rimaste oggi',unlimited:'Gioco illimitato',preview:'Anteprima di 5 domande',previewUsed:'L’anteprima gratuita è terminata. Accedi per continuare.',complete:'Partita completata',completeBody:'Hai completato questa partita Like Minded.',finishGame:'Termina partita',historyEmpty:'Nessuna partita completata.',opponent:'Altro giocatore',autoRotate:'Le domande ruotano automaticamente tra categorie e livelli per evitare ripetizioni.',or:'OPPURE',unavailableNow:'Non disponibile',online:'online',gameInvitations:'Inviti di gioco',statuses:{waiting:'In attesa',active:'Attivo',finished:'Terminato',abandoned:'Scaduto',blocked:'Bloccato'}},
+  de:{resume:'Spiel fortsetzen',recent:'Letzte Spiele',remaining:'Fragen heute übrig',unlimited:'Unbegrenztes Spielen',preview:'5-Fragen-Vorschau',previewUsed:'Die kostenlose Vorschau ist beendet. Melde dich an, um weiterzuspielen.',complete:'Spiel abgeschlossen',completeBody:'Du hast dieses Like-Minded-Spiel beendet.',finishGame:'Spiel beenden',historyEmpty:'Noch keine abgeschlossenen Spiele.',opponent:'Andere Person',autoRotate:'Fragen wechseln automatisch zwischen Kategorien und Tiefen, damit sich nichts wiederholt.',or:'ODER',unavailableNow:'Nicht verfügbar',online:'online',gameInvitations:'Spieleinladungen',statuses:{waiting:'Wartet',active:'Aktiv',finished:'Beendet',abandoned:'Abgelaufen',blocked:'Blockiert'}},
 };
 
 
@@ -309,6 +309,11 @@ export default function LikeMinded() {
   const questionText = QUESTIONS[activeCanonicalCategory]?.[depthKey(activeDepth)]?.[lang] || QUESTIONS[activeCanonicalCategory]?.real?.en;
   const answers = getLikeMindedAnswerChoices(activeCanonicalCategory, activeDepth, lang);
   const displayCategory = t.categoriesList[CANONICAL_CATEGORIES.indexOf(activeCanonicalCategory)] || activeCanonicalCategory;
+  const localDepth = (value) => value==='Easy' ? t.easy : value==='Deep' ? t.deep : t.real;
+  const localCategory = (value) => {
+    const i=CANONICAL_CATEGORIES.indexOf(value); return i>=0 ? t.categoriesList[i] : value;
+  };
+  const localStatus = (value) => x.statuses?.[value] || value;
 
   useEffect(() => {
     if (!isAuthenticated) { setAccess(null); setActiveRoom(null); setRecentGames([]); return; }
@@ -627,7 +632,7 @@ export default function LikeMinded() {
 
             <div className="rounded-[28px] bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 p-6 text-white sm:p-9">
               <div className="mb-4 flex items-center justify-between gap-3 text-xs font-bold text-white/65">
-                <span>{t.category}: {displayCategory}</span><span>{t.questionDepth}: {activeDepth}</span>
+                <span>{t.category}: {displayCategory}</span><span>{t.questionDepth}: {localDepth(activeDepth)}</span>
               </div>
               <h2 className="text-2xl font-black leading-tight sm:text-4xl">{questionText}</h2>
             </div>
@@ -695,7 +700,7 @@ export default function LikeMinded() {
                   <div className="mt-5 text-sm font-black text-slate-800">{t.depth}</div>
                   <div className="mt-2 grid grid-cols-3 gap-2">{['Easy','Real','Deep'].map(d=><button key={d} onClick={()=>setDepth(d)} className={"rounded-xl px-3 py-3 text-sm font-black " + (depth===d?'bg-violet-600 text-white':'bg-slate-100 text-slate-700')}>{d==='Easy'?t.easy:d==='Real'?t.real:t.deep}</button>)}</div>
                   <button onClick={createRoom} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 font-black text-white">{t.createRoom}</button>
-                  <div className="my-6 flex items-center gap-3"><div className="h-px flex-1 bg-slate-200"/><span className="text-xs font-bold text-slate-400">OR</span><div className="h-px flex-1 bg-slate-200"/></div>
+                  <div className="my-6 flex items-center gap-3"><div className="h-px flex-1 bg-slate-200"/><span className="text-xs font-bold text-slate-400">{x.or}</span><div className="h-px flex-1 bg-slate-200"/></div>
                   <h2 className="text-xl font-black text-slate-950">{t.joinRoom}</h2>
                   <div className="mt-3 flex gap-2"><input value={roomCode} onChange={e=>setRoomCode(e.target.value.toUpperCase())} placeholder={t.codePlaceholder} className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 font-black uppercase tracking-widest"/><button onClick={joinRoom} className="rounded-2xl bg-slate-950 px-5 py-3 font-black text-white">{t.join}</button></div>
                 </>
@@ -734,7 +739,7 @@ export default function LikeMinded() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><div className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-600">{t.room}</div><h1 className="mt-1 text-2xl font-black">{t.question} {current.current_question_no || questionNo}/21</h1></div>
+              <div><div className="text-xs font-black uppercase tracking-[0.2em] text-fuchsia-600">{t.room}</div><h1 className="mt-1 text-2xl font-black">{t.set} {current.set_number || 1} · {t.question} {current.current_question_no || questionNo}/21</h1></div>
               <div className="text-right"><div className="text-xs font-bold text-slate-500">{t.roomCode}</div><div className="font-mono text-xl font-black tracking-[0.2em]">{current.code || room?.code}</div></div>
             </div>
 
@@ -746,7 +751,7 @@ export default function LikeMinded() {
             )}
 
             <div className="mt-6 rounded-[28px] bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 p-6 text-white sm:p-9">
-              <div className="mb-3 text-xs font-bold text-white/60">{displayCategory} · {activeDepth}</div>
+              <div className="mb-3 text-xs font-bold text-white/60">{displayCategory} · {localDepth(activeDepth)}</div>
               <h2 className="text-2xl font-black leading-tight sm:text-4xl">{questionText}</h2>
             </div>
 
@@ -762,7 +767,7 @@ export default function LikeMinded() {
                   <div className="mt-1 text-sm">{t.score}: {current.matches || 0}/{current.total_answered || 0}</div>
                   <div className="mt-4 grid gap-2 sm:grid-cols-2">
                     <div className="rounded-xl bg-white/70 p-3"><div className="text-[11px] font-black uppercase opacity-60">{t.yourAnswer}</div><div className="mt-1 font-black">{answers[current.my_answer_id] || '—'}</div></div>
-                    <div className="rounded-xl bg-white/70 p-3"><div className="text-[11px] font-black uppercase opacity-60">Player 2</div><div className="mt-1 font-black">{answers[current.other_answer_id] || '—'}</div></div>
+                    <div className="rounded-xl bg-white/70 p-3"><div className="text-[11px] font-black uppercase opacity-60">{current.opponent_first_name || x.opponent}</div><div className="mt-1 font-black">{answers[current.other_answer_id] || '—'}</div></div>
                   </div>
                   {current.category_scores?.[activeCanonicalCategory] && <div className="mt-3 text-xs font-bold opacity-75">{displayCategory}: {current.category_scores[activeCanonicalCategory].matches}/{current.category_scores[activeCanonicalCategory].total} {t.matches}</div>}
                 </div>
@@ -793,10 +798,10 @@ export default function LikeMinded() {
             </div>
           ) : (
             <>
-              <div className="mb-5 flex items-center justify-between gap-3"><div><h1 className="text-3xl font-black">{t.available}</h1><p className="text-sm text-slate-500">{lobbyUsers.length} online</p></div><button onClick={leaveLobby} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black">{t.leaveLobby}</button></div>
+              <div className="mb-5 flex items-center justify-between gap-3"><div><h1 className="text-3xl font-black">{t.available}</h1><p className="text-sm text-slate-500">{lobbyUsers.length} {x.online}</p></div><button onClick={leaveLobby} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black">{t.leaveLobby}</button></div>
               {lobbyInvites.length > 0 && <div className="mb-5 rounded-[28px] border border-fuchsia-200 bg-fuchsia-50 p-5 text-slate-950">
-                <div className="text-sm font-black uppercase tracking-[.16em] text-fuchsia-700">Game invitations</div>
-                <div className="mt-3 grid gap-2">{lobbyInvites.map(inv => <button key={inv.code} onClick={()=>joinInvite(inv.code)} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left shadow-sm"><span><strong>{inv.host_first_name}</strong><span className="ml-2 text-sm text-slate-500">{inv.category} · {inv.depth}</span></span><span className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">{t.join}</span></button>)}</div>
+                <div className="text-sm font-black uppercase tracking-[.16em] text-fuchsia-700">{x.gameInvitations}</div>
+                <div className="mt-3 grid gap-2">{lobbyInvites.map(inv => <button key={inv.code} onClick={()=>joinInvite(inv.code)} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-left shadow-sm"><span><strong>{inv.host_first_name}</strong><span className="ml-2 text-sm text-slate-500">{localCategory(inv.category)} · {localDepth(inv.depth)}</span></span><span className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white">{t.join}</span></button>)}</div>
               </div>}
               <div className="grid gap-4 md:grid-cols-2">
                 {lobbyUsers.length===0 ? <div className="rounded-[28px] bg-white p-8 text-center text-slate-500 shadow">{t.lobbyEmpty}</div> : lobbyUsers.map((p)=>(
@@ -905,7 +910,7 @@ export default function LikeMinded() {
               >
                 <span className={"absolute top-1 h-4 w-4 rounded-full bg-white transition " + (available ? 'left-6' : 'left-1')} />
               </button>
-              <span className="font-bold">{available ? t.available : 'Unavailable'}</span>
+              <span className="font-bold">{available ? t.available : x.unavailableNow}</span>
             </div>
           )}
 
@@ -938,7 +943,7 @@ export default function LikeMinded() {
 
           {isAuthenticated && recentGames.length>0 && <div className="mx-auto mt-5 w-full max-w-5xl rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left">
             <div className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{x.recent}</div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">{recentGames.slice(0,3).map(g=><button key={g.id} onClick={()=>['waiting','active'].includes(g.status)&&resumeRoom(g)} disabled={!['waiting','active'].includes(g.status)} className="rounded-xl bg-white/10 p-3 text-left disabled:cursor-default"><div className="font-black text-white">{g.opponent_first_name||x.opponent}</div><div className="mt-1 text-xs text-slate-300">{g.matches||0}/{g.total_answered||0} {t.matches} · {String(g.status||'').replaceAll('_',' ')}</div></button>)}</div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">{recentGames.slice(0,3).map(g=><button key={g.id} onClick={()=>['waiting','active'].includes(g.status)&&resumeRoom(g)} disabled={!['waiting','active'].includes(g.status)} className="rounded-xl bg-white/10 p-3 text-left disabled:cursor-default"><div className="font-black text-white">{g.opponent_first_name||x.opponent}</div><div className="mt-1 text-xs text-slate-300">{g.matches||0}/{g.total_answered||0} {t.matches} · {localStatus(g.status)}</div></button>)}</div>
           </div>}
         </div>
       </section>
