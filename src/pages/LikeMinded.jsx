@@ -11,9 +11,9 @@ import { createPageUrl } from '@/utils';
 import {
   LIKE_MINDED_PREVIEW_LIMIT,
   buildLikeMindedSlot,
-  depthKey,
   getLikeMindedAnswerChoices,
 } from '@/lib/likeMindedGame';
+import { getLikeMindedPrompt } from '@/lib/likeMindedQuestionVariants';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -306,7 +306,7 @@ export default function LikeMinded() {
   const activeSlot = buildLikeMindedSlot(CANONICAL_CATEGORIES, category, depth, effectiveSetNo, effectiveQuestionNo);
   const activeCanonicalCategory = activeSlot.category;
   const activeDepth = activeSlot.depth;
-  const questionText = QUESTIONS[activeCanonicalCategory]?.[depthKey(activeDepth)]?.[lang] || QUESTIONS[activeCanonicalCategory]?.real?.en;
+  const questionText = getLikeMindedPrompt(QUESTIONS, activeCanonicalCategory, activeDepth, activeSlot.variant, lang);
   const answers = getLikeMindedAnswerChoices(activeCanonicalCategory, activeDepth, lang);
   const displayCategory = t.categoriesList[CANONICAL_CATEGORIES.indexOf(activeCanonicalCategory)] || activeCanonicalCategory;
   const localDepth = (value) => value==='Easy' ? t.easy : value==='Deep' ? t.deep : t.real;
