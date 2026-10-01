@@ -104,14 +104,16 @@ jobs:
                 opponent_user_id:other,opponent_first_name:'Jordan',
                 created_at:new Date().toISOString(),updated_at:new Date().toISOString()
               };
-              await context.route('**/api/auth/get-session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+              let authHits=0,likeHits=0;
+              await context.route(/\/api\/auth\/get-session(?:\?|$)/,r=>{authHits++;return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
                 user:{id:self,email:'qa@example.invalid',emailVerified:true,name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phoneNumberVerified:true},
                 session:{id:'qa-session',userId:self}
-              })}));
-              await context.route('**/api/profile',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{
+              })})});
+              await context.route(/\/api\/profile(?:\?|$)/,r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{
                 id:self,email:'qa@example.invalid',name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true
               }})}));
-              await context.route('**/api/like-minded/**',r=>{
+              await context.route(/\/api\/like-minded(?:\/|$)/,r=>{
+                likeHits++;
                 const p=new URL(r.request().url()).pathname;
                 let body={ok:true};
                 if(p==='/api/like-minded/access')body={ok:true,access:{plan:'Exclusive',dailyLimit:null,usedToday:3,remaining:null}};
@@ -124,8 +126,14 @@ jobs:
               const page=await context.newPage();
               const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
               await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000});
+              try{
+                await page.getByText(/Unlimited play/i).first().waitFor({state:'visible',timeout:10000});
+              }catch{
+                const debug=(await page.locator('body').innerText()).replace(/\s+/g,' ').slice(0,3000);
+                throw new Error('Authenticated Like Minded state did not load; authHits='+authHits+' likeHits='+likeHits+' body='+debug);
+              }
               const resume=page.getByRole('button',{name:/Resume game/i}).first();
-              await resume.waitFor({state:'visible'});
+              await resume.waitFor({state:'visible',timeout:10000});
               await resume.click();
               await page.getByRole('button',{name:'Block',exact:true}).waitFor({state:'visible'});
               await page.getByRole('button',{name:'Report',exact:true}).waitFor({state:'visible'});
