@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import {
   LIKE_MINDED_PREVIEW_LIMIT,
-  LIKE_MINDED_MAX_ROOM_QUESTIONS,
   buildLikeMindedSlot,
   depthKey,
   getLikeMindedAnswerChoices,
@@ -248,13 +247,6 @@ const QUESTIONS = {
   }
 };
 
-const ANSWERS = {
-  en:['Strongly me','Mostly me','It depends','Not really me'],
-  es:['Totalmente yo','Bastante yo','Depende','No mucho'],
-  fr:['Tout à fait moi','Plutôt moi','Ça dépend','Pas vraiment moi'],
-  it:['Proprio io','Abbastanza io','Dipende','Non proprio io'],
-  de:['Ganz ich','Eher ich','Kommt darauf an','Eher nicht ich']
-};
 
 function ModeCard({ icon:Icon, title, body, onClick, accent, surface }) {
   return (
@@ -290,7 +282,6 @@ export default function LikeMinded() {
   const [selected,setSelected] = useState(null);
   const [locked,setLocked] = useState(false);
   const [checkpoint,setCheckpoint] = useState(false);
-  const [nextCategory,setNextCategory] = useState('Communication');
   const [room,setRoom] = useState(null);
   const [roomCode,setRoomCode] = useState('');
   const [roomState,setRoomState] = useState(null);
