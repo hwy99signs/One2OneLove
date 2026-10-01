@@ -72,6 +72,26 @@ jobs:
           console.log('LIKE_MINDED_ANSWER_LOCALIZATION=PASS');
           NODE
 
+      - name: Verify all 45 prompts are localized
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          text=Path('src/pages/LikeMinded.jsx').read_text(encoding='utf-8')
+          start=text.index('const QUESTIONS = {')
+          end=text.index('\n};\n\nfunction ModeCard',start)
+          block=text[start:end]
+          rows=[line.strip() for line in block.splitlines() if re.match(r'^(easy|real|deep):\\{en:',line.strip())]
+          assert len(rows)==45, len(rows)
+          for i,row in enumerate(rows,1):
+              for lang in ['es','fr','it','de']:
+                  assert f",{lang}:'" in row, (i,lang,row)
+          assert 'const ANSWERS =' not in text
+          print('LIKE_MINDED_45_PROMPTS_X_5_LANGUAGES=PASS')
+          PY
+
       - name: Verify backend launch controls
         shell: bash
         run: |
