@@ -85,7 +85,7 @@ export default [
   ],
   [
     "22. Gebühren für SMS-Liebesnachrichten",
-    "Der Versand von durch One2OneLove zugestellten SMS-Liebesnachrichten ist während der 24-stündigen Gastvorschau nicht verfügbar, da die Vorschau nur zum Ansehen dient. Während des 7-tägigen Vollzugriff-Tests ist der erste Versand einer SMS-Liebesnachricht kostenlos und jede weitere Sendung kostet USUS$0.29. Nutzungsgebühren können gebündelt und über die hinterlegte Zahlungsmethode abgerechnet werden und sind vom wiederkehrenden Abonnementpreis getrennt. Der Text einer benutzerdefinierten Liebesnachricht ist auf 171 Zeichen begrenzt. Vom Nutzer hinzugefügte Emojis werden im benutzerdefinierten Text nicht unterstützt; die gebrandete SMS-Fußzeile von One2OneLove kann das Symbol ❤️ enthalten. Bereits angefallene Gebühren für versendete Liebesnachrichten bleiben fällig, sofern das anwendbare Recht nichts anderes verlangt.",
+    "Während des 7-tägigen Vollzugriff-Tests ist der erste Versand einer durch One2OneLove zugestellten SMS-Liebesnachricht kostenlos und jede weitere Sendung kostet US$0.29. Nutzungsgebühren können gebündelt und über die hinterlegte Zahlungsmethode abgerechnet werden und sind vom wiederkehrenden Abonnementpreis getrennt. Der Text einer benutzerdefinierten Liebesnachricht ist auf 171 Zeichen begrenzt. Vom Nutzer hinzugefügte Emojis werden im benutzerdefinierten Text nicht unterstützt; die gebrandete SMS-Fußzeile von One2OneLove kann das Symbol ❤️ enthalten. Bereits angefallene Gebühren für versendete Liebesnachrichten bleiben fällig, sofern das anwendbare Recht nichts anderes verlangt.",
   ],
   [
     "23. Kündigung und Abrechnung",
