@@ -328,6 +328,55 @@ async function taskJournal(browser){
   await context.close();
 }
 
+async function taskCalendar(browser){
+  const writes=[];
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await addMemberMocks(context,writes);
+  await context.route('**/api/calendar-events**',r=>{
+    const pth=new URL(r.request().url()).pathname, method=r.request().method();
+    if(method==='GET') return fulfill(r,200,{events:[]});
+    const body=r.request().postDataJSON()||{};
+    writes.push({path:pth,method,body});
+    return fulfill(r,200,{event:{id:'calendar-qa',...body}});
+  });
+  const page=await context.newPage();
+  await page.goto(BASE+'/CouplesCalendar',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Add Event/i}).first().click();
+  await page.locator('#calendar-event-title').fill('QA Date Night');
+  await page.locator('#calendar-event-date').fill('2026-10-10');
+  await page.getByRole('button',{name:/Save Event/i}).click();
+  await page.waitForTimeout(250);
+  const hit=writes.find(x=>x.path==='/api/calendar-events'&&x.method==='POST'&&x.body?.title==='QA Date Night');
+  if(!hit) fail('task-calendar-create',{writes});
+  report.tasks.push('Calendar event create');
+  await context.close();
+}
+
+async function taskGoals(browser){
+  const writes=[];
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await addMemberMocks(context,writes);
+  await context.route('**/api/goals**',r=>{
+    const pth=new URL(r.request().url()).pathname, method=r.request().method();
+    if(method==='GET') return fulfill(r,200,pth.endsWith('/stats')?{stats:{total:0,completed:0,in_progress:0,cancelled:0,avgProgress:0}}:{goals:[]});
+    const body=r.request().postDataJSON()||{};
+    writes.push({path:pth,method,body});
+    return fulfill(r,200,{goal:{id:'goal-qa',progress:0,status:'in_progress',...body}});
+  });
+  const page=await context.newPage();
+  await page.goto(BASE+'/RelationshipGoals',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Add New Goal/i}).first().click();
+  await page.locator('#goal-title').fill('QA Relationship Goal');
+  await page.locator('#goal-description').fill('QA validates goal creation from form to API request.');
+  await page.locator('#goal-target-date').fill('2026-12-31');
+  await page.getByRole('button',{name:/Save Goal/i}).click();
+  await page.waitForTimeout(250);
+  const hit=writes.find(x=>x.path==='/api/goals'&&x.method==='POST'&&x.body?.title==='QA Relationship Goal');
+  if(!hit) fail('task-goal-create',{writes});
+  report.tasks.push('Relationship Goal create');
+  await context.close();
+}
+
 async function taskFounding(browser){
   const context=await browser.newContext({viewport:{width:1440,height:900}});
   let signedIn=false,phoneVerified=false;
@@ -401,6 +450,8 @@ try{
   await taskChat(browser);
   await taskMemory(browser);
   await taskJournal(browser);
+  await taskCalendar(browser);
+  await taskGoals(browser);
   await taskFounding(browser);
 } finally { await browser.close(); }
 
