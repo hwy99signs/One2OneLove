@@ -41,6 +41,7 @@ import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
 import { handleLikeMindedRequest } from './like-minded';
+import { handleStudioMediaRequest } from './studio-media';
 
 
 const SOCIAL_PAGE_META = {
@@ -158,6 +159,11 @@ async function socialPageResponse(request, env, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/studio-media/')) {
+      const response = await handleStudioMediaRequest(request, env, url);
+      if (response) return response;
+    }
 
     const socialPage = await socialPageResponse(request, env, url);
     if (socialPage) return socialPage;
