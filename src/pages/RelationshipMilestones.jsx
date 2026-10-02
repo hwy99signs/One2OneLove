@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { calendarDayDifference, formatLocalDateInput, parseLocalDate } from "@/utils/localDate";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 import MilestoneForm from "../components/milestones/MilestoneForm";
 import MilestoneCard from "../components/milestones/MilestoneCard";
@@ -162,14 +164,17 @@ export default function RelationshipMilestones() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState(null);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
 
   const { data: milestones = [], isLoading } = useQuery({
-    queryKey: ['milestones'],
+    queryKey: ['milestones', user?.id],
     queryFn: () => getMilestones('-date'),
+    enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
@@ -275,6 +280,8 @@ export default function RelationshipMilestones() {
           </Link>
         </div>
 
+        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -292,6 +299,7 @@ export default function RelationshipMilestones() {
           </p>
           <Button
             onClick={() => {
+              if (!user?.id) return navigate('/SignUp?source=open-house&feature=relationship-milestones');
               setEditingMilestone(null);
               setShowForm(true);
             }}
