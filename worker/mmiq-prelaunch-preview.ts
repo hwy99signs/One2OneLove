@@ -89,6 +89,26 @@ async function prelaunchAdminDashboard(env: { MEDIA: R2Bucket }) {
   });
 }
 
+function prelaunchFoundingOffer() {
+  return Response.json({
+    ok:true,
+    preview:true,
+    readOnly:true,
+    offer:{
+      available:true,
+      existing:false,
+      foundingNumber:1,
+      cohort:'first100',
+      plan:'Exclusive',
+      freeDays:30,
+      recurringPriceCents:1599,
+      regularPriceCents:1999,
+    },
+  }, {
+    headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' },
+  });
+}
+
 function prelaunchAdminAnalytics() {
   return Response.json({
     ok:true,
@@ -158,6 +178,28 @@ export default {
       return Response.json(
         { ok:false, preview:true, readOnly:true, error:{ code:'prelaunch_admin_read_only', message:'Admin controls are disabled in the prelaunch preview.' } },
         { status:405, headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } },
+      );
+    }
+
+    if (url.pathname === '/api/billing/founding-offer' && request.method === 'GET') {
+      return prelaunchFoundingOffer();
+    }
+
+    if (url.pathname === '/api/billing/config' && request.method === 'GET') {
+      return Response.json({
+        ok:true,preview:true,readOnly:true,
+        paid_checkout_ready:false,webhook_ready:false,
+        plans:['Premiere','Exclusive'],
+        founding_limit:200,founding_free_days:30,
+        regular_prices_cents:{Premiere:999,Exclusive:1999},
+        love_note_sms_price_cents:29,
+      }, { headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } });
+    }
+
+    if (url.pathname.startsWith('/api/billing/')) {
+      return Response.json(
+        { ok:false,preview:true,readOnly:true,error:{code:'prelaunch_billing_read_only',message:'Billing writes are disabled in Prelaunch.'} },
+        { status:405,headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } },
       );
     }
 
