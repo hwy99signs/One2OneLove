@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const PUBLIC_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
-  '/reviews', '/leavereview', '/suggestions', '/subscription', '/dateideas',
+  '/reviews', '/leavereview', '/suggestions', '/subscription', '/dateideas', '/lovenotes',
   '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup', '/likeminded',
   '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/bianca', '/mymatchiq/credits', '/mymatchiq/actions', '/mymatchiq/dashboard',
   '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
