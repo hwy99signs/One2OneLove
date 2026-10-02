@@ -363,9 +363,9 @@ export default function Admin() {
 
       <main className="lg:pl-64">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:flex-nowrap sm:gap-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3"><button className="rounded-lg border border-slate-200 p-2 lg:hidden" onClick={()=>setMobileNav(true)}><Menu size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Operations Dashboard</p><h1 className="text-lg font-bold text-slate-900">{visibleSections.find(s=>s.id===section)?.label}</h1></div></div>
-            <div className="flex items-center gap-2">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Preview'}</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Preview'}</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
           </div>
         </header>
 
@@ -548,19 +548,29 @@ export default function Admin() {
               subtitle="Every active Chat Room and each newly created conversation topic automatically becomes a new data line here."
               className="mt-6"
             >
-              {conversationTopics.length ? <TableShell><table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr><th className="px-4 py-3">Topic</th><th className="px-4 py-3">Source</th><th className="px-4 py-3 text-right"># Comments</th><th className="px-4 py-3">Created</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {conversationTopics.map(item=><tr key={item.key} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-semibold text-slate-900">{item.topic}</td>
-                    <td className="px-4 py-3 text-slate-500">{item.source||'Chat Room'}</td>
-                    <td className="px-4 py-3 text-right text-lg font-black text-slate-900">{number(item.comments)}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{date(item.createdAt)}</td>
-                  </tr>)}
-                </tbody>
-              </table></TableShell> : <Empty>No Chat Room topics or comments have been recorded yet.</Empty>}
+              {conversationTopics.length ? <>
+                <div className="space-y-2 sm:hidden">
+                  {conversationTopics.map(item=><div key={item.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0"><p className="break-words font-semibold text-slate-900">{item.topic}</p><p className="mt-1 text-xs text-slate-500">{item.source||'Chat Room'} · {date(item.createdAt)}</p></div>
+                      <div className="shrink-0 text-right"><p className="text-2xl font-black text-slate-900">{number(item.comments)}</p><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Comments</p></div>
+                    </div>
+                  </div>)}
+                </div>
+                <div className="hidden sm:block"><TableShell><table className="min-w-full text-sm">
+                  <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr><th className="px-4 py-3">Topic</th><th className="px-4 py-3">Source</th><th className="px-4 py-3 text-right"># Comments</th><th className="px-4 py-3">Created</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {conversationTopics.map(item=><tr key={item.key} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-semibold text-slate-900">{item.topic}</td>
+                      <td className="px-4 py-3 text-slate-500">{item.source||'Chat Room'}</td>
+                      <td className="px-4 py-3 text-right text-lg font-black text-slate-900">{number(item.comments)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{date(item.createdAt)}</td>
+                    </tr>)}
+                  </tbody>
+                </table></TableShell></div>
+              </> : <Empty>No Chat Room topics or comments have been recorded yet.</Empty>}
             </Panel>
           </div>}
 
