@@ -15,7 +15,7 @@ const defaultLabels = {
   choose: 'Choose',
   paymentFailed: 'Failed to process payment',
   redirecting: 'Redirecting to Stripe checkout...',
-  planUpdated: 'Plan updated. Your 7-day full-access trial continues.',
+  planUpdated: 'Plan updated. Your Founding Member free period continues under the terms shown when you joined.',
   genericError: 'An error occurred. Please try again.',
 };
 
