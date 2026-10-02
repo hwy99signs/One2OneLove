@@ -280,6 +280,54 @@ async function taskChat(browser){
   await context.close();
 }
 
+async function taskMemory(browser){
+  const writes=[];
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await addMemberMocks(context,writes);
+  await context.route('**/api/memories**',r=>{
+    const pth=new URL(r.request().url()).pathname, method=r.request().method();
+    if(method==='GET') return fulfill(r,200,{memories:[]});
+    const body=r.request().postDataJSON()||{};
+    writes.push({path:pth,method,body});
+    return fulfill(r,200,{memory:{id:'memory-qa',...body}});
+  });
+  const page=await context.newPage();
+  await page.goto(BASE+'/MemoryLane',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Add New Memory/i}).first().click();
+  await page.locator('#memory-title').fill('QA Memory');
+  await page.locator('#memory-description').fill('QA validates memory creation from form to API request.');
+  await page.getByRole('button',{name:/Save Memory/i}).click();
+  await page.waitForTimeout(250);
+  const hit=writes.find(x=>x.path==='/api/memories'&&x.method==='POST'&&x.body?.title==='QA Memory');
+  if(!hit) fail('task-memory-create',{writes});
+  report.tasks.push('Memory create');
+  await context.close();
+}
+
+async function taskJournal(browser){
+  const writes=[];
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await addMemberMocks(context,writes);
+  await context.route('**/api/journals**',r=>{
+    const pth=new URL(r.request().url()).pathname, method=r.request().method();
+    if(method==='GET') return fulfill(r,200,{entries:[]});
+    const body=r.request().postDataJSON()||{};
+    writes.push({path:pth,method,body});
+    return fulfill(r,200,{entry:{id:'journal-qa',...body}});
+  });
+  const page=await context.newPage();
+  await page.goto(BASE+'/SharedJournals',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Add Entry/i}).first().click();
+  await page.locator('#journal-title').fill('QA Journal');
+  await page.locator('#journal-content').fill('QA validates journal creation from form to API request.');
+  await page.getByRole('button',{name:/Save Entry/i}).click();
+  await page.waitForTimeout(250);
+  const hit=writes.find(x=>x.path==='/api/journals'&&x.method==='POST'&&x.body?.title==='QA Journal');
+  if(!hit) fail('task-journal-create',{writes});
+  report.tasks.push('Journal create');
+  await context.close();
+}
+
 async function taskFounding(browser){
   const context=await browser.newContext({viewport:{width:1440,height:900}});
   let signedIn=false,phoneVerified=false;
@@ -351,6 +399,8 @@ try{
   await taskReview(browser);
   await taskProfile(browser);
   await taskChat(browser);
+  await taskMemory(browser);
+  await taskJournal(browser);
   await taskFounding(browser);
 } finally { await browser.close(); }
 
