@@ -12,6 +12,7 @@ import JournalEntry from '../components/activities/JournalEntry';
 import * as journalService from '@/lib/journalService';
 import { useAuth } from '@/contexts/AuthContext';
 import OpenHouseBrowseNotice from '@/components/launch/OpenHouseBrowseNotice';
+import { hasFullMemberAccess, openHouseProtectedDestination } from '@/lib/openHouseAccess';
 
 const translations = {
   en: { title:'Shared Journals', subtitle:'Write together, share thoughts, and document your relationship journey', back:'Back to Activities', addEntry:'Add Entry', all:'All', noEntries:'No journal entries yet', startWriting:'Start writing your first entry together', saved:'Journal entry saved.', updated:'Journal entry updated.', deleted:'Journal entry deleted.', error:'Unable to update the journal right now.', deleteConfirm:'Are you sure you want to delete this journal entry?', moods:{ happy:'Happy', grateful:'Grateful', reflective:'Reflective', excited:'Excited', peaceful:'Peaceful', challenged:'Challenged', loving:'Loving' } },
@@ -29,6 +30,7 @@ export default function SharedJournals() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fullMemberAccess = hasFullMemberAccess(user);
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [moodFilter, setMoodFilter] = useState('all');
@@ -36,7 +38,7 @@ export default function SharedJournals() {
   const { data: entries = [] } = useQuery({
     queryKey:['sharedJournals', user?.id],
     queryFn:() => journalService.getJournalEntries('-entry_date'),
-    enabled: !!user?.id,
+    enabled: fullMemberAccess,
   });
 
   const createMutation = useMutation({
@@ -71,7 +73,7 @@ export default function SharedJournals() {
   });
 
   const openNewEntry = () => {
-    if (!user?.id) return navigate('/SignUp?source=open-house&feature=shared-journals');
+    if (!fullMemberAccess) return navigate(openHouseProtectedDestination(user,'shared-journals'));
     setEditingEntry(null);
     setShowForm(true);
   };
@@ -85,7 +87,7 @@ export default function SharedJournals() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50">
       <div className="mx-auto max-w-6xl px-4 py-12">
-        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+        {!fullMemberAccess && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
         <div className="mb-6"><Link to={createPageUrl('CoupleActivities')} className="inline-flex items-center text-gray-600 hover:text-blue-600"><ArrowLeft className="mr-2 h-4 w-4"/>{t.back}</Link></div>
 
         <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="mb-12 text-center">
