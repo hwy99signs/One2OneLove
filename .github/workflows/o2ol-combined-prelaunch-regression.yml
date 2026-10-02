@@ -47,6 +47,12 @@ jobs:
           grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
           grep -F "email_mismatch" worker/mymatchiq-legacy.ts
           ! grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
+          ! grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup
+          ! grep -F "MMIQ_COPY" src/pages/Subscription.jsx
+          ! grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx
+          grep -F 'path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />}' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />}' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
           ! grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml
 
