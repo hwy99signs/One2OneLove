@@ -59,23 +59,14 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
-const PREVIEW_MS = 24 * 60 * 60 * 1000;
-
 function adminAccessActive(user) {
   if (!user?.subscription_end_date) return false;
   const end = new Date(user.subscription_end_date);
   return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
 }
 
-function previewActive(user) {
-  if (user?.stripe_subscription_id || adminAccessActive(user)) return false;
-  const created = user?.created_at ? new Date(user.created_at) : null;
-  return Boolean(created && !Number.isNaN(created.getTime()) && created.getTime() + PREVIEW_MS > Date.now());
-}
 
 function currentPlanFor(user) {
-  const status = String(user?.subscription_status || '').toLowerCase();
-  if (status === 'trial' || status === 'trialing') return 'Exclusive';
   const stored = String(user?.subscription_plan || 'Premiere');
   if (stored.toLowerCase() === 'exclusive') return 'Exclusive';
   return 'Premiere';
@@ -112,12 +103,9 @@ export default function LaunchAccessGate({ pathname, children }) {
     return isPublicRoute ? children : <Navigate to="/SignIn" replace />;
   }
 
-  const guestPreviewForPublicRoute = previewActive(user);
-  const previewSetupRoute = ['/subscription', '/signin', '/login', '/signup', '/forgotpassword'].includes(route);
-  if (isPublicRoute) {
-    if (guestPreviewForPublicRoute && !previewSetupRoute) return children;
-    return children;
-  }
+  // Open House routes remain browseable whether or not the visitor is signed in.
+  // Protected writes and personal data remain guarded by the API/member controls.
+  if (isPublicRoute) return children;
 
   if (route === '/verifyphone') return children;
 
@@ -134,19 +122,9 @@ export default function LaunchAccessGate({ pathname, children }) {
   const status = String(user.subscription_status || '').toLowerCase();
   const hasStripeSubscription = Boolean(user.stripe_subscription_id);
   const hasAdminAccess = adminAccessActive(user);
-  const guestPreview = previewActive(user);
-
-  // Open House/public browsing never unlocks private member routes or personalized data.
-  if (guestPreview) {
-    return <Navigate to="/Subscription?open-house=view-only" replace />;
-  }
-
   if (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess)) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
-
-  // Founding-member trial accounts are real member access, not Open House browsing.
-  if (status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
   if (!required) return children;
