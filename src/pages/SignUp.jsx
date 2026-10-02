@@ -69,7 +69,7 @@ export default function SignUp() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-lg mb-5"><UserRound className="w-8 h-8" /></div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">{t.individual}</h2>
               <p className="text-gray-600 leading-relaxed mb-7 flex-1">{t.individualBody}</p>
-              <Button onClick={chooseIndividual} className="w-full py-6 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold">{t.continue}</Button>
+              <Button onClick={chooseIndividual} aria-label={t.individual} className="w-full py-6 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold">{t.continue}</Button>
             </CardContent>
           </Card>
 
@@ -78,7 +78,7 @@ export default function SignUp() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg mb-5"><BriefcaseBusiness className="w-8 h-8" /></div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">{t.professional}</h2>
               <p className="text-gray-600 leading-relaxed mb-7 flex-1">{t.professionalBody}</p>
-              <Button onClick={chooseProfessional} className="w-full py-6 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">{t.continue}</Button>
+              <Button onClick={chooseProfessional} aria-label={t.professional} className="w-full py-6 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">{t.continue}</Button>
             </CardContent>
           </Card>
 
