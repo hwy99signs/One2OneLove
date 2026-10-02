@@ -10,6 +10,7 @@ import { addMonths, subMonths } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
+import { hasFullMemberAccess, openHouseProtectedDestination } from "@/lib/openHouseAccess";
 
 import CalendarEventForm from "../components/calendar/CalendarEventForm";
 import CalendarEventCard from "../components/calendar/CalendarEventCard";
@@ -202,6 +203,7 @@ export default function CouplesCalendar() {
   const { currentLanguage } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fullMemberAccess = hasFullMemberAccess(user);
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
 
@@ -232,7 +234,7 @@ export default function CouplesCalendar() {
           return getCalendarEvents(user.id, { sortBy: 'event_date', sortOrder: 'asc' });
       }
     },
-    enabled: !!user?.id,
+    enabled: fullMemberAccess,
     refetchOnWindowFocus: true, // Refetch when window gains focus for live updates
     refetchInterval: 30000, // Refetch every 30 seconds for live data
   });
@@ -289,7 +291,7 @@ export default function CouplesCalendar() {
   });
 
   const openNewEvent = () => {
-    if (!user?.id) return navigate('/SignUp?source=open-house&feature=couples-calendar');
+    if (!fullMemberAccess) return navigate(openHouseProtectedDestination(user,'couples-calendar'));
     setEditingEvent(null);
     setShowForm(true);
   };
@@ -336,7 +338,7 @@ export default function CouplesCalendar() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+        {!fullMemberAccess && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
 
         <motion.div
           initial={{ opacity: 0, y: -20 }}
