@@ -116,7 +116,11 @@ jobs:
                 });
                 await context.route('**/api/like-minded/**',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,rooms:[],session:null})}));
                 const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
-                let res=null; try{res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForTimeout(700);}catch(e){errors.push(String(e.message||e));}
+                let res=null; try{
+                  res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+                  if(route==='/Admin') await page.getByText('Chat Room Analytics',{exact:false}).first().waitFor({state:'visible',timeout:15000});
+                  else await page.waitForTimeout(700);
+                }catch(e){errors.push(String(e.message||e));}
                 const dom=await page.evaluate(()=>{
                   const overflowers=[...document.querySelectorAll('body *')].map(el=>{
                     const r=el.getBoundingClientRect();
