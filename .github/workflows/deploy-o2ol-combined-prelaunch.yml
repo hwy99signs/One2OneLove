@@ -8,6 +8,8 @@ on:
       - "src/**"
       - "public/**"
       - "worker/mmiq-prelaunch-preview.ts"
+      - "worker/community-chat.ts"
+      - "worker/index.ts"
       - "cloudflare/wrangler.combined-prelaunch.jsonc"
       - "package.json"
       - "package-lock.json"
@@ -44,8 +46,54 @@ jobs:
           npm ci
           npm run build
 
+      - name: Resolve isolated prelaunch Hyperdrive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs" \
+            > /tmp/o2ol-hyperdrives.json
+          node <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('/tmp/o2ol-hyperdrives.json','utf8'));
+          const configs = Array.isArray(payload?.result) ? payload.result : [];
+          const targetHost = 'ep-royal-darkness-ars10dcl';
+          const productionId = 'ef44564dbfca4e1bb13176ee568aaddf';
+          const matches = configs.filter(c => String(c?.origin?.host || '').includes(targetHost));
+          if (matches.length !== 1) {
+            const safe = configs.map(c => ({ id:c?.id, name:c?.name, host:c?.origin?.host || null, database:c?.origin?.database || null }));
+            console.error('Expected exactly one isolated O2OL prelaunch Hyperdrive. Found:', matches.length);
+            console.error(JSON.stringify(safe,null,2));
+            process.exit(1);
+          }
+          const chosen = matches[0];
+          if (!chosen.id || chosen.id === productionId) {
+            console.error('Refusing to use Production Hyperdrive.');
+            process.exit(1);
+          }
+          fs.appendFileSync(process.env.GITHUB_ENV, `PRELAUNCH_HYPERDRIVE_ID=${chosen.id}\n`);
+          console.log(`PRELAUNCH_HYPERDRIVE_NAME=${chosen.name || 'unnamed'}`);
+          console.log(`PRELAUNCH_HYPERDRIVE_ID=${chosen.id}`);
+          console.log(`PRELAUNCH_HYPERDRIVE_HOST=${chosen.origin?.host || ''}`);
+          NODE
+
+      - name: Generate isolated prelaunch Wrangler config
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const source = 'cloudflare/wrangler.combined-prelaunch.jsonc';
+          const target = 'cloudflare/wrangler.combined-prelaunch.runtime.jsonc';
+          const cfg = JSON.parse(fs.readFileSync(source,'utf8'));
+          cfg.hyperdrive = [{ binding:'HYPERDRIVE', id:process.env.PRELAUNCH_HYPERDRIVE_ID }];
+          fs.writeFileSync(target, JSON.stringify(cfg,null,2));
+          NODE
+
       - name: Deploy isolated combined prelaunch
-        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.combined-prelaunch.jsonc
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.combined-prelaunch.runtime.jsonc
 
       - name: Verify preview
         shell: bash
@@ -68,3 +116,10 @@ jobs:
           STUDIO_MEDIA_STATUS=$(curl -sS -I -o /dev/null -w '%{http_code}' --max-time 20 "$PREVIEW_URL/studio-media/season-1-episode-1.mp4" || true)
           echo "O2OL_STUDIO_PREVIEW_URL=$PREVIEW_URL/O2OLStudio"
           echo "STUDIO_MEDIA_STATUS=$STUDIO_MEDIA_STATUS"
+          CHAT_STATUS=$(curl -sS -o /tmp/chat-rooms.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/community-chat/rooms" || true)
+          echo "COMMUNITY_CHAT_STATUS=$CHAT_STATUS"
+          test "$CHAT_STATUS" = "200"
+          grep -F '"ok":true' /tmp/chat-rooms.json
+          BLOCKED_STATUS=$(curl -sS -o /tmp/blocked-api.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/love-notes" || true)
+          echo "OTHER_API_STATUS=$BLOCKED_STATUS"
+          test "$BLOCKED_STATUS" = "503"
