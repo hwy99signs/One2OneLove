@@ -191,7 +191,7 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Subscription" element={<Subscription />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Subscription product="mymatchiq" />} />
+          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
@@ -206,8 +206,8 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
-          <Route path="/MyMatchIQ/SignIn" element={<SignIn product="mymatchiq" />} />
-          <Route path="/MyMatchIQ/SignUp" element={<SignUp product="mymatchiq" />} />
+          <Route path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />} />
+          <Route path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
           <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
