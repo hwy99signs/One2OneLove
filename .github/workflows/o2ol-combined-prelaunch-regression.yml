@@ -45,6 +45,10 @@ jobs:
           grep -F 'path="/O2OLStudio"' src/pages/index.jsx
           grep -F "/o2olstudio" src/components/launch/LaunchAccessGate.jsx
           grep -F 'studio/season-1/episode-1-who-should-apologize-first.mp4' worker/studio-media.ts
+          grep -F 'Enter Chat Room to Comment' src/pages/O2OLStudio.jsx
+          grep -F 'studio-who-should-apologize-first' src/pages/O2OLStudio.jsx src/pages/Chat.jsx worker/community-chat.ts
+          grep -F "biancaStart: 'CHAT with Bianca'" src/pages/MyMatchIQ.jsx
+          grep -F "const openBianca = () => navigate('/MyMatchIQ/Bianca')" src/pages/MyMatchIQ.jsx
           grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
