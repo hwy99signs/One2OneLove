@@ -11,6 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
+import { hasFullMemberAccess, openHouseProtectedDestination } from "@/lib/openHouseAccess";
 
 import MilestoneForm from "../components/milestones/MilestoneForm";
 import MilestoneCard from "../components/milestones/MilestoneCard";
@@ -166,6 +167,7 @@ export default function RelationshipMilestones() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fullMemberAccess = hasFullMemberAccess(user);
 
   const [showForm, setShowForm] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState(null);
@@ -174,7 +176,7 @@ export default function RelationshipMilestones() {
   const { data: milestones = [], isLoading } = useQuery({
     queryKey: ['milestones', user?.id],
     queryFn: () => getMilestones('-date'),
-    enabled: !!user?.id,
+    enabled: fullMemberAccess,
   });
 
   const createMutation = useMutation({
@@ -280,7 +282,7 @@ export default function RelationshipMilestones() {
           </Link>
         </div>
 
-        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+        {!fullMemberAccess && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
 
         {/* Header */}
         <motion.div
@@ -299,7 +301,7 @@ export default function RelationshipMilestones() {
           </p>
           <Button
             onClick={() => {
-              if (!user?.id) return navigate('/SignUp?source=open-house&feature=relationship-milestones');
+              if (!fullMemberAccess) return navigate(openHouseProtectedDestination(user,'relationship-milestones'));
               setEditingMilestone(null);
               setShowForm(true);
             }}
