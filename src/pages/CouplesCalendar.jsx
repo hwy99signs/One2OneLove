@@ -8,6 +8,8 @@ import { Calendar as CalendarIcon, Plus, List, Grid3x3, ChevronLeft, ChevronRigh
 import { motion, AnimatePresence } from "framer-motion";
 import { addMonths, subMonths } from "date-fns";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 import CalendarEventForm from "../components/calendar/CalendarEventForm";
 import CalendarEventCard from "../components/calendar/CalendarEventCard";
@@ -199,6 +201,7 @@ const translations = {
 export default function CouplesCalendar() {
   const { currentLanguage } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
   const queryClient = useQueryClient();
 
@@ -285,6 +288,12 @@ export default function CouplesCalendar() {
     }
   });
 
+  const openNewEvent = () => {
+    if (!user?.id) return navigate('/SignUp?source=open-house&feature=couples-calendar');
+    setEditingEvent(null);
+    setShowForm(true);
+  };
+
   const handleSubmit = (eventData) => {
     
     // Validate required fields
@@ -327,6 +336,8 @@ export default function CouplesCalendar() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-12">
+        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -402,10 +413,7 @@ export default function CouplesCalendar() {
               <Grid3x3 className="w-5 h-5" />
             </Button>
             <Button
-              onClick={() => {
-                setEditingEvent(null);
-                setShowForm(true);
-              }}
+              onClick={openNewEvent}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -445,10 +453,7 @@ export default function CouplesCalendar() {
                   <h3 className="text-xl font-semibold text-gray-600 mb-2">{t.noEvents}</h3>
                   <p className="text-gray-500 mb-6">{t.noEventsDesc}</p>
                   <Button
-                    onClick={() => {
-                      setEditingEvent(null);
-                      setShowForm(true);
-                    }}
+                    onClick={openNewEvent}
                     className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                   >
                     <Plus className="w-5 h-5 mr-2" />
