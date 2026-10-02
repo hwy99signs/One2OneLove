@@ -96,7 +96,10 @@ export default function Home() {
             <button onClick={() => go('LoveNotes')} className="rounded-2xl bg-white px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold text-pink-600 shadow-xl hover:bg-slate-50">♡ {t.toolLabels.loveNotes}</button>
             <button onClick={() => go('PodcastsSupport')} className="rounded-2xl bg-orange-500 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-orange-600">🎙 {t.podcast}</button>
             <button onClick={() => go('DateIdeas')} className="rounded-2xl bg-teal-600 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold shadow-xl hover:bg-teal-700">▣ {t.toolLabels.dateIdeas}</button>
-            <button onClick={() => go('MyMatchIQ')} className="relative overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-slate-950 via-indigo-800 to-fuchsia-700 px-[1.4rem] py-[0.525rem] text-[1.375rem]/[1.925rem] font-extrabold text-white shadow-2xl transition hover:scale-[1.02] hover:from-indigo-950 hover:to-fuchsia-600 md:col-span-2"><span className="absolute right-4 top-1 text-[0.6rem] font-black tracking-[0.22em] text-fuchsia-200">NEW</span>✦ MyMatchIQ <span className="text-base font-bold text-violet-100">· {matchIQLabel}</span></button>
+            <button onClick={() => go('MyMatchIQ')} aria-label={`MyMatchIQ ${matchIQLabel}`} className="relative flex min-h-[68px] items-center justify-center overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-slate-950 via-indigo-800 to-fuchsia-700 px-4 py-2.5 text-white shadow-2xl transition hover:scale-[1.02] hover:from-indigo-950 hover:to-fuchsia-600 md:col-span-2">
+              <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-10 w-auto max-w-[72%] object-contain sm:h-11" />
+              <span className="absolute right-3 top-2 max-w-[45%] rounded-full bg-violet-500/90 px-2.5 py-1 text-[0.48rem] font-black uppercase leading-none tracking-[0.16em] text-white shadow-sm sm:right-4 sm:text-[0.56rem]">{matchIQLabel}</span>
+            </button>
           </div>
 
           {showHeroStats && (
