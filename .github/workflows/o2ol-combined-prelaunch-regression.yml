@@ -73,7 +73,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { chromium } from 'playwright-core';
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
-          const routes=['/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const routes=['/Subscription','/SignUp','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
           const langs=['en','es','fr','it','de'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           const failures=[];
@@ -112,6 +112,7 @@ jobs:
                 if(dom.overflow>6) failures.push({route,lang,kind:'overflow',pixels:dom.overflow,elements:dom.overflowers});
                 if(dom.broken.length) failures.push({route,lang,kind:'broken-images',count:dom.broken.length});
                 if(/undefined|\[object Object\]|NaN/.test(dom.text)) failures.push({route,lang,kind:'suspicious-text'});
+                if((route==='/Subscription'||route==='/SignUp') && /Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|24[- ]?(hour|horas|heures|ore|stünd)|Full Access Trial|Prueba de Acceso Completo|Vollzugriff-Test/i.test(dom.text)) failures.push({route,lang,kind:'retired-access-copy',text:dom.text.slice(0,500)});
                 await context.close();
               }
             }
