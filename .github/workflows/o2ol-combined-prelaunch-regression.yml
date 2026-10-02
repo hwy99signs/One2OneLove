@@ -54,6 +54,9 @@ jobs:
           grep -F "Conversation by Topic / # of Comments" src/pages/Admin.jsx
           grep -F "o2ol_show_vote_responses" worker/admin.ts
           grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
+          grep -F "one2onelove-prelaunch.hwy99signs.workers.dev" src/components/admin/AdminMfaGate.jsx src/pages/AdminAccess.jsx src/pages/Admin.jsx
+          grep -F "Prelaunch read-only preview" src/pages/Admin.jsx
+          grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
           grep -F "handlePrelaunchCommunityChatRequest" worker/mmiq-prelaunch-preview.ts
           grep -F "prelaunch-chat/messages/" worker/prelaunch-community-chat.ts
           ! grep -F '"binding": "HYPERDRIVE"' cloudflare/wrangler.combined-prelaunch.jsonc
@@ -88,7 +91,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { chromium } from 'playwright-core';
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
-          const routes=['/','/Subscription','/SignUp','/O2OLStudio','/Chat','/Chat?room=studio-who-should-apologize-first&from=studio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const routes=['/','/Subscription','/SignUp','/Admin','/O2OLStudio','/Chat','/Chat?room=studio-who-should-apologize-first&from=studio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
           const langs=['en','es','fr','it','de'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           const failures=[];
@@ -160,6 +163,12 @@ jobs:
                   }catch(e){
                     failures.push({route,lang,kind:'mymatchiq-bianca-navigation',error:String(e.message||e),url:page.url()});
                   }
+                }
+
+                if(lang==='en' && route==='/Admin'){
+                  if(!/Chat Room Analytics/i.test(dom.text)) failures.push({route,lang,kind:'admin-chat-analytics-missing',text:dom.text.slice(0,800)});
+                  if(!/Prelaunch read-only preview/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-banner-missing',text:dom.text.slice(0,800)});
+                  if(/Plans & Billing|Member Management|All Sign-ups/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-exposes-controls',text:dom.text.slice(0,1200)});
                 }
 
                 if(errors.length) failures.push({route,lang,kind:'pageerror-after-navigation',errors});
