@@ -101,7 +101,7 @@ export default function Home() {
             <p className="mx-auto mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base lg:mx-0">{openHouse.body}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:justify-center">
-            <button type="button" onClick={()=>go('LoveLanguageQuiz')} className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:brightness-105">{openHouse.explore}</button>
+            <button type="button" onClick={()=>document.getElementById('open-house-tools')?.scrollIntoView({behavior:'smooth',block:'start'})} className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:brightness-105">{openHouse.explore}</button>
             <button type="button" onClick={()=>navigate('/O2OLStudio')} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 shadow-sm transition hover:bg-slate-50">{openHouse.studio}</button>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white px-5 py-8">
+      <section id="open-house-tools" className="scroll-mt-24 bg-white px-5 py-8">
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
