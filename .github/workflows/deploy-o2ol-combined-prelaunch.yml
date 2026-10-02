@@ -73,6 +73,7 @@ jobs:
           echo "STUDIO_MEDIA_STATUS=$STUDIO_MEDIA_STATUS"
           CHAT_STATUS=$(curl -sS -o /tmp/chat-rooms.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/community-chat/rooms" || true)
           echo "COMMUNITY_CHAT_STATUS=$CHAT_STATUS"
+          echo "COMMUNITY_CHAT_BODY=$(cat /tmp/chat-rooms.json 2>/dev/null || true)"
           test "$CHAT_STATUS" = "200"
           grep -F '"ok":true' /tmp/chat-rooms.json
           BLOCKED_STATUS=$(curl -sS -o /tmp/blocked-api.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/love-notes" || true)
