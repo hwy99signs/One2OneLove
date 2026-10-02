@@ -172,7 +172,6 @@ async function ensureO2OLShowVotingSchema(db) {
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       topic_slug text NOT NULL,
       topic_title text NOT NULL,
-      user_id uuid,
       respondent_identity text,
       partner_identity text,
       relationship_priorities jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -184,11 +183,6 @@ async function ensureO2OLShowVotingSchema(db) {
   await db.query(`
     CREATE INDEX IF NOT EXISTS idx_o2ol_show_votes_topic_created
       ON public.o2ol_show_vote_responses(topic_slug,created_at DESC)
-  `);
-  await db.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_o2ol_show_votes_topic_user
-      ON public.o2ol_show_vote_responses(topic_slug,user_id)
-      WHERE user_id IS NOT NULL
   `);
 }
 
