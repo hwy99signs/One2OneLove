@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Loader2, MessageSquareText, Phone, ShieldCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -103,18 +103,20 @@ function normalizePhone(value) {
   return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
 }
 
-function nextRoute(user) {
+function nextRoute(user, redirect = null) {
   if (String(user?.role || '').toLowerCase() === 'admin') return '/Admin';
-  // New members begin on Home after identity verification. The 24-hour Guest
-  // Preview/access gates decide what they can use; do not force them back to
-  // the membership/tier page immediately after creating an account.
-  return '/Home';
+  return redirect || '/Home';
 }
 
 export default function VerifyPhone() {
   const { user, isAuthenticated, isLoading, refreshUserProfile } = useAuth();
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const safeRedirect = (() => {
+    const value = searchParams.get('redirect');
+    return value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+  })();
   const t = translations[currentLanguage] || translations.en;
   const [phone, setPhone] = useState(user?.phoneNumber || user?.phone_number || '');
   const [code, setCode] = useState('');
@@ -128,13 +130,13 @@ export default function VerifyPhone() {
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated || !user) {
-      navigate('/SignIn', { replace: true });
+      navigate(safeRedirect ? `/SignIn?redirect=${encodeURIComponent(safeRedirect)}` : '/SignIn', { replace: true });
       return;
     }
     if (!required || verified) {
-      navigate(nextRoute(user), { replace: true });
+      navigate(nextRoute(user, safeRedirect), { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, required, user, verified]);
+  }, [isAuthenticated, isLoading, navigate, required, safeRedirect, user, verified]);
 
   useEffect(() => {
     const stored = user?.phoneNumber || user?.phone_number || '';
@@ -169,7 +171,7 @@ export default function VerifyPhone() {
       await verifyPhoneNumberOtp(normalized, code);
       const refreshed = await refreshUserProfile();
       toast.success(t.success);
-      navigate(nextRoute(refreshed || user), { replace: true });
+      navigate(nextRoute(refreshed || user, safeRedirect), { replace: true });
     } catch (error) {
       toast.error(error?.message || t.invalidCode);
     } finally {
