@@ -9,11 +9,11 @@ export const isStripeConfigured = async () => {
   }
 };
 
-export const createCheckoutSession = async (_priceId, planName, amount) => {
+export const createCheckoutSession = async (_priceId, planName, amount, { founding = false } = {}) => {
   try {
     const payload = await apiRequest('/api/billing/checkout', {
       method: 'POST',
-      body: { planName, amount },
+      body: { planName, amount, founding },
     });
     return { success: true, sessionId: payload?.sessionId, url: payload?.url };
   } catch (error) {
@@ -26,7 +26,7 @@ export const createCheckoutSession = async (_priceId, planName, amount) => {
   }
 };
 
-export const changePlanDuringTrial = async (planName) => {
+export const changePlanDuringFoundingPeriod = async (planName) => {
   try {
     const payload = await apiRequest('/api/billing/change-plan', {
       method: 'POST',
@@ -36,21 +36,10 @@ export const changePlanDuringTrial = async (planName) => {
   } catch (error) {
     return {
       success: false,
-      error: error?.message || 'Failed to update trial plan',
+      error: error?.message || 'Failed to update Founding-period plan',
       code: error?.payload?.error?.code || null,
       status: error?.status || null,
     };
-  }
-};
-
-export const startPremierTrial = async () => {
-  try {
-    const payload = await apiRequest('/api/billing/trial', { method: 'POST', body: {} });
-    if (!payload?.url) throw new Error('No checkout URL received.');
-    window.location.href = payload.url;
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error?.message || 'Failed to start Premier trial' };
   }
 };
 
@@ -60,6 +49,15 @@ export const redirectToCheckout = async (sessionIdOrUrl) => {
     return;
   }
   throw new Error('Checkout URL was not returned by the billing service.');
+};
+
+export const getFoundingOffer = async () => {
+  try {
+    const payload = await apiRequest('/api/billing/founding-offer');
+    return payload?.offer || { available: false };
+  } catch {
+    return { available: false, unavailable: true };
+  }
 };
 
 export const getUserSubscription = async () => {
@@ -74,13 +72,13 @@ export const getUserSubscription = async () => {
 export const handleSubscriptionCheckout = async (plan) => {
   try {
     const planName = plan?.name;
-    const result = await createCheckoutSession(plan?.priceId, planName, plan?.price);
+    const result = await createCheckoutSession(plan?.priceId, planName, plan?.price, { founding: plan?.founding === true });
     if (!result.success) {
       if (result.code === 'subscription_exists') {
         const current = await getUserSubscription();
         const status = String(current?.subscription_status || '').toLowerCase();
         if (status === 'trial' || status === 'trialing') {
-          return changePlanDuringTrial(planName);
+          return changePlanDuringFoundingPeriod(planName);
         }
         return {
           success: false,
