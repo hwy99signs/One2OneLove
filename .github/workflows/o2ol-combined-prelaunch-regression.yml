@@ -55,6 +55,8 @@ jobs:
           grep -F "o2ol_show_vote_responses" worker/admin.ts
           grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
           grep -F "LIMITED-TIME OPEN HOUSE" src/pages/Layout.jsx
+          grep -F "LIMITED-TIME ONE2ONELOVE OPEN HOUSE" src/pages/Home.jsx
+          grep -F "hasFullMemberAccess" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx src/pages/CoupleActivities.jsx src/pages/CooperativeGames.jsx
           grep -F "'/memorylane'" src/components/launch/LaunchAccessGate.jsx
           grep -F "'/relationshipgoals'" src/components/launch/LaunchAccessGate.jsx
           grep -F "'/relationshipmilestones'" src/components/launch/LaunchAccessGate.jsx
@@ -181,6 +183,9 @@ jobs:
                 if(lang==='en' && route==='/Admin'){
                   if(!/Chat Room Analytics/i.test(dom.text)) failures.push({route,lang,kind:'admin-chat-analytics-missing',text:dom.text.slice(0,800)});
                   if(!/Prelaunch read-only preview/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-banner-missing',text:dom.text.slice(0,800)});
+                  for(const label of ['All Platforms','O2OL Chat Room','Facebook','Instagram','Threads','TikTok','X','Pinterest','LinkedIn']){
+                    if(!dom.text.includes(label)) failures.push({route,lang,kind:'admin-platform-tab-missing',label,text:dom.text.slice(0,1600)});
+                  }
                   if(/Plans & Billing|Member Management|All Sign-ups/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-exposes-controls',text:dom.text.slice(0,1200)});
                 }
 
@@ -206,7 +211,7 @@ jobs:
             '/CoupleSupport','/ArticlesSupport','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo',
             '/Games','/ScratchGame','/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/MyMatchIQ'
           ];
-          const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar']);
+          const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar','/CoupleActivities','/CooperativeGames']);
           const viewports=[
             {name:'desktop',width:1440,height:900},
             {name:'android',width:390,height:844},
@@ -244,4 +249,27 @@ jobs:
           } finally { await browser.close(); }
           if(failures.length){ console.error(JSON.stringify(failures,null,2)); process.exit(1); }
           console.log('OPEN_HOUSE_ANONYMOUS_DESKTOP_ANDROID=PASS');
+          NODE
+
+
+      - name: Open House security boundary smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="${PREVIEW_URL%/}"
+          profile_status="$(curl -sS -o /tmp/o2ol-profile.json -w '%{http_code}' "$BASE/api/profile")"
+          test "$profile_status" = "401"
+          rooms_status="$(curl -sS -o /tmp/o2ol-rooms.json -w '%{http_code}' "$BASE/api/community-chat/rooms")"
+          test "$rooms_status" = "200"
+          admin_status="$(curl -sS -o /tmp/o2ol-admin.json -w '%{http_code}' "$BASE/api/admin/dashboard")"
+          test "$admin_status" = "200"
+          admin_write_status="$(curl -sS -o /tmp/o2ol-admin-write.json -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' "$BASE/api/admin/member")"
+          test "$admin_write_status" = "405"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const admin=JSON.parse(fs.readFileSync('/tmp/o2ol-admin.json','utf8'));
+          if(admin?.readOnly!==true || admin?.preview!==true) throw new Error('Prelaunch Admin dashboard is not explicitly read-only.');
+          const denied=JSON.parse(fs.readFileSync('/tmp/o2ol-admin-write.json','utf8'));
+          if(denied?.readOnly!==true) throw new Error('Prelaunch Admin write denial is not explicitly read-only.');
+          console.log('OPEN_HOUSE_SECURITY_BOUNDARIES=PASS');
           NODE
