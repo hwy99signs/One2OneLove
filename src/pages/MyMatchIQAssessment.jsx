@@ -54,7 +54,7 @@ export default function MyMatchIQAssessment(){
 
  async function begin(){
   if(!isAuthenticated){
-    navigate('/SignUp?source=mymatchiq-assessment&card=required');
+    navigate('/SignUp?source=mymatchiq-assessment&type=individual&card=required');
     return;
   }
   if(!cardReady){
@@ -84,7 +84,7 @@ export default function MyMatchIQAssessment(){
   ? '/MyMatchIQ/Bianca'
   : isAuthenticated
     ? '/Subscription?source=mymatchiq-bianca&card=required&setup=required'
-    : '/SignUp?source=mymatchiq-bianca&card=required';
+    : '/SignUp?source=mymatchiq-bianca&type=individual&card=required';
 
  return <main className="min-h-screen bg-[#070312] px-4 py-10 text-white sm:px-6" style={{backgroundImage:'radial-gradient(circle at 16% 0%, #5b126f 0%, transparent 32%), radial-gradient(circle at 86% 20%, #162e78 0%, transparent 32%)'}}>
   <section className="mx-auto max-w-5xl">
