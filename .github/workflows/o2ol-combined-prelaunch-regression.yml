@@ -43,7 +43,7 @@ jobs:
           grep -F 'path="/MyMatchIQ/Meet"' src/pages/index.jsx
           grep -F 'path="/LikeMinded"' src/pages/index.jsx
           grep -F 'path="/O2OLStudio"' src/pages/index.jsx
-          grep -F '"/o2olstudio"' src/components/launch/LaunchAccessGate.jsx
+          grep -F "/o2olstudio" src/components/launch/LaunchAccessGate.jsx
           grep -F 'studio/season-1/episode-1-who-should-apologize-first.mp4' worker/studio-media.ts
           grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
