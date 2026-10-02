@@ -63,3 +63,8 @@ jobs:
           test "$HTML_OK" = yes
           echo "COMBINED_PRELAUNCH_URL=$PREVIEW_URL"
           echo "DATE_IDEAS_PREVIEW_URL=$PREVIEW_URL/DateIdeas"
+          STUDIO_HTML=$(curl -fsSL --max-time 20 "$PREVIEW_URL/O2OLStudio" 2>/dev/null || true)
+          printf '%s' "$STUDIO_HTML" | grep -qi '<!doctype html'
+          STUDIO_MEDIA_STATUS=$(curl -sS -I -o /dev/null -w '%{http_code}' --max-time 20 "$PREVIEW_URL/studio-media/season-1-episode-1.mp4" || true)
+          echo "O2OL_STUDIO_PREVIEW_URL=$PREVIEW_URL/O2OLStudio"
+          echo "STUDIO_MEDIA_STATUS=$STUDIO_MEDIA_STATUS"
