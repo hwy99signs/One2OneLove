@@ -595,10 +595,10 @@ export default function Admin() {
             <Heading title="Chat Room Analytics" subtitle="O2OL Show voting, audience demographics and live conversation volume by topic."/>
             {isPrelaunchAdminPreview && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>Prelaunch read-only preview:</strong> Admin verification is temporarily bypassed only on this isolated preview URL. Chat comment counts come from the prelaunch R2 Chat data. Production member, billing and Admin-control data are not exposed here.</div>}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric icon={BarChart3} label="O2OL Show Votes" value={number(showVoting.responseCount)} note={showVoting.topicTitle||'Current Show topic'} tone="violet"/>
+              <Metric icon={BarChart3} label="O2OL Show Votes" value={number(allPlatformsVoting.validResponses)} note="valid responses across all platform buckets" tone="violet"/>
               <Metric icon={MessageSquareText} label="Chat Comments" value={number(totalConversationComments)} note="approved comments across tracked topics" tone="blue"/>
               <Metric icon={Users} label="Conversation Topics" value={number(conversationTopics.length)} note="rooms and member-created topics" tone="green"/>
-              <Metric icon={Clock3} label="Last Show Vote" value={showVoting.lastResponseAt?'Recorded':'—'} note={showVoting.lastResponseAt?date(showVoting.lastResponseAt):'No responses yet'} tone="amber"/>
+              <Metric icon={Clock3} label="Last Show Update" value={allPlatformsVoting.lastUpdated?'Recorded':'—'} note={allPlatformsVoting.lastUpdated?date(allPlatformsVoting.lastUpdated):'No responses yet'} tone="amber"/>
             </div>
 
             <Panel
@@ -623,6 +623,10 @@ export default function Admin() {
               </div>
               <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
                 <strong>All Platforms math:</strong> raw percentage sums are combined first, then divided by total valid responses. Platform averages are never averaged against each other.
+              </div>
+              <div className="mb-5 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600">
+                <strong>Excluded-response reasons:</strong>{' '}
+                {selectedVoting.excludedReasons?.length ? selectedVoting.excludedReasons.join(' · ') : 'None recorded for this platform.'}
               </div>
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
                 <div>
