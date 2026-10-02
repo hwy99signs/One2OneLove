@@ -56,7 +56,7 @@ jobs:
           grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
           grep -F "LIMITED-TIME OPEN HOUSE" src/pages/Layout.jsx
           grep -F "LIMITED-TIME ONE2ONELOVE OPEN HOUSE" src/pages/Home.jsx
-          grep -F "hasFullMemberAccess" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx src/pages/CoupleActivities.jsx src/pages/CooperativeGames.jsx
+          grep -F "hasFullMemberAccess" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx src/pages/CoupleActivities.jsx src/pages/CooperativeGames.jsx src/pages/LoveLanguageQuiz.jsx src/pages/ScratchGame.jsx
           grep -F "'/memorylane'" src/components/launch/LaunchAccessGate.jsx
           grep -F "'/relationshipgoals'" src/components/launch/LaunchAccessGate.jsx
           grep -F "'/relationshipmilestones'" src/components/launch/LaunchAccessGate.jsx
@@ -70,21 +70,21 @@ jobs:
           grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
           grep -F "handlePrelaunchCommunityChatRequest" worker/mmiq-prelaunch-preview.ts
           grep -F "prelaunch-chat/messages/" worker/prelaunch-community-chat.ts
-          ! grep -F '"binding": "HYPERDRIVE"' cloudflare/wrangler.combined-prelaunch.jsonc
+          if grep -F '"binding": "HYPERDRIVE"' cloudflare/wrangler.combined-prelaunch.jsonc; then echo "Unexpected Hyperdrive binding in isolated prelaunch"; exit 1; fi
           grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
           grep -F "email_mismatch" worker/mymatchiq-legacy.ts
-          ! grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
-          ! grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup
-          ! grep -F "MMIQ_COPY" src/pages/Subscription.jsx
-          ! grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx
-          ! grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data
+          if grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql; then echo "Unsafe auth credential mutation found"; exit 1; fi
+          if grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup; then echo "Standalone MyMatchIQ account language found"; exit 1; fi
+          if grep -F "MMIQ_COPY" src/pages/Subscription.jsx; then echo "Retired MyMatchIQ subscription copy found"; exit 1; fi
+          if grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx; then echo "Retired standalone MyMatchIQ product gate found"; exit 1; fi
+          if grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data; then echo "Retired access/trial language found"; exit 1; fi
           grep -F 'path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
-          ! grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml
+          if grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml; then echo "Production workflow still references retired prelaunch branch"; exit 1; fi
 
       - name: Prepare browser
         shell: bash
@@ -211,7 +211,7 @@ jobs:
             '/CoupleSupport','/ArticlesSupport','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo',
             '/Games','/ScratchGame','/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/MyMatchIQ'
           ];
-          const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar','/CoupleActivities','/CooperativeGames']);
+          const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar','/CoupleActivities','/CooperativeGames','/ScratchGame']);
           const viewports=[
             {name:'desktop',width:1440,height:900},
             {name:'android',width:390,height:844},
