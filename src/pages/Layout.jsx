@@ -163,6 +163,8 @@ function LanguageContent({ children, currentPageName }) {
   const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
   const mT = MMIQ_FOOTER_COPY[currentLanguage] || MMIQ_FOOTER_COPY.en;
   const closeTimeoutRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const mobileMenuButtonRef = useRef(null);
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
   useEffect(() => {
@@ -294,6 +296,43 @@ function LanguageContent({ children, currentPageName }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    const closeOnOutsidePress = (event) => {
+      if (mobileMenuRef.current?.contains(event.target)) return;
+      if (mobileMenuButtonRef.current?.contains(event.target)) return;
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+      mobileMenuButtonRef.current?.focus();
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePress);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePress);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setMobileActionOpen(false);
+  }, [location.pathname]);
+
+  const closeResponsiveMenuOnHoverAway = () => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    setMobileMenuOpen(false);
+    setMobileActionOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -470,15 +509,31 @@ function LanguageContent({ children, currentPageName }) {
                 <SelectItem value="de">DE Deutsch</SelectItem>
               </SelectContent>
             </Select>
-            <button type="button" aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <button
+              ref={mobileMenuButtonRef}
+              type="button"
+              aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="responsive-navigation-menu"
+              onClick={() => {
+                setMobileMenuOpen((open) => !open);
+                if (mobileMenuOpen) setMobileActionOpen(false);
+              }}
+              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className={`lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 ${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto`}>
-              <nav className="flex flex-col gap-2">
+            <div
+              id="responsive-navigation-menu"
+              ref={mobileMenuRef}
+              onMouseLeave={closeResponsiveMenuOnHoverAway}
+              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[calc(100vw-1rem)] max-w-[320px] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-3 py-3 shadow-2xl max-h-[calc(100vh-7.5rem)] overflow-y-auto overscroll-contain`}
+            >
+              <nav className="flex flex-col gap-1.5">
                 {isMyMatchIQPage && (
                   <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="flex h-14 w-[104px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
                     <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-11 w-[92px] scale-[1.2] object-contain" />
