@@ -194,8 +194,7 @@ async function persistRegistration(db, user, registration) {
     );
 
     // This write is idempotent. A retry after a slow Worker/Database response
-    // repairs the member profile without creating a duplicate account or a new
-    // Guest Preview timer.
+    // repairs the member profile without creating a duplicate account.
     await db.query(
       `INSERT INTO public.users
         (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
@@ -348,7 +347,7 @@ async function registerLaunchUser(request, env) {
         emailVerificationRequired: true,
         verificationMethod: readiness.verification_method || 'otp',
         verificationEmailExpected: true,
-        guestPreviewHours: 24,
+        openHouseBrowsingFree: true,
         selectedPlan: registration.selectedPlan,
         profileReady: resumed.profileReady,
         recoveryPending: !resumed.profileReady,
@@ -380,7 +379,7 @@ async function registerLaunchUser(request, env) {
     emailVerificationRequired: true,
     verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
-    guestPreviewHours: 24,
+    openHouseBrowsingFree: true,
     selectedPlan: registration.selectedPlan,
     profileReady,
     recoveryPending: !profileReady,
