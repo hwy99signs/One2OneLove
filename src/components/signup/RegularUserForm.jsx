@@ -216,8 +216,8 @@ export default function RegularUserForm({ onBack }) {
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
         partnerEmail: formData.partnerEmail,
-        subscriptionPlan: 'Premiere', // Guest Preview defaults to the Premiere path after 24 hours
-        subscriptionPrice: 9.99, // Charged only after the 7-day Full Access trial unless cancelled or changed
+        subscriptionPlan: 'Premiere', // Default membership selection; Open House browsing does not create a subscription.
+        subscriptionPrice: 9.99, // Billing is determined by the confirmed checkout/founding-member terms.
       });
 
       console.log('Register result:', result);
