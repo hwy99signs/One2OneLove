@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, MapPin, Filter, Grid, List, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ import MemoryForm from "../components/memories/MemoryForm";
 import MemoryCard from "../components/memories/MemoryCard";
 import MemoryTimeline from "../components/memories/MemoryTimeline";
 import MemoryFilters from "../components/memories/MemoryFilters";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 const translations = {
   en: {
@@ -150,12 +151,18 @@ export default function MemoryLane() {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
-  const memoryUserKey = user?.id || 'guest';
+  const navigate = useNavigate();
+  const memoryUserKey = user?.id || null;
+  const openMemoryCreate = () => {
+    if (!user?.id) return navigate('/SignUp?source=open-house&feature=memory-lane');
+    setEditingMemory(null);
+    setShowForm(true);
+  };
 
   const { data: memories = [], isLoading } = useQuery({
     queryKey: ['memories', memoryUserKey],
     queryFn: () => listMemories(memoryUserKey),
-    enabled: true,
+    enabled: !!user?.id,
   });
 
   const createMemoryMutation = useMutation({
@@ -252,6 +259,8 @@ export default function MemoryLane() {
           </Link>
         </div>
 
+        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+
         {/* Header */}
         <div className="text-center mb-12">
           <motion.div
@@ -273,7 +282,7 @@ export default function MemoryLane() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => user?.id ? setShowForm(!showForm) : openMemoryCreate()}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -342,7 +351,7 @@ export default function MemoryLane() {
               {t.noMemoriesDesc}
             </p>
             <Button
-              onClick={() => setShowForm(true)}
+              onClick={openMemoryCreate}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
             >
               <Plus className="w-5 h-5 mr-2" />
