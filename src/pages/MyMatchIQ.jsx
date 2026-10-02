@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, Heart, PlayCircle, ShieldCheck, UsersRound, Sparkles, WalletCards } from 'lucide-react';
+import { BrainCircuit, Heart, MessageCircle, PlayCircle, ShieldCheck, UsersRound, Sparkles, WalletCards } from 'lucide-react';
 import { useLanguage } from './Layout';
 
 const COPY = {
