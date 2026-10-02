@@ -99,11 +99,15 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
     }
   };
 
+  const cardGradient = tier.name === 'Exclusive'
+    ? 'from-blue-600 via-violet-500 to-pink-500'
+    : 'from-pink-500 via-violet-500 to-blue-600';
+
   return (
     <div className="h-full">
       <Card
         onClick={selectThisTier}
-        className={`relative h-full flex flex-col cursor-pointer border-2 transition-shadow duration-200 hover:shadow-xl ${isHighlighted ? 'ring-2 ring-purple-500' : ''}`}
+        className={`relative h-full flex flex-col cursor-pointer border border-white/30 bg-gradient-to-r ${cardGradient} text-white shadow-xl transition-shadow duration-200 hover:shadow-2xl ${isHighlighted ? 'ring-2 ring-white/80' : ''}`}
       >
         {tier.popular && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
@@ -120,19 +124,19 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
               {tier.icon}
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">{displayName}</CardTitle>
-          <CardDescription className="text-base mt-2">{tier.description}</CardDescription>
+          <CardTitle className="text-3xl font-bold text-white">{displayName}</CardTitle>
+          <CardDescription className="mt-2 text-base text-white/85">{tier.description}</CardDescription>
 
           <div className="mt-6">
             <div className="flex items-baseline justify-center">
               {pricingPending ? (
-                <span className="text-2xl font-bold text-purple-700">{copy.pricingPending}</span>
+                <span className="text-2xl font-bold text-white">{copy.pricingPending}</span>
               ) : tier.isFree ? (
-                <span className="text-5xl font-bold text-green-600">{copy.free}</span>
+                <span className="text-5xl font-bold text-white">{copy.free}</span>
               ) : (
                 <>
-                  <span className="text-5xl font-bold text-gray-900">{`US${Number(tier.price).toFixed(2)}`}</span>
-                  <span className="text-xl text-gray-500 ml-2">/{tier.periodLabel || copy.month}</span>
+                  <span className="text-5xl font-bold text-white">{`US${Number(tier.price).toFixed(2)}`}</span>
+                  <span className="ml-2 text-xl text-white/75">/{tier.periodLabel || copy.month}</span>
                 </>
               )}
             </div>
@@ -143,8 +147,8 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
           <ul className="space-y-3 mb-6 flex-grow">
             {tier.features.map((feature, idx) => (
               <li key={idx} className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700 text-sm">{feature}</span>
+                <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-white" />
+                <span className="text-sm text-white/95">{feature}</span>
               </li>
             ))}
           </ul>
@@ -155,7 +159,7 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
               handleChoosePlan();
             }}
             disabled={isProcessing}
-            className={`w-full text-lg py-6 font-semibold transition-colors duration-200 ${tier.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg' : 'bg-gray-800 hover:bg-gray-900 text-white'}`}
+            className="w-full border border-white/35 bg-white/15 py-6 text-lg font-semibold text-white shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-white/25"
           >
             {isProcessing ? (
               <>
