@@ -48,7 +48,7 @@ export default function SignIn() {
         await endAdminMfa().catch(() => null);
       }
       const target = phoneRequired && !phoneVerified
-        ? '/VerifyPhone'
+        ? `/VerifyPhone${safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`
         : role === 'admin'
           ? '/AdminAccess'
           : safeRedirect || createPageUrl('Home');
