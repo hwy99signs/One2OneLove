@@ -539,11 +539,6 @@ function LanguageContent({ children, currentPageName }) {
                     <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-8 w-[72px] scale-[1.05] object-contain" />
                   </Link>
                 )}
-                {!isMyMatchIQPage && (
-                  <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="flex h-11 w-[84px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
-                    <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-8 w-[72px] scale-[1.05] object-contain" />
-                  </Link>
-                )}
                 <Link
                   to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")}
                   className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
