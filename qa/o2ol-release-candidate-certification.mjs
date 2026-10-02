@@ -223,10 +223,11 @@ async function taskSuggestion(browser){
 async function taskReview(browser){
   const writes=[];
   const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await context.addInitScript(()=>localStorage.setItem('preferredLanguage','en'));
   await addMemberMocks(context,writes);
   const page=await context.newPage();
   await page.goto(BASE+'/LeaveReview',{waitUntil:'domcontentloaded'});
-  const five=page.getByRole('radio',{name:/5 stars/i}).first();
+  const five=page.getByRole('radio').nth(4);
   await five.waitFor({state:'visible',timeout:8000});
   await five.click();
   await page.locator('#review-text').fill('QA review submission verifies task execution payload.');
