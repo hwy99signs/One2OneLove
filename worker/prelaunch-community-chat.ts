@@ -136,39 +136,55 @@ export async function getPrelaunchChatAdminSnapshot(env){
     comments:await countMessages(env,room),
     createdAt:null,
   })));
+  const relationship100=[
+    {number:1,key:'money',label:'Money',average:0},
+    {number:2,key:'religion',label:'Religion',average:0},
+    {number:3,key:'sex_intimacy',label:'Sex / Intimacy',average:0},
+    {number:4,key:'politics',label:'Politics',average:0},
+    {number:5,key:'family',label:'Family',average:0},
+    {number:6,key:'communication',label:'Communication',average:0},
+    {number:7,key:'looks_physical_appearance',label:'Looks / Physical appearance',average:0},
+    {number:8,key:'therapy_when_needed',label:'Therapy when needed',average:0},
+    {number:9,key:'help_around_home',label:'Help around the home',average:0},
+  ];
+  const respondentIdentity=['Man','Woman','Nonbinary','Prefer not to say'].map(label=>({label,count:0,percentage:0}));
+  const partnerIdentity=['Man','Woman','Nonbinary','Prefer not to say','Not currently partnered'].map(label=>({label,count:0,percentage:0}));
+  const platformMeta=[
+    ['o2ol-chat-room','O2OL Chat Room'],
+    ['facebook','Facebook'],
+    ['instagram','Instagram'],
+    ['threads','Threads'],
+    ['tiktok','TikTok'],
+    ['x','X'],
+    ['pinterest','Pinterest'],
+    ['linkedin','LinkedIn'],
+  ];
+  const platformRelationshipTotals=Object.fromEntries(relationship100.map(row=>[row.key,0]));
+  const platforms=platformMeta.map(([id,label])=>({
+    id,label,
+    validResponses:0,
+    excludedResponses:0,
+    excludedReasons:[],
+    commentCount:id==='o2ol-chat-room'?Number(conversations.find(row=>row.key==='room:studio-who-should-apologize-first')?.comments||0):0,
+    lastUpdated:null,
+    rawTotals:{relationship100:{...platformRelationshipTotals},expenseSplit:{man:0,woman:0}},
+    relationship100:relationship100.map(row=>({...row})),
+    expenseSplit:{number:10,label:'Household bills / shared expenses',manAverage:0,womanAverage:0},
+    demographics:{
+      respondentIdentity:respondentIdentity.map(row=>({...row})),
+      partnerIdentity:partnerIdentity.map(row=>({...row})),
+    },
+  }));
   return {
     showVoting:{
       topicSlug:'studio-who-should-apologize-first',
       topicTitle:'Who Should Apologize First?',
       responseCount:0,
       lastResponseAt:null,
-      relationship100:[
-        {number:1,key:'money',label:'Money',average:0},
-        {number:2,key:'religion',label:'Religion',average:0},
-        {number:3,key:'sex_intimacy',label:'Sex / Intimacy',average:0},
-        {number:4,key:'politics',label:'Politics',average:0},
-        {number:5,key:'family',label:'Family',average:0},
-        {number:6,key:'communication',label:'Communication',average:0},
-        {number:7,key:'looks_physical_appearance',label:'Looks / Physical appearance',average:0},
-        {number:8,key:'therapy_when_needed',label:'Therapy when needed',average:0},
-        {number:9,key:'help_around_home',label:'Help around the home',average:0},
-      ],
+      relationship100,
       expenseSplit:{number:10,label:'Household bills / shared expenses',manAverage:0,womanAverage:0},
-      demographics:{
-        respondentIdentity:[
-          {label:'Man',count:0,percentage:0},
-          {label:'Woman',count:0,percentage:0},
-          {label:'Nonbinary',count:0,percentage:0},
-          {label:'Prefer not to say',count:0,percentage:0},
-        ],
-        partnerIdentity:[
-          {label:'Man',count:0,percentage:0},
-          {label:'Woman',count:0,percentage:0},
-          {label:'Nonbinary',count:0,percentage:0},
-          {label:'Prefer not to say',count:0,percentage:0},
-          {label:'Not currently partnered',count:0,percentage:0},
-        ],
-      },
+      demographics:{respondentIdentity,partnerIdentity},
+      platforms,
     },
     conversations,
   };
