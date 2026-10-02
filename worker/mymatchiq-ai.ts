@@ -36,7 +36,33 @@ function assessmentPayload(input){
   return {answers,dimensionScores,questionCount};
 }
 async function latestAssessment(db,userId){ const r=await db.query(`SELECT * FROM public.mmiq_assessment_sessions WHERE user_id=$1::uuid ORDER BY updated_at DESC LIMIT 1`,[userId]); return r.rows[0]||null; }
-async function accessEntitlement(db,userId){ const r=await db.query(`SELECT tier,source,grandfathered,effective_at,expires_at FROM public.mmiq_access_entitlements WHERE user_id=$1::uuid AND (expires_at IS NULL OR expires_at>now())`,[userId]); return r.rows[0]||{tier:'free',source:'o2ol',grandfathered:false,effective_at:null,expires_at:null}; }
+async function cardAccess(db,userId){
+  const r=await db.query(`
+    SELECT
+      (
+        NULLIF(u.stripe_subscription_id,'') IS NOT NULL
+        OR EXISTS (
+          SELECT 1
+          FROM public.mmiq_auto_replenish_settings s
+          WHERE s.user_id=u.id
+            AND NULLIF(s.payment_method_reference,'') IS NOT NULL
+        )
+      ) AS card_on_file
+    FROM public.users u
+    WHERE u.id=$1::uuid
+    LIMIT 1
+  `,[userId]);
+  return r.rows[0]?.card_on_file===true;
+}
+async function requireCardAccess(db,userId){
+  if(await cardAccess(db,userId)) return;
+  throw Object.assign(new Error('A credit/debit card is required to use this MyMatchIQ feature.'),{status:402,code:'card_required'});
+}
+async function accessEntitlement(db,userId){
+  const r=await db.query(`SELECT tier,source,grandfathered,effective_at,expires_at FROM public.mmiq_access_entitlements WHERE user_id=$1::uuid AND (expires_at IS NULL OR expires_at>now())`,[userId]);
+  const access=r.rows[0]||{tier:'free',source:'o2ol',grandfathered:false,effective_at:null,expires_at:null};
+  return {...access,card_on_file:await cardAccess(db,userId)};
+}
 async function createAssessment(db,userId,input){ const language=LANGUAGE_NAMES[input?.language]?input.language:'en'; const r=await db.query(`INSERT INTO public.mmiq_assessment_sessions(user_id,language,status,question_count,answers,dimension_scores) VALUES($1::uuid,$2,'in_progress',0,'[]'::jsonb,'{}'::jsonb) RETURNING *`,[userId,language]); return r.rows[0]; }
 async function saveAssessment(db,userId,id,input,complete=false){ if(!UUID.test(String(id||'')))throw Object.assign(new Error('Invalid assessment session ID.'),{status:400,code:'bad_request'}); const data=assessmentPayload(input); const r=await db.query(`UPDATE public.mmiq_assessment_sessions SET answers=$1::jsonb,dimension_scores=$2::jsonb,question_count=$3,status=$4,completed_at=CASE WHEN $4='completed' THEN COALESCE(completed_at,now()) ELSE completed_at END,updated_at=now() WHERE id=$5::uuid AND user_id=$6::uuid RETURNING *`,[JSON.stringify(data.answers),JSON.stringify(data.dimensionScores),data.questionCount,complete?'completed':'in_progress',id,userId]); if(!r.rows[0])throw Object.assign(new Error('Assessment session not found.'),{status:404,code:'not_found'}); return r.rows[0]; }
 async function generateReport(db,env,auth,input){ const language=LANGUAGE_NAMES[input?.language]?input.language:'en'; const p=await profile(db,auth.user.id); const messages=(await db.query(`SELECT m.content,m.created_at FROM public.ai_coach_messages m JOIN public.ai_coach_conversations c ON c.id=m.conversation_id WHERE m.user_id=$1::uuid AND m.role='user' AND c.product='mymatchiq' AND c.mode='bianca_casual' ORDER BY m.created_at DESC LIMIT 80`,[auth.user.id])).rows.reverse(); const assessment=(await db.query(`SELECT id,answers,dimension_scores,question_count FROM public.mmiq_assessment_sessions WHERE user_id=$1::uuid AND status='completed' ORDER BY completed_at DESC NULLS LAST,updated_at DESC LIMIT 1`,[auth.user.id])).rows[0]||null; if(!messages.length&&!assessment)return fail('More MyMatchIQ context is needed before Bianca can create a report.',400,'insufficient_context'); const evidenceCount=messages.length+Number(assessment?.question_count||0); const prompt=`Create a private Personality & Relationship Pattern Report in ${LANGUAGE_NAMES[language]||'English'}. Use only the evidence supplied. Do not diagnose or predict outcomes. Cover these dimensions where evidence exists: ${DIMENSIONS.join(', ')}. Return JSON only with keys: summary (string), strengths (array of 3-6 strings), growthAreas (array of 3-6 strings), dimensions (object whose keys are dimension names and values are concise evidence-grounded observations).\n\nAssessment: ${assessment?JSON.stringify({answers:assessment.answers,scores:assessment.dimension_scores}):'none'}\n\nBianca conversation excerpts:\n${messages.map((m,i)=>`${i+1}. ${m.content}`).join('\n')}`; const generated=await openAiText(env,{instructions:'You create cautious, evidence-grounded MyMatchIQ self-reflection reports. Avoid diagnosis, clinical labels, deterministic compatibility claims, and invented facts. Return valid JSON only.',input:prompt,maxOutputTokens:1800}); const parsed=parseReport(generated.text); const stored=(await db.query(`INSERT INTO public.mmiq_personality_reports(user_id,assessment_session_id,language,summary,strengths,growth_areas,dimensions,evidence_count,context_depth_score) VALUES($1::uuid,$2::uuid,$3,$4,$5::jsonb,$6::jsonb,$7::jsonb,$8,$9) RETURNING *`,[auth.user.id,assessment?.id||null,language,clean(parsed.summary,12000,true),JSON.stringify(Array.isArray(parsed.strengths)?parsed.strengths:[]),JSON.stringify(Array.isArray(parsed.growthAreas)?parsed.growthAreas:[]),JSON.stringify(parsed.dimensions&&typeof parsed.dimensions==='object'?parsed.dimensions:{}),evidenceCount,p.context_depth_score||contextDepth(p.interaction_count,p.conversation_count)])).rows[0]; return json({ok:true,report:stored}); }
@@ -49,30 +75,56 @@ export async function handleMyMatchIQAiRequest(request,env,url){
       if(url.pathname==='/api/mymatchiq/access'&&request.method==='GET')return json({ok:true,access:await accessEntitlement(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/assessment/sessions/latest'&&request.method==='GET')return json({ok:true,session:await latestAssessment(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/assessment/sessions'){
-        if(request.method==='POST')return json({ok:true,session:await createAssessment(db,auth.user.id,await readJson(request))},201);
+        if(request.method==='POST'){
+          await requireCardAccess(db,auth.user.id);
+          return json({ok:true,session:await createAssessment(db,auth.user.id,await readJson(request))},201);
+        }
         return fail('Method not allowed.',405,'method_not_allowed');
       }
       const assessmentComplete=url.pathname.match(/^\/api\/mymatchiq\/assessment\/sessions\/([0-9a-f-]{36})\/complete$/i);
-      if(assessmentComplete){ if(request.method!=='POST')return fail('Method not allowed.',405,'method_not_allowed'); return json({ok:true,session:await saveAssessment(db,auth.user.id,assessmentComplete[1],await readJson(request),true)}); }
+      if(assessmentComplete){
+        if(request.method!=='POST')return fail('Method not allowed.',405,'method_not_allowed');
+        await requireCardAccess(db,auth.user.id);
+        return json({ok:true,session:await saveAssessment(db,auth.user.id,assessmentComplete[1],await readJson(request),true)});
+      }
       const assessmentOne=url.pathname.match(/^\/api\/mymatchiq\/assessment\/sessions\/([0-9a-f-]{36})$/i);
-      if(assessmentOne){ if(request.method!=='PATCH')return fail('Method not allowed.',405,'method_not_allowed'); return json({ok:true,session:await saveAssessment(db,auth.user.id,assessmentOne[1],await readJson(request),false)}); }
+      if(assessmentOne){
+        if(request.method!=='PATCH')return fail('Method not allowed.',405,'method_not_allowed');
+        await requireCardAccess(db,auth.user.id);
+        return json({ok:true,session:await saveAssessment(db,auth.user.id,assessmentOne[1],await readJson(request),false)});
+      }
       if(url.pathname==='/api/mymatchiq/bianca/profile'&&request.method==='GET')return json({ok:true,profile:await profile(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/bianca/reports'&&request.method==='GET')return json({ok:true,reports:await listReports(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/bianca/profile/reset'&&request.method==='POST')return json({ok:true,profile:await resetProfile(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/bianca/report'){
         if(request.method==='GET')return json({ok:true,report:await latestReport(db,auth.user.id)});
-        if(request.method==='POST')return generateReport(db,env,auth,await readJson(request));
+        if(request.method==='POST'){
+          await requireCardAccess(db,auth.user.id);
+          return generateReport(db,env,auth,await readJson(request));
+        }
         return fail('Method not allowed.',405,'method_not_allowed');
       }
       if(url.pathname==='/api/mymatchiq/bianca/conversations'){
         if(request.method==='GET')return json({ok:true,conversations:await listConversations(db,auth.user.id)});
-        if(request.method==='POST'){ const r=await db.query(`INSERT INTO public.ai_coach_conversations(user_id,title,product,mode) VALUES($1::uuid,'Casual Talk with Bianca','mymatchiq','bianca_casual') RETURNING id,title,created_at,updated_at`,[auth.user.id]); await db.query(`INSERT INTO public.mmiq_bianca_profiles(user_id,conversation_count,context_depth_score,updated_at) VALUES($1::uuid,1,21,now()) ON CONFLICT(user_id) DO UPDATE SET conversation_count=public.mmiq_bianca_profiles.conversation_count+1,context_depth_score=LEAST(95,public.mmiq_bianca_profiles.context_depth_score+3),updated_at=now()`,[auth.user.id]); return json({ok:true,conversation:r.rows[0]},201); }
+        if(request.method==='POST'){
+          await requireCardAccess(db,auth.user.id);
+          const r=await db.query(`INSERT INTO public.ai_coach_conversations(user_id,title,product,mode) VALUES($1::uuid,'Casual Talk with Bianca','mymatchiq','bianca_casual') RETURNING id,title,created_at,updated_at`,[auth.user.id]);
+          await db.query(`INSERT INTO public.mmiq_bianca_profiles(user_id,conversation_count,context_depth_score,updated_at) VALUES($1::uuid,1,21,now()) ON CONFLICT(user_id) DO UPDATE SET conversation_count=public.mmiq_bianca_profiles.conversation_count+1,context_depth_score=LEAST(95,public.mmiq_bianca_profiles.context_depth_score+3),updated_at=now()`,[auth.user.id]);
+          return json({ok:true,conversation:r.rows[0]},201);
+        }
         return fail('Method not allowed.',405,'method_not_allowed');
       }
       const one=url.pathname.match(/^\/api\/mymatchiq\/bianca\/conversations\/([0-9a-f-]{36})$/i);
       if(one){ if(request.method!=='DELETE')return fail('Method not allowed.',405,'method_not_allowed'); const r=await db.query(`DELETE FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='mymatchiq' AND mode='bianca_casual' RETURNING id`,[one[1],auth.user.id]); if(!r.rowCount)return fail('Conversation not found.',404,'not_found'); await db.query(`UPDATE public.mmiq_bianca_profiles SET conversation_count=GREATEST(0,conversation_count-1),updated_at=now() WHERE user_id=$1::uuid`,[auth.user.id]); return json({ok:true}); }
       const messages=url.pathname.match(/^\/api\/mymatchiq\/bianca\/conversations\/([0-9a-f-]{36})\/messages$/i);
-      if(messages){ if(request.method==='GET')return json({ok:true,messages:await listMessages(db,messages[1],auth.user.id)}); if(request.method==='POST')return sendMessage(db,env,auth,messages[1],await readJson(request)); return fail('Method not allowed.',405,'method_not_allowed'); }
+      if(messages){
+        if(request.method==='GET')return json({ok:true,messages:await listMessages(db,messages[1],auth.user.id)});
+        if(request.method==='POST'){
+          await requireCardAccess(db,auth.user.id);
+          return sendMessage(db,env,auth,messages[1],await readJson(request));
+        }
+        return fail('Method not allowed.',405,'method_not_allowed');
+      }
       return fail('Bianca route not found.',404,'not_found');
     });
   }catch(error){ console.error('MyMatchIQ Bianca API error',error); return fail(error?.message||'Unable to process Bianca request.',error?.status||500,error?.code||'bianca_error'); }
