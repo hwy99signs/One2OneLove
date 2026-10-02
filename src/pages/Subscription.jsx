@@ -36,7 +36,7 @@ function PlanCard({plan,t,planCopy,busy,onChoose}){
    <div className="text-4xl" aria-hidden="true">{plan.name==='Exclusive'?'👑':'💖'}</div>
    <h2 className="mt-4 text-3xl font-black text-white">{plan.name==='Exclusive'?t.exclusive:t.premiere}</h2>
    <div className="mt-2 text-2xl font-black text-white">{price}</div>
-   <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-sm leading-6 text-white/95"><Check className="mt-1 h-4 w-4 shrink-0 text-white"/><span>{item}</span></li>)}</ul>
+   <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-[1.3125rem] leading-[1.8rem] text-white/95"><Check className="mt-1 h-4 w-4 shrink-0 text-white"/><span>{item}</span></li>)}</ul>
    <Button disabled={busy} onClick={()=>onChoose(plan)} className="mt-7 w-full border border-white/35 bg-white/15 py-6 text-base font-bold text-white shadow-sm backdrop-blur-sm hover:bg-white/25">{busy?t.starting:create}</Button>
  </section>;
 }
