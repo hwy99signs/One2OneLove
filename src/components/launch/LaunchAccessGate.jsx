@@ -5,7 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 const PUBLIC_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
-  '/reviews', '/leavereview', '/suggestions', '/subscription', '/dateideas', '/lovenotes', '/o2olstudio', '/chat', '/community',
+  '/reviews', '/leavereview', '/suggestions', '/subscription',
+  '/dateideas', '/lovenotes', '/lovelanguagequiz', '/memorylane', '/podcastssupport',
+  '/relationshipquizzes', '/relationshipmilestones', '/relationshipgoals', '/communicationpractice',
+  '/couplesupport', '/articlessupport', '/coupleactivities', '/cooperativegames',
+  '/whatshouldtheydo', '/games', '/scratchgame', '/sharedjournals', '/couplescalendar',
+  '/lgbtqsupport', '/o2olstudio', '/chat', '/community',
   '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup', '/likeminded',
   '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/bianca', '/mymatchiq/credits', '/mymatchiq/actions', '/mymatchiq/dashboard',
   '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
@@ -131,7 +136,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   const hasAdminAccess = adminAccessActive(user);
   const guestPreview = previewActive(user);
 
-  // The 24-hour Guest Preview is browse-only. It must never unlock member features.
+  // Open House/public browsing never unlocks private member routes or personalized data.
   if (guestPreview) {
     return <Navigate to="/Subscription?guest-preview=view-only" replace />;
   }
@@ -140,7 +145,7 @@ export default function LaunchAccessGate({ pathname, children }) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
 
-  // Founding-member/full-access trial accounts are real member access, not Guest Preview.
+  // Founding-member trial accounts are real member access, not Open House browsing.
   if (status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
