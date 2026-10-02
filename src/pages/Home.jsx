@@ -5,7 +5,7 @@ import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
-const MYMATCHIQ_LABELS = { en: 'Compatibility', es: 'Compatibilidad', fr: 'Compatibilité', it: 'Compatibilità', de: 'Kompatibilität' };
+const MYMATCHIQ_LABELS = { en: 'Compatibility Test', es: 'Prueba de Compatibilidad', fr: 'Test de Compatibilité', it: 'Test di Compatibilità', de: 'Kompatibilitätstest' };
 
 const COPY = {
   en: {
