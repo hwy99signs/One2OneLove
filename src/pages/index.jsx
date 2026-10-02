@@ -56,6 +56,7 @@ import MyMatchIQCredits from './MyMatchIQCredits';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
+import O2OLStudio from './O2OLStudio';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
@@ -67,7 +68,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -101,6 +102,7 @@ const FEATURE_BY_ROUTE = {
   '/lgbtqsupport': 'LGBTQ+ Support',
   '/chat': 'Community Chat',
   '/subscription': 'Subscription / Billing',
+  '/o2olstudio': 'O2OL Studio',
   '/mymatchiq': 'MyMatchIQ',
 };
 
@@ -197,6 +199,7 @@ function PagesContent() {
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
+          <Route path="/O2OLStudio" element={<O2OLStudio />} />
           <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
           <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
