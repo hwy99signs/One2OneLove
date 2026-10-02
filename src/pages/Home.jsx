@@ -143,18 +143,19 @@ export default function Home() {
           <button type="button" onClick={()=>navigate('/O2OLStudio')} aria-label={`${studio.watch}: ${studio.title}`} className="group relative mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-left text-white shadow-2xl transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(124,58,237,0.28)]">
             <div className="relative aspect-[16/9] w-full overflow-hidden">
               <img src={STUDIO_IMAGE} alt="O2OL Studio with Bianca in conversation" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/70 to-slate-950/5 sm:via-slate-950/55" />
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-950/65 to-transparent sm:hidden" />
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-[78%] p-5 sm:w-[58%] sm:p-8 lg:w-[48%] lg:p-10">
-                  <div className="inline-flex rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1.5 text-[0.65rem] font-black uppercase tracking-[0.18em] shadow-lg sm:text-xs">{studio.eyebrow}</div>
-                  <div className="mt-3 text-[0.68rem] font-black uppercase tracking-[0.17em] text-cyan-200 sm:text-sm">{studio.season}</div>
-                  <div className="mt-2 text-2xl font-black leading-tight drop-shadow sm:text-4xl lg:text-5xl">{studio.title}</div>
-                  <p className="mt-3 hidden max-w-xl text-sm leading-6 text-white/85 sm:block lg:text-base">{studio.body}</p>
-                  <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg sm:px-5 sm:py-3 sm:text-sm">{studio.watch}<span aria-hidden="true">▶</span></span>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/88 to-slate-950/68 px-5 py-4 backdrop-blur-[2px] sm:px-7 sm:py-5 lg:px-9 lg:py-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.18em] shadow-lg sm:text-[0.68rem]">{studio.eyebrow}</span>
+                      <span className="text-[0.64rem] font-black uppercase tracking-[0.16em] text-cyan-200 sm:text-xs">{studio.season}</span>
+                    </div>
+                    <div className="mt-2 text-xl font-black leading-tight drop-shadow sm:text-2xl lg:text-3xl">{studio.title}</div>
+                    <p className="mt-1.5 hidden max-w-3xl text-sm leading-5 text-white/80 md:block">{studio.body}</p>
+                  </div>
+                  <span className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg transition group-hover:brightness-110 sm:self-auto sm:px-5 sm:py-2.5 sm:text-sm">{studio.watch}<span aria-hidden="true">▶</span></span>
                 </div>
               </div>
-              <div aria-hidden="true" className="absolute left-[63%] top-1/2 hidden h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 bg-black/35 text-2xl text-white shadow-xl backdrop-blur-sm transition group-hover:scale-110 sm:flex">▶</div>
             </div>
           </button>
         </div>
