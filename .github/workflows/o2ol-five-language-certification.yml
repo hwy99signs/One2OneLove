@@ -3,7 +3,7 @@ name: O2OL Five Language Certification
 on:
   push:
     branches:
-      - o2ol-password-reset-preview
+      - qa/o2ol-combined-prelaunch-20260930
     paths:
       - ".github/workflows/o2ol-five-language-certification.yml"
       - "src/**"
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: o2ol-password-reset-preview
+          ref: qa/o2ol-combined-prelaunch-20260930
 
       - name: Verify all 150 voting questions are localized in every language
         shell: bash
@@ -68,15 +68,16 @@ jobs:
           const PUBLIC=[
             '/','/Home','/AboutUs','/SignIn','/login','/SignUp','/signup','/ForgotPassword',
             '/Invite','/HelpCenter','/ContactUs','/PrivacyPolicy','/TermsOfService','/Reviews',
-            '/LeaveReview','/Suggestions'
+            '/LeaveReview','/Suggestions','/Subscription','/DateIdeas','/LoveNotes','/LoveLanguageQuiz',
+            '/MemoryLane','/PodcastsSupport','/RelationshipQuizzes','/RelationshipMilestones',
+            '/RelationshipGoals','/CommunicationPractice','/CoupleSupport','/ArticlesSupport',
+            '/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/Games','/ScratchGame',
+            '/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/Community',
+            '/MyMatchIQ'
           ];
           const MEMBER=[
-            '/MemoryLane','/LoveNotes','/SendCredits','/CoupleSupport','/LoveLanguageQuiz',
-            '/DateIdeas','/Profile','/PodcastsSupport','/ArticlesSupport','/RelationshipQuizzes',
-            '/AnniversaryTracker','/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice',
-            '/CouplesProfile','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo','/Games',
-            '/ScratchGame','/SharedJournals','/CouplesDashboard','/CouplesCalendar','/LGBTQSupport',
-            '/Chat','/PaymentSuccess','/Subscription','/VerifyPhone'
+            '/SendCredits','/Profile','/AnniversaryTracker','/CouplesProfile','/CouplesDashboard',
+            '/PaymentSuccess','/VerifyPhone'
           ];
           const ROUTES=[...PUBLIC,...MEMBER];
 
@@ -181,10 +182,13 @@ jobs:
               const member=MEMBER.includes(route);
               const en=await snapshot(browser,route,'en',member);
               report.snapshots[route]={en:{status:en.status,finalUrl:en.finalUrl,stored:en.stored,errors:en.errors,main:en.main.slice(0,1200)}};
+              if(en.status!==200) report.critical.push({kind:'route-status',route,lang:'en',status:en.status});
+              if(en.errors.length) report.critical.push({kind:'page-errors',route,lang:'en',errors:en.errors});
               const englishCandidates=en.segments.filter(likelyLeak);
               for(const lang of LANGS.slice(1)){
                 const loc=await snapshot(browser,route,lang,member);
                 report.snapshots[route][lang]={status:loc.status,finalUrl:loc.finalUrl,stored:loc.stored,errors:loc.errors,main:loc.main.slice(0,1200)};
+                if(loc.status!==200) report.critical.push({kind:'route-status',route,lang,status:loc.status});
                 if(loc.stored!==lang) report.critical.push({kind:'language-not-persisted',route,lang,actual:loc.stored});
                 if(loc.errors.length) report.critical.push({kind:'page-errors',route,lang,errors:loc.errors});
                 const locSet=new Set(loc.segments.map(norm));
@@ -253,6 +257,7 @@ jobs:
           for(const x of report.critical.slice(0,100)) console.log('CRITICAL '+JSON.stringify(x));
           for(const x of report.unchangedSegments.slice(0,100)) console.log('UNCHANGED '+JSON.stringify(x));
           console.log('SCRATCH '+JSON.stringify(report.scratchStandalone));
+          if(report.critical.length) process.exit(1);
           NODE
 
       - name: Upload certification evidence
