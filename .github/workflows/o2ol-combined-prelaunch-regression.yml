@@ -49,6 +49,11 @@ jobs:
           grep -F 'studio-who-should-apologize-first' src/pages/O2OLStudio.jsx src/pages/Chat.jsx worker/community-chat.ts
           grep -F "biancaStart: 'CHAT with Bianca'" src/pages/MyMatchIQ.jsx
           grep -F "const openBianca = () => navigate('/MyMatchIQ/Bianca')" src/pages/MyMatchIQ.jsx
+          grep -F "Chat Room Analytics" src/pages/Admin.jsx
+          grep -F "O2OL Show Voting" src/pages/Admin.jsx
+          grep -F "Conversation by Topic / # of Comments" src/pages/Admin.jsx
+          grep -F "o2ol_show_vote_responses" worker/admin.ts
+          grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
           grep -F "handlePrelaunchCommunityChatRequest" worker/mmiq-prelaunch-preview.ts
           grep -F "prelaunch-chat/messages/" worker/prelaunch-community-chat.ts
           ! grep -F '"binding": "HYPERDRIVE"' cloudflare/wrangler.combined-prelaunch.jsonc
