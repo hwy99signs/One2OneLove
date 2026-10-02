@@ -148,7 +148,7 @@ export default function TierCard({ tier, onSelect, isSelected, showPayment = fal
             {tier.features.map((feature, idx) => (
               <li key={idx} className="flex items-start gap-3">
                 <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-white" />
-                <span className="text-sm text-white/95">{feature}</span>
+                <span className="text-[1.3125rem] leading-[1.8rem] text-white/95">{feature}</span>
               </li>
             ))}
           </ul>
