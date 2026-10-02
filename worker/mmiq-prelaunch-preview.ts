@@ -1,6 +1,13 @@
+import { handleStudioMediaRequest } from './studio-media';
+
 export default {
-  async fetch(request: Request, env: { ASSETS: Fetcher }) {
+  async fetch(request: Request, env: { ASSETS: Fetcher; MEDIA: R2Bucket }) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/studio-media/')) {
+      const response = await handleStudioMediaRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname.startsWith('/api/')) {
       return Response.json(
