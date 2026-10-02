@@ -84,8 +84,11 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
 
     return await withDb(env, async db => {
       const result = await db.query(
-        `SELECT subscription_plan,subscription_status,stripe_subscription_id
-           FROM public.users WHERE id=$1::uuid`,
+        `SELECT u.subscription_plan,u.subscription_status,u.stripe_subscription_id,
+                f.founding_number,f.cohort AS founding_cohort,f.status AS founding_status
+           FROM public.users u
+           LEFT JOIN public.founding_members f ON f.user_id=u.id
+          WHERE u.id=$1::uuid`,
         [auth.user.id],
       );
       const user = result.rows[0];
@@ -95,6 +98,24 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
       }
 
       const currentPlan = canonicalPlan(user.subscription_plan) || 'Premiere';
+      const isFirst100Founder = user.founding_cohort === 'first100' && user.founding_status === 'active';
+      if (currentPlan === targetPlan) {
+        return json({
+          ok: true,
+          plan: customerPlan(targetPlan),
+          storedPlan: targetPlan,
+          subscriptionStatus: 'trial',
+          foundingPlan: targetPlan,
+          unchanged: true,
+        });
+      }
+      if (!isFirst100Founder || currentPlan !== 'Exclusive' || targetPlan !== 'Premiere') {
+        return fail(
+          'During the Founding Member free period, the supported plan choice is first-100 members choosing Premiere instead of continuing Exclusive.',
+          409,
+          'founding_plan_change_not_available',
+        );
+      }
       const subscription = await stripeRequest(env, 'GET', `/subscriptions/${encodeURIComponent(user.stripe_subscription_id)}`);
       const item = subscription?.items?.data?.[0];
       if (!item?.id) return fail('Stripe subscription item could not be found.', 502, 'stripe_subscription_item_missing');
@@ -129,14 +150,6 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
         throw error;
       }
 
-      if (currentPlan === 'Exclusive' && targetPlan === 'Premiere') {
-        await db.query(
-          `UPDATE public.founding_members
-              SET founding_rate_forfeited=true,updated_at=now()
-            WHERE user_id=$1::uuid AND cohort='first100' AND status='active'`,
-          [auth.user.id],
-        );
-      }
       return json({
         ok: true,
         plan: customerPlan(targetPlan),
