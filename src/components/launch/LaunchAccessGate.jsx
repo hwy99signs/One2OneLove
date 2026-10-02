@@ -138,7 +138,7 @@ export default function LaunchAccessGate({ pathname, children }) {
 
   // Open House/public browsing never unlocks private member routes or personalized data.
   if (guestPreview) {
-    return <Navigate to="/Subscription?guest-preview=view-only" replace />;
+    return <Navigate to="/Subscription?open-house=view-only" replace />;
   }
 
   if (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess)) {
