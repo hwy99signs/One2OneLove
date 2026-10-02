@@ -3,6 +3,7 @@ import { chromium } from 'playwright-core';
 
 const BASE=(process.env.PREVIEW_URL||'').replace(/\/$/,'');
 const CHROME=process.env.CHROME_BIN;
+const TASKS_ONLY=process.env.TASKS_ONLY==='1';
 if(!BASE||!CHROME) throw new Error('PREVIEW_URL and CHROME_BIN are required');
 
 const ACTIVE=[
@@ -442,12 +443,14 @@ async function taskFounding(browser){
 
 const browser=await chromium.launch({headless:true,executablePath:CHROME,args:['--no-sandbox']});
 try{
-  await crawl(browser,'anonymous',PUBLIC,{width:1440,height:900},'anonymousDesktop');
-  await crawl(browser,'anonymous',PUBLIC,{width:390,height:844},'anonymousAndroid');
-  const memberRoutes=ACTIVE.filter(r=>!r.toLowerCase().startsWith('/admin'));
-  await crawl(browser,'member',memberRoutes,{width:1440,height:900},'memberDesktop');
-  await crawl(browser,'member',memberRoutes,{width:390,height:844},'memberAndroid');
-  await checkDeferred(browser);
+  if(!TASKS_ONLY){
+    await crawl(browser,'anonymous',PUBLIC,{width:1440,height:900},'anonymousDesktop');
+    await crawl(browser,'anonymous',PUBLIC,{width:390,height:844},'anonymousAndroid');
+    const memberRoutes=ACTIVE.filter(r=>!r.toLowerCase().startsWith('/admin'));
+    await crawl(browser,'member',memberRoutes,{width:1440,height:900},'memberDesktop');
+    await crawl(browser,'member',memberRoutes,{width:390,height:844},'memberAndroid');
+    await checkDeferred(browser);
+  }
   await taskOpenHouse(browser);
   await taskStudioBianca(browser);
   await taskSuggestion(browser);
