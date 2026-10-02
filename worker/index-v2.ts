@@ -94,6 +94,14 @@ const SOCIAL_PAGE_META = {
     it:['Podcast | One2OneLove','Scopri conversazioni, idee e ispirazione sulle relazioni con i podcast One2OneLove.'],
     de:['Podcasts | One2OneLove','Entdecken Sie Beziehungsgespräche, Ideen und Inspiration in den One2OneLove Podcasts.'],
   },
+  '/o2olstudio': {
+    image:'/assets/o2ol-hero.png',
+    en:['O2OL Studio Show | One2OneLove','Watch O2OL Studio conversations about real relationship questions, featuring Bianca and the One2OneLove relationship experience.'],
+    es:['O2OL Studio Show | One2OneLove','Mira conversaciones de O2OL Studio sobre preguntas reales de relaciones, con Bianca y la experiencia One2OneLove.'],
+    fr:['O2OL Studio Show | One2OneLove','Regardez les conversations O2OL Studio autour de vraies questions relationnelles, avec Bianca et l’expérience One2OneLove.'],
+    it:['O2OL Studio Show | One2OneLove','Guarda le conversazioni O2OL Studio su vere domande relazionali, con Bianca e l’esperienza One2OneLove.'],
+    de:['O2OL Studio Show | One2OneLove','Sehen Sie O2OL-Studio-Gespräche über echte Beziehungsfragen mit Bianca und dem One2OneLove-Erlebnis.'],
+  },
   '/professionals': {
     image:'/assets/o2ol-hero.png',
     en:['Therapists & Professionals | One2OneLove','The One2OneLove professional network is now on-boarding qualified relationship professionals.'],
