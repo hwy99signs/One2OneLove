@@ -1,4 +1,4 @@
-import { handlePrelaunchCommunityChatRequest } from './prelaunch-community-chat';
+import { getPrelaunchChatAdminSnapshot, handlePrelaunchCommunityChatRequest } from './prelaunch-community-chat';
 import { handleStudioMediaRequest } from './studio-media';
 
 function copyAuthResponseHeaders(upstreamHeaders: Headers) {
@@ -56,6 +56,50 @@ async function session(request: Request, env: { NEON_AUTH_BASE_URL: string }) {
   return user?.id && user?.emailVerified === true && active ? { user, session: active } : null;
 }
 
+async function prelaunchAdminDashboard(env: { MEDIA: R2Bucket }) {
+  const chatRoom=await getPrelaunchChatAdminSnapshot(env);
+  return Response.json({
+    ok:true,
+    preview:true,
+    readOnly:true,
+    generatedAt:new Date().toISOString(),
+    summary:{
+      users:{ total:0,new_7d:0,inactive:0,verified:0 },
+      plans:[],
+      applications:{ pending_total:0 },
+      moderation:{ pending_total:0 },
+      payments:{ recorded_payments:0,payments_this_month:0 },
+      loveNotes:{ sent_total:0,sent_30d:0,scheduler_users:0,scheduler_users_30d:0,scheduled_total:0,scheduled_passed:0,scheduled_failed:0,scheduled_pending:0,scheduled_30d:0 },
+    },
+    members:[],
+    applications:[],
+    moderation:[],
+    billing:{ payments:[],changes:[] },
+    loveNotes:{ schedulers:{ users_total:0,users_30d:0,schedules_total:0,schedules_30d:0,avg_schedules_per_user:0 },recent:[] },
+    featureUsage:{
+      liveTracking:false,
+      trackingMessage:'Prelaunch Admin preview is read-only. Only isolated Chat Room analytics are enabled here.',
+      features:[],
+    },
+    topFeatureActivity:{ windows:[7,14,21,30] },
+    chatRoom,
+    system:{ aiUsage30d:[],authRoles:[],migrations:[] },
+  }, {
+    headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' },
+  });
+}
+
+function prelaunchAdminAnalytics() {
+  return Response.json({
+    ok:true,
+    preview:true,
+    readOnly:true,
+    directDelivery:{ sent:0,passed:0,failed:0,pending:0,receiptTrackingActive:false },
+  }, {
+    headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' },
+  });
+}
+
 async function prelaunchProfile(request: Request, env: { NEON_AUTH_BASE_URL: string }) {
   if (request.method !== 'GET') {
     return Response.json({ ok:false, error:{ code:'prelaunch_read_only_profile', message:'Profile editing is disabled in prelaunch.' } }, { status:405 });
@@ -100,6 +144,21 @@ export default {
     if (url.pathname.startsWith('/api/community-chat')) {
       const response = await handlePrelaunchCommunityChatRequest(request, env, url);
       if (response) return response;
+    }
+
+    if (url.pathname === '/api/admin/dashboard' && request.method === 'GET') {
+      return prelaunchAdminDashboard(env);
+    }
+
+    if (url.pathname === '/api/admin/analytics' && request.method === 'GET') {
+      return prelaunchAdminAnalytics();
+    }
+
+    if (url.pathname.startsWith('/api/admin/')) {
+      return Response.json(
+        { ok:false, preview:true, readOnly:true, error:{ code:'prelaunch_admin_read_only', message:'Admin controls are disabled in the prelaunch preview.' } },
+        { status:405, headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } },
+      );
     }
 
     if (url.pathname.startsWith('/api/auth')) {
