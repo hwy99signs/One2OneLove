@@ -13,6 +13,7 @@ const COPY={
     unavailable:'Episode 1 is staged for O2OL Studio, but the video file is not available from media storage yet.',
     test:'Take the MyMatchIQ Compatibility Test',
     talk:'Talk with Bianca',
+    chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',
     note:'Watching the Studio episode is open. Starting the Compatibility Test or a live Bianca conversation follows the current One2OneLove account and card requirements.'
   },
@@ -25,6 +26,7 @@ const COPY={
     unavailable:'El Episodio 1 está preparado para O2OL Studio, pero el archivo de video aún no está disponible en el almacenamiento multimedia.',
     test:'Hacer la Prueba de Compatibilidad MyMatchIQ',
     talk:'Hablar con Bianca',
+    chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',
     note:'Ver el episodio de Studio es abierto. Iniciar la Prueba de Compatibilidad o una conversación en vivo con Bianca sigue los requisitos actuales de cuenta y tarjeta de One2OneLove.'
   },
@@ -37,6 +39,7 @@ const COPY={
     unavailable:'L’épisode 1 est prêt pour O2OL Studio, mais le fichier vidéo n’est pas encore disponible dans le stockage média.',
     test:'Faire le Test de Compatibilité MyMatchIQ',
     talk:'Parler avec Bianca',
+    chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',
     note:'Le visionnage de l’épisode Studio est ouvert. Le Test de Compatibilité et la conversation en direct avec Bianca suivent les exigences actuelles de compte et de carte One2OneLove.'
   },
@@ -49,6 +52,7 @@ const COPY={
     unavailable:'L’Episodio 1 è pronto per O2OL Studio, ma il file video non è ancora disponibile nello storage multimediale.',
     test:'Fai il Test di Compatibilità MyMatchIQ',
     talk:'Parla con Bianca',
+    chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',
     note:'La visione dell’episodio Studio è aperta. Il Test di Compatibilità e la conversazione live con Bianca seguono gli attuali requisiti di account e carta One2OneLove.'
   },
@@ -61,6 +65,7 @@ const COPY={
     unavailable:'Folge 1 ist für O2OL Studio vorbereitet, aber die Videodatei ist im Medienspeicher noch nicht verfügbar.',
     test:'MyMatchIQ-Kompatibilitätstest Starten',
     talk:'Mit Bianca Sprechen',
+    chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',
     note:'Das Studio-Video kann frei angesehen werden. Für den Kompatibilitätstest und ein Live-Gespräch mit Bianca gelten die aktuellen One2OneLove-Konto- und Kartenanforderungen.'
   }
@@ -84,7 +89,7 @@ export default function O2OLStudio(){
             <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-white/75 sm:text-lg">{t.body}</p>
           </div>
 
-          <div className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-[1.5rem] border border-white/15 bg-black shadow-2xl">
+          <div className="relative mx-auto mt-8 max-w-5xl overflow-hidden rounded-[1.5rem] border border-white/15 bg-black shadow-2xl">
             {!videoUnavailable ? (
               <video
                 className="aspect-video w-full bg-black"
@@ -104,6 +109,12 @@ export default function O2OLStudio(){
                 </div>
               </div>
             )}
+            <Link
+              to="/Chat?room=studio-who-should-apologize-first&from=studio"
+              className="absolute right-3 top-3 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white shadow-xl backdrop-blur-md transition hover:bg-fuchsia-600/90 sm:right-4 sm:top-4 sm:px-5 sm:text-sm"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden="true"/>{t.chat}
+            </Link>
           </div>
 
           <div className="mx-auto mt-6 flex max-w-5xl items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-950/25 px-5 py-4 text-center text-sm font-bold text-cyan-50">
