@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getActivityProgress, getActivityPreferences } from "@/lib/activityService";
+import { hasFullMemberAccess } from "@/lib/openHouseAccess";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 const translations = {
   en: {
@@ -186,17 +188,18 @@ export default function CoupleActivities() {
   const t = translations[currentLanguage] || translations.en;
 
   const { user } = useAuth();
+  const fullMemberAccess = hasFullMemberAccess(user);
 
   const { data: progressData = [] } = useQuery({
     queryKey: ['activityProgress', user?.id],
     queryFn: async () => user?.id ? getActivityProgress() : [],
-    enabled: !!user?.id,
+    enabled: fullMemberAccess,
   });
 
   const { data: preferences = null } = useQuery({
     queryKey: ['userPreferences', user?.id],
     queryFn: async () => user?.id ? getActivityPreferences() : null,
-    enabled: !!user?.id,
+    enabled: fullMemberAccess,
   });
 
   const activities = [
@@ -308,6 +311,7 @@ export default function CoupleActivities() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+      {!fullMemberAccess && <div className="mx-auto max-w-7xl px-4 pt-8"><OpenHouseBrowseNotice /></div>}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
