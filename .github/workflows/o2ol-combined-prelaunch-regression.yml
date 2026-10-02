@@ -76,7 +76,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { chromium } from 'playwright-core';
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
-          const routes=['/Subscription','/SignUp','/O2OLStudio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const routes=['/','/Subscription','/SignUp','/O2OLStudio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
           const langs=['en','es','fr','it','de'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           const failures=[];
