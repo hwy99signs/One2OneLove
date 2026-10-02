@@ -58,7 +58,7 @@ jobs:
           grep -F "LIMITED-TIME ONE2ONELOVE OPEN HOUSE" src/pages/Home.jsx
           grep -F "Founding Members #1–100" src/pages/HelpCenter.jsx
           grep -F "Open House, Memberships, Founding Members" src/pages/TermsOfService.jsx
-          grep -F "US$15.99/month" src/pages/TermsOfService.jsx src/pages/HelpCenter.jsx
+          grep -F 'US$15.99/month' src/pages/TermsOfService.jsx src/pages/HelpCenter.jsx
           grep -F "hasFullMemberAccess" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx src/pages/CoupleActivities.jsx src/pages/CooperativeGames.jsx src/pages/LoveLanguageQuiz.jsx src/pages/ScratchGame.jsx
           grep -F "'/memorylane'" src/components/launch/LaunchAccessGate.jsx
           grep -F "'/relationshipgoals'" src/components/launch/LaunchAccessGate.jsx
