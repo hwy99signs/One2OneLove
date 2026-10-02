@@ -116,7 +116,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   const role = String(user.role || '').toLowerCase();
   if (role === 'admin') return children;
 
-  if (route === '/subscription' || route === '/payment-success') return children;
+  if (route === '/subscription' || route === '/payment-success' || route === '/paymentsuccess') return children;
   if (route === '/sendcredits') return <Navigate to="/Subscription" replace />;
 
   const status = String(user.subscription_status || '').toLowerCase();
