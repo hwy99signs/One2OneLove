@@ -531,25 +531,25 @@ function LanguageContent({ children, currentPageName }) {
               id="responsive-navigation-menu"
               ref={mobileMenuRef}
               onMouseLeave={closeResponsiveMenuOnHoverAway}
-              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[calc(100vw-1rem)] max-w-[320px] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-3 py-3 shadow-2xl max-h-[calc(100vh-7.5rem)] overflow-y-auto overscroll-contain`}
+              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[240px] sm:w-[260px] max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-2.5 py-2.5 shadow-2xl max-h-[calc(100vh-7.5rem)] overflow-y-auto overscroll-contain`}
             >
-              <nav className="flex flex-col gap-1.5">
+              <nav className="flex flex-col gap-1 text-[15px] leading-5">
                 {isMyMatchIQPage && (
-                  <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="flex h-14 w-[104px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
-                    <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-11 w-[92px] scale-[1.2] object-contain" />
+                  <Link to="/SignUp?source=mymatchiq-o2ol" aria-label="One to One Love" className="flex h-11 w-[84px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
+                    <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-8 w-[72px] scale-[1.05] object-contain" />
                   </Link>
                 )}
                 {!isMyMatchIQPage && (
-                  <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="flex h-14 w-[104px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
-                    <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-11 w-[92px] scale-[1.2] object-contain" />
+                  <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="flex h-11 w-[84px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
+                    <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-8 w-[72px] scale-[1.05] object-contain" />
                   </Link>
                 )}
                 <Link
                   to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Home className="w-5 h-5" />
+                  <Home className="w-4 h-4" />
                   {t.nav.home}
                 </Link>
 
@@ -559,10 +559,10 @@ function LanguageContent({ children, currentPageName }) {
                     type="button"
                     aria-expanded={mobileActionOpen}
                     onClick={() => setMobileActionOpen(!mobileActionOpen)}
-                    className="flex items-center justify-between w-full text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    className="flex items-center justify-between w-full text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <Heart className="w-5 h-5" />
+                      <Heart className="w-4 h-4" />
                       {t.nav.action}
                     </div>
                     <ChevronDown className={`w-4 h-4 transition-transform ${mobileActionOpen ? 'rotate-180' : ''}`} />
@@ -572,113 +572,113 @@ function LanguageContent({ children, currentPageName }) {
                     <div className="mt-1 bg-white/10 rounded-lg overflow-hidden">
                       <Link
                       to={isMyMatchIQPage ? '/MyMatchIQ/Actions' : createPageUrl("MyMatchIQ")}
-                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-950/90 via-violet-800/90 to-fuchsia-700/90 px-4 py-3 font-black text-white transition-all hover:from-indigo-950 hover:to-fuchsia-600"
+                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-950/90 via-violet-800/90 to-fuchsia-700/90 px-3 py-2.5 font-black text-white transition-all hover:from-indigo-950 hover:to-fuchsia-600"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Sparkles className="w-5 h-5" />
+                        <Sparkles className="w-4 h-4" />
                         MyMatchIQ
                         <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span>
                       </Link>
                       <Link
                         to={createPageUrl("LoveNotes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.sendLoveNote}
                       </Link>
                       <Link
                         to={createPageUrl("LGBTQSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Rainbow className="w-5 h-5" />
+                        <Rainbow className="w-4 h-4" />
                         {t.actionMenu.lgbtqSupport}
                       </Link>
                       <Link
                         to={createPageUrl("CoupleSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Users className="w-5 h-5" />
+                        <Users className="w-4 h-4" />
                         {t.actionMenu.coupleSupport}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipQuizzes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.relationshipQuizzes}
                       </Link>
                       <Link
                         to={createPageUrl("CooperativeGames")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Gamepad2 className="w-5 h-5" />
+                        <Gamepad2 className="w-4 h-4" />
                         {t.actionMenu.games}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipMilestones")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.relationshipMilestones}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipGoals")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Target className="w-5 h-5" />
+                        <Target className="w-4 h-4" />
                         {t.actionMenu.relationshipGoals}
                       </Link>
                       <Link
                         to={createPageUrl("DateIdeas")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.dateIdeas}
                       </Link>
                       <Link
                         to={createPageUrl("MemoryLane")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.memoryLane}
                       </Link>
                     </div>
@@ -687,41 +687,41 @@ function LanguageContent({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("Community")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Users className="w-5 h-5" />
+                  <Users className="w-4 h-4" />
                   {t.nav.community}
                 </Link>
                 <Link
                   to={createPageUrl("LGBTQSupport")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Rainbow className="w-5 h-5" />
+                  <Rainbow className="w-4 h-4" />
                   {t.nav.lgbtq}
                 </Link>
                 {isAuthenticated && (
                   <Link
                     to={createPageUrl("Profile")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <User className="w-5 h-5" />
+                    <User className="w-4 h-4" />
                     {t.nav.profile}
                   </Link>
                 )}
-                <div className="border-t border-white/20 my-2"></div>
+                <div className="border-t border-white/20 my-1.5"></div>
                 
 
                 {/* Chat - Only show when authenticated */}
                 {isAuthenticated && (
                   <Link
                     to={createPageUrl("Chat")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all relative"
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all relative"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <MessageCircle className="w-5 h-5" />
+                    <MessageCircle className="w-4 h-4" />
                     {t.nav.chat}
                     {totalUnreadCount > 0 && (
                       <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
@@ -740,9 +740,9 @@ function LanguageContent({ children, currentPageName }) {
                       setMobileMenuOpen(false);
                       handleSignOut(e);
                     }}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all w-full text-left"
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all w-full text-left"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-4 h-4" />
                     {t.nav.signOut}
                   </button>
                 )}
@@ -752,10 +752,10 @@ function LanguageContent({ children, currentPageName }) {
                   <>
                     <Link
                       to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                      className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <UserCheck className="w-5 h-5" />
+                      <UserCheck className="w-4 h-4" />
                       {t.nav.invite}
                     </Link>
                     <button
@@ -763,9 +763,9 @@ function LanguageContent({ children, currentPageName }) {
                         handleSignUp();
                         setMobileMenuOpen(false);
                       }}
-                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg transition-all font-semibold"
+                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-3 py-2.5 rounded-lg transition-all font-semibold"
                     >
-                      <UserPlus className="w-5 h-5" />
+                      <UserPlus className="w-4 h-4" />
                       {t.nav.signUp}
                     </button>
                     <button
@@ -773,9 +773,9 @@ function LanguageContent({ children, currentPageName }) {
                         handleSignIn();
                         setMobileMenuOpen(false);
                       }}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                      className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                     >
-                      <LogIn className="w-5 h-5" />
+                      <LogIn className="w-4 h-4" />
                       {t.nav.signIn}
                     </button>
                   </>
