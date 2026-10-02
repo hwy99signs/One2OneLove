@@ -38,7 +38,8 @@ export default function SignUp() {
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
         <LaunchRegularUserForm
           selectedPlan={effectivePlan}
-          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}`)}
+          foundingIntent={foundingIntent}
+          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}${foundingIntent ? '&founding=1' : ''}`)}
         />
       </div>
     );
