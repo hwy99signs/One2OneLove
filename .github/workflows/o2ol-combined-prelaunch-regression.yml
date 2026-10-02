@@ -98,11 +98,17 @@ jobs:
                 await context.route('**/api/like-minded/**',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,rooms:[],session:null})}));
                 const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
                 let res=null; try{res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForTimeout(700);}catch(e){errors.push(String(e.message||e));}
-                const dom=await page.evaluate(()=>({text:(document.querySelector('main')?.innerText||document.body?.innerText||'').replace(/\s+/g,' ').trim(),overflow:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth,broken:[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src)})).catch(()=>({text:'',overflow:0,broken:[]}));
+                const dom=await page.evaluate(()=>{
+                  const overflowers=[...document.querySelectorAll('body *')].map(el=>{
+                    const r=el.getBoundingClientRect();
+                    return {tag:el.tagName,cls:String(el.className||'').slice(0,180),text:String(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim().slice(0,140),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width)};
+                  }).filter(x=>x.right>innerWidth+6||x.left<-6).slice(0,12);
+                  return {text:(document.querySelector('main')?.innerText||document.body?.innerText||'').replace(/\s+/g,' ').trim(),overflow:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth,broken:[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src),overflowers};
+                }).catch(()=>({text:'',overflow:0,broken:[],overflowers:[]}));
                 if(!res||res.status()!==200) failures.push({route,lang,kind:'status',status:res?.status()});
                 if(errors.length) failures.push({route,lang,kind:'pageerror',errors});
                 if(dom.text.length<20) failures.push({route,lang,kind:'empty'});
-                if(dom.overflow>6) failures.push({route,lang,kind:'overflow',pixels:dom.overflow});
+                if(dom.overflow>6) failures.push({route,lang,kind:'overflow',pixels:dom.overflow,elements:dom.overflowers});
                 if(dom.broken.length) failures.push({route,lang,kind:'broken-images',count:dom.broken.length});
                 if(/undefined|\[object Object\]|NaN/.test(dom.text)) failures.push({route,lang,kind:'suspicious-text'});
                 await context.close();
