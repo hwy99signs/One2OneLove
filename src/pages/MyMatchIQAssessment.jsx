@@ -54,11 +54,11 @@ export default function MyMatchIQAssessment(){
 
  async function begin(){
   if(!isAuthenticated){
-    navigate('/MyMatchIQ/SignUp?source=open-house-assessment&card=required');
+    navigate('/SignUp?source=mymatchiq-assessment&card=required');
     return;
   }
   if(!cardReady){
-    navigate('/MyMatchIQ/Subscription?source=open-house-assessment&card=required&setup=required');
+    navigate('/Subscription?source=mymatchiq-assessment&card=required&setup=required');
     return;
   }
   setAnswers([]);setSaveError('');setStarted(true);
@@ -83,8 +83,8 @@ export default function MyMatchIQAssessment(){
  const casualHref=cardReady
   ? '/MyMatchIQ/Bianca'
   : isAuthenticated
-    ? '/MyMatchIQ/Subscription?source=open-house-bianca&card=required&setup=required'
-    : '/MyMatchIQ/SignUp?source=open-house-bianca&card=required';
+    ? '/Subscription?source=mymatchiq-bianca&card=required&setup=required'
+    : '/SignUp?source=mymatchiq-bianca&card=required';
 
  return <main className="min-h-screen bg-[#070312] px-4 py-10 text-white sm:px-6" style={{backgroundImage:'radial-gradient(circle at 16% 0%, #5b126f 0%, transparent 32%), radial-gradient(circle at 86% 20%, #162e78 0%, transparent 32%)'}}>
   <section className="mx-auto max-w-5xl">
