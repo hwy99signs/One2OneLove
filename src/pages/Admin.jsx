@@ -114,7 +114,7 @@ function BreakdownList({ items=[] }) {
   </div>)}</div>;
 }
 
-function Relationship100Averages({ rows=[] }) {
+function Relationship100Averages({ rows=[], hasResponses=false }) {
   return <div className="overflow-hidden rounded-xl border border-slate-200">
     <div className="grid grid-cols-[72px_minmax(0,1fr)_110px] bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-slate-500">
       <div>Question</div><div>Relationship 100 item</div><div className="text-right">Average</div>
@@ -122,7 +122,7 @@ function Relationship100Averages({ rows=[] }) {
     {rows.map(row=><div key={row.key} className="grid grid-cols-[72px_minmax(0,1fr)_110px] items-center border-t border-slate-100 px-3 py-3 text-sm">
       <div className="font-black text-violet-700">Q{row.number}</div>
       <div className="font-semibold text-slate-800">{row.label}</div>
-      <div className="text-right text-lg font-black text-slate-900">{decimal(row.average)}%</div>
+      <div className="text-right text-lg font-black text-slate-900">{hasResponses?(decimal(row.average)+'%'):'—'}</div>
     </div>)}
   </div>;
 }
@@ -497,12 +497,12 @@ export default function Admin() {
               <Metric icon={BarChart3} label="O2OL Show Votes" value={number(showVoting.responseCount)} note={showVoting.topicTitle||'Current Show topic'} tone="violet"/>
               <Metric icon={MessageSquareText} label="Chat Comments" value={number(totalConversationComments)} note="approved comments across tracked topics" tone="blue"/>
               <Metric icon={Users} label="Conversation Topics" value={number(conversationTopics.length)} note="rooms and member-created topics" tone="green"/>
-              <Metric icon={Clock3} label="Last Show Vote" value={showVoting.lastResponseAt?date(showVoting.lastResponseAt):'—'} note="latest Relationship 100 response" tone="amber"/>
+              <Metric icon={Clock3} label="Last Show Vote" value={showVoting.lastResponseAt?'Recorded':'—'} note={showVoting.lastResponseAt?date(showVoting.lastResponseAt):'No responses yet'} tone="amber"/>
             </div>
 
             <Panel
               title="O2OL Show Voting"
-              subtitle={`TOPIC: ${showVoting.topicTitle||'Who Should Apologize First?'} · ${number(showVoting.responseCount)} response${Number(showVoting.responseCount||0)===1?'':'s'}`}
+              subtitle={`TOPIC: ${showVoting.topicTitle||'Who Should Apologize First?'} · ${number(showVoting.responseCount)} response${Number(showVoting.responseCount||0)===1?'':'s'} · Admin sees live anonymous aggregates; public averages remain on the approved 7-day reveal schedule.`}
             >
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
                 <div>
@@ -513,15 +513,15 @@ export default function Admin() {
                     </div>
                     <Pill tone="purple">{number(showVoting.responseCount)} votes</Pill>
                   </div>
-                  <Relationship100Averages rows={showVoting.relationship100||[]}/>
+                  <Relationship100Averages rows={showVoting.relationship100||[]} hasResponses={Number(showVoting.responseCount||0)>0}/>
                   <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
                     <div className="flex items-center justify-between gap-4">
                       <div><p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Question 10</p><p className="mt-1 font-bold text-slate-900">{showVoting.expenseSplit?.label||'Household bills / shared expenses'}</p></div>
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700 shadow-sm">Total 100%</span>
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Man</p><p className="mt-1 text-3xl font-black text-slate-900">{decimal(showVoting.expenseSplit?.manAverage)}%</p></div>
-                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Woman</p><p className="mt-1 text-3xl font-black text-slate-900">{decimal(showVoting.expenseSplit?.womanAverage)}%</p></div>
+                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Man</p><p className="mt-1 text-3xl font-black text-slate-900">{Number(showVoting.responseCount||0)>0?(decimal(showVoting.expenseSplit?.manAverage)+'%'):'—'}</p></div>
+                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Woman</p><p className="mt-1 text-3xl font-black text-slate-900">{Number(showVoting.responseCount||0)>0?(decimal(showVoting.expenseSplit?.womanAverage)+'%'):'—'}</p></div>
                     </div>
                   </div>
                 </div>
