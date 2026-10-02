@@ -14,7 +14,7 @@ import termsFr from '@/content/terms/fr';
 import termsIt from '@/content/terms/it';
 import termsDe from '@/content/terms/de';
 
-const TERMS_VERSION = '2026-09-25';
+const TERMS_VERSION = '2026-10-02';
 const termsByLanguage = { en: termsEn, es: termsEs, fr: termsFr, it: termsIt, de: termsDe };
 const languageOptions = [
   { code:'en', label:'English' },
@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere' }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere', foundingIntent = false }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
@@ -214,7 +214,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
               </Button>
             </>
           ) : (
-            <Button type="button" onClick={() => navigate(createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
+            <Button type="button" onClick={() => navigate(foundingIntent ? '/SignIn?redirect=%2FSubscription%3Ffounding%3D1' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
           )}
         </CardContent>
       </Card>
