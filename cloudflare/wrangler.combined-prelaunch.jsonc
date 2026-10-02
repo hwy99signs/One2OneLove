@@ -12,6 +12,10 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/studio-media/*"]
   },
+  "vars": {
+    "NEON_AUTH_BASE_URL": "https://ep-royal-darkness-ars10dcl.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth",
+    "PRELAUNCH_ENVIRONMENT": "true"
+  },
   "r2_buckets": [
     {
       "binding": "MEDIA",
