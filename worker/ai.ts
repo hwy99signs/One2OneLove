@@ -62,7 +62,9 @@ async function entitlement(db, userId, feature) {
   const storedPlan = canonicalPlan(result.rows[0].subscription_plan);
   const status = String(result.rows[0].subscription_status || '').toLowerCase();
   const paidActive = ['active', 'trial', 'trialing'].includes(status);
-  const plan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
+  // Stripe trial/trialing is the 30-day Founding Member free period; access
+  // follows the member's stored Founding plan.
+  const plan = storedPlan;
 
   if (feature === 'content_creator') {
     return plan === 'Exclusive' && paidActive
