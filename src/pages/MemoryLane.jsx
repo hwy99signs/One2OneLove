@@ -16,6 +16,7 @@ import MemoryCard from "../components/memories/MemoryCard";
 import MemoryTimeline from "../components/memories/MemoryTimeline";
 import MemoryFilters from "../components/memories/MemoryFilters";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
+import { hasFullMemberAccess, openHouseProtectedDestination } from "@/lib/openHouseAccess";
 
 const translations = {
   en: {
@@ -152,9 +153,10 @@ export default function MemoryLane() {
 
   const { user } = useAuth();
   const navigate = useNavigate();
-  const memoryUserKey = user?.id || null;
+  const fullMemberAccess = hasFullMemberAccess(user);
+  const memoryUserKey = fullMemberAccess ? user.id : null;
   const openMemoryCreate = () => {
-    if (!user?.id) return navigate('/SignUp?source=open-house&feature=memory-lane');
+    if (!fullMemberAccess) return navigate(openHouseProtectedDestination(user,'memory-lane'));
     setEditingMemory(null);
     setShowForm(true);
   };
@@ -162,7 +164,7 @@ export default function MemoryLane() {
   const { data: memories = [], isLoading } = useQuery({
     queryKey: ['memories', memoryUserKey],
     queryFn: () => listMemories(memoryUserKey),
-    enabled: !!user?.id,
+    enabled: fullMemberAccess,
   });
 
   const createMemoryMutation = useMutation({
@@ -259,7 +261,7 @@ export default function MemoryLane() {
           </Link>
         </div>
 
-        {!user?.id && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+        {!fullMemberAccess && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
 
         {/* Header */}
         <div className="text-center mb-12">
