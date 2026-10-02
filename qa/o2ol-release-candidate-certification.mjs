@@ -252,6 +252,7 @@ async function taskFounding(browser){
   await context.route('**/api/phone-verification/send',r=>fulfill(r,200,{ok:true,sent:true}));
   await context.route('**/api/phone-verification/verify',r=>{phoneVerified=true;return fulfill(r,200,{ok:true,verified:true});});
   await context.route('**/api/billing/checkout',r=>{captured.billing=r.request().postDataJSON()||{};return fulfill(r,200,{ok:true,sessionId:'qa',url:BASE+'/PaymentSuccess?session_id=qa',plan:'Exclusive',founding:{number:1,cohort:'first100',freeDays:30,recurringPriceCents:1599}});});
+  await context.route('**/api/billing/subscription',r=>fulfill(r,200,{ok:true,subscription:{subscription_plan:'Exclusive',subscription_status:'trialing',subscription_price:15.99,stripe_subscription_id:'sub_qa_founding',trial_end_date:'2026-11-01T00:00:00.000Z',founding_number:1,founding_cohort:'first100',founding_status:'active',founding_badge_retained:true,founding_rate_forfeited:false}}));
 
   const page=await context.newPage();
   await page.goto(BASE+'/Subscription',{waitUntil:'domcontentloaded'});
@@ -288,6 +289,7 @@ async function taskFounding(browser){
   await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/subscription'&&new URL(u).searchParams.get('founding')==='1',{timeout:8000});
   await page.getByRole('button',{name:/Activate Founding Offer/i}).click();
   await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/paymentsuccess',{timeout:8000});
+  await page.getByText(/Founding Member Free Period Activated/i).waitFor({state:'visible',timeout:8000});
   if(captured.billing?.founding!==true||captured.billing?.planName!=='Exclusive') fail('task-founding-checkout-payload',{payload:captured.billing});
   report.tasks.push('Founding signup + email + phone + checkout');
   await context.close();
