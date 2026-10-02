@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock } from "lucide-react";
+import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +109,87 @@ const translations = {
   }
 };
 
+const OPEN_HOUSE_OPEN_DATE_IDS = new Set([1, 2, 4, 6, 7, 11, 15, 16, 19, 27, 34, 36, 42]);
+
+const OPEN_HOUSE_COPY = {
+  en: {
+    badge: 'OPEN HOUSE',
+    locked: 'LOCKED',
+    membersOnly: 'Members Only',
+    lockedTitle: 'There is more waiting inside',
+    lockedBody: 'This Date Idea is hidden during the Limited-Time Open House. Become a member to unlock all 52 Date Ideas.',
+    unlock: 'Unlock All 52',
+    signIn: 'Sign In',
+    saveGate: 'Create an account to save, schedule, and track Date Ideas.',
+    memberAction: 'Become a Member'
+  },
+  es: {
+    badge: 'PUERTAS ABIERTAS',
+    locked: 'BLOQUEADO',
+    membersOnly: 'Solo miembros',
+    lockedTitle: 'Hay mucho más por descubrir',
+    lockedBody: 'Esta idea de cita está oculta durante las Puertas Abiertas por tiempo limitado. Hazte miembro para desbloquear las 52 ideas de citas.',
+    unlock: 'Desbloquear las 52',
+    signIn: 'Iniciar sesión',
+    saveGate: 'Crea una cuenta para guardar, programar y seguir tus ideas de citas.',
+    memberAction: 'Hazte miembro'
+  },
+  fr: {
+    badge: 'PORTES OUVERTES',
+    locked: 'VERROUILLÉ',
+    membersOnly: 'Membres uniquement',
+    lockedTitle: 'Il y en a encore beaucoup à découvrir',
+    lockedBody: 'Cette idée de rendez-vous est masquée pendant les Portes Ouvertes à durée limitée. Devenez membre pour débloquer les 52 idées.',
+    unlock: 'Débloquer les 52',
+    signIn: 'Se connecter',
+    saveGate: 'Créez un compte pour enregistrer, planifier et suivre vos idées de rendez-vous.',
+    memberAction: 'Devenir membre'
+  },
+  it: {
+    badge: 'PORTE APERTE',
+    locked: 'BLOCCATO',
+    membersOnly: 'Solo membri',
+    lockedTitle: 'C’è molto altro da scoprire',
+    lockedBody: 'Questa idea è nascosta durante le Porte Aperte a tempo limitato. Diventa membro per sbloccare tutte le 52 idee.',
+    unlock: 'Sblocca tutte e 52',
+    signIn: 'Accedi',
+    saveGate: 'Crea un account per salvare, programmare e monitorare le idee per gli appuntamenti.',
+    memberAction: 'Diventa membro'
+  },
+  de: {
+    badge: 'TAG DER OFFENEN TÜR',
+    locked: 'GESPERRT',
+    membersOnly: 'Nur für Mitglieder',
+    lockedTitle: 'Es gibt noch viel mehr zu entdecken',
+    lockedBody: 'Diese Date-Idee bleibt während des zeitlich begrenzten Open House verborgen. Werde Mitglied, um alle 52 Date-Ideen freizuschalten.',
+    unlock: 'Alle 52 freischalten',
+    signIn: 'Anmelden',
+    saveGate: 'Erstelle ein Konto, um Date-Ideen zu speichern, zu planen und zu verfolgen.',
+    memberAction: 'Mitglied werden'
+  }
+};
+
+function adminAccessActive(user) {
+  if (!user?.subscription_end_date) return false;
+  const end = new Date(user.subscription_end_date);
+  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
+}
+
+function hasFullDateIdeasAccess(user) {
+  if (!user) return false;
+  if (String(user.role || '').toLowerCase() === 'admin') return true;
+  const status = String(user.subscription_status || '').toLowerCase();
+  const paidOrGranted = Boolean(user.stripe_subscription_id) || adminAccessActive(user);
+  return ['active', 'trial', 'trialing'].includes(status) && paidOrGranted;
+}
+
+function mysteryTitleFragment(title) {
+  const firstWord = String(title || '').trim().split(/\s+/)[0] || '';
+  if (!firstWord) return '•••';
+  const length = firstWord.length <= 6 ? firstWord.length : firstWord.length <= 9 ? 3 : 8;
+  return firstWord.slice(0, length);
+}
+
 export default function DateIdeas() {
   const { currentLanguage } = useLanguage();
   const t = DATE_IDEAS_UI[currentLanguage] || DATE_IDEAS_UI.en;
@@ -129,13 +210,16 @@ export default function DateIdeas() {
   const [isScheduling, setIsScheduling] = useState(false);
 
   const { user: currentUser } = useAuth();
+  const hasMemberAccess = hasFullDateIdeasAccess(currentUser);
+  const openHouseCopy = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
+  const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
 
   const dateIdeasUserKey = currentUser?.id || 'guest';
 
   const { data: customDates = [] } = useQuery({
     queryKey: ['customDates', dateIdeasUserKey],
     queryFn: () => listDateIdeas(dateIdeasUserKey),
-    enabled: true,
+    enabled: hasMemberAccess,
   });
 
 
@@ -416,6 +500,13 @@ export default function DateIdeas() {
   };
 
   const openDateIdea = (idea) => {
+    const isBuiltIn = Boolean(idea?.week);
+    const isLockedForOpenHouse = !hasMemberAccess && isBuiltIn && !OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id));
+    if (isLockedForOpenHouse) {
+      setShowOpenHouseLock(true);
+      return;
+    }
+
     setSelectedIdea(idea);
     setShowScheduleForm(false);
     setScheduleDate('');
@@ -474,29 +565,35 @@ export default function DateIdeas() {
             >
               {t.allDates}
             </Button>
-            <Button
-              onClick={() => setViewMode('custom')}
-              variant={viewMode === 'custom' ? 'default' : 'outline'}
-              className={viewMode === 'custom' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
-            >
-              {t.myCustomDates} ({customOnlyDates.length})
-            </Button>
-            <Button
-              onClick={() => setViewMode('saved')}
-              variant={viewMode === 'saved' ? 'default' : 'outline'}
-              className={viewMode === 'saved' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
-            >
-              <Bookmark className="w-4 h-4 mr-2" />
-              {t.savedDates} ({savedIdeas.length})
-            </Button>
+            {hasMemberAccess && (
+              <>
+                <Button
+                  onClick={() => setViewMode('custom')}
+                  variant={viewMode === 'custom' ? 'default' : 'outline'}
+                  className={viewMode === 'custom' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
+                >
+                  {t.myCustomDates} ({customOnlyDates.length})
+                </Button>
+                <Button
+                  onClick={() => setViewMode('saved')}
+                  variant={viewMode === 'saved' ? 'default' : 'outline'}
+                  className={viewMode === 'saved' ? 'bg-gradient-to-r from-pink-500 to-purple-600' : ''}
+                >
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  {t.savedDates} ({savedIdeas.length})
+                </Button>
+              </>
+            )}
           </div>
-          <Button
-            onClick={() => setShowCustomForm(true)}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            {t.createCustom}
-          </Button>
+          {hasMemberAccess && (
+            <Button
+              onClick={() => setShowCustomForm(true)}
+              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              {t.createCustom}
+            </Button>
+          )}
         </div>
 
         <AnimatePresence>
@@ -578,6 +675,10 @@ export default function DateIdeas() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredIdeas.map((idea, index) => {
             const Icon = idea.icon || Heart;
+            const isBuiltIn = Boolean(idea.week);
+            const isOpenHouseLocked = !hasMemberAccess && isBuiltIn && !OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id));
+            const teaser = isOpenHouseLocked ? mysteryTitleFragment(idea.title) : null;
+
             return (
               <motion.button
                 type="button"
@@ -586,18 +687,82 @@ export default function DateIdeas() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.015, 0.25) }}
                 onClick={() => openDateIdea(idea)}
-                className="w-full min-h-[86px] bg-white rounded-xl border border-gray-200 hover:border-pink-300 hover:shadow-lg transition-all duration-200 px-4 py-4 text-left flex items-center gap-4"
+                aria-label={isOpenHouseLocked ? `${openHouseCopy.locked}: ${openHouseCopy.membersOnly}` : idea.title}
+                className={`relative w-full min-h-[86px] rounded-xl border px-4 py-4 text-left flex items-center gap-4 transition-all duration-200 ${
+                  isOpenHouseLocked
+                    ? 'bg-slate-50 border-slate-300 hover:border-purple-300 hover:shadow-md'
+                    : 'bg-white border-gray-200 hover:border-pink-300 hover:shadow-lg'
+                }`}
               >
                 <div className={`w-11 h-11 flex-shrink-0 bg-gradient-to-br ${idea.color || 'from-pink-500 to-purple-600'} rounded-xl flex items-center justify-center shadow-md`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
-                <span className="font-bold text-gray-900 leading-snug">{idea.title}</span>
+
+                {isOpenHouseLocked ? (
+                  <div className="min-w-0 flex-1 pr-10">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="font-bold text-gray-700 leading-snug whitespace-nowrap">{teaser}</span>
+                      <span aria-hidden="true" className="h-4 w-24 sm:w-32 rounded bg-slate-300 blur-[3px] opacity-90" />
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-purple-700">
+                      <Lock className="h-3.5 w-3.5" />
+                      {openHouseCopy.membersOnly}
+                    </div>
+                    <div className="absolute inset-y-0 right-3 flex items-center">
+                      <div className="rounded-full bg-white/90 p-2 shadow-sm border border-slate-200">
+                        <Lock className="h-4 w-4 text-slate-600" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="font-bold text-gray-900 leading-snug">{idea.title}</span>
+                )}
               </motion.button>
             );
           })}
         </div>
 
         <AnimatePresence>
+          {showOpenHouseLock && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/35 backdrop-blur-[2px] flex items-center justify-center p-4"
+              onClick={() => setShowOpenHouseLock(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-purple-100"
+                onClick={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+              >
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
+                  <Lock className="h-7 w-7 text-purple-700" />
+                </div>
+                <div className="text-center">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-purple-700">{openHouseCopy.badge}</p>
+                  <h3 className="text-2xl font-bold text-gray-900">{openHouseCopy.lockedTitle}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{openHouseCopy.lockedBody}</p>
+                </div>
+                <div className="mt-6 flex flex-col gap-2">
+                  <Link to="/Subscription?open-house=date-ideas" onClick={() => setShowOpenHouseLock(false)}>
+                    <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                      <Lock className="mr-2 h-4 w-4" />
+                      {openHouseCopy.unlock}
+                    </Button>
+                  </Link>
+                  <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
+                    <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
+                  </Link>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
           {selectedIdea && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -657,33 +822,51 @@ export default function DateIdeas() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleSaveDate(selectedIdea)}
-                        className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
-                      >
-                        <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
-                        {selectedIdea.is_favorite ? t.saved : t.addToSaved}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
-                        <Share2 className="w-4 h-4 mr-2" />
-                        {t.shareWithPartner}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={openSchedule}>
-                        <CalendarDays className="w-4 h-4 mr-2" />
-                        {t.schedule}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCompleteDate(selectedIdea)}
-                        disabled={Boolean(selectedIdea.is_completed)}
-                        className={selectedIdea.is_completed ? 'bg-green-50 border-green-300 text-green-700' : ''}
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        {selectedIdea.is_completed ? t.done : t.markComplete}
-                      </Button>
+                      {hasMemberAccess ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSaveDate(selectedIdea)}
+                            className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
+                          >
+                            <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
+                            {selectedIdea.is_favorite ? t.saved : t.addToSaved}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {t.shareWithPartner}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={openSchedule}>
+                            <CalendarDays className="w-4 h-4 mr-2" />
+                            {t.schedule}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCompleteDate(selectedIdea)}
+                            disabled={Boolean(selectedIdea.is_completed)}
+                            className={selectedIdea.is_completed ? 'bg-green-50 border-green-300 text-green-700' : ''}
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            {selectedIdea.is_completed ? t.done : t.markComplete}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {t.shareWithPartner}
+                          </Button>
+                          <Link to="/Subscription?open-house=date-ideas">
+                            <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                              <Lock className="w-4 h-4 mr-2" />
+                              {openHouseCopy.memberAction}
+                            </Button>
+                          </Link>
+                          <p className="w-full text-xs text-gray-500">{openHouseCopy.saveGate}</p>
+                        </>
+                      )}
                     </div>
 
                     <AnimatePresence>
