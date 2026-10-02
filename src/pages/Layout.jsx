@@ -246,11 +246,11 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignIn = () => {
-    navigate(isMyMatchIQPage ? '/MyMatchIQ/SignIn' : createPageUrl("SignIn"));
+    navigate(createPageUrl("SignIn"));
   };
 
   const handleSignUp = () => {
-    navigate(isMyMatchIQPage ? '/MyMatchIQ/Subscription' : "/Subscription?signup=1");
+    navigate("/Subscription?signup=1&source=mymatchiq-feature");
   };
 
   const handleSignOut = async (e) => {
@@ -833,7 +833,7 @@ function LanguageContent({ children, currentPageName }) {
                 <FooterLink onClick={() => navigate('/MyMatchIQ/Assessment')}>{mT.gettingStarted}</FooterLink>
                 <FooterLink onClick={() => navigate('/MyMatchIQ/Invite')}>{mT.invite}</FooterLink>
                 <FooterLink onClick={() => navigate('/MyMatchIQ/Dashboard')}>{mT.workspace}</FooterLink>
-                <FooterLink onClick={() => navigate('/MyMatchIQ/SignIn')}>{mT.signIn}</FooterLink>
+                <FooterLink onClick={() => navigate('/SignIn?source=mymatchiq-feature')}>{mT.signIn}</FooterLink>
               </div>
             </div>
             <div className="mx-auto mt-8 max-w-7xl border-t border-white/25 pt-4 text-center text-sm">{mT.copyright}</div>
