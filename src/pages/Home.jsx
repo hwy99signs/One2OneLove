@@ -6,6 +6,13 @@ import { useLanguage } from './Layout';
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
 const MYMATCHIQ_LABELS = { en: 'Compatibility Test', es: 'Prueba de Compatibilidad', fr: 'Test de Compatibilité', it: 'Test di Compatibilità', de: 'Kompatibilitätstest' };
+const STUDIO_COPY = {
+  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 1',title:'Who Should Apologize First?',body:'See Bianca in an actual O2OL Studio conversation and explore a relationship question from more than one point of view.',watch:'Watch Episode 1'},
+  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 1',title:'Who Should Apologize First?',body:'Mira a Bianca en una conversación real de O2OL Studio y explora una pregunta de relación desde más de un punto de vista.',watch:'Ver Episodio 1'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 1',title:'Who Should Apologize First?',body:'Découvrez Bianca dans une véritable conversation O2OL Studio et explorez une question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 1'},
+  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 1',title:'Who Should Apologize First?',body:'Guarda Bianca in una vera conversazione O2OL Studio ed esplora una domanda relazionale da più punti di vista.',watch:'Guarda Episodio 1'},
+  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Who Should Apologize First?',body:'Erleben Sie Bianca in einem echten O2OL-Studio-Gespräch und betrachten Sie eine Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
+};
 
 const COPY = {
   en: {
@@ -51,6 +58,7 @@ export default function Home() {
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
   const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
+  const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
   const [publicStats, setPublicStats] = useState(null);
   const go = page => navigate(createPageUrl(page));
@@ -128,6 +136,13 @@ export default function Home() {
             ))}
           </div>
           <div className="mt-12 rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 px-9 py-8 shadow-sm"><h3 className="text-3xl font-black">{t.loveNotes}</h3><p className="mt-3 text-xl leading-relaxed">{t.loveNotesBody}</p></div>
+          <button type="button" onClick={()=>navigate('/O2OLStudio')} className="group mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/30 bg-[radial-gradient(circle_at_15%_20%,rgba(236,72,153,0.28),transparent_32%),radial-gradient(circle_at_85%_20%,rgba(59,130,246,0.26),transparent_30%),linear-gradient(120deg,#090514,#111b50)] px-7 py-8 text-left text-white shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl">
+            <div className="text-xs font-black uppercase tracking-[0.22em] text-fuchsia-200">{studio.eyebrow}</div>
+            <div className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-cyan-200">{studio.season}</div>
+            <div className="mt-2 text-3xl font-black sm:text-4xl">{studio.title}</div>
+            <p className="mt-3 max-w-4xl text-base leading-7 text-white/75 sm:text-lg">{studio.body}</p>
+            <span className="mt-5 inline-flex rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg">{studio.watch} ▶</span>
+          </button>
         </div>
       </section>
     </div>
