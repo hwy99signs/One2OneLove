@@ -129,16 +129,13 @@ async function findMessage(env,messageId){
 }
 
 export async function getPrelaunchChatAdminSnapshot(env){
-  const conversations=[];
-  for(const room of ROOMS){
-    conversations.push({
-      key:`room:${room.slug}`,
-      topic:room.name,
-      source:'Room',
-      comments:await countMessages(env,room),
-      createdAt:null,
-    });
-  }
+  const conversations=await Promise.all(ROOMS.map(async room=>({
+    key:`room:${room.slug}`,
+    topic:room.name,
+    source:'Room',
+    comments:await countMessages(env,room),
+    createdAt:null,
+  })));
   return {
     showVoting:{
       topicSlug:'studio-who-should-apologize-first',
