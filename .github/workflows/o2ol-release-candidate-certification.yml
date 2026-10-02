@@ -43,6 +43,12 @@ jobs:
           set -euo pipefail
           npx wrangler deploy --config cloudflare/wrangler.production.jsonc --dry-run --outdir /tmp/o2ol-production-dryrun
 
+      - name: Audit shipped production dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --audit-level=high
+
       - name: Enforce Open House and Founding contract
         shell: bash
         run: |
