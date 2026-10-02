@@ -123,6 +123,41 @@ jobs:
                 if(dom.broken.length) failures.push({route,lang,kind:'broken-images',count:dom.broken.length});
                 if(/undefined|\[object Object\]|NaN/.test(dom.text)) failures.push({route,lang,kind:'suspicious-text'});
                 if((route==='/Subscription'||route==='/SignUp') && /Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|24[- ]?(hour|horas|heures|ore|stünd)|Full Access Trial|Prueba de Acceso Completo|Vollzugriff-Test/i.test(dom.text)) failures.push({route,lang,kind:'retired-access-copy',text:dom.text.slice(0,500)});
+
+                if(lang==='en' && route==='/'){
+                  try{
+                    const chatTile=page.getByRole('button',{name:/Chat Room/i}).first();
+                    await chatTile.click({timeout:7000});
+                    await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/chat',{timeout:7000});
+                  }catch(e){
+                    failures.push({route,lang,kind:'homepage-chat-room-navigation',error:String(e.message||e),url:page.url()});
+                  }
+                }
+
+                if(lang==='en' && route==='/O2OLStudio'){
+                  try{
+                    const studioChat=page.getByRole('link',{name:/Enter Chat Room to Comment/i}).first();
+                    await studioChat.click({timeout:7000});
+                    await page.waitForURL(u=>{
+                      const target=new URL(u);
+                      return target.pathname.toLowerCase()==='/chat' && target.searchParams.get('room')==='studio-who-should-apologize-first';
+                    },{timeout:7000});
+                  }catch(e){
+                    failures.push({route,lang,kind:'studio-chat-room-navigation',error:String(e.message||e),url:page.url()});
+                  }
+                }
+
+                if(lang==='en' && route==='/MyMatchIQ'){
+                  try{
+                    const biancaCta=page.getByRole('button',{name:/CHAT with Bianca/i}).first();
+                    await biancaCta.click({timeout:7000});
+                    await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/mymatchiq/bianca',{timeout:7000});
+                  }catch(e){
+                    failures.push({route,lang,kind:'mymatchiq-bianca-navigation',error:String(e.message||e),url:page.url()});
+                  }
+                }
+
+                if(errors.length) failures.push({route,lang,kind:'pageerror-after-navigation',errors});
                 await context.close();
               }
             }
