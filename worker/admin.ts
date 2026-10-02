@@ -229,7 +229,18 @@ async function chatRoomAnalytics(db) {
       round(avg(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric),1) AS therapy_when_needed,
       round(avg(NULLIF(relationship_priorities->>'help_around_home','')::numeric),1) AS help_around_home,
       round(avg(NULLIF(expense_split->>'man','')::numeric),1) AS bills_man,
-      round(avg(NULLIF(expense_split->>'woman','')::numeric),1) AS bills_woman
+      round(avg(NULLIF(expense_split->>'woman','')::numeric),1) AS bills_woman,
+      COALESCE(sum(NULLIF(relationship_priorities->>'money','')::numeric),0) AS sum_money,
+      COALESCE(sum(NULLIF(relationship_priorities->>'religion','')::numeric),0) AS sum_religion,
+      COALESCE(sum(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric),0) AS sum_sex_intimacy,
+      COALESCE(sum(NULLIF(relationship_priorities->>'politics','')::numeric),0) AS sum_politics,
+      COALESCE(sum(NULLIF(relationship_priorities->>'family','')::numeric),0) AS sum_family,
+      COALESCE(sum(NULLIF(relationship_priorities->>'communication','')::numeric),0) AS sum_communication,
+      COALESCE(sum(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric),0) AS sum_looks_physical_appearance,
+      COALESCE(sum(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric),0) AS sum_therapy_when_needed,
+      COALESCE(sum(NULLIF(relationship_priorities->>'help_around_home','')::numeric),0) AS sum_help_around_home,
+      COALESCE(sum(NULLIF(expense_split->>'man','')::numeric),0) AS sum_bills_man,
+      COALESCE(sum(NULLIF(expense_split->>'woman','')::numeric),0) AS sum_bills_woman
     FROM public.o2ol_show_vote_responses
     WHERE topic_slug=$1
   `,[O2OL_SHOW_TOPIC.slug]);
@@ -291,36 +302,84 @@ async function chatRoomAnalytics(db) {
     `),
   ]);
 
+  const conversations=conversationRows.rows.map(row=>({
+    key:row.line_key,
+    topic:row.topic,
+    source:row.kind,
+    comments:Number(row.comments||0),
+    createdAt:row.created_at||null,
+  }));
+  const relationship100=RELATIONSHIP_100_QUESTIONS.map(([key,label],index)=>({
+    number:index+1,
+    key,
+    label,
+    average:Number(voteSummary[key]||0),
+  }));
+  const demographics={
+    respondentIdentity:identityBreakdown(respondentIdentityRows.rows,false),
+    partnerIdentity:identityBreakdown(partnerIdentityRows.rows,true),
+  };
+  const rawRelationshipTotals=Object.fromEntries(
+    RELATIONSHIP_100_QUESTIONS.map(([key])=>[key,Number(voteSummary['sum_'+key]||0)])
+  );
+  const chatComments=Number(conversations.find(row=>row.key==='room:'+O2OL_SHOW_TOPIC.slug)?.comments||0);
+  const platformMeta=[
+    ['o2ol-chat-room','O2OL Chat Room'],
+    ['facebook','Facebook'],
+    ['instagram','Instagram'],
+    ['threads','Threads'],
+    ['tiktok','TikTok'],
+    ['x','X'],
+    ['pinterest','Pinterest'],
+    ['linkedin','LinkedIn'],
+  ];
+  const platforms=platformMeta.map(([id,label])=>{
+    const isChat=id==='o2ol-chat-room';
+    return {
+      id,label,
+      validResponses:isChat?Number(voteSummary.total_responses||0):0,
+      excludedResponses:0,
+      excludedReasons:[],
+      commentCount:isChat?chatComments:0,
+      lastUpdated:isChat?(voteSummary.last_response_at||null):null,
+      rawTotals:{
+        relationship100:isChat?rawRelationshipTotals:Object.fromEntries(RELATIONSHIP_100_QUESTIONS.map(([key])=>[key,0])),
+        expenseSplit:{
+          man:isChat?Number(voteSummary.sum_bills_man||0):0,
+          woman:isChat?Number(voteSummary.sum_bills_woman||0):0,
+        },
+      },
+      relationship100:isChat?relationship100:RELATIONSHIP_100_QUESTIONS.map(([key,label],index)=>({number:index+1,key,label,average:0})),
+      expenseSplit:{
+        number:10,
+        label:'Household bills / shared expenses',
+        manAverage:isChat?Number(voteSummary.bills_man||0):0,
+        womanAverage:isChat?Number(voteSummary.bills_woman||0):0,
+      },
+      demographics:isChat?demographics:{
+        respondentIdentity:['Man','Woman','Nonbinary','Prefer not to say'].map(label=>({label,count:0,percentage:0})),
+        partnerIdentity:['Man','Woman','Nonbinary','Prefer not to say','Not currently partnered'].map(label=>({label,count:0,percentage:0})),
+      },
+    };
+  });
+
   return {
     showVoting:{
       topicSlug:O2OL_SHOW_TOPIC.slug,
       topicTitle:voteSummary.topic_title || O2OL_SHOW_TOPIC.title,
       responseCount:Number(voteSummary.total_responses||0),
       lastResponseAt:voteSummary.last_response_at||null,
-      relationship100:RELATIONSHIP_100_QUESTIONS.map(([key,label],index)=>({
-        number:index+1,
-        key,
-        label,
-        average:Number(voteSummary[key]||0),
-      })),
+      relationship100,
       expenseSplit:{
         number:10,
         label:'Household bills / shared expenses',
         manAverage:Number(voteSummary.bills_man||0),
         womanAverage:Number(voteSummary.bills_woman||0),
       },
-      demographics:{
-        respondentIdentity:identityBreakdown(respondentIdentityRows.rows,false),
-        partnerIdentity:identityBreakdown(partnerIdentityRows.rows,true),
-      },
+      demographics,
+      platforms,
     },
-    conversations:conversationRows.rows.map(row=>({
-      key:row.line_key,
-      topic:row.topic,
-      source:row.kind,
-      comments:Number(row.comments||0),
-      createdAt:row.created_at||null,
-    })),
+    conversations,
   };
 }
 
