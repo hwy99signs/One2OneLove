@@ -50,6 +50,7 @@ jobs:
           ! grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup
           ! grep -F "MMIQ_COPY" src/pages/Subscription.jsx
           ! grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx
+          ! grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data
           grep -F 'path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />}' src/pages/index.jsx
