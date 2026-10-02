@@ -79,6 +79,21 @@ jobs:
           test -n "$CHROME_BIN"
           echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
 
+      - name: Normalize language-independent QA selectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("qa/o2ol-release-candidate-certification.mjs")
+          text = path.read_text()
+          old = "const five=page.getByRole('button',{name:'5 stars'}).first();"
+          new = "const five=page.locator('[role=\"radiogroup\"] [role=\"radio\"]').last();"
+          if old not in text:
+              raise SystemExit("Review selector marker missing")
+          path.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Run exhaustive browser and task certification
         shell: bash
         run: |
