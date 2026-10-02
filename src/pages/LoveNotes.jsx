@@ -1920,7 +1920,7 @@ export default function LoveNotes() {
                     className="h-12"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {t.recipientPhoneDesc}
+                    {hasMemberAccess ? t.recipientPhoneDesc : openHouseCopy.sendBody}
                   </p>
                 </div>
 
