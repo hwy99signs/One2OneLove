@@ -127,6 +127,97 @@ function Relationship100Averages({ rows=[], hasResponses=false }) {
   </div>;
 }
 
+const O2OL_SHOW_PLATFORM_META = [
+  ['o2ol-chat-room','O2OL Chat Room'],
+  ['facebook','Facebook'],
+  ['instagram','Instagram'],
+  ['threads','Threads'],
+  ['tiktok','TikTok'],
+  ['x','X'],
+  ['pinterest','Pinterest'],
+  ['linkedin','LinkedIn'],
+];
+
+const RESPONDENT_LABELS=['Man','Woman','Nonbinary','Prefer not to say'];
+const PARTNER_LABELS=['Man','Woman','Nonbinary','Prefer not to say','Not currently partnered'];
+
+function normalizeIdentityBreakdown(items=[],labels=[]) {
+  const counts=Object.fromEntries(labels.map(label=>[label,0]));
+  for (const item of items) if (counts[item?.label] !== undefined) counts[item.label]+=Number(item.count||0);
+  const total=Object.values(counts).reduce((sum,value)=>sum+value,0);
+  return labels.map(label=>({label,count:counts[label],percentage:total?Math.round((counts[label]*1000)/total)/10:0}));
+}
+
+function platformVotingRows(showVoting={}) {
+  const provided=Array.isArray(showVoting.platforms)?showVoting.platforms:[];
+  const template=showVoting.relationship100||[];
+  return O2OL_SHOW_PLATFORM_META.map(([id,label])=>{
+    const found=provided.find(item=>item?.id===id)||{};
+    const valid=Number(found.validResponses||0);
+    const relationship100=(found.relationship100?.length?found.relationship100:template).map(row=>({...row,average:Number(row.average||0)}));
+    const rawRelationship={};
+    for(const row of relationship100){
+      const supplied=Number(found.rawTotals?.relationship100?.[row.key]);
+      rawRelationship[row.key]=Number.isFinite(supplied)?supplied:Number(row.average||0)*valid;
+    }
+    return {
+      id,label,
+      validResponses:valid,
+      excludedResponses:Number(found.excludedResponses||0),
+      excludedReasons:Array.isArray(found.excludedReasons)?found.excludedReasons:[],
+      commentCount:Number(found.commentCount||0),
+      lastUpdated:found.lastUpdated||null,
+      rawTotals:{
+        relationship100:rawRelationship,
+        expenseSplit:{
+          man:Number.isFinite(Number(found.rawTotals?.expenseSplit?.man))?Number(found.rawTotals.expenseSplit.man):Number(found.expenseSplit?.manAverage||0)*valid,
+          woman:Number.isFinite(Number(found.rawTotals?.expenseSplit?.woman))?Number(found.rawTotals.expenseSplit.woman):Number(found.expenseSplit?.womanAverage||0)*valid,
+        },
+      },
+      relationship100,
+      expenseSplit:{
+        number:10,
+        label:found.expenseSplit?.label||showVoting.expenseSplit?.label||'Household bills / shared expenses',
+        manAverage:Number(found.expenseSplit?.manAverage||0),
+        womanAverage:Number(found.expenseSplit?.womanAverage||0),
+      },
+      demographics:{
+        respondentIdentity:normalizeIdentityBreakdown(found.demographics?.respondentIdentity||[],RESPONDENT_LABELS),
+        partnerIdentity:normalizeIdentityBreakdown(found.demographics?.partnerIdentity||[],PARTNER_LABELS),
+      },
+    };
+  });
+}
+
+function combinedPlatformVoting(platforms=[],showVoting={}) {
+  const validResponses=platforms.reduce((sum,item)=>sum+Number(item.validResponses||0),0);
+  const excludedResponses=platforms.reduce((sum,item)=>sum+Number(item.excludedResponses||0),0);
+  const commentCount=platforms.reduce((sum,item)=>sum+Number(item.commentCount||0),0);
+  const template=showVoting.relationship100||platforms[0]?.relationship100||[];
+  const relationship100=template.map(row=>{
+    const raw=platforms.reduce((sum,item)=>sum+Number(item.rawTotals?.relationship100?.[row.key]||0),0);
+    return {...row,average:validResponses?raw/validResponses:0};
+  });
+  const manRaw=platforms.reduce((sum,item)=>sum+Number(item.rawTotals?.expenseSplit?.man||0),0);
+  const womanRaw=platforms.reduce((sum,item)=>sum+Number(item.rawTotals?.expenseSplit?.woman||0),0);
+  const latest=platforms.map(item=>item.lastUpdated).filter(Boolean).sort((a,b)=>new Date(b)-new Date(a))[0]||null;
+  return {
+    id:'all',label:'All Platforms',validResponses,excludedResponses,commentCount,lastUpdated:latest,
+    excludedReasons:platforms.flatMap(item=>item.excludedReasons||[]),
+    relationship100,
+    expenseSplit:{
+      number:10,
+      label:showVoting.expenseSplit?.label||'Household bills / shared expenses',
+      manAverage:validResponses?manRaw/validResponses:0,
+      womanAverage:validResponses?womanRaw/validResponses:0,
+    },
+    demographics:{
+      respondentIdentity:normalizeIdentityBreakdown(platforms.flatMap(item=>item.demographics?.respondentIdentity||[]),RESPONDENT_LABELS),
+      partnerIdentity:normalizeIdentityBreakdown(platforms.flatMap(item=>item.demographics?.partnerIdentity||[]),PARTNER_LABELS),
+    },
+  };
+}
+
 function DeliveryHealth({ firstLabel, firstValue, passed, failed, pending }) {
   return <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
     <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-semibold text-blue-700">{firstLabel}</p><p className="mt-1 text-2xl font-black text-blue-900">{number(firstValue)}</p></div>
@@ -151,6 +242,7 @@ export default function Admin() {
   const [memberActionId,setMemberActionId] = useState(null);
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
+  const [votingPlatform,setVotingPlatform] = useState('all');
 
   const load = async (refresh=false) => {
     refresh ? setRefreshing(true) : setLoading(true);
@@ -235,6 +327,11 @@ export default function Admin() {
   const showVoting=chatRoom.showVoting || {};
   const conversationTopics=chatRoom.conversations || [];
   const totalConversationComments=conversationTopics.reduce((sum,item)=>sum+Number(item.comments||0),0);
+  const votingPlatforms=platformVotingRows(showVoting);
+  const allPlatformsVoting=combinedPlatformVoting(votingPlatforms,showVoting);
+  const selectedVoting=votingPlatform==='all'
+    ? allPlatformsVoting
+    : (votingPlatforms.find(item=>item.id===votingPlatform)||allPlatformsVoting);
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
 
   const openAnalytics = () => window.location.assign('/Analytics');
@@ -506,8 +603,27 @@ export default function Admin() {
 
             <Panel
               title="O2OL Show Voting"
-              subtitle={`TOPIC: ${showVoting.topicTitle||'Who Should Apologize First?'} · ${number(showVoting.responseCount)} response${Number(showVoting.responseCount||0)===1?'':'s'} · Admin sees live anonymous aggregates; public averages remain on the approved 7-day reveal schedule.`}
+              subtitle={`TOPIC: ${showVoting.topicTitle||'Who Should Apologize First?'} · ${selectedVoting.label} · ${number(selectedVoting.validResponses)} valid response${Number(selectedVoting.validResponses||0)===1?'':'s'} · Admin sees live anonymous aggregates; public averages remain on the approved 7-day reveal schedule.`}
             >
+              <div className="mb-5 overflow-x-auto pb-1">
+                <div className="flex min-w-max gap-2">
+                  {[['all','All Platforms'],...O2OL_SHOW_PLATFORM_META].map(([id,label])=><button
+                    type="button"
+                    key={id}
+                    onClick={()=>setVotingPlatform(id)}
+                    className={cx('rounded-full border px-4 py-2 text-sm font-black transition',votingPlatform===id?'border-violet-600 bg-violet-600 text-white shadow-sm':'border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-700')}
+                  >{label}</button>)}
+                </div>
+              </div>
+              <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-black uppercase tracking-wide text-emerald-700">Valid responses</p><p className="mt-1 text-2xl font-black text-emerald-950">{number(selectedVoting.validResponses)}</p></div>
+                <div className="rounded-xl bg-rose-50 p-4"><p className="text-xs font-black uppercase tracking-wide text-rose-700">Excluded</p><p className="mt-1 text-2xl font-black text-rose-950">{number(selectedVoting.excludedResponses)}</p></div>
+                <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-black uppercase tracking-wide text-blue-700">Comments</p><p className="mt-1 text-2xl font-black text-blue-950">{number(selectedVoting.commentCount)}</p></div>
+                <div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-black uppercase tracking-wide text-amber-700">Last update</p><p className="mt-1 text-sm font-black text-amber-950">{selectedVoting.lastUpdated?date(selectedVoting.lastUpdated):'—'}</p></div>
+              </div>
+              <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                <strong>All Platforms math:</strong> raw percentage sums are combined first, then divided by total valid responses. Platform averages are never averaged against each other.
+              </div>
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
                 <div>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -515,17 +631,17 @@ export default function Admin() {
                       <p className="text-xs font-black uppercase tracking-[0.14em] text-violet-600">Questions 1–9</p>
                       <p className="mt-1 text-sm text-slate-500">Each value is the average percentage assigned to that Relationship 100 priority.</p>
                     </div>
-                    <Pill tone="purple">{number(showVoting.responseCount)} votes</Pill>
+                    <Pill tone="purple">{number(selectedVoting.validResponses)} valid</Pill>
                   </div>
-                  <Relationship100Averages rows={showVoting.relationship100||[]} hasResponses={Number(showVoting.responseCount||0)>0}/>
+                  <Relationship100Averages rows={selectedVoting.relationship100||[]} hasResponses={Number(selectedVoting.validResponses||0)>0}/>
                   <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
                     <div className="flex items-center justify-between gap-4">
-                      <div><p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Question 10</p><p className="mt-1 font-bold text-slate-900">{showVoting.expenseSplit?.label||'Household bills / shared expenses'}</p></div>
+                      <div><p className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Question 10</p><p className="mt-1 font-bold text-slate-900">{selectedVoting.expenseSplit?.label||'Household bills / shared expenses'}</p></div>
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700 shadow-sm">Total 100%</span>
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Man</p><p className="mt-1 text-3xl font-black text-slate-900">{Number(showVoting.responseCount||0)>0?(decimal(showVoting.expenseSplit?.manAverage)+'%'):'—'}</p></div>
-                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Woman</p><p className="mt-1 text-3xl font-black text-slate-900">{Number(showVoting.responseCount||0)>0?(decimal(showVoting.expenseSplit?.womanAverage)+'%'):'—'}</p></div>
+                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Man</p><p className="mt-1 text-3xl font-black text-slate-900">{Number(selectedVoting.validResponses||0)>0?(decimal(selectedVoting.expenseSplit?.manAverage)+'%'):'—'}</p></div>
+                      <div className="rounded-xl bg-white p-4 shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Woman</p><p className="mt-1 text-3xl font-black text-slate-900">{Number(selectedVoting.validResponses||0)>0?(decimal(selectedVoting.expenseSplit?.womanAverage)+'%'):'—'}</p></div>
                     </div>
                   </div>
                 </div>
@@ -533,11 +649,11 @@ export default function Admin() {
                 <div className="space-y-5">
                   <div>
                     <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500">Respondent identity</p>
-                    <BreakdownList items={showVoting.demographics?.respondentIdentity||[]}/>
+                    <BreakdownList items={selectedVoting.demographics?.respondentIdentity||[]}/>
                   </div>
                   <div>
                     <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500">How does your partner identify?</p>
-                    <BreakdownList items={showVoting.demographics?.partnerIdentity||[]}/>
+                    <BreakdownList items={selectedVoting.demographics?.partnerIdentity||[]}/>
                   </div>
                 </div>
               </div>
