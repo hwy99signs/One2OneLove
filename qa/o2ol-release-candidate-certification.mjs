@@ -226,7 +226,7 @@ async function taskReview(browser){
   await addMemberMocks(context,writes);
   const page=await context.newPage();
   await page.goto(BASE+'/LeaveReview',{waitUntil:'domcontentloaded'});
-  const five=page.getByRole('button',{name:'5 stars'}).first();
+  const five=page.getByRole('radio',{name:/5 stars/i}).first();
   await five.waitFor({state:'visible',timeout:8000});
   await five.click();
   await page.locator('#review-text').fill('QA review submission verifies task execution payload.');
