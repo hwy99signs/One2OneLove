@@ -128,6 +128,55 @@ async function findMessage(env,messageId){
   return message ? {message,key:pointer.key} : null;
 }
 
+export async function getPrelaunchChatAdminSnapshot(env){
+  const conversations=[];
+  for(const room of ROOMS){
+    conversations.push({
+      key:`room:${room.slug}`,
+      topic:room.name,
+      source:'Room',
+      comments:await countMessages(env,room),
+      createdAt:null,
+    });
+  }
+  return {
+    showVoting:{
+      topicSlug:'studio-who-should-apologize-first',
+      topicTitle:'Who Should Apologize First?',
+      responseCount:0,
+      lastResponseAt:null,
+      relationship100:[
+        {number:1,key:'money',label:'Money',average:0},
+        {number:2,key:'religion',label:'Religion',average:0},
+        {number:3,key:'sex_intimacy',label:'Sex / Intimacy',average:0},
+        {number:4,key:'politics',label:'Politics',average:0},
+        {number:5,key:'family',label:'Family',average:0},
+        {number:6,key:'communication',label:'Communication',average:0},
+        {number:7,key:'looks_physical_appearance',label:'Looks / Physical appearance',average:0},
+        {number:8,key:'therapy_when_needed',label:'Therapy when needed',average:0},
+        {number:9,key:'help_around_home',label:'Help around the home',average:0},
+      ],
+      expenseSplit:{number:10,label:'Household bills / shared expenses',manAverage:0,womanAverage:0},
+      demographics:{
+        respondentIdentity:[
+          {label:'Man',count:0,percentage:0},
+          {label:'Woman',count:0,percentage:0},
+          {label:'Nonbinary',count:0,percentage:0},
+          {label:'Prefer not to say',count:0,percentage:0},
+        ],
+        partnerIdentity:[
+          {label:'Man',count:0,percentage:0},
+          {label:'Woman',count:0,percentage:0},
+          {label:'Nonbinary',count:0,percentage:0},
+          {label:'Prefer not to say',count:0,percentage:0},
+          {label:'Not currently partnered',count:0,percentage:0},
+        ],
+      },
+    },
+    conversations,
+  };
+}
+
 async function handleRooms(request,env,url,auth){
   const scope=url.searchParams.get('scope')==='lgbtq' ? 'lgbtq' : 'general';
   const candidates=scope==='lgbtq'
