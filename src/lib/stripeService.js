@@ -127,25 +127,14 @@ export const reactivateSubscription = async () => {
 
 export const hasFeatureAccess = (feature, user) => {
   if (String(user?.role || '').toLowerCase() === 'admin') return true;
-
-  const created = user?.created_at ? new Date(user.created_at) : null;
-  const guestPreviewActive = Boolean(
-    !user?.stripe_subscription_id &&
-    created &&
-    !Number.isNaN(created.getTime()) &&
-    created.getTime() + 24 * 60 * 60 * 1000 > Date.now()
-  );
-  // Guest Preview may render/view every feature surface. LaunchAccessGate and
-  // API entitlements keep the experience strictly read-only.
-  if (guestPreviewActive) return true;
-
   if (!user?.subscription_plan || !user?.stripe_subscription_id) return false;
   const status = String(user?.subscription_status || '').toLowerCase();
   if (!['active', 'trial', 'trialing'].includes(status)) return false;
   const stored = String(user.subscription_plan || '').toLowerCase();
   const storedPlan = stored === 'exclusive' ? 'Exclusive' : 'Premiere';
-  const effectivePlan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : storedPlan;
-  return featureAccess[effectivePlan]?.includes(feature) || false;
+  // Stripe trial/trialing represents the Founding Member free period. Access
+  // follows the stored Founding plan: #1–100 Exclusive; #101–200 Premiere.
+  return featureAccess[storedPlan]?.includes(feature) || false;
 };
 
 const premiere = [
