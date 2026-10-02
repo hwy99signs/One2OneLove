@@ -32,9 +32,7 @@ export default function SignUp() {
   const signupType = String(searchParams.get("type") || "").toLowerCase();
 
   const effectivePlan = selectedPlan || 'Premiere';
-  const directGuestSignup = String(searchParams.get("source") || "").toLowerCase() === "guest-preview";
-
-  if (signupType === "individual" || directGuestSignup) {
+  if (signupType === "individual") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
         <LaunchRegularUserForm
