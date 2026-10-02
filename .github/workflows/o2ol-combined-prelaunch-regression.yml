@@ -54,6 +54,15 @@ jobs:
           grep -F "Conversation by Topic / # of Comments" src/pages/Admin.jsx
           grep -F "o2ol_show_vote_responses" worker/admin.ts
           grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
+          grep -F "LIMITED-TIME OPEN HOUSE" src/pages/Layout.jsx
+          grep -F "'/memorylane'" src/components/launch/LaunchAccessGate.jsx
+          grep -F "'/relationshipgoals'" src/components/launch/LaunchAccessGate.jsx
+          grep -F "'/relationshipmilestones'" src/components/launch/LaunchAccessGate.jsx
+          grep -F "OpenHouseBrowseNotice" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx
+          grep -F "All Platforms" src/pages/Admin.jsx
+          grep -F "O2OL Chat Room" src/pages/Admin.jsx worker/admin.ts worker/prelaunch-community-chat.ts
+          grep -F "Facebook" src/pages/Admin.jsx worker/admin.ts worker/prelaunch-community-chat.ts
+          grep -F "LinkedIn" src/pages/Admin.jsx worker/admin.ts worker/prelaunch-community-chat.ts
           grep -F "one2onelove-prelaunch.hwy99signs.workers.dev" src/components/admin/AdminMfaGate.jsx src/pages/AdminAccess.jsx src/pages/Admin.jsx
           grep -F "Prelaunch read-only preview" src/pages/Admin.jsx
           grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
@@ -182,4 +191,57 @@ jobs:
           } finally { await browser.close(); }
           if(failures.length){ console.error(JSON.stringify(failures,null,2)); process.exit(1); }
           console.log('COMBINED_PRELAUNCH_BROWSER_REGRESSION=PASS');
+          NODE
+
+      - name: Anonymous Open House desktop and Android smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright-core';
+          const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
+          const routes=[
+            '/','/DateIdeas','/LoveNotes','/LoveLanguageQuiz','/MemoryLane','/PodcastsSupport',
+            '/RelationshipQuizzes','/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice',
+            '/CoupleSupport','/ArticlesSupport','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo',
+            '/Games','/ScratchGame','/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/MyMatchIQ'
+          ];
+          const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar']);
+          const viewports=[
+            {name:'desktop',width:1440,height:900},
+            {name:'android',width:390,height:844},
+          ];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
+          const failures=[];
+          try{
+            for(const viewport of viewports){
+              for(const route of routes){
+                const context=await browser.newContext({viewport:{width:viewport.width,height:viewport.height}});
+                await context.addInitScript(()=>localStorage.setItem('preferredLanguage','en'));
+                const page=await context.newPage();
+                const errors=[];
+                page.on('pageerror',e=>errors.push(String(e.message||e)));
+                let res=null;
+                try{
+                  res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+                  await page.waitForTimeout(1100);
+                }catch(e){errors.push(String(e.message||e));}
+                const snap=await page.evaluate(()=>({
+                  text:(document.body?.innerText||'').replace(/\s+/g,' ').trim(),
+                  path:location.pathname,
+                  overflow:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth,
+                })).catch(()=>({text:'',path:'',overflow:0}));
+                if(!res||res.status()!==200) failures.push({viewport:viewport.name,route,kind:'status',status:res?.status()});
+                if(errors.length) failures.push({viewport:viewport.name,route,kind:'pageerror',errors});
+                if(snap.text.length<30) failures.push({viewport:viewport.name,route,kind:'empty'});
+                if(['/signin','/login','/subscription'].includes(String(snap.path||'').toLowerCase())) failures.push({viewport:viewport.name,route,kind:'unexpected-gate',finalPath:snap.path});
+                if(snap.overflow>6) failures.push({viewport:viewport.name,route,kind:'overflow',pixels:snap.overflow});
+                if(!/LIMITED-TIME OPEN HOUSE/i.test(snap.text)) failures.push({viewport:viewport.name,route,kind:'open-house-banner-missing'});
+                if(personalPreview.has(route) && !/Explore this feature free/i.test(snap.text)) failures.push({viewport:viewport.name,route,kind:'browse-notice-missing'});
+                await context.close();
+              }
+            }
+          } finally { await browser.close(); }
+          if(failures.length){ console.error(JSON.stringify(failures,null,2)); process.exit(1); }
+          console.log('OPEN_HOUSE_ANONYMOUS_DESKTOP_ANDROID=PASS');
           NODE
