@@ -238,6 +238,48 @@ async function taskReview(browser){
   await context.close();
 }
 
+async function taskProfile(browser){
+  const writes=[];
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await addMemberMocks(context,writes);
+  await context.route('**/api/memories**',r=>fulfill(r,200,{memories:[]}));
+  await context.route('**/api/goals**',r=>fulfill(r,200,{goals:[]}));
+  const page=await context.newPage();
+  await page.goto(BASE+'/Profile',{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:/Edit Profile/i}).first().click();
+  await page.locator('[aria-labelledby="profile-location-label"]').first().fill('Houston QA');
+  await page.getByRole('button',{name:/Save Changes/i}).click();
+  await page.waitForTimeout(250);
+  const hit=writes.find(x=>x.path==='/api/profile'&&x.method==='PATCH'&&x.body?.location==='Houston QA');
+  if(!hit) fail('task-profile-save',{writes});
+  report.tasks.push('Profile save');
+  await context.close();
+}
+
+async function taskChat(browser){
+  const writes=[];
+  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await addMemberMocks(context,writes);
+  await context.route('**/api/community-chat/rooms',r=>fulfill(r,200,{ok:true,rooms:[{id:'10000000-0000-4000-8000-000000000007',slug:'studio-who-should-apologize-first',name:'O2OL Studio — Who Should Apologize First?',description:'Episode discussion',icon:'🎬',online_count:1,message_count:0}]}));
+  await context.route('**/api/community-chat/rooms/**',r=>{
+    const pth=new URL(r.request().url()).pathname;
+    if(r.request().method()==='GET') return fulfill(r,200,pth.endsWith('/topics')?{ok:true,topics:[]}:{ok:true,messages:[]});
+    const body=r.request().postDataJSON()||{};
+    writes.push({path:pth,method:r.request().method(),body});
+    return fulfill(r,200,{ok:true,message:{id:'msg-qa',content:body.content||'',authorName:'QA Member',createdAt:new Date().toISOString()}});
+  });
+  const page=await context.newPage();
+  await page.goto(BASE+'/Chat?room=studio-who-should-apologize-first&from=studio',{waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(350);
+  await page.locator('textarea[placeholder*="thought" i]').last().fill('QA chat post execution check');
+  await page.getByRole('button',{name:/^Send$/i}).last().click();
+  await page.waitForTimeout(250);
+  const hit=writes.find(x=>x.method==='POST'&&x.path.endsWith('/messages')&&String(x.body?.content||'').includes('QA chat post'));
+  if(!hit) fail('task-chat-post',{writes});
+  report.tasks.push('Chat message post');
+  await context.close();
+}
+
 async function taskFounding(browser){
   const context=await browser.newContext({viewport:{width:1440,height:900}});
   let signedIn=false,phoneVerified=false;
@@ -307,6 +349,8 @@ try{
   await taskStudioBianca(browser);
   await taskSuggestion(browser);
   await taskReview(browser);
+  await taskProfile(browser);
+  await taskChat(browser);
   await taskFounding(browser);
 } finally { await browser.close(); }
 
