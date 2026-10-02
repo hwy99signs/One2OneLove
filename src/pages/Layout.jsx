@@ -380,7 +380,7 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Top Announcement Bar */}
       {t.announcement && location.pathname.toLowerCase() !== '/subscription' && (
-        <div className="bg-indigo-950 text-white overflow-hidden py-2">
+        <div className="relative w-full max-w-[100vw] overflow-hidden bg-indigo-950 py-2 text-white" style={{ contain: 'layout paint' }}>
           <div className="o2ol-announcement-track whitespace-nowrap text-lg md:text-xl font-medium tracking-wide" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
             <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcement.label}</span> 
             <span className="text-white/90">{t.announcement.text}</span>
