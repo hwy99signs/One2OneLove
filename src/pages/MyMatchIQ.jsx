@@ -10,7 +10,7 @@ const COPY = {
     biancaTitle: 'Hi, I’m Bianca.',
     biancaBody: 'I will guide you through thoughtful questions and help you turn your answers into a private Personality & Relationship Pattern Report.',
     biancaNote: 'For self-reflection only — not therapy, diagnosis, or a guarantee of compatibility.',
-    biancaStart: 'Start with Bianca',
+    biancaStart: 'CHAT with Bianca',
     biancaCredits: 'Explore credits', biancaWatch:'See Bianca in Conversation', biancaWatchSub:'O2OL Studio — Season 1, Episode 1',
     heroAlt: 'MyMatchIQ — When the intention is real, the connection follows.',
     benefitsLabel: 'MyMatchIQ relationship benefits',
@@ -24,7 +24,7 @@ const COPY = {
   es: {
     assessment: 'Realizar la evaluación',
     meetMembers: 'Conoce miembros intencionales',
-    biancaEyebrow: 'Conoce a Bianca — tu guía MyMatchIQ', biancaTitle: 'Hola, soy Bianca.', biancaBody: 'Te guiaré con preguntas reflexivas y te ayudaré a convertir tus respuestas en un Informe Privado de Patrones de Personalidad y Relaciones.', biancaNote: 'Solo para autorreflexión; no es terapia, diagnóstico ni garantía de compatibilidad.', biancaStart: 'Comenzar con Bianca', biancaCredits: 'Explorar créditos', biancaWatch:'Ver a Bianca en Conversación', biancaWatchSub:'O2OL Studio — Temporada 1, Episodio 1',
+    biancaEyebrow: 'Conoce a Bianca — tu guía MyMatchIQ', biancaTitle: 'Hola, soy Bianca.', biancaBody: 'Te guiaré con preguntas reflexivas y te ayudaré a convertir tus respuestas en un Informe Privado de Patrones de Personalidad y Relaciones.', biancaNote: 'Solo para autorreflexión; no es terapia, diagnóstico ni garantía de compatibilidad.', biancaStart: 'CHATEAR con Bianca', biancaCredits: 'Explorar créditos', biancaWatch:'Ver a Bianca en Conversación', biancaWatchSub:'O2OL Studio — Temporada 1, Episodio 1',
     heroAlt: 'MyMatchIQ — Cuando la intención es real, la conexión sigue.',
     benefitsLabel: 'Beneficios relacionales de MyMatchIQ',
     features: [
@@ -37,7 +37,7 @@ const COPY = {
   fr: {
     assessment: 'Faire l’évaluation',
     meetMembers: 'Rencontrer des membres intentionnels',
-    biancaEyebrow: 'Rencontrez Bianca — votre guide MyMatchIQ', biancaTitle: 'Bonjour, je suis Bianca.', biancaBody: 'Je vous guiderai avec des questions réfléchies et vous aiderai à transformer vos réponses en un Rapport Privé sur vos Schémas de Personnalité et de Relation.', biancaNote: 'Pour l’autoréflexion uniquement — ce n’est ni une thérapie, ni un diagnostic, ni une garantie de compatibilité.', biancaStart: 'Commencer avec Bianca', biancaCredits: 'Découvrir les crédits', biancaWatch:'Voir Bianca en Conversation', biancaWatchSub:'O2OL Studio — Saison 1, Épisode 1',
+    biancaEyebrow: 'Rencontrez Bianca — votre guide MyMatchIQ', biancaTitle: 'Bonjour, je suis Bianca.', biancaBody: 'Je vous guiderai avec des questions réfléchies et vous aiderai à transformer vos réponses en un Rapport Privé sur vos Schémas de Personnalité et de Relation.', biancaNote: 'Pour l’autoréflexion uniquement — ce n’est ni une thérapie, ni un diagnostic, ni une garantie de compatibilité.', biancaStart: 'CHATTER avec Bianca', biancaCredits: 'Découvrir les crédits', biancaWatch:'Voir Bianca en Conversation', biancaWatchSub:'O2OL Studio — Saison 1, Épisode 1',
     heroAlt: 'MyMatchIQ — Quand l’intention est réelle, la connexion suit.',
     benefitsLabel: 'Avantages relationnels de MyMatchIQ',
     features: [
@@ -50,7 +50,7 @@ const COPY = {
   it: {
     assessment: 'Fai la valutazione',
     meetMembers: 'Incontra membri intenzionali',
-    biancaEyebrow: 'Conosci Bianca — la tua guida MyMatchIQ', biancaTitle: 'Ciao, sono Bianca.', biancaBody: 'Ti guiderò attraverso domande ponderate e ti aiuterò a trasformare le risposte in un Rapporto Privato sui Pattern di Personalità e Relazione.', biancaNote: 'Solo per autoriflessione: non è terapia, diagnosi né una garanzia di compatibilità.', biancaStart: 'Inizia con Bianca', biancaCredits: 'Scopri i crediti', biancaWatch:'Guarda Bianca in Conversazione', biancaWatchSub:'O2OL Studio — Stagione 1, Episodio 1',
+    biancaEyebrow: 'Conosci Bianca — la tua guida MyMatchIQ', biancaTitle: 'Ciao, sono Bianca.', biancaBody: 'Ti guiderò attraverso domande ponderate e ti aiuterò a trasformare le risposte in un Rapporto Privato sui Pattern di Personalità e Relazione.', biancaNote: 'Solo per autoriflessione: non è terapia, diagnosi né una garanzia di compatibilità.', biancaStart: 'CHAT con Bianca', biancaCredits: 'Scopri i crediti', biancaWatch:'Guarda Bianca in Conversazione', biancaWatchSub:'O2OL Studio — Stagione 1, Episodio 1',
     heroAlt: 'MyMatchIQ — Quando l’intenzione è reale, la connessione segue.',
     benefitsLabel: 'Benefici relazionali di MyMatchIQ',
     features: [
@@ -63,7 +63,7 @@ const COPY = {
   de: {
     assessment: 'Assessment starten',
     meetMembers: 'Absichtsvolle Mitglieder treffen',
-    biancaEyebrow: 'Lernen Sie Bianca kennen — Ihre MyMatchIQ-Begleiterin', biancaTitle: 'Hallo, ich bin Bianca.', biancaBody: 'Ich führe Sie durch durchdachte Fragen und helfe Ihnen, Ihre Antworten in einen privaten Bericht über Persönlichkeits- und Beziehungsmuster zu verwandeln.', biancaNote: 'Nur zur Selbstreflexion — keine Therapie, Diagnose oder Garantie für Kompatibilität.', biancaStart: 'Mit Bianca beginnen', biancaCredits: 'Credits entdecken', biancaWatch:'Bianca im Gespräch Sehen', biancaWatchSub:'O2OL Studio — Staffel 1, Folge 1',
+    biancaEyebrow: 'Lernen Sie Bianca kennen — Ihre MyMatchIQ-Begleiterin', biancaTitle: 'Hallo, ich bin Bianca.', biancaBody: 'Ich führe Sie durch durchdachte Fragen und helfe Ihnen, Ihre Antworten in einen privaten Bericht über Persönlichkeits- und Beziehungsmuster zu verwandeln.', biancaNote: 'Nur zur Selbstreflexion — keine Therapie, Diagnose oder Garantie für Kompatibilität.', biancaStart: 'CHAT mit Bianca', biancaCredits: 'Credits entdecken', biancaWatch:'Bianca im Gespräch Sehen', biancaWatchSub:'O2OL Studio — Staffel 1, Folge 1',
     heroAlt: 'MyMatchIQ — Wenn die Absicht echt ist, folgt die Verbindung.',
     benefitsLabel: 'Beziehungsvorteile von MyMatchIQ',
     features: [
@@ -95,6 +95,7 @@ export default function MyMatchIQ() {
   const { currentLanguage } = useLanguage();
   const t = COPY[currentLanguage] || COPY.en;
   const openAssessment = () => navigate('/MyMatchIQ/Assessment');
+  const openBianca = () => navigate('/MyMatchIQ/Bianca');
   const openMeetMembers = () => navigate('/MyMatchIQ/Meet');
   const openCredits = () => navigate('/MyMatchIQ/Credits');
   const openStudio = () => navigate('/O2OLStudio?from=mymatchiq');
@@ -157,7 +158,7 @@ export default function MyMatchIQ() {
           <p className="mt-4 max-w-2xl text-lg leading-8 text-white/85">{t.biancaBody}</p>
           <div className="mt-5 flex items-start gap-2 text-sm leading-6 text-cyan-100"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />{t.biancaNote}</div>
           <div className="mt-7 flex flex-wrap gap-3">
-            <button type="button" onClick={openAssessment} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-violet-600 px-5 py-3 text-sm font-black shadow-lg transition hover:-translate-y-0.5 hover:brightness-110"><Sparkles className="h-4 w-4" aria-hidden="true" />{t.biancaStart}</button>
+            <button type="button" onClick={openBianca} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-violet-600 px-5 py-3 text-sm font-black shadow-lg transition hover:-translate-y-0.5 hover:brightness-110"><MessageCircle className="h-4 w-4" aria-hidden="true" />{t.biancaStart}</button>
             <button type="button" onClick={openStudio} className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/50 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20"><PlayCircle className="h-4 w-4" aria-hidden="true" /><span className="text-left"><span className="block">{t.biancaWatch}</span><span className="block text-[0.68rem] font-semibold text-fuchsia-100/80">{t.biancaWatchSub}</span></span></button>
             <button type="button" onClick={openCredits} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/50 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20"><WalletCards className="h-4 w-4" aria-hidden="true" />{t.biancaCredits}</button>
           </div>
