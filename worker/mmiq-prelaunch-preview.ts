@@ -197,6 +197,13 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/billing/')) {
+      const auth = await session(request, env);
+      if (!auth) {
+        return Response.json(
+          { ok:false,preview:true,readOnly:true,error:{code:'unauthorized',message:'Authentication required.'} },
+          { status:401,headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } },
+        );
+      }
       return Response.json(
         { ok:false,preview:true,readOnly:true,error:{code:'prelaunch_billing_read_only',message:'Billing writes are disabled in Prelaunch.'} },
         { status:405,headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } },
