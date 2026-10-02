@@ -56,6 +56,9 @@ jobs:
           grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
           grep -F "LIMITED-TIME OPEN HOUSE" src/pages/Layout.jsx
           grep -F "LIMITED-TIME ONE2ONELOVE OPEN HOUSE" src/pages/Home.jsx
+          grep -F "Founding Members #1–100" src/pages/HelpCenter.jsx
+          grep -F "Open House, Memberships, Founding Members" src/pages/TermsOfService.jsx
+          grep -F "US$15.99/month" src/pages/TermsOfService.jsx src/pages/HelpCenter.jsx
           grep -F "hasFullMemberAccess" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx src/pages/CoupleActivities.jsx src/pages/CooperativeGames.jsx src/pages/LoveLanguageQuiz.jsx src/pages/ScratchGame.jsx
           grep -F "'/memorylane'" src/components/launch/LaunchAccessGate.jsx
           grep -F "'/relationshipgoals'" src/components/launch/LaunchAccessGate.jsx
@@ -79,7 +82,7 @@ jobs:
           if grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup; then echo "Standalone MyMatchIQ account language found"; exit 1; fi
           if grep -F "MMIQ_COPY" src/pages/Subscription.jsx; then echo "Retired MyMatchIQ subscription copy found"; exit 1; fi
           if grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx; then echo "Retired standalone MyMatchIQ product gate found"; exit 1; fi
-          if grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data; then echo "Retired access/trial language found"; exit 1; fi
+          if grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data src/content; then echo "Retired access/trial language found"; exit 1; fi
           grep -F 'path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />}' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />}' src/pages/index.jsx
