@@ -226,8 +226,9 @@ async function taskReview(browser){
   await addMemberMocks(context,writes);
   const page=await context.newPage();
   await page.goto(BASE+'/LeaveReview',{waitUntil:'domcontentloaded'});
-  const five=page.getByRole('radio',{name:/5 stars/i});
-  if(await five.count()) await five.click(); else await page.locator('button').filter({hasText:'5'}).first().click();
+  const ratings=page.locator('[role="radiogroup"] [role="radio"]');
+  await ratings.last().waitFor({state:'visible',timeout:8000});
+  await ratings.last().click();
   await page.locator('#review-text').fill('QA review submission verifies task execution payload.');
   await page.getByRole('button',{name:/Submit Review/i}).click();
   await page.waitForTimeout(200);
