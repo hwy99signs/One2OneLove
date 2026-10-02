@@ -10,6 +10,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import GameCard from "../components/activities/GameCard";
 import { getCooperativeGameHistory } from "@/lib/activityService";
+import { hasFullMemberAccess } from "@/lib/openHouseAccess";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 const translations = {
   en: {
@@ -105,11 +107,12 @@ export default function CooperativeGames() {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
+  const fullMemberAccess = hasFullMemberAccess(user);
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
     queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
-    enabled: !!user?.id
+    enabled: fullMemberAccess
   });
 
   const availableGames = [
@@ -155,6 +158,7 @@ export default function CooperativeGames() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {!fullMemberAccess && <div className="mx-auto max-w-7xl px-4 pt-8"><OpenHouseBrowseNotice /></div>}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="mb-6">
           <Link to={createPageUrl("CoupleActivities")} className="inline-flex items-center text-gray-600 hover:text-green-600">
