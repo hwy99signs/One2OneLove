@@ -100,11 +100,11 @@ export default function MyMatchIQWorkspace({ page = 'assessment' }) {
                 <>
                   <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
                     <div><p className="text-sm font-bold text-fuchsia-200">{user?.name || user?.email}</p><h2 className="mt-1 text-2xl font-black text-white">{t.comingTitle}</h2><p className="mt-2 max-w-3xl leading-7 text-white/75">{t.comingBody}</p></div>
-                    <Link to="/SignUp?source=mymatchiq-o2ol" className={actionClass}>{t.o2olButton}</Link>
+                    <Link to="/Home" className={actionClass}>{t.o2olButton}</Link>
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-between gap-5 text-center sm:flex-row sm:text-left"><div><h2 className="text-2xl font-black text-white">{t.memberOnly}</h2><p className="mt-2 text-white/75">{t.o2olNote}</p></div><div className="flex flex-wrap justify-center gap-3"><Link to="/MyMatchIQ/SignIn" className={actionClass}>{t.signIn}</Link><Link to="/MyMatchIQ/SignUp" className="inline-flex items-center justify-center rounded-full border border-fuchsia-200/40 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20">{t.create}</Link></div></div>
+                <div className="flex flex-col items-center justify-between gap-5 text-center sm:flex-row sm:text-left"><div><h2 className="text-2xl font-black text-white">{t.memberOnly}</h2><p className="mt-2 text-white/75">{t.o2olNote}</p></div><div className="flex flex-wrap justify-center gap-3"><Link to="/SignIn?source=mymatchiq-feature" className={actionClass}>{t.signIn}</Link><Link to="/SignUp?source=mymatchiq-feature" className="inline-flex items-center justify-center rounded-full border border-fuchsia-200/40 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20">{t.create}</Link></div></div>
               )}
             </section>
 
