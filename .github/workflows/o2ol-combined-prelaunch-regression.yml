@@ -42,6 +42,9 @@ jobs:
           grep -F 'path="/MyMatchIQ/Credits"' src/pages/index.jsx
           grep -F 'path="/MyMatchIQ/Meet"' src/pages/index.jsx
           grep -F 'path="/LikeMinded"' src/pages/index.jsx
+          grep -F 'path="/O2OLStudio"' src/pages/index.jsx
+          grep -F '"/o2olstudio"' src/components/launch/LaunchAccessGate.jsx
+          grep -F 'studio/season-1/episode-1-who-should-apologize-first.mp4' worker/studio-media.ts
           grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
           grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
@@ -73,7 +76,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { chromium } from 'playwright-core';
           const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
-          const routes=['/Subscription','/SignUp','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const routes=['/Subscription','/SignUp','/O2OLStudio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
           const langs=['en','es','fr','it','de'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
           const failures=[];
