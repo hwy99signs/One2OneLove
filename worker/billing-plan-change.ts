@@ -91,7 +91,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
       const user = result.rows[0];
       if (!user?.stripe_subscription_id) return fail('No Stripe subscription is connected to this account.', 409, 'no_paid_subscription');
       if (String(user.subscription_status || '').toLowerCase() !== 'trial') {
-        return fail('Plan switching on this screen is currently available during the 7-day trial.', 409, 'trial_change_only');
+        return fail('Plan switching on this screen is available during the Founding Member free period.', 409, 'founding_change_only');
       }
 
       const currentPlan = canonicalPlan(user.subscription_plan) || 'Premiere';
@@ -105,7 +105,7 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
       params.set('proration_behavior', 'none');
       params.set('metadata[user_id]', auth.user.id);
       params.set('metadata[plan_name]', targetPlan);
-      params.set('metadata[trial_entitlement]', 'Exclusive');
+      params.set('metadata[founding_plan]', targetPlan);
       const updated = await stripeRequest(env, 'POST', `/subscriptions/${encodeURIComponent(user.stripe_subscription_id)}`, params);
 
       await db.query('BEGIN');
@@ -129,17 +129,25 @@ export async function handleBillingPlanChangeRequest(request, env, url) {
         throw error;
       }
 
+      if (currentPlan === 'Exclusive' && targetPlan === 'Premiere') {
+        await db.query(
+          `UPDATE public.founding_members
+              SET founding_rate_forfeited=true,updated_at=now()
+            WHERE user_id=$1::uuid AND cohort='first100' AND status='active'`,
+          [auth.user.id],
+        );
+      }
       return json({
         ok: true,
         plan: customerPlan(targetPlan),
         storedPlan: targetPlan,
         subscriptionStatus: 'trial',
-        trialEntitlement: 'Exclusive',
+        foundingPlan: targetPlan,
         stripeSubscriptionStatus: updated?.status || 'trialing',
       });
     });
   } catch (error) {
-    console.error('Trial plan change error:', error?.message || error);
-    return fail(error?.message || 'Unable to change your trial plan.', error?.status || 500, error?.code || 'plan_change_error');
+    console.error('Founding-period plan change error:', error?.message || error);
+    return fail(error?.message || 'Unable to change your Founding-period plan.', error?.status || 500, error?.code || 'plan_change_error');
   }
 }
