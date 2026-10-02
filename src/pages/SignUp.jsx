@@ -30,6 +30,7 @@ export default function SignUp() {
   const t = COPY[currentLanguage] || COPY.en;
   const selectedPlan = canonicalPlan(searchParams.get("plan"));
   const signupType = String(searchParams.get("type") || "").toLowerCase();
+  const foundingIntent = searchParams.get("founding") === "1";
 
   const effectivePlan = selectedPlan || 'Premiere';
   if (signupType === "individual") {
@@ -43,7 +44,7 @@ export default function SignUp() {
     );
   }
 
-  const chooseIndividual = () => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}&type=individual`);
+  const chooseIndividual = () => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}&type=individual${foundingIntent ? '&founding=1' : ''}`);
   const chooseProfessional = () => navigate(`/ProfessionalSignup?plan=${encodeURIComponent(effectivePlan)}`);
 
   return (
@@ -57,7 +58,7 @@ export default function SignUp() {
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{t.title}</h1>
           <p className="text-xl text-gray-600">{t.subtitle}</p>
           <div className="mt-5 inline-flex items-center rounded-full border border-purple-200 bg-white px-5 py-2 font-bold text-purple-800 shadow-sm">
-            {t.selectedPlan}: {effectivePlan} — {PLAN_PRICE[effectivePlan]}
+            {t.selectedPlan}: {foundingIntent ? (effectivePlan === 'Exclusive' ? 'Founding Offer — Exclusive: 30 days FREE, then US$15.99/month while continuously subscribed' : 'Founding Offer — Premiere: 30 days FREE, then US$9.99/month') : `${effectivePlan} — ${PLAN_PRICE[effectivePlan]}`}
           </div>
         </div>
 
