@@ -391,7 +391,12 @@ async function taskFounding(browser){
   await context.route('**/api/profile',r=>fulfill(r,200,{profile:Object.assign({},qaProfile,{phone_number_verified:phoneVerified,phoneNumberVerified:phoneVerified,phone_verification_required:true})}));
   await context.route('**/api/phone-verification/send',r=>fulfill(r,200,{ok:true,sent:true}));
   await context.route('**/api/phone-verification/verify',r=>{phoneVerified=true;return fulfill(r,200,{ok:true,verified:true});});
-  await context.route('**/api/billing/checkout',r=>{captured.billing=r.request().postDataJSON()||{};return fulfill(r,200,{ok:true,sessionId:'qa',url:BASE+'/PaymentSuccess?session_id=qa',plan:'Exclusive',founding:{number:1,cohort:'first100',freeDays:30,recurringPriceCents:1599}});});
+  await context.route('**/api/billing/checkout',r=>{
+    captured.billing=r.request().postDataJSON()||{};
+    if(!signedIn) return fulfill(r,401,{ok:false,error:{code:'unauthorized',message:'Authentication required.'}});
+    if(!phoneVerified) return fulfill(r,403,{ok:false,error:{code:'phone_verification_required',message:'Phone verification required.'}});
+    return fulfill(r,200,{ok:true,sessionId:'qa',url:BASE+'/PaymentSuccess?session_id=qa',plan:'Exclusive',founding:{number:1,cohort:'first100',freeDays:30,recurringPriceCents:1599}});
+  });
   await context.route('**/api/billing/subscription',r=>fulfill(r,200,{ok:true,subscription:{subscription_plan:'Exclusive',subscription_status:'trialing',subscription_price:15.99,stripe_subscription_id:'sub_qa_founding',trial_end_date:'2026-11-01T00:00:00.000Z',founding_number:1,founding_cohort:'first100',founding_status:'active',founding_badge_retained:true,founding_rate_forfeited:false}}));
 
   const page=await context.newPage();
