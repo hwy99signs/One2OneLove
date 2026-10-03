@@ -32,9 +32,10 @@ export async function sendCoachMessage(conversationId, message) {
 }
 
 export async function generateRelationshipContent(data) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `ai-content-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const payload = await apiRequest('/api/ai/content', {
     method: 'POST',
-    body: data,
+    body: { ...data, requestId },
   });
   return payload?.content || '';
 }
