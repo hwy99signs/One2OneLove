@@ -19,27 +19,27 @@ const translations = {
   en: {
     nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", language:"Language", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
     actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
-    announcement: { label: "O2OL Announcement Scroll", text: "FOUNDING MEMBERS: First 100 get Exclusive FREE for 30 days, then US$15.99/month while continuously subscribed. Members #101–200 get Premiere FREE for 30 days, then regular Premiere pricing. Card required. Terms apply." }
+    announcement: { label: "LIMITED-TIME OPEN HOUSE", text: "Explore One2OneLove FREE — no account required to browse. Sign up only when you want to save, post, or use protected member features." }
   },
   es: {
     nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", language:"Idioma", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
     actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
-    announcement: { label: "Anuncios O2OL", text: "MIEMBROS FUNDADORES: Los primeros 100 reciben Exclusive GRATIS 30 días y luego US$15.99/mes mientras mantengan la suscripción. Miembros #101–200 reciben Premiere GRATIS 30 días y luego el precio regular de Premiere. Se requiere tarjeta. Aplican términos." }
+    announcement: { label: "JORNADA DE PUERTAS ABIERTAS — TIEMPO LIMITADO", text: "Explora One2OneLove GRATIS — no necesitas una cuenta para navegar. Regístrate solo cuando quieras guardar, publicar o usar funciones protegidas para miembros." }
   },
   fr: {
     nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", language:"Langue", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
     actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
-    announcement: { label: "Annonces O2OL", text: "MEMBRES FONDATEURS : les 100 premiers obtiennent Exclusive GRATUIT 30 jours, puis US$15.99/mois tant que l’abonnement reste actif. Membres #101–200 : Premiere GRATUIT 30 jours, puis tarif Premiere normal. Carte requise. Conditions applicables." }
+    announcement: { label: "PORTES OUVERTES — DURÉE LIMITÉE", text: "Explorez One2OneLove GRATUITEMENT — aucun compte n’est nécessaire pour parcourir le site. Inscrivez-vous seulement pour enregistrer, publier ou utiliser des fonctions membres protégées." }
   },
   it: {
     nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", language:"Lingua", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
     actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
-    announcement: { label: "Annunci O2OL", text: "MEMBRI FONDATORI: i primi 100 ricevono Exclusive GRATIS 30 giorni, poi US$15.99/mese finché l’abbonamento resta attivo. Membri #101–200 ricevono Premiere GRATIS 30 giorni, poi il prezzo normale Premiere. Carta richiesta. Si applicano termini." }
+    announcement: { label: "OPEN HOUSE — TEMPO LIMITATO", text: "Esplora One2OneLove GRATIS — non serve un account per navigare. Registrati solo quando vuoi salvare, pubblicare o usare funzioni protette per i membri." }
   },
   de: {
     nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", language:"Sprache", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
     actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
-    announcement: { label: "O2OL Ankündigungen", text: "GRÜNDUNGSMITGLIEDER: Die ersten 100 erhalten Exclusive 30 Tage KOSTENLOS, danach US$15.99/Monat bei durchgehend aktivem Abo. Mitglieder #101–200 erhalten Premiere 30 Tage KOSTENLOS, danach regulärer Premiere-Preis. Karte erforderlich. Bedingungen gelten." }
+    announcement: { label: "OPEN HOUSE — NUR FÜR KURZE ZEIT", text: "Erkunde One2OneLove KOSTENLOS — zum Stöbern ist kein Konto erforderlich. Registriere dich erst, wenn du speichern, posten oder geschützte Mitgliederfunktionen nutzen möchtest." }
   },
   nl: {
     nav: { home: "Home", action: "Actie", profile: "Profil", signIn: "Inloggen", signUp: "Aanmelden", invite: "Uitnodigen", community: "Gemeenschap", aiCreator: "AI Content Maker", lgbtq: "LGBTQ+ Ondersteuning", developer: "Dev", requests: "Verzoeken", chat: "Chat", signOut: "Uitloggen" },
@@ -88,6 +88,14 @@ const FOOTER_COPY = {
   de: {
     loveGrow: "Lieben. Wachsen. Entwickeln. Gemeinsam.", footerBody: "One2OneLove unterstützt gesündere Verbindung, achtsame Kommunikation, Selbstreflexion, gemeinsame Erinnerungen und echte Gespräche.", supportCol: "Support", company: "Unternehmen", help: "Hilfe-Center", contact: "Kontakt", privacy: "Datenschutz", terms: "Nutzungsbedingungen", about: "Über uns", reviews: "Bewertungen", suggestions: "Vorschläge", copyright: "© 2026 One2OneLove. Mit ❤️ für gesündere Beziehungen."
   }
+};
+
+const MMIQ_FOOTER_COPY = {
+  en: { tagline:'Compatibility. Insights. Stronger Relationships.', body:'MyMatchIQ helps people explore compatibility, gain clarity, recognize red flags earlier, and make more intentional relationship decisions.', support:'MyMatchIQ Support', explore:'Explore MyMatchIQ', home:'MyMatchIQ Home', passport:'Compatibility Passport', credits:'MyMatchIQ Credits', insights:'Compatibility Insights', gettingStarted:'Getting Started', invite:'Invite a Connection', workspace:'MyMatchIQ Workspace', signIn:'Sign In to One2OneLove', copyright:'MyMatchIQ — a One2OneLove feature.' },
+  es: { tagline:'Compatibilidad. Claridad. Relaciones Más Fuertes.', body:'MyMatchIQ ayuda a explorar la compatibilidad, ganar claridad, reconocer señales de alerta antes y tomar decisiones relacionales más intencionales.', support:'Soporte MyMatchIQ', explore:'Explora MyMatchIQ', home:'Inicio MyMatchIQ', passport:'Pasaporte de Compatibilidad', credits:'Créditos MyMatchIQ', insights:'Insights de Compatibilidad', gettingStarted:'Primeros Pasos', invite:'Invitar a una Conexión', workspace:'Espacio MyMatchIQ', signIn:'Iniciar Sesión en One2OneLove', copyright:'MyMatchIQ — una función de One2OneLove.' },
+  fr: { tagline:'Compatibilité. Clarté. Relations Plus Fortes.', body:'MyMatchIQ vous aide à explorer la compatibilité, gagner en clarté, reconnaître les signaux d’alerte plus tôt et prendre des décisions relationnelles plus intentionnelles.', support:'Assistance MyMatchIQ', explore:'Explorer MyMatchIQ', home:'Accueil MyMatchIQ', passport:'Passeport de Compatibilité', credits:'Crédits MyMatchIQ', insights:'Insights de Compatibilité', gettingStarted:'Bien Commencer', invite:'Inviter une Connexion', workspace:'Espace MyMatchIQ', signIn:'Se Connecter à One2OneLove', copyright:'MyMatchIQ — une fonctionnalité de One2OneLove.' },
+  it: { tagline:'Compatibilità. Chiarezza. Relazioni Più Forti.', body:'MyMatchIQ aiuta a esplorare la compatibilità, ottenere chiarezza, riconoscere prima i segnali di allarme e prendere decisioni relazionali più intenzionali.', support:'Supporto MyMatchIQ', explore:'Esplora MyMatchIQ', home:'Home MyMatchIQ', passport:'Passaporto di Compatibilità', credits:'Crediti MyMatchIQ', insights:'Insight di Compatibilità', gettingStarted:'Per Iniziare', invite:'Invita una Connessione', workspace:'Spazio MyMatchIQ', signIn:'Accedi a One2OneLove', copyright:'MyMatchIQ — una funzione di One2OneLove.' },
+  de: { tagline:'Kompatibilität. Klarheit. Stärkere Beziehungen.', body:'MyMatchIQ hilft dabei, Kompatibilität zu erkunden, Klarheit zu gewinnen, Warnsignale früher zu erkennen und bewusstere Beziehungsentscheidungen zu treffen.', support:'MyMatchIQ Support', explore:'MyMatchIQ Entdecken', home:'MyMatchIQ Startseite', passport:'Kompatibilitäts-Pass', credits:'MyMatchIQ-Credits', insights:'Kompatibilitäts-Einblicke', gettingStarted:'Erste Schritte', invite:'Eine Verbindung Einladen', workspace:'MyMatchIQ-Bereich', signIn:'Bei One2OneLove Anmelden', copyright:'MyMatchIQ — eine Funktion von One2OneLove.' },
 };
 
 const FacebookIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 hover:text-yellow-200 transition-colors"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>);
@@ -153,7 +161,10 @@ function LanguageContent({ children, currentPageName }) {
   const { currentLanguage, changeLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
+  const mT = MMIQ_FOOTER_COPY[currentLanguage] || MMIQ_FOOTER_COPY.en;
   const closeTimeoutRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const mobileMenuButtonRef = useRef(null);
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
   useEffect(() => {
@@ -192,6 +203,10 @@ function LanguageContent({ children, currentPageName }) {
 
   const normalizedShareRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
   const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
+  const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq' || normalizedShareRoute.startsWith('/mymatchiq/');
+  const mmiqHeaderButton = (gradient) => isMyMatchIQPage
+    ? `inline-flex items-center whitespace-nowrap rounded-full border border-white/25 bg-gradient-to-r ${gradient} px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`
+    : 'hover:text-yellow-200';
 
 
 
@@ -282,8 +297,45 @@ function LanguageContent({ children, currentPageName }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    const closeOnOutsidePress = (event) => {
+      if (mobileMenuRef.current?.contains(event.target)) return;
+      if (mobileMenuButtonRef.current?.contains(event.target)) return;
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      setMobileMenuOpen(false);
+      setMobileActionOpen(false);
+      mobileMenuButtonRef.current?.focus();
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePress);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePress);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setMobileActionOpen(false);
+  }, [location.pathname]);
+
+  const closeResponsiveMenuOnHoverAway = () => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    setMobileMenuOpen(false);
+    setMobileActionOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Kalam:wght@300;400;700&family=Comic+Neue:wght@300;400;700&display=swap');
         
@@ -328,7 +380,7 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Top Announcement Bar */}
       {t.announcement && location.pathname.toLowerCase() !== '/subscription' && (
-        <div className="bg-indigo-950 text-white overflow-hidden py-2">
+        <div className="relative w-full max-w-[100vw] overflow-hidden bg-indigo-950 py-2 text-white" style={{ contain: 'layout paint' }}>
           <div className="o2ol-announcement-track whitespace-nowrap text-lg md:text-xl font-medium tracking-wide" style={{ fontFamily: "'Outfit', 'Inter', sans-serif" }}>
             <span className="font-extrabold text-yellow-400 uppercase tracking-widest text-sm mr-3">{t.announcement.label}</span> 
             <span className="text-white/90">{t.announcement.text}</span>
@@ -337,21 +389,31 @@ function LanguageContent({ children, currentPageName }) {
       )}
 
       {/* Header */}
-      <header className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-white shadow-md sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-5 h-[96px] flex items-center justify-between gap-5">
-          <Link to={createPageUrl("Home")} className="w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
+      <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
+        <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-3 sm:px-5'} h-[96px] flex items-center justify-between gap-2 sm:gap-5`}>
+          <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className="w-[168px] sm:w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
-              src="/assets/o2ol-header-logo.png" 
-              alt="One2One Love Logo" 
+              src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
+              alt={isMyMatchIQPage ? 'MyMatchIQ Logo' : 'One2One Love Logo'}
               width="220"
               height="88"
-              className="h-[88px] w-[220px] object-contain object-left"
+              className={isMyMatchIQPage ? 'h-[72px] w-[168px] sm:w-[220px] object-contain object-left' : 'h-[88px] w-[168px] sm:w-[220px] object-contain object-left'}
               onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             />
           </Link>
           
-          <nav className="hidden lg:flex items-center gap-6 font-bold text-lg shrink-0">
-            <Link to={createPageUrl("Home")} className="hover:text-yellow-200">⌂ {t.nav.home}</Link>
+          <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
+            {isMyMatchIQPage && (
+              <Link to="/Home" aria-label="One to One Love" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
+                <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] scale-[1.2] object-contain" />
+              </Link>
+            )}
+            {!isMyMatchIQPage && (
+              <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.24)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
+                <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-10 w-[76px] scale-[1.2] object-contain" />
+              </Link>
+            )}
+            <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
             <div
               className="relative"
@@ -367,12 +429,23 @@ function LanguageContent({ children, currentPageName }) {
                 aria-expanded={actionOpen}
                 aria-controls="desktop-action-menu"
                 onClick={() => setActionOpen((open) => !open)}
-                className="hover:text-yellow-200"
+                className={mmiqHeaderButton('from-violet-500 to-fuchsia-600')}
               >
                 ♡ {t.nav.action} ▾
               </button>
-              {actionOpen && (
+              {actionOpen && isMyMatchIQPage && (
+                <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 rounded-xl bg-white p-2 text-sm font-normal text-slate-800 shadow-xl z-50">
+                  <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ</Link>
+                  <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧠 Compatibility Passport</Link>
+                  <Link to="/MyMatchIQ/Credits" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>◈ {mT.credits}</Link>
+                  <Link to="/MyMatchIQ/Meet" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🤝 Meet Intentional Members</Link>
+                  <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>✦ MyMatchIQ Dashboard</Link>
+                  <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>💌 Invite with intention</Link>
+                </div>
+              )}
+              {actionOpen && !isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
+                  <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
                   <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
                   <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
                   <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
@@ -387,7 +460,7 @@ function LanguageContent({ children, currentPageName }) {
 
             {isAuthenticated ? (
               <>
-                <Link to={createPageUrl("Chat")} className="hover:text-yellow-200 relative">
+                <Link to={createPageUrl("Chat")} className={`${mmiqHeaderButton('from-cyan-500 to-blue-700')} relative`}>
                   💬 {t.nav.chat}
                   {totalUnreadCount > 0 && (
                     <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
@@ -395,20 +468,20 @@ function LanguageContent({ children, currentPageName }) {
                     </span>
                   )}
                 </Link>
-                <Link to={createPageUrl("Profile")} className="hover:text-yellow-200">👤 {t.nav.profile}</Link>
-                <button onClick={handleSignOut} className="hover:text-yellow-200">{t.nav.signOut}</button>
+                <Link to={createPageUrl("Profile")} className={mmiqHeaderButton('from-indigo-500 to-violet-700')}>👤 {t.nav.profile}</Link>
+                <button onClick={handleSignOut} className={mmiqHeaderButton('from-slate-600 to-slate-800')}>{t.nav.signOut}</button>
               </>
             ) : (
               <>
-                <Link to={createPageUrl("Invite")} className="hover:text-yellow-200">{t.nav.invite}</Link>
-                <button onClick={handleSignIn} className="hover:text-yellow-200">{t.nav.signIn}</button>
-                <button onClick={handleSignUp} className="text-yellow-300 text-xl hover:text-yellow-100">{t.nav.signUp}</button>
+                <Link to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
+                <button onClick={handleSignIn} aria-label={`${t.nav.signIn} — navigation`} className={mmiqHeaderButton('from-blue-500 to-indigo-700')}>{t.nav.signIn}</button>
+                <button onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>
               </>
             )}
 
             <div className="relative">
               <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className="w-36 rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300 h-auto font-bold text-lg">
+                <SelectTrigger className={isMyMatchIQPage ? 'h-auto w-36 rounded-full border border-white/25 bg-gradient-to-r from-amber-400 to-orange-500 px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)]' : 'w-36 rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300 h-auto font-bold text-lg'}>
                   <SelectValue placeholder={t.nav.language} />
                 </SelectTrigger>
                 <SelectContent>
@@ -422,23 +495,56 @@ function LanguageContent({ children, currentPageName }) {
             </div>
           </nav>
           
-          {/* Mobile menu button */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <button type="button" aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors">
+          {/* Mobile header controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+            <Select value={currentLanguage} onValueChange={changeLanguage}>
+              <SelectTrigger aria-label={t.nav.language} className="w-[76px] sm:w-[112px] rounded-xl bg-white/15 border border-white/30 px-2.5 sm:px-3 py-2 text-yellow-300 h-auto font-black text-sm sm:text-base">
+                <SelectValue placeholder={t.nav.language} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">EN English</SelectItem>
+                <SelectItem value="es">ES Español</SelectItem>
+                <SelectItem value="fr">FR Français</SelectItem>
+                <SelectItem value="it">IT Italiano</SelectItem>
+                <SelectItem value="de">DE Deutsch</SelectItem>
+              </SelectContent>
+            </Select>
+            <button
+              ref={mobileMenuButtonRef}
+              type="button"
+              aria-label={mobileMenuOpen ? t.nav.closeMenu : t.nav.openMenu}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="responsive-navigation-menu"
+              onClick={() => {
+                setMobileMenuOpen((open) => !open);
+                if (mobileMenuOpen) setMobileActionOpen(false);
+              }}
+              className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="lg:hidden absolute left-0 right-0 top-full z-[70] w-full border-t border-white/20 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 px-4 py-4 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto">
-              <nav className="flex flex-col gap-2">
+            <div
+              id="responsive-navigation-menu"
+              ref={mobileMenuRef}
+              onMouseLeave={closeResponsiveMenuOnHoverAway}
+              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[240px] sm:w-[260px] max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-2.5 py-2.5 shadow-2xl max-h-[calc(100vh-7.5rem)] overflow-y-auto overscroll-contain`}
+            >
+              <nav className="flex flex-col gap-1 text-[15px] leading-5">
+                {isMyMatchIQPage && (
+                  <Link to="/Home" aria-label="One to One Love" className="flex h-11 w-[84px] items-center justify-center rounded-xl bg-white px-3 shadow-sm" onClick={() => setMobileMenuOpen(false)}>
+                    <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-8 w-[72px] scale-[1.05] object-contain" />
+                  </Link>
+                )}
                 <Link
-                  to={createPageUrl("Home")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")}
+                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Home className="w-5 h-5" />
+                  <Home className="w-4 h-4" />
                   {t.nav.home}
                 </Link>
 
@@ -448,10 +554,10 @@ function LanguageContent({ children, currentPageName }) {
                     type="button"
                     aria-expanded={mobileActionOpen}
                     onClick={() => setMobileActionOpen(!mobileActionOpen)}
-                    className="flex items-center justify-between w-full text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    className="flex items-center justify-between w-full text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <Heart className="w-5 h-5" />
+                      <Heart className="w-4 h-4" />
                       {t.nav.action}
                     </div>
                     <ChevronDown className={`w-4 h-4 transition-transform ${mobileActionOpen ? 'rotate-180' : ''}`} />
@@ -460,102 +566,114 @@ function LanguageContent({ children, currentPageName }) {
                   {mobileActionOpen && (
                     <div className="mt-1 bg-white/10 rounded-lg overflow-hidden">
                       <Link
-                        to={createPageUrl("LoveNotes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                      to={isMyMatchIQPage ? '/MyMatchIQ/Actions' : createPageUrl("MyMatchIQ")}
+                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-950/90 via-violet-800/90 to-fuchsia-700/90 px-3 py-2.5 font-black text-white transition-all hover:from-indigo-950 hover:to-fuchsia-600"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Sparkles className="w-4 h-4" />
+                        MyMatchIQ
+                        <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span>
+                      </Link>
+                      <Link
+                        to={createPageUrl("LoveNotes")}
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.sendLoveNote}
                       </Link>
                       <Link
                         to={createPageUrl("LGBTQSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Rainbow className="w-5 h-5" />
+                        <Rainbow className="w-4 h-4" />
                         {t.actionMenu.lgbtqSupport}
                       </Link>
                       <Link
                         to={createPageUrl("CoupleSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Users className="w-5 h-5" />
+                        <Users className="w-4 h-4" />
                         {t.actionMenu.coupleSupport}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipQuizzes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.relationshipQuizzes}
                       </Link>
                       <Link
                         to={createPageUrl("CooperativeGames")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Gamepad2 className="w-5 h-5" />
+                        <Gamepad2 className="w-4 h-4" />
                         {t.actionMenu.games}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipMilestones")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.relationshipMilestones}
                       </Link>
                       <Link
                         to={createPageUrl("RelationshipGoals")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Target className="w-5 h-5" />
+                        <Target className="w-4 h-4" />
                         {t.actionMenu.relationshipGoals}
                       </Link>
                       <Link
                         to={createPageUrl("DateIdeas")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.dateIdeas}
                       </Link>
                       <Link
                         to={createPageUrl("MemoryLane")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-4 py-3 transition-all"
+                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setMobileActionOpen(false);
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                         {t.actionMenu.memoryLane}
                       </Link>
                     </div>
@@ -564,41 +682,41 @@ function LanguageContent({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("Community")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Users className="w-5 h-5" />
+                  <Users className="w-4 h-4" />
                   {t.nav.community}
                 </Link>
                 <Link
                   to={createPageUrl("LGBTQSupport")}
-                  className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                  className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Rainbow className="w-5 h-5" />
+                  <Rainbow className="w-4 h-4" />
                   {t.nav.lgbtq}
                 </Link>
                 {isAuthenticated && (
                   <Link
                     to={createPageUrl("Profile")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <User className="w-5 h-5" />
+                    <User className="w-4 h-4" />
                     {t.nav.profile}
                   </Link>
                 )}
-                <div className="border-t border-white/20 my-2"></div>
+                <div className="border-t border-white/20 my-1.5"></div>
                 
 
                 {/* Chat - Only show when authenticated */}
                 {isAuthenticated && (
                   <Link
                     to={createPageUrl("Chat")}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all relative"
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all relative"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <MessageCircle className="w-5 h-5" />
+                    <MessageCircle className="w-4 h-4" />
                     {t.nav.chat}
                     {totalUnreadCount > 0 && (
                       <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
@@ -617,9 +735,9 @@ function LanguageContent({ children, currentPageName }) {
                       setMobileMenuOpen(false);
                       handleSignOut(e);
                     }}
-                    className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all w-full text-left"
+                    className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all w-full text-left"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-4 h-4" />
                     {t.nav.signOut}
                   </button>
                 )}
@@ -628,11 +746,11 @@ function LanguageContent({ children, currentPageName }) {
                 {!isAuthenticated && (
                   <>
                     <Link
-                      to={createPageUrl("Invite")}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                      to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")}
+                      className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <UserCheck className="w-5 h-5" />
+                      <UserCheck className="w-4 h-4" />
                       {t.nav.invite}
                     </Link>
                     <button
@@ -640,19 +758,20 @@ function LanguageContent({ children, currentPageName }) {
                         handleSignUp();
                         setMobileMenuOpen(false);
                       }}
-                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg transition-all font-semibold"
+                      className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 px-3 py-2.5 rounded-lg transition-all font-semibold"
                     >
-                      <UserPlus className="w-5 h-5" />
+                      <UserPlus className="w-4 h-4" />
                       {t.nav.signUp}
                     </button>
                     <button
+                      aria-label={`${t.nav.signIn} — navigation`}
                       onClick={() => {
                         handleSignIn();
                         setMobileMenuOpen(false);
                       }}
-                      className="flex items-center gap-2 text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all"
+                      className="flex items-center gap-2 text-white hover:bg-white/10 px-3 py-2.5 rounded-lg transition-all"
                     >
-                      <LogIn className="w-5 h-5" />
+                      <LogIn className="w-4 h-4" />
                       {t.nav.signIn}
                     </button>
                   </>
@@ -685,30 +804,64 @@ function LanguageContent({ children, currentPageName }) {
       <main>{children}</main>
 
       {/* Footer */}
-      <section className="bg-white text-center px-5 py-5 border-t">
-        <h3 className="font-black text-lg">{fT.loveGrow}</h3>
-        <p className="text-slate-600 max-w-5xl mx-auto mt-1">{fT.footerBody}</p>
-      </section>
-
-      <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
-          <div>
-            <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-28 w-auto" />
-            <div className="text-lg mt-2">{fT.loveGrow}</div>
-            <div className="flex gap-4 mt-5 text-2xl">
-              <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
-              <a href="https://www.facebook.com/one2onelove" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon /></a>
-              <a href="https://www.instagram.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon /></a>
-              <a href="https://x.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><XIcon /></a>
-              <a href="https://www.threads.net/@one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Threads"><ThreadsIcon /></a>
-              <a href="https://www.pinterest.com/One2onelovers" target="_blank" rel="noopener noreferrer" aria-label="Pinterest"><PinterestIcon /></a>
+      {isMyMatchIQPage ? (
+        <>
+          <section className="border-t border-fuchsia-300/20 bg-[#0d0516] px-5 py-6 text-center text-white">
+            <h3 className="text-lg font-black">{mT.tagline}</h3>
+            <p className="mx-auto mt-2 max-w-4xl text-white/75">{mT.body}</p>
+          </section>
+          <footer className="bg-gradient-to-r from-[#240432] via-[#5d146f] to-[#172c70] px-6 py-10 text-white">
+            <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[1.3fr_1fr_1fr]">
+              <div>
+                <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-20 w-auto object-contain object-left" />
+                <div className="mt-3 text-lg font-semibold">{mT.tagline}</div>
+                <p className="mt-3 max-w-md text-sm leading-6 text-white/80">{mT.body}</p>
+              </div>
+              <div>
+                <h4 className="mb-4 text-xl font-black">{mT.explore}</h4>
+                <FooterLink onClick={() => navigate('/MyMatchIQ')}>{mT.home}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Assessment')}>{mT.passport}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Credits')}>{mT.credits}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Actions')}>{mT.insights}</FooterLink>
+              </div>
+              <div>
+                <h4 className="mb-4 text-xl font-black">{mT.support}</h4>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Assessment')}>{mT.gettingStarted}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Invite')}>{mT.invite}</FooterLink>
+                <FooterLink onClick={() => navigate('/MyMatchIQ/Dashboard')}>{mT.workspace}</FooterLink>
+                <FooterLink onClick={() => navigate('/SignIn?source=mymatchiq-feature')}>{mT.signIn}</FooterLink>
+              </div>
             </div>
-          </div>
-          <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-          <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
-        </div>
-        <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
-      </footer>
+            <div className="mx-auto mt-8 max-w-7xl border-t border-white/25 pt-4 text-center text-sm">{mT.copyright}</div>
+          </footer>
+        </>
+      ) : (
+        <>
+          <section className="bg-white text-center px-5 py-5 border-t">
+            <h3 className="font-black text-lg">{fT.loveGrow}</h3>
+            <p className="text-slate-600 max-w-5xl mx-auto mt-1">{fT.footerBody}</p>
+          </section>
+          <footer className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-10">
+            <div className="max-w-7xl mx-auto grid md:grid-cols-[1.3fr_1fr_1fr] gap-12">
+              <div>
+                <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" className="h-28 w-auto" />
+                <div className="text-lg mt-2">{fT.loveGrow}</div>
+                <div className="flex gap-4 mt-5 text-2xl">
+                  <a href="https://www.tiktok.com/@one2onelove" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TiktokIcon /></a>
+                  <a href="https://www.facebook.com/one2onelove" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FacebookIcon /></a>
+                  <a href="https://www.instagram.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><InstagramIcon /></a>
+                  <a href="https://x.com/one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><XIcon /></a>
+                  <a href="https://www.threads.net/@one2oneloves" target="_blank" rel="noopener noreferrer" aria-label="Threads"><ThreadsIcon /></a>
+                  <a href="https://www.pinterest.com/One2onelovers" target="_blank" rel="noopener noreferrer" aria-label="Pinterest"><PinterestIcon /></a>
+                </div>
+              </div>
+              <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
+            </div>
+            <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
+          </footer>
+        </>
+      )}
     </div>
   );
 }

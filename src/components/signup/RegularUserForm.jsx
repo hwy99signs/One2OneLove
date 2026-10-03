@@ -216,8 +216,8 @@ export default function RegularUserForm({ onBack }) {
         relationshipStatus: formData.relationshipStatus,
         anniversaryDate: formData.anniversaryDate,
         partnerEmail: formData.partnerEmail,
-        subscriptionPlan: 'Premiere',
-        subscriptionPrice: 9.99,
+        subscriptionPlan: 'Premiere', // Default membership selection; Open House browsing does not create a subscription.
+        subscriptionPrice: 9.99, // Billing is determined by the confirmed checkout/founding-member terms.
       });
 
       console.log('Register result:', result);

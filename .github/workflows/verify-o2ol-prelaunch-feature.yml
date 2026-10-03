@@ -1,0 +1,103 @@
+name: Verify O2OL Prelaunch Feature Build
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+      - feature/bianca-conversation-intelligence-20260930
+      - feature/mymatchiq-*
+      - qa/o2ol-combined-prelaunch-20260930
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "neon-migrations/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/verify-o2ol-prelaunch-feature.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+      - name: Verify consolidated MyMatchIQ and Like Minded routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "MyMatchIQBianca" src/pages/index.jsx
+          grep -F "MyMatchIQPassport" src/pages/index.jsx
+          grep -F "LikeMinded" src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Passport"' src/pages/index.jsx
+          grep -F 'path="/LikeMinded"' src/pages/index.jsx
+
+      - name: Verify Bianca conversation intelligence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "/api/mymatchiq/bianca" worker/index-v2.ts
+          grep -F "Casual talk with Bianca" src/pages/MyMatchIQBianca.jsx
+          grep -F "resetBiancaPersonalization" src/lib/aiService.js
+          grep -F "mmiq_bianca_profiles" neon-migrations/2026-09-30-mymatchiq-bianca-intelligence.sql
+
+      - name: Verify tiered 225-question assessment and Passport
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "questionCount:225" src/lib/mymatchiqAssessment.js
+          grep -F "questionCount:45" src/lib/mymatchiqAssessment.js
+          grep -F "questionCount:15" src/lib/mymatchiqAssessment.js
+          grep -F "getMyMatchIQAccess" src/pages/MyMatchIQAssessment.jsx
+          grep -F "/api/mymatchiq/assessment" worker/index-v2.ts
+          grep -F "listBiancaReports" src/pages/MyMatchIQPassport.jsx
+
+      - name: Verify credit wallet is fail-closed and idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "mmiq_credit_wallets" neon-migrations/2026-09-30-mymatchiq-credit-wallet.sql
+          grep -F "mmiq_payment_events" neon-migrations/2026-09-30-mymatchiq-credit-wallet.sql
+          grep -F "STRIPE_SECRET_KEY" worker/mymatchiq-credits.ts
+          grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
+          grep -F "checkout.session.completed" worker/mymatchiq-credits.ts
+          grep -F "payment_method_required" worker/mymatchiq-credits.ts
+
+      - name: Verify intentional-member consent and safety controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
+          grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
+          grep -F "mmiq_member_blocks" worker/mymatchiq-members.ts
+          grep -F "mmiq_member_reports" worker/mymatchiq-members.ts
+          grep -F "No open public chat" src/pages/MyMatchIQMeet.jsx
+
+      - name: Verify safe legacy migration bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "mmiq_legacy_migration_queue" neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
+          grep -F "email_mismatch" worker/mymatchiq-legacy.ts
+          grep -F "legacy_mymatchiq" worker/mymatchiq-legacy.ts
+          grep -F "mmiq_access_entitlements" neon-migrations/2026-09-30-mymatchiq-access-entitlements.sql
+          ! grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql
+
+      - name: Verify production remains an explicit separate workflow target
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "branches:" .github/workflows/deploy-o2ol-production-neon.yml
+          grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
+          ! grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml

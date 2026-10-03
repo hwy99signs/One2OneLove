@@ -1,0 +1,76 @@
+name: Deploy O2OL Like Minded Preview
+
+on:
+  push:
+    branches:
+      - feature/like-minded-rebuild-20260929
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-preview.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Cloudflare credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+
+      - name: Build preview application
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Deploy isolated Cloudflare preview
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.preview.jsonc
+
+      - name: Verify Like Minded preview
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          HTML_OK=no
+          for attempt in $(seq 1 18); do
+            HTML=$(curl -fsSL --max-time 20 "$PREVIEW_URL/LikeMinded" 2>/dev/null || true)
+            if printf '%s' "$HTML" | grep -qi '<!doctype html'; then
+              HTML_OK=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$HTML_OK" = yes
+
+          SCRIPT=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//')
+          test -n "$SCRIPT"
+
+          JS_OK=no
+          for attempt in $(seq 1 18); do
+            CODE=$(curl -sSL --max-time 30 -o /tmp/preview.js -w '%{http_code}' "$PREVIEW_URL$SCRIPT" || true)
+            if [ "$CODE" = "200" ] && [ -s /tmp/preview.js ]; then
+              JS_OK=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$JS_OK" = yes
+          grep -F 'Like Minded?' /tmp/preview.js >/dev/null
+          grep -F 'Same questions. Deeper connections.' /tmp/preview.js >/dev/null
+
+          API_CODE=$(curl -sS --max-time 20 -o /tmp/preview-api.json -w '%{http_code}' "$PREVIEW_URL/api/health")
+          test "$API_CODE" = "503"
+          grep -F 'preview_api_disabled' /tmp/preview-api.json >/dev/null
+
+          echo "LIKE_MINDED_PREVIEW_VERIFIED=yes"
+          echo "LIKE_MINDED_PREVIEW_URL=$PREVIEW_URL/LikeMinded"

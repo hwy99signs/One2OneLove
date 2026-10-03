@@ -1,0 +1,112 @@
+name: O2OL Release Candidate Certification
+
+on:
+  push:
+    branches:
+      - qa/o2ol-combined-prelaunch-20260930
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "package.json"
+      - "package-lock.json"
+      - "worker/package.json"
+      - "worker/package-lock.json"
+      - "neon-migrations/**"
+      - "qa/o2ol-release-candidate-certification.mjs"
+      - ".github/workflows/o2ol-release-candidate-certification.yml"
+      - ".github/workflows/deploy-o2ol-production-neon.yml"
+      - ".github/deploy-o2ol-production-neon-trigger"
+      - "cloudflare/wrangler.production.jsonc"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build release candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Dry compile Production Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config cloudflare/wrangler.production.jsonc --dry-run --outdir /tmp/o2ol-production-dryrun
+
+      - name: Audit shipped production dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --audit-level=high
+
+      - name: Match Production high-severity dependency audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --audit-level=high
+          npm --prefix worker audit --audit-level=high
+
+      - name: Enforce Open House and Founding contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "export const FOUNDING_LIMIT = 200;" worker/founding-rules.js >/dev/null
+          grep -F "export const FOUNDING_FREE_DAYS = 30;" worker/founding-rules.js >/dev/null
+          grep -F "export const FOUNDING_EXCLUSIVE_RATE_CENTS = 1599;" worker/founding-rules.js >/dev/null
+          grep -F "CREATE TABLE IF NOT EXISTS public.founding_members" neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql >/dev/null
+          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_rooms" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
+          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_reports" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
+          grep -F "/api/billing/founding-offer" worker/billing.ts >/dev/null
+          grep -F "String(foundingOffer.freeDays)" worker/billing.ts >/dev/null
+          grep -F "founding_rate_forfeited=true" worker/billing.ts >/dev/null
+          grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx >/dev/null
+          grep -F "OPEN HOUSE BROWSING IS FREE!" src/pages/Subscription.jsx >/dev/null
+          grep -F "Founding Members #1–100" src/pages/HelpCenter.jsx >/dev/null
+          grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
+          grep -F "const writeAccess = await loveNoteWriteAccess(db, auth);" worker/love-note-entitlements.ts >/dev/null
+          grep -F "reason: 'subscription_required'" worker/love-note-entitlements.ts >/dev/null
+          if grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null; then
+            echo "Retired trial/guest-preview behavior remains"; exit 1;
+          fi
+          if grep -RInE "status === 'trial' \? 'Exclusive'|\['trial', 'trialing'\].*\? 'Exclusive'" src worker 2>/dev/null; then
+            echo "Founding free-period access is incorrectly forced to Exclusive"; exit 1;
+          fi
+
+      - name: Prepare browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Run exhaustive browser and task certification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/o2ol-release-candidate-certification.mjs | tee /tmp/o2ol-release-candidate-certification.txt
+
+      - name: Upload certification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-release-candidate-certification
+          path: /tmp/o2ol-release-candidate-certification.txt
+          if-no-files-found: warn

@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, CreditCard } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useLanguage } from '@/Layout';
 import { Button } from '@/components/ui/button';
-import { handleSubscriptionCheckout } from '@/lib/stripeService';
+import { getFoundingOffer, handleSubscriptionCheckout } from '@/lib/stripeService';
 import { toast } from 'sonner';
 import { subscriptionPlanCopy } from '@/data/subscriptionPlanCopy';
 
 const COPY={
- en:{title:'Choose Your One2OneLove Membership',subtitle:'Simple, stable membership options with no hidden steps.',premiere:'Premiere',premierePrice:'US$9.99 / month',exclusive:'Exclusive',exclusivePrice:'US$19.99 / month',premiereFeatures:['Relationship tools and activities','Community and chat access','Love Notes and relationship support','Member profile and shared features'],exclusiveFeatures:['Everything in Premiere','Exclusive-level feature access','Enhanced relationship tools','Priority premium experiences'],createPremiere:'Create Account for Premiere',createExclusive:'Create Account for Exclusive',startTrial:'Start 7-Day Full Access Trial',starting:'Opening secure checkout…',current:'Current membership',loading:'Checking your membership…',trial:'The 7-day Full Access trial includes Exclusive-level access. After the trial, membership continues on Premiere unless you choose Exclusive or cancel.',setup:'Finish membership setup to continue.'},
- es:{title:'Elige Tu Membresía One2OneLove',subtitle:'Opciones simples y estables, sin pasos ocultos.',premiere:'Premiere',premierePrice:'US$9.99 / mes',exclusive:'Exclusive',exclusivePrice:'US$19.99 / mes',premiereFeatures:['Herramientas y actividades de relación','Comunidad y chat','Notas de Amor y apoyo','Perfil y funciones compartidas'],exclusiveFeatures:['Todo en Premiere','Acceso Exclusive','Herramientas ampliadas','Experiencias premium prioritarias'],createPremiere:'Crear Cuenta para Premiere',createExclusive:'Crear Cuenta para Exclusive',startTrial:'Comenzar Prueba de 7 Días',starting:'Abriendo pago seguro…',current:'Membresía actual',loading:'Comprobando tu membresía…',trial:'La prueba de 7 días incluye acceso Exclusive. Después continúa en Premiere salvo que elijas Exclusive o canceles.',setup:'Completa la configuración de membresía para continuar.'},
- fr:{title:'Choisissez Votre Abonnement One2OneLove',subtitle:'Des options simples et stables, sans étapes cachées.',guest:'Aperçu Invité de 24 Heures',guestPrice:'GRATUIT',guestBadge:'SANS CARTE',guestBody:'Créez et vérifiez votre compte pour commencer un aperçu de 24 heures en lecture seule. La vérification e-mail et mobile est requise.',guestButton:'Créer un Compte — Démarrer l’Aperçu',premiere:'Premiere',premierePrice:'US$9.99 / mois',exclusive:'Exclusive',exclusivePrice:'US$19.99 / mois',premiereFeatures:['Outils et activités relationnels','Communauté et chat','Notes d’Amour et soutien','Profil et fonctions partagées'],exclusiveFeatures:['Tout dans Premiere','Accès Exclusive','Outils relationnels renforcés','Expériences premium prioritaires'],createPremiere:'Créer un Compte Premiere',createExclusive:'Créer un Compte Exclusive',startTrial:'Commencer l’Essai de 7 Jours',starting:'Ouverture du paiement sécurisé…',current:'Abonnement actuel',loading:'Vérification de votre abonnement…',trial:'L’essai de 7 jours comprend l’accès Exclusive. Ensuite, l’abonnement continue en Premiere sauf choix d’Exclusive ou annulation.',setup:'Terminez la configuration de votre abonnement pour continuer.'},
- it:{title:'Scegli il Tuo Abbonamento One2OneLove',subtitle:'Opzioni semplici e stabili, senza passaggi nascosti.',guest:'Anteprima Ospite di 24 Ore',guestPrice:'GRATIS',guestBadge:'NESSUNA CARTA',guestBody:'Crea e verifica il tuo account per iniziare un’anteprima di 24 ore solo visualizzazione. Sono richieste verifica email e cellulare.',guestButton:'Crea Account — Avvia Anteprima',premiere:'Premiere',premierePrice:'US$9.99 / mese',exclusive:'Exclusive',exclusivePrice:'US$19.99 / mese',premiereFeatures:['Strumenti e attività di relazione','Community e chat','Love Notes e supporto','Profilo e funzioni condivise'],exclusiveFeatures:['Tutto in Premiere','Accesso Exclusive','Strumenti avanzati','Esperienze premium prioritarie'],createPremiere:'Crea Account Premiere',createExclusive:'Crea Account Exclusive',startTrial:'Avvia Prova di 7 Giorni',starting:'Apertura pagamento sicuro…',current:'Abbonamento attuale',loading:'Controllo abbonamento…',trial:'La prova di 7 giorni include accesso Exclusive. Dopo continua su Premiere salvo scelta di Exclusive o annullamento.',setup:'Completa la configurazione dell’abbonamento per continuare.'},
- de:{title:'Wählen Sie Ihre One2OneLove-Mitgliedschaft',subtitle:'Einfache, stabile Optionen ohne versteckte Schritte.',guest:'24-Stunden-Gastvorschau',guestPrice:'KOSTENLOS',guestBadge:'KEINE KARTE',guestBody:'Erstellen und bestätigen Sie Ihr Konto für eine 24-stündige Ansichtsvorschau. E-Mail- und Mobiltelefonbestätigung sind erforderlich.',guestButton:'Konto Erstellen — 24-Stunden-Vorschau',premiere:'Premiere',premierePrice:'US$9.99 / Monat',exclusive:'Exclusive',exclusivePrice:'US$19.99 / Monat',premiereFeatures:['Beziehungswerkzeuge und Aktivitäten','Community und Chat','Love Notes und Unterstützung','Profil und gemeinsame Funktionen'],exclusiveFeatures:['Alles in Premiere','Exclusive-Zugriff','Erweiterte Werkzeuge','Premium-Erlebnisse mit Priorität'],createPremiere:'Premiere-Konto Erstellen',createExclusive:'Exclusive-Konto Erstellen',startTrial:'7-Tage-Test Starten',starting:'Sicherer Checkout wird geöffnet…',current:'Aktuelle Mitgliedschaft',loading:'Mitgliedschaft wird geprüft…',trial:'Der 7-Tage-Test enthält Exclusive-Zugriff. Danach läuft Premiere weiter, sofern Sie nicht Exclusive wählen oder kündigen.',setup:'Schließen Sie die Mitgliedschaftseinrichtung ab, um fortzufahren.'}
+ en:{title:'Choose Your One2OneLove Membership',subtitle:'Simple, stable membership options with no hidden steps.',premiere:'Premiere',premierePrice:'US$9.99 / month',exclusive:'Exclusive',exclusivePrice:'US$19.99 / month',premiereFeatures:['Relationship tools and activities','Community and chat access','Love Notes and relationship support','Member profile and shared features'],exclusiveFeatures:['Everything in Premiere','Exclusive-level feature access','Enhanced relationship tools','Priority premium experiences'],createPremiere:'Create Account for Premiere',createExclusive:'Create Account for Exclusive',starting:'Opening secure checkout…',current:'Current membership',loading:'Checking your membership…',setup:'Finish membership setup to continue.',freeSignup:'OPEN HOUSE BROWSING IS FREE!',noCard:'No account or card is needed to browse. A valid credit or debit card is required to activate a Founding or paid membership.',openHouseTitle:'OPEN HOUSE — BROWSING IS FREE',openHouseBody:'You do not need a membership to keep exploring One2OneLove during the Open House. Membership is for protected, personal and member-only actions.',continueBrowsing:'Continue Free Open House',foundingCta:'Activate Founding Offer',foundingOpening:'Opening Founding checkout…',foundingCurrent:'Current Founding offer',foundingCompare:'Regular plans shown below for comparison. While a Founding slot is available, activation uses the Founding offer shown here.',foundingUnavailable:'Founding offer availability is being checked.'},
+ es:{title:'Elige Tu Membresía One2OneLove',subtitle:'Opciones simples y estables, sin pasos ocultos.',premiere:'Premiere',premierePrice:'US$9.99 / mes',exclusive:'Exclusive',exclusivePrice:'US$19.99 / mes',premiereFeatures:['Herramientas y actividades de relación','Comunidad y chat','Notas de Amor y apoyo','Perfil y funciones compartidas'],exclusiveFeatures:['Todo en Premiere','Acceso Exclusive','Herramientas ampliadas','Experiencias premium prioritarias'],createPremiere:'Crear Cuenta para Premiere',createExclusive:'Crear Cuenta para Exclusive',starting:'Abriendo pago seguro…',current:'Membresía actual',loading:'Comprobando tu membresía…',setup:'Completa la configuración de membresía para continuar.',freeSignup:'¡NAVEGAR EN OPEN HOUSE ES GRATIS!',noCard:'No necesitas cuenta ni tarjeta para navegar. Se requiere una tarjeta de crédito o débito válida para activar una membresía de Fundador o de pago.',openHouseTitle:'PUERTAS ABIERTAS — NAVEGAR ES GRATIS',openHouseBody:'No necesitas una membresía para seguir explorando One2OneLove durante la jornada de puertas abiertas. La membresía es para acciones protegidas, personales y exclusivas para miembros.',continueBrowsing:'Continuar Explorando Gratis',foundingCta:'Activar Oferta de Fundador',foundingOpening:'Abriendo checkout de Fundador…',foundingCurrent:'Oferta de Fundador actual',foundingCompare:'Los planes regulares se muestran abajo para comparar. Mientras haya una plaza de Fundador disponible, la activación usa la oferta mostrada aquí.',foundingUnavailable:'Comprobando disponibilidad de la oferta de Fundador.'},
+ fr:{title:'Choisissez Votre Abonnement One2OneLove',subtitle:'Des options simples et stables, sans étapes cachées.',premiere:'Premiere',premierePrice:'US$9.99 / mois',exclusive:'Exclusive',exclusivePrice:'US$19.99 / mois',premiereFeatures:['Outils et activités relationnels','Communauté et chat','Notes d’Amour et soutien','Profil et fonctions partagées'],exclusiveFeatures:['Tout dans Premiere','Accès Exclusive','Outils relationnels renforcés','Expériences premium prioritaires'],createPremiere:'Créer un Compte Premiere',createExclusive:'Créer un Compte Exclusive',starting:'Ouverture du paiement sécurisé…',current:'Abonnement actuel',loading:'Vérification de votre abonnement…',setup:'Terminez la configuration de votre abonnement pour continuer.',freeSignup:'LA NAVIGATION OPEN HOUSE EST GRATUITE !',noCard:'Aucun compte ni carte n’est requis pour parcourir le site. Une carte de crédit ou de débit valide est requise pour activer un abonnement Fondateur ou payant.',openHouseTitle:'PORTES OUVERTES — NAVIGATION GRATUITE',openHouseBody:'Vous n’avez pas besoin d’un abonnement pour continuer à explorer One2OneLove pendant les Portes Ouvertes. L’abonnement concerne les actions protégées, personnelles et réservées aux membres.',continueBrowsing:'Continuer Gratuitement',foundingCta:'Activer l’Offre Fondateur',foundingOpening:'Ouverture du paiement Fondateur…',foundingCurrent:'Offre Fondateur actuelle',foundingCompare:'Les abonnements réguliers ci-dessous sont affichés à titre de comparaison. Tant qu’une place Fondateur est disponible, l’activation utilise l’offre affichée ici.',foundingUnavailable:'Vérification de la disponibilité de l’offre Fondateur.'},
+ it:{title:'Scegli il Tuo Abbonamento One2OneLove',subtitle:'Opzioni semplici e stabili, senza passaggi nascosti.',premiere:'Premiere',premierePrice:'US$9.99 / mese',exclusive:'Exclusive',exclusivePrice:'US$19.99 / mese',premiereFeatures:['Strumenti e attività di relazione','Community e chat','Love Notes e supporto','Profilo e funzioni condivise'],exclusiveFeatures:['Tutto in Premiere','Accesso Exclusive','Strumenti avanzati','Esperienze premium prioritarie'],createPremiere:'Crea Account Premiere',createExclusive:'Crea Account Exclusive',starting:'Apertura pagamento sicuro…',current:'Abbonamento attuale',loading:'Controllo abbonamento…',setup:'Completa la configurazione dell’abbonamento per continuare.',freeSignup:'NAVIGARE NELL’OPEN HOUSE È GRATIS!',noCard:'Non servono account o carta per navigare. È richiesta una carta di credito o debito valida per attivare un abbonamento Fondatore o a pagamento.',openHouseTitle:'OPEN HOUSE — NAVIGAZIONE GRATUITA',openHouseBody:'Non serve un abbonamento per continuare a esplorare One2OneLove durante l’Open House. L’abbonamento serve per azioni protette, personali e riservate ai membri.',continueBrowsing:'Continua Gratis',foundingCta:'Attiva Offerta Fondatore',foundingOpening:'Apertura checkout Fondatore…',foundingCurrent:'Offerta Fondatore attuale',foundingCompare:'I piani regolari sotto sono mostrati per confronto. Finché è disponibile un posto Fondatore, l’attivazione usa l’offerta mostrata qui.',foundingUnavailable:'Verifica disponibilità dell’offerta Fondatore.'},
+ de:{title:'Wählen Sie Ihre One2OneLove-Mitgliedschaft',subtitle:'Einfache, stabile Optionen ohne versteckte Schritte.',premiere:'Premiere',premierePrice:'US$9.99 / Monat',exclusive:'Exclusive',exclusivePrice:'US$19.99 / Monat',premiereFeatures:['Beziehungswerkzeuge und Aktivitäten','Community und Chat','Love Notes und Unterstützung','Profil und gemeinsame Funktionen'],exclusiveFeatures:['Alles in Premiere','Exclusive-Zugriff','Erweiterte Werkzeuge','Premium-Erlebnisse mit Priorität'],createPremiere:'Premiere-Konto Erstellen',createExclusive:'Exclusive-Konto Erstellen',starting:'Sicherer Checkout wird geöffnet…',current:'Aktuelle Mitgliedschaft',loading:'Mitgliedschaft wird geprüft…',setup:'Schließen Sie die Mitgliedschaftseinrichtung ab, um fortzufahren.',freeSignup:'OPEN-HOUSE-STÖBERN IST KOSTENLOS!',noCard:'Zum Stöbern sind weder Konto noch Karte erforderlich. Für die Aktivierung einer Gründer- oder kostenpflichtigen Mitgliedschaft ist eine gültige Kredit- oder Debitkarte erforderlich.',openHouseTitle:'OPEN HOUSE — STÖBERN IST KOSTENLOS',openHouseBody:'Du brauchst während des Open House keine Mitgliedschaft, um One2OneLove weiter zu erkunden. Die Mitgliedschaft ist für geschützte, persönliche und mitgliederbezogene Aktionen.',continueBrowsing:'Kostenlos Weiter Erkunden',foundingCta:'Gründungsangebot Aktivieren',foundingOpening:'Gründer-Checkout wird geöffnet…',foundingCurrent:'Aktuelles Gründungsangebot',foundingCompare:'Die regulären Tarife unten dienen zum Vergleich. Solange ein Gründerplatz verfügbar ist, erfolgt die Aktivierung über das hier angezeigte Angebot.',foundingUnavailable:'Verfügbarkeit des Gründungsangebots wird geprüft.'}
 };
 
 const FOUNDING={
@@ -25,16 +25,19 @@ const FOUNDING={
 
 const PLANS=[{name:'Premiere',price:9.99},{name:'Exclusive',price:19.99}];
 
-function PlanCard({plan,t,planCopy,busy,onChoose}){
+function PlanCard({plan,t,planCopy,busy,onChoose,disabled=false}){
  const features=planCopy.plans[plan.name].features;
  const price=plan.name==='Exclusive'?t.exclusivePrice:t.premierePrice;
  const create=plan.name==='Exclusive'?t.createExclusive:t.createPremiere;
- return <section className="flex min-h-[430px] flex-col rounded-3xl border-2 border-slate-200 bg-white p-7 shadow-sm">
+ const cardGradient=plan.name==='Exclusive'
+  ? 'from-blue-600 via-violet-500 to-pink-500'
+  : 'from-pink-500 via-violet-500 to-blue-600';
+ return <section className={`flex min-h-[430px] flex-col rounded-3xl border border-white/30 bg-gradient-to-r ${cardGradient} p-7 text-white shadow-xl`}>
    <div className="text-4xl" aria-hidden="true">{plan.name==='Exclusive'?'👑':'💖'}</div>
-   <h2 className="mt-4 text-3xl font-black text-slate-900">{plan.name==='Exclusive'?t.exclusive:t.premiere}</h2>
-   <div className="mt-2 text-2xl font-black text-slate-800">{price}</div>
-   <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-sm leading-6 text-slate-700"><Check className="mt-1 h-4 w-4 shrink-0 text-emerald-600"/><span>{item}</span></li>)}</ul>
-   <Button disabled={busy} onClick={()=>onChoose(plan)} className="mt-7 w-full py-6 text-base font-bold">{busy?t.starting:create}</Button>
+   <h2 className="mt-4 text-3xl font-black text-white">{plan.name==='Exclusive'?t.exclusive:t.premiere}</h2>
+   <div className="mt-2 text-2xl font-black text-white">{price}</div>
+   <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-[1.3125rem] leading-[1.8rem] text-white/95"><Check className="mt-1 h-4 w-4 shrink-0 text-white"/><span>{item}</span></li>)}</ul>
+   <Button disabled={busy||disabled} onClick={()=>onChoose(plan)} className="mt-7 w-full border border-white/35 bg-white/15 py-6 text-base font-bold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">{busy?t.starting:create}</Button>
  </section>;
 }
 
@@ -46,6 +49,36 @@ export default function Subscription(){
  const planCopy=subscriptionPlanCopy[currentLanguage]||subscriptionPlanCopy.en;
  const founding=FOUNDING[currentLanguage]||FOUNDING.en;
  const [busy,setBusy]=useState('');
+ const [foundingOffer,setFoundingOffer]=useState(null);
+ const [foundingLoading,setFoundingLoading]=useState(true);
+
+ useEffect(()=>{
+  let active=true;
+  getFoundingOffer().then(offer=>{ if(active) setFoundingOffer(offer); }).finally(()=>{ if(active) setFoundingLoading(false); });
+  return ()=>{active=false;};
+ },[]);
+
+ const chooseFounding=async ()=>{
+  const offer=foundingOffer;
+  if(!offer?.available || !offer?.plan) return;
+  setBusy('founding');
+  try{
+   const result=await handleSubscriptionCheckout({
+     name:offer.plan,
+     price:Number(offer.recurringPriceCents||0)/100,
+     founding:true,
+   });
+   if(result?.success) return;
+   if(result?.status===401 || result?.code==='unauthorized'){
+     navigate('/SignUp?plan='+encodeURIComponent(offer.plan)+'&founding=1&source=founding-offer');
+     return;
+   }
+   if(result?.code==='founding_offer_unavailable'){
+     setFoundingOffer(await getFoundingOffer());
+   }
+   toast.error(result?.error||'Unable to continue.');
+  }finally{setBusy('');}
+ };
 
  const choose=async plan=>{
   setBusy(plan.name);
@@ -61,17 +94,38 @@ export default function Subscription(){
  };
 
  const setupRequired=searchParams.get('setup')==='required';
-
  return <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6" style={{fontFamily:'Arial, Helvetica, sans-serif',overflowAnchor:'none'}}>
   <div className="mx-auto max-w-6xl">
    <header className="text-center"><h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">{t.subtitle}</p></header>
-   <div className="mt-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-center shadow-sm"><div className="text-sm font-black uppercase tracking-widest text-amber-700">{founding.hero}</div><h2 className="mt-1 text-2xl font-black text-slate-900">{founding.title}</h2></div>
-   {setupRequired&&<div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p className="text-sm font-semibold text-amber-700">{t.setup}</p></div>}
-   <div className="mt-8 grid gap-6 lg:grid-cols-2">
-    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} onChoose={choose}/>) }
+   <div className="mt-6 rounded-2xl border-2 border-cyan-300 bg-cyan-50 p-5 text-center shadow-sm">
+    <div className="text-sm font-black uppercase tracking-widest text-cyan-800">{t.openHouseTitle}</div>
+    <p className="mx-auto mt-2 max-w-3xl text-sm leading-6 text-slate-700">{t.openHouseBody}</p>
+    <Button type="button" onClick={()=>navigate('/Home')} className="mt-4 bg-slate-900 px-5 font-black text-white hover:bg-slate-800">{t.continueBrowsing}</Button>
    </div>
-   <div className="mt-8 space-y-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-sm leading-6 text-slate-700"><h3 className="text-xl font-black text-slate-900">{founding.title}</h3><p><strong>{founding.first}</strong></p><p><strong>{founding.second}</strong></p><p>{founding.terms}</p></div>
-   <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600"><p>{planCopy.terms.trial}</p><p>{planCopy.terms.loveNotes}</p><p>{planCopy.terms.cancel}</p></div>
+   <div className="mt-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-center shadow-sm">
+    <div className="text-sm font-black uppercase tracking-widest text-amber-700">{founding.hero}</div>
+    <h2 className="mt-1 text-2xl font-black text-slate-900">{founding.title}</h2>
+    {foundingLoading ? <p className="mt-3 text-sm font-semibold text-amber-800">{t.foundingUnavailable}</p> : foundingOffer?.available ? <>
+      <div className="mx-auto mt-4 max-w-3xl rounded-2xl border border-amber-300 bg-white p-4">
+       <div className="text-xs font-black uppercase tracking-widest text-amber-700">{t.foundingCurrent}</div>
+       <p className="mt-2 text-lg font-black text-slate-900">{foundingOffer.cohort==='first100'?founding.first:founding.second}</p>
+       <Button type="button" disabled={busy==='founding'} onClick={chooseFounding} className="mt-4 bg-amber-600 px-6 font-black text-white hover:bg-amber-700">{busy==='founding'?t.foundingOpening:t.foundingCta}</Button>
+      </div>
+      <p className="mx-auto mt-3 max-w-3xl text-xs leading-5 text-slate-600">{t.foundingCompare}</p>
+    </> : null}
+   </div>
+   {setupRequired&&<div className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-center shadow-sm"><p className="text-sm font-semibold leading-6 text-amber-800">{t.setup}</p></div>}
+   <div className="relative mx-auto mt-7 w-full max-w-xl">
+    <div aria-hidden="true" className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500 opacity-45 blur-lg motion-safe:animate-pulse motion-reduce:animate-none"></div>
+    <div className="relative overflow-hidden rounded-2xl border border-white/40 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 px-5 py-3 text-center text-white shadow-xl">
+     <div className="text-xl font-black tracking-wide sm:text-2xl">{t.freeSignup}</div>
+     <div className="mt-0.5 text-sm font-semibold text-white/85 sm:text-base">{t.noCard}</div>
+    </div>
+   </div>
+   <div className="mt-5 grid gap-6 md:grid-cols-2">
+    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} onChoose={choose} disabled={Boolean(foundingOffer?.available)}/>) }
+   </div>
+   <><div className="mt-8 space-y-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-sm leading-6 text-slate-700"><h3 className="text-xl font-black text-slate-900">{founding.title}</h3><p><strong>{founding.first}</strong></p><p><strong>{founding.second}</strong></p><p>{founding.terms}</p></div><div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600"><p>{planCopy.terms.loveNotes}</p><p>{planCopy.terms.cancel}</p></div></>
   </div>
  </main>;
 }

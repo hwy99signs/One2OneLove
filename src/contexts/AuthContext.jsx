@@ -128,7 +128,7 @@ export function AuthProvider({ children }) {
           country: userData.country || 'US',
           preferredLanguage: userData.preferredLanguage || 'en',
           termsAcceptedAt: userData.termsAcceptedAt || new Date().toISOString(),
-          termsVersion: userData.termsVersion || '2026-09-25',
+          termsVersion: userData.termsVersion || '2026-10-02',
           privacyPolicyAcknowledged: userData.privacyPolicyAcknowledged !== false,
           age18Confirmed: userData.age18Confirmed !== false,
         },

@@ -10,6 +10,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import GameCard from "../components/activities/GameCard";
 import { getCooperativeGameHistory } from "@/lib/activityService";
+import { hasFullMemberAccess } from "@/lib/openHouseAccess";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 const translations = {
   en: {
@@ -25,7 +27,9 @@ const translations = {
     scratchName: "One2OneLove Scratch Game",
     scratchDesc: "Scratch, reveal, and talk through meaningful questions together.",
     whatShouldName: "What Should They Do?",
-    whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered."
+    whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered.",
+    likeMindedName: "Like Minded?",
+    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align."
   },
   es: {
     title: "Juegos de Relaciones",
@@ -40,7 +44,9 @@ const translations = {
     scratchName: "Juego de Rasca One2OneLove",
     scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas.",
     whatShouldName: "¿Qué Deberían Hacer?",
-    whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas."
+    whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas.",
+    likeMindedName: "¿Piensan Igual?",
+    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden."
   },
   fr: {
     title: "Jeux Relationnels",
@@ -55,7 +61,9 @@ const translations = {
     scratchName: "Jeu à Gratter One2OneLove",
     scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives.",
     whatShouldName: "Que Devraient-Ils Faire ?",
-    whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres."
+    whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres.",
+    likeMindedName: "Même Longueur d’Onde ?",
+    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord."
   },
   it: {
     title: "Giochi Relazionali",
@@ -70,7 +78,9 @@ const translations = {
     scratchName: "Gioco Gratta e Scopri One2OneLove",
     scratchDesc: "Grattate, scoprite e parlate insieme di domande significative.",
     whatShouldName: "Cosa Dovrebbero Fare?",
-    whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri."
+    whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri.",
+    likeMindedName: "Sulla Stessa Lunghezza d’Onda?",
+    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati."
   },
   de: {
     title: "Beziehungsspiele",
@@ -85,7 +95,9 @@ const translations = {
     scratchName: "One2OneLove Rubbelspiel",
     scratchDesc: "Rubbeln, aufdecken und gemeinsam über bedeutungsvolle Fragen sprechen.",
     whatShouldName: "Was Sollten Sie Tun?",
-    whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben."
+    whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben.",
+    likeMindedName: "Gleich Gesinnt?",
+    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen."
   }
 };
 
@@ -95,14 +107,25 @@ export default function CooperativeGames() {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
+  const fullMemberAccess = hasFullMemberAccess(user);
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
     queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
-    enabled: !!user?.id
+    enabled: fullMemberAccess
   });
 
   const availableGames = [
+    {
+      id: 'like_minded',
+      name: t.likeMindedName,
+      description: t.likeMindedDesc,
+      type: 'connection',
+      difficulty: 'easy-to-deep',
+      icon: '🧠',
+      link: 'LikeMinded',
+      playLabel: t.startGame
+    },
     {
       id: 'o2ol_scratch',
       name: t.scratchName,
@@ -135,6 +158,7 @@ export default function CooperativeGames() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {!fullMemberAccess && <div className="mx-auto max-w-7xl px-4 pt-8"><OpenHouseBrowseNotice /></div>}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="mb-6">
           <Link to={createPageUrl("CoupleActivities")} className="inline-flex items-center text-gray-600 hover:text-green-600">

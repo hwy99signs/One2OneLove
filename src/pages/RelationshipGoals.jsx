@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import goalsService from "@/lib/goalsService";
+import { useAuth } from "@/contexts/AuthContext";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
+import { hasFullMemberAccess, openHouseProtectedDestination } from "@/lib/openHouseAccess";
 
 import GoalForm from "../components/goals/GoalForm";
 import GoalCard from "../components/goals/GoalCard";
@@ -147,6 +150,8 @@ export default function RelationshipGoals() {
   const [updatingGoal, setUpdatingGoal] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const fullMemberAccess = hasFullMemberAccess(user);
 
   useEffect(() => {
     if (!String(location.state?.relationshipSubview || '').startsWith('goal-')) {
@@ -171,8 +176,9 @@ export default function RelationshipGoals() {
   };
 
   const { data: goals = [], isLoading } = useQuery({
-    queryKey: ['relationship-goals'],
+    queryKey: ['relationship-goals', user?.id],
     queryFn: () => goalsService.getGoals('-created_at'),
+    enabled: fullMemberAccess,
   });
 
   const createMutation = useMutation({
@@ -264,6 +270,8 @@ export default function RelationshipGoals() {
           </Link>
         </div>
 
+        {!fullMemberAccess && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -280,6 +288,7 @@ export default function RelationshipGoals() {
           </p>
           <Button
             onClick={() => {
+              if (!fullMemberAccess) return navigate(openHouseProtectedDestination(user,'relationship-goals'));
               openGoalSubview('goal-add');
               setEditingGoal(null);
               setShowForm(true);

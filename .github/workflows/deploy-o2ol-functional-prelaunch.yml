@@ -1,0 +1,93 @@
+name: Deploy O2OL Functional MyMatchIQ Prelaunch
+
+on:
+  workflow_dispatch:
+    inputs:
+      hyperdrive_id:
+        description: "Cloudflare Hyperdrive ID connected ONLY to Neon branch o2ol-prelaunch-bianca-20260930"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_NAME: one2onelove-mmiq-functional-prelaunch
+      NEON_AUTH_BASE_URL: https://ep-royal-darkness-ars10dcl.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify deployment inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "${{ inputs.hyperdrive_id }}"
+          test "${{ inputs.hyperdrive_id }}" != "ef44564dbfca4e1bb13176ee568aaddf"
+
+      - name: Build current consolidated Prelaunch
+        run: |
+          npm ci
+          npm run build
+
+      - name: Generate isolated functional Wrangler config
+        shell: bash
+        run: |
+          cat > /tmp/wrangler.functional-prelaunch.jsonc <<EOF
+          {
+            "name": "$WORKER_NAME",
+            "main": "$GITHUB_WORKSPACE/worker/mymatchiq-functional-prelaunch.ts",
+            "compatibility_date": "2026-09-11",
+            "compatibility_flags": ["nodejs_compat"],
+            "workers_dev": true,
+            "preview_urls": true,
+            "assets": {
+              "directory": "$GITHUB_WORKSPACE/dist",
+              "binding": "ASSETS",
+              "not_found_handling": "single-page-application",
+              "run_worker_first": ["/api/*"]
+            },
+            "vars": {
+              "NEON_AUTH_BASE_URL": "$NEON_AUTH_BASE_URL",
+              "PRELAUNCH_ENVIRONMENT": "true"
+            },
+            "hyperdrive": [
+              {
+                "binding": "HYPERDRIVE",
+                "id": "${{ inputs.hyperdrive_id }}"
+              }
+            ]
+          }
+          EOF
+
+      - name: Deploy isolated functional Prelaunch
+        run: npx --yes wrangler@latest deploy --config /tmp/wrangler.functional-prelaunch.jsonc
+
+      - name: Verify health and API isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://$WORKER_NAME.hwy99signs.workers.dev"
+          for attempt in $(seq 1 18); do
+            CODE=$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/api/health" || true)
+            [ "$CODE" = "200" ] && break
+            sleep 5
+          done
+          test "$CODE" = "200"
+          grep -F '"production":false' /tmp/health.json
+          BLOCKED=$(curl -sS -o /tmp/blocked.json -w '%{http_code}' "$URL/api/love-notes" || true)
+          test "$BLOCKED" = "404"
+          grep -F 'prelaunch_api_blocked' /tmp/blocked.json

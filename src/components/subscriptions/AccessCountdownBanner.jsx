@@ -5,11 +5,11 @@ import { getUserSubscription } from '@/lib/stripeService';
 import { useQuery } from '@tanstack/react-query';
 
 const COPY = {
-  en: { trial: 'Full Access Trial', ends: 'remaining', action: 'View Subscription' },
-  es: { trial: 'Prueba de Acceso Completo', ends: 'restantes', action: 'Ver Suscripción' },
-  fr: { trial: 'Essai Accès Complet', ends: 'restant', action: 'Voir l’Abonnement' },
-  it: { trial: 'Prova Accesso Completo', ends: 'rimanenti', action: 'Vedi Abbonamento' },
-  de: { trial: 'Vollzugriff-Test', ends: 'verbleibend', action: 'Abonnement Anzeigen' },
+  en: { trial: 'Founding Member Access', ends: 'remaining', action: 'View Subscription' },
+  es: { trial: 'Acceso de Miembro Fundador', ends: 'restantes', action: 'Ver Suscripción' },
+  fr: { trial: 'Accès Membre Fondateur', ends: 'restant', action: 'Voir l’Abonnement' },
+  it: { trial: 'Accesso Membro Fondatore', ends: 'rimanenti', action: 'Vedi Abbonamento' },
+  de: { trial: 'Gründungsmitglied-Zugang', ends: 'verbleibend', action: 'Abonnement Anzeigen' },
 };
 
 function language() {

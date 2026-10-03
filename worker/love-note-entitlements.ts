@@ -127,9 +127,7 @@ async function planForUser(db, userId) {
   );
   const row = result.rows[0] || {};
   const stored = canonicalPlan(row.subscription_plan);
-  const trial = ['trial', 'trialing'].includes(String(row.subscription_status || '').toLowerCase());
-  const effective = trial ? 'Exclusive' : stored;
-  return { storedPlan: stored, effectivePlan: effective, subscriptionStatus: row.subscription_status || 'inactive' };
+  return { storedPlan: stored, effectivePlan: stored, subscriptionStatus: row.subscription_status || 'inactive' };
 }
 
 async function loveNoteWriteAccess(db, auth) {
@@ -148,16 +146,16 @@ async function loveNoteWriteAccess(db, auth) {
   const endAt = row.subscription_end_date ? new Date(row.subscription_end_date) : null;
   const hasAdminAccess = Boolean(endAt && !Number.isNaN(endAt.getTime()) && endAt.getTime() > Date.now());
 
-  const activePaidAccess =
+  const hasMembershipAccess =
     row.is_active !== false &&
     ['active', 'trial', 'trialing'].includes(status) &&
     (hasStripeSubscription || hasAdminAccess);
 
-  if (!activePaidAccess) {
+  if (!hasMembershipAccess) {
     return {
       allowed: false,
       reason: 'subscription_required',
-      message: 'An active One2OneLove membership is required to use Love Notes sending features.',
+      message: 'An active One2OneLove membership or Founding Member free period is required to use Love Notes sending features.',
     };
   }
 
@@ -272,7 +270,7 @@ async function postImmediateSms(db, env, auth, body) {
   const sourceId = crypto.randomUUID();
   let reservation = null;
 
-  // Phase 1: reserve the trial/first-free or 29-cent entitlement and deliver the SMS.
+  // Phase 1: reserve the founding-period/first-free or 29-cent entitlement and deliver the SMS.
   // If Twilio fails, the DB transaction rolls back so no send is billed.
   await db.query('BEGIN');
   try {
@@ -389,7 +387,7 @@ async function postScheduled(db, env, auth, body) {
       billing: {
         free: reservation.free === true,
         amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
-        firstTrialSendFree: true,
+        firstMembershipSendFree: true,
         firstSendFree: true,
         additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
       },
@@ -476,11 +474,11 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
           ok: true,
           delivery: {
             ...scheduledSmsReadiness(env),
-            firstTrialSendFree: true,
+            firstMembershipSendFree: true,
             firstSendFree: true,
             additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
             customNoteMaxCharacters: CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
-            trialSendsAllowed: true,
+            foundingPeriodSendsAllowed: true,
           },
         });
       }
