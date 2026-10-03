@@ -46,7 +46,7 @@ export default function Subscription(){
  const navigate=useNavigate();
  const [searchParams]=useSearchParams();
  const {currentLanguage}=useLanguage();
- const {isAuthenticated}=useAuth();
+ const {user,isAuthenticated}=useAuth();
  const t=COPY[currentLanguage]||COPY.en;
  const planCopy=subscriptionPlanCopy[currentLanguage]||subscriptionPlanCopy.en;
  const founding=FOUNDING[currentLanguage]||FOUNDING.en;
@@ -63,7 +63,7 @@ export default function Subscription(){
  const chooseFounding=async ()=>{
   const offer=foundingOffer;
   if(!offer?.available || !offer?.plan) return;
-  if(!isAuthenticated){
+  if(!isAuthenticated || String(user?.role||'').toLowerCase()==='admin'){
     navigate('/SignUp?plan='+encodeURIComponent(offer.plan)+'&type=individual&founding=1&source=founding-offer');
     return;
   }
@@ -87,7 +87,7 @@ export default function Subscription(){
  };
 
  const choose=async plan=>{
-  if(!isAuthenticated){
+  if(!isAuthenticated || String(user?.role||'').toLowerCase()==='admin'){
     navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&type=individual&source=subscription-plan');
     return;
   }
