@@ -54,7 +54,6 @@ import InfluencerSignup from './InfluencerSignup';
 import MyMatchIQ from './MyMatchIQ';
 import MyMatchIQAssessment from './MyMatchIQAssessment';
 import MyMatchIQBianca from './MyMatchIQBianca';
-import MyMatchIQCredits from './MyMatchIQCredits';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
@@ -70,7 +69,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, Tokens, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
 const FEATURE_BY_ROUTE = {
