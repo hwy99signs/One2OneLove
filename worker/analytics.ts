@@ -115,7 +115,7 @@ async function analytics(db, env) {
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
      WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
-  `) : Promise.resolve({ rows:[{ page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 }] });
+  `) : { rows:[{ page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 }] };
 
   const languageUsagePromise = interactionReady && languageReady ? db.query(`
     WITH desired(language,label,sort_order) AS (
@@ -152,13 +152,13 @@ async function analytics(db, env) {
            COALESCE(usage.anonymous_visitors,0)::int AS anonymous_visitors
       FROM desired LEFT JOIN usage USING(language)
      ORDER BY desired.sort_order
-  `) : Promise.resolve({ rows:[
+  `) : { rows:[
     { language:'en',label:'English',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
     { language:'es',label:'Spanish',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
     { language:'fr',label:'French',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
     { language:'it',label:'Italian',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
     { language:'de',label:'German',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
-  ] });
+  ] };
 
   const languageUnknownPromise = interactionReady ? db.query(languageReady ? `
     SELECT count(*)::int AS events
@@ -173,7 +173,7 @@ async function analytics(db, env) {
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
      WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
-  `) : Promise.resolve({ rows:[{ events:0 }] });
+  `) : { rows:[{ events:0 }] };
 
   const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown] = await Promise.all([
     db.query(`
