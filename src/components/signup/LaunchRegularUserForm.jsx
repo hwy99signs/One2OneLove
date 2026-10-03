@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere', foundingIntent = false }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Basic', foundingIntent = false }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
