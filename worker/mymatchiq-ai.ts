@@ -135,33 +135,27 @@ function assessmentPayload(input){
   return {answers,dimensionScores,questionCount};
 }
 async function latestAssessment(db,userId){ const r=await db.query(`SELECT * FROM public.mmiq_assessment_sessions WHERE user_id=$1::uuid ORDER BY updated_at DESC LIMIT 1`,[userId]); return r.rows[0]||null; }
-async function cardAccess(db,userId){
-  const r=await db.query(`
-    SELECT
-      (
-        NULLIF(u.stripe_subscription_id,'') IS NOT NULL
-        OR EXISTS (
-          SELECT 1
-          FROM public.mmiq_auto_replenish_settings s
-          WHERE s.user_id=u.id
-            AND NULLIF(s.payment_method_reference,'') IS NOT NULL
-        )
-      ) AS card_on_file
-    FROM public.users u
-    WHERE u.id=$1::uuid
-    LIMIT 1
-  `,[userId]);
-  return r.rows[0]?.card_on_file===true;
-}
-async function requireCardAccess(db,userId){
-  if(await cardAccess(db,userId)) return;
-  throw Object.assign(new Error('A credit/debit card is required to use this MyMatchIQ feature.'),{status:402,code:'card_required'});
-}
 async function accessEntitlement(db,userId){
-  const r=await db.query(`SELECT tier,source,grandfathered,effective_at,expires_at FROM public.mmiq_access_entitlements WHERE user_id=$1::uuid AND (expires_at IS NULL OR expires_at>now())`,[userId]);
-  const access=r.rows[0]||{tier:'free',source:'o2ol',grandfathered:false,effective_at:null,expires_at:null};
-  const wallet=(await db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId])).rows[0];
-  return {...access,card_on_file:await cardAccess(db,userId),token_mode:true,token_balance:Number(wallet?.balance||0)};
+  const [walletResult,legacyResult]=await Promise.all([
+    db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId]),
+    db.query(`SELECT tier,source,grandfathered,effective_at,expires_at
+                FROM public.mmiq_access_entitlements
+               WHERE user_id=$1::uuid AND (expires_at IS NULL OR expires_at>now())
+               LIMIT 1`,[userId]).catch(()=>({rows:[]})),
+  ]);
+  const wallet=walletResult.rows[0];
+  const legacy=legacyResult.rows[0]||null;
+  return {
+    access_model:'free_tokens',
+    verified_member:true,
+    tier:'Free',
+    source:'o2ol_token_model',
+    assessment_question_count:225,
+    assessment_dimension_count:15,
+    token_mode:true,
+    token_balance:Number(wallet?.balance||0),
+    legacy_entitlement:legacy,
+  };
 }
 async function createAssessment(db,userId,input){ const language=LANGUAGE_NAMES[input?.language]?input.language:'en'; const r=await db.query(`INSERT INTO public.mmiq_assessment_sessions(user_id,language,status,question_count,answers,dimension_scores) VALUES($1::uuid,$2,'in_progress',0,'[]'::jsonb,'{}'::jsonb) RETURNING *`,[userId,language]); return r.rows[0]; }
 async function saveAssessment(db,userId,id,input,complete=false){ if(!UUID.test(String(id||'')))throw Object.assign(new Error('Invalid assessment session ID.'),{status:400,code:'bad_request'}); const data=assessmentPayload(input); const r=await db.query(`UPDATE public.mmiq_assessment_sessions SET answers=$1::jsonb,dimension_scores=$2::jsonb,question_count=$3,status=$4,completed_at=CASE WHEN $4='completed' THEN COALESCE(completed_at,now()) ELSE completed_at END,updated_at=now() WHERE id=$5::uuid AND user_id=$6::uuid RETURNING *`,[JSON.stringify(data.answers),JSON.stringify(data.dimensionScores),data.questionCount,complete?'completed':'in_progress',id,userId]); if(!r.rows[0])throw Object.assign(new Error('Assessment session not found.'),{status:404,code:'not_found'}); return r.rows[0]; }
@@ -251,13 +245,11 @@ export async function handleMyMatchIQAiRequest(request,env,url){
       const assessmentComplete=url.pathname.match(/^\/api\/mymatchiq\/assessment\/sessions\/([0-9a-f-]{36})\/complete$/i);
       if(assessmentComplete){
         if(request.method!=='POST')return fail('Method not allowed.',405,'method_not_allowed');
-        await requireCardAccess(db,auth.user.id);
         return json({ok:true,session:await saveAssessment(db,auth.user.id,assessmentComplete[1],await readJson(request),true)});
       }
       const assessmentOne=url.pathname.match(/^\/api\/mymatchiq\/assessment\/sessions\/([0-9a-f-]{36})$/i);
       if(assessmentOne){
         if(request.method!=='PATCH')return fail('Method not allowed.',405,'method_not_allowed');
-        await requireCardAccess(db,auth.user.id);
         return json({ok:true,session:await saveAssessment(db,auth.user.id,assessmentOne[1],await readJson(request),false)});
       }
       if(url.pathname==='/api/mymatchiq/bianca/profile'&&request.method==='GET')return json({ok:true,profile:await profile(db,auth.user.id)});
