@@ -241,6 +241,100 @@ async function adjustTokens(db,admin,userId,rawDelta,reason=''){
   }
 }
 
+
+async function startCalibration(db,admin,{userId,featureCode='all',packageCode=null,notes=''}) {
+  const target=(await db.query(
+    `SELECT id,email,role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0]||null;
+  if(!target)throw Object.assign(new Error('Calibration member not found.'),{status:404,code:'member_not_found'});
+  if(target.role==='admin'||target.id===admin.id)throw Object.assign(new Error('Calibration must use a non-Admin test/member account.'),{status:403,code:'admin_calibration_forbidden'});
+
+  const feature=String(featureCode||'all').trim();
+  if(feature!=='all'){
+    const valid=(await db.query(
+      `SELECT feature_code FROM public.o2ol_token_feature_prices WHERE feature_code=$1 AND active=true LIMIT 1`,
+      [feature],
+    )).rows[0];
+    if(!valid)throw Object.assign(new Error('Active metered feature not found.'),{status:400,code:'invalid_feature'});
+  }
+
+  let packageRow=null;
+  if(packageCode){
+    packageRow=(await db.query(
+      `SELECT code,label,tokens,amount_cents FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1`,
+      [String(packageCode)],
+    )).rows[0]||null;
+    if(!packageRow)throw Object.assign(new Error('Active Token package not found.'),{status:400,code:'invalid_package'});
+  }
+
+  const overlap=(await db.query(
+    `SELECT id FROM public.o2ol_calibration_sessions
+      WHERE user_id=$1::uuid AND ended_at IS NULL
+        AND (feature_code='all' OR $2='all' OR feature_code=$2)
+      LIMIT 1`,
+    [userId,feature],
+  )).rows[0];
+  if(overlap)throw Object.assign(new Error('This member already has an overlapping active calibration session.'),{status:409,code:'calibration_already_active'});
+
+  await db.query(`INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid) ON CONFLICT(user_id) DO NOTHING`,[userId]);
+  const wallet=(await db.query(`SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid LIMIT 1`,[userId])).rows[0]||{balance:0};
+  const safeNotes=String(notes||'').trim().slice(0,1000);
+  const row=(await db.query(
+    `INSERT INTO public.o2ol_calibration_sessions
+      (user_id,feature_code,package_code,starting_balance,notes,metadata)
+     VALUES($1::uuid,$2,$3,$4,$5,$6::jsonb)
+     RETURNING *`,
+    [userId,feature,packageRow?.code||null,Number(wallet.balance||0),safeNotes||null,JSON.stringify({
+      started_by_admin_id:admin.id,
+      started_by_admin_email:admin.email,
+      package_label:packageRow?.label||null,
+      package_tokens:packageRow?.tokens||null,
+      package_amount_cents:packageRow?.amount_cents||null,
+    })],
+  )).rows[0];
+  return {...row,email:target.email};
+}
+
+async function endCalibration(db,admin,sessionId,notes='') {
+  await db.query('BEGIN');
+  try{
+    const session=(await db.query(
+      `SELECT s.*,a.email,a.role
+         FROM public.o2ol_calibration_sessions s
+         LEFT JOIN neon_auth."user" a ON a.id=s.user_id
+        WHERE s.id=$1::uuid FOR UPDATE`,
+      [sessionId],
+    )).rows[0]||null;
+    if(!session)throw Object.assign(new Error('Calibration session not found.'),{status:404,code:'calibration_not_found'});
+    if(session.ended_at)throw Object.assign(new Error('Calibration session has already ended.'),{status:409,code:'calibration_already_ended'});
+    if(session.role==='admin')throw Object.assign(new Error('Admin calibration sessions cannot be finalized as member economics.'),{status:403,code:'admin_calibration_forbidden'});
+
+    const wallet=(await db.query(
+      `SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid LIMIT 1`,
+      [session.user_id],
+    )).rows[0]||{balance:0};
+    const appended=String(notes||'').trim().slice(0,1000);
+    const mergedNotes=[session.notes,appended].filter(Boolean).join('\n').slice(0,2000)||null;
+    const row=(await db.query(
+      `UPDATE public.o2ol_calibration_sessions
+          SET ending_balance=$1,ended_at=now(),notes=$2,
+              metadata=COALESCE(metadata,'{}'::jsonb)||$3::jsonb
+        WHERE id=$4::uuid
+        RETURNING *`,
+      [Number(wallet.balance||0),mergedNotes,JSON.stringify({
+        ended_by_admin_id:admin.id,
+        ended_by_admin_email:admin.email,
+      }),sessionId],
+    )).rows[0];
+    await db.query('COMMIT');
+    return {...row,email:session.email};
+  }catch(error){
+    await db.query('ROLLBACK').catch(()=>{});
+    throw error;
+  }
+}
+
 export async function handleTokenAdminRequest(request,env,url){
   if(!url.pathname.startsWith('/api/token-admin'))return null;
 
@@ -256,6 +350,24 @@ export async function handleTokenAdminRequest(request,env,url){
       if(request.method==='GET'&&url.pathname==='/api/token-admin/dashboard'){
         const data=await tokenDashboard(db);
         return json({ok:true,mode:'token_system_dashboard',generatedAt:new Date().toISOString(),admin:{id:admin.id,email:admin.email,name:admin.name},...data});
+      }
+
+      if(request.method==='POST'&&url.pathname==='/api/token-admin/calibrations/start'){
+        const body=await request.json().catch(()=>({}));
+        const result=await startCalibration(db,admin,{
+          userId:body?.userId,
+          featureCode:body?.featureCode,
+          packageCode:body?.packageCode,
+          notes:body?.notes,
+        });
+        return json({ok:true,calibration:result});
+      }
+
+      const calibrationEndMatch=url.pathname.match(/^\/api\/token-admin\/calibrations\/([0-9a-f-]{36})\/end$/i);
+      if(request.method==='POST'&&calibrationEndMatch){
+        const body=await request.json().catch(()=>({}));
+        const result=await endCalibration(db,admin,calibrationEndMatch[1],body?.notes);
+        return json({ok:true,calibration:result});
       }
 
       const walletMatch=url.pathname.match(/^\/api\/token-admin\/wallets\/([0-9a-f-]{36})\/adjust$/i);
