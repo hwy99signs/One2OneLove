@@ -470,15 +470,11 @@ async function members(db) {
            COALESCE(u.is_active,true) AS is_active,
            COALESCE(a."emailVerified",u.is_verified,false) AS is_verified,
            COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
-           CASE
-             WHEN u.id IS NULL THEN 'Guest'
-             WHEN u.stripe_subscription_id IS NULL
-               AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' > now() THEN 'Guest'
-             WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
-             WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
-             ELSE 'Premiere'
-           END AS subscription_plan,
+           COALESCE(NULLIF(u.subscription_plan,''),'Free') AS subscription_plan,
+           COALESCE(w.balance,0)::int AS token_balance,
+           COALESCE(w.lifetime_purchased,0)::int AS tokens_purchased,
+           COALESCE(w.lifetime_used,0)::int AS tokens_used,
+           COALESCE(w.lifetime_granted,0)::int AS tokens_granted,
            CASE
              WHEN u.id IS NULL THEN 'guest'
              WHEN u.stripe_subscription_id IS NULL
@@ -505,6 +501,7 @@ async function members(db) {
            (a.id IS NOT NULL) AS auth_ready
       FROM neon_auth."user" a
       FULL OUTER JOIN public.users u ON u.id=a.id
+      LEFT JOIN public.o2ol_token_wallets w ON w.user_id=COALESCE(u.id,a.id)
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
@@ -1058,6 +1055,148 @@ async function topFeatureActivity(db, env) {
   };
 }
 
+async function tokenEconomy(db) {
+  const [summary,packages,prices,byFeature,recentTransactions,topWallets,calibrations,conversionQuotes,legacy] = await Promise.all([
+    db.query(`
+      SELECT
+        count(*) FILTER (WHERE COALESCE(a.role,'user') <> 'admin')::int AS wallets,
+        COALESCE(sum(w.balance) FILTER (WHERE COALESCE(a.role,'user') <> 'admin'),0)::bigint AS outstanding_tokens,
+        COALESCE(sum(w.lifetime_purchased) FILTER (WHERE COALESCE(a.role,'user') <> 'admin'),0)::bigint AS lifetime_purchased,
+        COALESCE(sum(w.lifetime_used) FILTER (WHERE COALESCE(a.role,'user') <> 'admin'),0)::bigint AS lifetime_used,
+        COALESCE(sum(w.lifetime_granted) FILTER (WHERE COALESCE(a.role,'user') <> 'admin'),0)::bigint AS lifetime_granted,
+        (SELECT count(*)::int FROM public.o2ol_token_transactions t LEFT JOIN neon_auth."user" ua ON ua.id=t.user_id
+          WHERE t.created_at>=now()-interval '30 days' AND COALESCE(ua.role,'user')<>'admin') AS transactions_30d,
+        (SELECT COALESCE(sum(t.amount_cents),0)::bigint FROM public.o2ol_token_transactions t LEFT JOIN neon_auth."user" ua ON ua.id=t.user_id
+          WHERE t.created_at>=now()-interval '30 days' AND t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(ua.role,'user')<>'admin') AS token_revenue_cents_30d,
+        (SELECT COALESCE(sum(c.provider_cost_micros),0)::bigint FROM public.o2ol_cost_events c LEFT JOIN neon_auth."user" ua ON ua.id=c.user_id
+          WHERE c.created_at>=now()-interval '30 days' AND COALESCE(ua.role,'user')<>'admin') AS provider_cost_micros_30d,
+        (SELECT COALESCE(sum(c.customer_tokens_charged),0)::bigint FROM public.o2ol_cost_events c LEFT JOIN neon_auth."user" ua ON ua.id=c.user_id
+          WHERE c.created_at>=now()-interval '30 days' AND COALESCE(ua.role,'user')<>'admin') AS tokens_charged_30d
+      FROM public.o2ol_token_wallets w
+      LEFT JOIN neon_auth."user" a ON a.id=w.user_id
+    `),
+    db.query(`SELECT code,label,tokens,amount_cents,active,calibration_only,display_order,updated_at
+                FROM public.o2ol_token_packages ORDER BY display_order,amount_cents`),
+    db.query(`SELECT feature_code,label,token_cost,pricing_unit,active,calibration_only,metadata,updated_at
+                FROM public.o2ol_token_feature_prices ORDER BY feature_code`),
+    db.query(`
+      SELECT c.feature_code,c.provider,c.provider_product,
+             count(*)::int AS events,
+             count(DISTINCT c.user_id)::int AS users,
+             COALESCE(sum(c.customer_tokens_charged),0)::bigint AS tokens_charged,
+             COALESCE(sum(c.provider_cost_micros),0)::bigint AS provider_cost_micros,
+             COALESCE(sum(c.input_characters),0)::bigint AS input_characters,
+             COALESCE(sum(c.output_characters),0)::bigint AS output_characters,
+             COALESCE(sum(c.provider_input_units),0)::bigint AS provider_input_units,
+             COALESCE(sum(c.provider_output_units),0)::bigint AS provider_output_units,
+             max(c.created_at) AS last_event
+        FROM public.o2ol_cost_events c
+        LEFT JOIN neon_auth."user" a ON a.id=c.user_id
+       WHERE c.created_at>=now()-interval '30 days'
+         AND COALESCE(a.role,'user')<>'admin'
+       GROUP BY c.feature_code,c.provider,c.provider_product
+       ORDER BY provider_cost_micros DESC NULLS LAST,c.feature_code
+    `),
+    db.query(`
+      SELECT t.id,t.user_id,u.email,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,
+             t.package_code,t.amount_cents,t.provider,t.provider_reference,t.metadata,t.created_at
+        FROM public.o2ol_token_transactions t
+        LEFT JOIN public.users u ON u.id=t.user_id
+        LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+       WHERE COALESCE(a.role,'user')<>'admin'
+       ORDER BY t.created_at DESC LIMIT 100
+    `),
+    db.query(`
+      SELECT w.user_id,u.email,u.name,w.balance,w.lifetime_purchased,w.lifetime_used,w.lifetime_granted,w.updated_at
+        FROM public.o2ol_token_wallets w
+        LEFT JOIN public.users u ON u.id=w.user_id
+        LEFT JOIN neon_auth."user" a ON a.id=w.user_id
+       WHERE COALESCE(a.role,'user')<>'admin'
+       ORDER BY w.balance DESC,w.updated_at DESC LIMIT 50
+    `),
+    db.query(`
+      SELECT s.id,s.user_id,COALESCE(u.email,a.email) AS email,s.feature_code,s.package_code,
+             s.starting_balance,s.ending_balance,s.notes,s.started_at,s.ended_at,
+             COALESCE(sum(c.provider_cost_micros),0)::bigint AS provider_cost_micros,
+             COALESCE(sum(c.customer_tokens_charged),0)::bigint AS customer_tokens_charged,
+             count(c.id)::int AS cost_events
+        FROM public.o2ol_calibration_sessions s
+        LEFT JOIN public.users u ON u.id=s.user_id
+        LEFT JOIN neon_auth."user" a ON a.id=s.user_id
+        LEFT JOIN public.o2ol_cost_events c ON c.calibration_session_id=s.id
+       GROUP BY s.id,u.email,a.email
+       ORDER BY s.started_at DESC LIMIT 50
+    `),
+    db.query(`
+      SELECT q.id,q.user_id,u.email,q.stripe_subscription_id,q.old_plan,q.period_start,q.period_end,
+             q.amount_paid_cents,q.unused_value_cents,q.token_value_micros,q.proposed_tokens,q.status,
+             q.calculation,q.created_at,q.applied_at
+        FROM public.o2ol_subscription_conversion_quotes q
+        LEFT JOIN public.users u ON u.id=q.user_id
+       ORDER BY q.created_at DESC LIMIT 100
+    `),
+    db.query(`
+      SELECT
+        count(*) FILTER (WHERE u.stripe_subscription_id IS NOT NULL)::int AS stripe_linked_accounts,
+        count(*) FILTER (WHERE u.stripe_subscription_id IS NOT NULL AND lower(COALESCE(u.subscription_status,'')) IN ('active','trial','trialing','past_due'))::int AS legacy_active_accounts
+      FROM public.users u
+      LEFT JOIN neon_auth."user" a ON a.id=u.id
+      WHERE COALESCE(a.role,'user')<>'admin'
+    `)
+  ]);
+  return {
+    summary:summary.rows[0]||{},
+    packages:packages.rows,
+    featurePrices:prices.rows,
+    byFeature:byFeature.rows,
+    recentTransactions:recentTransactions.rows,
+    topWallets:topWallets.rows,
+    calibrations:calibrations.rows,
+    conversionQuotes:conversionQuotes.rows,
+    legacySubscriptions:legacy.rows[0]||{},
+  };
+}
+
+async function adjustMemberTokens(db,admin,memberId,rawDelta,reason='') {
+  const delta=Number.parseInt(String(rawDelta),10);
+  if(!Number.isInteger(delta)||delta===0||Math.abs(delta)>1000000) {
+    throw Object.assign(new Error('Token adjustment must be a non-zero whole number between -1,000,000 and 1,000,000.'),{status:400,code:'invalid_token_adjustment'});
+  }
+  const safeReason=String(reason||'').trim().slice(0,500);
+  if(!safeReason) throw Object.assign(new Error('A reason is required for an Admin token adjustment.'),{status:400,code:'reason_required'});
+  await db.query('BEGIN');
+  try{
+    const target=(await db.query(
+      `SELECT a.id,a.email,a.role FROM neon_auth."user" a WHERE a.id=$1::uuid FOR UPDATE`,
+      [memberId],
+    )).rows[0];
+    if(!target) throw Object.assign(new Error('Member account not found.'),{status:404,code:'member_not_found'});
+    if(target.role==='admin'||target.id===admin.id) throw Object.assign(new Error('Administrator wallets cannot be adjusted from Member Management.'),{status:403,code:'protected_admin_account'});
+    await db.query(`INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid) ON CONFLICT(user_id) DO NOTHING`,[memberId]);
+    const wallet=(await db.query(`SELECT * FROM public.o2ol_token_wallets WHERE user_id=$1::uuid FOR UPDATE`,[memberId])).rows[0];
+    const next=Number(wallet.balance||0)+delta;
+    if(next<0) throw Object.assign(new Error('This adjustment would make the wallet balance negative.'),{status:409,code:'insufficient_wallet_balance'});
+    await db.query(
+      `UPDATE public.o2ol_token_wallets
+          SET balance=$1,lifetime_granted=lifetime_granted+$2,updated_at=now()
+        WHERE user_id=$3::uuid`,
+      [next,delta>0?delta:0,memberId],
+    );
+    const tx=(await db.query(
+      `INSERT INTO public.o2ol_token_transactions
+        (user_id,wallet_delta,balance_after,transaction_type,provider,metadata)
+       VALUES($1::uuid,$2,$3,'admin_adjustment','admin',$4::jsonb)
+       RETURNING *`,
+      [memberId,delta,next,JSON.stringify({admin_id:admin.id,admin_email:admin.email,reason:safeReason})],
+    )).rows[0];
+    await db.query('COMMIT');
+    return {user_id:memberId,email:target.email,balance:next,transaction:tx};
+  }catch(error){
+    await db.query('ROLLBACK').catch(()=>{});
+    throw error;
+  }
+}
+
 async function system(db) {
   const [migrations, ai, authRoles] = await Promise.all([
     db.query(`SELECT migration_key,applied_at,notes FROM public.app_migrations ORDER BY applied_at DESC LIMIT 50`),
@@ -1070,10 +1209,10 @@ async function system(db) {
 async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,chatRoomData,systemData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,chatRoomData,tokenEconomyData,systemData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),topFeatureActivity(db,env),chatRoomAnalytics(db),tokenEconomy(db),system(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,tokenEconomy:tokenEconomyData,system:systemData };
 }
 
 export async function handleAdminRequest(request, env, url) {
@@ -1102,18 +1241,21 @@ export async function handleAdminRequest(request, env, url) {
         return json({ ok:true, ...result });
       }
 
+      const tokenMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/tokens$/i);
+      if (request.method === 'POST' && tokenMatch) {
+        const body=await request.json().catch(()=>({}));
+        const result=await adjustMemberTokens(db,admin,tokenMatch[1],body?.delta,body?.reason);
+        return json({ok:true,...result});
+      }
+
       const tierMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/tier$/i);
       if (request.method === 'POST' && tierMatch) {
-        const body = await request.json().catch(() => ({}));
-        const result = await changeMemberTier(db, env, admin, tierMatch[1], body?.plan);
-        return json({ ok:true, member:result });
+        return fail('Premiere/Exclusive tier changes are retired in the O2OL Token model. Use token adjustments or historical conversion reconciliation.',410,'legacy_tier_retired');
       }
 
       const accessMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/access$/i);
       if (request.method === 'POST' && accessMatch) {
-        const body = await request.json().catch(() => ({}));
-        const result = await grantMemberAccessTime(db, admin, accessMatch[1], body?.unit, body?.amount);
-        return json({ ok:true, member:result });
+        return fail('Time-based membership grants are retired in the O2OL Token model. Use a documented token adjustment instead.',410,'legacy_access_time_retired');
       }
 
       const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);
