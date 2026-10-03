@@ -1,4 +1,5 @@
 name: O2OL Release Candidate Certification
+# Canonical npm lockfile metadata verified for runtime audit separation.
 
 on:
   push:
