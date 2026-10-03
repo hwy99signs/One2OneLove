@@ -55,3 +55,43 @@ jobs:
           present CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
 
           echo "No secret values were printed."
+
+      - name: Discover existing isolated Cloudflare resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          EXPECTED_HOST_PREFIX="ep-super-silence-arbl98ls"
+          PRODUCTION_HYPERDRIVE_ID="ef44564dbfca4e1bb13176ee568aaddf"
+
+          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"             -o /tmp/hyperdrives.json
+          jq -e '.success == true' /tmp/hyperdrives.json >/dev/null
+
+          MATCHES=$(jq -r --arg p "$EXPECTED_HOST_PREFIX" --arg prod "$PRODUCTION_HYPERDRIVE_ID" '
+            .result[]? |
+            select(.id != $prod) |
+            select(((.origin.host // .origin.hostname // "") | startswith($p))) |
+            [.id, (.name // ""), (.origin.host // .origin.hostname // ""), (.origin.database // "")] |
+            @tsv
+          ' /tmp/hyperdrives.json)
+
+          if [ -n "$MATCHES" ]; then
+            echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCHES_BEGIN"
+            printf '%s\n' "$MATCHES"
+            echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCHES_END"
+          else
+            echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCH=missing"
+          fi
+
+          WORKER_NAME="one2onelove-token-prelaunch"
+          SECRET_CODE=$(curl -sS -o /tmp/worker-secrets.json -w '%{http_code}'             -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME/secrets" || true)
+          echo "TOKEN_PRELAUNCH_WORKER_SECRET_HTTP=$SECRET_CODE"
+          if [ "$SECRET_CODE" = "200" ]; then
+            jq -e '.success == true' /tmp/worker-secrets.json >/dev/null
+            echo "TOKEN_PRELAUNCH_WORKER_SECRET_NAMES_BEGIN"
+            jq -r '.result[]?.name' /tmp/worker-secrets.json | sort
+            echo "TOKEN_PRELAUNCH_WORKER_SECRET_NAMES_END"
+          else
+            echo "TOKEN_PRELAUNCH_WORKER=not_found_or_unreadable"
+          fi
+
