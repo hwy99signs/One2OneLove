@@ -65,6 +65,24 @@ jobs:
           grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
           grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
 
+      - name: Verify separate Token dashboard and burn calibration controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
+          grep -F "AdminMfaGate><TokenSystemDashboard" src/pages/index.jsx
+          grep -F "Package Burn Tests" src/pages/TokenSystemDashboard.jsx
+          grep -F "Auto-refresh 15 min" src/pages/TokenSystemDashboard.jsx
+          grep -F "startTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
+          grep -F "endTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
+          grep -F "/api/token-admin/calibrations/start" worker/token-admin.ts
+          grep -F "/api/token-admin/calibrations/" worker/token-admin.ts
+          grep -F "Calibration must use a non-Admin test/member account." worker/token-admin.ts
+          grep -F "activeCalibrationSession" worker/o2ol-cost-ledger.ts
+          grep -F "calibration_session_id" worker/o2ol-cost-ledger.ts
+          test "$(git show restore/locked-o2ol-before-token-economy-prelaunch-20261003:src/pages/Admin.jsx | git hash-object --stdin)" = "$(git hash-object src/pages/Admin.jsx)"
+          test "$(git show restore/locked-o2ol-before-token-economy-prelaunch-20261003:src/lib/adminService.js | git hash-object --stdin)" = "$(git hash-object src/lib/adminService.js)"
+
       - name: Verify free-account access contract
         shell: bash
         run: |
