@@ -3,15 +3,7 @@ import { Client } from 'pg';
 import { scheduledSmsReadiness, scheduledSmsReady, smsProviderReady, sendTwilioLoveNoteSms } from './scheduled-love-notes';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
-import {
-  CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
-  LOVE_NOTE_SEND_PRICE_CENTS,
-  billReservedLoveNoteSend,
-  consumeLoveNoteReservation,
-  loveNoteUsageSummary,
-  releaseLoveNoteReservation,
-  reserveLoveNoteSend,
-} from './love-note-billing';
+const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -70,11 +62,6 @@ function validateLoveNoteBody(value) {
   }
   return content;
 }
-function canonicalPlan(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'exclusive') return 'Exclusive';
-  return 'Premiere';
-}
 const LOVE_NOTE_CATEGORY_IDS = [
   'romantic','lgbtqRomantic','lgbtqSupport','lgbtqMilestone','sweet','playful','deep',
   'appreciation','memories','future','morning','night','daily','special','dateIdeas',
@@ -86,9 +73,6 @@ const DEFAULT_CATEGORY_IDS = [
   'playful','deep','future','morning','night','special',
   'dateIdeas','milestone','justBecause','apology','family','friends',
 ];
-function categoryLimit(_plan) {
-  return LOVE_NOTE_CATEGORY_IDS.length;
-}
 function monthStart(dateText) {
   return `${String(dateText).slice(0, 7)}-01`;
 }
@@ -113,7 +97,7 @@ async function ensureProfile(db, auth) {
   await db.query(
     `INSERT INTO public.users
       (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-     VALUES($1::uuid,$2,$3,'regular',true,'Premiere',9.99,'inactive')
+     VALUES($1::uuid,$2,$3,'regular',true,'Free',0,'inactive')
      ON CONFLICT (id) DO UPDATE SET
        email=EXCLUDED.email,
        name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name),
@@ -121,16 +105,6 @@ async function ensureProfile(db, auth) {
     [auth.user.id, auth.user.email || '', auth.user.name || auth.user.email?.split('@')[0] || 'Member'],
   );
 }
-async function planForUser(db, userId) {
-  const result = await db.query(
-    `SELECT subscription_plan,subscription_status FROM public.users WHERE id=$1::uuid`,
-    [userId],
-  );
-  const row = result.rows[0] || {};
-  const stored = canonicalPlan(row.subscription_plan);
-  return { storedPlan: stored, effectivePlan: stored, subscriptionStatus: row.subscription_status || 'inactive' };
-}
-
 async function loveNoteWriteAccess(db, auth) {
   const result=await db.query(
     `SELECT COALESCE(is_active,true) AS is_active,COALESCE(phone_number_verified,false) AS phone_verified
@@ -143,73 +117,78 @@ async function loveNoteWriteAccess(db, auth) {
   return {allowed:true,reason:'free_verified_member'};
 }
 async function categoryPreferenceForDate(db, userId, quotaDate) {
-  const plan = await planForUser(db, userId);
-  const quotaMonth = monthStart(quotaDate);
-  const limit = categoryLimit(plan.effectivePlan);
-  if (plan.effectivePlan === 'Exclusive') {
-    return { plan: plan.effectivePlan, limit, quotaMonth, categories: LOVE_NOTE_CATEGORY_IDS, configured: true };
-  }
-  const result = await db.query(
-    `SELECT plan,categories FROM public.love_note_category_preferences
+  const quotaMonth=monthStart(quotaDate);
+  const limit=LOVE_NOTE_CATEGORY_IDS.length;
+  const result=await db.query(
+    `SELECT categories FROM public.love_note_category_preferences
       WHERE user_id=$1::uuid AND quota_month=$2::date`,
-    [userId, quotaMonth],
+    [userId,quotaMonth],
   );
-  const stored = Array.isArray(result.rows[0]?.categories) ? result.rows[0].categories : [];
-  const allowed = stored.filter(id => LOVE_NOTE_CATEGORY_IDS.includes(id)).slice(0, limit);
-  const defaults = DEFAULT_CATEGORY_IDS.slice(0, limit);
+  const stored=Array.isArray(result.rows[0]?.categories)?result.rows[0].categories:[];
+  const allowed=stored.filter(id=>LOVE_NOTE_CATEGORY_IDS.includes(id)).slice(0,limit);
   return {
-    plan: plan.effectivePlan,
+    plan:'Free',
+    accessModel:'free_tokens',
     limit,
     quotaMonth,
-    categories: allowed.length ? allowed : defaults,
-    configured: allowed.length > 0,
+    categories:allowed.length?allowed:LOVE_NOTE_CATEGORY_IDS,
+    configured:true,
   };
 }
-async function saveCategoryPreference(db, userId, quotaDate, requestedCategories) {
-  const plan = await planForUser(db, userId);
-  const quotaMonth = monthStart(quotaDate);
-  const limit = categoryLimit(plan.effectivePlan);
-  if (plan.effectivePlan === 'Exclusive') {
-    return { plan: plan.effectivePlan, limit, quotaMonth, categories: LOVE_NOTE_CATEGORY_IDS, configured: true };
+async function saveCategoryPreference(db,userId,quotaDate,requestedCategories) {
+  const quotaMonth=monthStart(quotaDate);
+  const limit=LOVE_NOTE_CATEGORY_IDS.length;
+  if(!Array.isArray(requestedCategories)){
+    throw Object.assign(new Error('categories must be an array.'),{status:400,code:'bad_request'});
   }
-  if (!Array.isArray(requestedCategories)) {
-    throw Object.assign(new Error('categories must be an array.'), { status: 400, code: 'bad_request' });
+  const categories=[...new Set(requestedCategories.map(v=>String(v||'').trim()).filter(Boolean))];
+  if(!categories.length){
+    throw Object.assign(new Error('Choose at least one Love Note category.'),{status:400,code:'category_required'});
   }
-  const categories = [...new Set(requestedCategories.map(v => String(v || '').trim()).filter(Boolean))];
-  if (!categories.length) {
-    throw Object.assign(new Error('Choose at least one Love Note category.'), { status: 400, code: 'category_required' });
+  const invalid=categories.filter(id=>!LOVE_NOTE_CATEGORY_IDS.includes(id));
+  if(invalid.length){
+    throw Object.assign(new Error('One or more Love Note categories are invalid.'),{status:400,code:'invalid_category'});
   }
-  const invalid = categories.filter(id => !LOVE_NOTE_CATEGORY_IDS.includes(id));
-  if (invalid.length) {
-    throw Object.assign(new Error('One or more Love Note categories are invalid.'), { status: 400, code: 'invalid_category' });
-  }
-  if (categories.length > limit) {
-    throw Object.assign(new Error(`Your ${plan.effectivePlan} plan allows up to ${limit} Love Note categories per month.`), {
-      status: 400, code: 'category_limit',
-    });
+  if(categories.length>limit){
+    throw Object.assign(new Error(`A verified free member may select up to ${limit} Love Note categories.`),{status:400,code:'category_limit'});
   }
   await db.query(
     `INSERT INTO public.love_note_category_preferences(user_id,quota_month,plan,categories,updated_at)
-     VALUES($1::uuid,$2::date,$3,$4::jsonb,now())
+     VALUES($1::uuid,$2::date,'Free',$3::jsonb,now())
      ON CONFLICT(user_id,quota_month) DO UPDATE
-       SET plan=EXCLUDED.plan,categories=EXCLUDED.categories,updated_at=now()`,
-    [userId, quotaMonth, plan.effectivePlan, JSON.stringify(categories)],
+       SET plan='Free',categories=EXCLUDED.categories,updated_at=now()`,
+    [userId,quotaMonth,JSON.stringify(categories)],
   );
-  return { plan: plan.effectivePlan, limit, quotaMonth, categories, configured: true };
+  return {plan:'Free',accessModel:'free_tokens',limit,quotaMonth,categories,configured:true};
 }
 
-async function usageForDate(db, userId, quotaDate) {
-  const usage = await loveNoteUsageSummary(db, userId);
+async function usageForDate(db,userId,quotaDate) {
+  const [walletResult,priceResult,sendResult]=await Promise.all([
+    db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId]),
+    db.query(`SELECT token_cost FROM public.o2ol_token_feature_prices
+               WHERE feature_code='love_note_send' AND active=true LIMIT 1`),
+    db.query(`SELECT count(*)::int AS sent_count
+                FROM public.sent_love_notes
+               WHERE user_id=$1::uuid AND recipient_type='sms'`,[userId]),
+  ]);
   return {
-    ...usage,
+    accessModel:'free_tokens',
+    tokenMode:true,
+    tokenBalance:Number(walletResult.rows[0]?.balance||0),
+    tokenCost:Number(priceResult.rows[0]?.token_cost||0),
+    sentCount:Number(sendResult.rows[0]?.sent_count||0),
+    firstMembershipSendFree:false,
+    firstSendFree:false,
+    firstFreeAvailable:false,
+    customNoteMaxCharacters:CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
     quotaDate,
-    quotaMonth: monthStart(quotaDate),
+    quotaMonth:monthStart(quotaDate),
   };
 }
 
 // This route records user-initiated external sharing (for example opening the
 // phone's SMS composer). It does not represent One2OneLove-delivered Twilio SMS
-// and therefore does not create a $0.29 One2OneLove delivery charge.
+// and therefore does not consume O2OL Tokens.
 async function postSent(db, auth, body) {
   const title = cleanText(body.note_title, 250, true);
   const content = validateLoveNoteBody(body.note_content);
