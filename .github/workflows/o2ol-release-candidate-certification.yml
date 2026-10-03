@@ -14,6 +14,8 @@ on:
       - "neon-migrations/**"
       - "qa/o2ol-release-candidate-certification.mjs"
       - ".github/workflows/o2ol-release-candidate-certification.yml"
+      - ".github/workflows/deploy-o2ol-production-neon.yml"
+      - ".github/deploy-o2ol-production-neon-trigger"
       - "cloudflare/wrangler.production.jsonc"
   workflow_dispatch:
 
