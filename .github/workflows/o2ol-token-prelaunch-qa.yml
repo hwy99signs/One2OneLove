@@ -173,6 +173,21 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Token payment and Auto-Replenish safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "'metadata[idempotency_key]':marker" worker/o2ol-tokens.ts
+          grep -F 'idempotencyKey:meta.idempotency_key||`stripe_auto:' worker/o2ol-tokens.ts
+          grep -F "payment_method_saved:Boolean(state.settings?.payment_method_reference)" worker/o2ol-tokens.ts
+          grep -F "trigger>Number(pkg.tokens||0)" worker/o2ol-tokens.ts
+          grep -F "max={maxAutoTrigger||undefined}" src/pages/Tokens.jsx
+          grep -F "settings?.payment_method_saved" src/pages/Tokens.jsx
+          if grep -F "settings?.payment_method_reference" src/pages/Tokens.jsx; then
+            echo "Raw Stripe payment method reference is still exposed to the browser." >&2
+            exit 1
+          fi
+
       - name: Verify legacy billing is fail-closed
         shell: bash
         run: |
