@@ -50,12 +50,23 @@ export async function manageMemberAccountsBulk(memberIds, action, reason = '') {
 }
 
 
-export async function adjustMemberTokens(memberId, delta, reason) {
-  const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/tokens`, {
+export async function grantMemberAccessTime(memberId, unit, amount = 1) {
+  const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/access`, {
     method: 'POST',
     credentials: 'include',
     headers: { accept: 'application/json', 'content-type': 'application/json' },
-    body: JSON.stringify({ delta, reason }),
+    body: JSON.stringify({ unit, amount }),
+  });
+  return parseJson(response);
+}
+
+
+export async function changeMemberTier(memberId, plan) {
+  const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}/tier`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ plan }),
   });
   return parseJson(response);
 }
