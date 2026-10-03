@@ -132,7 +132,7 @@ async function requireUser(request, env) {
       await db.query(
       `INSERT INTO public.users
         (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
-       VALUES ($1::uuid, $2, $3, 'regular', true, 'Premiere', 9.99, 'inactive')
+       VALUES ($1::uuid, $2, $3, 'regular', true, 'Free', 0, 'inactive')
        ON CONFLICT (id) DO NOTHING`,
       [auth.user.id, auth.user.email, auth.user.name || auth.user.email?.split('@')[0] || 'Member'],
       );
