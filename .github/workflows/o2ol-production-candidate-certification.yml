@@ -18,12 +18,12 @@ jobs:
           ref: master
           fetch-depth: 0
 
-      - name: Verify Production schema was prepared
+      - name: Verify Live remains schema-gated before Production QA
         shell: bash
         run: |
           set -euo pipefail
-          test -s .github/o2ol-production-schema-prepared
-          grep -Fx 'o2ol-open-house-schema-v1' .github/o2ol-production-schema-prepared >/dev/null
+          grep -F "Require verified Production schema preparation" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "o2ol-open-house-schema-v1" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
 
       - name: Verify Production app tree matches locked certified candidate
         shell: bash
