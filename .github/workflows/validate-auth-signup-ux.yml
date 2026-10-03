@@ -53,7 +53,7 @@ jobs:
             await page.route('**/api/launch-signup/readiness', route => route.fulfill({
               status:200,
               contentType:'application/json',
-              body:JSON.stringify({success:true,ready:true})
+              body:JSON.stringify({readiness:{publicLaunchIdentityGateReady:true}})
             }));
 
             await page.goto('http://127.0.0.1:4173/SignUp?plan=Premiere&type=individual', {waitUntil:'domcontentloaded',timeout:60000});
