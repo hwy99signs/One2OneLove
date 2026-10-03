@@ -1051,9 +1051,11 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events e
+    FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-    WHERE e.feature='Date Ideas' AND e.event_type='view' AND COALESCE(a.role,'user') <> 'admin'
+    WHERE e.feature='Date Ideas'
+      AND e.event_type='page_view'
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `);
   const dateSaved = await windowCounts(`
     SELECT
@@ -1080,24 +1082,40 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events e
+    FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-    WHERE e.feature=$2 AND e.event_type='view' AND COALESCE(a.role,'user') <> 'admin'
+    WHERE e.feature=$2
+      AND e.event_type='page_view'
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `,[feature]);
 
   const routedTop = async (feature,prefix) => {
     const result=await db.query(`
-      SELECT substring(route from $3) AS name,
+      WITH actions(name,created_at) AS (
+        SELECT substring(e.control_key from $3) AS name,e.created_at
+          FROM public.interaction_events e
+          LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+         WHERE e.feature=$2
+           AND e.event_type='action'
+           AND e.control_key LIKE $4
+           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+        UNION ALL
+        SELECT substring(e.route from $3) AS name,e.created_at
+          FROM public.feature_usage_events e
+          LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+         WHERE e.feature=$2
+           AND e.event_type='action'
+           AND e.route LIKE $4
+           AND COALESCE(a.role,'user') <> 'admin'
+      )
+      SELECT name,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-      FROM public.feature_usage_events e
-      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-      WHERE e.feature=$2 AND e.event_type='action' AND e.route LIKE $4
-        AND COALESCE(a.role,'user') <> 'admin'
-        AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-      GROUP BY 1 ORDER BY d30 DESC,name ASC LIMIT 5
+      FROM actions
+      WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+      GROUP BY name ORDER BY d30 DESC,name ASC LIMIT 5
     `,[baseline,feature,prefix.length+1,`${prefix}%`]);
     return result.rows;
   };
@@ -1133,11 +1151,11 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events e
+    FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-    WHERE e.event_type='view'
-      AND e.feature IN ('Communication Practice','Meditation','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
-      AND COALESCE(a.role,'user') <> 'admin'
+    WHERE e.event_type='page_view'
+      AND e.feature IN ('Communication Practice','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
       AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
     GROUP BY e.feature ORDER BY d30 DESC,name ASC LIMIT 5
   `,[baseline]);
