@@ -1,0 +1,117 @@
+name: Validate Admin Data Integrity
+
+on:
+  push:
+    branches:
+      - fix/admin-data-integrity-20261003
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install worker dependencies
+        working-directory: worker
+        run: npm ci
+
+      - name: Dry-run production Worker
+        working-directory: worker
+        run: npx wrangler deploy --dry-run --config ../cloudflare/wrangler.production.jsonc
+
+      - name: Validate Admin route and card/data contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "import Analytics from './Analytics';" src/pages/index.jsx
+          grep -q '<Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />' src/pages/index.jsx
+          grep -q "Fully Verified Members" src/pages/Admin.jsx
+          grep -q "Membership Breakdown" src/pages/Admin.jsx
+          grep -q "Registered Free" src/pages/Admin.jsx
+          grep -q "Production" src/pages/Admin.jsx
+          grep -q "is not connected to O2OL Show vote ingestion yet" src/pages/Admin.jsx
+          grep -q "featureUsage(db,env)" worker/admin.ts
+          grep -q "public.interaction_events" worker/admin.ts
+          grep -q "unique_registered_free_30d" worker/admin.ts
+          grep -q "unique_subscribed_30d" worker/admin.ts
+          grep -q "mymatchiq_bianca_chat" worker/mymatchiq-ai.ts
+          grep -q "mymatchiq_bianca_report" worker/mymatchiq-ai.ts
+          grep -q "event_type IN ('click','page_view','action')" worker/feature-usage.ts
+          grep -q "trackFeatureActionEvent" src/lib/featureUsageService.js
+          grep -q "Account Verification" src/lib/interactionAnalytics.js
+          grep -q "Current Account / Tier Distribution" src/pages/Analytics.jsx
+          grep -q 'dataKey="actions"' src/pages/Analytics.jsx
+
+      - name: Verify live feature routes map into Admin catalog
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const idx=fs.readFileSync('src/pages/index.jsx','utf8');
+          const ia=fs.readFileSync('src/lib/interactionAnalytics.js','utf8');
+          const aw=fs.readFileSync('worker/admin.ts','utf8');
+          const routeFeatures=[...new Set([...ia.matchAll(/'\/[^']+':\s*'([^']+)'/g)].map(m=>m[1]))];
+          const block=aw.slice(aw.indexOf('const FEATURE_CATALOG'),aw.indexOf('function json'));
+          const catalog=[...new Set([...block.matchAll(/\['([^']+)',\s*'([^']+)'\]/g)].map(m=>m[1]))];
+          const missing=routeFeatures.filter(x=>!catalog.includes(x));
+          if(missing.length) throw new Error('Mapped features missing from Admin catalog: '+missing.join(', '));
+          if(!idx.includes('<Route path="/Analytics"')) throw new Error('/Analytics route not declared');
+          console.log('Mapped feature/catalog contract OK:', routeFeatures.length, 'mapped features');
+          NODE
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Browser smoke public app and analytics payload
+        shell: bash
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 >/tmp/o2ol-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+
+          cat > admin-integrity-browser.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const context = await browser.newContext();
+            const page = await context.newPage();
+            const events = [];
+            const errors = [];
+            await page.route('**/api/interaction-events', async route => {
+              const req = route.request();
+              let body = req.postData();
+              try { body = JSON.parse(body || '{}'); } catch {}
+              events.push(body);
+              await route.fulfill({status:204, body:''});
+            });
+            page.on('pageerror', e => errors.push(String(e)));
+            const res=await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded',timeout:60000});
+            await page.waitForTimeout(500);
+            await page.locator('[data-analytics-id="home-hero-love-notes"]').click();
+            await page.waitForTimeout(400);
+            const click=events.find(e=>e?.eventType==='click' && e?.controlKey==='home-hero-love-notes');
+            if(!res || res.status()!==200) throw new Error('Homepage did not return 200');
+            if(errors.length) throw new Error('Public app errors: '+errors.join(' | '));
+            if(!click) throw new Error('Expected labeled homepage click event');
+            if(click.feature!=='Love Notes' || click.destination!=='/LoveNotes') throw new Error('Homepage feature wiring mismatch');
+            console.log(JSON.stringify({homepage:res.status(),click}));
+            await browser.close();
+          })().catch(err=>{ console.error(err); process.exit(1); });
+          NODE
+          node admin-integrity-browser.cjs
