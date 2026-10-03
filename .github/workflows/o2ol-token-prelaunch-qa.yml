@@ -110,6 +110,27 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Love Notes uses Tokens only
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "VALUES(\$1::uuid,\$2,\$3,'regular',true,'Free',0,'inactive')" worker/love-note-entitlements.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'love_note_send'" worker/love-note-entitlements.ts
+          grep -F "customerTokensCharged:Number(reservation.tokens||0)" worker/love-note-entitlements.ts
+          grep -F "plan:'Free'" worker/love-note-entitlements.ts
+          grep -F "accessModel:'free_tokens'" worker/love-note-entitlements.ts
+          grep -F "LOVE_NOTE_SEND_PRICE_CENTS=0" worker/love-note-billing.ts
+          grep -F "legacy_love_note_billing_retired" worker/love-note-billing.ts
+          grep -F "'Free'::text" neon-migrations/2026-10-03-o2ol-free-love-note-categories.sql
+          if grep -REn 'US\$0\.29|\$0\.29|first (One2OneLove )?SMS.*FREE|first.*SMS.*GRATUIT|first.*SMS.*GRATIS' src/pages/LoveNotes.jsx worker/love-note-entitlements.ts; then
+            echo "Stale 29-cent or first-free Love Note billing copy remains." >&2
+            exit 1
+          fi
+          if grep -REn "'Premiere'|9\.99|effectivePlan|stripe_subscription_id" worker/love-note-entitlements.ts; then
+            echo "Stale subscription-derived Love Note access remains." >&2
+            exit 1
+          fi
+
       - name: Verify legacy billing is fail-closed
         shell: bash
         run: |
