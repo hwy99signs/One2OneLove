@@ -11,6 +11,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/o2ol-token-prelaunch-qa.yml"
+      - ".github/workflows/deploy-o2ol-functional-prelaunch.yml"
 
 permissions:
   contents: read
@@ -365,6 +366,9 @@ jobs:
           grep -F "TOKEN_PRELAUNCH_OPENAI_API_KEY" "$DEPLOY"
           grep -F "TOKEN_PRELAUNCH_STRIPE_SECRET_KEY" "$DEPLOY"
           grep -F "TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID" "$DEPLOY"
+          grep -F "feature remains fail-closed" "$DEPLOY"
+          grep -F "Install available Token Prelaunch provider secrets" "$DEPLOY"
+          grep -F "Verify any supplied provider secrets were installed" "$DEPLOY"
           grep -F '"workers_dev": $WORKERS_DEV' "$DEPLOY"
           grep -F "make_config /tmp/wrangler.token-bootstrap.jsonc false false" "$DEPLOY"
           grep -F "make_config /tmp/wrangler.token-live.jsonc true true" "$DEPLOY"
