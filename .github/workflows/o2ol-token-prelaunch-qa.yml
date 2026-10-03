@@ -191,18 +191,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "recentCostEvents:recentCostEvents.rows" worker/admin.ts
-          grep -F "c.input_characters,c.context_characters,c.output_characters" worker/admin.ts
-          grep -F "c.provider_input_units,c.provider_cached_input_units,c.provider_output_units" worker/admin.ts
-          grep -F "c.provider_cost_micros,c.customer_tokens_charged" worker/admin.ts
-          grep -F 'title="Recent Calibration Events"' src/pages/Admin.jsx
-          grep -F ">Input Chars<" src/pages/Admin.jsx
-          grep -F ">Context Chars<" src/pages/Admin.jsx
-          grep -F ">Output Chars<" src/pages/Admin.jsx
-          grep -F ">Input Tokens<" src/pages/Admin.jsx
-          grep -F ">Cached<" src/pages/Admin.jsx
-          grep -F ">Output Tokens<" src/pages/Admin.jsx
-          grep -F ">Cost / O2OL Token<" src/pages/Admin.jsx
+          grep -F "recentCostEvents:recentCostEvents.rows" worker/token-admin.ts
+          grep -F "c.input_characters,c.context_characters,c.output_characters" worker/token-admin.ts
+          grep -F "c.provider_input_units,c.provider_cached_input_units,c.provider_output_units" worker/token-admin.ts
+          grep -F "c.provider_cost_micros,c.customer_tokens_charged" worker/token-admin.ts
+          grep -F 'title="Recent Calibration Events"' src/pages/TokenSystemDashboard.jsx
+          grep -F ">Input Chars<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Context Chars<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Output Chars<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Input Tokens<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Cached<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Output Tokens<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Cost / O2OL Token<" src/pages/TokenSystemDashboard.jsx
 
       - name: Verify Token payment and Auto-Replenish safety
         shell: bash
@@ -219,30 +219,42 @@ jobs:
             exit 1
           fi
 
-      - name: Verify legacy billing is fail-closed
+      - name: Verify legacy public billing is fail-closed
         shell: bash
         run: |
           set -euo pipefail
           grep -F "Premiere/Exclusive recurring checkout is retired" worker/billing.ts
           grep -F "legacy_subscription_reconciliation_locked" worker/billing.ts
           grep -F "Recurring One2OneLove subscriptions are retired" src/lib/stripeService.js
-          grep -F "legacy_tier_retired" worker/admin.ts
-          grep -F "legacy_access_time_retired" worker/admin.ts
           if grep -RInE 'handleSubscriptionCheckout\(' src              --exclude='stripeService.js'              --exclude='SubscriptionSelection.jsx'              --exclude='TierCard.jsx'; then
-            echo "A live UI still calls legacy recurring checkout." >&2
+            echo "A live customer UI still calls legacy recurring checkout." >&2
             exit 1
           fi
 
-      - name: Verify Admin preview remains restricted
+      - name: Verify original Admin dashboard is untouched
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "Token Economy" src/pages/Admin.jsx
-          grep -F "adjustMemberTokens" src/pages/Admin.jsx src/lib/adminService.js worker/admin.ts
+          test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
+          test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
+          test "$(git hash-object worker/admin.ts)" = "29c521a6ac79d212670fdbc29361571d4c39e34e"
+
+      - name: Verify Token dashboard is separate and MFA-protected
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Token System Dashboard" src/pages/TokenSystemDashboard.jsx
+          grep -F "getTokenSystemDashboard" src/lib/tokenAdminService.js
+          grep -F "handleTokenAdminRequest" worker/token-admin.ts worker/index-v2.ts
+          grep -F "url.pathname.startsWith('/api/token-admin')" worker/index-v2.ts
+          grep -F "const gate = await enforceAdminMfa(request, env);" worker/index-v2.ts
+          grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
+          grep -F "<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>" src/pages/index.jsx
+          grep -F "adjustTokenWallet" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
           grep -F "Prelaunch read-only preview" src/pages/Admin.jsx
           grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
-          if grep -F "tokenEconomy" worker/mmiq-prelaunch-preview.ts; then
-            echo "Token economics must not be exposed by the public Admin preview bypass." >&2
+          if grep -F "token-admin" worker/mmiq-prelaunch-preview.ts; then
+            echo "Token System Admin API must not be exposed by the public Admin preview bypass." >&2
             exit 1
           fi
 
