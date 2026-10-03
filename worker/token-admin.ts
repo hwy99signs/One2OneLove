@@ -242,6 +242,67 @@ async function adjustTokens(db,admin,userId,rawDelta,reason=''){
 }
 
 
+async function loadCalibrationPackage(db,admin,{userId,packageCode}) {
+  const target=(await db.query(
+    `SELECT id,email,role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0]||null;
+  if(!target)throw Object.assign(new Error('Calibration member not found.'),{status:404,code:'member_not_found'});
+  if(target.role==='admin'||target.id===admin.id)throw Object.assign(new Error('Calibration packages can only be loaded to a non-Admin test/member account.'),{status:403,code:'admin_calibration_forbidden'});
+
+  const pkg=(await db.query(
+    `SELECT code,label,tokens,amount_cents FROM public.o2ol_token_packages
+      WHERE code=$1 AND active=true AND calibration_only=true LIMIT 1`,
+    [String(packageCode||'')],
+  )).rows[0]||null;
+  if(!pkg)throw Object.assign(new Error('Active calibration Token package not found.'),{status:400,code:'invalid_package'});
+
+  const active=(await db.query(
+    `SELECT id FROM public.o2ol_calibration_sessions
+      WHERE user_id=$1::uuid AND ended_at IS NULL LIMIT 1`,
+    [userId],
+  )).rows[0];
+  if(active)throw Object.assign(new Error('End the active calibration session before loading another test package.'),{status:409,code:'calibration_active'});
+
+  await db.query('BEGIN');
+  try{
+    await db.query(`INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid) ON CONFLICT(user_id) DO NOTHING`,[userId]);
+    const wallet=(await db.query(
+      `SELECT * FROM public.o2ol_token_wallets WHERE user_id=$1::uuid FOR UPDATE`,
+      [userId],
+    )).rows[0];
+    if(Number(wallet.balance||0)!==0){
+      throw Object.assign(new Error('Calibration package loading requires a zero Token balance so package endurance is measured cleanly.'),{status:409,code:'calibration_balance_not_zero',balance:Number(wallet.balance||0)});
+    }
+    const qty=Number(pkg.tokens||0);
+    await db.query(
+      `UPDATE public.o2ol_token_wallets
+          SET balance=$1,lifetime_granted=lifetime_granted+$1,updated_at=now()
+        WHERE user_id=$2::uuid`,
+      [qty,userId],
+    );
+    const tx=(await db.query(
+      `INSERT INTO public.o2ol_token_transactions
+        (user_id,wallet_delta,balance_after,transaction_type,package_code,provider,metadata)
+       VALUES($1::uuid,$2,$2,'grant',$3,'token_admin',$4::jsonb)
+       RETURNING *`,
+      [userId,qty,pkg.code,JSON.stringify({
+        calibration_only:true,
+        package_label:pkg.label,
+        package_amount_cents:Number(pkg.amount_cents||0),
+        admin_id:admin.id,
+        admin_email:admin.email,
+        revenue_cents:0,
+      })],
+    )).rows[0];
+    await db.query('COMMIT');
+    return {userId,email:target.email,package:{code:pkg.code,label:pkg.label,tokens:qty,amountCents:Number(pkg.amount_cents||0)},walletBalance:qty,transaction:tx};
+  }catch(error){
+    await db.query('ROLLBACK').catch(()=>{});
+    throw error;
+  }
+}
+
 async function startCalibration(db,admin,{userId,featureCode='all',packageCode=null,notes=''}) {
   const target=(await db.query(
     `SELECT id,email,role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
@@ -364,6 +425,12 @@ export async function handleTokenAdminRequest(request,env,url){
           scheduledSmsDisabled:String(env.SCHEDULED_SMS_ENABLED||'').toLowerCase()!=='true',
         };
         return json({ok:true,mode:'token_system_dashboard',generatedAt:new Date().toISOString(),admin:{id:admin.id,email:admin.email,name:admin.name},environmentReadiness,...data});
+      }
+
+      if(request.method==='POST'&&url.pathname==='/api/token-admin/calibrations/load-package'){
+        const body=await request.json().catch(()=>({}));
+        const result=await loadCalibrationPackage(db,admin,{userId:body?.userId,packageCode:body?.packageCode});
+        return json({ok:true,...result});
       }
 
       if(request.method==='POST'&&url.pathname==='/api/token-admin/calibrations/start'){
