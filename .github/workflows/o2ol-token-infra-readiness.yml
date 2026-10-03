@@ -89,6 +89,21 @@ jobs:
             echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCH=missing"
           fi
 
+          R2_CODE=$(curl -sS -o /tmp/r2-buckets.json -w '%{http_code}' \
+            -H "$AUTH" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets" || true)
+          echo "TOKEN_PRELAUNCH_R2_HTTP=$R2_CODE"
+          if [ "$R2_CODE" = "200" ]; then
+            jq -e '.success == true' /tmp/r2-buckets.json >/dev/null
+            if jq -e '.result.buckets[]? | select(.name=="one2onelove-token-prelaunch-media")' /tmp/r2-buckets.json >/dev/null; then
+              echo "TOKEN_PRELAUNCH_R2=present"
+            else
+              echo "TOKEN_PRELAUNCH_R2=missing"
+            fi
+          else
+            echo "TOKEN_PRELAUNCH_R2=unreadable"
+          fi
+
           WORKER_NAME="one2onelove-token-prelaunch"
           SECRET_CODE=$(curl -sS -o /tmp/worker-secrets.json -w '%{http_code}'             -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME/secrets" || true)
           echo "TOKEN_PRELAUNCH_WORKER_SECRET_HTTP=$SECRET_CODE"
