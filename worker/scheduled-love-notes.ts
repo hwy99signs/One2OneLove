@@ -213,55 +213,6 @@ async function markFailed(db,note,error){
 }
 
 export async function dispatchDueScheduledLoveNotes(env) {
-  if (!scheduledSmsReady(env)) {
-    return { ready: false, claimed: 0, sent: 0, failed: 0, retried: 0, billingPending: 0 };
-  }
-
-  return withDb(env, async db => {
-    const cancelled = await cancelIneligibleDue(db);
-    const scheduledReconciliation = await reconcileUnbilledSent(db, env);
-    const immediateReconciliation = await reconcileUnbilledImmediate(db, env);
-    const claimed = await claimDue(db);
-
-    let sent = 0;
-    let failed = 0;
-    let retried = 0;
-    let billingPending = scheduledReconciliation.pending + immediateReconciliation.pending;
-
-    for (const note of claimed) {
-      try {
-        await sendTwilioLoveNoteSms(env, note);
-        await markSent(db, note);
-        sent += 1;
-      } catch (error) {
-        console.error('Scheduled Love Note SMS failed', { id: note.id, message: error?.message });
-        const outcome = await markFailed(db, note, error);
-        if (outcome.retry) retried += 1;
-        else failed += 1;
-        continue;
-      }
-
-      try {
-        await finalizeDeliveredBilling(db, env, note);
-      } catch (billingError) {
-        billingPending += 1;
-        console.error('Delivered Love Note billing pending', { id: note.id, message: billingError?.message });
-      }
-    }
-
-    return {
-      ready: true,
-      cancelled,
-      claimed: claimed.length,
-      sent,
-      failed,
-      retried,
-      billingReconciled: scheduledReconciliation.reconciled + immediateReconciliation.reconciled,
-      billingPending,
-    };
-  });
-}
-export async function dispatchDueScheduledLoveNotes(env) {
   if(!scheduledSmsReady(env))return {ready:false,claimed:0,sent:0,failed:0,retried:0};
 
   return withDb(env,async db=>{
