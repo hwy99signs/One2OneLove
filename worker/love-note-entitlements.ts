@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
-import { scheduledSmsReadiness, scheduledSmsReady, sendTwilioLoveNoteSms } from './scheduled-love-notes';
+import { scheduledSmsReadiness, scheduledSmsReady, smsProviderReady, sendTwilioLoveNoteSms } from './scheduled-love-notes';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
 import {
@@ -232,7 +232,7 @@ async function postSent(db, auth, body) {
 }
 
 async function postImmediateSms(db, env, auth, body) {
-  if (!scheduledSmsReady(env)) return fail('One2OneLove SMS delivery is not available yet.',503,'sms_delivery_not_ready');
+  if (!smsProviderReady(env)) return fail('One2OneLove SMS delivery is not available yet.',503,'sms_delivery_not_ready');
 
   const title=cleanText(body.note_title,250,true);
   const content=validateLoveNoteBody(body.note_content);
