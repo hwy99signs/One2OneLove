@@ -1,0 +1,51 @@
+name: O2OL Token Prelaunch Provider Readiness
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - ".github/workflows/o2ol-token-prelaunch-provider-readiness.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  provider-readiness:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TWILIO_VERIFY_SERVICE_SID }}
+      TOKEN_PRELAUNCH_HYPERDRIVE_ID: ${{ secrets.TOKEN_PRELAUNCH_HYPERDRIVE_ID }}
+    steps:
+      - name: Report secret readiness without revealing values
+        shell: bash
+        run: |
+          set -euo pipefail
+          check() {
+            name="$1"
+            value="$2"
+            if [ -n "$value" ]; then
+              echo "$name=present"
+            else
+              echo "$name=missing"
+            fi
+          }
+          check CLOUDFLARE_API_TOKEN "${CLOUDFLARE_API_TOKEN:-}"
+          check CLOUDFLARE_ACCOUNT_ID "${CLOUDFLARE_ACCOUNT_ID:-}"
+          check OPENAI_API_KEY "${OPENAI_API_KEY:-}"
+          check STRIPE_SECRET_KEY "${STRIPE_SECRET_KEY:-}"
+          check STRIPE_WEBHOOK_SECRET "${STRIPE_WEBHOOK_SECRET:-}"
+          check TWILIO_ACCOUNT_SID "${TWILIO_ACCOUNT_SID:-}"
+          check TWILIO_AUTH_TOKEN "${TWILIO_AUTH_TOKEN:-}"
+          check TWILIO_VERIFY_SERVICE_SID "${TWILIO_VERIFY_SERVICE_SID:-}"
+          check TOKEN_PRELAUNCH_HYPERDRIVE_ID "${TOKEN_PRELAUNCH_HYPERDRIVE_ID:-}"
+
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
