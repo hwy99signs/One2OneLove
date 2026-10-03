@@ -8,7 +8,7 @@ const HEADERS = {
 };
 
 function json(data,status=200){ return new Response(JSON.stringify(data),{status,headers:HEADERS}); }
-function fail(message,status=400,code='bad_request'){ return json({ok:false,error:{code,message}},status); }
+function fail(message,status=400,code='bad_request',extra={}){ return json({ok:false,error:{code,message,...extra}},status); }
 
 async function session(request,env){
   const cookie=request.headers.get('cookie');
@@ -106,6 +106,28 @@ async function ensureSchema(db){
   await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_answers_room ON public.like_minded_answers(room_id,set_number,question_no)');
 }
 
+async function requirePremiumGamePass(db,userId){
+  await db.query(`UPDATE public.o2ol_game_access_passes SET status='expired'
+    WHERE user_id=$1::uuid AND game='like_minded' AND status='active' AND expires_at<=now()`,[userId]);
+  const pass=(await db.query(
+    `SELECT id,tokens_charged,started_at,expires_at FROM public.o2ol_game_access_passes
+      WHERE user_id=$1::uuid AND game='like_minded' AND status='active' AND expires_at>now()
+      ORDER BY expires_at DESC LIMIT 1`,
+    [userId],
+  )).rows[0];
+  if(pass)return pass;
+  const wallet=(await db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId])).rows[0];
+  const price=(await db.query(
+    `SELECT token_cost,label FROM public.o2ol_token_feature_prices
+      WHERE feature_code='like_minded_session' AND active=true LIMIT 1`
+  )).rows[0];
+  throw Object.assign(new Error('Buy Tokens To Access'),{
+    status:402,code:'tokens_required',
+    balance:Number(wallet?.balance||0),required:Number(price?.token_cost||2),
+    featureCode:'like_minded_session',featureLabel:price?.label||'Like Minded session',
+  });
+}
+
 async function roomState(db,room,userId){
   const isHost=room.host_user_id===userId;
   const isGuest=room.guest_user_id===userId;
@@ -185,6 +207,10 @@ export async function handleLikeMindedRequest(request,env,url){
     return await withDb(env,async(db)=>{
       await ensureSchema(db);
       const body=['POST','PATCH','PUT'].includes(request.method)?await readJson(request):{};
+
+      // Blocking/reporting stays available for safety even if a paid game pass has expired.
+      const safetyRoute=url.pathname==='/api/like-minded/blocks'||url.pathname==='/api/like-minded/reports';
+      if(!safetyRoute)await requirePremiumGamePass(db,auth.user.id);
 
       if(url.pathname==='/api/like-minded/settings'){
         const current=await db.query('SELECT * FROM public.like_minded_player_settings WHERE user_id=$1::uuid',[auth.user.id]);
