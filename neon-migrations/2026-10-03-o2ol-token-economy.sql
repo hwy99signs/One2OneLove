@@ -45,7 +45,8 @@ INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,prici
   ('amora_response','Amora response',1,'response',true,true),
   ('bianca_report','Bianca deeper report',5,'report',true,true),
   ('love_note_send','Love Note send',3,'send',true,true),
-  ('premium_game_session','Premium game session',2,'session',true,true)
+  ('premium_game_session','Premium game session',2,'session',true,true),
+  ('ai_content_generation','AI content generation',1,'action',true,true)
 ON CONFLICT(feature_code) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS public.o2ol_token_transactions (
