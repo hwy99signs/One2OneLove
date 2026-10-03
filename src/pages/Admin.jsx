@@ -511,6 +511,18 @@ export default function Admin() {
               <Metric icon={UserCheck} label="Fully Verified Members" value={number(users.verified)} note={`Email ${number(users.email_verified)} · Phone ${number(users.phone_verified)} · both required`} tone="green"/>
             </div>
 
+            <Panel title="Signup & Free Account Funnel" subtitle="Separates people visiting signup from accounts that were actually created. These are real account records, not anonymous clicks." className="mt-6">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total Sign-ups</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.total)}</p></div>
+                <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-700">Registered Free</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.registered_free)}</p></div>
+                <div className="rounded-xl bg-violet-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Subscribed</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.subscribed)}</p></div>
+                <div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-amber-700">Pending Verification</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.pending_verification)}</p></div>
+                <div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Fully Verified</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.verified)}</p></div>
+                <div className="rounded-xl bg-rose-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-rose-700">Auth Only / No Profile</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.auth_only_no_profile)}</p></div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs"><Pill tone="blue">{number(users.signups_today)} signups today</Pill><Pill tone="purple">{number(users.signups_24h)} in the last 24 hours</Pill></div>
+            </Panel>
+
             <div className="mt-6 grid gap-6 xl:grid-cols-3">
               <Panel title="Membership Breakdown" subtitle="Registered Free plus both paid membership tiers are always shown, including zero-count groups.">
                 <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">accounts</p></div>)}</div>
