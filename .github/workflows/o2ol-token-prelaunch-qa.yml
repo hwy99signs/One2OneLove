@@ -81,6 +81,35 @@ jobs:
             exit 1
           fi
 
+      - name: Verify MyMatchIQ uses free assessment plus O2OL Tokens
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Free: { questionCount:225, dimensionCount:15 }" src/lib/mymatchiqAssessment.js
+          grep -F "return buildMyMatchIQQuestionBank(language);" src/lib/mymatchiqAssessment.js
+          grep -F "assessment_question_count:225" worker/mymatchiq-ai.ts
+          grep -F "access_model:'free_tokens'" worker/mymatchiq-ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'bianca_report'" worker/mymatchiq-ai.ts
+          grep -F "'bianca_response'" worker/mymatchiq-ai.ts
+          grep -F "legacy_mymatchiq_credits_retired" worker/mymatchiq-credits.ts
+          grep -F 'to="/Tokens?source=mymatchiq-assessment"' src/pages/MyMatchIQAssessment.jsx
+          if grep -F "requireCardAccess" worker/mymatchiq-ai.ts; then
+            echo "Stale MyMatchIQ card gate remains in API." >&2
+            exit 1
+          fi
+          if grep -F "card_on_file" src/pages/MyMatchIQAssessment.jsx; then
+            echo "Stale MyMatchIQ card gate remains in assessment UI." >&2
+            exit 1
+          fi
+          if grep -REn "questionCount:(15|45)" src/lib/mymatchiqAssessment.js; then
+            echo "Stale 15/45-question tier limit remains." >&2
+            exit 1
+          fi
+          if grep -REn "api/mymatchiq/credits/(checkout|setup-intent|auto-replenish)" src worker --exclude='mymatchiq-credits.ts'; then
+            echo "Legacy MyMatchIQ credit API is still called outside the retirement shim." >&2
+            exit 1
+          fi
+
       - name: Verify legacy billing is fail-closed
         shell: bash
         run: |
