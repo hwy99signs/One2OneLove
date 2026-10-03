@@ -4,7 +4,7 @@ import {
   Activity,ArrowLeft,BarChart3,Coins,CreditCard,Database,Gamepad2,Gauge,Gift,
   History,Loader2,RefreshCw,ShieldCheck,Sparkles,Users,WalletCards
 } from 'lucide-react';
-import {getTokenSystemDashboard,adjustTokenWallet} from '@/lib/tokenAdminService';
+import {getTokenSystemDashboard,adjustTokenWallet,startTokenCalibration,endTokenCalibration} from '@/lib/tokenAdminService';
 
 const TABS=[
   ['overview','Overview',Gauge],
@@ -41,6 +41,10 @@ export default function TokenSystemDashboard(){
   const [error,setError]=useState('');
   const [busy,setBusy]=useState('');
   const [query,setQuery]=useState('');
+  const [calUser,setCalUser]=useState('');
+  const [calPackage,setCalPackage]=useState('');
+  const [calFeature,setCalFeature]=useState('all');
+  const [calBusy,setCalBusy]=useState('');
 
   const load=async(silent=false)=>{
     if(!silent)setLoading(true);
@@ -111,6 +115,29 @@ export default function TokenSystemDashboard(){
     try{await adjustTokenWallet(row.user_id,delta,reason.trim());await load(true);}
     catch(err){window.alert(err?.message||'Unable to adjust this wallet.');}
     finally{setBusy('');}
+  };
+
+  const startBurnTest=async()=>{
+    if(!calUser||!calPackage){window.alert('Choose a non-Admin member/test account and a Token package first.');return;}
+    const notes=window.prompt('Optional test notes. Example: Starter package burn test — normal Bianca conversation mix.','')??'';
+    if(!window.confirm('Start this package burn test now? The current wallet balance will be captured as the starting balance.'))return;
+    setCalBusy('start');
+    try{
+      await startTokenCalibration({userId:calUser,featureCode:calFeature,packageCode:calPackage,notes});
+      await load(true);
+    }catch(err){window.alert(err?.message||'Unable to start calibration.');}
+    finally{setCalBusy('');}
+  };
+
+  const finishBurnTest=async row=>{
+    const notes=window.prompt('Optional ending notes for this burn test.','')??'';
+    if(!window.confirm('End this burn test and capture the current wallet balance?'))return;
+    setCalBusy(row.id);
+    try{
+      await endTokenCalibration(row.id,notes);
+      await load(true);
+    }catch(err){window.alert(err?.message||'Unable to end calibration.');}
+    finally{setCalBusy('');}
   };
 
   if(loading&&!data)return <div className="min-h-screen bg-slate-950 px-4 py-16 text-white"><div className="mx-auto flex max-w-7xl items-center justify-center gap-3"><Loader2 className="h-7 w-7 animate-spin"/><span className="font-bold">Loading Token System Dashboard…</span></div></div>;
@@ -205,6 +232,24 @@ export default function TokenSystemDashboard(){
       </div>}
 
       {tab==='burn'&&<div className="space-y-6 text-slate-900">
+        <Panel title="Run a Controlled Package Burn Test" subtitle="Choose the test account, package, and scope. Starting captures the wallet balance; ending captures the final balance. Provider-cost events generated during the session attach automatically.">
+          <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+            <select value={calUser} onChange={e=>setCalUser(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
+              <option value="">Choose test/member account…</option>
+              {(data?.wallets||[]).map(row=><option key={row.user_id} value={row.user_id}>{row.email||row.name||row.user_id} · balance {n(row.balance)}</option>)}
+            </select>
+            <select value={calPackage} onChange={e=>setCalPackage(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
+              <option value="">Choose package…</option>
+              {(data?.packages||[]).filter(row=>row.active).map(row=><option key={row.code} value={row.code}>{row.label} · {money(Number(row.amount_cents)/100)} · {n(row.tokens)} Tokens</option>)}
+            </select>
+            <select value={calFeature} onChange={e=>setCalFeature(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">
+              <option value="all">All metered features</option>
+              {(data?.featurePrices||[]).filter(row=>row.active).map(row=><option key={row.feature_code} value={row.feature_code}>{row.label}</option>)}
+            </select>
+            <button onClick={startBurnTest} disabled={calBusy==='start'||!calUser||!calPackage} className="rounded-xl bg-violet-700 px-5 py-3 text-sm font-black text-white disabled:opacity-40">{calBusy==='start'?'Starting…':'Start Burn Test'}</button>
+          </div>
+          <div className="mt-3 text-xs text-slate-500">This control does not add, remove, or purchase Tokens. It only opens a measurement session around the account's real Token activity.</div>
+        </Panel>
         <Panel title="Package Burn Test Matrix" subtitle="Before you buy/test each package, this shows the maximum full metered uses at current calibration prices. It updates automatically when Token pricing changes.">
           {burnRows.length?<div className="grid gap-4 xl:grid-cols-3">{burnRows.map(pkg=><div key={pkg.code} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
             <div className="flex items-start justify-between gap-3"><div><div className="text-xl font-black">{pkg.label}</div><div className="mt-1 font-mono text-xs text-slate-400">{pkg.code}</div></div><div className="text-right"><div className="text-2xl font-black text-violet-700">{money(Number(pkg.amount_cents)/100)}</div><div className="text-xs font-bold text-amber-700">{n(pkg.tokens)} Tokens</div></div></div>
@@ -218,7 +263,7 @@ export default function TokenSystemDashboard(){
         <div className="grid gap-6 xl:grid-cols-2">
           <Panel title="Actual Package Burn Sessions" subtitle="Real calibration sessions tied to a package. This is where the $4.99 → $9.99 → $19.99 burn experiment becomes measurable rather than theoretical.">
             {packageCalibration.length?<div className="space-y-3">{packageCalibration.map(row=><div key={row.id} className="rounded-xl border border-slate-200 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-black">{row.package_code} · {row.feature_code}</div><div className="text-xs text-slate-400">{row.email||row.user_id}</div></div><Badge tone={row.ended_at?'green':'amber'}>{row.ended_at?'Complete':'Running'}</Badge></div>
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-black">{row.package_code} · {row.feature_code}</div><div className="text-xs text-slate-400">{row.email||row.user_id}</div></div><div className="flex items-center gap-2"><Badge tone={row.ended_at?'green':'amber'}>{row.ended_at?'Complete':'Running'}</Badge>{!row.ended_at&&<button onClick={()=>finishBurnTest(row)} disabled={calBusy===row.id} className="rounded-lg bg-slate-950 px-3 py-1.5 text-[11px] font-black text-white disabled:opacity-50">{calBusy===row.id?'Ending…':'End Test'}</button>}</div></div>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs"><div>Start<br/><strong>{n(row.starting_balance)}</strong></div><div>End<br/><strong>{row.ending_balance==null?'—':n(row.ending_balance)}</strong></div><div>Burned<br/><strong className="text-amber-700">{row.ending_balance==null?'—':n(row.burned)}</strong></div><div>Provider Cost<br/><strong>{money(Number(row.provider_cost_micros||0)/1000000)}</strong></div></div>
               <div className="mt-3 text-xs text-slate-400">{dt(row.started_at)}{row.ended_at?' → '+dt(row.ended_at):''}</div>
             </div>)}</div>:<Empty>No package-linked burn session has been completed yet. The dashboard is ready to record them once testing begins.</Empty>}
