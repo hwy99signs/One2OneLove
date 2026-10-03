@@ -231,7 +231,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname === '/api/feature-usage') {
+    if (url.pathname === '/api/feature-usage' || url.pathname === '/api/interaction-events') {
       const response = await handleFeatureUsageRequest(request, env, url);
       if (response) return response;
     }
