@@ -5,6 +5,7 @@ import LicensedProfessionalApplication from "@/components/signup/LicensedProfess
 export default function TherapistSignup() {
   const [searchParams] = useSearchParams();
   const plan = String(searchParams.get("plan") || "").toLowerCase();
-  if (!["premiere", "premier", "exclusive"].includes(plan)) return <Navigate to="/Subscription?signup=1" replace />;
+  const freeAccount = searchParams.get("account") === "free";
+  if (!freeAccount && !["premiere", "premier", "exclusive"].includes(plan)) return <Navigate to="/Subscription?signup=1" replace />;
   return <LicensedProfessionalApplication />;
 }

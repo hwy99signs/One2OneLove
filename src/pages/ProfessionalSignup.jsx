@@ -63,8 +63,15 @@ export default function ProfessionalSignup() {
   const selectedType = searchParams.get("type");
   const selectedPlanRaw = String(searchParams.get("plan") || "").toLowerCase();
   const selectedPlan = selectedPlanRaw === "exclusive" ? "Exclusive" : ["premiere", "premier"].includes(selectedPlanRaw) ? "Premiere" : null;
+  const freeAccount = searchParams.get("account") === "free";
+  const foundingIntent = searchParams.get("founding") === "1";
+  const membershipQuery = freeAccount
+    ? "account=free"
+    : selectedPlan
+      ? `plan=${encodeURIComponent(selectedPlan)}${foundingIntent ? "&founding=1" : ""}`
+      : "";
 
-  if (!selectedPlan) return <Navigate to="/Subscription?signup=1" replace />;
+  if (!freeAccount && !selectedPlan) return <Navigate to="/Subscription?signup=1" replace />;
 
   if (["coach", "organization"].includes(selectedType)) {
     return <ProfessionalApplication mode={selectedType} />;
@@ -72,20 +79,20 @@ export default function ProfessionalSignup() {
 
   const openApplication = (key) => {
     if (key === "licensed") {
-      navigate(`${createPageUrl("TherapistSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
+      navigate(`${createPageUrl("TherapistSignup")}?${membershipQuery}`);
       return;
     }
     if (key === "contributor") {
-      navigate(`${createPageUrl("InfluencerSignup")}?plan=${encodeURIComponent(selectedPlan)}`);
+      navigate(`${createPageUrl("InfluencerSignup")}?${membershipQuery}`);
       return;
     }
-    setSearchParams({ type: key, plan: selectedPlan });
+    setSearchParams(freeAccount ? { type: key, account: "free" } : { type: key, plan: selectedPlan, ...(foundingIntent ? { founding: "1" } : {}) });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(`/SignUp?plan=${encodeURIComponent(selectedPlan)}`)} className="mb-8 text-gray-600">
+        <Button variant="ghost" onClick={() => navigate(freeAccount ? "/SignUp?account=free" : `/SignUp?plan=${encodeURIComponent(selectedPlan)}${foundingIntent ? "&founding=1" : ""}`)} className="mb-8 text-gray-600">
           <ArrowLeft className="w-5 h-5 mr-2" />{t.back}
         </Button>
 
