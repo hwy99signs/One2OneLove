@@ -1,0 +1,76 @@
+name: Validate Traffic Source Analytics
+
+on:
+  push:
+    branches:
+      - feature/traffic-source-analytics-20261003
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - working-directory: worker
+        run: npm ci
+      - working-directory: worker
+        run: npx wrangler deploy --dry-run --config ../cloudflare/wrangler.production.jsonc
+      - name: Static attribution guards
+        run: |
+          grep -q "Traffic by Platform" src/pages/Analytics.jsx
+          grep -q "trafficSource: trafficSource()" src/lib/interactionAnalytics.js
+          grep -q "TRAFFIC_SOURCES" worker/feature-usage.ts
+          grep -q "traffic_source_ready" worker/analytics.ts
+          grep -q "utm_source" src/lib/interactionAnalytics.js
+          ! grep -q "document.referrer.*body" src/lib/interactionAnalytics.js
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Verify browser source attribution
+        shell: bash
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 >/tmp/o2ol-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          cat > traffic-source-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            for (const test of [
+              {url:'http://127.0.0.1:4173/?utm_source=instagram&utm_campaign=ignored-secret', expected:'instagram'},
+              {url:'http://127.0.0.1:4173/?utm_source=fb', expected:'facebook'},
+              {url:'http://127.0.0.1:4173/', expected:'direct'},
+            ]) {
+              const context = await browser.newContext();
+              const page = await context.newPage();
+              const events = [];
+              await page.route('**/api/interaction-events', async route => {
+                const req = route.request();
+                let body = req.postData();
+                try { body = JSON.parse(body || '{}'); } catch {}
+                events.push(body);
+                await route.fulfill({status:204, body:''});
+              });
+              await page.goto(test.url, {waitUntil:'domcontentloaded', timeout:60000});
+              await page.waitForTimeout(700);
+              const event = events.find(e => e && e.eventType === 'page_view');
+              console.log(JSON.stringify({url:test.url, event}));
+              if (!event) throw new Error('No page-view event for '+test.url);
+              if (event.trafficSource !== test.expected) throw new Error('Wrong source '+event.trafficSource+' expected '+test.expected);
+              if (JSON.stringify(event).includes('ignored-secret')) throw new Error('Campaign/query value leaked into analytics payload');
+              await context.close();
+            }
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+          node traffic-source-audit.cjs
