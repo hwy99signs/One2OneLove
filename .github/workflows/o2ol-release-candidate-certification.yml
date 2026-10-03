@@ -7,6 +7,10 @@ on:
     paths:
       - "src/**"
       - "worker/**"
+      - "package.json"
+      - "package-lock.json"
+      - "worker/package.json"
+      - "worker/package-lock.json"
       - "neon-migrations/**"
       - "qa/o2ol-release-candidate-certification.mjs"
       - ".github/workflows/o2ol-release-candidate-certification.yml"
