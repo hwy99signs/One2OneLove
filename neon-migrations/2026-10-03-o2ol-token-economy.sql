@@ -46,7 +46,8 @@ INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,prici
   ('bianca_report','Bianca deeper report',5,'report',true,true),
   ('love_note_send','Love Note send',3,'send',true,true),
   ('premium_game_session','Premium game session',2,'session',true,true),
-  ('ai_content_generation','AI content generation',1,'action',true,true)
+  ('ai_content_generation','AI content generation',1,'action',true,true),
+  ('like_minded_session','Like Minded session',2,'session',true,true)
 ON CONFLICT(feature_code) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS public.o2ol_token_transactions (
@@ -180,3 +181,19 @@ CREATE TABLE IF NOT EXISTS public.o2ol_founding_token_benefits (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+
+CREATE TABLE IF NOT EXISTS public.o2ol_game_access_passes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  game text NOT NULL,
+  token_transaction_id uuid REFERENCES public.o2ol_token_transactions(id) ON DELETE SET NULL,
+  tokens_charged integer NOT NULL DEFAULT 0 CHECK(tokens_charged >= 0),
+  status text NOT NULL DEFAULT 'active' CHECK(status IN ('active','expired','revoked')),
+  started_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_o2ol_game_access_passes_user_game
+  ON public.o2ol_game_access_passes(user_id,game,expires_at DESC);
