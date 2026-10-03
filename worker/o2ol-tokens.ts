@@ -404,12 +404,17 @@ async function confirmSetupCheckout(db,env,auth,sessionId){
 }
 async function updateAutoReplenish(db,userId,input){
   const packageCode=String(input?.packageCode||'value');
-  const pkg=(await db.query('SELECT code FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1',[packageCode])).rows[0];
+  const pkg=(await db.query('SELECT code,tokens FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1',[packageCode])).rows[0];
   if(!pkg)throw Object.assign(new Error('Invalid auto-replenish package.'),{status:400,code:'invalid_package'});
   const state=(await ensureTokenWallet(db,userId)).settings;
   const enabled=Boolean(input?.enabled);
   if(enabled&&!state.payment_method_reference)throw Object.assign(new Error('Add a payment method before enabling Auto-Replenish.'),{status:409,code:'payment_method_required'});
   const trigger=Math.max(0,Math.floor(Number(input?.triggerBalance)||0));
+  if(trigger>Number(pkg.tokens||0)){
+    throw Object.assign(new Error('Choose a refill threshold no higher than the selected package size.'),{
+      status:400,code:'trigger_too_high',maxTrigger:Number(pkg.tokens||0),
+    });
+  }
   return (await db.query(
     `UPDATE public.o2ol_auto_replenish_settings
         SET enabled=$1,package_code=$2,trigger_balance=$3,updated_at=now()
@@ -444,6 +449,7 @@ export async function maybeAutoReplenish(db,env,userId){
     'metadata[purpose]':'o2ol_token_auto_replenish',
     'metadata[package_code]':row.package_code,
     'metadata[tokens]':row.tokens,
+    'metadata[idempotency_key]':marker,
   },marker);
   if(intent.status!=='succeeded')throw Object.assign(new Error('Auto-Replenish payment requires attention.'),{status:402,code:'auto_replenish_payment_failed'});
   const tx=await creditTokens(db,userId,{
@@ -508,8 +514,8 @@ async function tokenWebhook(request,env){
       if(pkg){
         await creditTokens(db,meta.user_id,{
           tokens:Number(pkg.tokens),transactionType:'auto_replenish',packageCode:pkg.code,amountCents:Number(pkg.amount_cents),
-          provider:'stripe',providerReference:obj.id,idempotencyKey:`stripe_auto:${obj.id}`,
-          metadata:{webhook_event:event.id},
+          provider:'stripe',providerReference:obj.id,idempotencyKey:meta.idempotency_key||`stripe_auto:${obj.id}`,
+          metadata:{webhook_event:event.id,payment_intent:obj.id},
         });
         await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.id,pkg.code,Number(pkg.tokens));
       }
@@ -612,8 +618,14 @@ async function walletPayload(db,userId){
       WHERE user_id=$1::uuid AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1`,
     [userId],
   )).rows[0]||null;
+  const safeSettings={
+    ...state.settings,
+    payment_method_reference:undefined,
+    payment_method_saved:Boolean(state.settings?.payment_method_reference),
+  };
   return {
-    ...state,
+    wallet:state.wallet,
+    settings:safeSettings,
     transactions:await recentTransactions(db,userId),
     packages:await tokenPackages(db),
     featurePrices:await featurePrices(db),
