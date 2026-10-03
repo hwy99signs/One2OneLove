@@ -44,6 +44,7 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
+import Tokens from './Tokens';
 import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
@@ -67,7 +68,7 @@ const PAGES = {
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
-  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
+  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, Tokens, VerifyPhone,
   Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
@@ -101,7 +102,8 @@ const FEATURE_BY_ROUTE = {
   '/couplescalendar': 'Couples Calendar',
   '/lgbtqsupport': 'LGBTQ+ Support',
   '/chat': 'Community Chat',
-  '/subscription': 'Subscription / Billing',
+  '/subscription': 'Tokens / Billing',
+  '/tokens': 'Tokens / Billing',
   '/o2olstudio': 'O2OL Studio',
   '/mymatchiq': 'MyMatchIQ',
 };
@@ -192,8 +194,9 @@ function PagesContent() {
           <Route path="/Chat" element={<Chat />} />
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/Subscription" element={<Subscription />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />} />
+          <Route path="/Tokens" element={<Tokens />} />
+          <Route path="/Subscription" element={<Navigate to="/Tokens" replace />} />
+          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Tokens?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
@@ -205,7 +208,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
-          <Route path="/MyMatchIQ/Credits" element={<MyMatchIQCredits />} />
+          <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Tokens?source=mymatchiq" replace />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
@@ -222,7 +225,7 @@ function PagesContent() {
           <Route path="/Developer" element={<Navigate to="/Home" replace />} />
           <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
           <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
-          <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
+          <Route path="/PremiumFeatures" element={<Navigate to="/Tokens" replace />} />
           <Route path="/FindFriends" element={<Navigate to="/Community" replace />} />
           <Route path="/FriendRequests" element={<Navigate to="/Community" replace />} />
           <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
