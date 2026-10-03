@@ -29,6 +29,7 @@ jobs:
 
       WORKER_NAME: one2onelove-token-prelaunch
       PREVIEW_URL: https://one2onelove-token-prelaunch.hwy99signs.workers.dev
+      TOKEN_MEDIA_BUCKET: one2onelove-token-prelaunch-media
       EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls
       EXPECTED_NEON_DATABASE: one2onelove
       PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf
@@ -139,7 +140,7 @@ jobs:
             "r2_buckets": [
               {
                 "binding": "MEDIA",
-                "bucket_name": "one2onelove-media"
+                "bucket_name": "$TOKEN_MEDIA_BUCKET"
               }
             ]
           }
@@ -213,7 +214,7 @@ jobs:
           test "$FOUNDING_STATUS" = "200"
           jq -e '.offer.accessModel == "free_tokens" and .offer.recurringSubscriptionOffer == false and .offer.economicsPendingCalibration == true' /tmp/founding.json >/dev/null
 
-          # Studio may read the shared media bucket, but code-level QA forbids writes.
+          # Studio/chat/profile media use only the isolated Prelaunch R2 bucket.
           STUDIO_STATUS=$(curl -sS -o /tmp/studio.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/studio/episodes" || true)
           test "$STUDIO_STATUS" = "200"
 
