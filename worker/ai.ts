@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
+import { recordOpenAICostEvent } from './o2ol-cost-ledger';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -11,8 +13,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: HEADERS });
 }
-function fail(message, status = 400, code = 'bad_request') {
-  return json({ ok: false, error: { code, message } }, status);
+function fail(message, status = 400, code = 'bad_request', extra = {}) {
+  return json({ ok: false, error: { code, message, ...extra } }, status);
 }
 function cleanText(value, max = 10000, required = false) {
   if (value == null) {
@@ -130,12 +132,12 @@ async function openAiText(env, { instructions, input, maxOutputTokens = 900 }) {
   }
   const text = outputText(payload);
   if (!text) throw Object.assign(new Error('AI provider returned no text.'), { status: 502, code: 'empty_ai_response' });
-  return { text, model: payload?.model || model };
+  return { text, model: payload?.model || model, payload };
 }
 async function requireConversation(db, conversationId, userId) {
   if (!UUID.test(String(conversationId || ''))) throw Object.assign(new Error('Invalid conversation ID.'), { status: 400, code: 'bad_request' });
   const result = await db.query(
-    "SELECT * FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='o2ol'",
+    "SELECT * FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='o2ol' AND mode='amora'",
     [conversationId, userId],
   );
   if (!result.rows[0]) throw Object.assign(new Error('Coaching conversation not found.'), { status: 404, code: 'not_found' });
@@ -146,7 +148,7 @@ async function listConversations(db, userId) {
     `SELECT c.id,c.title,c.created_at,c.updated_at,
             (SELECT content FROM public.ai_coach_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message
        FROM public.ai_coach_conversations c
-      WHERE c.user_id=$1::uuid AND c.product='o2ol'
+      WHERE c.user_id=$1::uuid AND c.product='o2ol' AND c.mode='amora'
       ORDER BY c.updated_at DESC,c.created_at DESC`,
     [userId],
   );
@@ -179,12 +181,15 @@ async function listMessages(db, conversationId, userId) {
     is_user: row.role === 'user',
   }));
 }
-async function sendCoachMessage(db, env, auth, conversationId, message) {
-  const entitlementResult = await entitlement(db, auth.user.id, 'relationship_coach');
-  if (!entitlementResult.allowed) return fail(entitlementResult.reason, 403, 'feature_not_available');
-
+async function sendCoachMessage(db, env, auth, conversationId, input) {
   const conversation = await requireConversation(db, conversationId, auth.user.id);
-  const text = cleanText(message, 6000, true);
+  const text = cleanText(input?.message, 6000, true);
+  const requestId = String(input?.requestId || crypto.randomUUID()).slice(0,120);
+  const reservation = await reserveTokenCharge(db,auth.user.id,'amora_response',{
+    idempotencyKey:`amora:${conversationId}:${requestId}`,
+    metadata:{conversation_id:conversationId,request_id:requestId},
+  });
+
   const historyResult = await db.query(
     `SELECT role,content FROM public.ai_coach_messages
       WHERE conversation_id=$1::uuid AND user_id=$2::uuid
@@ -192,19 +197,26 @@ async function sendCoachMessage(db, env, auth, conversationId, message) {
     [conversationId, auth.user.id],
   );
   const history = historyResult.rows.reverse();
-  const transcript = history.map(item => `${item.role === 'assistant' ? 'Coach' : 'Member'}: ${item.content}`).join('\n\n');
-  const prompt = `${transcript ? `${transcript}\n\n` : ''}Member: ${text}\n\nCoach:`;
-  const instructions = 'You are One2OneLove Relationship Coach. Give warm, practical relationship guidance, not diagnosis or therapy. Encourage respectful communication and boundaries. If there is abuse, danger, self-harm, or an emergency, prioritize immediate safety and appropriate local professional help. Keep answers concise and actionable.';
-  const generated = await openAiText(env, { instructions, input: prompt, maxOutputTokens: 900 });
+  const transcript = history.map(item => `${item.role === 'assistant' ? 'Amora' : 'Member'}: ${item.content}`).join('\n\n');
+  const prompt = `${transcript ? `${transcript}\n\n` : ''}Member: ${text}\n\nAmora:`;
+  const instructions = 'You are Amora, the warm One2OneLove relationship coach. Speak naturally and conversationally. Give practical relationship guidance and reflection, not diagnosis or therapy. You may laugh naturally when something is genuinely funny, apologize when appropriate, show empathy without inventing feelings, and ask useful follow-up questions. Encourage respectful communication, consent and healthy boundaries. If there is abuse, danger, self-harm, coercion or an emergency, prioritize immediate safety and appropriate local professional help. Never shame, manipulate, pressure, or encourage surveillance. Keep answers useful and human rather than formulaic.';
+  let generated=null;
+  try{
+    generated=await openAiText(env,{instructions,input:prompt,maxOutputTokens:900});
+  }catch(error){
+    await releaseTokenReservation(db,reservation.id,'ai_provider_failed').catch(()=>{});
+    throw error;
+  }
 
-  await db.query('BEGIN');
+  let userMessage=null,assistantMessage=null;
   try {
-    const userMessage = await db.query(
+    await db.query('BEGIN');
+    userMessage = await db.query(
       `INSERT INTO public.ai_coach_messages(conversation_id,user_id,role,content)
        VALUES($1::uuid,$2::uuid,'user',$3) RETURNING id,role,content,created_at`,
       [conversationId, auth.user.id, text],
     );
-    const assistantMessage = await db.query(
+    assistantMessage = await db.query(
       `INSERT INTO public.ai_coach_messages(conversation_id,user_id,role,content,model)
        VALUES($1::uuid,$2::uuid,'assistant',$3,$4) RETURNING id,role,content,model,created_at`,
       [conversationId, auth.user.id, generated.text, generated.model],
@@ -213,19 +225,36 @@ async function sendCoachMessage(db, env, auth, conversationId, message) {
       `INSERT INTO public.ai_usage_events(user_id,feature) VALUES($1::uuid,'relationship_coach')`,
       [auth.user.id],
     );
-    const nextTitle = conversation.title === 'Coaching Session' ? text.slice(0, 72) : conversation.title;
-    await db.query('UPDATE public.ai_coach_conversations SET title=$1,updated_at=now() WHERE id=$2::uuid', [nextTitle, conversationId]);
+    const nextTitle = ['Coaching Session','Chat with Amora'].includes(conversation.title) ? text.slice(0,72) : conversation.title;
+    await db.query('UPDATE public.ai_coach_conversations SET title=$1,updated_at=now() WHERE id=$2::uuid',[nextTitle,conversationId]);
     await db.query('COMMIT');
-    return json({
-      ok: true,
-      userMessage: { ...userMessage.rows[0], text: userMessage.rows[0].content, is_user: true },
-      message: { ...assistantMessage.rows[0], text: assistantMessage.rows[0].content, is_user: false },
-      entitlement: entitlementResult,
-    });
   } catch (error) {
-    await db.query('ROLLBACK');
+    try{await db.query('ROLLBACK');}catch(_){}
+    await releaseTokenReservation(db,reservation.id,'message_persistence_failed').catch(()=>{});
+    await recordOpenAICostEvent(db,env,{
+      userId:auth.user.id,featureCode:'amora_response',payload:generated.payload,model:generated.model,
+      inputText:text,outputText:generated.text,contextText:instructions+'\n\n'+prompt,
+      customerTokensCharged:0,metadata:{conversation_id:conversationId,request_id:requestId,delivery_failed:true},
+    }).catch(()=>{});
     throw error;
   }
+
+  await consumeTokenReservation(db,reservation.id);
+  await recordOpenAICostEvent(db,env,{
+    userId:auth.user.id,featureCode:'amora_response',payload:generated.payload,model:generated.model,
+    inputText:text,outputText:generated.text,contextText:instructions+'\n\n'+prompt,
+    walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+    customerTokensCharged:Number(reservation.tokens||0),
+    metadata:{conversation_id:conversationId,request_id:requestId,history_messages:history.length},
+  }).catch(error=>console.error('Amora cost telemetry failed',error));
+  maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Amora Auto-Replenish check failed',error));
+
+  return json({
+    ok:true,
+    userMessage:{...userMessage.rows[0],text:userMessage.rows[0].content,is_user:true},
+    message:{...assistantMessage.rows[0],text:assistantMessage.rows[0].content,is_user:false},
+    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
+  });
 }
 async function createContent(db, env, auth, input) {
   const entitlementResult = await entitlement(db, auth.user.id, 'content_creator');
@@ -260,7 +289,8 @@ export async function handleAiRequest(request, env, url) {
   try {
     return await withDb(env, async db => {
       if (url.pathname === '/api/ai/config' && request.method === 'GET') {
-        const coach = await entitlement(db, auth.user.id, 'relationship_coach');
+        const wallet=(await db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[auth.user.id])).rows[0];
+        const coach={allowed:true,token_mode:true,token_balance:Number(wallet?.balance||0)};
         const creator = await entitlement(db, auth.user.id, 'content_creator');
         return json({ ok: true, configured: Boolean(env.OPENAI_API_KEY), model: env.OPENAI_MODEL || 'gpt-5-mini', coach, creator });
       }
@@ -268,10 +298,8 @@ export async function handleAiRequest(request, env, url) {
       if (url.pathname === '/api/ai/coach/conversations') {
         if (request.method === 'GET') return json({ ok: true, conversations: await listConversations(db, auth.user.id) });
         if (request.method === 'POST') {
-          const e = await entitlement(db, auth.user.id, 'relationship_coach');
-          if (!e.allowed) return fail(e.reason, 403, 'feature_not_available');
           const result = await db.query(
-            `INSERT INTO public.ai_coach_conversations(user_id,product,mode) VALUES($1::uuid,'o2ol','coach')
+            `INSERT INTO public.ai_coach_conversations(user_id,title,product,mode) VALUES($1::uuid,'Chat with Amora','o2ol','amora')
              RETURNING id,title,created_at,updated_at`,
             [auth.user.id],
           );
@@ -284,7 +312,7 @@ export async function handleAiRequest(request, env, url) {
       if (conversationMatch) {
         if (request.method !== 'DELETE') return fail('Method not allowed.', 405, 'method_not_allowed');
         const result = await db.query(
-          "DELETE FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='o2ol' RETURNING id",
+          "DELETE FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='o2ol' AND mode='amora' RETURNING id",
           [conversationMatch[1], auth.user.id],
         );
         return result.rowCount ? json({ ok: true }) : fail('Conversation not found.', 404, 'not_found');
@@ -295,7 +323,7 @@ export async function handleAiRequest(request, env, url) {
         if (request.method === 'GET') return json({ ok: true, messages: await listMessages(db, messagesMatch[1], auth.user.id) });
         if (request.method === 'POST') {
           const input = await readJson(request);
-          return sendCoachMessage(db, env, auth, messagesMatch[1], input?.message);
+          return sendCoachMessage(db, env, auth, messagesMatch[1], input);
         }
         return fail('Method not allowed.', 405, 'method_not_allowed');
       }
@@ -308,6 +336,6 @@ export async function handleAiRequest(request, env, url) {
     });
   } catch (error) {
     console.error('One2OneLove AI API error', error);
-    return fail(error?.message || 'Unable to process AI request.', error?.status || 500, error?.code || 'ai_error');
+    return fail(error?.message || 'Unable to process AI request.', error?.status || 500, error?.code || 'ai_error',{balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel});
   }
 }
