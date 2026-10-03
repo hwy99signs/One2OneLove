@@ -15,6 +15,8 @@ on:
       - "qa/o2ol-release-candidate-certification.mjs"
       - ".github/workflows/o2ol-release-candidate-certification.yml"
       - ".github/workflows/deploy-o2ol-production-neon.yml"
+      - ".github/workflows/o2ol-production-candidate-certification.yml"
+      - ".github/workflows/o2ol-live-access-emergency-check.yml"
       - ".github/deploy-o2ol-production-neon-trigger"
       - "cloudflare/wrangler.production.jsonc"
   workflow_dispatch:
@@ -81,6 +83,14 @@ jobs:
           grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
           grep -F "const writeAccess = await loveNoteWriteAccess(db, auth);" worker/love-note-entitlements.ts >/dev/null
           grep -F "reason: 'subscription_required'" worker/love-note-entitlements.ts >/dev/null
+          grep -F "name: O2OL Production Candidate Certification" .github/workflows/o2ol-production-candidate-certification.yml >/dev/null
+          grep -F "workflow_dispatch:" .github/workflows/o2ol-production-candidate-certification.yml >/dev/null
+          grep -F "ref: master" .github/workflows/o2ol-production-candidate-certification.yml >/dev/null
+          grep -F "name: O2OL Live Open House Access Check" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
+          grep -F "workflow_run:" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
+          grep -F "Deploy O2OL Production Neon" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
+          grep -F "Verify anonymous Open House browsing is available" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
+          grep -F "Verify anonymous protected APIs remain locked" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
           if grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null; then
             echo "Retired trial/guest-preview behavior remains"; exit 1;
           fi
