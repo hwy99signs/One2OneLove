@@ -3,7 +3,7 @@ import { useLanguage } from "@/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles } from "lucide-react";
+import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles, Lock, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,7 +63,7 @@ const translations = {
     personalizedFor: "Personalized for",
     recipientPhone: "Recipient's Phone Number",
     recipientPhonePlaceholder: "(555) 123-4567",
-    recipientPhoneDesc: "One2OneLove SMS delivery: your first send during the 7-day Full Access trial is FREE; each additional send is US$0.29. Recipient carrier rates may apply.",
+    recipientPhoneDesc: "One2OneLove SMS delivery: your first SMS Love Note send is FREE; each additional send is US$0.29. Recipient carrier rates may apply.",
     schedulingOptions: "📅 Scheduling Options",
     sendNow: "Send Now",
     scheduleLater: "Schedule for Later",
@@ -197,7 +197,7 @@ const translations = {
     copiedTikTok: "¡Copiado! Pega en TikTok",
     openingLinkedIn: "Abriendo LinkedIn...",
     openingEmail: "Abriendo email...",
-    recipientPhoneDesc: "Entrega SMS de One2OneLove: tu primer envío durante la prueba de Acceso Completo de 7 días es GRATIS; cada envío adicional cuesta US$0.29. Pueden aplicarse tarifas del operador del destinatario.",
+    recipientPhoneDesc: "Entrega SMS de One2OneLove: tu primer envío SMS de Nota de Amor es GRATIS; cada envío adicional cuesta US$0.29. Pueden aplicarse tarifas del operador del destinatario.",
     partnerNameDesc: 'Reemplaza "tú" y "tu" en las notas.',
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
@@ -310,7 +310,7 @@ const translations = {
     copiedTikTok: "Copié! Coller dans TikTok",
     openingLinkedIn: "Ouverture de LinkedIn...",
     openingEmail: "Ouverture de l'email...",
-    recipientPhoneDesc: "Livraison SMS One2OneLove : votre premier envoi pendant l’essai Accès Complet de 7 jours est GRATUIT ; chaque envoi supplémentaire coûte US$0.29. Des frais opérateur peuvent s’appliquer au destinataire.",
+    recipientPhoneDesc: "Livraison SMS One2OneLove : votre premier envoi SMS de Note d’Amour est GRATUIT ; chaque envoi supplémentaire coûte US$0.29. Des frais opérateur peuvent s’appliquer au destinataire.",
     partnerNameDesc: 'Remplace "tu" et "ton" dans les notes.',
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
@@ -423,7 +423,7 @@ const translations = {
     copiedTikTok: "Copiato! Incolla su TikTok",
     openingLinkedIn: "Apertura LinkedIn...",
     openingEmail: "Apertura email...",
-    recipientPhoneDesc: "Consegna SMS One2OneLove: il primo invio durante la prova di Accesso Completo di 7 giorni è GRATIS; ogni invio successivo costa US$0.29. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
+    recipientPhoneDesc: "Consegna SMS One2OneLove: il primo invio SMS di una Nota d’Amore è GRATIS; ogni invio successivo costa US$0.29. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
     partnerNameDesc: 'Sostituisce "tu" e "tuo" nelle note.',
     petNameDesc: 'Aggiunto alle note contenenti "amore".',
     specialPlaceDesc: "Aggiunto alle note di 'Ricordi'.",
@@ -536,7 +536,7 @@ const translations = {
     copiedTikTok: "Kopiert! In TikTok einfügen",
     openingLinkedIn: "Öffne LinkedIn...",
     openingEmail: "Öffne E-Mail...",
-    recipientPhoneDesc: "One2OneLove-SMS-Zustellung: Ihre erste Sendung während des 7-Tage-Vollzugriff-Tests ist KOSTENLOS; jede weitere Sendung kostet US$0.29. Beim Empfänger können Mobilfunkgebühren anfallen.",
+    recipientPhoneDesc: "One2OneLove-SMS-Zustellung: Ihre erste SMS-Liebesnachricht ist KOSTENLOS; jede weitere Sendung kostet US$0.29. Beim Empfänger können Mobilfunkgebühren anfallen.",
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
@@ -778,6 +778,95 @@ function effectiveLoveNotesPlan(user) {
   return 'Premiere';
 }
 
+const OPEN_HOUSE_LOVE_NOTE_CATEGORIES = new Set([
+  'morning',
+  'playful',
+  'appreciation',
+  'encouragement',
+  'goodLuck',
+  'holiday',
+  'workplace',
+]);
+
+const OPEN_HOUSE_LOVE_NOTES_COPY = {
+  en: {
+    badge: 'LIMITED-TIME OPEN HOUSE',
+    locked: 'LOCKED',
+    membersOnly: 'Members Only',
+    categoryTitle: 'More Love Notes are waiting inside',
+    categoryBody: 'This Love Notes category is reserved for members during the Open House.',
+    sendTitle: 'Ready to send it?',
+    sendBody: 'Create your One2OneLove account and add a card to send, schedule, email, or share a Love Note.',
+    unlock: 'Create Account & Add Card',
+    signIn: 'Sign In',
+  },
+  es: {
+    badge: 'PUERTAS ABIERTAS POR TIEMPO LIMITADO',
+    locked: 'BLOQUEADO',
+    membersOnly: 'Solo miembros',
+    categoryTitle: 'Hay más Notas de Amor esperando dentro',
+    categoryBody: 'Esta categoría de Notas de Amor está reservada para miembros durante las Puertas Abiertas.',
+    sendTitle: '¿Listo para enviarla?',
+    sendBody: 'Crea tu cuenta de One2OneLove y agrega una tarjeta para enviar, programar, enviar por correo o compartir una Nota de Amor.',
+    unlock: 'Crear cuenta y agregar tarjeta',
+    signIn: 'Iniciar sesión',
+  },
+  fr: {
+    badge: 'PORTES OUVERTES À DURÉE LIMITÉE',
+    locked: 'VERROUILLÉ',
+    membersOnly: 'Membres uniquement',
+    categoryTitle: 'D’autres Notes d’Amour vous attendent',
+    categoryBody: 'Cette catégorie de Notes d’Amour est réservée aux membres pendant les Portes Ouvertes.',
+    sendTitle: 'Prêt à l’envoyer ?',
+    sendBody: 'Créez votre compte One2OneLove et ajoutez une carte pour envoyer, programmer, envoyer par e-mail ou partager une Note d’Amour.',
+    unlock: 'Créer un compte et ajouter une carte',
+    signIn: 'Se connecter',
+  },
+  it: {
+    badge: 'PORTE APERTE A TEMPO LIMITATO',
+    locked: 'BLOCCATO',
+    membersOnly: 'Solo membri',
+    categoryTitle: 'Ci sono altre Note d’Amore da scoprire',
+    categoryBody: 'Questa categoria di Note d’Amore è riservata ai membri durante le Porte Aperte.',
+    sendTitle: 'Pronto a inviarla?',
+    sendBody: 'Crea il tuo account One2OneLove e aggiungi una carta per inviare, programmare, inviare via email o condividere una Nota d’Amore.',
+    unlock: 'Crea account e aggiungi carta',
+    signIn: 'Accedi',
+  },
+  de: {
+    badge: 'ZEITLICH BEGRENZTER TAG DER OFFENEN TÜR',
+    locked: 'GESPERRT',
+    membersOnly: 'Nur für Mitglieder',
+    categoryTitle: 'Weitere Liebesnachrichten warten auf dich',
+    categoryBody: 'Diese Liebesnachrichten-Kategorie ist während des Open House Mitgliedern vorbehalten.',
+    sendTitle: 'Bereit zum Senden?',
+    sendBody: 'Erstelle dein One2OneLove-Konto und hinterlege eine Karte, um eine Liebesnachricht zu senden, zu planen, per E-Mail zu verschicken oder zu teilen.',
+    unlock: 'Konto erstellen & Karte hinzufügen',
+    signIn: 'Anmelden',
+  },
+};
+
+function loveNotesAdminAccessActive(user) {
+  if (!user?.subscription_end_date) return false;
+  const end = new Date(user.subscription_end_date);
+  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
+}
+
+function hasLoveNotesMemberAccess(user) {
+  if (!user) return false;
+  if (String(user.role || '').toLowerCase() === 'admin') return true;
+  const status = String(user.subscription_status || '').toLowerCase();
+  const paidOrGranted = Boolean(user.stripe_subscription_id) || loveNotesAdminAccessActive(user);
+  return ['active', 'trial', 'trialing'].includes(status) && paidOrGranted;
+}
+
+function loveNotesCategoryTeaser(name) {
+  const firstWord = String(name || '').trim().split(/\s+/)[0] || '';
+  if (!firstWord) return '•••';
+  const visible = firstWord.length <= 4 ? 2 : firstWord.length <= 7 ? 3 : 4;
+  return firstWord.slice(0, visible);
+}
+
 export default function LoveNotes() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
@@ -837,9 +926,13 @@ export default function LoveNotes() {
 
   // Fetch current user
   const { user: currentUser } = useAuth();
+  const hasMemberAccess = hasLoveNotesMemberAccess(currentUser);
+  const openHouseCopy = OPEN_HOUSE_LOVE_NOTES_COPY[currentLanguage] || OPEN_HOUSE_LOVE_NOTES_COPY.en;
+  const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
+  const [openHouseLockReason, setOpenHouseLockReason] = useState('category');
 
   const effectivePlan = effectiveLoveNotesPlan(currentUser);
-  const aiPlanEligible = effectivePlan === 'Exclusive';
+  const aiPlanEligible = hasMemberAccess && effectivePlan === 'Exclusive';
 
   const { data: aiConfig } = useQuery({
     queryKey: ['loveNotesAiConfig', currentUser?.id],
@@ -958,7 +1051,9 @@ export default function LoveNotes() {
   };
 
   const displayedNotes = useMemo(() => {
-    let filtered = allNotes;
+    let filtered = hasMemberAccess
+      ? allNotes
+      : allNotes.filter(note => OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(note.category));
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(note => note.category === selectedCategory);
@@ -983,13 +1078,19 @@ export default function LoveNotes() {
     }
 
     return filtered;
-  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes]);
+  }, [selectedCategory, selectedSubject, searchQuery, partnerName, petName, specialPlace, allNotes, hasMemberAccess]);
 
   const handleRandomNote = () => {
     setShowRandomCategoryPicker(true);
   };
 
   const handleRandomCategorySelect = (categoryId) => {
+    if (!hasMemberAccess && !OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(categoryId)) {
+      setOpenHouseLockReason('category');
+      setShowOpenHouseLock(true);
+      return;
+    }
+
     const categoryNotes = allNotes.filter(note => note.category === categoryId);
 
     if (categoryNotes.length === 0) {
@@ -1022,6 +1123,12 @@ export default function LoveNotes() {
   };
 
   const handleScheduleNote = () => {
+    if (!hasMemberAccess) {
+      setOpenHouseLockReason('send');
+      setShowOpenHouseLock(true);
+      return;
+    }
+
     if (!recipientPhone.trim()) {
       toast.error(t.pleaseEnterPhone);
       return;
@@ -1045,10 +1152,7 @@ export default function LoveNotes() {
   };
 
   const checkLimitBeforeSend = (method, currentRecipientPhoneInput, targetPlatformIdentifier) => {
-    if (!currentUser) {
-      // Guest sending (no limits, but also no tracking in backend)
-      return { type: 'guest', identifier: currentRecipientPhoneInput || targetPlatformIdentifier };
-    }
+    if (!hasMemberAccess || !currentUser) return null;
 
     let recipientType = 'other';
     let recipientIdentifier = currentRecipientPhoneInput || targetPlatformIdentifier;
@@ -1079,6 +1183,12 @@ export default function LoveNotes() {
   };
 
   const handleSendVia = async (note, method) => {
+    if (!hasMemberAccess) {
+      setOpenHouseLockReason('send');
+      setShowOpenHouseLock(true);
+      return;
+    }
+
     const text = `${note.title}\n\n${note.content}\n\n❤️ From One 2 One Love`;
     let currentRecipientPhoneInput = '';
     const targetPlatformIdentifier = method;
@@ -1114,7 +1224,7 @@ export default function LoveNotes() {
       return;
     }
 
-    if (currentUser && limitCheckResult.type !== 'guest') {
+    if (currentUser) {
       await sendNoteMutation.mutateAsync({
         note_title: note.title,
         note_content: note.content,
@@ -1288,14 +1398,16 @@ export default function LoveNotes() {
             <Shuffle className="w-5 h-5 mr-2" />
             {t.randomNote}
           </Button>
-          <Button
-            onClick={() => setShowScheduledNotes(!showScheduledNotes)}
-            variant="outline"
-            className="h-12 px-6 border-pink-300 hover:bg-pink-50"
-          >
-            <Calendar className="w-5 h-5 mr-2" />
-            {t.viewScheduled}
-          </Button>
+          {hasMemberAccess && (
+            <Button
+              onClick={() => setShowScheduledNotes(!showScheduledNotes)}
+              variant="outline"
+              className="h-12 px-6 border-pink-300 hover:bg-pink-50"
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              {t.viewScheduled}
+            </Button>
+          )}
         </div>
 
         <AnimatePresence>
@@ -1317,17 +1429,31 @@ export default function LoveNotes() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {categories.filter(category => category.id !== 'all').map((category) => (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => handleRandomCategorySelect(category.id)}
-                        className="px-4 py-2 rounded-full font-medium bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-700 border border-pink-200 shadow-sm transition-all"
-                      >
-                        <span className="mr-2">{category.icon}</span>
-                        {category.name}
-                      </button>
-                    ))}
+                    {categories.filter(category => category.id !== 'all').map((category) => {
+                      const locked = !hasMemberAccess && !OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(category.id);
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => handleRandomCategorySelect(category.id)}
+                          aria-label={locked ? `${openHouseCopy.locked}: ${openHouseCopy.membersOnly}` : category.name}
+                          className={`px-4 py-2 rounded-full font-medium border shadow-sm transition-all ${
+                            locked
+                              ? 'bg-slate-50 text-slate-600 border-slate-300 hover:border-purple-300'
+                              : 'bg-white text-gray-700 hover:bg-pink-50 hover:text-pink-700 border-pink-200'
+                          }`}
+                        >
+                          <span className="mr-2">{category.icon}</span>
+                          {locked ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>{loveNotesCategoryTeaser(category.name)}</span>
+                              <span aria-hidden="true" className="inline-block h-3 w-10 rounded bg-slate-300 blur-[2px]" />
+                              <Lock className="h-3.5 w-3.5" />
+                            </span>
+                          ) : category.name}
+                        </button>
+                      );
+                    })}
                   </div>
                   <div className="mt-6 flex justify-center">
                     <Button
@@ -1360,24 +1486,41 @@ export default function LoveNotes() {
 
         <div className="mb-8">
           <div className="flex flex-wrap gap-2 justify-center">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => {
-                  setSelectedCategory(category.id);
-                  setSelectedSubject('all');
-                  setSearchQuery('');
-                }}
-                className={`px-4 py-2 rounded-full font-medium transition-all ${
-                  selectedCategory === category.id
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg scale-105'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 shadow'
-                }`}
-              >
-                <span className="mr-2">{category.icon}</span>
-                {category.name}
-              </button>
-            ))}
+            {categories.map((category) => {
+              const locked = category.id !== 'all' && !hasMemberAccess && !OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(category.id);
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    if (locked) {
+                      setOpenHouseLockReason('category');
+                      setShowOpenHouseLock(true);
+                      return;
+                    }
+                    setSelectedCategory(category.id);
+                    setSelectedSubject('all');
+                    setSearchQuery('');
+                  }}
+                  aria-label={locked ? `${openHouseCopy.locked}: ${openHouseCopy.membersOnly}` : category.name}
+                  className={`px-4 py-2 rounded-full font-medium transition-all border ${
+                    locked
+                      ? 'bg-slate-50 text-slate-600 border-slate-300 hover:border-purple-300 shadow-sm'
+                      : selectedCategory === category.id
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white border-transparent shadow-lg scale-105'
+                        : 'bg-white text-gray-700 border-transparent hover:bg-gray-50 shadow'
+                  }`}
+                >
+                  <span className="mr-2">{category.icon}</span>
+                  {locked ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span>{loveNotesCategoryTeaser(category.name)}</span>
+                      <span aria-hidden="true" className="inline-block h-3 w-10 rounded bg-slate-300 blur-[2px]" />
+                      <Lock className="h-3.5 w-3.5" />
+                    </span>
+                  ) : category.name}
+                </button>
+              );
+            })}
           </div>
 
         </div>
@@ -1480,6 +1623,55 @@ export default function LoveNotes() {
       </div>
 
       <AnimatePresence>
+        {showOpenHouseLock && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowOpenHouseLock(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 10 }}
+              onClick={(event) => event.stopPropagation()}
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-purple-100"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
+                {openHouseLockReason === 'send'
+                  ? <CreditCard className="h-7 w-7 text-purple-700" />
+                  : <Lock className="h-7 w-7 text-purple-700" />}
+              </div>
+              <div className="text-center">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-purple-700">{openHouseCopy.badge}</p>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {openHouseLockReason === 'send' ? openHouseCopy.sendTitle : openHouseCopy.categoryTitle}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                  {openHouseLockReason === 'send' ? openHouseCopy.sendBody : openHouseCopy.categoryBody}
+                </p>
+              </div>
+              <div className="mt-6 flex flex-col gap-2">
+                <Link
+                  to={currentUser ? '/Subscription?open-house=love-notes&card=required' : '/SignUp?open-house=love-notes&card=required'}
+                  onClick={() => setShowOpenHouseLock(false)}
+                >
+                  <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    {openHouseCopy.unlock}
+                  </Button>
+                </Link>
+                <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
+                  <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showAIPersonalization && aiPersonalizationReady && (
           <AIPersonalizationModal
             onClose={() => setShowAIPersonalization(false)}
@@ -1728,7 +1920,7 @@ export default function LoveNotes() {
                     className="h-12"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {t.recipientPhoneDesc}
+                    {hasMemberAccess ? t.recipientPhoneDesc : openHouseCopy.sendBody}
                   </p>
                 </div>
 

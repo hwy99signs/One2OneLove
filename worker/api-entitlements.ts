@@ -72,7 +72,6 @@ function adminAccessActive(row) {
   return !Number.isNaN(end.getTime()) && end.getTime() > Date.now();
 }
 
-
 export async function enforceApiEntitlement(request, env, url) {
   const required = requiredPlan(url.pathname);
   if (!required) return null;
@@ -115,11 +114,12 @@ export async function enforceApiEntitlement(request, env, url) {
     const active = ['active', 'trial', 'trialing'].includes(status);
 
     if (!active || (!row.stripe_subscription_id && !adminAccess)) {
-      return json({ ok: false, error: { code: 'billing_required', message: 'An active One2OneLove membership is required.' } }, 402);
+      return json({ ok: false, error: { code: 'billing_required', message: 'An active One2OneLove membership is required to use this protected feature. Open House browsing remains free.' } }, 402);
     }
 
-
-    const effectiveLevel = ['trial', 'trialing'].includes(status) ? 2 : planLevel(row.subscription_plan);
+    // Stripe trial/trialing represents the 30-day Founding Member free period.
+    // Access always follows the stored plan for the member's Founding cohort.
+    const effectiveLevel = planLevel(row.subscription_plan);
 
     if (effectiveLevel < planLevel(required)) {
       return json({ ok: false, error: { code: 'plan_upgrade_required', message: `${required} membership or higher is required.` } }, 403);

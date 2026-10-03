@@ -14,7 +14,7 @@ import termsFr from '@/content/terms/fr';
 import termsIt from '@/content/terms/it';
 import termsDe from '@/content/terms/de';
 
-const TERMS_VERSION = '2026-09-25';
+const TERMS_VERSION = '2026-10-02';
 const termsByLanguage = { en: termsEn, es: termsEs, fr: termsFr, it: termsIt, de: termsDe };
 const languageOptions = [
   { code:'en', label:'English' },
@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere' }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere', foundingIntent = false }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
@@ -175,9 +175,11 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
     setVerifyLoading(false);
   };
 
+  const cardClass = 'mx-auto max-w-xl shadow-2xl';
+
   if (successEmail) {
     return (
-      <Card className="mx-auto max-w-xl shadow-2xl">
+      <Card className={cardClass}>
         <CardContent className="p-8 text-center">
           <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${verified ? 'bg-green-100' : 'bg-purple-100'}`}>
             {verified ? <CheckCircle2 className="h-9 w-9 text-green-600"/> : <Mail className="h-9 w-9 text-purple-600"/>}
@@ -212,7 +214,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
               </Button>
             </>
           ) : (
-            <Button type="button" onClick={() => navigate(createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
+            <Button type="button" onClick={() => navigate(foundingIntent ? '/SignIn?redirect=%2FSubscription%3Ffounding%3D1' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
           )}
         </CardContent>
       </Card>
@@ -221,7 +223,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
 
   return (
     <>
-      <Card className="mx-auto max-w-xl shadow-2xl">
+      <Card className={cardClass}>
         <CardHeader>
           <button type="button" onClick={goBack} className="mb-4 inline-flex items-center text-gray-600 transition-colors hover:text-gray-800"><ArrowLeft size={20} className="mr-2"/>{t.back}</button>
           <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><CardTitle className="text-3xl">{t.title}</CardTitle></div>

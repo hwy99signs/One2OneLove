@@ -76,9 +76,9 @@ export default function SubscriptionSelection({ onBack, onSelectPlan }) {
         )}
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }} className="mt-12 mx-auto max-w-4xl rounded-2xl border border-purple-200 bg-white p-6 text-sm leading-6 text-gray-700">
-          <p>Create an account and choose a membership plan to access One2OneLove member features.</p>
-          <p>During the 7-day Full Access trial, your first One2OneLove SMS Love Note send is FREE; every additional send is US$0.29 and is billed to your payment method on file. Usage charges may be grouped.</p>
-          <p className="text-xs text-gray-500">All prices are shown in U.S. dollars (US$). Cancel anytime; cancellation takes effect at the end of the current billing period. Love Note usage charges already incurred remain due.</p>
+          <p className="font-semibold text-gray-900">Founding Members launch terms apply while the offer is available.</p>
+          <p>A credit or debit card is required for membership signup and for Open House actions that create paid delivery, AI, messaging, or other billable usage.</p>
+          <p className="text-xs text-gray-500">All prices are shown in U.S. dollars (US$). Applicable charges are shown before a billable action is confirmed. Cancel anytime under the current membership terms.</p>
         </motion.div>
       </div>
     </div>

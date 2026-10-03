@@ -117,6 +117,21 @@ async function adminIdentity(db, userId) {
 
 async function ensureChatModerationSchema(db) {
   await db.query(`
+    CREATE TABLE IF NOT EXISTS public.chat_room_topics (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      room_id uuid NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
+      creator_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      title text NOT NULL,
+      is_locked boolean NOT NULL DEFAULT false,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await db.query(`
+    ALTER TABLE public.chat_room_messages
+    ADD COLUMN IF NOT EXISTS topic_id uuid REFERENCES public.chat_room_topics(id) ON DELETE SET NULL
+  `);
+  await db.query(`
     CREATE TABLE IF NOT EXISTS public.chat_room_reports (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       room_id uuid NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
@@ -131,6 +146,241 @@ async function ensureChatModerationSchema(db) {
       UNIQUE(message_id, reporter_id)
     )
   `);
+}
+
+
+const RELATIONSHIP_100_QUESTIONS = [
+  ['money','Money'],
+  ['religion','Religion'],
+  ['sex_intimacy','Sex / Intimacy'],
+  ['politics','Politics'],
+  ['family','Family'],
+  ['communication','Communication'],
+  ['looks_physical_appearance','Looks / Physical appearance'],
+  ['therapy_when_needed','Therapy when needed'],
+  ['help_around_home','Help around the home'],
+];
+
+const O2OL_SHOW_TOPIC = {
+  slug:'studio-who-should-apologize-first',
+  title:'Who Should Apologize First?',
+};
+
+async function ensureO2OLShowVotingSchema(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.o2ol_show_vote_responses (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      topic_slug text NOT NULL,
+      topic_title text NOT NULL,
+      respondent_identity text,
+      partner_identity text,
+      relationship_priorities jsonb NOT NULL DEFAULT '{}'::jsonb,
+      expense_split jsonb NOT NULL DEFAULT '{}'::jsonb,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_o2ol_show_votes_topic_created
+      ON public.o2ol_show_vote_responses(topic_slug,created_at DESC)
+  `);
+}
+
+function canonicalIdentity(value, allowNotPartnered=false) {
+  const raw=String(value||'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+  if (raw==='man' || raw==='male') return 'Man';
+  if (raw==='woman' || raw==='female') return 'Woman';
+  if (raw==='nonbinary' || raw==='non_binary' || raw==='non-binary') return 'Nonbinary';
+  if (raw==='prefer_not_to_say' || raw==='prefer_not' || raw==='private') return 'Prefer not to say';
+  if (allowNotPartnered && ['not_currently_partnered','not_partnered','single','none'].includes(raw)) return 'Not currently partnered';
+  return null;
+}
+
+function identityBreakdown(rows, allowNotPartnered=false) {
+  const labels = allowNotPartnered
+    ? ['Man','Woman','Nonbinary','Prefer not to say','Not currently partnered']
+    : ['Man','Woman','Nonbinary','Prefer not to say'];
+  const counts = Object.fromEntries(labels.map(label=>[label,0]));
+  for (const row of rows || []) {
+    const label=canonicalIdentity(row.value,allowNotPartnered);
+    if (label) counts[label]+=Number(row.count||0);
+  }
+  const total=Object.values(counts).reduce((sum,value)=>sum+value,0);
+  return labels.map(label=>({
+    label,
+    count:counts[label],
+    percentage:total ? Math.round((counts[label]*1000)/total)/10 : 0,
+  }));
+}
+
+async function chatRoomAnalytics(db) {
+  const voteSummaryResult = await db.query(`
+    SELECT
+      count(*)::int AS total_responses,
+      max(topic_title) AS topic_title,
+      max(created_at) AS last_response_at,
+      round(avg(NULLIF(relationship_priorities->>'money','')::numeric),1) AS money,
+      round(avg(NULLIF(relationship_priorities->>'religion','')::numeric),1) AS religion,
+      round(avg(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric),1) AS sex_intimacy,
+      round(avg(NULLIF(relationship_priorities->>'politics','')::numeric),1) AS politics,
+      round(avg(NULLIF(relationship_priorities->>'family','')::numeric),1) AS family,
+      round(avg(NULLIF(relationship_priorities->>'communication','')::numeric),1) AS communication,
+      round(avg(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric),1) AS looks_physical_appearance,
+      round(avg(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric),1) AS therapy_when_needed,
+      round(avg(NULLIF(relationship_priorities->>'help_around_home','')::numeric),1) AS help_around_home,
+      round(avg(NULLIF(expense_split->>'man','')::numeric),1) AS bills_man,
+      round(avg(NULLIF(expense_split->>'woman','')::numeric),1) AS bills_woman,
+      COALESCE(sum(NULLIF(relationship_priorities->>'money','')::numeric),0) AS sum_money,
+      COALESCE(sum(NULLIF(relationship_priorities->>'religion','')::numeric),0) AS sum_religion,
+      COALESCE(sum(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric),0) AS sum_sex_intimacy,
+      COALESCE(sum(NULLIF(relationship_priorities->>'politics','')::numeric),0) AS sum_politics,
+      COALESCE(sum(NULLIF(relationship_priorities->>'family','')::numeric),0) AS sum_family,
+      COALESCE(sum(NULLIF(relationship_priorities->>'communication','')::numeric),0) AS sum_communication,
+      COALESCE(sum(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric),0) AS sum_looks_physical_appearance,
+      COALESCE(sum(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric),0) AS sum_therapy_when_needed,
+      COALESCE(sum(NULLIF(relationship_priorities->>'help_around_home','')::numeric),0) AS sum_help_around_home,
+      COALESCE(sum(NULLIF(expense_split->>'man','')::numeric),0) AS sum_bills_man,
+      COALESCE(sum(NULLIF(expense_split->>'woman','')::numeric),0) AS sum_bills_woman
+    FROM public.o2ol_show_vote_responses
+    WHERE topic_slug=$1
+  `,[O2OL_SHOW_TOPIC.slug]);
+  const voteSummary=voteSummaryResult.rows[0]||{};
+
+  const [respondentIdentityRows,partnerIdentityRows,conversationRows] = await Promise.all([
+    db.query(`
+      SELECT respondent_identity AS value,count(*)::int AS count
+      FROM public.o2ol_show_vote_responses
+      WHERE topic_slug=$1 AND respondent_identity IS NOT NULL
+      GROUP BY respondent_identity
+    `,[O2OL_SHOW_TOPIC.slug]),
+    db.query(`
+      SELECT partner_identity AS value,count(*)::int AS count
+      FROM public.o2ol_show_vote_responses
+      WHERE topic_slug=$1 AND partner_identity IS NOT NULL
+      GROUP BY partner_identity
+    `,[O2OL_SHOW_TOPIC.slug]),
+    db.query(`
+      WITH base_rooms AS (
+        SELECT
+          'room:'||r.slug AS line_key,
+          r.name AS topic,
+          'Room'::text AS kind,
+          count(m.id) FILTER (
+            WHERE m.is_deleted=false
+              AND m.moderation_status='approved'
+              AND m.topic_id IS NULL
+          )::int AS comments,
+          r.created_at
+        FROM public.chat_rooms r
+        LEFT JOIN public.chat_room_messages m ON m.room_id=r.id
+        WHERE r.is_active=true
+        GROUP BY r.id,r.slug,r.name,r.created_at
+      ),
+      topic_rows AS (
+        SELECT
+          'topic:'||t.id::text AS line_key,
+          t.title AS topic,
+          r.name AS kind,
+          count(m.id) FILTER (
+            WHERE m.is_deleted=false
+              AND m.moderation_status='approved'
+          )::int AS comments,
+          t.created_at
+        FROM public.chat_room_topics t
+        JOIN public.chat_rooms r ON r.id=t.room_id
+        LEFT JOIN public.chat_room_messages m ON m.topic_id=t.id
+        WHERE r.is_active=true
+        GROUP BY t.id,t.title,t.created_at,r.name
+      )
+      SELECT line_key,topic,kind,comments,created_at
+      FROM (
+        SELECT * FROM base_rooms
+        UNION ALL
+        SELECT * FROM topic_rows
+      ) lines
+      ORDER BY created_at DESC,topic ASC
+    `),
+  ]);
+
+  const conversations=conversationRows.rows.map(row=>({
+    key:row.line_key,
+    topic:row.topic,
+    source:row.kind,
+    comments:Number(row.comments||0),
+    createdAt:row.created_at||null,
+  }));
+  const relationship100=RELATIONSHIP_100_QUESTIONS.map(([key,label],index)=>({
+    number:index+1,
+    key,
+    label,
+    average:Number(voteSummary[key]||0),
+  }));
+  const demographics={
+    respondentIdentity:identityBreakdown(respondentIdentityRows.rows,false),
+    partnerIdentity:identityBreakdown(partnerIdentityRows.rows,true),
+  };
+  const rawRelationshipTotals=Object.fromEntries(
+    RELATIONSHIP_100_QUESTIONS.map(([key])=>[key,Number(voteSummary['sum_'+key]||0)])
+  );
+  const chatComments=Number(conversations.find(row=>row.key==='room:'+O2OL_SHOW_TOPIC.slug)?.comments||0);
+  const platformMeta=[
+    ['o2ol-chat-room','O2OL Chat Room'],
+    ['facebook','Facebook'],
+    ['instagram','Instagram'],
+    ['threads','Threads'],
+    ['tiktok','TikTok'],
+    ['x','X'],
+    ['pinterest','Pinterest'],
+    ['linkedin','LinkedIn'],
+  ];
+  const platforms=platformMeta.map(([id,label])=>{
+    const isChat=id==='o2ol-chat-room';
+    return {
+      id,label,
+      validResponses:isChat?Number(voteSummary.total_responses||0):0,
+      excludedResponses:0,
+      excludedReasons:[],
+      commentCount:isChat?chatComments:0,
+      lastUpdated:isChat?(voteSummary.last_response_at||null):null,
+      rawTotals:{
+        relationship100:isChat?rawRelationshipTotals:Object.fromEntries(RELATIONSHIP_100_QUESTIONS.map(([key])=>[key,0])),
+        expenseSplit:{
+          man:isChat?Number(voteSummary.sum_bills_man||0):0,
+          woman:isChat?Number(voteSummary.sum_bills_woman||0):0,
+        },
+      },
+      relationship100:isChat?relationship100:RELATIONSHIP_100_QUESTIONS.map(([key,label],index)=>({number:index+1,key,label,average:0})),
+      expenseSplit:{
+        number:10,
+        label:'Household bills / shared expenses',
+        manAverage:isChat?Number(voteSummary.bills_man||0):0,
+        womanAverage:isChat?Number(voteSummary.bills_woman||0):0,
+      },
+      demographics:isChat?demographics:{
+        respondentIdentity:['Man','Woman','Nonbinary','Prefer not to say'].map(label=>({label,count:0,percentage:0})),
+        partnerIdentity:['Man','Woman','Nonbinary','Prefer not to say','Not currently partnered'].map(label=>({label,count:0,percentage:0})),
+      },
+    };
+  });
+
+  return {
+    showVoting:{
+      topicSlug:O2OL_SHOW_TOPIC.slug,
+      topicTitle:voteSummary.topic_title || O2OL_SHOW_TOPIC.title,
+      responseCount:Number(voteSummary.total_responses||0),
+      lastResponseAt:voteSummary.last_response_at||null,
+      relationship100,
+      expenseSplit:{
+        number:10,
+        label:'Household bills / shared expenses',
+        manAverage:Number(voteSummary.bills_man||0),
+        womanAverage:Number(voteSummary.bills_woman||0),
+      },
+      demographics,
+      platforms,
+    },
+    conversations,
+  };
 }
 
 async function overview(db) {
@@ -819,10 +1069,11 @@ async function system(db) {
 
 async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,systemData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),topFeatureActivity(db,env),system(db),
+  await ensureO2OLShowVotingSchema(db);
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,chatRoomData,systemData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,topFeatureActivity:topFeatureData,system:systemData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData };
 }
 
 export async function handleAdminRequest(request, env, url) {

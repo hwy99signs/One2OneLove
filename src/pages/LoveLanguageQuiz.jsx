@@ -8,8 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { saveLoveLanguage } from "@/lib/profileService";
 import { toast } from "sonner";
 import { buildLoveLanguageQuizSession } from "@/components/lovelanguage/LoveLanguageQuestionBank";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { hasFullMemberAccess, openHouseProtectedDestination } from "@/lib/openHouseAccess";
 
 const backToQuizzesCopy = {
   en: "Back to Quizzes",
@@ -338,6 +339,8 @@ export default function LoveLanguageQuiz() {
   const [isSaved, setIsSaved] = useState(false);
   const { currentLanguage } = useLanguage();
   const { user, refreshUserProfile } = useAuth();
+  const navigate = useNavigate();
+  const fullMemberAccess = hasFullMemberAccess(user);
   const t = translations[currentLanguage] || translations.en;
 
   const loveLanguages = [
@@ -418,6 +421,10 @@ export default function LoveLanguageQuiz() {
   const handleSaveResult = async () => {
     if (!user) {
       toast.error(t.quiz.saveAuth);
+      return;
+    }
+    if (!fullMemberAccess) {
+      navigate(openHouseProtectedDestination(user,'love-language'));
       return;
     }
 
