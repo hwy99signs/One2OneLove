@@ -88,6 +88,7 @@ async function analytics(db, env) {
       SELECT e.created_at::date AS day,
              count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
              count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(*) FILTER (WHERE e.event_type='action')::int AS actions,
              count(DISTINCT CASE
                WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
                ELSE 'v:' || e.visitor_id
@@ -135,6 +136,7 @@ async function analytics(db, env) {
              count(*)::int AS total_events,
              count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
              count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(*) FILTER (WHERE e.event_type='action')::int AS actions,
              count(DISTINCT CASE
                WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
                ELSE 'v:' || e.visitor_id
@@ -152,17 +154,18 @@ async function analytics(db, env) {
            COALESCE(usage.total_events,0)::int AS total_events,
            COALESCE(usage.page_views,0)::int AS page_views,
            COALESCE(usage.clicks,0)::int AS clicks,
+           COALESCE(usage.actions,0)::int AS actions,
            COALESCE(usage.unique_visitors,0)::int AS unique_visitors,
            COALESCE(usage.registered_users,0)::int AS registered_users,
            COALESCE(usage.anonymous_visitors,0)::int AS anonymous_visitors
       FROM desired LEFT JOIN usage USING(language)
      ORDER BY desired.sort_order
   `) : { rows:[
-    { language:'en',label:'English',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
-    { language:'es',label:'Spanish',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
-    { language:'fr',label:'French',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
-    { language:'it',label:'Italian',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
-    { language:'de',label:'German',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'en',label:'English',total_events:0,page_views:0,clicks:0,actions:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'es',label:'Spanish',total_events:0,page_views:0,clicks:0,actions:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'fr',label:'French',total_events:0,page_views:0,clicks:0,actions:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'it',label:'Italian',total_events:0,page_views:0,clicks:0,actions:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'de',label:'German',total_events:0,page_views:0,clicks:0,actions:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
   ] };
 
   const trafficSourcePromise = interactionReady && trafficSourceReady ? db.query(`
@@ -254,6 +257,7 @@ async function analytics(db, env) {
              count(*)::int AS events,
              count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
              count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(*) FILTER (WHERE e.event_type='action')::int AS actions,
              count(DISTINCT CASE
                WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
                ELSE 'v:' || e.visitor_id
@@ -269,12 +273,13 @@ async function analytics(db, env) {
            COALESCE(activity.events,0)::int AS events,
            COALESCE(activity.page_views,0)::int AS page_views,
            COALESCE(activity.clicks,0)::int AS clicks,
+           COALESCE(activity.actions,0)::int AS actions,
            COALESCE(activity.users,0)::int AS users
       FROM days LEFT JOIN activity USING(day)
      ORDER BY days.day
   `) : db.query(`
     SELECT to_char(day,'YYYY-MM-DD') AS date,
-           0::int AS events,0::int AS page_views,0::int AS clicks,0::int AS users
+           0::int AS events,0::int AS page_views,0::int AS clicks,0::int AS actions,0::int AS users
       FROM generate_series(current_date-29,current_date,interval '1 day') AS day
      ORDER BY day
   `);
@@ -284,6 +289,7 @@ async function analytics(db, env) {
            count(*)::int AS activity,
            count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
            count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+           count(*) FILTER (WHERE e.event_type='action')::int AS actions,
            count(DISTINCT CASE
              WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
              ELSE 'v:' || e.visitor_id
@@ -317,9 +323,11 @@ async function analytics(db, env) {
       WITH days AS (
         SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
       ), counts AS (
-        SELECT created_at::date AS day,count(*)::int AS signups
-          FROM public.users
-         WHERE created_at >= GREATEST(current_date-29, ${baselineSql})
+        SELECT COALESCE(u.created_at,a."createdAt")::date AS day,count(*)::int AS signups
+          FROM neon_auth."user" a
+          FULL OUTER JOIN public.users u ON u.id=a.id
+         WHERE COALESCE(u.created_at,a."createdAt") >= GREATEST(current_date-29, ${baselineSql})
+           AND COALESCE(a.role,'user') <> 'admin'
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,COALESCE(counts.signups,0)::int AS signups
@@ -428,15 +436,19 @@ async function analytics(db, env) {
        ORDER BY days.day`),
     db.query(`
       WITH desired(plan,sort_order) AS (
-        VALUES ('Premiere'::text,1),('Exclusive'::text,2)
+        VALUES ('Registered Free'::text,1),('Premiere'::text,2),('Exclusive'::text,3)
       ), counts AS (
         SELECT CASE
-                 WHEN lower(COALESCE(subscription_plan,''))='exclusive' THEN 'Exclusive'
-                 ELSE 'Premiere'
+                 WHEN lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+                   THEN 'Registered Free'
+                 WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
+                 WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
+                 ELSE 'Registered Free'
                END AS plan,count(*)::int AS count
-          FROM public.users
-          WHERE created_at >= ${baselineSql}
-          GROUP BY 1
+          FROM public.users u
+          LEFT JOIN neon_auth."user" a ON a.id=u.id
+         WHERE COALESCE(a.role,'user') <> 'admin'
+         GROUP BY 1
       )
       SELECT desired.plan,COALESCE(counts.count,0)::int AS count
         FROM desired LEFT JOIN counts USING(plan)

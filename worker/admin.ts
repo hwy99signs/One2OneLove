@@ -22,20 +22,32 @@ const FEATURE_CATALOG = [
   ['Relationship Milestones', 'Relationship Tools'],
   ['Couples Profile', 'Relationship Tools'],
   ['Couples Dashboard', 'Relationship Tools'],
+  ['Relationship Games', 'Relationship Tools'],
+  ['What Should They Do?', 'Relationship Games'],
+  ['Scratch Game', 'Relationship Games'],
+  ['Like Minded?', 'Relationship Games'],
   ['Relationship Support', 'Support & Content'],
   ['Communication Practice', 'Support & Content'],
-  ['Meditation', 'Support & Content'],
   ['Podcasts', 'Support & Content'],
   ['Articles', 'Support & Content'],
   ['LGBTQ+ Support', 'Support & Content'],
   ['Couple Activities', 'Support & Content'],
-  ['Community', 'Community'],
-  ['Chat', 'Community'],
-  ['Find Friends', 'Community'],
-  ['Friend Requests', 'Community'],
+  ['Community Chat', 'Community'],
   ['Invite & Share', 'Growth'],
   ['Member Profile', 'Account'],
   ['Subscription / Billing', 'Account'],
+  ['O2OL Studio', 'Media'],
+  ['MyMatchIQ', 'MyMatchIQ'],
+  ['Reviews', 'Growth'],
+  ['Suggestions', 'Growth'],
+  ['Professionals', 'Professional'],
+  ['Professional Onboarding', 'Professional'],
+  ['Account Verification', 'Account'],
+  ['Win A Cruise', 'Growth'],
+  ['AI Content Creator', 'AI'],
+  ['Relationship Coach', 'AI'],
+  ['Gamification', 'Engagement'],
+  ['Find Friends', 'Community'],
 ];
 
 function json(data, status = 200) {
@@ -330,6 +342,7 @@ async function chatRoomAnalytics(db) {
     ['threads','Threads'],
     ['tiktok','TikTok'],
     ['x','X'],
+    ['youtube','YouTube'],
     ['pinterest','Pinterest'],
     ['linkedin','LinkedIn'],
   ];
@@ -337,6 +350,7 @@ async function chatRoomAnalytics(db) {
     const isChat=id==='o2ol-chat-room';
     return {
       id,label,
+      connected:isChat,
       validResponses:isChat?Number(voteSummary.total_responses||0):0,
       excludedResponses:0,
       excludedReasons:[],
@@ -389,18 +403,26 @@ async function overview(db) {
       SELECT count(*)::int AS total,
              count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '7 days')::int AS new_7d,
              count(*) FILTER (WHERE p.id IS NOT NULL AND COALESCE(p.is_active,true)=false)::int AS inactive,
-             count(*) FILTER (WHERE COALESCE(p.is_verified,a."emailVerified",false)=true)::int AS verified
+             count(*) FILTER (WHERE COALESCE(p.is_verified,a."emailVerified",false)=true)::int AS email_verified,
+             count(*) FILTER (WHERE COALESCE(p.phone_number_verified,false)=true)::int AS phone_verified,
+             count(*) FILTER (
+               WHERE COALESCE(p.is_verified,a."emailVerified",false)=true
+                 AND COALESCE(p.phone_number_verified,false)=true
+             )::int AS verified
         FROM neon_auth."user" a
         FULL OUTER JOIN public.users p ON p.id=a.id
        WHERE COALESCE(a.role,'user') <> 'admin'`),
     db.query(`
       WITH desired(plan,sort_order) AS (
-        VALUES ('Premiere'::text,1),('Exclusive'::text,2)
+        VALUES ('Registered Free'::text,1),('Premiere'::text,2),('Exclusive'::text,3)
       ), counts AS (
         SELECT CASE
-                 WHEN lower(COALESCE(subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
-                 WHEN lower(COALESCE(subscription_plan,''))='exclusive' THEN 'Exclusive'
-                 ELSE 'Premiere'
+                 WHEN u.stripe_subscription_id IS NULL
+                   AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+                   THEN 'Registered Free'
+                 WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
+                 WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
+                 ELSE 'Registered Free'
                END AS plan,
                count(*)::int AS count
           FROM public.users u
@@ -418,11 +440,11 @@ async function overview(db) {
         (SELECT count(*) FROM public.influencer_profiles WHERE status='pending')::int AS contributor_pending`),
     db.query(`
       SELECT
-        (SELECT count(*) FROM public.success_stories WHERE moderation_status='pending')::int AS stories_pending,
-        (SELECT count(*) FROM public.community_posts WHERE moderation_status='pending')::int AS posts_pending,
-        (SELECT count(*) FROM public.post_comments WHERE moderation_status='pending')::int AS comments_pending,
+        (SELECT count(*) FROM public.success_stories WHERE moderation_status <> 'approved')::int AS stories_pending,
+        (SELECT count(*) FROM public.community_posts WHERE moderation_status <> 'approved')::int AS posts_pending,
+        (SELECT count(*) FROM public.post_comments WHERE moderation_status <> 'approved')::int AS comments_pending,
         (SELECT count(*) FROM public.reviews WHERE COALESCE(is_published,false)=false)::int AS reviews_unpublished,
-        (SELECT count(*) FROM public.chat_room_reports WHERE status='pending')::int AS chat_reports_pending`),
+        (SELECT count(*) FROM public.chat_room_reports WHERE status <> 'resolved')::int AS chat_reports_pending`),
     db.query(`
       SELECT count(*)::int AS recorded_payments,
              count(*) FILTER (WHERE created_at >= date_trunc('month',now()))::int AS payments_this_month,
@@ -471,22 +493,19 @@ async function members(db) {
            COALESCE(a."emailVerified",u.is_verified,false) AS is_verified,
            COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
            CASE
-             WHEN u.id IS NULL THEN 'Guest'
+             WHEN u.id IS NULL THEN 'Signup Pending'
              WHEN u.stripe_subscription_id IS NULL
                AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' > now() THEN 'Guest'
+               THEN 'Registered Free'
              WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
              WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
-             ELSE 'Premiere'
+             ELSE 'Registered Free'
            END AS subscription_plan,
            CASE
-             WHEN u.id IS NULL THEN 'guest'
+             WHEN u.id IS NULL THEN 'signup_pending'
              WHEN u.stripe_subscription_id IS NULL
                AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' > now() THEN 'guest'
-             WHEN u.stripe_subscription_id IS NULL
-               AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' <= now() THEN 'guest_expired'
+               THEN 'registered_free'
              ELSE COALESCE(u.subscription_status,'inactive')
            END AS subscription_status,
            u.subscription_price,
@@ -846,7 +865,8 @@ async function clickAnalytics(db, env) {
   const liveTracking = Boolean(tableCheck.rows[0]?.ready);
   const empty = {
     total_clicks:0, clicks_30d:0, anonymous_30d:0, registered_free_30d:0,
-    subscribed_30d:0, unique_anonymous_30d:0, unique_registered_30d:0, page_views_30d:0,
+    subscribed_30d:0, unique_anonymous_30d:0, unique_registered_free_30d:0,
+    unique_subscribed_30d:0, unique_registered_30d:0, page_views_30d:0,
   };
   if (!liveTracking) {
     return {
@@ -868,6 +888,8 @@ async function clickAnalytics(db, env) {
         count(*) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS registered_free_30d,
         count(*) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS subscribed_30d,
         count(DISTINCT visitor_id) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_anonymous_30d,
+        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_free_30d,
+        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_subscribed_30d,
         count(DISTINCT user_id) FILTER (WHERE event_type='click' AND actor_type='registered' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_30d,
         count(*) FILTER (WHERE event_type='page_view' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS page_views_30d
       FROM public.interaction_events e
@@ -916,49 +938,64 @@ async function clickAnalytics(db, env) {
   };
 }
 
-async function featureUsage(db) {
-  const tableCheck = await db.query(`SELECT to_regclass('public.feature_usage_events') IS NOT NULL AS ready`);
-  const liveTracking = Boolean(tableCheck.rows[0]?.ready);
-  const eventSql = liveTracking ? `
+async function featureUsage(db, env) {
+  const baseline = analyticsBaselineDate(env);
+  const interactionReady = Boolean((await db.query(`SELECT to_regclass('public.interaction_events') IS NOT NULL AS ready`)).rows[0]?.ready);
+
+  const publicInteractionSql = interactionReady ? `
+      SELECT
+        CASE
+          WHEN e.feature IN ('Community','Chat') THEN 'Community Chat'
+          WHEN e.feature='Meditation' THEN 'Relationship Support'
+          ELSE e.feature
+        END AS feature,
+        CASE
+          WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+          ELSE 'v:' || e.visitor_id
+        END AS actor_key,
+        e.created_at AS occurred_at
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      WHERE e.feature IS NOT NULL
+        AND e.event_type IN ('page_view','action')
+        AND e.created_at >= $1::timestamptz
+        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
       UNION ALL
-      SELECT e.feature,e.user_id,e.created_at
-        FROM public.feature_usage_events e
-        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-       WHERE COALESCE(a.role,'user') <> 'admin'
   ` : '';
 
   const activity = await db.query(`
-    WITH activity(feature,user_id,occurred_at) AS (
-      SELECT 'Love Note Scheduler'::text,user_id,created_at FROM public.scheduled_love_notes
-      UNION ALL SELECT 'Love Notes',user_id,COALESCE(sent_date,created_at) FROM public.sent_love_notes
-      UNION ALL SELECT 'Date Ideas',user_id,created_at FROM public.custom_date_ideas
-      UNION ALL SELECT 'Memory Lane',user_id,created_at FROM public.memories
-      UNION ALL SELECT 'Relationship Goals',user_id,created_at FROM public.relationship_goals
-      UNION ALL SELECT 'Couples Calendar',user_id,created_at FROM public.calendar_events
-      UNION ALL SELECT 'Shared Journals',user_id,created_at FROM public.shared_journals
-      UNION ALL SELECT 'Relationship Milestones',user_id,created_at FROM public.relationship_milestones
-      UNION ALL SELECT 'Anniversary Tracker',id,updated_at FROM public.users WHERE anniversary_date IS NOT NULL
-      UNION ALL SELECT 'Couples Profile',id,updated_at FROM public.users WHERE partner_email IS NOT NULL OR partner_name IS NOT NULL
-      UNION ALL SELECT 'Community',author_id,created_at FROM public.community_posts
-      UNION ALL SELECT 'Community',author_id,created_at FROM public.post_comments
-      UNION ALL SELECT 'Community',user_id,joined_at FROM public.community_members
-      UNION ALL SELECT 'Chat',sender_id,created_at FROM public.messages WHERE COALESCE(is_deleted,false)=false
-      UNION ALL SELECT 'Find Friends',from_user_id,created_at FROM public.buddy_requests
-      UNION ALL SELECT 'Find Friends',user_id,created_at FROM public.buddy_matches
-      UNION ALL SELECT 'Subscription / Billing',user_id,created_at FROM public.payment_history
-      UNION ALL SELECT 'Subscription / Billing',user_id,created_at FROM public.subscription_changes
-      ${eventSql}
+    WITH activity(feature,actor_key,occurred_at) AS (
+      ${publicInteractionSql}
+      SELECT 'Love Note Scheduler'::text,'u:'||user_id::text,created_at FROM public.scheduled_love_notes WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Love Notes','u:'||user_id::text,COALESCE(sent_date,created_at) FROM public.sent_love_notes WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Date Ideas','u:'||user_id::text,created_at FROM public.custom_date_ideas WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Memory Lane','u:'||user_id::text,created_at FROM public.memories WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Relationship Goals','u:'||user_id::text,created_at FROM public.relationship_goals WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Couples Calendar','u:'||user_id::text,created_at FROM public.calendar_events WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Shared Journals','u:'||user_id::text,created_at FROM public.shared_journals WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Relationship Milestones','u:'||user_id::text,created_at FROM public.relationship_milestones WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Anniversary Tracker','u:'||id::text,updated_at FROM public.users WHERE anniversary_date IS NOT NULL
+      UNION ALL SELECT 'Couples Profile','u:'||id::text,updated_at FROM public.users WHERE partner_email IS NOT NULL OR partner_name IS NOT NULL
+      UNION ALL SELECT 'Community Chat','u:'||author_id::text,created_at FROM public.community_posts WHERE author_id IS NOT NULL
+      UNION ALL SELECT 'Community Chat','u:'||author_id::text,created_at FROM public.post_comments WHERE author_id IS NOT NULL
+      UNION ALL SELECT 'Community Chat','u:'||user_id::text,joined_at FROM public.community_members WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Community Chat','u:'||sender_id::text,created_at FROM public.messages WHERE sender_id IS NOT NULL AND COALESCE(is_deleted,false)=false
+      UNION ALL SELECT 'Community Chat','u:'||from_user_id::text,created_at FROM public.buddy_requests WHERE from_user_id IS NOT NULL
+      UNION ALL SELECT 'Community Chat','u:'||user_id::text,created_at FROM public.buddy_matches WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Subscription / Billing','u:'||user_id::text,created_at FROM public.payment_history WHERE user_id IS NOT NULL
+      UNION ALL SELECT 'Subscription / Billing','u:'||user_id::text,created_at FROM public.subscription_changes WHERE user_id IS NOT NULL
     )
     SELECT feature,
-           count(DISTINCT user_id)::int AS unique_users,
+           count(DISTINCT actor_key)::int AS unique_users,
            count(*)::int AS total_activity,
-           count(*) FILTER (WHERE occurred_at>=now()-interval '7 days')::int AS activity_7d,
-           count(*) FILTER (WHERE occurred_at>=now()-interval '30 days')::int AS activity_30d,
-           CASE WHEN count(DISTINCT user_id)=0 THEN 0 ELSE round(count(*)::numeric/count(DISTINCT user_id),1) END AS avg_per_user,
+           count(*) FILTER (WHERE occurred_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS activity_7d,
+           count(*) FILTER (WHERE occurred_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS activity_30d,
+           CASE WHEN count(DISTINCT actor_key)=0 THEN 0 ELSE round(count(*)::numeric/count(DISTINCT actor_key),1) END AS avg_per_user,
            max(occurred_at) AS last_used
       FROM activity
-     WHERE user_id IS NOT NULL
-     GROUP BY feature`);
+     WHERE feature IS NOT NULL
+     GROUP BY feature
+  `,[baseline]);
 
   const byFeature = new Map(activity.rows.map(row => [row.feature, row]));
   const features = FEATURE_CATALOG.map(([feature, category]) => {
@@ -977,14 +1014,13 @@ async function featureUsage(db) {
 
   features.sort((a,b) => b.activity_30d - a.activity_30d || b.total_activity - a.total_activity || a.feature.localeCompare(b.feature));
   return {
-    liveTracking,
-    trackingMessage: liveTracking
-      ? 'Live page-view tracking is active. Stored feature actions are also included where One2OneLove already saves them.'
-      : 'Stored feature actions are shown now. Live page-view tracking is prepared but has not yet been activated.',
+    liveTracking:interactionReady,
+    trackingMessage:interactionReady
+      ? 'All-visitor feature activity is live. Feature opens and semantic actions include anonymous Open House visitors, registered-free users and subscribers; saved feature records are included where applicable. Administrator activity is excluded.'
+      : 'Saved feature records are available, but all-visitor interaction tracking is not connected.',
     features,
   };
 }
-
 
 function analyticsBaselineDate(env) {
   const parsed = Date.parse(String(env?.ANALYTICS_BASELINE_AT || ''));
@@ -1023,9 +1059,11 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events e
+    FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-    WHERE e.feature='Date Ideas' AND e.event_type='view' AND COALESCE(a.role,'user') <> 'admin'
+    WHERE e.feature='Date Ideas'
+      AND e.event_type='page_view'
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `);
   const dateSaved = await windowCounts(`
     SELECT
@@ -1052,34 +1090,52 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events e
+    FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-    WHERE e.feature=$2 AND e.event_type='view' AND COALESCE(a.role,'user') <> 'admin'
+    WHERE e.feature=$2
+      AND e.event_type='page_view'
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `,[feature]);
 
   const routedTop = async (feature,prefix) => {
     const result=await db.query(`
-      SELECT substring(route from $3) AS name,
+      WITH actions(name,created_at) AS (
+        SELECT substring(e.control_key from $3) AS name,e.created_at
+          FROM public.interaction_events e
+          LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+         WHERE e.feature=$2
+           AND e.event_type='action'
+           AND e.control_key LIKE $4
+           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+        UNION ALL
+        SELECT substring(e.route from $3) AS name,e.created_at
+          FROM public.feature_usage_events e
+          LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+         WHERE e.feature=$2
+           AND e.event_type='action'
+           AND e.route LIKE $4
+           AND COALESCE(a.role,'user') <> 'admin'
+      )
+      SELECT name,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
         count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-      FROM public.feature_usage_events e
-      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-      WHERE e.feature=$2 AND e.event_type='action' AND e.route LIKE $4
-        AND COALESCE(a.role,'user') <> 'admin'
-        AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-      GROUP BY 1 ORDER BY d30 DESC,name ASC LIMIT 5
+      FROM actions
+      WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+      GROUP BY name ORDER BY d30 DESC,name ASC LIMIT 5
     `,[baseline,feature,prefix.length+1,`${prefix}%`]);
     return result.rows;
   };
 
-  const [lgbtqViews,lgbtqTop,relationshipViews,podcastViews,podcastTop,loveSent,loveScheduled,loveTop] = await Promise.all([
+  const [subscriptionViews,lgbtqViews,lgbtqTop,relationshipViews,podcastViews,podcastTop,loveViews,loveSent,loveScheduled,loveTop] = await Promise.all([
+    pageViews('Subscription / Billing'),
     pageViews('LGBTQ+ Support'),
     routedTop('LGBTQ+ Support','lgbtq:'),
     pageViews('Relationship Support'),
     pageViews('Podcasts'),
     routedTop('Podcasts','podcast:'),
+    pageViews('Love Notes'),
     windowCounts(`
       SELECT
         count(*) FILTER (WHERE COALESCE(sent_date,created_at)>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
@@ -1105,11 +1161,11 @@ async function topFeatureActivity(db, env) {
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '21 days'))::int AS d21,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS d30
-    FROM public.feature_usage_events e
+    FROM public.interaction_events e
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-    WHERE e.event_type='view'
-      AND e.feature IN ('Communication Practice','Meditation','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
-      AND COALESCE(a.role,'user') <> 'admin'
+    WHERE e.event_type='page_view'
+      AND e.feature IN ('Communication Practice','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
       AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
     GROUP BY e.feature ORDER BY d30 DESC,name ASC LIMIT 5
   `,[baseline]);
@@ -1122,12 +1178,13 @@ async function topFeatureActivity(db, env) {
   return {
     windows,
     subscriptionBilling:{
+      accesses:subscriptionViews,
       withCard:Object.fromEntries(windows.map(d=>[d,Number(s[`cc${d}`]||0)])),
       withoutCard:Object.fromEntries(windows.map(d=>[d,Number(s[`no${d}`]||0)])),
     },
     dateIdeas:{ used:dateUse, saved:dateSaved, top:mapTop(dateTop.rows) },
     lgbtq:{ accesses:lgbtqViews, top:mapTop(lgbtqTop) },
-    loveNotes:{ sent:loveSent, scheduled:loveScheduled, top:mapTop(loveTop) },
+    loveNotes:{ accesses:loveViews, sent:loveSent, scheduled:loveScheduled, top:mapTop(loveTop) },
     relationshipSupport:{ accesses:relationshipViews, top:mapTop(relationshipTopResult.rows) },
     podcasts:{ accesses:podcastViews, top:mapTop(podcastTop) },
   };
@@ -1146,7 +1203,7 @@ async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
   const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
   ]);
   return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData };
 }

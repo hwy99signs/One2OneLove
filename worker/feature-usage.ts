@@ -36,10 +36,19 @@ const TRACKABLE_FEATURES = new Set([
   'Like Minded?',
   'O2OL Studio',
   'MyMatchIQ',
+  'Reviews',
+  'Suggestions',
+  'Professionals',
+  'Professional Onboarding',
+  'Account Verification',
+  'Win A Cruise',
+  'AI Content Creator',
+  'Relationship Coach',
+  'Gamification',
 ]);
 
 const LEGACY_EVENT_TYPES = new Set(['view', 'action']);
-const INTERACTION_EVENT_TYPES = new Set(['click', 'page_view']);
+const INTERACTION_EVENT_TYPES = new Set(['click', 'page_view', 'action']);
 const INTERACTION_LANGUAGES = new Set(['en','es','fr','it','de']);
 const TRAFFIC_SOURCES = new Set(['facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other']);
 let interactionSchemaReady = false;
@@ -125,11 +134,33 @@ async function ensureInteractionSchema(db) {
       created_at timestamptz NOT NULL DEFAULT now(),
       CONSTRAINT interaction_events_actor_type_check CHECK (actor_type IN ('anonymous','registered')),
       CONSTRAINT interaction_events_access_type_check CHECK (access_type IN ('open_house','registered_free','subscribed')),
-      CONSTRAINT interaction_events_event_type_check CHECK (event_type IN ('click','page_view'))
+      CONSTRAINT interaction_events_event_type_check CHECK (event_type IN ('click','page_view','action'))
     )
   `);
   await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS language text NULL`);
   await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS traffic_source text NULL`);
+  await db.query(`
+    DO $
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+         WHERE conname='interaction_events_event_type_check'
+           AND conrelid='public.interaction_events'::regclass
+           AND position('action' in pg_get_constraintdef(oid))=0
+      ) THEN
+        ALTER TABLE public.interaction_events DROP CONSTRAINT interaction_events_event_type_check;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+         WHERE conname='interaction_events_event_type_check'
+           AND conrelid='public.interaction_events'::regclass
+      ) THEN
+        ALTER TABLE public.interaction_events
+          ADD CONSTRAINT interaction_events_event_type_check
+          CHECK (event_type IN ('click','page_view','action'));
+      END IF;
+    END $;
+  `);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_created_at_idx ON public.interaction_events(created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_route_idx ON public.interaction_events(route,created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_user_idx ON public.interaction_events(user_id,created_at DESC) WHERE user_id IS NOT NULL`);
@@ -200,7 +231,8 @@ async function handleInteractionEvent(request, env) {
         actorType = 'registered';
         subscriptionPlan = row.subscription_plan || null;
         subscriptionStatus = row.subscription_status || null;
-        accessType = row.stripe_subscription_id ? 'subscribed' : 'registered_free';
+        const activeMembership = ['active','trial','trialing','past_due'].includes(String(row.subscription_status || '').toLowerCase());
+        accessType = activeMembership ? 'subscribed' : 'registered_free';
       }
     }
 

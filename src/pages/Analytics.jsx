@@ -95,6 +95,7 @@ export default function Analytics() {
       Number(row.unique_visitors||0),
       Number(row.page_views||0),
       Number(row.clicks||0),
+      Number(row.actions||0),
     ]));
     return Math.max(100, Math.ceil(rawMax / 100) * 100);
   },[languageRows]);
@@ -139,7 +140,7 @@ export default function Analytics() {
           <Metric icon={Users} label="New Signups" value={number(signupTotal)} note="last 30 days"/>
           <Metric icon={Heart} label="Direct Love Notes" value={number(directTotal)} note="sent in last 30 days"/>
           <Metric icon={TrendingUp} label="Scheduled Love Notes" value={number(scheduledTotal)} note="created in last 30 days"/>
-          <Metric icon={BarChart3} label="Tracked Feature Activity" value={number(featureTotal)} note="all visitors · opens + clicks · last 30 days"/>
+          <Metric icon={BarChart3} label="Tracked Feature Activity" value={number(featureTotal)} note="all visitors · opens + clicks + actions · last 30 days"/>
         </div>
 
         <div className="mt-6">
@@ -176,13 +177,13 @@ export default function Analytics() {
         </div>
 
         <div className="mt-6">
-          <Panel title="Usage by Language" subtitle="Shows the interface language active when each page view or click occurred. A person who actively uses more than one language can appear in more than one language's unique-user count.">
+          <Panel title="Usage by Language" subtitle="Shows the interface language active when each page view, click or meaningful feature action occurred. A person who actively uses more than one language can appear in more than one language's unique-user count.">
             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-              <ChartFrame height={330}><ResponsiveContainer width="100%" height="100%"><BarChart data={languageRows} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="2 4" opacity={0.28}/><XAxis dataKey="label"/><YAxis allowDecimals={false} domain={[0,languageChartMax]} ticks={languageMinorTicks} interval={0} tickFormatter={(value)=>value%100===0?value:''}/>{languageMajorTicks.map(value=><ReferenceLine key={value} y={value} strokeWidth={1.4}/>) }<Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="unique_visitors" name="Unique users / visitors"/><Bar dataKey="page_views" name="Page views"/><Bar dataKey="clicks" name="Clicks"/></BarChart></ResponsiveContainer></ChartFrame>
+              <ChartFrame height={330}><ResponsiveContainer width="100%" height="100%"><BarChart data={languageRows} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="2 4" opacity={0.28}/><XAxis dataKey="label"/><YAxis allowDecimals={false} domain={[0,languageChartMax]} ticks={languageMinorTicks} interval={0} tickFormatter={(value)=>value%100===0?value:''}/>{languageMajorTicks.map(value=><ReferenceLine key={value} y={value} strokeWidth={1.4}/>) }<Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="unique_visitors" name="Unique users / visitors"/><Bar dataKey="page_views" name="Page views"/><Bar dataKey="clicks" name="Clicks"/><Bar dataKey="actions" name="Actions"/></BarChart></ResponsiveContainer></ChartFrame>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Language</th><th className="px-3 py-2 text-right">Users / Visitors</th><th className="px-3 py-2 text-right">Registered</th><th className="px-3 py-2 text-right">Anonymous</th><th className="px-3 py-2 text-right">Views</th><th className="px-3 py-2 text-right">Clicks</th><th className="px-3 py-2 text-right">Usage Share</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">{languageRows.map(row=><tr key={row.language}><td className="px-3 py-3 font-semibold text-slate-900">{row.label}</td><td className="px-3 py-3 text-right font-bold">{number(row.unique_visitors)}</td><td className="px-3 py-3 text-right">{number(row.registered_users)}</td><td className="px-3 py-3 text-right">{number(row.anonymous_visitors)}</td><td className="px-3 py-3 text-right">{number(row.page_views)}</td><td className="px-3 py-3 text-right">{number(row.clicks)}</td><td className="px-3 py-3 text-right font-bold">{Number(row.share||0).toLocaleString(undefined,{maximumFractionDigits:1})}%</td></tr>)}</tbody>
+                  <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Language</th><th className="px-3 py-2 text-right">Users / Visitors</th><th className="px-3 py-2 text-right">Registered</th><th className="px-3 py-2 text-right">Anonymous</th><th className="px-3 py-2 text-right">Views</th><th className="px-3 py-2 text-right">Clicks</th><th className="px-3 py-2 text-right">Actions</th><th className="px-3 py-2 text-right">Usage Share</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">{languageRows.map(row=><tr key={row.language}><td className="px-3 py-3 font-semibold text-slate-900">{row.label}</td><td className="px-3 py-3 text-right font-bold">{number(row.unique_visitors)}</td><td className="px-3 py-3 text-right">{number(row.registered_users)}</td><td className="px-3 py-3 text-right">{number(row.anonymous_visitors)}</td><td className="px-3 py-3 text-right">{number(row.page_views)}</td><td className="px-3 py-3 text-right">{number(row.clicks)}</td><td className="px-3 py-3 text-right">{number(row.actions)}</td><td className="px-3 py-3 text-right font-bold">{Number(row.share||0).toLocaleString(undefined,{maximumFractionDigits:1})}%</td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -216,12 +217,12 @@ export default function Analytics() {
             <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.scheduledHealth||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Bar dataKey="passed" name="Passed"/><Bar dataKey="failed" name="Failed"/><Bar dataKey="pending" name="Pending"/></BarChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
-          <Panel title="Most-Used Features — All Visitors" subtitle="Actual feature opens and clicks from anonymous visitors, registered-free users and subscribers. Admin activity is excluded.">
-            <ChartFrame height={360}><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.featureRankAll||[]} layout="vertical" margin={{ top: 5,right: 20,left: 35,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="feature" width={135}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="page_views" name="Feature opens"/><Bar dataKey="clicks" name="Clicks"/></BarChart></ResponsiveContainer></ChartFrame>
+          <Panel title="Most-Used Features — All Visitors" subtitle="Actual feature opens, clicks and meaningful feature actions from anonymous visitors, registered-free users and subscribers. Admin activity is excluded.">
+            <ChartFrame height={360}><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.featureRankAll||[]} layout="vertical" margin={{ top: 5,right: 20,left: 35,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="feature" width={135}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="page_views" name="Feature opens"/><Bar dataKey="clicks" name="Clicks"/><Bar dataKey="actions" name="Actions"/></BarChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
-          <Panel title="Daily Feature Activity — All Visitors" subtitle="Shows whether visitors merely open features or actually click inside them.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.featureDailyAll||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Feature opens" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="users" name="Unique visitors / users" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+          <Panel title="Daily Feature Activity — All Visitors" subtitle="Shows feature opens, ordinary clicks and meaningful actions such as opening a podcast, using an LGBTQ+ resource or selecting a Love Note category.">
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.featureDailyAll||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Feature opens" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="actions" name="Actions" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="users" name="Unique visitors / users" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Community Activity" subtitle="Daily posts and comments.">
@@ -232,8 +233,8 @@ export default function Analytics() {
             <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.payments||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="payments" name="Payments" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
-          <Panel title="Current Tier Distribution" subtitle="Basic, Premier and Exclusive members right now.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.tiers||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="plan"/><YAxis allowDecimals={false}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="count" name="Members"/></BarChart></ResponsiveContainer></ChartFrame>
+          <Panel title="Current Account / Tier Distribution" subtitle="Registered Free, Premiere and Exclusive accounts right now.">
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.tiers||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="plan"/><YAxis allowDecimals={false}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="count" name="Accounts"/></BarChart></ResponsiveContainer></ChartFrame>
           </Panel>
         </div>
 

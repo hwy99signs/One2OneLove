@@ -1,7 +1,7 @@
 const VISITOR_KEY = 'o2ol.analytics.visitor';
 const SESSION_KEY = 'o2ol.analytics.session';
 const SOURCE_KEY = 'o2ol.analytics.source';
-const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess']);
+const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess','/developer']);
 const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
 const FEATURE_BY_ROUTE = {
@@ -35,6 +35,16 @@ const FEATURE_BY_ROUTE = {
   '/lgbtqsupport': 'LGBTQ+ Support',
   '/chat': 'Community Chat',
   '/subscription': 'Subscription / Billing',
+  '/paymentsuccess': 'Subscription / Billing',
+  '/payment-success': 'Subscription / Billing',
+  '/verifyphone': 'Account Verification',
+  '/reviews': 'Reviews',
+  '/leavereview': 'Reviews',
+  '/suggestions': 'Suggestions',
+  '/professionals': 'Professionals',
+  '/professionalsignup': 'Professional Onboarding',
+  '/therapistsignup': 'Professional Onboarding',
+  '/influencersignup': 'Professional Onboarding',
   '/o2olstudio': 'O2OL Studio',
   '/mymatchiq': 'MyMatchIQ',
   '/mymatchiq/meet': 'MyMatchIQ',
@@ -45,6 +55,19 @@ const FEATURE_BY_ROUTE = {
   '/mymatchiq/actions': 'MyMatchIQ',
   '/mymatchiq/dashboard': 'MyMatchIQ',
   '/mymatchiq/invite': 'MyMatchIQ',
+  '/mymatchiq/subscription': 'MyMatchIQ',
+  '/winacruise': 'Win A Cruise',
+  '/counselingsupport': 'Relationship Support',
+  '/influencerssupport': 'Professionals',
+  '/aicontentcreator': 'AI Content Creator',
+  '/relationshipcoach': 'Relationship Coach',
+  '/meditation': 'Relationship Support',
+  '/leaderboard': 'Gamification',
+  '/achievements': 'Gamification',
+  '/premiumfeatures': 'Subscription / Billing',
+  '/findfriends': 'Find Friends',
+  '/friendrequests': 'Find Friends',
+  '/blog': 'Articles',
 };
 
 function randomId() {
@@ -183,6 +206,21 @@ export function trackPageView(pathname) {
     eventType: 'page_view',
     route,
     feature: featureForPath(route),
+  });
+}
+
+export function trackFeatureActionEvent(feature, detail) {
+  if (isAdminAnalyticsSurface()) return;
+  const safeFeature = safeText(feature, 100);
+  const actionKey = safeText(detail, 160);
+  if (!safeFeature || !actionKey) return;
+  const route = normalizedPath(window.location.pathname) || '/';
+  send({
+    eventType: 'action',
+    route,
+    feature: safeFeature,
+    controlType: 'feature_action',
+    controlKey: actionKey,
   });
 }
 
