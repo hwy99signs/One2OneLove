@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, BarChart3, CreditCard, Heart, Loader2, LockKeyhole,
   RefreshCw, TrendingUp, Users,
@@ -8,6 +8,8 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
+
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
 function number(value) { return Number(value || 0).toLocaleString(); }
 function shortDate(value) {
@@ -30,20 +32,59 @@ export default function Analytics() {
   const [loading,setLoading] = useState(true);
   const [refreshing,setRefreshing] = useState(false);
   const [error,setError] = useState(null);
+  const dataRef = useRef(null);
+  const loadInFlightRef = useRef(false);
+  const lastRefreshAtRef = useRef(0);
 
   const load = async (refresh=false) => {
+    if (loadInFlightRef.current) return;
+    loadInFlightRef.current = true;
     refresh ? setRefreshing(true) : setLoading(true);
-    setError(null);
-    try { setData(await getAdminAnalytics()); }
-    catch (err) { setError(err); }
-    finally { setLoading(false); setRefreshing(false); }
+    if (!refresh) setError(null);
+    try {
+      const next = await getAdminAnalytics();
+      setData(next);
+      dataRef.current = next;
+      lastRefreshAtRef.current = Date.now();
+      setError(null);
+    } catch (err) {
+      if (!refresh || !dataRef.current || [401,403].includes(err?.status)) setError(err);
+      else console.warn('Analytics background refresh failed; keeping current data visible.', err);
+    } finally {
+      loadInFlightRef.current = false;
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
   useEffect(() => { load(false); }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refreshIfDue = () => {
+      if (!active || document.visibilityState !== 'visible') return;
+      if (Date.now() - Number(lastRefreshAtRef.current || 0) >= AUTO_REFRESH_MS) load(true);
+    };
+    const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshIfDue);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshIfDue);
+    };
+  }, []);
 
   const signupTotal = useMemo(() => (data?.signups || []).reduce((sum,row)=>sum+Number(row.signups||0),0),[data]);
   const directTotal = useMemo(() => (data?.loveNotes || []).reduce((sum,row)=>sum+Number(row.direct_sent||0),0),[data]);
   const scheduledTotal = useMemo(() => (data?.loveNotes || []).reduce((sum,row)=>sum+Number(row.scheduled||0),0),[data]);
   const featureTotal = useMemo(() => (data?.featureDaily || []).reduce((sum,row)=>sum+Number(row.events||0),0),[data]);
+  const languageRows = useMemo(() => {
+    const rows = data?.languageUsage || [];
+    const knownEvents = rows.reduce((sum,row)=>sum+Number(row.total_events||0),0);
+    return rows.map(row => ({
+      ...row,
+      share: knownEvents ? Math.round((Number(row.total_events||0) / knownEvents) * 1000) / 10 : 0,
+    }));
+  },[data]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading Analytics</h1><p className="mt-2 text-sm text-slate-500">Building your One2OneLove trend view.</p></div></div>;
   if (error) {
@@ -58,7 +99,7 @@ export default function Analytics() {
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3"><button onClick={()=>window.location.assign('/Admin')} className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-700 hover:bg-rose-100"><ArrowLeft size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">One2OneLove Admin</p><h1 className="text-xl font-black">Analytics</h1></div></div>
-          <button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={refreshing?'animate-spin':''}/>Refresh</button>
+          <div className="flex items-center gap-2"><span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:inline">Auto-refresh · 15 min</span><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={refreshing?'animate-spin':''}/>Refresh</button></div>
         </div>
       </header>
 
@@ -70,6 +111,35 @@ export default function Analytics() {
           <Metric icon={Heart} label="Direct Love Notes" value={number(directTotal)} note="sent in last 30 days"/>
           <Metric icon={TrendingUp} label="Scheduled Love Notes" value={number(scheduledTotal)} note="created in last 30 days"/>
           <Metric icon={BarChart3} label="Tracked Feature Activity" value={number(featureTotal)} note="page-use events in last 30 days"/>
+        </div>
+
+        <div className="mt-6">
+          <Panel title="Site Usage — All Visitors" subtitle="Rolling 30-day view of the entire public One2OneLove site. Includes anonymous Open House visitors and registered members; administrator activity is excluded.">
+            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Page Views</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.page_views)}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Meaningful Clicks</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.clicks)}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Unique Users / Visitors</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.unique_visitors)}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Anonymous Visitors</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.anonymous_visitors)}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Registered Users</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.registered_users)}</p></div>
+            </div>
+            <ChartFrame height={340}><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.siteUsage||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Page views" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visitors" name="Unique visitors / day" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+          </Panel>
+        </div>
+
+        <div className="mt-6">
+          <Panel title="Usage by Language" subtitle="Shows the interface language active when each page view or click occurred. A person who actively uses more than one language can appear in more than one language's unique-user count.">
+            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              <ChartFrame height={330}><ResponsiveContainer width="100%" height="100%"><BarChart data={languageRows} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="label"/><YAxis allowDecimals={false}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="unique_visitors" name="Unique users / visitors"/><Bar dataKey="page_views" name="Page views"/><Bar dataKey="clicks" name="Clicks"/></BarChart></ResponsiveContainer></ChartFrame>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Language</th><th className="px-3 py-2 text-right">Users / Visitors</th><th className="px-3 py-2 text-right">Registered</th><th className="px-3 py-2 text-right">Anonymous</th><th className="px-3 py-2 text-right">Views</th><th className="px-3 py-2 text-right">Clicks</th><th className="px-3 py-2 text-right">Usage Share</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">{languageRows.map(row=><tr key={row.language}><td className="px-3 py-3 font-semibold text-slate-900">{row.label}</td><td className="px-3 py-3 text-right font-bold">{number(row.unique_visitors)}</td><td className="px-3 py-3 text-right">{number(row.registered_users)}</td><td className="px-3 py-3 text-right">{number(row.anonymous_visitors)}</td><td className="px-3 py-3 text-right">{number(row.page_views)}</td><td className="px-3 py-3 text-right">{number(row.clicks)}</td><td className="px-3 py-3 text-right font-bold">{Number(row.share||0).toLocaleString(undefined,{maximumFractionDigits:1})}%</td></tr>)}</tbody>
+                </table>
+              </div>
+            </div>
+            {Number(data?.languageUnknownEvents||0)>0 && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">{number(data.languageUnknownEvents)} interaction events in this 30-day window were recorded before language attribution was enabled, so they are intentionally not guessed into one of the five languages.</div>}
+            <p className="mt-4 text-xs leading-5 text-slate-500">Languages tracked: English, Spanish, French, Italian and German. Language tracking applies to both anonymous and registered traffic.</p>
+          </Panel>
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-2">
