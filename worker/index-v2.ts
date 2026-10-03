@@ -212,6 +212,13 @@ export default {
       if (response) return response;
     }
 
+    if (url.pathname.startsWith('/api/token-admin')) {
+      const gate = await enforceAdminMfa(request, env);
+      if (gate) return gate;
+      const response = await handleTokenAdminRequest(request, env, url);
+      if (response) return response;
+    }
+
     const identityGate = await enforceLaunchIdentity(request, env, url);
     if (identityGate) return identityGate;
 
@@ -235,13 +242,6 @@ export default {
 
     if (url.pathname === '/api/billing/change-plan') {
       const response = await handleBillingPlanChangeRequest(request, env, url);
-      if (response) return response;
-    }
-
-    if (url.pathname.startsWith('/api/token-admin')) {
-      const gate = await enforceAdminMfa(request, env);
-      if (gate) return gate;
-      const response = await handleTokenAdminRequest(request, env, url);
       if (response) return response;
     }
 
