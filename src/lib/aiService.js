@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { getTokenWallet, startTokenCheckout, updateAutoReplenish, startPaymentMethodSetup } from './tokenService';
 
 export async function getAiConfig() {
   return apiRequest('/api/ai/config');
@@ -122,25 +123,20 @@ export async function completeMyMatchIQAssessmentSession(sessionId, { answers=[]
 
 
 export async function getMyMatchIQCreditWallet() {
-  return apiRequest('/api/mymatchiq/credits/wallet');
+  return getTokenWallet();
 }
 
 export async function createMyMatchIQCreditCheckout(packageCode) {
-  return apiRequest('/api/mymatchiq/credits/checkout', { method:'POST', body:{ packageCode } });
+  return startTokenCheckout(packageCode);
 }
 
 export async function updateMyMatchIQAutoReplenish({ enabled, packageCode, triggerBalance }) {
-  const payload = await apiRequest('/api/mymatchiq/credits/auto-replenish', {
-    method:'PUT',
-    body:{ enabled, packageCode, triggerBalance },
-  });
-  return payload?.settings || null;
+  return updateAutoReplenish({ enabled, packageCode, triggerBalance });
 }
 
 export async function createMyMatchIQSetupIntent() {
-  return apiRequest('/api/mymatchiq/credits/setup-intent', { method:'POST', body:{} });
+  return startPaymentMethodSetup();
 }
-
 
 export async function getMyMatchIQMemberProfile() {
   const payload = await apiRequest('/api/mymatchiq/members/profile');
