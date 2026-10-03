@@ -204,7 +204,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname === '/api/games/scratch/launch') {
+    if (url.pathname.startsWith('/api/games/')) {
       const response = await handleGameAccessRequest(request, env, url);
       if (response) return response;
     }
