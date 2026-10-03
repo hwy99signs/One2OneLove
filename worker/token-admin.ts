@@ -48,7 +48,7 @@ async function adminIdentity(db,userId){
 async function tokenDashboard(db){
   const [
     summary,packages,featurePrices,featureEconomics,wallets,transactions,reservations,
-    founders,founderSummary,calibrations,conversionQuotes,legacySummary,gameSummary,systemCounts
+    founders,founderSummary,calibrations,recentCostEvents,conversionQuotes,legacySummary,gameSummary,systemCounts
   ]=await Promise.all([
     db.query(`
       SELECT
@@ -142,6 +142,17 @@ async function tokenDashboard(db){
        ORDER BY s.started_at DESC LIMIT 100
     `),
     db.query(`
+      SELECT c.id,c.created_at,c.user_id,COALESCE(u.email,a.email) AS email,COALESCE(a.role,'user') AS auth_role,
+             c.calibration_session_id,c.feature_code,c.provider,c.provider_product,c.provider_request_id,
+             c.input_characters,c.context_characters,c.output_characters,
+             c.provider_input_units,c.provider_cached_input_units,c.provider_output_units,
+             c.provider_cost_micros,c.customer_tokens_charged,c.customer_value_cents,c.metadata
+        FROM public.o2ol_cost_events c
+        LEFT JOIN public.users u ON u.id=c.user_id
+        LEFT JOIN neon_auth."user" a ON a.id=c.user_id
+       ORDER BY c.created_at DESC LIMIT 200
+    `),
+    db.query(`
       SELECT q.id,q.user_id,u.email,q.stripe_subscription_id,q.old_plan,q.period_start,q.period_end,q.amount_paid_cents,
              q.unused_value_cents,q.token_value_micros,q.proposed_tokens,q.status,q.calculation,q.created_at,q.applied_at
         FROM public.o2ol_subscription_conversion_quotes q
@@ -183,6 +194,7 @@ async function tokenDashboard(db){
     founders:founders.rows,
     founderSummary:founderSummary.rows[0]||{},
     calibrations:calibrations.rows,
+    recentCostEvents:recentCostEvents.rows,
     conversionQuotes:conversionQuotes.rows,
     legacySummary:legacySummary.rows[0]||{},
     gameSummary:gameSummary.rows,
