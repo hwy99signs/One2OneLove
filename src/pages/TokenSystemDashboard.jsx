@@ -49,7 +49,14 @@ export default function TokenSystemDashboard(){
     finally{setLoading(false);}
   };
 
-  useEffect(()=>{load();},[]);
+  useEffect(()=>{
+    load();
+    const refresh=()=>{if(document.visibilityState==='visible')load(true);};
+    const interval=window.setInterval(refresh,15*60*1000);
+    const onVisibility=()=>{if(document.visibilityState==='visible')load(true);};
+    document.addEventListener('visibilitychange',onVisibility);
+    return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',onVisibility);};
+  },[]);
 
   const summary=data?.summary||{};
   const founderSummary=data?.founderSummary||{};
@@ -95,7 +102,7 @@ export default function TokenSystemDashboard(){
               <Badge tone="green">Free Account Model</Badge>
               <Badge tone="amber">Calibration Mode</Badge>
               <Badge tone="violet">Admin MFA Protected</Badge>
-              {data?.generatedAt&&<Badge>Updated {new Date(data.generatedAt).toLocaleTimeString()}</Badge>}
+              {data?.generatedAt&&<Badge>Updated {new Date(data.generatedAt).toLocaleTimeString()}</Badge>}<Badge tone="blue">Auto-refresh 15 min</Badge>
             </div>
           </div>
           <div className="flex gap-2">
