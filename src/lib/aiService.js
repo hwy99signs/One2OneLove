@@ -95,8 +95,8 @@ export async function listBiancaReports() {
 }
 
 
-export async function createMyMatchIQAssessmentSession({ language='en', tier='Elite' }={}) {
-  const payload = await apiRequest('/api/mymatchiq/assessment/sessions', { method:'POST', body:{ language, tier } });
+export async function createMyMatchIQAssessmentSession({ language='en' }={}) {
+  const payload = await apiRequest('/api/mymatchiq/assessment/sessions', { method:'POST', body:{ language } });
   return payload?.session || null;
 }
 
