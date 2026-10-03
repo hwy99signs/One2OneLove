@@ -349,7 +349,21 @@ export async function handleTokenAdminRequest(request,env,url){
 
       if(request.method==='GET'&&url.pathname==='/api/token-admin/dashboard'){
         const data=await tokenDashboard(db);
-        return json({ok:true,mode:'token_system_dashboard',generatedAt:new Date().toISOString(),admin:{id:admin.id,email:admin.email,name:admin.name},...data});
+        const environmentReadiness={
+          hyperdrive:Boolean(env.HYPERDRIVE?.connectionString),
+          mediaR2:Boolean(env.MEDIA),
+          assets:Boolean(env.ASSETS),
+          neonAuth:Boolean(env.NEON_AUTH_BASE_URL),
+          openai:Boolean(env.OPENAI_API_KEY),
+          stripeSecret:Boolean(env.STRIPE_SECRET_KEY),
+          stripeWebhook:Boolean(env.STRIPE_WEBHOOK_SECRET),
+          twilioAccount:Boolean(env.TWILIO_ACCOUNT_SID),
+          twilioAuth:Boolean(env.TWILIO_AUTH_TOKEN),
+          twilioVerify:Boolean(env.TWILIO_VERIFY_SERVICE_SID),
+          prelaunch:String(env.PRELAUNCH_ENVIRONMENT||'').toLowerCase()==='true',
+          scheduledSmsDisabled:String(env.SCHEDULED_SMS_ENABLED||'').toLowerCase()!=='true',
+        };
+        return json({ok:true,mode:'token_system_dashboard',generatedAt:new Date().toISOString(),admin:{id:admin.id,email:admin.email,name:admin.name},environmentReadiness,...data});
       }
 
       if(request.method==='POST'&&url.pathname==='/api/token-admin/calibrations/start'){
