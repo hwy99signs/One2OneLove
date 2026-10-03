@@ -263,6 +263,12 @@ async function loadCalibrationPackage(db,admin,{userId,packageCode}) {
     [userId],
   )).rows[0];
   if(active)throw Object.assign(new Error('End the active calibration session before loading another test package.'),{status:409,code:'calibration_active'});
+  const auto=(await db.query(
+    `SELECT COALESCE(enabled,false) AS enabled FROM public.o2ol_auto_replenish_settings
+      WHERE user_id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0];
+  if(auto?.enabled===true)throw Object.assign(new Error('Disable Auto-Replenish before loading a controlled calibration package.'),{status:409,code:'calibration_auto_replenish_enabled'});
 
   await db.query('BEGIN');
   try{
@@ -339,14 +345,31 @@ async function startCalibration(db,admin,{userId,featureCode='all',packageCode=n
   if(overlap)throw Object.assign(new Error('This member already has an overlapping active calibration session.'),{status:409,code:'calibration_already_active'});
 
   await db.query(`INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid) ON CONFLICT(user_id) DO NOTHING`,[userId]);
-  const wallet=(await db.query(`SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid LIMIT 1`,[userId])).rows[0]||{balance:0};
+  await db.query(`INSERT INTO public.o2ol_auto_replenish_settings(user_id) VALUES($1::uuid) ON CONFLICT(user_id) DO NOTHING`,[userId]);
+  const state=(await db.query(
+    `SELECT w.balance,COALESCE(s.enabled,false) AS auto_replenish_enabled
+       FROM public.o2ol_token_wallets w
+       LEFT JOIN public.o2ol_auto_replenish_settings s ON s.user_id=w.user_id
+      WHERE w.user_id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0]||{balance:0,auto_replenish_enabled:false};
+  if(state.auto_replenish_enabled===true){
+    throw Object.assign(new Error('Disable Auto-Replenish before starting a controlled calibration session.'),{status:409,code:'calibration_auto_replenish_enabled'});
+  }
+  if(packageRow&&Number(state.balance||0)!==Number(packageRow.tokens||0)){
+    throw Object.assign(new Error(`Load the full ${packageRow.label} calibration package before starting this burn test.`),{
+      status:409,code:'calibration_package_balance_mismatch',
+      expectedBalance:Number(packageRow.tokens||0),
+      actualBalance:Number(state.balance||0),
+    });
+  }
   const safeNotes=String(notes||'').trim().slice(0,1000);
   const row=(await db.query(
     `INSERT INTO public.o2ol_calibration_sessions
       (user_id,feature_code,package_code,starting_balance,notes,metadata)
      VALUES($1::uuid,$2,$3,$4,$5,$6::jsonb)
      RETURNING *`,
-    [userId,feature,packageRow?.code||null,Number(wallet.balance||0),safeNotes||null,JSON.stringify({
+    [userId,feature,packageRow?.code||null,Number(state.balance||0),safeNotes||null,JSON.stringify({
       started_by_admin_id:admin.id,
       started_by_admin_email:admin.email,
       package_label:packageRow?.label||null,
