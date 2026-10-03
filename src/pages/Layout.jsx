@@ -217,7 +217,7 @@ function LanguageContent({ children, currentPageName }) {
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: getMyConversations,
-    enabled: !!user && isAuthenticated && location.pathname.toLowerCase() !== '/subscription',
+    enabled: !!user && isAuthenticated && !['/subscription','/tokens'].includes(location.pathname.toLowerCase()),
     refetchInterval: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -250,7 +250,7 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   const handleSignUp = () => {
-    navigate("/Subscription?signup=1");
+    navigate("/SignUp");
   };
 
   const handleSignOut = async (e) => {
