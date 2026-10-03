@@ -41,6 +41,8 @@ const DEFERRED={
 '/FindFriends':'/Community','/FriendRequests':'/Community','/Blog':'/ArticlesSupport'
 };
 const KNOWN=new Set(ACTIVE.concat(Object.keys(DEFERRED)).map(x=>x.toLowerCase()));
+const AUTH_ENTRY_ROUTES=new Set(['/signin','/login','/mymatchiq/signin']);
+
 const failures=[];
 const report={anonymousDesktop:0,anonymousAndroid:0,memberDesktop:0,memberAndroid:0,deferred:0,links:0,tabs:0,tasks:[],failures};
 const qaUser={id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',emailVerified:true,name:'QA Member',role:'user',phoneNumberVerified:true};
@@ -136,8 +138,8 @@ async function crawl(browser,mode,routes,viewport,key){
     if(errors.length) fail('pageerror',{route,mode,errors});
     if(s.unlabeled) fail('unlabeled-control',{route,mode,count:s.unlabeled});
     if(/undefined|\[object Object\]|NaN/.test(s.text)) fail('suspicious-rendered-text',{route,mode});
-    if(mode==='anonymous'&&PUBLIC.includes(route)&&['/signin','/login'].includes(s.path.toLowerCase())) fail('unexpected-anonymous-gate',{route,final:s.path});
-    if(mode==='member'&&!route.toLowerCase().startsWith('/admin')&&['/signin','/login'].includes(s.path.toLowerCase())) fail('unexpected-member-gate',{route,final:s.path});
+    if(mode==='anonymous'&&PUBLIC.includes(route)&&!AUTH_ENTRY_ROUTES.has(route.toLowerCase())&&['/signin','/login'].includes(s.path.toLowerCase())) fail('unexpected-anonymous-gate',{route,final:s.path});
+    if(mode==='member'&&!route.toLowerCase().startsWith('/admin')&&!AUTH_ENTRY_ROUTES.has(route.toLowerCase())&&['/signin','/login'].includes(s.path.toLowerCase())) fail('unexpected-member-gate',{route,final:s.path});
     for(const href of s.links){
       let u; try{u=new URL(href,BASE);}catch{continue;}
       if(u.origin===new URL(BASE).origin&&!u.pathname.startsWith('/api/')&&!u.pathname.startsWith('/assets/')){
@@ -160,9 +162,12 @@ async function crawl(browser,mode,routes,viewport,key){
 async function checkDeferred(browser){
   for(const route of Object.keys(DEFERRED)){
     const context=await browser.newContext({viewport:{width:1440,height:900}});
+    await addMemberMocks(context,[]);
     const page=await context.newPage();
     await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
-    await page.waitForTimeout(250);
+    try{
+      await page.waitForURL(u=>new URL(u).pathname.toLowerCase()===DEFERRED[route].toLowerCase(),{timeout:8000});
+    }catch{}
     const actual=new URL(page.url()).pathname;
     if(actual.toLowerCase()!==DEFERRED[route].toLowerCase()) fail('deferred-redirect',{route,expected:DEFERRED[route],actual});
     report.deferred++;
