@@ -1,8 +1,8 @@
 import React from 'react';
 
 // Retired compatibility component.
-// The former first-free-SMS / US$0.29 / subscription overlay has been replaced
-// by the native Love Notes O2OL Token flow and server-side token enforcement.
+// Love Note delivery economics now live in the native O2OL Token flow with
+// server-side Token reservation and settlement.
 export default function LoveNotesLimitAddSends(){
   return null;
 }
