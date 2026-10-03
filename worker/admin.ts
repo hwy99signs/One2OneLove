@@ -841,6 +841,81 @@ async function loveNotes(db) {
   return { statusCounts: statusCounts.rows, recent: recent.rows, sent: sent.rows[0] || {}, schedulers: schedulers.rows[0] || {} };
 }
 
+async function clickAnalytics(db, env) {
+  const tableCheck = await db.query(`SELECT to_regclass('public.interaction_events') IS NOT NULL AS ready`);
+  const liveTracking = Boolean(tableCheck.rows[0]?.ready);
+  const empty = {
+    total_clicks:0, clicks_30d:0, anonymous_30d:0, registered_free_30d:0,
+    subscribed_30d:0, unique_anonymous_30d:0, unique_registered_30d:0, page_views_30d:0,
+  };
+  if (!liveTracking) {
+    return {
+      liveTracking:false,
+      trackingMessage:'All-visitor click tracking is deployed but will activate when the first public interaction reaches Production.',
+      summary:empty,
+      topRoutes:[],
+      topFeatures:[],
+    };
+  }
+
+  const baseline = analyticsBaselineDate(env);
+  const [summary, routes, features] = await Promise.all([
+    db.query(`
+      SELECT
+        count(*) FILTER (WHERE event_type='click')::int AS total_clicks,
+        count(*) FILTER (WHERE event_type='click' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS clicks_30d,
+        count(*) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS anonymous_30d,
+        count(*) FILTER (WHERE event_type='click' AND access_type='registered_free' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS registered_free_30d,
+        count(*) FILTER (WHERE event_type='click' AND access_type='subscribed' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS subscribed_30d,
+        count(DISTINCT visitor_id) FILTER (WHERE event_type='click' AND actor_type='anonymous' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_anonymous_30d,
+        count(DISTINCT user_id) FILTER (WHERE event_type='click' AND actor_type='registered' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS unique_registered_30d,
+        count(*) FILTER (WHERE event_type='page_view' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS page_views_30d
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      WHERE e.created_at >= $1::timestamptz
+        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+    `,[baseline]),
+    db.query(`
+      SELECT route,
+             count(*)::int AS clicks,
+             count(*) FILTER (WHERE actor_type='anonymous')::int AS anonymous,
+             count(*) FILTER (WHERE access_type='registered_free')::int AS registered_free,
+             count(*) FILTER (WHERE access_type='subscribed')::int AS subscribed
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE e.event_type='click'
+         AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       GROUP BY route
+       ORDER BY clicks DESC,route ASC
+       LIMIT 15
+    `,[baseline]),
+    db.query(`
+      SELECT COALESCE(feature,'Unclassified') AS feature,
+             count(*)::int AS clicks,
+             count(*) FILTER (WHERE actor_type='anonymous')::int AS anonymous,
+             count(*) FILTER (WHERE access_type='registered_free')::int AS registered_free,
+             count(*) FILTER (WHERE access_type='subscribed')::int AS subscribed
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE e.event_type='click'
+         AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       GROUP BY COALESCE(feature,'Unclassified')
+       ORDER BY clicks DESC,feature ASC
+       LIMIT 15
+    `,[baseline]),
+  ]);
+
+  return {
+    liveTracking:true,
+    trackingMessage:'All normal UI clicks are recorded for anonymous Open House visitors, registered users without a paid subscription, and subscribed members. Administrator activity is excluded.',
+    summary:{ ...empty,...(summary.rows[0] || {}) },
+    topRoutes:routes.rows,
+    topFeatures:features.rows,
+  };
+}
+
 async function featureUsage(db) {
   const tableCheck = await db.query(`SELECT to_regclass('public.feature_usage_events') IS NOT NULL AS ready`);
   const liveTracking = Boolean(tableCheck.rows[0]?.ready);
@@ -1070,10 +1145,10 @@ async function system(db) {
 async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,topFeatureData,chatRoomData,systemData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData };
 }
 
 export async function handleAdminRequest(request, env, url) {

@@ -329,6 +329,15 @@ jobs:
             check_json "$BASE/api/consents/adult-sensitive" 401 /tmp/consent.json
             check_json "$BASE/api/phone-verification/send" 401 /tmp/phone-send.json
             check_json "$BASE/api/phone-verification/verify" 401 /tmp/phone-verify.json
+            ANALYTICS_CODE=$(curl -sS --max-time 20 -o /tmp/analytics-smoke.json -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              -H 'x-o2ol-analytics-smoke: schema' \
+              -X POST "$BASE/api/interaction-events" \
+              --data '{"visitorId":"analytics-smoke-visitor","sessionId":"analytics-smoke-session","eventType":"page_view","route":"/__analytics-smoke"}')
+            echo "$BASE/api/interaction-events smoke -> HTTP $ANALYTICS_CODE"
+            cat /tmp/analytics-smoke.json
+            test "$ANALYTICS_CODE" = "200"
+            jq -e '.ok == true and .smoke == true and .storageReady == true' /tmp/analytics-smoke.json >/dev/null
           done
           echo 'O2OL_PRODUCTION_NEON_VERIFIED=yes'
           echo 'O2OL_MEMBER_AUDIT_BEGIN'
