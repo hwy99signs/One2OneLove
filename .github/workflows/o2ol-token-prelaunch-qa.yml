@@ -131,6 +131,48 @@ jobs:
             exit 1
           fi
 
+      - name: Verify no active subscription-derived access survives
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Current member access is FREE after verification" src/components/launch/LaunchAccessGate.jsx
+          grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
+          grep -F "accessModel:'free_tokens'" worker/ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'ai_content_generation'" worker/ai.ts
+          grep -F "legacy_subscription_model_retired" worker/billing-plan-change.ts
+          grep -F "'Free',0,'inactive'" worker/onboarding.ts worker/member-onboarding.ts worker/index.ts
+          grep -F "'Free','inactive',0" worker/professional-signup.ts
+          grep -F "INSERT INTO public.o2ol_token_wallets" worker/professional-signup.ts
+          grep -F "accessModel:'free_tokens'" src/lib/professionalOnboardingService.js
+          grep -F "token_wallets_ready" worker/launch-readiness.ts
+          grep -F "stripeTokenCheckoutReady" worker/launch-readiness.ts
+          grep -F "column_default = '''Free''::text'" worker/launch-readiness.ts
+          if grep -REn 'PLAN_LEVEL|REQUIRED_PLAN|stripe_subscription_id|subscription_status|subscription_plan' src/components/launch/LaunchAccessGate.jsx; then
+            echo "Global browser access still depends on a subscription." >&2
+            exit 1
+          fi
+          if grep -REn 'Premiere|Exclusive|8.*month|monthly.*limit' src/components/dateideas/DateIdeasPlanAccess.jsx; then
+            echo "Date Ideas still contains a recurring-tier limit." >&2
+            exit 1
+          fi
+          if grep -REn "canonicalPlan|Premiere|Exclusive|50 AI Relationship Coach|subscription_plan|subscription_status" worker/ai.ts; then
+            echo "AI access still contains legacy tier eligibility." >&2
+            exit 1
+          fi
+          if grep -REn "selectedSignupPlan|Choose Premiere or Exclusive|selectedPlan" src/lib/professionalOnboardingService.js src/pages/ProfessionalSignup.jsx worker/professional-signup.ts; then
+            echo "Professional onboarding still depends on a paid tier." >&2
+            exit 1
+          fi
+          if grep -REn "STRIPE_PRICE_PREMIERE|STRIPE_PRICE_EXCLUSIVE|premiere_default_ready" worker/launch-readiness.ts; then
+            echo "Launch readiness still certifies old subscription prices." >&2
+            exit 1
+          fi
+          if grep -REn 'US\$0\.29|\$0\.29|firstFreeAvailable|firstMembershipSendFree' src/components/lovenotes/LoveNotesLimitAddSends.jsx; then
+            echo "Legacy Love Note add-sends billing overlay survived." >&2
+            exit 1
+          fi
+
       - name: Verify legacy billing is fail-closed
         shell: bash
         run: |
