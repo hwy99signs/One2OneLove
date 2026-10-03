@@ -34,7 +34,9 @@ const translations = {
     memorySaveFailed: "Unable to save memory.",
     memoryUpdateFailed: "Unable to update memory.",
     memoryDeleteFailed: "Unable to delete memory.",
-    back: "Back"
+    back: "Back",
+    gridView: "Grid view",
+    timelineView: "Timeline view"
   },
   es: {
     title: "Carril de Recuerdos 💕",
@@ -51,7 +53,9 @@ const translations = {
     memorySaveFailed: "No se pudo guardar el recuerdo.",
     memoryUpdateFailed: "No se pudo actualizar el recuerdo.",
     memoryDeleteFailed: "No se pudo eliminar el recuerdo.",
-    back: "Atrás"
+    back: "Atrás",
+    gridView: "Vista de cuadrícula",
+    timelineView: "Vista de cronología"
   },
   fr: {
     title: "Allée des Souvenirs 💕",
@@ -68,7 +72,9 @@ const translations = {
     memorySaveFailed: "Impossible d’enregistrer le souvenir.",
     memoryUpdateFailed: "Impossible de mettre à jour le souvenir.",
     memoryDeleteFailed: "Impossible de supprimer le souvenir.",
-    back: "Retour"
+    back: "Retour",
+    gridView: "Vue en grille",
+    timelineView: "Vue chronologique"
   },
   it: {
     title: "Viale dei Ricordi 💕",
@@ -85,7 +91,9 @@ const translations = {
     memorySaveFailed: "Impossibile salvare il ricordo.",
     memoryUpdateFailed: "Impossibile aggiornare il ricordo.",
     memoryDeleteFailed: "Impossibile eliminare il ricordo.",
-    back: "Indietro"
+    back: "Indietro",
+    gridView: "Vista a griglia",
+    timelineView: "Vista cronologica"
   },
   de: {
     title: "Erinnerungsgasse 💕",
@@ -102,7 +110,9 @@ const translations = {
     memorySaveFailed: "Erinnerung konnte nicht gespeichert werden.",
     memoryUpdateFailed: "Erinnerung konnte nicht aktualisiert werden.",
     memoryDeleteFailed: "Erinnerung konnte nicht gelöscht werden.",
-    back: "Zurück"
+    back: "Zurück",
+    gridView: "Rasteransicht",
+    timelineView: "Zeitleistenansicht"
   },
   nl: {
     title: "Herinneringslaan 💕",
@@ -119,7 +129,9 @@ const translations = {
     memorySaveFailed: "Herinnering kon niet worden opgeslagen.",
     memoryUpdateFailed: "Herinnering kon niet worden bijgewerkt.",
     memoryDeleteFailed: "Herinnering kon niet worden verwijderd.",
-    back: "Terug"
+    back: "Terug",
+    gridView: "Rasterweergave",
+    timelineView: "Tijdlijnweergave"
   },
   pt: {
     title: "Alameda das Memórias 💕",
@@ -136,7 +148,9 @@ const translations = {
     memorySaveFailed: "Não foi possível salvar a memória.",
     memoryUpdateFailed: "Não foi possível atualizar a memória.",
     memoryDeleteFailed: "Não foi possível excluir a memória.",
-    back: "Voltar"
+    back: "Voltar",
+    gridView: "Visualização em grade",
+    timelineView: "Visualização da linha do tempo"
   }
 };
 
@@ -295,6 +309,8 @@ export default function MemoryLane() {
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
+                aria-label={t.gridView}
+                title={t.gridView}
                 className={viewMode === 'grid' ? 'bg-pink-500 hover:bg-pink-600' : ''}
               >
                 <Grid className="w-4 h-4" />
@@ -303,6 +319,8 @@ export default function MemoryLane() {
                 variant={viewMode === 'timeline' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('timeline')}
+                aria-label={t.timelineView}
+                title={t.timelineView}
                 className={viewMode === 'timeline' ? 'bg-pink-500 hover:bg-pink-600' : ''}
               >
                 <List className="w-4 h-4" />
