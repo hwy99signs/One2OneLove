@@ -129,6 +129,38 @@ async function planForUser(db, userId) {
   const stored = canonicalPlan(row.subscription_plan);
   return { storedPlan: stored, effectivePlan: stored, subscriptionStatus: row.subscription_status || 'inactive' };
 }
+
+async function loveNoteWriteAccess(db, auth) {
+  if (String(auth?.user?.role || '').toLowerCase() === 'admin') {
+    return { allowed: true, reason: 'admin' };
+  }
+
+  const result = await db.query(
+    `SELECT is_active,subscription_status,stripe_subscription_id,subscription_end_date
+       FROM public.users WHERE id=$1::uuid LIMIT 1`,
+    [auth.user.id],
+  );
+  const row = result.rows[0] || {};
+  const status = String(row.subscription_status || '').toLowerCase();
+  const hasStripeSubscription = Boolean(row.stripe_subscription_id);
+  const endAt = row.subscription_end_date ? new Date(row.subscription_end_date) : null;
+  const hasAdminAccess = Boolean(endAt && !Number.isNaN(endAt.getTime()) && endAt.getTime() > Date.now());
+
+  const hasMembershipAccess =
+    row.is_active !== false &&
+    ['active', 'trial', 'trialing'].includes(status) &&
+    (hasStripeSubscription || hasAdminAccess);
+
+  if (!hasMembershipAccess) {
+    return {
+      allowed: false,
+      reason: 'subscription_required',
+      message: 'An active One2OneLove membership or Founding Member free period is required to use Love Notes sending features.',
+    };
+  }
+
+  return { allowed: true, reason: 'member' };
+}
 async function categoryPreferenceForDate(db, userId, quotaDate) {
   const plan = await planForUser(db, userId);
   const quotaMonth = monthStart(quotaDate);
@@ -410,6 +442,18 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
   try {
     return await withDb(env, async db => {
       await ensureProfile(db, auth);
+
+      if (request.method !== 'GET') {
+        const writeAccess = await loveNoteWriteAccess(db, auth);
+        if (!writeAccess.allowed) {
+          return fail(
+            writeAccess.message || 'Love Notes sending is unavailable for this account.',
+            403,
+            writeAccess.reason || 'love_notes_access_denied'
+          );
+        }
+      }
+
       if (url.pathname === '/api/love-notes/usage' && request.method === 'GET') {
         const quotaDate = dateForTimezone(url.searchParams.get('tz') || 'UTC');
         return json({ ok: true, usage: await usageForDate(db, auth.user.id, quotaDate) });
