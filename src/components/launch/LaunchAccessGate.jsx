@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const PUBLIC_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
-  '/reviews', '/leavereview', '/suggestions', '/subscription',
+  '/reviews', '/leavereview', '/suggestions', '/subscription', '/payment-success', '/paymentsuccess',
   '/dateideas', '/lovenotes', '/lovelanguagequiz', '/memorylane', '/podcastssupport',
   '/relationshipquizzes', '/relationshipmilestones', '/relationshipgoals', '/communicationpractice',
   '/couplesupport', '/articlessupport', '/coupleactivities', '/cooperativegames',
