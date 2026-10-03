@@ -337,6 +337,7 @@ async function chatRoomAnalytics(db) {
     ['threads','Threads'],
     ['tiktok','TikTok'],
     ['x','X'],
+    ['youtube','YouTube'],
     ['pinterest','Pinterest'],
     ['linkedin','LinkedIn'],
   ];
@@ -344,6 +345,7 @@ async function chatRoomAnalytics(db) {
     const isChat=id==='o2ol-chat-room';
     return {
       id,label,
+      connected:isChat,
       validResponses:isChat?Number(voteSummary.total_responses||0):0,
       excludedResponses:0,
       excludedReasons:[],
