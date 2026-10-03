@@ -881,7 +881,7 @@ async function topFeatureActivity(db, env) {
 }
 
 async function tokenEconomy(db) {
-  const [summary,packages,prices,byFeature,recentTransactions,topWallets,calibrations,conversionQuotes,legacy] = await Promise.all([
+  const [summary,packages,prices,byFeature,recentCostEvents,recentTransactions,topWallets,calibrations,conversionQuotes,legacy] = await Promise.all([
     db.query(`
       SELECT
         count(*) FILTER (WHERE COALESCE(a.role,'user') <> 'admin')::int AS wallets,
@@ -911,8 +911,10 @@ async function tokenEconomy(db) {
              COALESCE(sum(c.customer_tokens_charged),0)::bigint AS tokens_charged,
              COALESCE(sum(c.provider_cost_micros),0)::bigint AS provider_cost_micros,
              COALESCE(sum(c.input_characters),0)::bigint AS input_characters,
+             COALESCE(sum(c.context_characters),0)::bigint AS context_characters,
              COALESCE(sum(c.output_characters),0)::bigint AS output_characters,
              COALESCE(sum(c.provider_input_units),0)::bigint AS provider_input_units,
+             COALESCE(sum(c.provider_cached_input_units),0)::bigint AS provider_cached_input_units,
              COALESCE(sum(c.provider_output_units),0)::bigint AS provider_output_units,
              max(c.created_at) AS last_event
         FROM public.o2ol_cost_events c
@@ -921,6 +923,20 @@ async function tokenEconomy(db) {
          AND COALESCE(a.role,'user')<>'admin'
        GROUP BY c.feature_code,c.provider,c.provider_product
        ORDER BY provider_cost_micros DESC NULLS LAST,c.feature_code
+    `),
+    db.query(`
+      SELECT c.id,c.user_id,COALESCE(u.email,a.email) AS email,c.calibration_session_id,
+             c.feature_code,c.provider,c.provider_product,c.provider_request_id,c.wallet_transaction_id,
+             c.input_characters,c.context_characters,c.output_characters,
+             c.provider_input_units,c.provider_cached_input_units,c.provider_output_units,
+             c.provider_cost_micros,c.customer_tokens_charged,c.customer_value_cents,
+             c.metadata,c.created_at
+        FROM public.o2ol_cost_events c
+        LEFT JOIN public.users u ON u.id=c.user_id
+        LEFT JOIN neon_auth."user" a ON a.id=c.user_id
+       WHERE COALESCE(a.role,'user')<>'admin'
+       ORDER BY c.created_at DESC
+       LIMIT 200
     `),
     db.query(`
       SELECT t.id,t.user_id,u.email,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,
@@ -974,6 +990,7 @@ async function tokenEconomy(db) {
     packages:packages.rows,
     featurePrices:prices.rows,
     byFeature:byFeature.rows,
+    recentCostEvents:recentCostEvents.rows,
     recentTransactions:recentTransactions.rows,
     topWallets:topWallets.rows,
     calibrations:calibrations.rows,
