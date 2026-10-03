@@ -60,6 +60,7 @@ import O2OLStudio from './O2OLStudio';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
   Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
@@ -71,63 +72,9 @@ const PAGES = {
   Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
-const FEATURE_BY_ROUTE = {
-  '/memorylane': 'Memory Lane',
-  '/lovenotes': 'Love Notes',
-  '/sendcredits': 'Love Notes',
-  '/couplesupport': 'Relationship Support',
-  '/lovelanguagequiz': 'Love Language Quiz',
-  '/dateideas': 'Date Ideas',
-  '/profile': 'Member Profile',
-  '/invite': 'Invite & Share',
-  '/podcastssupport': 'Podcasts',
-  '/articlessupport': 'Articles',
-  '/relationshipquizzes': 'Relationship Quizzes',
-  '/anniversarytracker': 'Anniversary Tracker',
-  '/dashboard': 'Member Profile',
-  '/community': 'Community Chat',
-  '/relationshipmilestones': 'Relationship Milestones',
-  '/relationshipgoals': 'Relationship Goals',
-  '/communicationpractice': 'Communication Practice',
-  '/couplesprofile': 'Couples Profile',
-  '/coupleactivities': 'Couple Activities',
-  '/cooperativegames': 'Relationship Games',
-  '/whatshouldtheydo': 'What Should They Do?',
-  '/games': 'What Should They Do?',
-  '/scratchgame': 'Scratch Game',
-  '/likeminded': 'Like Minded?',
-  '/sharedjournals': 'Shared Journals',
-  '/couplesdashboard': 'Couples Dashboard',
-  '/couplescalendar': 'Couples Calendar',
-  '/lgbtqsupport': 'LGBTQ+ Support',
-  '/chat': 'Community Chat',
-  '/subscription': 'Subscription / Billing',
-  '/o2olstudio': 'O2OL Studio',
-  '/mymatchiq': 'MyMatchIQ',
-};
-
-function _getCurrentPage(url) {
-  if (url.endsWith('/')) url = url.slice(0, -1);
-  let urlLastPart = url.split('/').pop();
-  if (urlLastPart.includes('?')) urlLastPart = urlLastPart.split('?')[0];
-  const pageName = Object.keys(PAGES).find(page => page.toLowerCase() === urlLastPart.toLowerCase());
-  return pageName || 'Home';
-}
-
-function trackFeatureView(pathname, isAuthenticated, user) {
-  const feature = FEATURE_BY_ROUTE[String(pathname || '').toLowerCase()];
-  if (!feature || !isAuthenticated || String(user?.role || '').toLowerCase() === 'admin') return;
-  fetch('/api/feature-usage', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ feature, eventType: 'view', route: pathname }),
-  }).catch(() => {});
-}
-
 function PagesContent() {
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  useAuth();
   const currentPage = _getCurrentPage(location.pathname);
 
   useEffect(() => {
@@ -137,8 +84,8 @@ function PagesContent() {
   }, [location.pathname]);
 
   useEffect(() => {
-    trackFeatureView(location.pathname, isAuthenticated, user);
-  }, [location.pathname, isAuthenticated, user?.role]);
+    trackPageView(location.pathname);
+  }, [location.pathname]);
 
   return (
     <Layout currentPageName={currentPage}>
