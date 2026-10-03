@@ -499,7 +499,7 @@ export default function Admin() {
           {section==='overview' && <div>
             <Heading title="Platform Overview" subtitle="A quick operating view of users, tiers, Love Notes, moderation and the features visitors and members are actually using."/>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric icon={Users} label="Total Members" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
+              <Metric icon={Users} label="Total Sign-ups" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
               <Metric icon={Heart} label="Love Notes Sent" value={number(love.sent_total)} note={`${number(love.sent_30d)} in the last 30 days`} tone="violet"/>
               <Metric icon={CalendarDays} label="People Using Scheduler" value={number(love.scheduler_users)} note={`${number(love.scheduler_users_30d)} in the last 30 days`} tone="blue"/>
               <Metric icon={TrendingUp} label="Feature Activity — 30 Days" value={number(features.reduce((sum,f)=>sum+Number(f.activity_30d||0),0))} note={`${features.filter(f=>Number(f.activity_30d||0)>0).length} features used · all visitors`} tone="green"/>
@@ -511,7 +511,7 @@ export default function Admin() {
 
             <div className="mt-6 grid gap-6 xl:grid-cols-3">
               <Panel title="Membership Breakdown" subtitle="Registered Free plus both paid membership tiers are always shown, including zero-count groups.">
-                <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">members</p></div>)}</div>
+                <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">accounts</p></div>)}</div>
               </Panel>
               <Panel title="Scheduled Love Note Delivery Health" subtitle="How scheduled Love Notes are performing after they enter the scheduler.">
                 <DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/>
