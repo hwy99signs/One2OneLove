@@ -207,7 +207,8 @@ async function handleInteractionEvent(request, env) {
         actorType = 'registered';
         subscriptionPlan = row.subscription_plan || null;
         subscriptionStatus = row.subscription_status || null;
-        accessType = row.stripe_subscription_id ? 'subscribed' : 'registered_free';
+        const activeMembership = ['active','trial','trialing','past_due'].includes(String(row.subscription_status || '').toLowerCase());
+        accessType = activeMembership ? 'subscribed' : 'registered_free';
       }
     }
 
