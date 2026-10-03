@@ -517,6 +517,52 @@ async function tokenWebhook(request,env){
     return json({ok:true});
   });
 }
+async function twilioMessageDetails(env,messageSid){
+  if(!messageSid||!env.TWILIO_ACCOUNT_SID||!env.TWILIO_AUTH_TOKEN)return null;
+  const auth=btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`);
+  const response=await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(env.TWILIO_ACCOUNT_SID)}/Messages/${encodeURIComponent(messageSid)}.json`,
+    {headers:{authorization:`Basic ${auth}`,accept:'application/json'}},
+  );
+  if(!response.ok)return null;
+  return response.json().catch(()=>null);
+}
+async function refreshTwilioCalibrationCosts(db,env,sessionId){
+  const rows=(await db.query(
+    `SELECT id,provider_request_id,provider_cost_micros,provider_output_units,metadata
+       FROM public.o2ol_cost_events
+      WHERE calibration_session_id=$1::uuid
+        AND provider='twilio'
+        AND provider_request_id IS NOT NULL
+        AND (provider_cost_micros IS NULL OR provider_output_units=0)`,
+    [sessionId],
+  )).rows;
+  let refreshed=0,pending=0;
+  for(const row of rows){
+    try{
+      const message=await twilioMessageDetails(env,row.provider_request_id);
+      if(!message){pending+=1;continue;}
+      const price=message.price==null?null:Number(message.price);
+      const costMicros=Number.isFinite(price)?Math.round(Math.abs(price)*1000000):null;
+      const segments=Math.max(0,Number(message.num_segments||0)||0);
+      const metadata={...(row.metadata||{}),twilio_status:message.status||null,twilio_price_unit:message.price_unit||'USD',cost_pending:costMicros==null,settled_lookup:true};
+      await db.query(
+        `UPDATE public.o2ol_cost_events
+            SET provider_cost_micros=COALESCE($1,provider_cost_micros),
+                provider_output_units=CASE WHEN $2>0 THEN $2 ELSE provider_output_units END,
+                metadata=$3::jsonb
+          WHERE id=$4::uuid`,
+        [costMicros,segments,JSON.stringify(metadata),row.id],
+      );
+      if(costMicros==null)pending+=1;else refreshed+=1;
+    }catch(error){
+      pending+=1;
+      console.error('Twilio calibration refresh failed',{messageSid:row.provider_request_id,message:error?.message});
+    }
+  }
+  return {refreshed,pending};
+}
+
 async function calibrationStart(db,auth,input){
   if(String(auth.user.role||'').toLowerCase()!=='admin')throw Object.assign(new Error('Admin access required.'),{status:403,code:'admin_required'});
   const featureCode=String(input?.featureCode||'').trim();
@@ -530,7 +576,7 @@ async function calibrationStart(db,auth,input){
     [auth.user.id,featureCode,input?.packageCode||null,Number(state.wallet.balance||0),String(input?.notes||'').slice(0,2000)||null,JSON.stringify({started_by:'admin'})],
   )).rows[0];
 }
-async function calibrationEnd(db,auth,input){
+async function calibrationEnd(db,env,auth,input){
   if(String(auth.user.role||'').toLowerCase()!=='admin')throw Object.assign(new Error('Admin access required.'),{status:403,code:'admin_required'});
   const id=String(input?.sessionId||'').trim();
   const state=await ensureTokenWallet(db,auth.user.id);
@@ -542,6 +588,7 @@ async function calibrationEnd(db,auth,input){
     [state.wallet.balance,id,auth.user.id],
   )).rows[0];
   if(!ended)throw Object.assign(new Error('Calibration session not found.'),{status:404,code:'not_found'});
+  const providerRefresh={twilio:await refreshTwilioCalibrationCosts(db,env,id)};
   const summary=(await db.query(
     `SELECT
        COUNT(*)::int AS cost_events,
@@ -556,7 +603,7 @@ async function calibrationEnd(db,auth,input){
        FROM public.o2ol_cost_events WHERE calibration_session_id=$1::uuid`,
     [id],
   )).rows[0];
-  return {session:ended,summary};
+  return {session:ended,summary,providerRefresh};
 }
 async function walletPayload(db,userId){
   const state=await ensureTokenWallet(db,userId);
@@ -606,7 +653,7 @@ export async function handleO2OLTokenRequest(request,env,url){
         return json({ok:true,session:await calibrationStart(db,auth,await readJson(request))},201);
       }
       if(url.pathname==='/api/tokens/calibration/end'&&request.method==='POST'){
-        return json({ok:true,...await calibrationEnd(db,auth,await readJson(request))});
+        return json({ok:true,...await calibrationEnd(db,env,auth,await readJson(request))});
       }
       if(url.pathname==='/api/tokens/calibration/history'&&request.method==='GET'){
         if(String(auth.user.role||'').toLowerCase()!=='admin')return fail('Admin access required.',403,'admin_required');
