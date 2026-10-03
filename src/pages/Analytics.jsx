@@ -4,7 +4,7 @@ import {
   RefreshCw, TrendingUp, Users,
 } from 'lucide-react';
 import {
-  Bar, BarChart, CartesianGrid, Legend, Line, LineChart,
+  Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
@@ -16,6 +16,11 @@ function shortDate(value) {
   if (!value) return '';
   const d = new Date(`${value}T00:00:00`);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function shortDateTime(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
 }
 function Panel({ title, subtitle, children }) {
   return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4"><h2 className="font-bold text-slate-900">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>{children}</section>;
@@ -76,7 +81,7 @@ export default function Analytics() {
   const signupTotal = useMemo(() => (data?.signups || []).reduce((sum,row)=>sum+Number(row.signups||0),0),[data]);
   const directTotal = useMemo(() => (data?.loveNotes || []).reduce((sum,row)=>sum+Number(row.direct_sent||0),0),[data]);
   const scheduledTotal = useMemo(() => (data?.loveNotes || []).reduce((sum,row)=>sum+Number(row.scheduled||0),0),[data]);
-  const featureTotal = useMemo(() => (data?.featureDaily || []).reduce((sum,row)=>sum+Number(row.events||0),0),[data]);
+  const featureTotal = useMemo(() => (data?.featureDailyAll || []).reduce((sum,row)=>sum+Number(row.events||0),0),[data]);
   const languageRows = useMemo(() => {
     const rows = data?.languageUsage || [];
     const knownEvents = rows.reduce((sum,row)=>sum+Number(row.total_events||0),0);
@@ -85,6 +90,19 @@ export default function Analytics() {
       share: knownEvents ? Math.round((Number(row.total_events||0) / knownEvents) * 1000) / 10 : 0,
     }));
   },[data]);
+  const languageChartMax = useMemo(() => {
+    const rawMax = Math.max(0,...languageRows.flatMap(row => [
+      Number(row.unique_visitors||0),
+      Number(row.page_views||0),
+      Number(row.clicks||0),
+    ]));
+    return Math.max(100, Math.ceil(rawMax / 100) * 100);
+  },[languageRows]);
+  const languageMinorTicks = useMemo(() => Array.from(
+    { length: Math.floor(languageChartMax / 10) + 1 },
+    (_, i) => i * 10
+  ),[languageChartMax]);
+  const languageMajorTicks = useMemo(() => languageMinorTicks.filter(value => value % 100 === 0),[languageMinorTicks]);
   const trafficRows = useMemo(() => {
     return [...(data?.trafficSources || [])]
       .map(row => ({
@@ -121,7 +139,7 @@ export default function Analytics() {
           <Metric icon={Users} label="New Signups" value={number(signupTotal)} note="last 30 days"/>
           <Metric icon={Heart} label="Direct Love Notes" value={number(directTotal)} note="sent in last 30 days"/>
           <Metric icon={TrendingUp} label="Scheduled Love Notes" value={number(scheduledTotal)} note="created in last 30 days"/>
-          <Metric icon={BarChart3} label="Tracked Feature Activity" value={number(featureTotal)} note="page-use events in last 30 days"/>
+          <Metric icon={BarChart3} label="Tracked Feature Activity" value={number(featureTotal)} note="all visitors · opens + clicks · last 30 days"/>
         </div>
 
         <div className="mt-6">
@@ -160,7 +178,7 @@ export default function Analytics() {
         <div className="mt-6">
           <Panel title="Usage by Language" subtitle="Shows the interface language active when each page view or click occurred. A person who actively uses more than one language can appear in more than one language's unique-user count.">
             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-              <ChartFrame height={330}><ResponsiveContainer width="100%" height="100%"><BarChart data={languageRows} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="label"/><YAxis allowDecimals={false}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="unique_visitors" name="Unique users / visitors"/><Bar dataKey="page_views" name="Page views"/><Bar dataKey="clicks" name="Clicks"/></BarChart></ResponsiveContainer></ChartFrame>
+              <ChartFrame height={330}><ResponsiveContainer width="100%" height="100%"><BarChart data={languageRows} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="2 4" opacity={0.28}/><XAxis dataKey="label"/><YAxis allowDecimals={false} domain={[0,languageChartMax]} ticks={languageMinorTicks} interval={0} tickFormatter={(value)=>value%100===0?value:''}/>{languageMajorTicks.map(value=><ReferenceLine key={value} y={value} strokeWidth={1.4}/>) }<Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="unique_visitors" name="Unique users / visitors"/><Bar dataKey="page_views" name="Page views"/><Bar dataKey="clicks" name="Clicks"/></BarChart></ResponsiveContainer></ChartFrame>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Language</th><th className="px-3 py-2 text-right">Users / Visitors</th><th className="px-3 py-2 text-right">Registered</th><th className="px-3 py-2 text-right">Anonymous</th><th className="px-3 py-2 text-right">Views</th><th className="px-3 py-2 text-right">Clicks</th><th className="px-3 py-2 text-right">Usage Share</th></tr></thead>
@@ -170,6 +188,18 @@ export default function Analytics() {
             </div>
             {Number(data?.languageUnknownEvents||0)>0 && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">{number(data.languageUnknownEvents)} interaction events in this 30-day window were recorded before language attribution was enabled, so they are intentionally not guessed into one of the five languages.</div>}
             <p className="mt-4 text-xs leading-5 text-slate-500">Languages tracked: English, Spanish, French, Italian and German. Language tracking applies to both anonymous and registered traffic.</p>
+          </Panel>
+        </div>
+
+        <div className="mt-6">
+          <Panel title="Recent Click Details" subtitle="The most recent on-site clicks from non-admin visitors. New labeled controls show exactly what was pressed and where it leads.">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Time</th><th className="px-3 py-2">Audience</th><th className="px-3 py-2">Source</th><th className="px-3 py-2">Page</th><th className="px-3 py-2">Clicked</th><th className="px-3 py-2">Feature / Destination</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{row.actor_type==='anonymous'?'Anonymous':(row.access_type==='subscribed'?'Subscribed':'Registered free')}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{row.control_key||`Unlabeled ${row.control_type||'control'} (older event)`}</td><td className="px-3 py-3">{row.feature||row.destination||'—'}</td></tr>)}</tbody>
+              </table>
+              {!(data?.recentClicks||[]).length && <div className="py-8 text-center text-sm text-slate-500">No non-admin clicks have been recorded in this 30-day window yet.</div>}
+            </div>
           </Panel>
         </div>
 
@@ -186,12 +216,12 @@ export default function Analytics() {
             <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.scheduledHealth||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Bar dataKey="passed" name="Passed"/><Bar dataKey="failed" name="Failed"/><Bar dataKey="pending" name="Pending"/></BarChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
-          <Panel title="Most-Used Features" subtitle="30-day activity by feature, combining tracked visits with saved feature actions where available.">
-            <ChartFrame height={340}><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.featureRank||[]} layout="vertical" margin={{ top: 5,right: 20,left: 35,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="feature" width={125}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="activity" name="Activity"/></BarChart></ResponsiveContainer></ChartFrame>
+          <Panel title="Most-Used Features — All Visitors" subtitle="Actual feature opens and clicks from anonymous visitors, registered-free users and subscribers. Admin activity is excluded.">
+            <ChartFrame height={360}><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.featureRankAll||[]} layout="vertical" margin={{ top: 5,right: 20,left: 35,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="feature" width={135}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="page_views" name="Feature opens"/><Bar dataKey="clicks" name="Clicks"/></BarChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
-          <Panel title="Daily Feature Activity" subtitle="How often members are opening tracked features, plus unique users each day.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.featureDaily||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="events" name="Feature events" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="users" name="Unique users" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+          <Panel title="Daily Feature Activity — All Visitors" subtitle="Shows whether visitors merely open features or actually click inside them.">
+            <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.featureDailyAll||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Feature opens" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="users" name="Unique visitors / users" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
 
           <Panel title="Community Activity" subtitle="Daily posts and comments.">
