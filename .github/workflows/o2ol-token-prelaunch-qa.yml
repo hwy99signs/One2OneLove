@@ -71,7 +71,7 @@ jobs:
           set -euo pipefail
           grep -F "'Free'" worker/launch-auth.ts
           grep -F "subscription_price,subscription_status" worker/launch-auth.ts
-          grep -F "VALUES ($1::uuid,$2,$3,'regular',true,'Free',0,'inactive')" worker/launch-auth.ts
+          grep -F 'VALUES ($1::uuid,$2,$3,'\''regular'\'',true,'\''Free'\'',0,'\''inactive'\'')' worker/launch-auth.ts
           grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts
           grep -F "founding_intent" worker/launch-auth.ts
           grep -F "badge_activated:true" worker/phone-verification.ts
