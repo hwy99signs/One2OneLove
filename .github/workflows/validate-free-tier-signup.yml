@@ -24,6 +24,10 @@ jobs:
           grep -q "Create Free Account" src/pages/Subscription.jsx
           grep -q "plan=Basic&type=individual" src/pages/Subscription.jsx
           grep -q "const effectivePlan = selectedPlan || 'Basic';" src/pages/SignUp.jsx
+          grep -q "Registered Free Accounts" src/pages/Admin.jsx
+          grep -q "Pending Verification" src/pages/Admin.jsx
+          grep -q "registered_free" worker/admin.ts
+          grep -q "pending_verification" worker/admin.ts
           ! grep -q "disabled={Boolean(foundingOffer?.available)}" src/pages/Subscription.jsx
 
       - name: Install Playwright
