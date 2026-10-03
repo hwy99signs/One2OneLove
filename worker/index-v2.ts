@@ -1,6 +1,7 @@
 // @ts-nocheck
 import baseWorker from './index';
 import { handleAdminRequest } from './admin';
+import { handleTokenAdminRequest } from './token-admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest } from './feature-usage';
@@ -234,6 +235,13 @@ export default {
 
     if (url.pathname === '/api/billing/change-plan') {
       const response = await handleBillingPlanChangeRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/token-admin')) {
+      const gate = await enforceAdminMfa(request, env);
+      if (gate) return gate;
+      const response = await handleTokenAdminRequest(request, env, url);
       if (response) return response;
     }
 
