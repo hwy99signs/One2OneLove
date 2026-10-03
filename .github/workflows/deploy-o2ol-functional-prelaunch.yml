@@ -124,7 +124,10 @@ jobs:
           fi
 
           test -n "$ID"
-          test "$ID" != "$PRODUCTION_HYPERDRIVE_ID"
+          if [ "$ID" = "$PRODUCTION_HYPERDRIVE_ID" ]; then
+            echo "Production Hyperdrive is forbidden for Token Prelaunch." >&2
+            exit 1
+          fi
           echo "hyperdrive_id=$ID" >> "$GITHUB_OUTPUT"
 
           curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs/$ID"             -o /tmp/token-hyperdrive.json
