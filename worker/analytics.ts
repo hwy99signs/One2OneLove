@@ -64,10 +64,15 @@ async function analytics(db, env) {
       EXISTS (
         SELECT 1 FROM information_schema.columns
          WHERE table_schema='public' AND table_name='interaction_events' AND column_name='language'
-      ) AS language_ready
+      ) AS language_ready,
+      EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema='public' AND table_name='interaction_events' AND column_name='traffic_source'
+      ) AS traffic_source_ready
   `);
   const interactionReady = Boolean(interactionSchema.rows[0]?.ready);
   const languageReady = Boolean(interactionSchema.rows[0]?.language_ready);
+  const trafficSourceReady = Boolean(interactionSchema.rows[0]?.traffic_source_ready);
 
   const zeroSiteUsage = () => db.query(`
     SELECT to_char(day,'YYYY-MM-DD') AS date,
@@ -160,6 +165,72 @@ async function analytics(db, env) {
     { language:'de',label:'German',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
   ] };
 
+  const trafficSourcePromise = interactionReady && trafficSourceReady ? db.query(`
+    WITH desired(source,label,sort_order) AS (
+      VALUES
+        ('facebook'::text,'Facebook'::text,1),
+        ('instagram'::text,'Instagram'::text,2),
+        ('threads'::text,'Threads'::text,3),
+        ('tiktok'::text,'TikTok'::text,4),
+        ('x'::text,'X'::text,5),
+        ('youtube'::text,'YouTube'::text,6),
+        ('linkedin'::text,'LinkedIn'::text,7),
+        ('pinterest'::text,'Pinterest'::text,8),
+        ('direct'::text,'Direct'::text,9),
+        ('other'::text,'Other'::text,10)
+    ), usage AS (
+      SELECT e.traffic_source AS source,
+             count(DISTINCT e.session_id) FILTER (WHERE e.event_type='page_view')::int AS landings,
+             count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+             count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(DISTINCT CASE
+               WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+               ELSE 'v:' || e.visitor_id
+             END)::int AS unique_visitors,
+             count(DISTINCT e.session_id) FILTER (WHERE e.event_type='click')::int AS engaged_sessions
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+         AND e.traffic_source IN ('facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       GROUP BY e.traffic_source
+    )
+    SELECT desired.source,desired.label,
+           COALESCE(usage.landings,0)::int AS landings,
+           COALESCE(usage.page_views,0)::int AS page_views,
+           COALESCE(usage.clicks,0)::int AS clicks,
+           COALESCE(usage.unique_visitors,0)::int AS unique_visitors,
+           COALESCE(usage.engaged_sessions,0)::int AS engaged_sessions
+      FROM desired LEFT JOIN usage USING(source)
+     ORDER BY desired.sort_order
+  `) : { rows:[
+    {source:'facebook',label:'Facebook',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'instagram',label:'Instagram',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'threads',label:'Threads',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'tiktok',label:'TikTok',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'x',label:'X',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'youtube',label:'YouTube',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'linkedin',label:'LinkedIn',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'pinterest',label:'Pinterest',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'direct',label:'Direct',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+    {source:'other',label:'Other',landings:0,page_views:0,clicks:0,unique_visitors:0,engaged_sessions:0},
+  ] };
+
+  const trafficSourceUnknownPromise = interactionReady ? db.query(trafficSourceReady ? `
+    SELECT count(*)::int AS events
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND e.traffic_source IS NULL
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+  ` : `
+    SELECT count(*)::int AS events
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+  `) : { rows:[{ events:0 }] };
+
   const languageUnknownPromise = interactionReady ? db.query(languageReady ? `
     SELECT count(*)::int AS events
       FROM public.interaction_events e
@@ -175,7 +246,7 @@ async function analytics(db, env) {
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `) : { rows:[{ events:0 }] };
 
-  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown] = await Promise.all([
+  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown, trafficSources, trafficSourceUnknown] = await Promise.all([
     db.query(`
       WITH days AS (
         SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
@@ -315,6 +386,8 @@ async function analytics(db, env) {
     siteUsageSummaryPromise,
     languageUsagePromise,
     languageUnknownPromise,
+    trafficSourcePromise,
+    trafficSourceUnknownPromise,
   ]);
 
   return {
@@ -332,6 +405,9 @@ async function analytics(db, env) {
     languageUsage: languageUsage.rows,
     languageUnknownEvents: Number(languageUnknown.rows[0]?.events || 0),
     languageTrackingActive: interactionReady && languageReady,
+    trafficSources: trafficSources.rows,
+    trafficSourceUnknownEvents: Number(trafficSourceUnknown.rows[0]?.events || 0),
+    trafficSourceTrackingActive: interactionReady && trafficSourceReady,
     directDelivery: {
       ...(directSummary.rows[0] || { sent:0,passed:0,failed:0,pending:0 }),
       receiptTrackingActive: false,
