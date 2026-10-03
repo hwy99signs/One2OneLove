@@ -266,6 +266,8 @@ jobs:
           grep -F "transaction_type,package_code,provider,metadata" worker/token-admin.ts
           grep -F "'grant'" worker/token-admin.ts
           grep -F "Load Test Package" src/pages/TokenSystemDashboard.jsx
+          grep -F "Completed Package Burn Comparison" src/pages/TokenSystemDashboard.jsx
+          grep -F "avgCostPerBurnedToken" src/pages/TokenSystemDashboard.jsx
 
       - name: Verify Stripe Token webhook remains retry-safe
         shell: bash
