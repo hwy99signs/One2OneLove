@@ -407,12 +407,15 @@ async function overview(db) {
        WHERE COALESCE(a.role,'user') <> 'admin'`),
     db.query(`
       WITH desired(plan,sort_order) AS (
-        VALUES ('Premiere'::text,1),('Exclusive'::text,2)
+        VALUES ('Registered Free'::text,1),('Premiere'::text,2),('Exclusive'::text,3)
       ), counts AS (
         SELECT CASE
-                 WHEN lower(COALESCE(subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
-                 WHEN lower(COALESCE(subscription_plan,''))='exclusive' THEN 'Exclusive'
-                 ELSE 'Premiere'
+                 WHEN u.stripe_subscription_id IS NULL
+                   AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+                   THEN 'Registered Free'
+                 WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
+                 WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
+                 ELSE 'Registered Free'
                END AS plan,
                count(*)::int AS count
           FROM public.users u
@@ -483,22 +486,19 @@ async function members(db) {
            COALESCE(a."emailVerified",u.is_verified,false) AS is_verified,
            COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
            CASE
-             WHEN u.id IS NULL THEN 'Guest'
+             WHEN u.id IS NULL THEN 'Signup Pending'
              WHEN u.stripe_subscription_id IS NULL
                AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' > now() THEN 'Guest'
+               THEN 'Registered Free'
              WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
              WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
-             ELSE 'Premiere'
+             ELSE 'Registered Free'
            END AS subscription_plan,
            CASE
-             WHEN u.id IS NULL THEN 'guest'
+             WHEN u.id IS NULL THEN 'signup_pending'
              WHEN u.stripe_subscription_id IS NULL
                AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' > now() THEN 'guest'
-             WHEN u.stripe_subscription_id IS NULL
-               AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-               AND u.created_at + interval '24 hours' <= now() THEN 'guest_expired'
+               THEN 'registered_free'
              ELSE COALESCE(u.subscription_status,'inactive')
            END AS subscription_status,
            u.subscription_price,
