@@ -491,11 +491,20 @@ async function tokenWebhook(request,env){
   const obj=event?.data?.object||{};
   const meta=obj.metadata||{};
   return withDb(env,async db=>{
-    const seen=(await db.query('SELECT 1 FROM public.o2ol_token_payment_events WHERE provider=\'stripe\' AND event_id=$1',[event.id])).rowCount>0;
-    if(seen)return json({ok:true,duplicate:true});
+    const existingEvent=(await db.query(
+      `SELECT id,processed_at FROM public.o2ol_token_payment_events
+        WHERE provider='stripe' AND event_id=$1 LIMIT 1`,
+      [event.id],
+    )).rows[0]||null;
+    if(existingEvent?.processed_at)return json({ok:true,duplicate:true});
+
     await db.query(
       `INSERT INTO public.o2ol_token_payment_events(provider,event_id,event_type,user_id,payload,processed_at)
-       VALUES('stripe',$1,$2,$3::uuid,$4::jsonb,now())`,
+       VALUES('stripe',$1,$2,$3::uuid,$4::jsonb,NULL)
+       ON CONFLICT(provider,event_id) DO UPDATE SET
+         event_type=EXCLUDED.event_type,
+         user_id=COALESCE(EXCLUDED.user_id,public.o2ol_token_payment_events.user_id),
+         payload=EXCLUDED.payload`,
       [event.id,event.type,meta.user_id||null,JSON.stringify(event)],
     );
     if(event.type==='checkout.session.completed'&&obj.payment_status==='paid'&&meta.purpose==='o2ol_token_purchase'&&meta.user_id){
@@ -520,6 +529,12 @@ async function tokenWebhook(request,env){
         await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.id,pkg.code,Number(pkg.tokens));
       }
     }
+    await db.query(
+      `UPDATE public.o2ol_token_payment_events
+          SET processed_at=now()
+        WHERE provider='stripe' AND event_id=$1`,
+      [event.id],
+    );
     return json({ok:true});
   });
 }
