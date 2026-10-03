@@ -3,7 +3,7 @@ import { useLanguage } from "@/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles, Lock, CreditCard } from "lucide-react";
+import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Twitter, Mail, Linkedin, Settings, Calendar, Loader2, Clock, Trash, Phone, ArrowLeft, AlertCircle, Sparkles, Lock, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +19,7 @@ import { subjectSupplementalNotes } from "../components/lovenotes/additional/Lov
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getAiConfig } from "@/lib/aiService";
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from "@/lib/tokenService";
 
 const LOVE_NOTE_MAX_CHARACTERS = 171;
 const clampLoveNote = (value) => Array.from(String(value || '')).slice(0, LOVE_NOTE_MAX_CHARACTERS).join('');
@@ -63,7 +64,7 @@ const translations = {
     personalizedFor: "Personalized for",
     recipientPhone: "Recipient's Phone Number",
     recipientPhonePlaceholder: "(555) 123-4567",
-    recipientPhoneDesc: "One2OneLove SMS delivery: your first SMS Love Note send is FREE; each additional send is US$0.29. Recipient carrier rates may apply.",
+    recipientPhoneDesc: "One2OneLove SMS delivery uses O2OL Tokens. The token cost is shown before sending. Recipient carrier rates may apply.",
     schedulingOptions: "📅 Scheduling Options",
     sendNow: "Send Now",
     scheduleLater: "Schedule for Later",
@@ -80,7 +81,7 @@ const translations = {
     pleaseEnterPhone: "Please enter recipient phone number",
     pleaseSelectDateTime: "Please select date and time for scheduling",
     openingText: "Love Note sent by One2OneLove.",
-    smsBillingPending: "Love Note delivered. The 29¢ usage charge is still being finalized.",
+    smsBillingPending: "Love Note delivered. Token usage is being finalized.",
     openingWhatsApp: "Opening WhatsApp...",
     openingFacebook: "Opening Facebook...",
     copiedInstagram: "Copied! Paste in Instagram",
@@ -189,7 +190,7 @@ const translations = {
     howItWorksItem4: "• ¡Perfecto para sorprender a tu pareja!",
     shareViaSocial: "📱 O Comparte por Redes Sociales",
     openingText: "Nota de Amor enviada por One2OneLove.",
-    smsBillingPending: "Nota de Amor entregada. El cargo de uso de 29¢ aún se está finalizando.",
+    smsBillingPending: "Nota de Amor entregada. El uso de tokens aún se está finalizando.",
     openingWhatsApp: "Abriendo WhatsApp...",
     openingFacebook: "Abriendo Facebook...",
     copiedInstagram: "¡Copiado! Pega en Instagram",
@@ -197,7 +198,7 @@ const translations = {
     copiedTikTok: "¡Copiado! Pega en TikTok",
     openingLinkedIn: "Abriendo LinkedIn...",
     openingEmail: "Abriendo email...",
-    recipientPhoneDesc: "Entrega SMS de One2OneLove: tu primer envío SMS de Nota de Amor es GRATIS; cada envío adicional cuesta US$0.29. Pueden aplicarse tarifas del operador del destinatario.",
+    recipientPhoneDesc: "La entrega SMS de One2OneLove usa Tokens O2OL. El costo en tokens se muestra antes de enviar. Pueden aplicarse tarifas del operador del destinatario.",
     partnerNameDesc: 'Reemplaza "tú" y "tu" en las notas.',
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
@@ -528,7 +529,7 @@ const translations = {
     howItWorksItem4: "• Perfekt, um deinen Partner zu überraschen!",
     shareViaSocial: "📱 Oder Teilen über Social Media",
     openingText: "Liebesnachricht von One2OneLove gesendet.",
-    smsBillingPending: "Liebesnachricht zugestellt. Die Nutzungsgebühr von US$0.29 wird noch abgeschlossen.",
+    smsBillingPending: "Liebesnachricht zugestellt. Die Token-Nutzung wird noch abgeschlossen.",
     openingWhatsApp: "Öffne WhatsApp...",
     openingFacebook: "Öffne Facebook...",
     copiedInstagram: "Kopiert! In Instagram einfügen",
@@ -536,7 +537,7 @@ const translations = {
     copiedTikTok: "Kopiert! In TikTok einfügen",
     openingLinkedIn: "Öffne LinkedIn...",
     openingEmail: "Öffne E-Mail...",
-    recipientPhoneDesc: "One2OneLove-SMS-Zustellung: Ihre erste SMS-Liebesnachricht ist KOSTENLOS; jede weitere Sendung kostet US$0.29. Beim Empfänger können Mobilfunkgebühren anfallen.",
+    recipientPhoneDesc: "One2OneLove-SMS verwenden O2OL Tokens. Die Token-Kosten werden vor dem Senden angezeigt. Beim Empfänger können Mobilfunkgebühren anfallen.",
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
@@ -794,10 +795,10 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     locked: 'LOCKED',
     membersOnly: 'Members Only',
     categoryTitle: 'More Love Notes are waiting inside',
-    categoryBody: 'This Love Notes category is reserved for members during the Open House.',
+    categoryBody: 'Create a free verified One2OneLove account to unlock the complete Love Notes collection.',
     sendTitle: 'Ready to send it?',
-    sendBody: 'Create your One2OneLove account and add a card to send, schedule, email, or share a Love Note.',
-    unlock: 'Create Account & Add Card',
+    sendBody: 'Create a free verified account to participate. One2OneLove SMS delivery uses O2OL Tokens; sharing through your own apps remains free.',
+    unlock: 'Create FREE Account',
     signIn: 'Sign In',
   },
   es: {
@@ -805,10 +806,10 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     locked: 'BLOQUEADO',
     membersOnly: 'Solo miembros',
     categoryTitle: 'Hay más Notas de Amor esperando dentro',
-    categoryBody: 'Esta categoría de Notas de Amor está reservada para miembros durante las Puertas Abiertas.',
+    categoryBody: 'Crea una cuenta One2OneLove gratuita y verificada para desbloquear toda la colección de Notas de Amor.',
     sendTitle: '¿Listo para enviarla?',
-    sendBody: 'Crea tu cuenta de One2OneLove y agrega una tarjeta para enviar, programar, enviar por correo o compartir una Nota de Amor.',
-    unlock: 'Crear cuenta y agregar tarjeta',
+    sendBody: 'Crea una cuenta gratuita y verificada para participar. El envío SMS de One2OneLove usa Tokens O2OL; compartir desde tus propias aplicaciones sigue siendo gratis.',
+    unlock: 'Crear Cuenta GRATIS',
     signIn: 'Iniciar sesión',
   },
   fr: {
@@ -816,10 +817,10 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     locked: 'VERROUILLÉ',
     membersOnly: 'Membres uniquement',
     categoryTitle: 'D’autres Notes d’Amour vous attendent',
-    categoryBody: 'Cette catégorie de Notes d’Amour est réservée aux membres pendant les Portes Ouvertes.',
+    categoryBody: 'Créez un compte One2OneLove gratuit et vérifié pour débloquer toute la collection de Notes d’Amour.',
     sendTitle: 'Prêt à l’envoyer ?',
-    sendBody: 'Créez votre compte One2OneLove et ajoutez une carte pour envoyer, programmer, envoyer par e-mail ou partager une Note d’Amour.',
-    unlock: 'Créer un compte et ajouter une carte',
+    sendBody: 'Créez un compte gratuit et vérifié pour participer. L’envoi SMS One2OneLove utilise des Jetons O2OL; le partage via vos propres applications reste gratuit.',
+    unlock: 'Créer un Compte GRATUIT',
     signIn: 'Se connecter',
   },
   it: {
@@ -827,10 +828,10 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     locked: 'BLOCCATO',
     membersOnly: 'Solo membri',
     categoryTitle: 'Ci sono altre Note d’Amore da scoprire',
-    categoryBody: 'Questa categoria di Note d’Amore è riservata ai membri durante le Porte Aperte.',
+    categoryBody: 'Crea un account One2OneLove gratuito e verificato per sbloccare l’intera raccolta di Note d’Amore.',
     sendTitle: 'Pronto a inviarla?',
-    sendBody: 'Crea il tuo account One2OneLove e aggiungi una carta per inviare, programmare, inviare via email o condividere una Nota d’Amore.',
-    unlock: 'Crea account e aggiungi carta',
+    sendBody: 'Crea un account gratuito e verificato per partecipare. L’invio SMS One2OneLove usa Token O2OL; la condivisione tramite le tue app resta gratuita.',
+    unlock: 'Crea Account GRATUITO',
     signIn: 'Accedi',
   },
   de: {
@@ -838,10 +839,10 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     locked: 'GESPERRT',
     membersOnly: 'Nur für Mitglieder',
     categoryTitle: 'Weitere Liebesnachrichten warten auf dich',
-    categoryBody: 'Diese Liebesnachrichten-Kategorie ist während des Open House Mitgliedern vorbehalten.',
+    categoryBody: 'Erstelle ein kostenloses verifiziertes One2OneLove-Konto, um die vollständige Liebesnachrichten-Sammlung freizuschalten.',
     sendTitle: 'Bereit zum Senden?',
-    sendBody: 'Erstelle dein One2OneLove-Konto und hinterlege eine Karte, um eine Liebesnachricht zu senden, zu planen, per E-Mail zu verschicken oder zu teilen.',
-    unlock: 'Konto erstellen & Karte hinzufügen',
+    sendBody: 'Erstelle ein kostenloses verifiziertes Konto. One2OneLove-SMS verwenden O2OL Tokens; das Teilen über deine eigenen Apps bleibt kostenlos.',
+    unlock: 'KOSTENLOSES Konto Erstellen',
     signIn: 'Anmelden',
   },
 };
@@ -926,13 +927,13 @@ export default function LoveNotes() {
 
   // Fetch current user
   const { user: currentUser } = useAuth();
-  const hasMemberAccess = hasLoveNotesMemberAccess(currentUser);
+  const hasMemberAccess = Boolean(currentUser?.id);
   const openHouseCopy = OPEN_HOUSE_LOVE_NOTES_COPY[currentLanguage] || OPEN_HOUSE_LOVE_NOTES_COPY.en;
   const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
   const [openHouseLockReason, setOpenHouseLockReason] = useState('category');
 
   const effectivePlan = effectiveLoveNotesPlan(currentUser);
-  const aiPlanEligible = hasMemberAccess && effectivePlan === 'Exclusive';
+  const aiPlanEligible = hasMemberAccess;
 
   const { data: aiConfig } = useQuery({
     queryKey: ['loveNotesAiConfig', currentUser?.id],
@@ -942,7 +943,7 @@ export default function LoveNotes() {
   });
 
   const categories = useMemo(() => allCategories, [allCategories]);
-  const aiPersonalizationReady = aiPlanEligible && aiConfig?.configured === true && aiConfig?.creator?.allowed === true;
+  const aiPersonalizationReady = aiPlanEligible && aiConfig?.configured === true;
 
   // Fetch user's partner identifier (email or phone) from profile or localStorage
   const partnerIdentifier = currentUser?.partner_email || localStorage.getItem('partnerEmail') || '';
@@ -965,6 +966,25 @@ export default function LoveNotes() {
     staleTime: 5 * 60 * 1000,
   });
   const scheduledSmsReady = deliveryReadiness?.scheduledSmsReady === true;
+
+  const { data: tokenWallet } = useQuery({
+    queryKey: ['o2olTokenWallet', currentUser?.id],
+    queryFn: getTokenWallet,
+    enabled: !!currentUser?.id,
+    staleTime: 10 * 1000,
+  });
+  const tokenBalance = Number(tokenWallet?.wallet?.balance || 0);
+  const loveNoteTokenCost = Number(
+    tokenWallet?.featurePrices?.find(item => item.feature_code === 'love_note_send')?.token_cost || 0
+  );
+  const tokenAccessError = (error) => {
+    if (!isTokensRequiredError(error)) return false;
+    const info = tokenRequiredDetails(error);
+    setOpenHouseLockReason('send');
+    setShowOpenHouseLock(true);
+    toast.message(`Buy Tokens To Access — ${info.required || loveNoteTokenCost || 1} token${Number(info.required || loveNoteTokenCost || 1) === 1 ? '' : 's'} required. Balance: ${info.balance || 0}.`);
+    return true;
+  };
 
   const { data: loveNoteUsage } = useQuery({
     queryKey: ['loveNoteUsage', currentUser?.id],
@@ -1011,12 +1031,16 @@ export default function LoveNotes() {
       trackFeatureAction('Love Notes', `love-note-category:${sendModalNote?.category || 'uncategorized'}`);
       queryClient.invalidateQueries({ queryKey: ['scheduledNotes'] });
       queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
+      queryClient.invalidateQueries({ queryKey: ['o2olTokenWallet'] });
       toast.success(t.scheduleSuccess);
       setSendModalNote(null);
       setRecipientPhone('');
       setIsScheduling(false);
       setScheduleDate('');
       setScheduleTime('');
+    },
+    onError: (error) => {
+      if (!tokenAccessError(error)) toast.error(error?.message || t.limitSMS);
     }
   });
 
@@ -1213,13 +1237,13 @@ export default function LoveNotes() {
         });
         queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
         queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
+        queryClient.invalidateQueries({ queryKey: ['o2olTokenWallet'] });
         trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
         toast.success(t.openingText);
-        if (result?.billing?.billingPending) toast.message(t.smsBillingPending);
         setSendModalNote(null);
         setRecipientPhone('');
       } catch (error) {
-        toast.error(error?.message || t.limitSMS);
+        if (!tokenAccessError(error)) toast.error(error?.message || t.limitSMS);
       }
       return;
     }
@@ -1324,38 +1348,29 @@ export default function LoveNotes() {
           )}
         </div>
 
-        {/* Love Note Sending & Billing */}
+        {/* Love Note Token Access */}
         {currentUser && (
           <Card className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
             <CardContent className="pt-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-purple-500" />
-                {t.sendingLimits}
+                <Coins className="w-5 h-5 text-purple-500" />
+                O2OL Token Access
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">{t.firstPaidSend}</span>
-                    <Heart className="w-5 h-5 text-pink-500" />
-                  </div>
-                  <div className="text-2xl font-bold text-pink-600">{firstSmsDisplay}</div>
-                  <div className="text-xs text-gray-500">{t.smsNotes}</div>
+                  <div className="text-sm font-semibold text-gray-700">Token Balance</div>
+                  <div className="mt-2 text-3xl font-black text-purple-600">{tokenBalance}</div>
+                  <Link to="/Tokens?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Buy Tokens</Link>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">{t.additionalSms}</span>
-                    <Phone className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div className="text-2xl font-bold text-blue-600">US$0.29</div>
-                  <div className="text-xs text-gray-500">{t.billedWithSubscription}</div>
+                  <div className="text-sm font-semibold text-gray-700">One2OneLove SMS</div>
+                  <div className="mt-2 text-3xl font-black text-blue-600">{loveNoteTokenCost || '—'} <span className="text-sm">tokens / send</span></div>
+                  <div className="mt-1 text-xs text-gray-500">Tokens are used only when O2OL delivers the SMS.</div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">{t.socialMedia}</span>
-                    <MessageSquare className="w-5 h-5 text-purple-500" />
-                  </div>
-                  <div className="text-2xl font-bold text-purple-600">{socialPlatformsRemainingCount}/{totalSocialPlatforms}</div>
-                  <div className="text-xs text-gray-500">1 per platform</div>
+                  <div className="text-sm font-semibold text-gray-700">Share from Your Apps</div>
+                  <div className="mt-2 text-3xl font-black text-emerald-600">FREE</div>
+                  <div className="mt-1 text-xs text-gray-500">WhatsApp, email, social sharing and copy actions do not spend O2OL Tokens.</div>
                 </div>
               </div>
             </CardContent>
@@ -1398,7 +1413,7 @@ export default function LoveNotes() {
             <Shuffle className="w-5 h-5 mr-2" />
             {t.randomNote}
           </Button>
-          {hasMemberAccess && (
+          {currentUser && (
             <Button
               onClick={() => setShowScheduledNotes(!showScheduledNotes)}
               variant="outline"
@@ -1642,7 +1657,7 @@ export default function LoveNotes() {
             >
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100">
                 {openHouseLockReason === 'send'
-                  ? <CreditCard className="h-7 w-7 text-purple-700" />
+                  ? <Coins className="h-7 w-7 text-purple-700" />
                   : <Lock className="h-7 w-7 text-purple-700" />}
               </div>
               <div className="text-center">
@@ -1656,12 +1671,12 @@ export default function LoveNotes() {
               </div>
               <div className="mt-6 flex flex-col gap-2">
                 <Link
-                  to={currentUser ? '/Subscription?open-house=love-notes&card=required' : '/SignUp?open-house=love-notes&card=required'}
+                  to={currentUser ? '/Tokens?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
                   onClick={() => setShowOpenHouseLock(false)}
                 >
                   <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    {openHouseCopy.unlock}
+                    <Coins className="mr-2 h-4 w-4" />
+                    {currentUser ? 'Buy Tokens To Access' : openHouseCopy.unlock}
                   </Button>
                 </Link>
                 <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
