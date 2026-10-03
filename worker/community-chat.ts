@@ -103,6 +103,13 @@ async function ensureChatSafetySchema(db) {
            '🏳️‍🌈',true,now()
      WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='lgbtq-community')
   `);
+  await db.query(`
+    INSERT INTO public.chat_rooms(id,slug,name,description,icon,is_active,created_at)
+    SELECT gen_random_uuid(),'studio-who-should-apologize-first','O2OL Studio — Who Should Apologize First?',
+           'Discuss Season 1, Episode 1 and share your perspective after watching O2OL and Bianca.',
+           '🎬',true,now()
+     WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='studio-who-should-apologize-first')
+  `);
 }
 
 async function listRooms(db, scope = 'general') {

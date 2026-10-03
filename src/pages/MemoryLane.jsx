@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Heart, Calendar, MapPin, Filter, Grid, List, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/Layout";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 
@@ -15,6 +15,8 @@ import MemoryForm from "../components/memories/MemoryForm";
 import MemoryCard from "../components/memories/MemoryCard";
 import MemoryTimeline from "../components/memories/MemoryTimeline";
 import MemoryFilters from "../components/memories/MemoryFilters";
+import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
+import { hasFullMemberAccess, openHouseProtectedDestination } from "@/lib/openHouseAccess";
 
 const translations = {
   en: {
@@ -32,7 +34,9 @@ const translations = {
     memorySaveFailed: "Unable to save memory.",
     memoryUpdateFailed: "Unable to update memory.",
     memoryDeleteFailed: "Unable to delete memory.",
-    back: "Back"
+    back: "Back",
+    gridView: "Grid view",
+    timelineView: "Timeline view"
   },
   es: {
     title: "Carril de Recuerdos 💕",
@@ -49,7 +53,9 @@ const translations = {
     memorySaveFailed: "No se pudo guardar el recuerdo.",
     memoryUpdateFailed: "No se pudo actualizar el recuerdo.",
     memoryDeleteFailed: "No se pudo eliminar el recuerdo.",
-    back: "Atrás"
+    back: "Atrás",
+    gridView: "Vista de cuadrícula",
+    timelineView: "Vista de cronología"
   },
   fr: {
     title: "Allée des Souvenirs 💕",
@@ -66,7 +72,9 @@ const translations = {
     memorySaveFailed: "Impossible d’enregistrer le souvenir.",
     memoryUpdateFailed: "Impossible de mettre à jour le souvenir.",
     memoryDeleteFailed: "Impossible de supprimer le souvenir.",
-    back: "Retour"
+    back: "Retour",
+    gridView: "Vue en grille",
+    timelineView: "Vue chronologique"
   },
   it: {
     title: "Viale dei Ricordi 💕",
@@ -83,7 +91,9 @@ const translations = {
     memorySaveFailed: "Impossibile salvare il ricordo.",
     memoryUpdateFailed: "Impossibile aggiornare il ricordo.",
     memoryDeleteFailed: "Impossibile eliminare il ricordo.",
-    back: "Indietro"
+    back: "Indietro",
+    gridView: "Vista a griglia",
+    timelineView: "Vista cronologica"
   },
   de: {
     title: "Erinnerungsgasse 💕",
@@ -100,7 +110,9 @@ const translations = {
     memorySaveFailed: "Erinnerung konnte nicht gespeichert werden.",
     memoryUpdateFailed: "Erinnerung konnte nicht aktualisiert werden.",
     memoryDeleteFailed: "Erinnerung konnte nicht gelöscht werden.",
-    back: "Zurück"
+    back: "Zurück",
+    gridView: "Rasteransicht",
+    timelineView: "Zeitleistenansicht"
   },
   nl: {
     title: "Herinneringslaan 💕",
@@ -117,7 +129,9 @@ const translations = {
     memorySaveFailed: "Herinnering kon niet worden opgeslagen.",
     memoryUpdateFailed: "Herinnering kon niet worden bijgewerkt.",
     memoryDeleteFailed: "Herinnering kon niet worden verwijderd.",
-    back: "Terug"
+    back: "Terug",
+    gridView: "Rasterweergave",
+    timelineView: "Tijdlijnweergave"
   },
   pt: {
     title: "Alameda das Memórias 💕",
@@ -134,7 +148,9 @@ const translations = {
     memorySaveFailed: "Não foi possível salvar a memória.",
     memoryUpdateFailed: "Não foi possível atualizar a memória.",
     memoryDeleteFailed: "Não foi possível excluir a memória.",
-    back: "Voltar"
+    back: "Voltar",
+    gridView: "Visualização em grade",
+    timelineView: "Visualização da linha do tempo"
   }
 };
 
@@ -150,12 +166,19 @@ export default function MemoryLane() {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
-  const memoryUserKey = user?.id || 'guest';
+  const navigate = useNavigate();
+  const fullMemberAccess = hasFullMemberAccess(user);
+  const memoryUserKey = fullMemberAccess ? user.id : null;
+  const openMemoryCreate = () => {
+    if (!fullMemberAccess) return navigate(openHouseProtectedDestination(user,'memory-lane'));
+    setEditingMemory(null);
+    setShowForm(true);
+  };
 
   const { data: memories = [], isLoading } = useQuery({
     queryKey: ['memories', memoryUserKey],
     queryFn: () => listMemories(memoryUserKey),
-    enabled: true,
+    enabled: fullMemberAccess,
   });
 
   const createMemoryMutation = useMutation({
@@ -252,6 +275,8 @@ export default function MemoryLane() {
           </Link>
         </div>
 
+        {!fullMemberAccess && <div className="mb-8"><OpenHouseBrowseNotice /></div>}
+
         {/* Header */}
         <div className="text-center mb-12">
           <motion.div
@@ -273,7 +298,7 @@ export default function MemoryLane() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => user?.id ? setShowForm(!showForm) : openMemoryCreate()}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -284,6 +309,8 @@ export default function MemoryLane() {
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
+                aria-label={t.gridView}
+                title={t.gridView}
                 className={viewMode === 'grid' ? 'bg-pink-500 hover:bg-pink-600' : ''}
               >
                 <Grid className="w-4 h-4" />
@@ -292,6 +319,8 @@ export default function MemoryLane() {
                 variant={viewMode === 'timeline' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('timeline')}
+                aria-label={t.timelineView}
+                title={t.timelineView}
                 className={viewMode === 'timeline' ? 'bg-pink-500 hover:bg-pink-600' : ''}
               >
                 <List className="w-4 h-4" />
@@ -342,7 +371,7 @@ export default function MemoryLane() {
               {t.noMemoriesDesc}
             </p>
             <Button
-              onClick={() => setShowForm(true)}
+              onClick={openMemoryCreate}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
             >
               <Plus className="w-5 h-5 mr-2" />

@@ -5,8 +5,15 @@ import { useAuth } from '@/contexts/AuthContext';
 const PUBLIC_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
-  '/reviews', '/leavereview', '/suggestions', '/subscription',
-  '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
+  '/reviews', '/leavereview', '/suggestions', '/subscription', '/payment-success', '/paymentsuccess',
+  '/dateideas', '/lovenotes', '/lovelanguagequiz', '/memorylane', '/podcastssupport',
+  '/relationshipquizzes', '/relationshipmilestones', '/relationshipgoals', '/communicationpractice',
+  '/couplesupport', '/articlessupport', '/coupleactivities', '/cooperativegames',
+  '/whatshouldtheydo', '/games', '/scratchgame', '/sharedjournals', '/couplescalendar',
+  '/lgbtqsupport', '/o2olstudio', '/chat', '/community',
+  '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup', '/likeminded',
+  '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/bianca', '/mymatchiq/credits', '/mymatchiq/actions', '/mymatchiq/dashboard',
+  '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
 ]);
 
 const PLAN_LEVEL = {
@@ -52,16 +59,14 @@ const LOADING_COPY = {
   de: 'Ihr One2OneLove-Zugang wird geladen…',
 };
 
-
 function adminAccessActive(user) {
   if (!user?.subscription_end_date) return false;
   const end = new Date(user.subscription_end_date);
   return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
 }
 
+
 function currentPlanFor(user) {
-  const status = String(user?.subscription_status || '').toLowerCase();
-  if (status === 'trial' || status === 'trialing') return 'Exclusive';
   const stored = String(user?.subscription_plan || 'Premiere');
   if (stored.toLowerCase() === 'exclusive') return 'Exclusive';
   return 'Premiere';
@@ -98,6 +103,8 @@ export default function LaunchAccessGate({ pathname, children }) {
     return isPublicRoute ? children : <Navigate to="/SignIn" replace />;
   }
 
+  // Open House routes remain browseable whether or not the visitor is signed in.
+  // Protected writes and personal data remain guarded by the API/member controls.
   if (isPublicRoute) return children;
 
   if (route === '/verifyphone') return children;
@@ -109,19 +116,15 @@ export default function LaunchAccessGate({ pathname, children }) {
   const role = String(user.role || '').toLowerCase();
   if (role === 'admin') return children;
 
-  if (route === '/subscription' || route === '/payment-success') return children;
+  if (route === '/subscription' || route === '/payment-success' || route === '/paymentsuccess') return children;
   if (route === '/sendcredits') return <Navigate to="/Subscription" replace />;
 
   const status = String(user.subscription_status || '').toLowerCase();
   const hasStripeSubscription = Boolean(user.stripe_subscription_id);
   const hasAdminAccess = adminAccessActive(user);
-
   if (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess)) {
     return <Navigate to="/Subscription?setup=required" replace />;
   }
-
-  // Founding-member/full-access trial accounts are real member access.
-  if (status === 'trial' || status === 'trialing') return children;
 
   const required = REQUIRED_PLAN[route];
   if (!required) return children;

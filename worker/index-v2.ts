@@ -29,12 +29,19 @@ import { handleReviewsRequest } from './reviews';
 import { handleConsentsRequest } from './consents';
 import { handleContestsRequest } from './contests';
 import { handleAiRequest } from './ai';
+import { handleMyMatchIQAiRequest } from './mymatchiq-ai';
+import { handleMyMatchIQCreditsRequest } from './mymatchiq-credits';
+import { handleMyMatchIQMembersRequest } from './mymatchiq-members';
+import { handleMyMatchIQLegacyRequest } from './mymatchiq-legacy';
+import { handleMyMatchIQCoreRequest } from './mymatchiq-core';
 import { enforceApiEntitlement } from './api-entitlements';
 import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
+import { handleLikeMindedRequest } from './like-minded';
+import { handleStudioMediaRequest } from './studio-media';
 
 
 const SOCIAL_PAGE_META = {
@@ -86,6 +93,14 @@ const SOCIAL_PAGE_META = {
     fr:['Podcasts | One2OneLove','Découvrez des conversations, idées et inspirations relationnelles avec les podcasts One2OneLove.'],
     it:['Podcast | One2OneLove','Scopri conversazioni, idee e ispirazione sulle relazioni con i podcast One2OneLove.'],
     de:['Podcasts | One2OneLove','Entdecken Sie Beziehungsgespräche, Ideen und Inspiration in den One2OneLove Podcasts.'],
+  },
+  '/o2olstudio': {
+    image:'/assets/o2ol-hero.png',
+    en:['O2OL Studio Show | One2OneLove','Watch O2OL Studio conversations about real relationship questions, featuring Bianca and the One2OneLove relationship experience.'],
+    es:['O2OL Studio Show | One2OneLove','Mira conversaciones de O2OL Studio sobre preguntas reales de relaciones, con Bianca y la experiencia One2OneLove.'],
+    fr:['O2OL Studio Show | One2OneLove','Regardez les conversations O2OL Studio autour de vraies questions relationnelles, avec Bianca et l’expérience One2OneLove.'],
+    it:['O2OL Studio Show | One2OneLove','Guarda le conversazioni O2OL Studio su vere domande relazionali, con Bianca e l’esperienza One2OneLove.'],
+    de:['O2OL Studio Show | One2OneLove','Sehen Sie O2OL-Studio-Gespräche über echte Beziehungsfragen mit Bianca und dem One2OneLove-Erlebnis.'],
   },
   '/professionals': {
     image:'/assets/o2ol-hero.png',
@@ -153,6 +168,11 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    if (url.pathname.startsWith('/studio-media/')) {
+      const response = await handleStudioMediaRequest(request, env, url);
+      if (response) return response;
+    }
+
     const socialPage = await socialPageResponse(request, env, url);
     if (socialPage) return socialPage;
 
@@ -171,6 +191,11 @@ export default {
 
     const entitlementGate = await enforceApiEntitlement(request, env, url);
     if (entitlementGate) return entitlementGate;
+
+    if (url.pathname.startsWith('/api/like-minded')) {
+      const response = await handleLikeMindedRequest(request, env, url);
+      if (response) return response;
+    }
 
     if (url.pathname === '/api/games/scratch/launch') {
       const response = await handleGameAccessRequest(request, env, url);
@@ -208,6 +233,31 @@ export default {
 
     if (url.pathname === '/api/feature-usage') {
       const response = await handleFeatureUsageRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/credits')) {
+      const response = await handleMyMatchIQCreditsRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/members')) {
+      const response = await handleMyMatchIQMembersRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/legacy')) {
+      const response = await handleMyMatchIQLegacyRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/mymatchiq/access' || url.pathname.startsWith('/api/mymatchiq/bianca') || url.pathname.startsWith('/api/mymatchiq/assessment')) {
+      const response = await handleMyMatchIQAiRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/mymatchiq/')) {
+      const response = await handleMyMatchIQCoreRequest(request, env, url);
       if (response) return response;
     }
 

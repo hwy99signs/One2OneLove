@@ -31,8 +31,7 @@ export const useCanUpgrade = () => {
 
 export const useFeatureLimits = () => {
   const { user } = useAuth();
-  const status = String(user?.subscription_status || '').toLowerCase();
-  const plan = ['trial', 'trialing'].includes(status) ? 'Exclusive' : canonicalPlan(user?.subscription_plan);
+  const plan = canonicalPlan(user?.subscription_plan);
   const limits = {
     Premiere: {
       loveNoteSmsPrice: 0.29,

@@ -80,12 +80,12 @@ export default [
     "Sie sind für Ihre Entscheidungen, Kommunikation, Ihr Verhalten und die Nutzung von Informationen verantwortlich, die Sie über One2OneLove erhalten. Entscheidungen über Ihre Beziehungen bleiben Ihre eigenen. Handeln Sie mit angemessenem Urteilsvermögen, bevor Sie persönliche Informationen teilen, jemanden treffen, Empfehlungen befolgen oder generierte Inhalte senden."
   ],
   [
-    "21. Mitgliedschaftstarife und Testphase",
-    "One2OneLove kann einen 7-tägigen Vollzugriff-Test anbieten, für den eine gültige Kredit- oder Debitkarte erforderlich ist. Zu Beginn des Tests wird keine wiederkehrende Abonnementgebühr berechnet. Der Test umfasst vollständigen Zugriff auf Exclusive-Niveau. Der erste Versand einer durch One2OneLove zugestellten SMS-Liebesnachricht während des Tests ist kostenlos; jede weitere Sendung kostet US$0.29 und kann über die hinterlegte Zahlungsmethode abgerechnet werden. Sofern Sie nicht Exclusive wählen oder vor Ende der Testphase kündigen, wird die Testphase automatisch als Premiere-Mitgliedschaft für US$9.99 pro Monat fortgesetzt. Exclusive kostet US$19.99 pro Monat.",
+    "21. Open House, Mitgliedschaftstarife und Gründungsmitglieder",
+    "Während des zeitlich begrenzten One2OneLove Open House können Besucher ausgewiesene öffentliche Bereiche ohne Konto und ohne Zahlungskarte ansehen. Geschützte Mitgliederaktionen, Funktionen mit persönlichen Daten, kostenpflichtige Zustellung, KI, Messaging oder andere abrechenbare Dienste können ein Konto, eine berechtigte Mitgliedschaft und/oder eine gültige Zahlungsmethode erfordern. Die regulären Monatspreise betragen US$9.99 für Premiere und US$19.99 für Exclusive, sofern vor dem Kauf kein anderer Preis angezeigt wird. Das Gründungsmitglied-Angebot ist auf die ersten 200 berechtigten Mitglieder begrenzt. Mitglieder #1–100 erhalten Exclusive 30 Tage kostenlos mit gültiger Karte; sofern sie nicht vor Ende des kostenlosen Zeitraums Premiere wählen oder kündigen, läuft Exclusive automatisch zum Gründungspreis von US$15.99/Monat weiter, solange das Abonnement ohne Unterbrechung aktiv bleibt. Endet das Abonnement und kehrt das Mitglied später zurück, bleibt das dauerhafte Abzeichen erhalten, der Preis von US$15.99 geht jedoch verloren und die dann geltenden Preise finden Anwendung. Mitglieder #101–200 erhalten Premiere 30 Tage kostenlos mit gültiger Karte; danach läuft Premiere automatisch zum regulären Monatspreis weiter, sofern nicht gekündigt wird. Gründungsmitgliedsnummern bleiben reserviert und werden nicht erneut vergeben."
   ],
   [
-    "22. Gebühren für SMS-Liebesnachrichten",
-    "Während des 7-tägigen Vollzugriff-Tests ist der erste Versand einer durch One2OneLove zugestellten SMS-Liebesnachricht kostenlos und jede weitere Sendung kostet US$0.29. Nutzungsgebühren können gebündelt und über die hinterlegte Zahlungsmethode abgerechnet werden und sind vom wiederkehrenden Abonnementpreis getrennt. Der Text einer benutzerdefinierten Liebesnachricht ist auf 171 Zeichen begrenzt. Vom Nutzer hinzugefügte Emojis werden im benutzerdefinierten Text nicht unterstützt; die gebrandete SMS-Fußzeile von One2OneLove kann das Symbol ❤️ enthalten. Bereits angefallene Gebühren für versendete Liebesnachrichten bleiben fällig, sofern das anwendbare Recht nichts anderes verlangt.",
+    "22. SMS-Liebesnachrichten und Andere Nutzungsgebühren",
+    "SMS-Liebesnachrichten und andere abrechenbare Aktionen sind von der kostenlosen Open-House-Navigation getrennt. Der erste berechtigte SMS-Versand kann kostenlos sein, wenn dies im jeweiligen Mitgliedschaftsangebot angegeben ist; jede weitere One2OneLove-SMS-Liebesnachricht kostet derzeit US$0.29, sofern vor der Bestätigung kein anderer Betrag angezeigt wird. Nutzungsgebühren können gebündelt und über die hinterlegte Zahlungsmethode abgerechnet werden und sind vom wiederkehrenden Mitgliedschaftspreis getrennt. Der Text einer benutzerdefinierten Liebesnachricht ist auf 171 Zeichen begrenzt. Vom Nutzer hinzugefügte Emojis werden im benutzerdefinierten Text nicht unterstützt; die One2OneLove-SMS-Fußzeile kann das Symbol ❤️ enthalten. Bereits angefallene Gebühren bleiben fällig, sofern das anwendbare Recht nichts anderes verlangt."
   ],
   [
     "23. Kündigung und Abrechnung",
@@ -106,9 +106,5 @@ export default [
   [
     "27. Kontakt",
     "Fragen zu diesen Bedingungen oder zur Plattform können an support@one2onelove.com gesendet werden."
-  ],
-  [
-    "25. Kostenlose Testphase, Abonnements, Liebesnachrichten-Gebühren, Kündigung und Erstattungen",
-    "Während des 7-tägigen Vollzugriff-Tests ist der erste Versand einer durch One2OneLove zugestellten SMS-Liebesnachricht kostenlos und jede weitere Sendung kostet US$0.29. Nutzungsgebühren können gebündelt und über die hinterlegte Zahlungsmethode abgerechnet werden und sind vom wiederkehrenden Abonnementpreis getrennt. Der Text einer benutzerdefinierten Liebesnachricht ist auf 171 Zeichen begrenzt. Vom Nutzer hinzugefügte Emojis werden im benutzerdefinierten Text nicht unterstützt; die gebrandete SMS-Fußzeile von One2OneLove kann das Symbol ❤️ enthalten.",
   ]
 ];

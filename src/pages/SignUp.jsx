@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowLeft, BriefcaseBusiness, UserRound } from "lucide-react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/Layout";
@@ -30,21 +30,22 @@ export default function SignUp() {
   const t = COPY[currentLanguage] || COPY.en;
   const selectedPlan = canonicalPlan(searchParams.get("plan"));
   const signupType = String(searchParams.get("type") || "").toLowerCase();
+  const foundingIntent = searchParams.get("founding") === "1";
 
   const effectivePlan = selectedPlan || 'Premiere';
-
   if (signupType === "individual") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
         <LaunchRegularUserForm
           selectedPlan={effectivePlan}
-          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}`)}
+          foundingIntent={foundingIntent}
+          onBack={() => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}${foundingIntent ? '&founding=1' : ''}`)}
         />
       </div>
     );
   }
 
-  const chooseIndividual = () => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}&type=individual`);
+  const chooseIndividual = () => navigate(`/SignUp?plan=${encodeURIComponent(effectivePlan)}&type=individual${foundingIntent ? '&founding=1' : ''}`);
   const chooseProfessional = () => navigate(`/ProfessionalSignup?plan=${encodeURIComponent(effectivePlan)}`);
 
   return (
@@ -58,17 +59,17 @@ export default function SignUp() {
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{t.title}</h1>
           <p className="text-xl text-gray-600">{t.subtitle}</p>
           <div className="mt-5 inline-flex items-center rounded-full border border-purple-200 bg-white px-5 py-2 font-bold text-purple-800 shadow-sm">
-            {t.selectedPlan}: {effectivePlan} — {PLAN_PRICE[effectivePlan]}
+            {t.selectedPlan}: {foundingIntent ? (effectivePlan === 'Exclusive' ? 'Founding Offer — Exclusive: 30 days FREE, then US$15.99/month while continuously subscribed' : 'Founding Offer — Premiere: 30 days FREE, then US$9.99/month') : `${effectivePlan} — ${PLAN_PRICE[effectivePlan]}`}
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-7">
+        <div className="grid gap-7 md:grid-cols-2">
           <Card className="shadow-xl hover:shadow-2xl transition-shadow border-2 border-transparent hover:border-pink-200">
             <CardContent className="p-8 flex flex-col h-full">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-lg mb-5"><UserRound className="w-8 h-8" /></div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">{t.individual}</h2>
               <p className="text-gray-600 leading-relaxed mb-7 flex-1">{t.individualBody}</p>
-              <Button onClick={chooseIndividual} className="w-full py-6 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold">{t.continue}</Button>
+              <Button onClick={chooseIndividual} aria-label={t.individual} className="w-full py-6 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold">{t.continue}</Button>
             </CardContent>
           </Card>
 
@@ -77,9 +78,10 @@ export default function SignUp() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg mb-5"><BriefcaseBusiness className="w-8 h-8" /></div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">{t.professional}</h2>
               <p className="text-gray-600 leading-relaxed mb-7 flex-1">{t.professionalBody}</p>
-              <Button onClick={chooseProfessional} className="w-full py-6 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">{t.continue}</Button>
+              <Button onClick={chooseProfessional} aria-label={t.professional} className="w-full py-6 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">{t.continue}</Button>
             </CardContent>
           </Card>
+
         </div>
       </div>
     </div>
