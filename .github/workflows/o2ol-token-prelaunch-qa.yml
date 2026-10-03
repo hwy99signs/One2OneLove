@@ -187,6 +187,23 @@ jobs:
             exit 1
           fi
 
+      - name: Verify per-event calibration evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "recentCostEvents:recentCostEvents.rows" worker/admin.ts
+          grep -F "c.input_characters,c.context_characters,c.output_characters" worker/admin.ts
+          grep -F "c.provider_input_units,c.provider_cached_input_units,c.provider_output_units" worker/admin.ts
+          grep -F "c.provider_cost_micros,c.customer_tokens_charged" worker/admin.ts
+          grep -F 'title="Recent Calibration Events"' src/pages/Admin.jsx
+          grep -F ">Input Chars<" src/pages/Admin.jsx
+          grep -F ">Context Chars<" src/pages/Admin.jsx
+          grep -F ">Output Chars<" src/pages/Admin.jsx
+          grep -F ">Input Tokens<" src/pages/Admin.jsx
+          grep -F ">Cached<" src/pages/Admin.jsx
+          grep -F ">Output Tokens<" src/pages/Admin.jsx
+          grep -F ">Cost / O2OL Token<" src/pages/Admin.jsx
+
       - name: Verify Token payment and Auto-Replenish safety
         shell: bash
         run: |
