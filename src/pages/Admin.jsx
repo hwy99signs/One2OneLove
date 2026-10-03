@@ -762,15 +762,43 @@ export default function Admin() {
 
             <Panel title="Measured Provider Cost by Feature — Last 30 Days" subtitle="Actual or provider-usage-derived cost evidence; member economics exclude administrator activity.">
               {(tokenEconomy.byFeature||[]).length?<div className="overflow-x-auto"><table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">Feature</th><th className="px-3 py-2">Provider</th><th className="px-3 py-2">Events</th><th className="px-3 py-2">Tokens</th><th className="px-3 py-2">Provider Cost</th><th className="px-3 py-2">Input / Output</th></tr></thead>
+                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">Feature</th><th className="px-3 py-2">Provider</th><th className="px-3 py-2">Events</th><th className="px-3 py-2">Tokens</th><th className="px-3 py-2">Provider Cost</th><th className="px-3 py-2">Characters</th><th className="px-3 py-2">Provider Tokens</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">{tokenEconomy.byFeature.map((row,index)=><tr key={`${row.feature_code}-${row.provider}-${index}`}>
                   <td className="px-3 py-3 font-bold">{row.feature_code}</td><td className="px-3 py-3">{row.provider}{row.provider_product?<div className="text-xs text-slate-400">{row.provider_product}</div>:null}</td>
                   <td className="px-3 py-3">{number(row.events)}</td><td className="px-3 py-3">{number(row.tokens_charged)}</td>
                   <td className="px-3 py-3 font-black">{money(Number(row.provider_cost_micros||0)/1000000)}</td>
-                  <td className="px-3 py-3 text-xs text-slate-500">{number(row.provider_input_units||row.input_characters)} / {number(row.provider_output_units||row.output_characters)}</td>
+                  <td className="px-3 py-3 text-xs text-slate-500">In {number(row.input_characters)} · Context {number(row.context_characters)} · Out {number(row.output_characters)}</td>
+                  <td className="px-3 py-3 text-xs text-slate-500">In {number(row.provider_input_units)} · Cached {number(row.provider_cached_input_units)} · Out {number(row.provider_output_units)}</td>
                 </tr>)}</tbody>
               </table></div>:<Empty>No non-admin cost events have been recorded yet.</Empty>}
             </Panel>
+
+            <div className="mt-6">
+              <Panel title="Recent Calibration Events" subtitle="Per-event evidence for package-burn testing: message size, full context size, provider token usage, estimated provider cost and O2OL Tokens charged.">
+                {(tokenEconomy.recentCostEvents||[]).length?<div className="max-h-[620px] overflow-auto"><table className="min-w-[1180px] w-full text-xs">
+                  <thead className="sticky top-0 bg-slate-50 text-left uppercase text-slate-500"><tr>
+                    <th className="px-3 py-2">When</th><th className="px-3 py-2">Feature / Provider</th><th className="px-3 py-2">Input Chars</th><th className="px-3 py-2">Context Chars</th><th className="px-3 py-2">Output Chars</th><th className="px-3 py-2">Input Tokens</th><th className="px-3 py-2">Cached</th><th className="px-3 py-2">Output Tokens</th><th className="px-3 py-2">Provider Cost</th><th className="px-3 py-2">O2OL Tokens</th><th className="px-3 py-2">Cost / O2OL Token</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-slate-100">{tokenEconomy.recentCostEvents.map(event=>{
+                    const charged=Number(event.customer_tokens_charged||0);
+                    const providerCost=Number(event.provider_cost_micros||0)/1000000;
+                    return <tr key={event.id}>
+                      <td className="whitespace-nowrap px-3 py-3 text-slate-500">{date(event.created_at)}</td>
+                      <td className="px-3 py-3"><div className="font-bold text-slate-900">{event.feature_code}</div><div className="text-slate-400">{event.provider}{event.provider_product?` · ${event.provider_product}`:''}</div>{event.email&&<div className="max-w-[220px] truncate text-slate-400">{event.email}</div>}</td>
+                      <td className="px-3 py-3 font-semibold">{number(event.input_characters)}</td>
+                      <td className="px-3 py-3 font-semibold">{number(event.context_characters)}</td>
+                      <td className="px-3 py-3 font-semibold">{number(event.output_characters)}</td>
+                      <td className="px-3 py-3">{number(event.provider_input_units)}</td>
+                      <td className="px-3 py-3">{number(event.provider_cached_input_units)}</td>
+                      <td className="px-3 py-3">{number(event.provider_output_units)}</td>
+                      <td className="px-3 py-3 font-black">{money(providerCost)}</td>
+                      <td className="px-3 py-3 font-black text-amber-700">{number(charged)}</td>
+                      <td className="px-3 py-3">{charged>0?money(providerCost/charged):'—'}</td>
+                    </tr>;
+                  })}</tbody>
+                </table></div>:<Empty>No measured calibration events yet. Run a Token calibration session and use Bianca or another metered feature to populate this table.</Empty>}
+              </Panel>
+            </div>
 
             <div className="mt-6 grid gap-6 xl:grid-cols-2">
               <Panel title="Recent Token Ledger">
