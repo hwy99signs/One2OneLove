@@ -1,0 +1,83 @@
+name: Audit O2OL Analytics Pipeline
+
+on:
+  push:
+    branches:
+      - audit/admin-analytics-deepcheck-20261003
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare zone traffic aggregates
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          curl -fsS -H "$AUTH" "https://api.cloudflare.com/client/v4/zones?name=one2onelove.com" -o /tmp/zones.json
+          ZONE_ID=$(jq -r '.result[0].id // empty' /tmp/zones.json)
+          test -n "$ZONE_ID"
+          CODE=$(curl -sS -o /tmp/analytics.json -w '%{http_code}' -H "$AUTH" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/analytics/dashboard?since=-360&continuous=true")
+          echo "CLOUDFLARE_ANALYTICS_HTTP=$CODE"
+          if [ "$CODE" = "200" ]; then
+            jq '{success, totals:(.result.totals // {}), timeseries_points:((.result.timeseries // [])|length)}' /tmp/analytics.json
+          else
+            jq '{success,errors}' /tmp/analytics.json || true
+          fi
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Verify live browser emits analytics without writing production data
+        shell: bash
+        run: |
+          cat > /tmp/analytics-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const context = await browser.newContext();
+            const page = await context.newPage();
+            const events = [];
+            const consoleErrors = [];
+            const pageErrors = [];
+
+            await page.route('**/api/interaction-events', async route => {
+              const req = route.request();
+              let body = req.postData();
+              try { body = JSON.parse(body || '{}'); } catch {}
+              events.push({method:req.method(), url:req.url(), body});
+              await route.fulfill({status:204, body:''});
+            });
+
+            page.on('console', msg => {
+              if (msg.type() === 'error') consoleErrors.push(msg.text());
+            });
+            page.on('pageerror', err => pageErrors.push(String(err)));
+
+            const response = await page.goto('https://one2onelove.com/', {waitUntil:'networkidle', timeout:60000});
+            await page.waitForTimeout(2500);
+
+            console.log('LIVE_HTTP=' + (response ? response.status() : 'none'));
+            console.log('LIVE_URL=' + page.url());
+            console.log('LIVE_TITLE=' + await page.title());
+            console.log('ANALYTICS_REQUEST_COUNT=' + events.length);
+            console.log('ANALYTICS_REQUESTS=' + JSON.stringify(events));
+            console.log('CONSOLE_ERRORS=' + JSON.stringify(consoleErrors.slice(0,20)));
+            console.log('PAGE_ERRORS=' + JSON.stringify(pageErrors.slice(0,20)));
+
+            const candidate = page.locator('a[href]').filter({hasNot: page.locator('[href^="mailto:"]')}).first();
+            if (await candidate.count()) {
+              const href = await candidate.getAttribute('href');
+              console.log('FIRST_LINK=' + String(href));
+            }
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+          node /tmp/analytics-audit.cjs
