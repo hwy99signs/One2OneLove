@@ -1123,12 +1123,14 @@ async function topFeatureActivity(db, env) {
     return result.rows;
   };
 
-  const [lgbtqViews,lgbtqTop,relationshipViews,podcastViews,podcastTop,loveSent,loveScheduled,loveTop] = await Promise.all([
+  const [subscriptionViews,lgbtqViews,lgbtqTop,relationshipViews,podcastViews,podcastTop,loveViews,loveSent,loveScheduled,loveTop] = await Promise.all([
+    pageViews('Subscription / Billing'),
     pageViews('LGBTQ+ Support'),
     routedTop('LGBTQ+ Support','lgbtq:'),
     pageViews('Relationship Support'),
     pageViews('Podcasts'),
     routedTop('Podcasts','podcast:'),
+    pageViews('Love Notes'),
     windowCounts(`
       SELECT
         count(*) FILTER (WHERE COALESCE(sent_date,created_at)>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
@@ -1171,12 +1173,13 @@ async function topFeatureActivity(db, env) {
   return {
     windows,
     subscriptionBilling:{
+      accesses:subscriptionViews,
       withCard:Object.fromEntries(windows.map(d=>[d,Number(s[`cc${d}`]||0)])),
       withoutCard:Object.fromEntries(windows.map(d=>[d,Number(s[`no${d}`]||0)])),
     },
     dateIdeas:{ used:dateUse, saved:dateSaved, top:mapTop(dateTop.rows) },
     lgbtq:{ accesses:lgbtqViews, top:mapTop(lgbtqTop) },
-    loveNotes:{ sent:loveSent, scheduled:loveScheduled, top:mapTop(loveTop) },
+    loveNotes:{ accesses:loveViews, sent:loveSent, scheduled:loveScheduled, top:mapTop(loveTop) },
     relationshipSupport:{ accesses:relationshipViews, top:mapTop(relationshipTopResult.rows) },
     podcasts:{ accesses:podcastViews, top:mapTop(podcastTop) },
   };
