@@ -1,0 +1,132 @@
+name: O2OL Token Prelaunch QA
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "neon-migrations/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/o2ol-token-prelaunch-qa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  token-prelaunch-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Bundle-check Cloudflare Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes esbuild@0.25.10 worker/index-v2.ts             --bundle             --platform=browser             --format=esm             --external:pg             --outfile=/tmp/o2ol-token-worker.mjs
+          test -s /tmp/o2ol-token-worker.mjs
+
+      - name: Verify Token architecture contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "handleO2OLTokenRequest" worker/index-v2.ts
+          grep -F "reserveTokenCharge" worker/o2ol-tokens.ts
+          grep -F "releaseTokenReservation" worker/o2ol-tokens.ts
+          grep -F "maybeAutoReplenish" worker/o2ol-tokens.ts
+          grep -F "recordOpenAICostEvent" worker/o2ol-cost-ledger.ts
+          grep -F "bianca_response" worker/mymatchiq-ai.ts
+          grep -F "amora_response" worker/ai.ts
+          grep -F "love_note_send" worker/love-note-entitlements.ts
+          grep -F "like_minded_session" worker/game-access.ts
+          grep -F 'path="/Tokens"' src/pages/index.jsx
+          grep -F 'path="/Amora"' src/pages/index.jsx
+          grep -F '<Navigate to="/Tokens" replace' src/pages/Subscription.jsx
+          grep -F 'navigate("/SignUp")' src/pages/Layout.jsx
+          grep -F "legacy_subscription_model_retired" worker/billing.ts src/lib/stripeService.js
+          grep -F "return false;" worker/api-entitlements.ts
+          grep -F "method === 'GET' && path.startsWith('/api/community-chat')" worker/identity-gate.ts
+          grep -F "PUBLIC_DELAY_MS=7*24*60*60*1000" worker/studio-media.ts
+          grep -F "o2ol_token_wallets" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
+
+      - name: Verify free-account access contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "'Free'" worker/launch-auth.ts
+          grep -F "subscription_price,subscription_status" worker/launch-auth.ts
+          grep -F "VALUES ($1::uuid,$2,$3,'regular',true,'Free',0,'inactive')" worker/launch-auth.ts
+          grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts
+          grep -F "founding_intent" worker/launch-auth.ts
+          grep -F "badge_activated:true" worker/phone-verification.ts
+          grep -F "const TERMS_VERSION = '2026-10-03';" src/components/signup/LaunchRegularUserForm.jsx
+          if grep -RInE 'navigate\(["'\''"]/Subscription\?signup=1|Create Account for Premiere|Create Account for Exclusive' src --exclude='stripeService.js'; then
+            echo "Active recurring-plan signup path found." >&2
+            exit 1
+          fi
+
+      - name: Verify legacy billing is fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Premiere/Exclusive recurring checkout is retired" worker/billing.ts
+          grep -F "legacy_subscription_reconciliation_locked" worker/billing.ts
+          grep -F "Recurring One2OneLove subscriptions are retired" src/lib/stripeService.js
+          grep -F "legacy_tier_retired" worker/admin.ts
+          grep -F "legacy_access_time_retired" worker/admin.ts
+          if grep -RInE 'handleSubscriptionCheckout\(' src              --exclude='stripeService.js'              --exclude='SubscriptionSelection.jsx'              --exclude='TierCard.jsx'; then
+            echo "A live UI still calls legacy recurring checkout." >&2
+            exit 1
+          fi
+
+      - name: Verify Admin preview remains restricted
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Token Economy" src/pages/Admin.jsx
+          grep -F "adjustMemberTokens" src/pages/Admin.jsx src/lib/adminService.js worker/admin.ts
+          grep -F "Prelaunch read-only preview" src/pages/Admin.jsx
+          grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
+          if grep -F "tokenEconomy" worker/mmiq-prelaunch-preview.ts; then
+            echo "Token economics must not be exposed by the public Admin preview bypass." >&2
+            exit 1
+          fi
+
+      - name: Verify no plaintext runtime credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE 'sk_(live|test)_[A-Za-z0-9]|sk-proj-[A-Za-z0-9]|whsec_[A-Za-z0-9]|AC[0-9a-fA-F]{32}' src worker cloudflare 2>/dev/null; then
+            echo "Plaintext credential pattern found." >&2
+            exit 1
+          fi
+
+      - name: Verify Production deployment remains untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "branches:" .github/workflows/deploy-o2ol-production-neon.yml
+          grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
+          if grep -F "prelaunch/o2ol-token-economy-20261003" .github/workflows/deploy-o2ol-production-neon.yml; then
+            echo "Production workflow must not target Token Prelaunch." >&2
+            exit 1
+          fi
+
+      - name: Report QA marker
+        run: echo "O2OL_TOKEN_PRELAUNCH_QA=PASS"
