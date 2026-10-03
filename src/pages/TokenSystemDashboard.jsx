@@ -99,6 +99,19 @@ export default function TokenSystemDashboard(){
     }));
   },[data?.packages,data?.featurePrices]);
 
+  const projectedPackageEconomics=useMemo(()=>{
+    const providerCost=Number(summary.provider_cost_micros_30d||0)/1000000;
+    const charged=Number(summary.tokens_charged_30d||0);
+    const avgProviderCostPerToken=charged>0?providerCost/charged:0;
+    return (data?.packages||[]).filter(pkg=>pkg.active).map(pkg=>{
+      const revenue=Number(pkg.amount_cents||0)/100;
+      const estimatedProviderCost=avgProviderCostPerToken*Number(pkg.tokens||0);
+      const providerContribution=revenue-estimatedProviderCost;
+      const providerMarginPct=revenue>0?(providerContribution/revenue)*100:null;
+      return {...pkg,revenue,avgProviderCostPerToken,estimatedProviderCost,providerContribution,providerMarginPct};
+    });
+  },[data?.packages,summary.provider_cost_micros_30d,summary.tokens_charged_30d]);
+
   const packageCalibration=useMemo(()=>{
     const rows=data?.calibrations||[];
     return rows.filter(row=>row.package_code).map(row=>({
@@ -265,6 +278,19 @@ export default function TokenSystemDashboard(){
           </div>
           <div className="mt-3 text-xs text-slate-500">This control does not add, remove, or purchase Tokens. It only opens a measurement session around the account's real Token activity.</div>
         </Panel>
+        <Panel title="Projected Package Economics" subtitle="Uses the actual 30-day average provider cost per O2OL Token. This is provider-cost contribution only—not net profit and not a final price recommendation.">
+          {Number(summary.tokens_charged_30d)>0?<div className="grid gap-4 xl:grid-cols-3">{projectedPackageEconomics.map(pkg=><div key={pkg.code} className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-3"><div><div className="font-black">{pkg.label}</div><div className="mt-1 text-xs text-slate-400">{n(pkg.tokens)} Tokens</div></div><div className="text-xl font-black text-emerald-700">{money(pkg.revenue)}</div></div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl bg-slate-50 p-3">Avg provider cost / Token<br/><strong>{money(pkg.avgProviderCostPerToken)}</strong></div>
+              <div className="rounded-xl bg-slate-50 p-3">Est. provider cost<br/><strong>{money(pkg.estimatedProviderCost)}</strong></div>
+              <div className="rounded-xl bg-slate-50 p-3">Provider contribution<br/><strong>{money(pkg.providerContribution)}</strong></div>
+              <div className="rounded-xl bg-slate-50 p-3">Provider-cost margin<br/><strong>{pkg.providerMarginPct==null?'—':pkg.providerMarginPct.toFixed(1)+'%'}</strong></div>
+            </div>
+          </div>)}</div>:<Empty>Provider-cost projections will appear after real non-Admin Token usage records at least one charged cost event.</Empty>}
+          <div className="mt-4 rounded-xl bg-amber-50 p-4 text-xs leading-5 text-amber-900">These figures exclude Stripe fees, Twilio/SMS costs not represented in the cost ledger, hosting, database, support, taxes, refunds, promotions, and other operating expenses. Use them only as a calibration signal.</div>
+        </Panel>
+
         <Panel title="Package Burn Test Matrix" subtitle="Before you buy/test each package, this shows the maximum full metered uses at current calibration prices. It updates automatically when Token pricing changes.">
           {burnRows.length?<div className="grid gap-4 xl:grid-cols-3">{burnRows.map(pkg=><div key={pkg.code} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
             <div className="flex items-start justify-between gap-3"><div><div className="text-xl font-black">{pkg.label}</div><div className="mt-1 font-mono text-xs text-slate-400">{pkg.code}</div></div><div className="text-right"><div className="text-2xl font-black text-violet-700">{money(Number(pkg.amount_cents)/100)}</div><div className="text-xs font-bold text-amber-700">{n(pkg.tokens)} Tokens</div></div></div>
