@@ -319,7 +319,8 @@ export default function Admin() {
 
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
-  const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {};
+  const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, clickAnalytics=data?.clickAnalytics || {};
+  const clickSummary=clickAnalytics.summary || {};
   const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
   const featureWindows=topFeatureActivity.windows || [7,14,21,30];
@@ -558,7 +559,22 @@ export default function Admin() {
           </div>}
 
           {section==='feature-usage' && <div>
-            <Heading title="Feature Usage Analytics" subtitle="See which features attract users, how many members use them, how often they are used, and when they were last active."/>
+            <Heading title="Feature & Click Analytics" subtitle="Tracks normal UI clicks from non-registered Open House visitors, registered users without a paid subscription, and subscribed members. Administrator activity is excluded."/>
+            <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric icon={Activity} label="All Clicks" value={number(clickSummary.clicks_30d)} note={`${number(clickSummary.total_clicks)} since analytics baseline`} tone="blue"/>
+              <Metric icon={Users} label="Non-Registered Clicks" value={number(clickSummary.anonymous_30d)} note={`${number(clickSummary.unique_anonymous_30d)} unique anonymous visitors · 30 days`} tone="violet"/>
+              <Metric icon={UserCheck} label="Registered Free Clicks" value={number(clickSummary.registered_free_30d)} note={`${number(clickSummary.unique_registered_30d)} total registered users active · 30 days`} tone="amber"/>
+              <Metric icon={CreditCard} label="Subscribed Clicks" value={number(clickSummary.subscribed_30d)} note="paid/subscribed members · 30 days" tone="green"/>
+            </div>
+            <div className={cx('mb-5 rounded-xl border p-4 text-sm',clickAnalytics.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{clickAnalytics.trackingMessage || 'All-visitor click tracking has not produced data yet.'}</div>
+            <div className="mb-6 grid gap-6 xl:grid-cols-2">
+              <Panel title="Top Clicked Pages — 30 Days">
+                {(clickAnalytics.topRoutes||[]).length?<div className="space-y-2">{clickAnalytics.topRoutes.map(item=><div key={item.route} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="min-w-0 truncate font-semibold">{item.route}</span><strong>{number(item.clicks)}</strong></div><div className="mt-1 text-xs text-slate-500">Anonymous {number(item.anonymous)} · Registered free {number(item.registered_free)} · Subscribed {number(item.subscribed)}</div></div>)}</div>:<Empty>No public clicks recorded yet.</Empty>}
+              </Panel>
+              <Panel title="Top Clicked Features — 30 Days">
+                {(clickAnalytics.topFeatures||[]).length?<div className="space-y-2">{clickAnalytics.topFeatures.map(item=><div key={item.feature} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="min-w-0 truncate font-semibold">{item.feature}</span><strong>{number(item.clicks)}</strong></div><div className="mt-1 text-xs text-slate-500">Anonymous {number(item.anonymous)} · Registered free {number(item.registered_free)} · Subscribed {number(item.subscribed)}</div></div>)}</div>:<Empty>No feature clicks recorded yet.</Empty>}
+              </Panel>
+            </div>
             <div className={cx('mb-5 rounded-xl border p-4 text-sm',featureUsage.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{featureUsage.trackingMessage}</div>
             <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="min-w-[900px]">
