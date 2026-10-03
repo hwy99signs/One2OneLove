@@ -7,7 +7,7 @@ import { Heart, Search, Shuffle, Send, X, MessageSquare, Facebook, Instagram, Tw
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLoveNoteDeliveryReadiness, getLoveNoteUsage, listSentLoveNotes, recordSentLoveNote, sendLoveNoteSms, scheduleLoveNote } from "@/lib/loveNotesService";
+import { getLoveNoteDeliveryReadiness, listSentLoveNotes, recordSentLoveNote, sendLoveNoteSms, scheduleLoveNote } from "@/lib/loveNotesService";
 import { trackFeatureAction } from "@/lib/featureUsageService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -90,11 +90,11 @@ const translations = {
     openingLinkedIn: "Opening LinkedIn...",
     openingEmail: "Opening email...",
     sendingLimits: "📊 Love Note Sending & Billing",
-    firstPaidSend: "First trial SMS",
-    freeFirstSend: "FREE",
-    firstSendUsed: "Used",
-    additionalSms: "Additional One2OneLove SMS",
-    billedWithSubscription: "Billed with subscription usage",
+    firstPaidSend: "O2OL Token Wallet",
+    freeFirstSend: "No recurring fee",
+    firstSendUsed: "Token metered",
+    additionalSms: "One2OneLove SMS delivery",
+    billedWithSubscription: "Token cost shown before sending",
     partnerNotes: "Notes to Partner",
     smsNotes: "SMS to Others",
     socialMedia: "Social Media",
@@ -203,11 +203,11 @@ const translations = {
     petNameDesc: 'Añadido a notas que contienen "amor".',
     specialPlaceDesc: "Añadido a notas de 'Recuerdos'.",
     sendingLimits: "📊 Envío y Facturación de Notas de Amor",
-    firstPaidSend: "Primer SMS de la prueba",
-    freeFirstSend: "GRATIS",
-    firstSendUsed: "Usado",
-    additionalSms: "SMS adicionales de One2OneLove",
-    billedWithSubscription: "Facturados con el uso de tu suscripción",
+    firstPaidSend: "Billetera de Tokens O2OL",
+    freeFirstSend: "Sin cuota recurrente",
+    firstSendUsed: "Medido con Tokens",
+    additionalSms: "Entrega SMS de One2OneLove",
+    billedWithSubscription: "El costo en Tokens se muestra antes de enviar",
     partnerNotes: "Notas a la Pareja",
     smsNotes: "SMS a Otros",
     socialMedia: "Redes Sociales",
@@ -303,7 +303,7 @@ const translations = {
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
     openingText: "Note d’Amour envoyée par One2OneLove.",
-    smsBillingPending: "Note d’Amour livrée. Les frais d’utilisation de US$0.29 sont encore en cours de finalisation.",
+    smsBillingPending: "Note d’Amour livrée. L’utilisation des Jetons est en cours de finalisation.",
     openingWhatsApp: "Ouverture de WhatsApp...",
     openingFacebook: "Ouverture de Facebook...",
     copiedInstagram: "Copié! Coller dans Instagram",
@@ -311,16 +311,16 @@ const translations = {
     copiedTikTok: "Copié! Coller dans TikTok",
     openingLinkedIn: "Ouverture de LinkedIn...",
     openingEmail: "Ouverture de l'email...",
-    recipientPhoneDesc: "Livraison SMS One2OneLove : votre premier envoi SMS de Note d’Amour est GRATUIT ; chaque envoi supplémentaire coûte US$0.29. Des frais opérateur peuvent s’appliquer au destinataire.",
+    recipientPhoneDesc: "La livraison SMS One2OneLove utilise des Jetons O2OL. Le coût en Jetons est affiché avant l’envoi. Des frais opérateur peuvent s’appliquer au destinataire.",
     partnerNameDesc: 'Remplace "tu" et "ton" dans les notes.',
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
     sendingLimits: "📊 Envoi et Facturation des Notes d’Amour",
-    firstPaidSend: "Premier SMS de l’essai",
-    freeFirstSend: "GRATUIT",
-    firstSendUsed: "Utilisé",
-    additionalSms: "SMS One2OneLove supplémentaires",
-    billedWithSubscription: "Facturés avec l’utilisation de votre abonnement",
+    firstPaidSend: "Portefeuille de Jetons O2OL",
+    freeFirstSend: "Aucun frais récurrent",
+    firstSendUsed: "Mesuré en Jetons",
+    additionalSms: "Livraison SMS One2OneLove",
+    billedWithSubscription: "Le coût en Jetons est affiché avant l’envoi",
     partnerNotes: "Notes au Partenaire",
     smsNotes: "SMS aux Autres",
     socialMedia: "Réseaux Sociaux",
@@ -416,7 +416,7 @@ const translations = {
     howItWorksItem4: "• Perfetto per sorprendere il tuo partner!",
     shareViaSocial: "📱 O Condividi Tramite Social Media",
     openingText: "Nota d’Amore inviata da One2OneLove.",
-    smsBillingPending: "Nota d’Amore consegnata. L’addebito di utilizzo di US$0.29 è ancora in fase di finalizzazione.",
+    smsBillingPending: "Nota d’Amore consegnata. L’utilizzo dei Token è in fase di finalizzazione.",
     openingWhatsApp: "Apertura WhatsApp...",
     openingFacebook: "Apertura Facebook...",
     copiedInstagram: "Copiato! Incolla su Instagram",
@@ -424,16 +424,16 @@ const translations = {
     copiedTikTok: "Copiato! Incolla su TikTok",
     openingLinkedIn: "Apertura LinkedIn...",
     openingEmail: "Apertura email...",
-    recipientPhoneDesc: "Consegna SMS One2OneLove: il primo invio SMS di una Nota d’Amore è GRATIS; ogni invio successivo costa US$0.29. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
+    recipientPhoneDesc: "La consegna SMS One2OneLove usa Token O2OL. Il costo in Token viene mostrato prima dell’invio. Potrebbero applicarsi tariffe dell’operatore del destinatario.",
     partnerNameDesc: 'Sostituisce "tu" e "tuo" nelle note.',
     petNameDesc: 'Aggiunto alle note contenenti "amore".',
     specialPlaceDesc: "Aggiunto alle note di 'Ricordi'.",
     sendingLimits: "📊 Invio e Fatturazione delle Note d’Amore",
-    firstPaidSend: "Primo SMS della prova",
-    freeFirstSend: "GRATIS",
-    firstSendUsed: "Usato",
-    additionalSms: "SMS One2OneLove aggiuntivi",
-    billedWithSubscription: "Addebitati con l’utilizzo dell’abbonamento",
+    firstPaidSend: "Portafoglio Token O2OL",
+    freeFirstSend: "Nessuna quota ricorrente",
+    firstSendUsed: "Misurato in Token",
+    additionalSms: "Consegna SMS One2OneLove",
+    billedWithSubscription: "Il costo in Token viene mostrato prima dell’invio",
     partnerNotes: "Note al Partner",
     smsNotes: "SMS ad Altri",
     socialMedia: "Social Media",
@@ -542,11 +542,11 @@ const translations = {
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
     sendingLimits: "📊 Versand und Abrechnung von Liebesnachrichten",
-    firstPaidSend: "Erste Test-SMS",
-    freeFirstSend: "KOSTENLOS",
-    firstSendUsed: "Verwendet",
-    additionalSms: "Weitere One2OneLove-SMS",
-    billedWithSubscription: "Mit der Abonnementnutzung abgerechnet",
+    firstPaidSend: "O2OL Token-Wallet",
+    freeFirstSend: "Keine laufende Gebühr",
+    firstSendUsed: "Token-basiert",
+    additionalSms: "One2OneLove-SMS-Zustellung",
+    billedWithSubscription: "Token-Kosten werden vor dem Senden angezeigt",
     partnerNotes: "Nachrichten an den Partner",
     smsNotes: "SMS an Andere",
     socialMedia: "Soziale Medien",
@@ -769,16 +769,6 @@ const matchesLoveNoteSearch = (note, query) => {
   });
 };
 
-function effectiveLoveNotesPlan(user) {
-  if (String(user?.role || '').toLowerCase() === 'admin') return 'Exclusive';
-  const status = String(user?.subscription_status || '').toLowerCase();
-  if (status === 'trial' || status === 'trialing') return 'Exclusive';
-  const raw = String(user?.subscription_plan || 'Premiere').toLowerCase();
-  if (raw === 'exclusive') return 'Exclusive';
-  if (raw === 'premier' || raw === 'premiere') return 'Premiere';
-  return 'Premiere';
-}
-
 const OPEN_HOUSE_LOVE_NOTE_CATEGORIES = new Set([
   'morning',
   'playful',
@@ -846,20 +836,6 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     signIn: 'Anmelden',
   },
 };
-
-function loveNotesAdminAccessActive(user) {
-  if (!user?.subscription_end_date) return false;
-  const end = new Date(user.subscription_end_date);
-  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
-}
-
-function hasLoveNotesMemberAccess(user) {
-  if (!user) return false;
-  if (String(user.role || '').toLowerCase() === 'admin') return true;
-  const status = String(user.subscription_status || '').toLowerCase();
-  const paidOrGranted = Boolean(user.stripe_subscription_id) || loveNotesAdminAccessActive(user);
-  return ['active', 'trial', 'trialing'].includes(status) && paidOrGranted;
-}
 
 function loveNotesCategoryTeaser(name) {
   const firstWord = String(name || '').trim().split(/\s+/)[0] || '';
@@ -932,7 +908,6 @@ export default function LoveNotes() {
   const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
   const [openHouseLockReason, setOpenHouseLockReason] = useState('category');
 
-  const effectivePlan = effectiveLoveNotesPlan(currentUser);
   const aiPlanEligible = hasMemberAccess;
 
   const { data: aiConfig } = useQuery({
@@ -986,15 +961,7 @@ export default function LoveNotes() {
     return true;
   };
 
-  const { data: loveNoteUsage } = useQuery({
-    queryKey: ['loveNoteUsage', currentUser?.id],
-    queryFn: getLoveNoteUsage,
-    enabled: !!currentUser?.id,
-    staleTime: 30 * 1000,
-  });
-  const firstSmsDisplay = loveNoteUsage
-    ? (loveNoteUsage.firstFreeAvailable ? t.freeFirstSend : t.firstSendUsed)
-    : '—';
+
 
   // Calculate usage limits
   
