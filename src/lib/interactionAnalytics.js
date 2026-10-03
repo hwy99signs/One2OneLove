@@ -186,6 +186,21 @@ export function trackPageView(pathname) {
   });
 }
 
+export function trackFeatureActionEvent(feature, detail) {
+  if (isAdminAnalyticsSurface()) return;
+  const safeFeature = safeText(feature, 100);
+  const actionKey = safeText(detail, 160);
+  if (!safeFeature || !actionKey) return;
+  const route = normalizedPath(window.location.pathname) || '/';
+  send({
+    eventType: 'action',
+    route,
+    feature: safeFeature,
+    controlType: 'feature_action',
+    controlKey: actionKey,
+  });
+}
+
 export function installClickAnalytics() {
   if (typeof document === 'undefined' || document.documentElement.dataset.o2olClickAnalytics === 'on') return;
   document.documentElement.dataset.o2olClickAnalytics = 'on';
