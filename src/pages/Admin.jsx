@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertTriangle, ArrowLeft, BarChart3, CalendarDays, CheckCircle2,
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
+
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -243,8 +245,13 @@ export default function Admin() {
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
   const [votingPlatform,setVotingPlatform] = useState('all');
+  const dataRef = useRef(null);
+  const loadInFlightRef = useRef(false);
+  const lastRefreshAtRef = useRef(0);
 
   const load = async (refresh=false) => {
+    if (loadInFlightRef.current) return;
+    loadInFlightRef.current = true;
     refresh ? setRefreshing(true) : setLoading(true);
     if (!refresh) setError(null);
     const fetchBundle = async () => Promise.all([getAdminDashboard(),getAdminAnalytics()]);
@@ -265,10 +272,12 @@ export default function Admin() {
       if (!result) throw lastError || new Error('Unable to load Admin dashboard.');
       const [dashboardData,analyticsData] = result;
       setData(dashboardData);
+      dataRef.current = dashboardData;
       setAnalytics(analyticsData);
+      lastRefreshAtRef.current = Date.now();
       setError(null);
     } catch (err) {
-      if (!refresh || !data) {
+      if (!refresh || !dataRef.current) {
         setError(err);
       } else if (err?.status === 428) {
         window.location.replace('/AdminAccess');
@@ -278,12 +287,29 @@ export default function Admin() {
         console.warn('Admin background refresh failed; keeping the current dashboard visible.', err);
       }
     } finally {
+      loadInFlightRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
   };
   useEffect(() => {
     load(false);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refreshIfDue = () => {
+      if (!active || document.visibilityState !== 'visible') return;
+      const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
+      if (elapsed >= AUTO_REFRESH_MS) load(true);
+    };
+    const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshIfDue);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshIfDue);
+    };
   }, []);
 
   useEffect(() => {
@@ -463,7 +489,7 @@ export default function Admin() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:flex-nowrap sm:gap-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3"><button className="rounded-lg border border-slate-200 p-2 lg:hidden" onClick={()=>setMobileNav(true)}><Menu size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Operations Dashboard</p><h1 className="text-lg font-bold text-slate-900">{visibleSections.find(s=>s.id===section)?.label}</h1></div></div>
-            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Preview'}</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Preview'}</Pill><span className="hidden md:inline-flex"><Pill tone="green">Auto-refresh · 15 min</Pill></span><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
           </div>
         </header>
 
