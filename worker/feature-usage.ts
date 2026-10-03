@@ -113,60 +113,28 @@ function cleanTrafficSource(value) {
 
 async function ensureInteractionSchema(db) {
   if (interactionSchemaReady) return;
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS public.interaction_events (
-      id bigserial PRIMARY KEY,
-      user_id uuid NULL,
-      visitor_id text NOT NULL,
-      session_id text NOT NULL,
-      actor_type text NOT NULL,
-      access_type text NOT NULL,
-      subscription_plan text NULL,
-      subscription_status text NULL,
-      event_type text NOT NULL,
-      route text NOT NULL,
-      feature text NULL,
-      control_type text NULL,
-      control_key text NULL,
-      destination text NULL,
-      language text NULL,
-      traffic_source text NULL,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      CONSTRAINT interaction_events_actor_type_check CHECK (actor_type IN ('anonymous','registered')),
-      CONSTRAINT interaction_events_access_type_check CHECK (access_type IN ('open_house','registered_free','subscribed')),
-      CONSTRAINT interaction_events_event_type_check CHECK (event_type IN ('click','page_view','action'))
-    )
-  `);
-  await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS language text NULL`);
-  await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS traffic_source text NULL`);
-  const eventConstraint = await db.query(`
-    SELECT pg_get_constraintdef(oid) AS definition
-      FROM pg_constraint
-     WHERE conname='interaction_events_event_type_check'
-       AND conrelid='public.interaction_events'::regclass
-     LIMIT 1
-  `);
-  if (!String(eventConstraint.rows[0]?.definition || '').includes("'action'")) {
-    try {
-      await db.query(`ALTER TABLE public.interaction_events DROP CONSTRAINT IF EXISTS interaction_events_event_type_check`);
-      await db.query(`ALTER TABLE public.interaction_events ADD CONSTRAINT interaction_events_event_type_check CHECK (event_type IN ('click','page_view','action'))`);
-    } catch (error) {
-      const afterRace = await db.query(`
-        SELECT pg_get_constraintdef(oid) AS definition
-          FROM pg_constraint
+  const readiness = await db.query(`
+    SELECT
+      to_regclass('public.interaction_events') IS NOT NULL AS table_ready,
+      EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema='public' AND table_name='interaction_events' AND column_name='language'
+      ) AS language_ready,
+      EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema='public' AND table_name='interaction_events' AND column_name='traffic_source'
+      ) AS traffic_source_ready,
+      EXISTS (
+        SELECT 1 FROM pg_constraint
          WHERE conname='interaction_events_event_type_check'
-           AND conrelid='public.interaction_events'::regclass
-         LIMIT 1
-      `);
-      if (!String(afterRace.rows[0]?.definition || '').includes("'action'")) throw error;
-    }
+           AND conrelid=to_regclass('public.interaction_events')
+           AND position('action' in pg_get_constraintdef(oid))>0
+      ) AS action_ready
+  `);
+  const state = readiness.rows[0] || {};
+  if (!state.table_ready || !state.language_ready || !state.traffic_source_ready || !state.action_ready) {
+    throw new Error('Interaction analytics schema is not prepared.');
   }
-  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_created_at_idx ON public.interaction_events(created_at DESC)`);
-  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_route_idx ON public.interaction_events(route,created_at DESC)`);
-  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_user_idx ON public.interaction_events(user_id,created_at DESC) WHERE user_id IS NOT NULL`);
-  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_visitor_idx ON public.interaction_events(visitor_id,created_at DESC)`);
-  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_language_idx ON public.interaction_events(language,created_at DESC)`);
-  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_traffic_source_idx ON public.interaction_events(traffic_source,created_at DESC)`);
   interactionSchemaReady = true;
 }
 
