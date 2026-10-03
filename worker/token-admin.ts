@@ -84,7 +84,10 @@ async function tokenDashboard(db){
        ORDER BY provider_cost_micros DESC NULLS LAST,c.feature_code
     `),
     db.query(`
-      SELECT w.user_id,u.email,u.name,w.balance,w.lifetime_purchased,w.lifetime_used,w.lifetime_granted,w.created_at,w.updated_at,
+      SELECT w.user_id,u.email,u.name,COALESCE(u.is_active,false) AS is_active,
+             COALESCE(u.phone_number_verified,false) AS phone_verified,
+             COALESCE(a."emailVerified",false) AS email_verified,
+             w.balance,w.lifetime_purchased,w.lifetime_used,w.lifetime_granted,w.created_at,w.updated_at,
              COALESCE(s.enabled,false) AS auto_replenish_enabled,s.package_code AS auto_package,s.trigger_balance,
              f.founding_number,f.cohort AS founding_cohort,f.status AS founding_status
         FROM public.o2ol_token_wallets w
@@ -244,11 +247,19 @@ async function adjustTokens(db,admin,userId,rawDelta,reason=''){
 
 async function loadCalibrationPackage(db,admin,{userId,packageCode}) {
   const target=(await db.query(
-    `SELECT id,email,role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+    `SELECT a.id,a.email,a.role,a."emailVerified" AS email_verified,
+            COALESCE(u.is_active,false) AS is_active,
+            COALESCE(u.phone_number_verified,false) AS phone_verified
+       FROM neon_auth."user" a
+       LEFT JOIN public.users u ON u.id=a.id
+      WHERE a.id=$1::uuid LIMIT 1`,
     [userId],
   )).rows[0]||null;
   if(!target)throw Object.assign(new Error('Calibration member not found.'),{status:404,code:'member_not_found'});
   if(target.role==='admin'||target.id===admin.id)throw Object.assign(new Error('Calibration packages can only be loaded to a non-Admin test/member account.'),{status:403,code:'admin_calibration_forbidden'});
+  if(target.email_verified!==true||target.is_active!==true||target.phone_verified!==true){
+    throw Object.assign(new Error('Calibration requires an active member with verified email and phone.'),{status:409,code:'calibration_member_not_ready'});
+  }
 
   const pkg=(await db.query(
     `SELECT code,label,tokens,amount_cents FROM public.o2ol_token_packages
@@ -311,11 +322,19 @@ async function loadCalibrationPackage(db,admin,{userId,packageCode}) {
 
 async function startCalibration(db,admin,{userId,featureCode='all',packageCode=null,notes=''}) {
   const target=(await db.query(
-    `SELECT id,email,role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+    `SELECT a.id,a.email,a.role,a."emailVerified" AS email_verified,
+            COALESCE(u.is_active,false) AS is_active,
+            COALESCE(u.phone_number_verified,false) AS phone_verified
+       FROM neon_auth."user" a
+       LEFT JOIN public.users u ON u.id=a.id
+      WHERE a.id=$1::uuid LIMIT 1`,
     [userId],
   )).rows[0]||null;
   if(!target)throw Object.assign(new Error('Calibration member not found.'),{status:404,code:'member_not_found'});
   if(target.role==='admin'||target.id===admin.id)throw Object.assign(new Error('Calibration must use a non-Admin test/member account.'),{status:403,code:'admin_calibration_forbidden'});
+  if(target.email_verified!==true||target.is_active!==true||target.phone_verified!==true){
+    throw Object.assign(new Error('Calibration requires an active member with verified email and phone.'),{status:409,code:'calibration_member_not_ready'});
+  }
 
   const feature=String(featureCode||'all').trim();
   if(feature!=='all'){
