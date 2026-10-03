@@ -130,7 +130,20 @@ export function installClickAnalytics() {
   document.addEventListener('click', (event) => {
     if (isAdminAnalyticsSurface()) return;
     const target = event.target instanceof Element ? event.target : null;
-    const control = target?.closest('a,button,[role="button"],input[type="button"],input[type="submit"]');
+    if (!target) return;
+
+    let control = target.closest('a,button,[role="button"],[role="link"],input[type="button"],input[type="submit"],summary,label,[data-analytics-id],[tabindex]');
+    if (!control) {
+      let node = target;
+      for (let depth = 0; node && depth < 6; depth += 1, node = node.parentElement) {
+        try {
+          if (window.getComputedStyle(node).cursor === 'pointer') {
+            control = node;
+            break;
+          }
+        } catch {}
+      }
+    }
     if (!control) return;
 
     const currentRoute = window.location.pathname || '/';
