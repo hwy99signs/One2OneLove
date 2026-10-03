@@ -426,7 +426,7 @@ async function taskFounding(browser){
   await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/signin'&&new URL(u).searchParams.get('redirect')==='/Subscription?founding=1',{timeout:5000});
   await page.locator('#signin-email').fill('qa-founding@example.invalid');
   await page.locator('#signin-password').fill('QaPass123!');
-  await page.getByRole('button',{name:/^Sign In$/i}).click();
+  await page.getByRole('main').getByRole('button',{name:/^Sign In$/i}).click();
   await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/verifyphone'&&new URL(u).searchParams.get('redirect')==='/Subscription?founding=1',{timeout:8000});
   await page.locator('input[type="tel"]').first().fill('+17135550123');
   await page.getByRole('button',{name:/Send.*Code|Send/i}).first().click();
