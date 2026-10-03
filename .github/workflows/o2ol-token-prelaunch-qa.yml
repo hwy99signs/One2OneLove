@@ -80,8 +80,8 @@ jobs:
           grep -F "Calibration must use a non-Admin test/member account." worker/token-admin.ts
           grep -F "activeCalibrationSession" worker/o2ol-cost-ledger.ts
           grep -F "calibration_session_id" worker/o2ol-cost-ledger.ts
-          test "$(git show restore/locked-o2ol-before-token-economy-prelaunch-20261003:src/pages/Admin.jsx | git hash-object --stdin)" = "$(git hash-object src/pages/Admin.jsx)"
-          test "$(git show restore/locked-o2ol-before-token-economy-prelaunch-20261003:src/lib/adminService.js | git hash-object --stdin)" = "$(git hash-object src/lib/adminService.js)"
+          test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
+          test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
 
       - name: Verify free-account access contract
         shell: bash
