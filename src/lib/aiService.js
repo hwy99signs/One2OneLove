@@ -173,7 +173,15 @@ export async function reportMyMatchIQMember({reportedUserId,category='other',det
 
 export async function getMyMatchIQAccess() {
   const payload = await apiRequest('/api/mymatchiq/access');
-  return payload?.access || { tier:'free' };
+  return payload?.access || {
+    access_model:'free_tokens',
+    verified_member:true,
+    tier:'Free',
+    assessment_question_count:225,
+    assessment_dimension_count:15,
+    token_mode:true,
+    token_balance:0,
+  };
 }
 
 export async function getMyMatchIQLegacyMigrationStatus() {
