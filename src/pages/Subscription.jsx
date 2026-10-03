@@ -101,7 +101,7 @@ export default function Subscription(){
     <div className="text-sm font-black uppercase tracking-widest text-cyan-800">{t.openHouseTitle}</div>
     <p className="mx-auto mt-2 max-w-3xl text-sm leading-6 text-slate-700">{t.openHouseBody}</p>
     <div className="mt-4 flex flex-wrap justify-center gap-3">
-      <Button type="button" data-analytics-id="subscription-create-free-account" onClick={()=>navigate('/SignUp?plan=Basic&type=individual&source=open-house-free')} className="bg-cyan-700 px-5 font-black text-white hover:bg-cyan-800">{t.createFreeAccount}</Button>
+      <Button type="button" data-analytics-id="subscription-create-free-account" onClick={()=>navigate('/SignUp?account=free&type=individual&source=open-house-free')} className="bg-cyan-700 px-5 font-black text-white hover:bg-cyan-800">{t.createFreeAccount}</Button>
       <Button type="button" data-analytics-id="subscription-continue-open-house" onClick={()=>navigate('/Home')} className="bg-slate-900 px-5 font-black text-white hover:bg-slate-800">{t.continueBrowsing}</Button>
     </div>
    </div>
