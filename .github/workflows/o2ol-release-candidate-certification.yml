@@ -63,6 +63,9 @@ jobs:
           grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx >/dev/null
           grep -F "OPEN HOUSE BROWSING IS FREE!" src/pages/Subscription.jsx >/dev/null
           grep -F "Founding Members #1–100" src/pages/HelpCenter.jsx >/dev/null
+          grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
+          grep -F "const writeAccess = await loveNoteWriteAccess(db, auth);" worker/love-note-entitlements.ts >/dev/null
+          grep -F "reason: 'subscription_required'" worker/love-note-entitlements.ts >/dev/null
           if grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null; then
             echo "Retired trial/guest-preview behavior remains"; exit 1;
           fi
