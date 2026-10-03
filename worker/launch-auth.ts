@@ -149,18 +149,18 @@ function registrationContext(body) {
   const termsAcceptedAt = clean(body.termsAcceptedAt, 100, true);
   const privacyAcknowledged = body.privacyPolicyAcknowledged === true;
   const age18Confirmed = body.age18Confirmed === true;
-  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Basic';
+  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Premiere';
   const selectedPlan = selectedPlanRaw.toLowerCase() === 'exclusive'
     ? 'Exclusive'
     : ['premiere', 'premier'].includes(selectedPlanRaw.toLowerCase()) ? 'Premiere'
-    : ['basic', 'free', 'registered free', 'registered-free'].includes(selectedPlanRaw.toLowerCase()) ? 'Basic'
     : null;
+  const freeAccount = body.freeAccount === true;
 
   if (!/^\S+@\S+\.\S+$/.test(email || '')) throw new Error('Please enter a valid email address.');
   if (!/^[A-Z]{2}$/.test(country || '')) throw new Error('Please select a valid country.');
   if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) throw new Error('Please select one of the supported One2OneLove languages.');
   if (!privacyAcknowledged || !age18Confirmed) throw new Error('Privacy acknowledgement and 18+ confirmation are required.');
-  if (!selectedPlan) throw new Error('Please choose Free, Premiere or Exclusive before creating an account.');
+  if (!selectedPlan) throw new Error('Please choose Premiere or Exclusive before creating an account.');
 
   const acceptedDate = new Date(termsAcceptedAt);
   if (Number.isNaN(acceptedDate.getTime())) throw new Error('Terms acceptance date is invalid.');
@@ -173,7 +173,8 @@ function registrationContext(body) {
     termsVersion,
     termsAcceptedAt: acceptedDate.toISOString(),
     selectedPlan,
-    selectedPrice: selectedPlan === 'Basic' ? 0 : selectedPlan === 'Exclusive' ? 19.99 : 9.99,
+    freeAccount,
+    selectedPrice: freeAccount ? 0 : selectedPlan === 'Exclusive' ? 19.99 : 9.99,
   };
 }
 
