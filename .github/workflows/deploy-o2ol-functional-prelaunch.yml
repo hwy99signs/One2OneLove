@@ -45,14 +45,14 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Require isolated provider credentials
+      - name: Require isolated core infrastructure and report optional providers
         shell: bash
         run: |
           set -euo pipefail
-          for NAME in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+          for NAME in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
             VALUE="${!NAME:-}"
             if [ -z "$VALUE" ]; then
-              echo "Missing required Token Prelaunch secret: $NAME" >&2
+              echo "Missing required Token Prelaunch infrastructure secret: $NAME" >&2
               exit 1
             fi
           done
@@ -61,6 +61,14 @@ jobs:
             echo "Production Hyperdrive is forbidden for Token Prelaunch." >&2
             exit 1
           fi
+          for NAME in OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+            VALUE="${!NAME:-}"
+            if [ -n "$VALUE" ]; then
+              echo "$NAME=present"
+            else
+              echo "$NAME=missing (feature remains fail-closed)"
+            fi
+          done
 
       - name: Prove Hyperdrive points only to Token Neon branch
         shell: bash
@@ -156,29 +164,37 @@ jobs:
           set -euo pipefail
           npx --yes wrangler@latest deploy --config /tmp/wrangler.token-bootstrap.jsonc
 
-      - name: Install Token Prelaunch provider secrets
+      - name: Install available Token Prelaunch provider secrets
         shell: bash
         run: |
           set -euo pipefail
-          put_secret() {
+          put_secret_if_present() {
             NAME="$1"
             VALUE="$2"
-            printf '%s' "$VALUE" | npx --yes wrangler@latest secret put "$NAME" --name "$WORKER_NAME"
+            if [ -n "$VALUE" ]; then
+              printf '%s' "$VALUE" | npx --yes wrangler@latest secret put "$NAME" --name "$WORKER_NAME"
+              echo "$NAME=installed"
+            else
+              echo "$NAME=not installed; corresponding feature remains fail-closed"
+            fi
           }
-          put_secret OPENAI_API_KEY "$OPENAI_API_KEY"
-          put_secret STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
-          put_secret STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
-          put_secret TWILIO_ACCOUNT_SID "$TWILIO_ACCOUNT_SID"
-          put_secret TWILIO_AUTH_TOKEN "$TWILIO_AUTH_TOKEN"
-          put_secret TWILIO_VERIFY_SERVICE_SID "$TWILIO_VERIFY_SERVICE_SID"
+          put_secret_if_present OPENAI_API_KEY "$OPENAI_API_KEY"
+          put_secret_if_present STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
+          put_secret_if_present STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
+          put_secret_if_present TWILIO_ACCOUNT_SID "$TWILIO_ACCOUNT_SID"
+          put_secret_if_present TWILIO_AUTH_TOKEN "$TWILIO_AUTH_TOKEN"
+          put_secret_if_present TWILIO_VERIFY_SERVICE_SID "$TWILIO_VERIFY_SERVICE_SID"
 
-      - name: Verify isolated Worker secret names
+      - name: Verify any supplied provider secrets were installed
         shell: bash
         run: |
           set -euo pipefail
           OUT=$(npx --yes wrangler@latest secret list --name "$WORKER_NAME" 2>&1)
-          for REQUIRED in OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
-            printf '%s\n' "$OUT" | grep -F "$REQUIRED" >/dev/null
+          for NAME in OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+            VALUE="${!NAME:-}"
+            if [ -n "$VALUE" ]; then
+              printf '%s\n' "$OUT" | grep -F "$NAME" >/dev/null
+            fi
           done
 
       - name: Publish Token Prelaunch on workers.dev only
