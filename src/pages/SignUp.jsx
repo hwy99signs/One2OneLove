@@ -48,7 +48,13 @@ export default function SignUp() {
   }
 
   const chooseIndividual = () => navigate(freeAccount ? '/SignUp?account=free&type=individual' : `/SignUp?plan=${encodeURIComponent(effectivePlan)}&type=individual${foundingIntent ? '&founding=1' : ''}`);
-  const chooseProfessional = () => navigate(`/ProfessionalSignup?plan=${encodeURIComponent(effectivePlan)}`);
+  const chooseProfessional = () => {
+    if (freeAccount) {
+      navigate('/ProfessionalSignup?account=free');
+      return;
+    }
+    navigate(`/ProfessionalSignup?plan=${encodeURIComponent(effectivePlan)}${foundingIntent ? '&founding=1' : ''}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
