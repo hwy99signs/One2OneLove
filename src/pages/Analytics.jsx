@@ -85,6 +85,17 @@ export default function Analytics() {
       share: knownEvents ? Math.round((Number(row.total_events||0) / knownEvents) * 1000) / 10 : 0,
     }));
   },[data]);
+  const trafficRows = useMemo(() => {
+    return [...(data?.trafficSources || [])]
+      .map(row => ({
+        ...row,
+        engagement_rate: Number(row.landings||0)
+          ? Math.round((Number(row.engaged_sessions||0) / Number(row.landings||0)) * 1000) / 10
+          : 0,
+      }))
+      .sort((a,b) => Number(b.unique_visitors||0) - Number(a.unique_visitors||0) || Number(b.landings||0) - Number(a.landings||0));
+  },[data]);
+  const topTrafficSource = trafficRows.find(row => Number(row.unique_visitors||0) > 0) || null;
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading Analytics</h1><p className="mt-2 text-sm text-slate-500">Building your One2OneLove trend view.</p></div></div>;
   if (error) {
@@ -123,6 +134,26 @@ export default function Analytics() {
               <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Registered Users</p><p className="mt-1 text-2xl font-black text-slate-900">{number(data?.siteUsageSummary?.registered_users)}</p></div>
             </div>
             <ChartFrame height={340}><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.siteUsage||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Page views" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visitors" name="Unique visitors / day" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+          </Panel>
+        </div>
+
+        <div className="mt-6">
+          <Panel title="Traffic by Platform" subtitle="Rolling 30-day attribution for the source that brought each visit to One2OneLove. UTM source is used when present; otherwise a privacy-safe referring-platform match is used.">
+            {topTrafficSource && <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Top Traffic Source</p>
+              <div className="mt-1 flex flex-wrap items-end gap-x-4 gap-y-1"><p className="text-2xl font-black text-slate-900">{topTrafficSource.label}</p><p className="text-sm font-semibold text-slate-600">{number(topTrafficSource.unique_visitors)} unique visitors · {number(topTrafficSource.landings)} visits</p></div>
+            </div>}
+            <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+              <ChartFrame height={390}><ResponsiveContainer width="100%" height="100%"><BarChart data={trafficRows} layout="vertical" margin={{ top: 5,right: 15,left: 18,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="label" width={80}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="unique_visitors" name="Unique visitors"/><Bar dataKey="landings" name="Visits"/></BarChart></ResponsiveContainer></ChartFrame>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Source</th><th className="px-3 py-2 text-right">Visitors</th><th className="px-3 py-2 text-right">Visits</th><th className="px-3 py-2 text-right">Views</th><th className="px-3 py-2 text-right">Clicks</th><th className="px-3 py-2 text-right">Engaged</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">{trafficRows.map(row=><tr key={row.source}><td className="px-3 py-3 font-semibold text-slate-900">{row.label}</td><td className="px-3 py-3 text-right font-bold">{number(row.unique_visitors)}</td><td className="px-3 py-3 text-right">{number(row.landings)}</td><td className="px-3 py-3 text-right">{number(row.page_views)}</td><td className="px-3 py-3 text-right">{number(row.clicks)}</td><td className="px-3 py-3 text-right font-bold">{Number(row.engagement_rate||0).toLocaleString(undefined,{maximumFractionDigits:1})}%</td></tr>)}</tbody>
+                </table>
+              </div>
+            </div>
+            {Number(data?.trafficSourceUnknownEvents||0)>0 && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">{number(data.trafficSourceUnknownEvents)} older interaction events were recorded before traffic-source attribution was enabled. They are left unclassified rather than guessed.</div>}
+            <p className="mt-4 text-xs leading-5 text-slate-500">For the cleanest ad comparison, use links with standard <span className="font-semibold">utm_source</span> values such as facebook, instagram, threads, tiktok, x, youtube, linkedin or pinterest. Direct means no external source was available; Other means an external source was present but did not match one of those platforms.</p>
           </Panel>
         </div>
 

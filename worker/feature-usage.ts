@@ -41,6 +41,7 @@ const TRACKABLE_FEATURES = new Set([
 const LEGACY_EVENT_TYPES = new Set(['view', 'action']);
 const INTERACTION_EVENT_TYPES = new Set(['click', 'page_view']);
 const INTERACTION_LANGUAGES = new Set(['en','es','fr','it','de']);
+const TRAFFIC_SOURCES = new Set(['facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other']);
 let interactionSchemaReady = false;
 
 async function session(request, env, requireVerified = true) {
@@ -96,6 +97,11 @@ function cleanLanguage(value) {
   return language && INTERACTION_LANGUAGES.has(language) ? language : null;
 }
 
+function cleanTrafficSource(value) {
+  const source = clean(value, 20)?.toLowerCase();
+  return source && TRAFFIC_SOURCES.has(source) ? source : 'other';
+}
+
 async function ensureInteractionSchema(db) {
   if (interactionSchemaReady) return;
   await db.query(`
@@ -115,6 +121,7 @@ async function ensureInteractionSchema(db) {
       control_key text NULL,
       destination text NULL,
       language text NULL,
+      traffic_source text NULL,
       created_at timestamptz NOT NULL DEFAULT now(),
       CONSTRAINT interaction_events_actor_type_check CHECK (actor_type IN ('anonymous','registered')),
       CONSTRAINT interaction_events_access_type_check CHECK (access_type IN ('open_house','registered_free','subscribed')),
@@ -122,11 +129,13 @@ async function ensureInteractionSchema(db) {
     )
   `);
   await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS language text NULL`);
+  await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS traffic_source text NULL`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_created_at_idx ON public.interaction_events(created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_route_idx ON public.interaction_events(route,created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_user_idx ON public.interaction_events(user_id,created_at DESC) WHERE user_id IS NOT NULL`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_visitor_idx ON public.interaction_events(visitor_id,created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_language_idx ON public.interaction_events(language,created_at DESC)`);
+  await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_traffic_source_idx ON public.interaction_events(traffic_source,created_at DESC)`);
   interactionSchemaReady = true;
 }
 
@@ -147,6 +156,7 @@ async function handleInteractionEvent(request, env) {
   const controlType = clean(body?.controlType, 40);
   const controlKey = clean(body?.controlKey, 160);
   const language = cleanLanguage(body?.language);
+  const trafficSource = cleanTrafficSource(body?.trafficSource);
 
   if (!INTERACTION_EVENT_TYPES.has(eventType)) return json({ ok:false,error:{ message:'Unknown event type.' } },400);
   if (!visitorId || !sessionId || !route) return json({ ok:false,error:{ message:'Invalid analytics event.' } },400);
@@ -196,9 +206,9 @@ async function handleInteractionEvent(request, env) {
 
     await db.query(
       `INSERT INTO public.interaction_events
-        (user_id,visitor_id,session_id,actor_type,access_type,subscription_plan,subscription_status,event_type,route,feature,control_type,control_key,destination,language)
-       VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [userId,visitorId,sessionId,actorType,accessType,subscriptionPlan,subscriptionStatus,eventType,route,feature,controlType,controlKey,destination,language],
+        (user_id,visitor_id,session_id,actor_type,access_type,subscription_plan,subscription_status,event_type,route,feature,control_type,control_key,destination,language,traffic_source)
+       VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      [userId,visitorId,sessionId,actorType,accessType,subscriptionPlan,subscriptionStatus,eventType,route,feature,controlType,controlKey,destination,language,trafficSource],
     );
 
     return json({ ok:true });
