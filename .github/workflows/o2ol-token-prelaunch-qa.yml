@@ -85,6 +85,14 @@ jobs:
           test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
           test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
 
+      - name: Verify stale Stripe-less memberships are normalized inactive
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Retire stale Stripe-less active/trial access labels" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "stripe_subscription_id IS NULL" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "subscription_status='inactive'" neon-migrations/2026-10-03-o2ol-token-economy.sql
+
       - name: Verify free-account access contract
         shell: bash
         run: |
