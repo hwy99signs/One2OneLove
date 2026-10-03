@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useLanguage } from '@/Layout';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { getFoundingOffer, handleSubscriptionCheckout } from '@/lib/stripeService';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ const FOUNDING={
 
 const PLANS=[{name:'Premiere',price:9.99},{name:'Exclusive',price:19.99}];
 
-function PlanCard({plan,t,planCopy,busy,onChoose,disabled=false}){
+function PlanCard({plan,t,planCopy,busy,onChoose,authLoading=false}){
  const features=planCopy.plans[plan.name].features;
  const price=plan.name==='Exclusive'?t.exclusivePrice:t.premierePrice;
  const create=plan.name==='Exclusive'?t.createExclusive:t.createPremiere;
@@ -37,7 +38,7 @@ function PlanCard({plan,t,planCopy,busy,onChoose,disabled=false}){
    <h2 className="mt-4 text-3xl font-black text-white">{plan.name==='Exclusive'?t.exclusive:t.premiere}</h2>
    <div className="mt-2 text-2xl font-black text-white">{price}</div>
    <ul className="mt-6 flex-1 space-y-3">{features.map(item=><li key={item} className="flex items-start gap-3 text-[1.3125rem] leading-[1.8rem] text-white/95"><Check className="mt-1 h-4 w-4 shrink-0 text-white"/><span>{item}</span></li>)}</ul>
-   <Button data-analytics-id={`subscription-plan-${plan.name.toLowerCase()}`} disabled={busy||disabled} onClick={()=>onChoose(plan)} className="mt-7 w-full border border-white/35 bg-white/15 py-6 text-base font-bold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60">{busy?t.starting:create}</Button>
+   <Button data-analytics-id={`subscription-plan-${plan.name.toLowerCase()}`} disabled={busy||authLoading} onClick={()=>onChoose(plan)} className="mt-7 w-full border-2 border-white bg-white py-6 text-base font-black text-slate-900 shadow-lg hover:bg-slate-100 disabled:cursor-wait disabled:opacity-70">{busy?t.starting:(authLoading?t.loading:create)}</Button>
  </section>;
 }
 
@@ -45,6 +46,7 @@ export default function Subscription(){
  const navigate=useNavigate();
  const [searchParams]=useSearchParams();
  const {currentLanguage}=useLanguage();
+ const {isAuthenticated,isLoading:authLoading}=useAuth();
  const t=COPY[currentLanguage]||COPY.en;
  const planCopy=subscriptionPlanCopy[currentLanguage]||subscriptionPlanCopy.en;
  const founding=FOUNDING[currentLanguage]||FOUNDING.en;
@@ -61,6 +63,10 @@ export default function Subscription(){
  const chooseFounding=async ()=>{
   const offer=foundingOffer;
   if(!offer?.available || !offer?.plan) return;
+  if(!isAuthenticated){
+    navigate('/SignUp?plan='+encodeURIComponent(offer.plan)+'&founding=1&source=founding-offer');
+    return;
+  }
   setBusy('founding');
   try{
    const result=await handleSubscriptionCheckout({
@@ -81,6 +87,10 @@ export default function Subscription(){
  };
 
  const choose=async plan=>{
+  if(!isAuthenticated){
+    navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&source=subscription-plan');
+    return;
+  }
   setBusy(plan.name);
   try{
    const result=await handleSubscriptionCheckout({name:plan.name,price:plan.price,priceId:plan.name==='Exclusive'?(import.meta.env.VITE_STRIPE_PRICE_EXCLUSIVE||'price_1UFUSKCoKDheG1ASG5zk97Ph'):(import.meta.env.VITE_STRIPE_PRICE_PREMIERE||'price_1UFUSDCoKDheG1AS2AgFooh0')});
@@ -112,7 +122,7 @@ export default function Subscription(){
       <div className="mx-auto mt-4 max-w-3xl rounded-2xl border border-amber-300 bg-white p-4">
        <div className="text-xs font-black uppercase tracking-widest text-amber-700">{t.foundingCurrent}</div>
        <p className="mt-2 text-lg font-black text-slate-900">{foundingOffer.cohort==='first100'?founding.first:founding.second}</p>
-       <Button type="button" disabled={busy==='founding'} onClick={chooseFounding} className="mt-4 bg-amber-600 px-6 font-black text-white hover:bg-amber-700">{busy==='founding'?t.foundingOpening:t.foundingCta}</Button>
+       <Button type="button" disabled={busy==='founding'||authLoading} onClick={chooseFounding} className="mt-4 bg-amber-600 px-6 font-black text-white shadow-md hover:bg-amber-700 disabled:cursor-wait disabled:opacity-70">{busy==='founding'?t.foundingOpening:(authLoading?t.loading:t.foundingCta)}</Button>
       </div>
       <p className="mx-auto mt-3 max-w-3xl text-xs leading-5 text-slate-600">{t.foundingCompare}</p>
     </> : null}
@@ -126,7 +136,7 @@ export default function Subscription(){
     </div>
    </div>
    <div className="mt-5 grid gap-6 md:grid-cols-2">
-    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} onChoose={choose}/>) }
+    {PLANS.map(plan=><PlanCard key={plan.name} plan={plan} t={t} planCopy={planCopy} busy={busy===plan.name} authLoading={authLoading} onChoose={choose}/>) }
    </div>
    <><div className="mt-8 space-y-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-sm leading-6 text-slate-700"><h3 className="text-xl font-black text-slate-900">{founding.title}</h3><p><strong>{founding.first}</strong></p><p><strong>{founding.second}</strong></p><p>{founding.terms}</p></div><div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600"><p>{planCopy.terms.loveNotes}</p><p>{planCopy.terms.cancel}</p></div></>
   </div>
