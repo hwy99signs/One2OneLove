@@ -257,6 +257,7 @@ async function analytics(db, env) {
              count(*)::int AS events,
              count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
              count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(*) FILTER (WHERE e.event_type='action')::int AS actions,
              count(DISTINCT CASE
                WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
                ELSE 'v:' || e.visitor_id
