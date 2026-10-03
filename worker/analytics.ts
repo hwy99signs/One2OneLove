@@ -246,7 +246,73 @@ async function analytics(db, env) {
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `) : { rows:[{ events:0 }] };
 
-  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown, trafficSources, trafficSourceUnknown] = await Promise.all([
+  const featureDailyAllPromise = interactionReady ? db.query(`
+    WITH days AS (
+      SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+    ), activity AS (
+      SELECT e.created_at::date AS day,
+             count(*)::int AS events,
+             count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+             count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(DISTINCT CASE
+               WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+               ELSE 'v:' || e.visitor_id
+             END)::int AS users
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+         AND e.feature IS NOT NULL
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       GROUP BY 1
+    )
+    SELECT to_char(days.day,'YYYY-MM-DD') AS date,
+           COALESCE(activity.events,0)::int AS events,
+           COALESCE(activity.page_views,0)::int AS page_views,
+           COALESCE(activity.clicks,0)::int AS clicks,
+           COALESCE(activity.users,0)::int AS users
+      FROM days LEFT JOIN activity USING(day)
+     ORDER BY days.day
+  `) : db.query(`
+    SELECT to_char(day,'YYYY-MM-DD') AS date,
+           0::int AS events,0::int AS page_views,0::int AS clicks,0::int AS users
+      FROM generate_series(current_date-29,current_date,interval '1 day') AS day
+     ORDER BY day
+  `);
+
+  const featureRankAllPromise = interactionReady ? db.query(`
+    SELECT e.feature,
+           count(*)::int AS activity,
+           count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+           count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+           count(DISTINCT CASE
+             WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+             ELSE 'v:' || e.visitor_id
+           END)::int AS users,
+           count(DISTINCT e.visitor_id) FILTER (WHERE e.actor_type='anonymous')::int AS anonymous_visitors,
+           count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND e.feature IS NOT NULL
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+     GROUP BY e.feature
+     ORDER BY activity DESC,e.feature ASC
+     LIMIT 20
+  `) : { rows:[] };
+
+  const recentClicksPromise = interactionReady ? db.query(`
+    SELECT e.created_at,e.route,e.feature,e.actor_type,e.access_type,
+           e.traffic_source,e.language,e.control_type,e.control_key,e.destination
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.event_type='click'
+       AND e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+     ORDER BY e.created_at DESC
+     LIMIT 50
+  `) : { rows:[] };
+
+  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown, trafficSources, trafficSourceUnknown, featureDailyAll, featureRankAll, recentClicks] = await Promise.all([
     db.query(`
       WITH days AS (
         SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
@@ -388,6 +454,9 @@ async function analytics(db, env) {
     languageUnknownPromise,
     trafficSourcePromise,
     trafficSourceUnknownPromise,
+    featureDailyAllPromise,
+    featureRankAllPromise,
+    recentClicksPromise,
   ]);
 
   return {
@@ -408,6 +477,9 @@ async function analytics(db, env) {
     trafficSources: trafficSources.rows,
     trafficSourceUnknownEvents: Number(trafficSourceUnknown.rows[0]?.events || 0),
     trafficSourceTrackingActive: interactionReady && trafficSourceReady,
+    featureDailyAll: featureDailyAll.rows,
+    featureRankAll: featureRankAll.rows,
+    recentClicks: recentClicks.rows,
     directDelivery: {
       ...(directSummary.rows[0] || { sent:0,passed:0,failed:0,pending:0 }),
       receiptTrackingActive: false,
