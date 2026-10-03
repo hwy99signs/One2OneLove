@@ -12,6 +12,7 @@ on:
       - "package-lock.json"
       - ".github/workflows/o2ol-token-prelaunch-qa.yml"
       - ".github/workflows/deploy-o2ol-functional-prelaunch.yml"
+      - ".github/workflows/o2ol-token-infra-readiness.yml"
 
 permissions:
   contents: read
@@ -361,6 +362,8 @@ jobs:
           grep -F "ref: prelaunch/o2ol-token-economy-20261003" "$DEPLOY"
           grep -F "main\": \"\$GITHUB_WORKSPACE/worker/index-v2.ts" "$DEPLOY"
           grep -F "EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls" "$DEPLOY"
+          grep -F "EXPECTED_NEON_ROLE: o2ol_token_hyperdrive" "$DEPLOY"
+          grep -F "Hyperdrive must use the dedicated Token Prelaunch database role." "$DEPLOY"
           grep -F "PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf" "$DEPLOY"
           grep -F "Production Hyperdrive is forbidden for Token Prelaunch." "$DEPLOY"
           grep -F "TOKEN_PRELAUNCH_OPENAI_API_KEY" "$DEPLOY"
