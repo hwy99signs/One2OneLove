@@ -67,6 +67,21 @@ export default function TokenSystemDashboard(){
   const founderSummary=data?.founderSummary||{};
   const legacy=data?.legacySummary||{};
   const system=data?.systemCounts||{};
+  const readiness=data?.environmentReadiness||{};
+  const readinessItems=[
+    ['Hyperdrive → Token Neon',readiness.hyperdrive],
+    ['Token Media R2',readiness.mediaR2],
+    ['Static Assets',readiness.assets],
+    ['Neon Auth',readiness.neonAuth],
+    ['OpenAI',readiness.openai],
+    ['Stripe Secret',readiness.stripeSecret],
+    ['Stripe Webhook',readiness.stripeWebhook],
+    ['Twilio Account',readiness.twilioAccount],
+    ['Twilio Auth',readiness.twilioAuth],
+    ['Twilio Verify',readiness.twilioVerify],
+    ['Prelaunch Isolation Flag',readiness.prelaunch],
+    ['Scheduled SMS Disabled',readiness.scheduledSmsDisabled],
+  ];
 
   const burnRows=useMemo(()=>{
     const packages=data?.packages||[];
@@ -322,6 +337,18 @@ export default function TokenSystemDashboard(){
           <Stat icon={History} label="Conversion Quotes" value={n(system.conversion_quotes)} tone="slate"/>
           <Stat icon={Gamepad2} label="Game Passes" value={n(system.game_passes)} tone="emerald"/>
         </div>
+        <Panel title="Isolated Token Environment Readiness" subtitle="Presence-only status. No credential values are returned to the browser.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {readinessItems.map(([label,ready])=><div key={label} className={"rounded-xl border p-4 "+(ready?"border-emerald-200 bg-emerald-50":"border-amber-200 bg-amber-50")}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-bold text-slate-800">{label}</div>
+                <Badge tone={ready?"green":"amber"}>{ready?"Ready":"Missing"}</Badge>
+              </div>
+            </div>)}
+          </div>
+          <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">This panel reports only whether each isolated Token Prelaunch dependency is configured. It never returns API keys, secrets, passwords, connection strings, or provider credentials.</div>
+        </Panel>
+
         <div className="grid gap-6 xl:grid-cols-2">
           <Panel title="Reservation Integrity" subtitle="Reserved Tokens are consumed on successful delivery or released on failure.">
             {(data?.reservations||[]).length?<div className="space-y-3">{data.reservations.map(row=><div key={row.status} className="flex items-center justify-between rounded-xl bg-slate-50 p-4"><Badge tone={row.status==='consumed'?'green':row.status==='reserved'?'amber':'slate'}>{row.status}</Badge><div className="text-right"><div className="font-black">{n(row.count)} reservations</div><div className="text-xs text-slate-500">{n(row.tokens)} Tokens</div></div></div>)}</div>:<Empty>No Token reservations yet.</Empty>}
