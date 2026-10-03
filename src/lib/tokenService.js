@@ -1,0 +1,39 @@
+import { apiRequest } from './apiClient';
+
+export async function getTokenWallet(){
+  return apiRequest('/api/tokens/wallet');
+}
+export async function getTokenPackages(){
+  return apiRequest('/api/tokens/packages');
+}
+export async function startTokenCheckout(packageCode){
+  return apiRequest('/api/tokens/checkout',{method:'POST',body:{packageCode}});
+}
+export async function confirmTokenCheckout(sessionId){
+  return apiRequest('/api/tokens/checkout/confirm',{method:'POST',body:{sessionId}});
+}
+export async function startPaymentMethodSetup(){
+  return apiRequest('/api/tokens/payment-method/setup',{method:'POST',body:{}});
+}
+export async function confirmPaymentMethodSetup(sessionId){
+  return apiRequest('/api/tokens/payment-method/confirm',{method:'POST',body:{sessionId}});
+}
+export async function updateAutoReplenish({enabled,packageCode,triggerBalance}){
+  return apiRequest('/api/tokens/auto-replenish',{method:'PUT',body:{enabled,packageCode,triggerBalance}});
+}
+export async function startCostCalibration({featureCode,packageCode=null,notes=''}) {
+  return apiRequest('/api/tokens/calibration/start',{method:'POST',body:{featureCode,packageCode,notes}});
+}
+export async function endCostCalibration(sessionId) {
+  return apiRequest('/api/tokens/calibration/end',{method:'POST',body:{sessionId}});
+}
+export async function getCalibrationHistory(){
+  return apiRequest('/api/tokens/calibration/history');
+}
+export function isTokensRequiredError(error){
+  return error?.status===402 && error?.payload?.error?.code==='tokens_required';
+}
+export function tokenRequiredDetails(error){
+  const e=error?.payload?.error||{};
+  return {balance:Number(e.balance||0),required:Number(e.required||0),featureCode:e.featureCode||null,featureLabel:e.featureLabel||null};
+}
