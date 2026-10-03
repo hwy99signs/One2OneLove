@@ -75,6 +75,8 @@ jobs:
           grep -F "AdminMfaGate><TokenSystemDashboard" src/pages/index.jsx
           grep -F "Package Burn Tests" src/pages/TokenSystemDashboard.jsx
           grep -F "Auto-refresh 15 min" src/pages/TokenSystemDashboard.jsx
+          grep -F "Core Token Environment" src/pages/TokenSystemDashboard.jsx
+          grep -F "FAIL-CLOSED" src/pages/TokenSystemDashboard.jsx
           grep -F "startTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
           grep -F "endTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
           grep -F "/api/token-admin/calibrations/start" worker/token-admin.ts
