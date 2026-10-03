@@ -210,9 +210,12 @@ export function installClickAnalytics() {
     if (!control) return;
 
     const currentRoute = window.location.pathname || '/';
+    const explicitDestination = safeText(control.getAttribute('data-analytics-destination'), 300);
     const href = control instanceof HTMLAnchorElement ? control.href : control.getAttribute('href');
-    const sameSiteDestination = href ? normalizedPath(href) : null;
-    const externalDestination = href && !sameSiteDestination ? (() => {
+    const sameSiteDestination = explicitDestination
+      ? normalizedPath(explicitDestination)
+      : (href ? normalizedPath(href) : null);
+    const externalDestination = !explicitDestination && href && !sameSiteDestination ? (() => {
       try { return new URL(href, window.location.origin).hostname; } catch { return null; }
     })() : null;
 
