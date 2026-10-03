@@ -1,0 +1,160 @@
+name: Validate Tier Role Selection First
+
+on:
+  push:
+    branches:
+      - fix/tier-role-selection-first-20261003
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Static route guards
+        run: |
+          ! grep -q "subscription-plan.*type=individual" src/pages/Subscription.jsx
+          ! grep -q "tier-selector.*type=individual" src/pages/Subscription.jsx
+          grep -q "Professional / Contributor" src/pages/SignUp.jsx
+          grep -q "account=free" src/pages/ProfessionalSignup.jsx
+          grep -q "freeAccount" src/pages/TherapistSignup.jsx
+          grep -q "freeAccount" src/pages/InfluencerSignup.jsx
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Browser verify Tier then Role flow
+        shell: bash
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 >/tmp/o2ol-preview.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && break
+            sleep 1
+          done
+
+          cat > tier-role-audit.cjs <<'NODE'
+          const { chromium } = require('playwright');
+
+          async function openSubscription(browser) {
+            const context=await browser.newContext();
+            const page=await context.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e)));
+            await page.route('**/api/subscription/founding-offer', route=>route.fulfill({
+              status:200,
+              contentType:'application/json',
+              body:JSON.stringify({available:true,plan:'Exclusive',cohort:'first100',recurringPriceCents:1599})
+            }));
+            await page.goto('http://127.0.0.1:4173/Subscription',{waitUntil:'domcontentloaded',timeout:60000});
+            await page.waitForTimeout(250);
+            return {context,page,errors};
+          }
+
+          async function assertRolePage(page,label) {
+            if(!(await page.getByRole('heading',{name:'Individual Member'}).isVisible())) throw new Error(label+' did not show Individual');
+            if(!(await page.getByRole('heading',{name:'Professional / Contributor'}).isVisible())) throw new Error(label+' did not show Professional');
+            if(new URL(page.url()).searchParams.get('type')) throw new Error(label+' skipped role selection with type param');
+          }
+
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+
+            const entries=[
+              {selector:'[data-analytics-id="subscription-tier-free"]', label:'Free', account:'free'},
+              {selector:'[data-analytics-id="subscription-tier-premiere"]', label:'Premiere', plan:'Premiere'},
+              {selector:'[data-analytics-id="subscription-tier-exclusive"]', label:'Exclusive', plan:'Exclusive'},
+              {selector:'[data-analytics-id="subscription-card-premiere"]', label:'Premiere card', plan:'Premiere'},
+              {selector:'[data-analytics-id="subscription-card-exclusive"]', label:'Exclusive card', plan:'Exclusive'},
+              {selector:'[data-analytics-id="subscription-create-free-account"]', label:'Open House Free', account:'free'},
+            ];
+
+            for(const test of entries){
+              const {context,page,errors}=await openSubscription(browser);
+              await page.locator(test.selector).click();
+              await page.waitForTimeout(150);
+              await assertRolePage(page,test.label);
+              const url=new URL(page.url());
+              if(test.account && url.searchParams.get('account')!==test.account) throw new Error(test.label+' lost account intent');
+              if(test.plan && url.searchParams.get('plan')!==test.plan) throw new Error(test.label+' lost plan intent');
+              if(errors.length) throw new Error(test.label+' errors: '+errors.join(' | '));
+              console.log(test.label+' => '+url.pathname+url.search);
+              await context.close();
+            }
+
+            // Founding CTA must also stop at role selection.
+            {
+              const {context,page,errors}=await openSubscription(browser);
+              await page.getByRole('button',{name:'Activate Founding Offer'}).click();
+              await page.waitForTimeout(150);
+              await assertRolePage(page,'Founding');
+              const url=new URL(page.url());
+              if(url.searchParams.get('plan')!=='Exclusive' || url.searchParams.get('founding')!=='1') throw new Error('Founding intent lost');
+              if(errors.length) throw new Error(errors.join(' | '));
+              console.log('Founding => '+url.pathname+url.search);
+              await context.close();
+            }
+
+            // Free -> Individual
+            {
+              const context=await browser.newContext();
+              const page=await context.newPage();
+              await page.goto('http://127.0.0.1:4173/SignUp?account=free',{waitUntil:'domcontentloaded'});
+              await page.getByRole('button',{name:'Individual Member'}).click();
+              const url=new URL(page.url());
+              if(url.pathname!=='/SignUp' || url.searchParams.get('account')!=='free' || url.searchParams.get('type')!=='individual') throw new Error('Free Individual flow incorrect: '+url.href);
+              await context.close();
+            }
+
+            // Free -> Professional, must stay Free and not become Premiere.
+            {
+              const context=await browser.newContext();
+              const page=await context.newPage();
+              await page.goto('http://127.0.0.1:4173/SignUp?account=free',{waitUntil:'domcontentloaded'});
+              await page.getByRole('button',{name:'Professional / Contributor'}).click();
+              await page.waitForTimeout(100);
+              const url=new URL(page.url());
+              if(url.pathname!=='/ProfessionalSignup' || url.searchParams.get('account')!=='free' || url.searchParams.has('plan')) throw new Error('Free Professional flow changed tier: '+url.href);
+              if(!(await page.getByRole('heading',{name:'Professional Sign Up'}).isVisible())) throw new Error('Free Professional options did not render');
+              await context.close();
+            }
+
+            // Paid -> Professional preserves Premiere.
+            {
+              const context=await browser.newContext();
+              const page=await context.newPage();
+              await page.goto('http://127.0.0.1:4173/SignUp?plan=Premiere',{waitUntil:'domcontentloaded'});
+              await page.getByRole('button',{name:'Professional / Contributor'}).click();
+              await page.waitForTimeout(100);
+              const url=new URL(page.url());
+              if(url.pathname!=='/ProfessionalSignup' || url.searchParams.get('plan')!=='Premiere') throw new Error('Premiere Professional intent lost: '+url.href);
+              await context.close();
+            }
+
+            // Free Professional -> Licensed form remains free and does not redirect to plans.
+            {
+              const context=await browser.newContext();
+              const page=await context.newPage();
+              await page.goto('http://127.0.0.1:4173/ProfessionalSignup?account=free',{waitUntil:'domcontentloaded'});
+              await page.getByRole('button',{name:'Start Credential Application'}).click();
+              await page.waitForTimeout(100);
+              const url=new URL(page.url());
+              if(url.pathname!=='/TherapistSignup' || url.searchParams.get('account')!=='free') throw new Error('Free licensed professional intent lost: '+url.href);
+              await context.close();
+            }
+
+            await browser.close();
+            console.log('Tier -> role -> signup flow passed');
+          })().catch(err=>{console.error(err);process.exit(1)});
+          NODE
+          node tier-role-audit.cjs
