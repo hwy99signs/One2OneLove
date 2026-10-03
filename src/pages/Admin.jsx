@@ -527,9 +527,10 @@ export default function Admin() {
               <div className="grid gap-4 xl:grid-cols-2">
                 <FeatureActivityCard
                   title="Subscription / Billing"
-                  subtitle="Member accounts created with a Stripe card/subscription connection versus accounts without one."
+                  subtitle="Page accesses plus member accounts created with or without a Stripe subscription connection."
                   windows={featureWindows}
                   rows={[
+                    {label:'Page accesses',values:topFeatureActivity.subscriptionBilling?.accesses},
                     {label:'With CC',values:topFeatureActivity.subscriptionBilling?.withCard},
                     {label:'Without CC',values:topFeatureActivity.subscriptionBilling?.withoutCard},
                   ]}
@@ -539,7 +540,7 @@ export default function Admin() {
                   subtitle="Page usage and saved/favorited date ideas."
                   windows={featureWindows}
                   rows={[
-                    {label:'Used',values:topFeatureActivity.dateIdeas?.used},
+                    {label:'Page accesses',values:topFeatureActivity.dateIdeas?.used},
                     {label:'Saved',values:topFeatureActivity.dateIdeas?.saved},
                   ]}
                   topTitle="Top 5 saved date ideas"
@@ -559,6 +560,7 @@ export default function Admin() {
                   subtitle="Love Notes sent and scheduled, with the most-used note categories."
                   windows={featureWindows}
                   rows={[
+                    {label:'Page accesses',values:topFeatureActivity.loveNotes?.accesses},
                     {label:'Sent',values:topFeatureActivity.loveNotes?.sent},
                     {label:'Scheduled',values:topFeatureActivity.loveNotes?.scheduled},
                   ]}
