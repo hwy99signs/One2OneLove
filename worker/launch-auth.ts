@@ -171,6 +171,40 @@ function registrationContext(body) {
   };
 }
 
+async function reserveFoundingTokenMember(db,userId) {
+  await db.query("SELECT pg_advisory_xact_lock(hashtext('one2onelove_founding_members'))");
+  await db.query(`
+    DELETE FROM public.founding_members
+     WHERE status='reserved'
+       AND activated_at IS NULL
+       AND reservation_expires_at IS NOT NULL
+       AND reservation_expires_at<=now()
+  `);
+  const existing=(await db.query(
+    `SELECT founding_number,cohort,status,badge_retained,reservation_expires_at
+       FROM public.founding_members WHERE user_id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0]||null;
+  if(existing)return existing;
+
+  const next=(await db.query(`
+    SELECT n
+      FROM generate_series(1,200) n
+     WHERE NOT EXISTS (SELECT 1 FROM public.founding_members f WHERE f.founding_number=n)
+     ORDER BY n LIMIT 1
+  `)).rows[0]?.n;
+  if(!next)return null;
+  const foundingNumber=Number(next);
+  const cohort=foundingNumber<=100?'first100':'second100';
+  return (await db.query(
+    `INSERT INTO public.founding_members
+      (user_id,founding_number,cohort,status,badge_retained,founding_rate_forfeited,reservation_expires_at)
+     VALUES($1::uuid,$2,$3,'reserved',true,false,now()+interval '48 hours')
+     RETURNING founding_number,cohort,status,badge_retained,reservation_expires_at`,
+    [userId,foundingNumber,cohort],
+  )).rows[0];
+}
+
 async function persistRegistration(db, user, registration) {
   await db.query('BEGIN');
   try {
@@ -212,18 +246,27 @@ async function persistRegistration(db, user, registration) {
       [user.id],
     );
 
-    // Preserve Founding intent without assigning an unmeasured token value.
-    // Final Founder token economics are deliberately calibrated before activation.
+    // Reserve the Founder number immediately, but do not activate the badge until
+    // verified phone completion. Token economics remain deliberately unassigned.
     if (registration.foundingIntent) {
-      await db.query(
-        `INSERT INTO public.o2ol_founding_token_benefits
-          (user_id,monthly_tokens,months_total,months_granted,status,metadata)
-         VALUES($1::uuid,0,6,0,'pending',$2::jsonb)
-         ON CONFLICT(user_id) DO UPDATE SET
-           metadata=public.o2ol_founding_token_benefits.metadata||EXCLUDED.metadata,
-           updated_at=now()`,
-        [user.id, JSON.stringify({ founding_intent:true, economics_pending_calibration:true })],
-      );
+      const founding=await reserveFoundingTokenMember(db,user.id);
+      if(founding){
+        await db.query(
+          `INSERT INTO public.o2ol_founding_token_benefits
+            (user_id,monthly_tokens,months_total,months_granted,status,metadata)
+           VALUES($1::uuid,0,6,0,'pending',$2::jsonb)
+           ON CONFLICT(user_id) DO UPDATE SET
+             metadata=public.o2ol_founding_token_benefits.metadata||EXCLUDED.metadata,
+             updated_at=now()`,
+          [user.id,JSON.stringify({
+            founding_intent:true,
+            founding_number:Number(founding.founding_number),
+            founding_cohort:founding.cohort,
+            badge_activation:'after_phone_verification',
+            economics_pending_calibration:true,
+          })],
+        );
+      }
     }
 
     await db.query('COMMIT');
