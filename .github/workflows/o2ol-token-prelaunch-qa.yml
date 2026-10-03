@@ -108,6 +108,45 @@ jobs:
             exit 1
           fi
 
+      - name: Audit shipped runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --audit-level=high
+          npm --prefix worker audit --audit-level=high
+
+      - name: Reject stale public recurring-price copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGETS=(
+            src/pages/Home.jsx
+            src/pages/HelpCenter.jsx
+            src/pages/AboutUs.jsx
+            src/pages/PaymentSuccess.jsx
+            src/pages/LoveNotes.jsx
+            src/pages/O2OLStudio.jsx
+            src/pages/MyMatchIQBianca.jsx
+            src/pages/Amora.jsx
+            src/components/home
+            src/components/launch
+            src/components/signup
+            src/components/subscriptions
+            src/data/subscriptionPlanCopy.js
+          )
+          if grep -RInE 'US\$(9\.99|15\.99|19\.99)(/month|/mes|/mois|/mese|/Monat)?|\$(9\.99|15\.99|19\.99).*(month|mensual|mois|mese|Monat)' "${TARGETS[@]}" 2>/dev/null; then
+            echo "Stale recurring launch pricing found on an active public surface." >&2
+            exit 1
+          fi
+          if grep -RInE 'credit or debit card on file|valid credit or debit card|tarjeta (válida|registrada)|carte (valide|enregistrée)|carta (valida|registrata)|hinterlegte (Kredit-|Debit-)?Karte' "${TARGETS[@]}" 2>/dev/null; then
+            echo "Stale card-required membership copy found on an active public surface." >&2
+            exit 1
+          fi
+          if grep -RInF '/Subscription?signup=1' "${TARGETS[@]}" 2>/dev/null; then
+            echo "Stale recurring-plan signup route found on an active public surface." >&2
+            exit 1
+          fi
+
       - name: Verify no plaintext runtime credentials
         shell: bash
         run: |
