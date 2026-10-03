@@ -149,7 +149,7 @@ jobs:
               await page.getByRole('button',{name:'Start Credential Application'}).click();
               await page.waitForTimeout(100);
               const url=new URL(page.url());
-              if(url.pathname!=='/TherapistSignup' || url.searchParams.get('account')!=='free') throw new Error('Free licensed professional intent lost: '+url.href);
+              if(url.pathname.toLowerCase()!=='/therapistsignup' || url.searchParams.get('account')!=='free') throw new Error('Free licensed professional intent lost: '+url.href);
               await context.close();
             }
 
