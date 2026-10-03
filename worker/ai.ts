@@ -49,52 +49,26 @@ async function withDb(env, fn) {
   await db.connect();
   try { return await fn(db); } finally { await db.end(); }
 }
-function canonicalPlan(value) {
-  const plan = String(value || '').trim().toLowerCase();
-  if (plan === 'premiere') return 'Premiere';
-  if (plan === 'exclusive') return 'Exclusive';
-  return 'Premiere';
-}
-async function entitlement(db, userId, feature) {
-  const result = await db.query(
-    'SELECT subscription_plan,subscription_status FROM public.users WHERE id=$1::uuid',
+async function entitlement(db,userId,feature){
+  const wallet=(await db.query(
+    'SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',
     [userId],
-  );
-  if (!result.rows[0]) return { allowed: false, reason: 'User profile not found.' };
-  const storedPlan = canonicalPlan(result.rows[0].subscription_plan);
-  const status = String(result.rows[0].subscription_status || '').toLowerCase();
-  const paidActive = ['active', 'trial', 'trialing'].includes(status);
-  // Stripe trial/trialing is the 30-day Founding Member free period; access
-  // follows the member's stored Founding plan.
-  const plan = storedPlan;
-
-  if (feature === 'content_creator') {
-    return plan === 'Exclusive' && paidActive
-      ? { allowed: true, plan, limit: null }
-      : { allowed: false, plan, reason: 'AI Content Creator is available on the Exclusive plan.' };
-  }
-
-  if (feature === 'relationship_coach') {
-    if (!paidActive) {
-      return { allowed: false, plan, reason: 'AI Relationship Coach is available on Premiere and Exclusive plans.' };
-    }
-    if (plan === 'Exclusive') return { allowed: true, plan, limit: null };
-
-    const usage = await db.query(
-      `SELECT count(*)::int AS count
-         FROM public.ai_usage_events
-        WHERE user_id=$1::uuid
-          AND feature='relationship_coach'
-          AND created_at >= date_trunc('month', now())`,
-      [userId],
-    );
-    const used = usage.rows[0]?.count || 0;
-    return used < 50
-      ? { allowed: true, plan, limit: 50, used, remaining: 50 - used }
-      : { allowed: false, plan, limit: 50, used, remaining: 0, reason: 'You have used your 50 AI Relationship Coach questions for this month.' };
-  }
-
-  return { allowed: false, reason: 'Unknown AI feature.' };
+  )).rows[0];
+  const featureCode=feature==='content_creator'?'ai_content_generation':'amora_response';
+  const price=(await db.query(
+    `SELECT token_cost FROM public.o2ol_token_feature_prices
+      WHERE feature_code=$1 AND active=true LIMIT 1`,
+    [featureCode],
+  )).rows[0];
+  return {
+    allowed:true,
+    accessModel:'free_tokens',
+    token_mode:true,
+    featureCode,
+    token_cost:Number(price?.token_cost||0),
+    token_balance:Number(wallet?.balance||0),
+    limit:null,
+  };
 }
 function outputText(payload) {
   if (typeof payload?.output_text === 'string' && payload.output_text.trim()) return payload.output_text.trim();
