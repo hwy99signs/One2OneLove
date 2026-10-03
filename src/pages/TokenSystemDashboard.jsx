@@ -117,6 +117,37 @@ export default function TokenSystemDashboard(){
     });
   },[data?.packages,summary.provider_cost_micros_30d,summary.tokens_charged_30d]);
 
+  const burnComparison=useMemo(()=>{
+    const sessions=(data?.calibrations||[]).filter(row=>row.package_code&&row.ended_at&&row.ending_balance!=null);
+    const packages=new Map((data?.packages||[]).map(pkg=>[pkg.code,pkg]));
+    const grouped=new Map();
+    for(const row of sessions){
+      const item=grouped.get(row.package_code)||{package_code:row.package_code,tests:0,totalBurned:0,totalProviderCostMicros:0,totalCostEvents:0};
+      item.tests+=1;
+      item.totalBurned+=Math.max(0,Number(row.starting_balance||0)-Number(row.ending_balance||0));
+      item.totalProviderCostMicros+=Number(row.provider_cost_micros||0);
+      item.totalCostEvents+=Number(row.cost_events||0);
+      grouped.set(row.package_code,item);
+    }
+    return [...grouped.values()].map(item=>{
+      const pkg=packages.get(item.package_code)||{};
+      const avgBurned=item.tests?item.totalBurned/item.tests:0;
+      const avgProviderCost=item.tests?(item.totalProviderCostMicros/1000000)/item.tests:0;
+      const packagePrice=Number(pkg.amount_cents||0)/100;
+      return {
+        ...item,
+        label:pkg.label||item.package_code,
+        packageTokens:Number(pkg.tokens||0),
+        packagePrice,
+        avgBurned,
+        avgProviderCost,
+        avgCostPerBurnedToken:avgBurned>0?avgProviderCost/avgBurned:0,
+        providerContribution:packagePrice-avgProviderCost,
+        providerMarginPct:packagePrice>0?((packagePrice-avgProviderCost)/packagePrice)*100:null,
+      };
+    }).sort((a,b)=>a.packagePrice-b.packagePrice);
+  },[data?.calibrations,data?.packages]);
+
   const packageCalibration=useMemo(()=>{
     const rows=data?.calibrations||[];
     return rows.filter(row=>row.package_code).map(row=>({
@@ -318,6 +349,23 @@ export default function TokenSystemDashboard(){
               <div className="text-right"><div className="text-lg font-black">{n(row.full_uses)}</div><div className="text-[11px] text-slate-400">full uses{row.remainder?' + '+row.remainder+' Token'+(row.remainder===1?'':'s')+' left':''}</div></div>
             </div>)}</div>
           </div>)}</div>:<Empty>No active Token packages are configured.</Empty>}
+        </Panel>
+
+        <Panel title="Completed Package Burn Comparison" subtitle="Side-by-side actual results from completed calibration sessions. Package price is shown only as a calibration reference; these sessions are non-revenue test grants.">
+          {burnComparison.length?<div className="overflow-x-auto"><table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">Package</th><th className="px-3 py-2">Tests</th><th className="px-3 py-2">Avg Burned</th><th className="px-3 py-2">Avg Provider Cost</th><th className="px-3 py-2">Cost / Burned Token</th><th className="px-3 py-2">Reference Price</th><th className="px-3 py-2">Provider Contribution</th><th className="px-3 py-2">Provider-cost Margin</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">{burnComparison.map(row=><tr key={row.package_code}>
+              <td className="px-3 py-3"><div className="font-black">{row.label}</div><div className="text-xs text-slate-400">{n(row.packageTokens)} Tokens</div></td>
+              <td className="px-3 py-3">{n(row.tests)}</td>
+              <td className="px-3 py-3 font-black text-amber-700">{Number(row.avgBurned).toFixed(1)}</td>
+              <td className="px-3 py-3">{money(row.avgProviderCost)}</td>
+              <td className="px-3 py-3">{money(row.avgCostPerBurnedToken)}</td>
+              <td className="px-3 py-3">{money(row.packagePrice)}</td>
+              <td className="px-3 py-3 font-black">{money(row.providerContribution)}</td>
+              <td className="px-3 py-3">{row.providerMarginPct==null?'—':row.providerMarginPct.toFixed(1)+'%'}</td>
+            </tr>)}</tbody>
+          </table></div>:<Empty>Complete at least one package-linked burn session to populate the comparison.</Empty>}
+          <div className="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-500">Provider contribution is not net profit. It excludes hosting, database, payment fees not captured in the session, support, refunds, taxes, promotions and other operating costs.</div>
         </Panel>
 
         <div className="grid gap-6 xl:grid-cols-2">
