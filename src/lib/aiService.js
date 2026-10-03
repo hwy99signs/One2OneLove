@@ -24,9 +24,10 @@ export async function listCoachMessages(conversationId) {
 }
 
 export async function sendCoachMessage(conversationId, message) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `amora-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return apiRequest(`/api/ai/coach/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: { message },
+    body: { message, requestId },
   });
 }
 
