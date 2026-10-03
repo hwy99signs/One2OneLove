@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Basic', foundingIntent = false }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere', freeAccount = false, foundingIntent = false }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
@@ -124,6 +124,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Basic', 
     privacyPolicyAcknowledged: true,
     age18Confirmed: true,
     selectedPlan,
+    freeAccount,
   });
 
   const handleSubmit = async event => {
@@ -146,6 +147,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Basic', 
         privacyPolicyAcknowledged:true,
         age18Confirmed:true,
         selectedPlan,
+        freeAccount,
       });
       if (result?.success && result.emailVerificationRequired) {
         setSuccessEmail(formData.email.trim().toLowerCase());
@@ -231,8 +233,8 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Basic', 
           <button type="button" onClick={goBack} className="mb-4 inline-flex items-center text-gray-600 transition-colors hover:text-gray-800"><ArrowLeft size={20} className="mr-2"/>{t.back}</button>
           <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><CardTitle className="text-3xl">{t.title}</CardTitle></div>
           <p className="text-gray-600">{t.subtitle}</p>
-          <div className={`mt-4 inline-flex rounded-full border px-4 py-2 text-sm font-black ${selectedPlan==='Basic'?'border-cyan-200 bg-cyan-50 text-cyan-800':'border-purple-200 bg-purple-50 text-purple-800'}`}>
-            {selectedPlan==='Basic' ? t.registeredFree : `${t.selectedMembership}: ${selectedPlan}`}
+          <div className={`mt-4 inline-flex rounded-full border px-4 py-2 text-sm font-black ${freeAccount?'border-cyan-200 bg-cyan-50 text-cyan-800':'border-purple-200 bg-purple-50 text-purple-800'}`}>
+            {freeAccount ? t.registeredFree : `${t.selectedMembership}: ${selectedPlan}`}
           </div>
         </CardHeader>
         <CardContent>
