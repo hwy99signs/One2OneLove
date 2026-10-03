@@ -135,8 +135,28 @@ async function ensureInteractionSchema(db) {
   `);
   await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS language text NULL`);
   await db.query(`ALTER TABLE public.interaction_events ADD COLUMN IF NOT EXISTS traffic_source text NULL`);
-  await db.query(`ALTER TABLE public.interaction_events DROP CONSTRAINT IF EXISTS interaction_events_event_type_check`);
-  await db.query(`ALTER TABLE public.interaction_events ADD CONSTRAINT interaction_events_event_type_check CHECK (event_type IN ('click','page_view','action'))`);
+  await db.query(`
+    DO $
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+         WHERE conname='interaction_events_event_type_check'
+           AND conrelid='public.interaction_events'::regclass
+           AND position('action' in pg_get_constraintdef(oid))=0
+      ) THEN
+        ALTER TABLE public.interaction_events DROP CONSTRAINT interaction_events_event_type_check;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+         WHERE conname='interaction_events_event_type_check'
+           AND conrelid='public.interaction_events'::regclass
+      ) THEN
+        ALTER TABLE public.interaction_events
+          ADD CONSTRAINT interaction_events_event_type_check
+          CHECK (event_type IN ('click','page_view','action'));
+      END IF;
+    END $;
+  `);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_created_at_idx ON public.interaction_events(created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_route_idx ON public.interaction_events(route,created_at DESC)`);
   await db.query(`CREATE INDEX IF NOT EXISTS interaction_events_user_idx ON public.interaction_events(user_id,created_at DESC) WHERE user_id IS NOT NULL`);
