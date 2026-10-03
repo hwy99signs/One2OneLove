@@ -1,0 +1,36 @@
+name: Validate O2OL All Click Analytics
+
+on:
+  push:
+    branches:
+      - feature/all-click-analytics-20261003
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install and build
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          npm --prefix worker install --no-audit --no-fund
+      - name: Validate Cloudflare Worker bundle
+        run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc
+      - name: Verify analytics privacy and coverage guards
+        run: |
+          set -euo pipefail
+          grep -F "/api/interaction-events" worker/index-v2.ts >/dev/null
+          grep -F "actor_type IN ('anonymous','registered')" worker/feature-usage.ts >/dev/null
+          grep -F "registered_free" worker/feature-usage.ts >/dev/null
+          grep -F "Administrator activity is excluded" src/pages/Admin.jsx >/dev/null
+          ! grep -F "control.textContent" src/lib/interactionAnalytics.js >/dev/null
