@@ -47,6 +47,7 @@ const FEATURE_CATALOG = [
   ['AI Content Creator', 'AI'],
   ['Relationship Coach', 'AI'],
   ['Gamification', 'Engagement'],
+  ['Find Friends', 'Community'],
 ];
 
 function json(data, status = 200) {
