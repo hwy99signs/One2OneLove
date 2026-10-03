@@ -68,6 +68,8 @@ export default function Tokens(){
  const packages=state?.packages||[];
  const prices=state?.featurePrices||[];
  const active=state?.activeCalibration||null;
+ const selectedAutoPackage=useMemo(()=>packages.find(pkg=>pkg.code===autoPackage)||null,[packages,autoPackage]);
+ const maxAutoTrigger=Number(selectedAutoPackage?.tokens||0);
 
  const buy=async(code)=>{
   setBusy(code);
@@ -127,9 +129,9 @@ export default function Tokens(){
     <div className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm">
      <div className="flex items-start gap-3"><RefreshCw className="mt-1 h-6 w-6 text-violet-600"/><div><h2 className="text-xl font-black">{t.auto}</h2><p className="mt-1 text-sm leading-6 text-slate-600">{t.autoBody}</p></div></div>
      <label className="mt-5 flex items-center gap-3 font-bold"><input type="checkbox" checked={autoEnabled} onChange={e=>setAutoEnabled(e.target.checked)} className="h-5 w-5"/>{t.enable}</label>
-     <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-sm font-bold">{t.threshold}<input type="number" min="0" value={trigger} onChange={e=>setTrigger(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2"/></label><label className="text-sm font-bold">{t.packages}<select value={autoPackage} onChange={e=>setAutoPackage(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2">{packages.map(p=><option key={p.code} value={p.code}>{p.label} — {p.tokens}</option>)}</select></label></div>
+     <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-sm font-bold">{t.threshold}<input type="number" min="0" max={maxAutoTrigger||undefined} value={trigger} onChange={e=>setTrigger(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2"/></label><label className="text-sm font-bold">{t.packages}<select value={autoPackage} onChange={e=>setAutoPackage(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2">{packages.map(p=><option key={p.code} value={p.code}>{p.label} — {p.tokens}</option>)}</select></label></div>
      <div className="mt-4 flex flex-wrap gap-3"><button onClick={setupCard} disabled={!!busy} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 font-black"><CreditCard className="h-4 w-4"/>{t.addCard}</button><button onClick={saveAuto} disabled={!!busy} className="rounded-xl bg-violet-600 px-4 py-2 font-black text-white">Save</button></div>
-     <div className="mt-3 text-xs text-slate-500">{state?.settings?.payment_method_reference?<span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-4 w-4"/>Card token stored securely by Stripe</span>:'No saved payment method for Auto-Replenish.'}</div>
+     <div className="mt-3 text-xs text-slate-500">{state?.settings?.payment_method_saved?<span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-4 w-4"/>Payment method stored securely by Stripe</span>:'No saved payment method for Auto-Replenish.'}</div>
     </div>
 
     <div className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-black">{t.history}</h2><div className="mt-4 max-h-80 space-y-3 overflow-y-auto">{(state?.transactions||[]).length===0?<p className="text-sm text-slate-500">{t.noHistory}</p>:(state.transactions||[]).map(tx=><div key={tx.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3"><div><div className="text-sm font-bold">{txLabel(tx)}</div><div className="text-xs text-slate-500">{new Date(tx.created_at).toLocaleString()}</div></div><div className={'font-black '+(Number(tx.wallet_delta)>=0?'text-emerald-600':'text-rose-600')}>{Number(tx.wallet_delta)>=0?'+':''}{tx.wallet_delta}</div></div>)}</div></div>
