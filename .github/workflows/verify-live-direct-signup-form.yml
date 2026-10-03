@@ -1,0 +1,56 @@
+name: Verify Live Direct Signup Form
+
+on:
+  push:
+    branches:
+      - qa/live-direct-signup-form-20261003
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Verify live direct signup form
+        run: |
+          cat > verify-live-direct-form.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const context=await browser.newContext();
+            const page=await context.newPage();
+            const errors=[];
+            let checkoutCalls=0;
+            page.on('pageerror',e=>errors.push(String(e)));
+            page.on('request',req=>{ if(req.url().includes('/api/billing/checkout')) checkoutCalls++; });
+
+            async function verify(plan){
+              await page.goto('https://one2onelove.com/Subscription',{waitUntil:'domcontentloaded',timeout:60000});
+              const button=page.getByRole('button',{name:'Create Account for '+plan});
+              await button.waitFor({state:'visible',timeout:15000});
+              if(await button.isDisabled()) throw new Error(plan+' button disabled on live site');
+              await button.click();
+              await page.waitForURL(new RegExp('/SignUp\\?plan='+plan+'&type=individual&source=subscription-plan'),{timeout:10000});
+              await page.locator('#signup-full-name').waitFor({state:'visible',timeout:10000});
+              await page.locator('#signup-email').waitFor({state:'visible',timeout:10000});
+              await page.locator('#signup-password').waitFor({state:'visible',timeout:10000});
+              console.log(plan+' live form URL: '+page.url());
+              console.log(plan+' full signup form visible: true');
+            }
+
+            await verify('Premiere');
+            await verify('Exclusive');
+
+            if(checkoutCalls!==0) throw new Error('Anonymous live clicks called billing checkout '+checkoutCalls+' time(s)');
+            if(errors.length) throw new Error(errors.join(' | '));
+            console.log('LIVE DIRECT SIGNUP FORM QA PASSED');
+            await browser.close();
+          })().catch(err=>{console.error(err);process.exit(1);});
+          NODE
+          node verify-live-direct-form.cjs
