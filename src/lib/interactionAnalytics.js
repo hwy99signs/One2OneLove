@@ -1,5 +1,6 @@
 const VISITOR_KEY = 'o2ol.analytics.visitor';
 const SESSION_KEY = 'o2ol.analytics.session';
+const SOURCE_KEY = 'o2ol.analytics.source';
 const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess']);
 const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
@@ -106,12 +107,63 @@ function activeLanguage() {
   }
 }
 
+const TRAFFIC_SOURCES = new Set(['facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other']);
+
+function canonicalTrafficSource(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return null;
+  if (['facebook','fb','meta'].includes(raw)) return 'facebook';
+  if (['instagram','ig'].includes(raw)) return 'instagram';
+  if (raw === 'threads') return 'threads';
+  if (raw === 'tiktok' || raw === 'tik_tok') return 'tiktok';
+  if (['x','twitter'].includes(raw)) return 'x';
+  if (['youtube','yt'].includes(raw)) return 'youtube';
+  if (raw === 'linkedin') return 'linkedin';
+  if (['pinterest','pin'].includes(raw)) return 'pinterest';
+  if (TRAFFIC_SOURCES.has(raw)) return raw;
+  return 'other';
+}
+
+function sourceFromReferrer() {
+  try {
+    if (!document.referrer) return 'direct';
+    const ref = new URL(document.referrer);
+    if (ref.origin === window.location.origin) return 'direct';
+    const host = ref.hostname.toLowerCase().replace(/^www\./, '');
+    if (host === 'facebook.com' || host.endsWith('.facebook.com')) return 'facebook';
+    if (host === 'instagram.com' || host.endsWith('.instagram.com')) return 'instagram';
+    if (host === 'threads.net' || host.endsWith('.threads.net')) return 'threads';
+    if (host === 'tiktok.com' || host.endsWith('.tiktok.com')) return 'tiktok';
+    if (host === 'x.com' || host.endsWith('.x.com') || host === 'twitter.com' || host.endsWith('.twitter.com') || host === 't.co') return 'x';
+    if (host === 'youtube.com' || host.endsWith('.youtube.com') || host === 'youtu.be') return 'youtube';
+    if (host === 'linkedin.com' || host.endsWith('.linkedin.com') || host === 'lnkd.in') return 'linkedin';
+    if (host === 'pinterest.com' || host.endsWith('.pinterest.com') || host === 'pin.it') return 'pinterest';
+    return 'other';
+  } catch {
+    return 'other';
+  }
+}
+
+function trafficSource() {
+  try {
+    const existing = window.sessionStorage.getItem(SOURCE_KEY);
+    if (existing && TRAFFIC_SOURCES.has(existing)) return existing;
+    const params = new URLSearchParams(window.location.search || '');
+    const source = canonicalTrafficSource(params.get('utm_source')) || sourceFromReferrer();
+    window.sessionStorage.setItem(SOURCE_KEY, source);
+    return source;
+  } catch {
+    return sourceFromReferrer();
+  }
+}
+
 function send(payload) {
   if (isAdminAnalyticsSurface()) return;
   const body = {
     visitorId: visitorId(),
     sessionId: sessionId(),
     language: activeLanguage(),
+    trafficSource: trafficSource(),
     ...payload,
   };
 
