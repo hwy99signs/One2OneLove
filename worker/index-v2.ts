@@ -42,6 +42,7 @@ import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
+import { handleO2OLTokenRequest } from './o2ol-tokens';
 
 
 const SOCIAL_PAGE_META = {
@@ -183,6 +184,12 @@ export default {
 
     if (url.pathname.startsWith('/api/phone-verification')) {
       const response = await handlePhoneVerificationRequest(request, env, url);
+      if (response) return response;
+    }
+
+    // Token purchase/webhook/calibration has its own verified-member and Stripe-signature gates.
+    if (url.pathname.startsWith('/api/tokens')) {
+      const response = await handleO2OLTokenRequest(request, env, url);
       if (response) return response;
     }
 
