@@ -31,6 +31,9 @@ function isPublicIdentityRoute(request, url) {
   if (path === '/api/mymatchiq/credits/webhook') return true;
   if (path === '/api/engagement/waitlist') return true;
 
+  // Open House: anyone may read public community chat rooms/messages/topics.
+  // Posting and all participation still run through verified-member identity enforcement.
+  if (method === 'GET' && path.startsWith('/api/community-chat')) return true;
   if (method === 'GET' && path === '/api/reviews') return true;
   if (method === 'GET' && path.startsWith('/api/stories')) return true;
   if (method === 'GET' && (path === '/api/contests/leaderboard' || path === '/api/contests/winner')) return true;
