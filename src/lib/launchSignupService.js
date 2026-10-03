@@ -27,6 +27,7 @@ export async function registerLaunchUser({
   privacyPolicyAcknowledged,
   age18Confirmed,
   selectedPlan = 'Premiere',
+  freeAccount = false,
 }) {
   try {
     const payload = await apiRequest('/api/launch-signup', {
@@ -42,6 +43,7 @@ export async function registerLaunchUser({
         privacyPolicyAcknowledged,
         age18Confirmed,
         selectedPlan,
+        freeAccount,
       },
     });
 
