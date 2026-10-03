@@ -57,6 +57,8 @@ jobs:
           grep -F "export const FOUNDING_FREE_DAYS = 30;" worker/founding-rules.js >/dev/null
           grep -F "export const FOUNDING_EXCLUSIVE_RATE_CENTS = 1599;" worker/founding-rules.js >/dev/null
           grep -F "CREATE TABLE IF NOT EXISTS public.founding_members" neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql >/dev/null
+          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_rooms" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
+          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_reports" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
           grep -F "/api/billing/founding-offer" worker/billing.ts >/dev/null
           grep -F "String(foundingOffer.freeDays)" worker/billing.ts >/dev/null
           grep -F "founding_rate_forfeited=true" worker/billing.ts >/dev/null
