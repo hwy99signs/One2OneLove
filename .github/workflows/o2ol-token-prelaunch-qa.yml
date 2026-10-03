@@ -173,6 +173,20 @@ jobs:
             exit 1
           fi
 
+      - name: Verify game Token access is transactional
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "reserveTokenCharge(db,auth.user.id,'like_minded_session'" worker/game-access.ts
+          grep -F "await consumeTokenReservation(db,reservation.id)" worker/game-access.ts
+          grep -F "await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed')" worker/game-access.ts
+          grep -F "featureCode:'like_minded_session'" worker/game-access.ts
+          grep -F "access:'free_verified_account'" worker/game-access.ts
+          if grep -REn 'Premiere|Exclusive|stripe_subscription_id|subscription_status' worker/game-access.ts worker/like-minded.ts; then
+            echo "Game access still contains subscription-era gating." >&2
+            exit 1
+          fi
+
       - name: Verify Token payment and Auto-Replenish safety
         shell: bash
         run: |
