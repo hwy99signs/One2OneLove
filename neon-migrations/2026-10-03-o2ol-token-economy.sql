@@ -197,3 +197,21 @@ CREATE TABLE IF NOT EXISTS public.o2ol_game_access_passes (
 );
 CREATE INDEX IF NOT EXISTS idx_o2ol_game_access_passes_user_game
   ON public.o2ol_game_access_passes(user_id,game,expires_at DESC);
+
+
+-- Token-economy free-account defaults. Legacy tier values remain valid for migration.
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_subscription_plan_check;
+ALTER TABLE public.users
+  ADD CONSTRAINT users_subscription_plan_check
+  CHECK (subscription_plan = ANY (ARRAY['Free'::text,'Basic'::text,'Premiere'::text,'Exclusive'::text]));
+ALTER TABLE public.users ALTER COLUMN subscription_plan SET DEFAULT 'Free';
+ALTER TABLE public.users ALTER COLUMN subscription_price SET DEFAULT 0;
+
+-- Every existing account receives an empty wallet/settings row without changing prior balances.
+INSERT INTO public.o2ol_token_wallets(user_id)
+SELECT id FROM public.users
+ON CONFLICT(user_id) DO NOTHING;
+
+INSERT INTO public.o2ol_auto_replenish_settings(user_id)
+SELECT id FROM public.users
+ON CONFLICT(user_id) DO NOTHING;
