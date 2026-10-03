@@ -73,6 +73,7 @@ export async function sendLoveNoteSms(data) {
         note_content: data.note_content,
         recipient_phone: data.recipient_phone,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        requestId: globalThis.crypto?.randomUUID?.() || `love-note-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       },
     });
     notifyUsageChanged();
