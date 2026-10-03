@@ -36,6 +36,11 @@ const TRACKABLE_FEATURES = new Set([
   'Like Minded?',
   'O2OL Studio',
   'MyMatchIQ',
+  'Reviews',
+  'Suggestions',
+  'Professionals',
+  'Professional Onboarding',
+  'Account Verification',
 ]);
 
 const LEGACY_EVENT_TYPES = new Set(['view', 'action']);
