@@ -417,11 +417,11 @@ async function taskFounding(browser){
   await page.waitForTimeout(150);
   await page.getByRole('button',{name:/I Am 18\+ and Accept the Terms of Service/i}).click();
   await page.getByRole('button',{name:/Create Account/i}).click();
-  await page.getByText(/Verify Your Email/i).waitFor({state:'visible',timeout:5000});
+  await page.getByRole('heading',{name:/Verify Your Email/i}).waitFor({state:'visible',timeout:5000});
   if(captured.signup?.termsVersion!=='2026-10-02'||captured.signup?.selectedPlan!=='Exclusive') fail('task-founding-signup-payload',{payload:captured.signup});
   await page.locator('input[inputmode="numeric"]').first().fill('123456');
   await page.getByRole('button',{name:/Verify Email/i}).click();
-  await page.getByText(/Email Verified/i).waitFor({state:'visible',timeout:5000});
+  await page.getByRole('heading',{name:/Email Verified/i}).waitFor({state:'visible',timeout:5000});
   await page.getByRole('button',{name:/Go to Sign In/i}).click();
   await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/signin'&&new URL(u).searchParams.get('redirect')==='/Subscription?founding=1',{timeout:5000});
   await page.locator('#signin-email').fill('qa-founding@example.invalid');
