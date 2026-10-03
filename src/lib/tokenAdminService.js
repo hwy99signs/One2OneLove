@@ -50,3 +50,14 @@ export async function endTokenCalibration(sessionId,notes='') {
   });
   return parseJson(response);
 }
+
+
+export async function loadTokenCalibrationPackage({userId,packageCode}) {
+  const response=await fetch('/api/token-admin/calibrations/load-package',{
+    method:'POST',
+    credentials:'include',
+    headers:{accept:'application/json','content-type':'application/json'},
+    body:JSON.stringify({userId,packageCode}),
+  });
+  return parseJson(response);
+}
