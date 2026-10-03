@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BrainCircuit, MessageCircle, PlayCircle, Sparkles } from 'lucide-react';
+import { BrainCircuit, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
 import { useLanguage } from './Layout';
+import { useAuth } from '@/contexts/AuthContext';
 
 const COPY={
   en:{
@@ -15,7 +16,7 @@ const COPY={
     talk:'Talk with Bianca',
     chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',
-    note:'Watching the Studio episode is open. Starting the Compatibility Test or a live Bianca conversation follows the current One2OneLove account and card requirements.'
+    note:'Current Studio episodes are immediate for free verified O2OL accounts. Public visitors receive the replay seven days after release. Bianca and other metered premium actions use O2OL Tokens.', replay:'Public replay opens', freeNow:'Create a FREE account to watch now', signIn:'Sign In'
   },
   es:{
     eyebrow:'O2OL Studio Show',
@@ -28,7 +29,7 @@ const COPY={
     talk:'Hablar con Bianca',
     chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',
-    note:'Ver el episodio de Studio es abierto. Iniciar la Prueba de Compatibilidad o una conversación en vivo con Bianca sigue los requisitos actuales de cuenta y tarjeta de One2OneLove.'
+    note:'Los episodios actuales de Studio están disponibles de inmediato para cuentas O2OL gratuitas y verificadas. Los visitantes reciben la repetición siete días después. Bianca y otras funciones premium usan Tokens O2OL.', replay:'La repetición pública abre', freeNow:'Crea una cuenta GRATIS para verlo ahora', signIn:'Iniciar Sesión'
   },
   fr:{
     eyebrow:'O2OL Studio Show',
@@ -41,7 +42,7 @@ const COPY={
     talk:'Parler avec Bianca',
     chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',
-    note:'Le visionnage de l’épisode Studio est ouvert. Le Test de Compatibilité et la conversation en direct avec Bianca suivent les exigences actuelles de compte et de carte One2OneLove.'
+    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent des Jetons O2OL.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
   },
   it:{
     eyebrow:'O2OL Studio Show',
@@ -54,7 +55,7 @@ const COPY={
     talk:'Parla con Bianca',
     chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',
-    note:'La visione dell’episodio Studio è aperta. Il Test di Compatibilità e la conversazione live con Bianca seguono gli attuali requisiti di account e carta One2OneLove.'
+    note:'Gli episodi Studio attuali sono immediati per gli account O2OL gratuiti e verificati. Il pubblico riceve la replica dopo sette giorni. Bianca e le altre funzioni premium a consumo usano Token O2OL.', replay:'La replica pubblica apre', freeNow:'Crea un account GRATUITO per guardare ora', signIn:'Accedi'
   },
   de:{
     eyebrow:'O2OL Studio Show',
@@ -67,14 +68,27 @@ const COPY={
     talk:'Mit Bianca Sprechen',
     chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',
-    note:'Das Studio-Video kann frei angesehen werden. Für den Kompatibilitätstest und ein Live-Gespräch mit Bianca gelten die aktuellen One2OneLove-Konto- und Kartenanforderungen.'
+    note:'Aktuelle Studio-Folgen sind für kostenlose verifizierte O2OL-Konten sofort verfügbar. Öffentliche Besucher erhalten die Wiederholung sieben Tage später. Bianca und andere Premium-Aktionen verwenden O2OL Tokens.', replay:'Öffentliche Wiederholung ab', freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen', signIn:'Anmelden'
   }
 };
 
 export default function O2OLStudio(){
   const {currentLanguage}=useLanguage();
+  const {isAuthenticated}=useAuth();
   const t=COPY[currentLanguage]||COPY.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
+  const [episode,setEpisode]=useState(null);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    let active=true;
+    fetch('/api/studio/episodes',{credentials:'include'})
+      .then(async res=>{const data=await res.json();if(!res.ok)throw new Error(data?.error?.message||'Unable to load Studio access.');return data;})
+      .then(data=>{if(active)setEpisode(data?.episodes?.[0]||null);})
+      .catch(()=>{if(active)setEpisode(null);})
+      .finally(()=>{if(active)setLoading(false);});
+    return()=>{active=false};
+  },[isAuthenticated]);
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-12">
@@ -90,17 +104,31 @@ export default function O2OLStudio(){
           </div>
 
           <div className="relative mx-auto mt-8 max-w-5xl overflow-hidden rounded-[1.5rem] border border-white/15 bg-black shadow-2xl">
-            {!videoUnavailable ? (
+            {loading ? (
+              <div className="flex aspect-video items-center justify-center bg-black text-white/60">Checking Studio access…</div>
+            ) : episode?.canWatch && !videoUnavailable ? (
               <video
                 className="aspect-video w-full bg-black"
                 controls
                 playsInline
                 preload="metadata"
-                src="/studio-media/season-1-episode-1.mp4"
+                src={episode.mediaPath || "/studio-media/season-1-episode-1.mp4"}
                 onError={()=>setVideoUnavailable(true)}
               >
                 Your browser does not support HTML5 video.
               </video>
+            ) : episode && !episode.publicAvailable && !episode.memberAvailable ? (
+              <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
+                <div className="max-w-xl">
+                  <LockKeyhole className="mx-auto h-14 w-14 text-amber-300"/>
+                  <p className="mt-5 text-xl font-black text-white">{t.freeNow}</p>
+                  <p className="mt-2 text-sm text-white/60">{t.replay}: {new Date(episode.publicAvailableAt).toLocaleDateString()}</p>
+                  <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.freeNow}</Link>
+                    <Link to="/SignIn?source=o2ol-studio" className="rounded-full border border-white/25 bg-white/10 px-5 py-3 font-black text-white">{t.signIn}</Link>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
                 <div className="max-w-xl">
