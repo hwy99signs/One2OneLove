@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertTriangle, ArrowLeft, BarChart3, CalendarDays, CheckCircle2,
-  Clock3, CreditCard, FileCheck2, Gauge, Heart, Loader2, LockKeyhole,
+  Clock3, Coins, CreditCard, FileCheck2, Gauge, Heart, Loader2, LockKeyhole,
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { adjustMemberTokens, getAdminAnalytics, getAdminDashboard, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 
 const sections = [
@@ -14,7 +14,7 @@ const sections = [
   { id: 'feature-usage', label: 'Feature Usage', icon: Gauge },
   { id: 'chat-room', label: 'Chat Room', icon: MessageSquareText },
   { id: 'members', label: 'Members', icon: Users },
-  { id: 'plans', label: 'Plans & Billing', icon: CreditCard },
+  { id: 'tokens', label: 'Token Economy', icon: Coins },
   { id: 'love-notes', label: 'Love Notes', icon: Heart },
   { id: 'applications', label: 'Applications', icon: FileCheck2 },
   { id: 'moderation', label: 'Moderation', icon: MessageSquareText },
@@ -319,6 +319,7 @@ export default function Admin() {
 
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
+  const tokenEconomy=data?.tokenEconomy || {}, tokenSummary=tokenEconomy.summary || {};
   const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {};
   const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
@@ -364,48 +365,32 @@ export default function Admin() {
     }
   };
 
-  const handleGrantAccessTime = async (member, unit) => {
-    if (member.auth_role === 'admin' || !unit) return;
-
-    let amount = 1;
-    if (unit !== 'unlimited') {
-      const enteredAmount = window.prompt(`How many ${unit} should be added?`, '1');
-      if (enteredAmount === null) return;
-      amount = Number.parseInt(String(enteredAmount), 10);
-      if (!Number.isInteger(amount) || amount < 1 || amount > 10000) {
-        window.alert('Enter a whole number from 1 to 10,000.');
-        return;
-      }
-    } else if (!window.confirm(`Give ${member.email} unlimited membership access?`)) {
+  const handleAdjustTokens = async (member) => {
+    if (member.auth_role === 'admin') return;
+    const entered = window.prompt(
+      `Adjust O2OL Tokens for ${member.email}. Enter a positive number to add Tokens or a negative number to remove Tokens.`,
+      '10'
+    );
+    if (entered === null) return;
+    const delta = Number.parseInt(String(entered),10);
+    if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 1000000) {
+      window.alert('Enter a non-zero whole number between -1,000,000 and 1,000,000.');
       return;
     }
-
-    setMemberActionId(member.id);
-    try {
-      await grantMemberAccessTime(member.id, unit, amount);
-      await load(true);
-    } catch (err) {
-      window.alert(err?.message || 'Unable to add access time to this member.');
-    } finally {
-      setMemberActionId(null);
+    const reason = window.prompt('Reason for this Token adjustment (required):','');
+    if (reason === null) return;
+    if (!reason.trim()) {
+      window.alert('A reason is required so the Token ledger remains auditable.');
+      return;
     }
-  };
-
-  const handleChangeTier = async (member, target) => {
-    if (member.auth_role === 'admin' || !target) return;
-
-    const current = String(member.subscription_plan || 'Premiere');
-    if (target === current) return;
-    const action = target === 'Exclusive' ? 'UPGRADE' : 'DOWNGRADE';
-
-    if (!window.confirm(`${action} ${member.email} from ${current} to ${target}?`)) return;
+    if (!window.confirm(`${delta > 0 ? 'Add' : 'Remove'} ${Math.abs(delta)} O2OL Token${Math.abs(delta)===1?'':'s'} ${delta > 0 ? 'to' : 'from'} ${member.email}?`)) return;
 
     setMemberActionId(member.id);
     try {
-      await changeMemberTier(member.id, target);
+      await adjustMemberTokens(member.id,delta,reason.trim());
       await load(true);
     } catch (err) {
-      window.alert(err?.message || `Unable to ${action.toLowerCase()} this member.`);
+      window.alert(err?.message || 'Unable to adjust this Token wallet.');
     } finally {
       setMemberActionId(null);
     }
@@ -497,8 +482,8 @@ export default function Admin() {
             <Panel title="Top Feature Activity" subtitle="Operational activity for the six launch areas you want to watch most closely. Each card uses rolling 7, 14, 21 and 30-day windows." className="mt-6">
               <div className="grid gap-4 xl:grid-cols-2">
                 <FeatureActivityCard
-                  title="Subscription / Billing"
-                  subtitle="Member accounts created with a Stripe card/subscription connection versus accounts without one."
+                  title="Legacy Billing / Token Migration"
+                  subtitle="Historical Stripe-linked accounts are tracked for migration only; current feature access is based on free verified accounts plus Tokens."
                   windows={featureWindows}
                   rows={[
                     {label:'With CC',values:topFeatureActivity.subscriptionBilling?.withCard},
@@ -699,7 +684,7 @@ export default function Admin() {
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                 <Search size={17} className="text-slate-400"/>
-                <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, plan or location" className="w-full bg-transparent text-sm outline-none"/>
+                <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, email, legacy plan or location" className="w-full bg-transparent text-sm outline-none"/>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-semibold text-slate-600">{selectedMemberIds.length} selected</span>
@@ -710,7 +695,7 @@ export default function Admin() {
             </div>
             <TableShell><table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>
-                <th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all visible members" checked={allVisibleSelected} onChange={toggleVisibleSelection}/></th><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
+                <th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all visible members" checked={allVisibleSelected} onChange={toggleVisibleSelection}/></th><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Tokens / Legacy</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">{filteredMembers.map(m=>{
                 const state=m.account_state || (m.banned?'suspended':m.is_active===false?'suspended':'active');
@@ -722,35 +707,23 @@ export default function Admin() {
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
                   <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
-                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill>{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
+                  <td className="px-4 py-3">
+                    <div className="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 font-black text-amber-800"><Coins size={14}/>{number(m.token_balance)} Tokens</div>
+                    <div className="mt-1 text-[11px] text-slate-500">Purchased {number(m.tokens_purchased)} · Used {number(m.tokens_used)} · Granted {number(m.tokens_granted)}</div>
+                    {m.subscription_plan&&m.subscription_plan!=='Free'&&<div className="mt-1"><Pill tone="slate">Legacy: {m.subscription_plan}</Pill></div>}
+                  </td>
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
-                        <select
+                        <button
                           disabled={busy}
-                          defaultValue=""
-                          onChange={event=>{const unit=event.target.value;event.target.value='';if(unit)handleGrantAccessTime(m,unit);}}
-                          className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 outline-none disabled:opacity-50"
-                          aria-label={`Add access time for ${m.email}`}
+                          onClick={()=>handleAdjustTokens(m)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-800 disabled:opacity-50"
                         >
-                          <option value="" disabled>Add Time ▾</option>
-                          <option value="hours">Hours…</option>
-                          <option value="days">Days…</option>
-                          <option value="weeks">Weeks…</option>
-                          <option value="unlimited">Unlimited</option>
-                        </select>
-                        <select
-                          disabled={busy}
-                          value={m.subscription_plan==='Exclusive'?'Exclusive':'Premiere'}
-                          onChange={event=>handleChangeTier(m,event.target.value)}
-                          className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-700 outline-none disabled:opacity-50"
-                          aria-label={`Change membership tier for ${m.email}`}
-                        >
-                          <option value="Premiere">Premiere</option>
-                          <option value="Exclusive">Exclusive</option>
-                        </select>
+                          <Coins size={14}/>Adjust Tokens
+                        </button>
                         {state==='active' ? <>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
@@ -763,7 +736,68 @@ export default function Admin() {
             </table></TableShell>
           </div>}
 
-          {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
+          {section==='tokens' && <div>
+            <Heading title="Token Economy" subtitle="Wallets, Token sales, feature pricing, provider costs, calibration evidence and legacy-subscription reconciliation. Administrator activity is excluded from member economics."/>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric icon={Users} label="Member Wallets" value={number(tokenSummary.wallets)} note="non-admin wallets" tone="blue"/>
+              <Metric icon={Coins} label="Outstanding Tokens" value={number(tokenSummary.outstanding_tokens)} note="current member balances" tone="amber"/>
+              <Metric icon={TrendingUp} label="Token Revenue — 30d" value={money(Number(tokenSummary.token_revenue_cents_30d||0)/100)} note={`${number(tokenSummary.transactions_30d)} ledger transactions`} tone="green"/>
+              <Metric icon={Gauge} label="Provider Cost — 30d" value={money(Number(tokenSummary.provider_cost_micros_30d||0)/1000000)} note={`${number(tokenSummary.tokens_charged_30d)} Tokens charged`} tone="violet"/>
+            </div>
+
+            <div className="mb-6 grid gap-6 xl:grid-cols-2">
+              <Panel title="Prelaunch Token Packages" subtitle="Calibration-only packages remain adjustable until measured usage supports final economics.">
+                <div className="space-y-2">{(tokenEconomy.packages||[]).map(pkg=><div key={pkg.code} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3">
+                  <div><div className="font-black text-slate-900">{pkg.label}</div><div className="text-xs text-slate-500">{pkg.code}{pkg.calibration_only?' · calibration only':''}</div></div>
+                  <div className="text-right"><div className="font-black text-violet-700">{number(pkg.tokens)} Tokens</div><div className="text-sm font-semibold text-slate-600">{money(Number(pkg.amount_cents||0)/100)}</div></div>
+                </div>)}</div>
+              </Panel>
+              <Panel title="Metered Feature Prices" subtitle="Current Prelaunch Token prices. These are not final until calibration is complete.">
+                <div className="space-y-2">{(tokenEconomy.featurePrices||[]).map(item=><div key={item.feature_code} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3">
+                  <div><div className="font-black text-slate-900">{item.label}</div><div className="font-mono text-[11px] text-slate-400">{item.feature_code}</div></div>
+                  <div className="text-right"><div className="font-black text-amber-700">{number(item.token_cost)} / {item.pricing_unit}</div><div className="text-[11px] text-slate-400">{item.calibration_only?'CALIBRATION':'ACTIVE PRICE'}</div></div>
+                </div>)}</div>
+              </Panel>
+            </div>
+
+            <Panel title="Measured Provider Cost by Feature — Last 30 Days" subtitle="Actual or provider-usage-derived cost evidence; member economics exclude administrator activity.">
+              {(tokenEconomy.byFeature||[]).length?<div className="overflow-x-auto"><table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">Feature</th><th className="px-3 py-2">Provider</th><th className="px-3 py-2">Events</th><th className="px-3 py-2">Tokens</th><th className="px-3 py-2">Provider Cost</th><th className="px-3 py-2">Input / Output</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">{tokenEconomy.byFeature.map((row,index)=><tr key={`${row.feature_code}-${row.provider}-${index}`}>
+                  <td className="px-3 py-3 font-bold">{row.feature_code}</td><td className="px-3 py-3">{row.provider}{row.provider_product?<div className="text-xs text-slate-400">{row.provider_product}</div>:null}</td>
+                  <td className="px-3 py-3">{number(row.events)}</td><td className="px-3 py-3">{number(row.tokens_charged)}</td>
+                  <td className="px-3 py-3 font-black">{money(Number(row.provider_cost_micros||0)/1000000)}</td>
+                  <td className="px-3 py-3 text-xs text-slate-500">{number(row.provider_input_units||row.input_characters)} / {number(row.provider_output_units||row.output_characters)}</td>
+                </tr>)}</tbody>
+              </table></div>:<Empty>No non-admin cost events have been recorded yet.</Empty>}
+            </Panel>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-2">
+              <Panel title="Recent Token Ledger">
+                {(tokenEconomy.recentTransactions||[]).length?<div className="max-h-[520px] space-y-2 overflow-y-auto">{tokenEconomy.recentTransactions.map(tx=><div key={tx.id} className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3 text-sm">
+                  <div className="min-w-0"><div className="truncate font-semibold">{tx.email||tx.user_id}</div><div className="text-xs text-slate-400">{tx.transaction_type}{tx.feature_code?` · ${tx.feature_code}`:''} · {date(tx.created_at)}</div></div>
+                  <div className="text-right"><div className={cx('font-black',Number(tx.wallet_delta)>=0?'text-emerald-700':'text-rose-700')}>{Number(tx.wallet_delta)>=0?'+':''}{number(tx.wallet_delta)}</div><div className="text-[11px] text-slate-400">Balance {number(tx.balance_after)}</div></div>
+                </div>)}</div>:<Empty>No member Token transactions yet.</Empty>}
+              </Panel>
+              <Panel title="Cost Calibration Sessions" subtitle="Administrator calibration is shown here separately and is not counted as member economics.">
+                {(tokenEconomy.calibrations||[]).length?<div className="max-h-[520px] space-y-2 overflow-y-auto">{tokenEconomy.calibrations.map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm">
+                  <div className="flex items-start justify-between gap-3"><div><div className="font-black">{item.feature_code}</div><div className="text-xs text-slate-400">{item.email||item.user_id}</div></div><Pill tone={item.ended_at?'green':'amber'}>{item.ended_at?'Completed':'Running'}</Pill></div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-slate-600"><div>Events <strong>{number(item.cost_events)}</strong></div><div>Tokens <strong>{number(item.customer_tokens_charged)}</strong></div><div>Cost <strong>{money(Number(item.provider_cost_micros||0)/1000000)}</strong></div></div>
+                  <div className="mt-1 text-[11px] text-slate-400">{date(item.started_at)}{item.ended_at?` → ${date(item.ended_at)}`:''}</div>
+                </div>)}</div>:<Empty>No calibration sessions yet.</Empty>}
+              </Panel>
+            </div>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-2">
+              <Panel title="Legacy Subscription Reconciliation" subtitle="Historical recurring-plan records are retained only so no member value is lost during migration.">
+                <div className="grid grid-cols-2 gap-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-500">Stripe-linked accounts</p><p className="mt-1 text-2xl font-black">{number(tokenEconomy.legacySubscriptions?.stripe_linked_accounts)}</p></div><div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-bold text-amber-700">Legacy active records</p><p className="mt-1 text-2xl font-black text-amber-950">{number(tokenEconomy.legacySubscriptions?.legacy_active_accounts)}</p></div></div>
+                <p className="mt-3 text-xs leading-5 text-slate-500">No historical subscription is automatically converted or canceled from this dashboard. Conversion remains a preview/reconciliation process until final Token value is calibrated.</p>
+              </Panel>
+              <Panel title="Conversion Previews">
+                {(tokenEconomy.conversionQuotes||[]).length?<div className="space-y-2">{tokenEconomy.conversionQuotes.map(q=><div key={q.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="font-semibold">{q.email||q.user_id}</span><Pill tone={statusTone(q.status)}>{q.status}</Pill></div><div className="mt-1 text-xs text-slate-500">{q.old_plan||'Legacy plan'} · proposed {number(q.proposed_tokens)} Tokens · {date(q.created_at)}</div></div>)}</div>:<Empty>No conversion previews have been generated.</Empty>}
+              </Panel>
+            </div>
+          </div>}
 
           {section==='love-notes' && <div><Heading title="Love Notes Operations" subtitle="Monitor scheduler adoption, scheduled volume, successful deliveries and failures."/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={Users} label="Scheduler Users" value={number(loveNotes.schedulers?.users_total)} note={`${number(loveNotes.schedulers?.users_30d)} in 30 days`} tone="blue"/><Metric icon={CalendarDays} label="Schedules Created" value={number(loveNotes.schedulers?.schedules_total)} note={`${number(loveNotes.schedulers?.schedules_30d)} in 30 days`} tone="violet"/><Metric icon={CheckCircle2} label="Passed" value={number(love.scheduled_passed)} note="successful scheduled sends" tone="green"/><Metric icon={AlertTriangle} label="Failed" value={number(love.scheduled_failed)} note="delivery failures" tone="rose"/><Metric icon={Clock3} label="Avg Schedules / User" value={decimal(loveNotes.schedulers?.avg_schedules_per_user)} note="all-time scheduler frequency" tone="amber"/></div><div className="mt-6 grid gap-6 xl:grid-cols-2"><Panel title="Scheduled Delivery Health"><DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/></Panel><Panel title="Direct Delivery Health"><DeliveryHealth firstLabel="Sent" firstValue={direct.sent} passed={direct.passed} failed={direct.failed} pending={direct.pending}/></Panel></div><div className="mt-6">{(loveNotes.recent||[]).length?<TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Note</th><th className="px-4 py-3">Delivery</th><th className="px-4 py-3">Scheduled</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{loveNotes.recent.map(item=><tr key={item.id}><td className="px-4 py-3"><div className="font-semibold">{item.note_title||'Love Note'}</div><div className="text-xs text-slate-500">{item.email||item.user_id}</div></td><td className="px-4 py-3">{item.delivery_method||'—'}{item.recipient_phone_masked&&<div className="text-xs text-slate-400">{item.recipient_phone_masked}</div>}</td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{item.scheduled_date||'—'} {item.scheduled_time||''}</td><td className="px-4 py-3"><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill>{item.failure_reason&&<div className="mt-1 max-w-xs text-xs text-rose-600">{item.failure_reason}</div>}</td></tr>)}</tbody></table></TableShell>:<Empty>No scheduled Love Notes yet.</Empty>}</div></div>}
 
