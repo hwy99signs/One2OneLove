@@ -1,0 +1,79 @@
+name: Verify Live Tier Clicks
+
+on:
+  push:
+    branches:
+      - qa/live-tier-click-verification-20261003
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Test live public tier buttons
+        run: |
+          cat > live-tier-clicks.cjs <<'NODE'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const context=await browser.newContext();
+            const page=await context.newPage();
+            const errors=[];
+            let checkoutCalls=0;
+            page.on('pageerror',e=>errors.push(String(e)));
+            page.on('request',req=>{
+              if(req.url().includes('/api/billing/checkout')) checkoutCalls++;
+            });
+
+            async function openSubscription(){
+              await page.goto('https://one2onelove.com/Subscription',{waitUntil:'domcontentloaded',timeout:60000});
+              await page.waitForFunction(()=>{
+                const labels=['Create Account for Premiere','Create Account for Exclusive'];
+                return labels.every(label=>{
+                  const b=[...document.querySelectorAll('button')].find(x=>(x.textContent||'').includes(label));
+                  return b && !b.disabled;
+                });
+              },null,{timeout:15000});
+            }
+
+            await openSubscription();
+            const premiere=page.getByRole('button',{name:'Create Account for Premiere'});
+            const exclusive=page.getByRole('button',{name:'Create Account for Exclusive'});
+            console.log('Premiere enabled:',!(await premiere.isDisabled()));
+            console.log('Exclusive enabled:',!(await exclusive.isDisabled()));
+
+            await premiere.click();
+            await page.waitForURL(/\/SignUp\?plan=Premiere&source=subscription-plan/,{timeout:10000});
+            console.log('Premiere destination:',page.url());
+
+            await openSubscription();
+            await page.getByRole('button',{name:'Create Account for Exclusive'}).click();
+            await page.waitForURL(/\/SignUp\?plan=Exclusive&source=subscription-plan/,{timeout:10000});
+            console.log('Exclusive destination:',page.url());
+
+            await openSubscription();
+            const founding=page.getByRole('button',{name:'Activate Founding Offer'});
+            if(await founding.count()){
+              await page.waitForFunction(()=>{
+                const b=[...document.querySelectorAll('button')].find(x=>(x.textContent||'').includes('Activate Founding Offer'));
+                return b && !b.disabled;
+              },null,{timeout:15000});
+              await founding.click();
+              await page.waitForURL(/\/SignUp\?plan=(Premiere|Exclusive)&founding=1&source=founding-offer/,{timeout:10000});
+              console.log('Founding destination:',page.url());
+            }
+
+            if(checkoutCalls!==0) throw new Error('Live anonymous clicks called billing checkout '+checkoutCalls+' time(s)');
+            if(errors.length) throw new Error(errors.join(' | '));
+            console.log('LIVE TIER CLICK QA PASSED');
+            await browser.close();
+          })().catch(err=>{console.error(err);process.exit(1);});
+          NODE
+          node live-tier-clicks.cjs
