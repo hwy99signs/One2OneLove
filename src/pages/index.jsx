@@ -71,6 +71,14 @@ const PAGES = {
   Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
+function _getCurrentPage(url) {
+  if (url.endsWith('/')) url = url.slice(0, -1);
+  let urlLastPart = url.split('/').pop();
+  if (urlLastPart.includes('?')) urlLastPart = urlLastPart.split('?')[0];
+  const pageName = Object.keys(PAGES).find(page => page.toLowerCase() === urlLastPart.toLowerCase());
+  return pageName || 'Home';
+}
+
 function PagesContent() {
   const location = useLocation();
   const currentPage = _getCurrentPage(location.pathname);
