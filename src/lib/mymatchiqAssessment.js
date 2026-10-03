@@ -43,8 +43,10 @@ const COPY = {
 };
 
 export const MMIQ_ACCESS = {
-  Free: { questionCount:15, dimensionCount:1 },
-  Premier: { questionCount:45, dimensionCount:3 },
+  // Current O2OL model: the structured assessment is a verified-member tool.
+  // Legacy names remain aliases only so old saved links/state cannot reduce access.
+  Free: { questionCount:225, dimensionCount:15 },
+  Premier: { questionCount:225, dimensionCount:15 },
   Elite: { questionCount:225, dimensionCount:15 },
 };
 
@@ -69,10 +71,8 @@ export function buildMyMatchIQQuestionBank(language='en'){
   return questions;
 }
 
-export function getAssessmentQuestions({language='en',tier='Elite'}={}){
-  const bank=buildMyMatchIQQuestionBank(language);
-  const access=MMIQ_ACCESS[tier]||MMIQ_ACCESS.Elite;
-  return bank.slice(0,access.questionCount);
+export function getAssessmentQuestions({language='en'}={}){
+  return buildMyMatchIQQuestionBank(language);
 }
 
 export function scoreAssessment(answers=[]){
