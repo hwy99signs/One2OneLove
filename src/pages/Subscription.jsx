@@ -73,7 +73,7 @@ export default function Subscription(){
   const offer=foundingOffer;
   if(!offer?.available || !offer?.plan) return;
   if(!isAuthenticated || String(user?.role||'').toLowerCase()==='admin'){
-    navigate('/SignUp?plan='+encodeURIComponent(offer.plan)+'&type=individual&founding=1&source=founding-offer');
+    navigate('/SignUp?plan='+encodeURIComponent(offer.plan)+'&founding=1&source=founding-offer');
     return;
   }
   setBusy('founding');
@@ -97,7 +97,7 @@ export default function Subscription(){
 
  const choose=async plan=>{
   if(!isAuthenticated || String(user?.role||'').toLowerCase()==='admin'){
-    navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&type=individual&source=subscription-plan');
+    navigate('/SignUp?plan='+encodeURIComponent(plan.name)+'&source=subscription-plan');
     return;
   }
   setBusy(plan.name);
@@ -120,7 +120,7 @@ export default function Subscription(){
     <div className="text-sm font-black uppercase tracking-widest text-cyan-800">{t.openHouseTitle}</div>
     <p className="mx-auto mt-2 max-w-3xl text-sm leading-6 text-slate-700">{t.openHouseBody}</p>
     <div className="mt-4 flex flex-wrap justify-center gap-3">
-      <Button type="button" data-analytics-id="subscription-create-free-account" onClick={()=>navigate('/SignUp?account=free&type=individual&source=open-house-free')} className="bg-cyan-700 px-5 font-black text-white hover:bg-cyan-800">{t.createFreeAccount}</Button>
+      <Button type="button" data-analytics-id="subscription-create-free-account" onClick={()=>navigate('/SignUp?account=free&source=open-house-free')} className="bg-cyan-700 px-5 font-black text-white hover:bg-cyan-800">{t.createFreeAccount}</Button>
       <Button type="button" data-analytics-id="subscription-continue-open-house" onClick={()=>navigate('/Home')} className="bg-slate-900 px-5 font-black text-white hover:bg-slate-800">{t.continueBrowsing}</Button>
     </div>
    </div>
@@ -140,7 +140,7 @@ export default function Subscription(){
    <section className="mt-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
     <h2 className="text-center text-xl font-black text-slate-900">{t.chooseAccount}</h2>
     <div className="mt-4 grid gap-3 md:grid-cols-3">
-      <button type="button" data-analytics-id="subscription-tier-free" onClick={()=>navigate('/SignUp?account=free&type=individual&source=tier-selector')} className="rounded-2xl border-2 border-cyan-300 bg-cyan-50 p-4 text-left transition hover:border-cyan-500 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-200">
+      <button type="button" data-analytics-id="subscription-tier-free" onClick={()=>navigate('/SignUp?account=free&source=tier-selector')} className="rounded-2xl border-2 border-cyan-300 bg-cyan-50 p-4 text-left transition hover:border-cyan-500 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-200">
         <div className="text-lg font-black text-cyan-900">{t.freeTier}</div><div className="mt-1 text-sm font-semibold text-cyan-800">{t.freeTierBody}</div>
       </button>
       <button type="button" data-analytics-id="subscription-tier-premiere" onClick={()=>choose(PLANS[0])} disabled={Boolean(busy)} className="rounded-2xl border-2 border-violet-300 bg-violet-50 p-4 text-left transition hover:border-violet-500 hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-200 disabled:cursor-wait disabled:opacity-60">
