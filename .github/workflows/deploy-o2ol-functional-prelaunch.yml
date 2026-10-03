@@ -32,6 +32,7 @@ jobs:
       TOKEN_MEDIA_BUCKET: one2onelove-token-prelaunch-media
       EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls
       EXPECTED_NEON_DATABASE: one2onelove
+      EXPECTED_NEON_ROLE: o2ol_token_hyperdrive
       PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf
       NEON_AUTH_BASE_URL: https://ep-super-silence-arbl98ls.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
 
@@ -80,8 +81,10 @@ jobs:
 
           HOST=$(jq -r '.result.origin.host // .result.origin.hostname // ""' /tmp/token-hyperdrive.json)
           DATABASE=$(jq -r '.result.origin.database // ""' /tmp/token-hyperdrive.json)
+          DB_USER=$(jq -r '.result.origin.user // ""' /tmp/token-hyperdrive.json)
           echo "TOKEN_PRELAUNCH_HYPERDRIVE_HOST=$HOST"
           echo "TOKEN_PRELAUNCH_HYPERDRIVE_DATABASE=$DATABASE"
+          echo "TOKEN_PRELAUNCH_HYPERDRIVE_USER=$DB_USER"
 
           case "$HOST" in
             "$EXPECTED_NEON_HOST_PREFIX".c-4.us-west-2.aws.neon.tech|            "$EXPECTED_NEON_HOST_PREFIX"-pooler.c-4.us-west-2.aws.neon.tech|            "$EXPECTED_NEON_HOST_PREFIX"-*.c-4.us-west-2.aws.neon.tech)
@@ -92,6 +95,10 @@ jobs:
               ;;
           esac
           test "$DATABASE" = "$EXPECTED_NEON_DATABASE"
+          if [ "$DB_USER" != "$EXPECTED_NEON_ROLE" ]; then
+            echo "Hyperdrive must use the dedicated Token Prelaunch database role." >&2
+            exit 1
+          fi
 
           if printf '%s' "$HOST" | grep -F 'ep-shiny-truth-ar740o0s' >/dev/null; then
             echo "Production Neon host is forbidden." >&2
