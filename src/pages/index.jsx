@@ -6,6 +6,7 @@ import SignIn from './SignIn';
 import SignUp from './SignUp';
 import AdminAccess from './AdminAccess';
 import Admin from './Admin';
+import TokenSystemDashboard from './TokenSystemDashboard';
 import AdminMfaGate from '@/components/admin/AdminMfaGate.jsx';
 import MemoryLane from './MemoryLane';
 import LoveNotes from './LoveNotes';
@@ -63,7 +64,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 
 const PAGES = {
-  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, TokenSystemDashboard, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
@@ -155,6 +156,7 @@ function PagesContent() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/AdminAccess" element={<AdminAccess />} />
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
+          <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
           <Route path="/MemoryLane" element={<MemoryLane />} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
           <Route path="/SendCredits" element={<SendCredits />} />
