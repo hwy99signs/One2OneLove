@@ -90,7 +90,16 @@ export async function sendTwilioLoveNoteSms(env, note) {
     error.providerStatus = response.status;
     throw error;
   }
-  return { provider: 'twilio', messageId: payload?.sid || null };
+  return {
+    provider:'twilio',
+    messageId:payload?.sid||null,
+    status:payload?.status||null,
+    numSegments:Number(payload?.num_segments||0)||0,
+    price:payload?.price==null?null:Number(payload.price),
+    priceUnit:payload?.price_unit||'USD',
+    to:payload?.to||to,
+    body:payload?.body||params.get('Body')||'',
+  };
 }
 
 async function cancelIneligibleDue(db) {
