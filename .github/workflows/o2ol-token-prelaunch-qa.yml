@@ -248,6 +248,11 @@ jobs:
           grep -F "handleTokenAdminRequest" worker/token-admin.ts worker/index-v2.ts
           grep -F "url.pathname.startsWith('/api/token-admin')" worker/index-v2.ts
           grep -F "const gate = await enforceAdminMfa(request, env);" worker/index-v2.ts
+          TOKEN_ADMIN_LINE=$(grep -n "url.pathname.startsWith('/api/token-admin')" worker/index-v2.ts | head -1 | cut -d: -f1)
+          IDENTITY_GATE_LINE=$(grep -n "const identityGate = await enforceLaunchIdentity" worker/index-v2.ts | head -1 | cut -d: -f1)
+          test -n "$TOKEN_ADMIN_LINE"
+          test -n "$IDENTITY_GATE_LINE"
+          test "$TOKEN_ADMIN_LINE" -lt "$IDENTITY_GATE_LINE"
           grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
           grep -F "<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>" src/pages/index.jsx
           grep -F "adjustTokenWallet" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
