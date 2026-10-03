@@ -58,7 +58,124 @@ function analyticsBaselineSql(env) {
 
 async function analytics(db, env) {
   const baselineSql = analyticsBaselineSql(env);
-  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary] = await Promise.all([
+  const interactionSchema = await db.query(`
+    SELECT
+      to_regclass('public.interaction_events') IS NOT NULL AS ready,
+      EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema='public' AND table_name='interaction_events' AND column_name='language'
+      ) AS language_ready
+  `);
+  const interactionReady = Boolean(interactionSchema.rows[0]?.ready);
+  const languageReady = Boolean(interactionSchema.rows[0]?.language_ready);
+
+  const zeroSiteUsage = () => db.query(`
+    SELECT to_char(day,'YYYY-MM-DD') AS date,
+           0::int AS page_views,0::int AS clicks,0::int AS visitors
+      FROM generate_series(current_date-29,current_date,interval '1 day') AS day
+     ORDER BY day
+  `);
+
+  const siteUsagePromise = interactionReady ? db.query(`
+    WITH days AS (
+      SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+    ), usage AS (
+      SELECT e.created_at::date AS day,
+             count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+             count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(DISTINCT CASE
+               WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+               ELSE 'v:' || e.visitor_id
+             END)::int AS visitors
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       GROUP BY 1
+    )
+    SELECT to_char(days.day,'YYYY-MM-DD') AS date,
+           COALESCE(usage.page_views,0)::int AS page_views,
+           COALESCE(usage.clicks,0)::int AS clicks,
+           COALESCE(usage.visitors,0)::int AS visitors
+      FROM days LEFT JOIN usage USING(day)
+     ORDER BY days.day
+  `) : zeroSiteUsage();
+
+  const siteUsageSummaryPromise = interactionReady ? db.query(`
+    SELECT
+      count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+      count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+      count(DISTINCT CASE
+        WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+        ELSE 'v:' || e.visitor_id
+      END)::int AS unique_visitors,
+      count(DISTINCT e.visitor_id) FILTER (WHERE e.actor_type='anonymous')::int AS anonymous_visitors,
+      count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+  `) : Promise.resolve({ rows:[{ page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 }] });
+
+  const languageUsagePromise = interactionReady && languageReady ? db.query(`
+    WITH desired(language,label,sort_order) AS (
+      VALUES
+        ('en'::text,'English'::text,1),
+        ('es'::text,'Spanish'::text,2),
+        ('fr'::text,'French'::text,3),
+        ('it'::text,'Italian'::text,4),
+        ('de'::text,'German'::text,5)
+    ), usage AS (
+      SELECT e.language,
+             count(*)::int AS total_events,
+             count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+             count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+             count(DISTINCT CASE
+               WHEN e.user_id IS NOT NULL THEN 'u:' || e.user_id::text
+               ELSE 'v:' || e.visitor_id
+             END)::int AS unique_visitors,
+             count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users,
+             count(DISTINCT e.visitor_id) FILTER (WHERE e.actor_type='anonymous')::int AS anonymous_visitors
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+         AND e.language IN ('en','es','fr','it','de')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       GROUP BY e.language
+    )
+    SELECT desired.language,desired.label,
+           COALESCE(usage.total_events,0)::int AS total_events,
+           COALESCE(usage.page_views,0)::int AS page_views,
+           COALESCE(usage.clicks,0)::int AS clicks,
+           COALESCE(usage.unique_visitors,0)::int AS unique_visitors,
+           COALESCE(usage.registered_users,0)::int AS registered_users,
+           COALESCE(usage.anonymous_visitors,0)::int AS anonymous_visitors
+      FROM desired LEFT JOIN usage USING(language)
+     ORDER BY desired.sort_order
+  `) : Promise.resolve({ rows:[
+    { language:'en',label:'English',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'es',label:'Spanish',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'fr',label:'French',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'it',label:'Italian',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+    { language:'de',label:'German',total_events:0,page_views:0,clicks:0,unique_visitors:0,registered_users:0,anonymous_visitors:0 },
+  ] });
+
+  const languageUnknownPromise = interactionReady ? db.query(languageReady ? `
+    SELECT count(*)::int AS events
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND (e.language IS NULL OR e.language NOT IN ('en','es','fr','it','de'))
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+  ` : `
+    SELECT count(*)::int AS events
+      FROM public.interaction_events e
+      LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+  `) : Promise.resolve({ rows:[{ events:0 }] });
+
+  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown] = await Promise.all([
     db.query(`
       WITH days AS (
         SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
@@ -194,6 +311,10 @@ async function analytics(db, env) {
              0::int AS pending
         FROM public.sent_love_notes
        WHERE COALESCE(sent_date,created_at) >= ${baselineSql}`),
+    siteUsagePromise,
+    siteUsageSummaryPromise,
+    languageUsagePromise,
+    languageUnknownPromise,
   ]);
 
   return {
@@ -206,6 +327,11 @@ async function analytics(db, env) {
     community: community.rows,
     payments: payments.rows,
     tiers: tiers.rows,
+    siteUsage: siteUsage.rows,
+    siteUsageSummary: siteUsageSummary.rows[0] || { page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 },
+    languageUsage: languageUsage.rows,
+    languageUnknownEvents: Number(languageUnknown.rows[0]?.events || 0),
+    languageTrackingActive: interactionReady && languageReady,
     directDelivery: {
       ...(directSummary.rows[0] || { sent:0,passed:0,failed:0,pending:0 }),
       receiptTrackingActive: false,
