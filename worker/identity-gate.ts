@@ -28,7 +28,6 @@ function isPublicIdentityRoute(request, url) {
   if (path === '/api/professional-signup') return true;
   if (path.startsWith('/api/suggestions')) return true;
   if (path === '/api/billing/webhook') return true;
-  if (path === '/api/mymatchiq/credits/webhook') return true;
   if (path === '/api/engagement/waitlist') return true;
 
   // Open House: anyone may read public community chat rooms/messages/topics.
