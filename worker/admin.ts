@@ -934,7 +934,7 @@ async function tokenEconomy(db) {
         FROM public.o2ol_cost_events c
         LEFT JOIN public.users u ON u.id=c.user_id
         LEFT JOIN neon_auth."user" a ON a.id=c.user_id
-       WHERE COALESCE(a.role,'user')<>'admin'
+       WHERE c.calibration_session_id IS NOT NULL
        ORDER BY c.created_at DESC
        LIMIT 200
     `),
