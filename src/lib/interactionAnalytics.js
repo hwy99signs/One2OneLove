@@ -1,7 +1,7 @@
 const VISITOR_KEY = 'o2ol.analytics.visitor';
 const SESSION_KEY = 'o2ol.analytics.session';
 const SOURCE_KEY = 'o2ol.analytics.source';
-const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess']);
+const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess','/developer']);
 const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
 const FEATURE_BY_ROUTE = {
@@ -55,6 +55,19 @@ const FEATURE_BY_ROUTE = {
   '/mymatchiq/actions': 'MyMatchIQ',
   '/mymatchiq/dashboard': 'MyMatchIQ',
   '/mymatchiq/invite': 'MyMatchIQ',
+  '/mymatchiq/subscription': 'MyMatchIQ',
+  '/winacruise': 'Win A Cruise',
+  '/counselingsupport': 'Relationship Support',
+  '/influencerssupport': 'Professionals',
+  '/aicontentcreator': 'AI Content Creator',
+  '/relationshipcoach': 'Relationship Coach',
+  '/meditation': 'Relationship Support',
+  '/leaderboard': 'Gamification',
+  '/achievements': 'Gamification',
+  '/premiumfeatures': 'Subscription / Billing',
+  '/findfriends': 'Find Friends',
+  '/friendrequests': 'Find Friends',
+  '/blog': 'Articles',
 };
 
 function randomId() {
