@@ -414,6 +414,13 @@ async function overview(db) {
                  AND lower(COALESCE(p.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
              )::int AS registered_free,
              count(*) FILTER (
+               WHERE p.id IS NOT NULL
+                 AND lower(COALESCE(p.subscription_status,'inactive')) IN ('active','trial','trialing','past_due')
+             )::int AS subscribed,
+             count(*) FILTER (WHERE p.id IS NULL)::int AS auth_only_no_profile,
+             count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= current_date)::int AS signups_today,
+             count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '24 hours')::int AS signups_24h,
+             count(*) FILTER (
                WHERE NOT (
                  COALESCE(p.is_verified,a."emailVerified",false)=true
                  AND COALESCE(p.phone_number_verified,false)=true
