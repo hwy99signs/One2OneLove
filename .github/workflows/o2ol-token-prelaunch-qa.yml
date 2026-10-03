@@ -263,6 +263,43 @@ jobs:
             exit 1
           fi
 
+      - name: Verify functional Token deploy is isolated and fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEPLOY=.github/workflows/deploy-o2ol-functional-prelaunch.yml
+          grep -F "name: Deploy O2OL Token Functional Prelaunch" "$DEPLOY"
+          grep -F "ref: prelaunch/o2ol-token-economy-20261003" "$DEPLOY"
+          grep -F "main\": \"\$GITHUB_WORKSPACE/worker/index-v2.ts" "$DEPLOY"
+          grep -F "EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls" "$DEPLOY"
+          grep -F "PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf" "$DEPLOY"
+          grep -F "Production Hyperdrive is forbidden for Token Prelaunch." "$DEPLOY"
+          grep -F "TOKEN_PRELAUNCH_OPENAI_API_KEY" "$DEPLOY"
+          grep -F "TOKEN_PRELAUNCH_STRIPE_SECRET_KEY" "$DEPLOY"
+          grep -F "TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID" "$DEPLOY"
+          grep -F '"workers_dev": false' "$DEPLOY"
+          grep -F '"workers_dev": true' "$DEPLOY"
+          grep -F '"PRELAUNCH_ENVIRONMENT": "true"' "$DEPLOY"
+          grep -F '"SCHEDULED_SMS_ENABLED": "false"' "$DEPLOY"
+          grep -F '"bucket_name": "one2onelove-media"' "$DEPLOY"
+          grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts
+          if grep -F "o2ol-password-reset-preview" "$DEPLOY"; then
+            echo "Stale preview checkout branch remains in functional deploy." >&2
+            exit 1
+          fi
+          if grep -F "ep-royal-darkness-ars10dcl" "$DEPLOY"; then
+            echo "Old Bianca Neon endpoint remains in Token deploy." >&2
+            exit 1
+          fi
+          if grep -F "one2onelove-launch" "$DEPLOY"; then
+            echo "Production Worker name leaked into Token deploy." >&2
+            exit 1
+          fi
+          if grep -REn 'MEDIA\.(put|delete)\(' worker; then
+            echo "R2 mutation code is forbidden while Token Prelaunch shares the media bucket." >&2
+            exit 1
+          fi
+
       - name: Verify Production deployment remains untouched
         shell: bash
         run: |
