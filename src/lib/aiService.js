@@ -68,14 +68,16 @@ export async function resetBiancaPersonalization() {
 }
 
 export async function sendBiancaMessage(conversationId, message, language = 'en') {
+  const requestId = globalThis.crypto?.randomUUID?.() || `bianca-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: { message, language },
+    body: { message, language, requestId },
   });
 }
 
 export async function generateBiancaReport(language = 'en') {
-  const payload = await apiRequest('/api/mymatchiq/bianca/report', { method: 'POST', body: { language } });
+  const requestId = globalThis.crypto?.randomUUID?.() || `bianca-report-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const payload = await apiRequest('/api/mymatchiq/bianca/report', { method: 'POST', body: { language, requestId } });
   return payload?.report || null;
 }
 
