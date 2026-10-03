@@ -31,6 +31,13 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
 
+      - name: Require verified Production schema preparation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/o2ol-production-schema-prepared
+          grep -Fx 'o2ol-open-house-schema-v1' .github/o2ol-production-schema-prepared >/dev/null
+
       - name: Build production application
         shell: bash
         run: |
