@@ -49,6 +49,13 @@ jobs:
           set -euo pipefail
           npm audit --omit=dev --audit-level=high
 
+      - name: Match Production high-severity dependency audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --audit-level=high
+          npm --prefix worker audit --audit-level=high
+
       - name: Enforce Open House and Founding contract
         shell: bash
         run: |
