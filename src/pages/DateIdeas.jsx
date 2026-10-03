@@ -117,7 +117,7 @@ const OPEN_HOUSE_COPY = {
     locked: 'LOCKED',
     membersOnly: 'Members Only',
     lockedTitle: 'There is more waiting inside',
-    lockedBody: 'This Date Idea is hidden during the Limited-Time Open House. Become a member to unlock all 52 Date Ideas.',
+    lockedBody: 'This Date Idea is hidden during the Limited-Time Open House. Create FREE Account to unlock all 52 Date Ideas.',
     unlock: 'Unlock All 52',
     signIn: 'Sign In',
     saveGate: 'Create an account to save, schedule, and track Date Ideas.',
@@ -128,59 +128,51 @@ const OPEN_HOUSE_COPY = {
     locked: 'BLOQUEADO',
     membersOnly: 'Solo miembros',
     lockedTitle: 'Hay mucho más por descubrir',
-    lockedBody: 'Esta idea de cita está oculta durante las Puertas Abiertas por tiempo limitado. Hazte miembro para desbloquear las 52 ideas de citas.',
-    unlock: 'Desbloquear las 52',
+    lockedBody: 'Esta idea de cita está oculta durante las Puertas Abiertas por tiempo limitado. Crear Cuenta GRATIS para desbloquear las 52 ideas de citas.',
+    unlock: 'Crear Cuenta GRATIS',
     signIn: 'Iniciar sesión',
     saveGate: 'Crea una cuenta para guardar, programar y seguir tus ideas de citas.',
-    memberAction: 'Hazte miembro'
+    memberAction: 'Crear Cuenta GRATIS'
   },
   fr: {
     badge: 'PORTES OUVERTES',
     locked: 'VERROUILLÉ',
     membersOnly: 'Membres uniquement',
     lockedTitle: 'Il y en a encore beaucoup à découvrir',
-    lockedBody: 'Cette idée de rendez-vous est masquée pendant les Portes Ouvertes à durée limitée. Devenez membre pour débloquer les 52 idées.',
-    unlock: 'Débloquer les 52',
+    lockedBody: 'Cette idée reste masquée pendant les Portes Ouvertes. Créez votre compte GRATUIT vérifié pour débloquer les 52 idées.',
+    unlock: 'Créer un Compte GRATUIT',
     signIn: 'Se connecter',
     saveGate: 'Créez un compte pour enregistrer, planifier et suivre vos idées de rendez-vous.',
-    memberAction: 'Devenir membre'
+    memberAction: 'Créer un Compte GRATUIT'
   },
   it: {
     badge: 'PORTE APERTE',
     locked: 'BLOCCATO',
     membersOnly: 'Solo membri',
     lockedTitle: 'C’è molto altro da scoprire',
-    lockedBody: 'Questa idea è nascosta durante le Porte Aperte a tempo limitato. Diventa membro per sbloccare tutte le 52 idee.',
-    unlock: 'Sblocca tutte e 52',
+    lockedBody: 'Questa idea resta nascosta durante l’Open House. Crea il tuo account GRATUITO verificato per sbloccare tutte le 52 idee.',
+    unlock: 'Crea Account GRATUITO',
     signIn: 'Accedi',
     saveGate: 'Crea un account per salvare, programmare e monitorare le idee per gli appuntamenti.',
-    memberAction: 'Diventa membro'
+    memberAction: 'Crea Account GRATUITO'
   },
   de: {
     badge: 'TAG DER OFFENEN TÜR',
     locked: 'GESPERRT',
     membersOnly: 'Nur für Mitglieder',
     lockedTitle: 'Es gibt noch viel mehr zu entdecken',
-    lockedBody: 'Diese Date-Idee bleibt während des zeitlich begrenzten Open House verborgen. Werde Mitglied, um alle 52 Date-Ideen freizuschalten.',
-    unlock: 'Alle 52 freischalten',
+    lockedBody: 'Diese Date-Idee bleibt während des Open House verborgen. Erstelle dein verifiziertes KOSTENLOSES Konto, um alle 52 Date-Ideen freizuschalten.',
+    unlock: 'KOSTENLOSES Konto Erstellen',
     signIn: 'Anmelden',
     saveGate: 'Erstelle ein Konto, um Date-Ideen zu speichern, zu planen und zu verfolgen.',
-    memberAction: 'Mitglied werden'
+    memberAction: 'KOSTENLOSES Konto Erstellen'
   }
 };
 
-function adminAccessActive(user) {
-  if (!user?.subscription_end_date) return false;
-  const end = new Date(user.subscription_end_date);
-  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
-}
-
 function hasFullDateIdeasAccess(user) {
-  if (!user) return false;
+  if (!user?.id) return false;
   if (String(user.role || '').toLowerCase() === 'admin') return true;
-  const status = String(user.subscription_status || '').toLowerCase();
-  const paidOrGranted = Boolean(user.stripe_subscription_id) || adminAccessActive(user);
-  return ['active', 'trial', 'trialing'].includes(status) && paidOrGranted;
+  return user.phone_number_verified === false || user.phoneNumberVerified === false ? false : true;
 }
 
 function mysteryTitleFragment(title) {
@@ -749,7 +741,7 @@ export default function DateIdeas() {
                   <p className="mt-3 text-sm leading-relaxed text-gray-600">{openHouseCopy.lockedBody}</p>
                 </div>
                 <div className="mt-6 flex flex-col gap-2">
-                  <Link to="/Subscription?open-house=date-ideas" onClick={() => setShowOpenHouseLock(false)}>
+                  <Link to="/SignUp?source=open-house-date-ideas&type=individual" onClick={() => setShowOpenHouseLock(false)}>
                     <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                       <Lock className="mr-2 h-4 w-4" />
                       {openHouseCopy.unlock}
@@ -858,7 +850,7 @@ export default function DateIdeas() {
                             <Share2 className="w-4 h-4 mr-2" />
                             {t.shareWithPartner}
                           </Button>
-                          <Link to="/Subscription?open-house=date-ideas">
+                          <Link to="/SignUp?source=open-house-date-ideas&type=individual">
                             <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                               <Lock className="w-4 h-4 mr-2" />
                               {openHouseCopy.memberAction}
