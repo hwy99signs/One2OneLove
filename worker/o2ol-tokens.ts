@@ -332,12 +332,20 @@ async function recordStripeFeeFromPaymentIntent(db,env,userId,paymentIntentId,pa
     const bt=intent?.latest_charge?.balance_transaction;
     const feeCents=Number(bt?.fee||0);
     if(!feeCents)return null;
+    const providerRequestId=String(bt?.id||paymentIntentId);
+    const existing=(await db.query(
+      `SELECT id FROM public.o2ol_cost_events
+        WHERE feature_code='token_purchase' AND provider='stripe' AND provider_request_id=$1
+        LIMIT 1`,
+      [providerRequestId],
+    )).rows[0]||null;
+    if(existing)return existing;
     return recordCostEvent(db,env,{
       userId,
       featureCode:'token_purchase',
       provider:'stripe',
       providerProduct:'card_processing',
-      providerRequestId:String(bt?.id||paymentIntentId),
+      providerRequestId,
       providerCostMicros:feeCents*10000,
       customerTokensCharged:0,
       metadata:{package_code:packageCode,purchased_tokens:tokens,payment_intent:paymentIntentId,fee_cents:feeCents,net_cents:Number(bt?.net||0)},
@@ -525,14 +533,18 @@ async function tokenWebhook(request,env){
       }
     }
     if(event.type==='payment_intent.succeeded'&&meta.purpose==='o2ol_token_auto_replenish'&&meta.user_id){
-      const pkg=(await db.query('SELECT * FROM public.o2ol_token_packages WHERE code=$1 LIMIT 1',[meta.package_code])).rows[0];
-      if(pkg){
+      const replenishedTokens=Math.max(0,Math.floor(Number(meta.tokens)||0));
+      const packageCode=String(meta.package_code||'').trim();
+      const amountCents=Math.max(0,Math.floor(Number(obj.amount_received??obj.amount)||0));
+      if(packageCode&&replenishedTokens&&amountCents){
         await creditTokens(db,meta.user_id,{
-          tokens:Number(pkg.tokens),transactionType:'auto_replenish',packageCode:pkg.code,amountCents:Number(pkg.amount_cents),
+          tokens:replenishedTokens,transactionType:'auto_replenish',packageCode,amountCents,
           provider:'stripe',providerReference:obj.id,idempotencyKey:meta.idempotency_key||`stripe_auto:${obj.id}`,
-          metadata:{webhook_event:event.id,payment_intent:obj.id},
+          metadata:{webhook_event:event.id,payment_intent:obj.id,purchased_snapshot:true},
         });
-        await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.id,pkg.code,Number(pkg.tokens));
+        await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.id,packageCode,replenishedTokens);
+      }else{
+        throw Object.assign(new Error('Auto-Replenish webhook metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
       }
     }
     await db.query(
