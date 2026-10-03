@@ -91,6 +91,12 @@ jobs:
           grep -F "Deploy O2OL Production Neon" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
           grep -F "Verify anonymous Open House browsing is available" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
           grep -F "Verify anonymous protected APIs remain locked" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
+          grep -F "Require verified Production schema preparation" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "o2ol-open-house-schema-v1" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "Verify Production schema was prepared" .github/workflows/o2ol-production-candidate-certification.yml >/dev/null
+          grep -F "Verify Production app tree matches locked certified candidate" .github/workflows/o2ol-production-candidate-certification.yml >/dev/null
+          grep -F "restore/locked-o2ol-open-house-reconciled-20261003" .github/workflows/o2ol-production-candidate-certification.yml >/dev/null
+          grep -F "Verify current Open House information" .github/workflows/o2ol-live-access-emergency-check.yml >/dev/null
           if grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null; then
             echo "Retired trial/guest-preview behavior remains"; exit 1;
           fi
