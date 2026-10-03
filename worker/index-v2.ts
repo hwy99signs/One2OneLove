@@ -169,6 +169,24 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    if (url.pathname === '/api/health') {
+      const prelaunch = String(env.PRELAUNCH_ENVIRONMENT || '').toLowerCase() === 'true';
+      return new Response(JSON.stringify({
+        ok:true,
+        app:'one2onelove',
+        environment:prelaunch?'token-prelaunch':'production',
+        production:!prelaunch,
+        accessModel:'free_tokens',
+      }), {
+        status:200,
+        headers:{
+          'content-type':'application/json; charset=utf-8',
+          'cache-control':'no-store',
+          'x-content-type-options':'nosniff',
+        },
+      });
+    }
+
     if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
       const response = await handleStudioMediaRequest(request, env, url);
       if (response) return response;
