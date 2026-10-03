@@ -1,0 +1,36 @@
+name: Validate Site and Language Analytics
+
+on:
+  push:
+    branches:
+      - feature/site-usage-graph-20261003
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build frontend
+        run: npm run build
+      - name: Install worker dependencies
+        working-directory: worker
+        run: npm ci
+      - name: Dry-run production worker bundle
+        working-directory: worker
+        run: npx wrangler deploy --dry-run --config ../cloudflare/wrangler.production.jsonc
+      - name: Verify analytics coverage and privacy guardrails
+        run: |
+          grep -q "Site Usage — All Visitors" src/pages/Analytics.jsx
+          grep -q "Usage by Language" src/pages/Analytics.jsx
+          grep -q "Auto-refresh · 15 min" src/pages/Analytics.jsx
+          grep -q "language: activeLanguage()" src/lib/interactionAnalytics.js
+          grep -q "INTERACTION_LANGUAGES" worker/feature-usage.ts
+          grep -q "languageUnknownEvents" worker/analytics.ts
+          grep -q "COALESCE(a.role,'user') <> 'admin'" worker/analytics.ts
+          ! grep -q "textContent" src/lib/interactionAnalytics.js || grep -q "Deliberately do not read textContent" src/lib/interactionAnalytics.js
