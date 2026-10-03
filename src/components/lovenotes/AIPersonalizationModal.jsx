@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, Coins } from "lucide-react";
 import { motion } from "framer-motion";
 import { generateRelationshipContent } from "@/lib/aiService";
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from "@/lib/tokenService";
 
 const LOVE_NOTE_MAX_CHARACTERS = 171;
 const sanitizeGeneratedLoveNote = (value) => Array.from(String(value || "").replace(/\p{Extended_Pictographic}/gu, "").trim()).slice(0, LOVE_NOTE_MAX_CHARACTERS).join("");
@@ -76,8 +77,20 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
   const [insideJokes, setInsideJokes] = useState("");
   const [noteStyle, setNoteStyle] = useState("romantic");
   const [generating, setGenerating] = useState(false);
+  const [tokenBalance,setTokenBalance]=useState(0);
+  const [tokenCost,setTokenCost]=useState(0);
   const language = ["en","es","fr","it","de"].includes(currentLanguage) ? currentLanguage : "en";
   const t = COPY[language];
+
+  useEffect(()=>{
+    let cancelled=false;
+    getTokenWallet().then(data=>{
+      if(cancelled)return;
+      setTokenBalance(Number(data?.wallet?.balance||0));
+      setTokenCost(Number(data?.featurePrices?.find(item=>item.feature_code==='ai_content_generation')?.token_cost||0));
+    }).catch(()=>{});
+    return()=>{cancelled=true};
+  },[]);
 
   const toggleTrait = (trait) => {
     if (selectedTraits.includes(trait)) {
@@ -126,7 +139,15 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
       onClose();
     } catch (error) {
       console.error("Error generating note:", error);
-      toast.error(language === "en" ? (error?.message || t.error) : t.error);
+      if (isTokensRequiredError(error)) {
+        const info=tokenRequiredDetails(error);
+        toast.error("Buy Tokens To Access",{
+          description:`${info.required||tokenCost||1} token${Number(info.required||tokenCost||1)===1?'':'s'} required. Current balance: ${info.balance||tokenBalance||0}.`,
+          action:{label:"Buy Tokens",onClick:()=>window.location.assign('/Tokens?return=/LoveNotes')},
+        });
+      } else {
+        toast.error(language === "en" ? (error?.message || t.error) : t.error);
+      }
     } finally {
       setGenerating(false);
     }
@@ -229,6 +250,14 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
               className="h-24"
             />
             <p className="text-xs text-gray-500 mt-1">{t.insideHelp}</p>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2 font-black text-amber-900"><Coins className="h-5 w-5"/>O2OL Tokens</span>
+              <span className="font-black text-amber-900">{tokenCost || '—'} token{tokenCost===1?'':'s'} · Balance {tokenBalance}</span>
+            </div>
+            <p className="mt-1 text-xs text-amber-800">Tokens are charged only when the AI-generated Love Note is successfully created.</p>
           </div>
 
           <div className="bg-purple-50 rounded-xl p-4">
