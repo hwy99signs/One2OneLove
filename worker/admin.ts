@@ -43,6 +43,10 @@ const FEATURE_CATALOG = [
   ['Professionals', 'Professional'],
   ['Professional Onboarding', 'Professional'],
   ['Account Verification', 'Account'],
+  ['Win A Cruise', 'Growth'],
+  ['AI Content Creator', 'AI'],
+  ['Relationship Coach', 'AI'],
+  ['Gamification', 'Engagement'],
 ];
 
 function json(data, status = 200) {
