@@ -5,6 +5,7 @@ on:
     branches:
       - qa/o2ol-combined-prelaunch-20260930
     paths:
+      - "src/**"
       - "qa/o2ol-release-candidate-certification.mjs"
       - ".github/workflows/o2ol-release-candidate-task-certification.yml"
   workflow_dispatch:
