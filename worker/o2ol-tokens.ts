@@ -354,19 +354,21 @@ async function confirmCheckout(db,env,auth,sessionId){
   const meta=checkout?.metadata||{};
   if(meta.purpose!=='o2ol_token_purchase'||meta.user_id!==auth.user.id)throw Object.assign(new Error('Checkout session does not belong to this account.'),{status:403,code:'checkout_mismatch'});
   if(checkout.payment_status!=='paid')throw Object.assign(new Error('Token payment has not completed.'),{status:409,code:'payment_not_complete'});
-  const pkg=(await db.query('SELECT * FROM public.o2ol_token_packages WHERE code=$1 LIMIT 1',[meta.package_code])).rows[0];
-  if(!pkg)throw Object.assign(new Error('Token package is no longer available.'),{status:409,code:'package_missing'});
+  const purchasedTokens=Math.max(0,Math.floor(Number(meta.tokens)||0));
+  const packageCode=String(meta.package_code||'').trim();
+  const amountCents=Math.max(0,Math.floor(Number(checkout.amount_total??meta.amount_cents)||0));
+  if(!packageCode||!purchasedTokens||!amountCents)throw Object.assign(new Error('Token purchase metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
   const tx=await creditTokens(db,auth.user.id,{
-    tokens:Number(pkg.tokens),
+    tokens:purchasedTokens,
     transactionType:'purchase',
-    packageCode:pkg.code,
-    amountCents:Number(pkg.amount_cents),
+    packageCode,
+    amountCents,
     provider:'stripe',
     providerReference:checkout.id,
     idempotencyKey:`stripe_checkout:${checkout.id}`,
-    metadata:{payment_intent:checkout.payment_intent||null},
+    metadata:{payment_intent:checkout.payment_intent||null,purchased_snapshot:true},
   });
-  await recordStripeFeeFromPaymentIntent(db,env,auth.user.id,checkout.payment_intent,pkg.code,Number(pkg.tokens));
+  await recordStripeFeeFromPaymentIntent(db,env,auth.user.id,checkout.payment_intent,packageCode,purchasedTokens);
   return tx;
 }
 async function createSetupCheckout(request,db,env,auth){
@@ -508,14 +510,18 @@ async function tokenWebhook(request,env){
       [event.id,event.type,meta.user_id||null,JSON.stringify(event)],
     );
     if(event.type==='checkout.session.completed'&&obj.payment_status==='paid'&&meta.purpose==='o2ol_token_purchase'&&meta.user_id){
-      const pkg=(await db.query('SELECT * FROM public.o2ol_token_packages WHERE code=$1 LIMIT 1',[meta.package_code])).rows[0];
-      if(pkg){
+      const purchasedTokens=Math.max(0,Math.floor(Number(meta.tokens)||0));
+      const packageCode=String(meta.package_code||'').trim();
+      const amountCents=Math.max(0,Math.floor(Number(obj.amount_total??meta.amount_cents)||0));
+      if(packageCode&&purchasedTokens&&amountCents){
         await creditTokens(db,meta.user_id,{
-          tokens:Number(pkg.tokens),transactionType:'purchase',packageCode:pkg.code,amountCents:Number(pkg.amount_cents),
+          tokens:purchasedTokens,transactionType:'purchase',packageCode,amountCents,
           provider:'stripe',providerReference:obj.id,idempotencyKey:`stripe_checkout:${obj.id}`,
-          metadata:{payment_intent:obj.payment_intent||null,webhook_event:event.id},
+          metadata:{payment_intent:obj.payment_intent||null,webhook_event:event.id,purchased_snapshot:true},
         });
-        await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.payment_intent,pkg.code,Number(pkg.tokens));
+        await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.payment_intent,packageCode,purchasedTokens);
+      }else{
+        throw Object.assign(new Error('Token purchase webhook metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
       }
     }
     if(event.type==='payment_intent.succeeded'&&meta.purpose==='o2ol_token_auto_replenish'&&meta.user_id){
