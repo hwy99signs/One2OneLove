@@ -163,7 +163,8 @@ jobs:
           grep -F "sendLoveNoteSms" src/pages/LoveNotes.jsx >/dev/null
           grep -F "aiPersonalizationReady" src/pages/LoveNotes.jsx >/dev/null
           grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "Email and mobile-number verification are required." src/pages/Subscription.jsx >/dev/null
+          grep -F "code: 'email_verification_required'" worker/identity-gate.ts >/dev/null
+          grep -F "code: 'phone_verification_required'" worker/identity-gate.ts >/dev/null
           ! grep -F "setInterval(" src/pages/Subscription.jsx >/dev/null
 
       - name: Verify production deployment configuration
