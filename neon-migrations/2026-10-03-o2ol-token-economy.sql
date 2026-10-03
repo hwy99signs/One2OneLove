@@ -149,6 +149,9 @@ CREATE TABLE IF NOT EXISTS public.o2ol_cost_events (
 );
 CREATE INDEX IF NOT EXISTS idx_o2ol_cost_events_feature_created
   ON public.o2ol_cost_events(feature_code,created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_o2ol_cost_events_stripe_fee_once
+  ON public.o2ol_cost_events(provider,provider_request_id,feature_code)
+  WHERE provider='stripe' AND feature_code='token_purchase' AND provider_request_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS public.o2ol_subscription_conversion_quotes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
