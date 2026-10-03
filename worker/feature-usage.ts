@@ -41,6 +41,10 @@ const TRACKABLE_FEATURES = new Set([
   'Professionals',
   'Professional Onboarding',
   'Account Verification',
+  'Win A Cruise',
+  'AI Content Creator',
+  'Relationship Coach',
+  'Gamification',
 ]);
 
 const LEGACY_EVENT_TYPES = new Set(['view', 'action']);
