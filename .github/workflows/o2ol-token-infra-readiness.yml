@@ -63,6 +63,7 @@ jobs:
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
           EXPECTED_HOST_PREFIX="ep-super-silence-arbl98ls"
           PRODUCTION_HYPERDRIVE_ID="ef44564dbfca4e1bb13176ee568aaddf"
+          EXPECTED_ROLE="o2ol_token_hyperdrive"
 
           curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"             -o /tmp/hyperdrives.json
           jq -e '.success == true' /tmp/hyperdrives.json >/dev/null
@@ -71,7 +72,7 @@ jobs:
             .result[]? |
             select(.id != $prod) |
             select(((.origin.host // .origin.hostname // "") | startswith($p))) |
-            [.id, (.name // ""), (.origin.host // .origin.hostname // ""), (.origin.database // "")] |
+            [.id, (.name // ""), (.origin.host // .origin.hostname // ""), (.origin.database // ""), (.origin.user // "")] |
             @tsv
           ' /tmp/hyperdrives.json)
 
@@ -79,6 +80,11 @@ jobs:
             echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCHES_BEGIN"
             printf '%s\n' "$MATCHES"
             echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCHES_END"
+            if ! printf '%s\n' "$MATCHES" | awk -F '\t' -v role="$EXPECTED_ROLE" '$5 == role { found=1 } END { exit(found?0:1) }'; then
+              echo "TOKEN_PRELAUNCH_HYPERDRIVE_ROLE_MATCH=missing"
+            else
+              echo "TOKEN_PRELAUNCH_HYPERDRIVE_ROLE_MATCH=present"
+            fi
           else
             echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCH=missing"
           fi
