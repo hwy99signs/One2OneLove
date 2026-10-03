@@ -58,7 +58,6 @@ import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
 import O2OLStudio from './O2OLStudio';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
-import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { trackPageView } from '@/lib/interactionAnalytics';
 
@@ -74,7 +73,6 @@ const PAGES = {
 
 function PagesContent() {
   const location = useLocation();
-  useAuth();
   const currentPage = _getCurrentPage(location.pathname);
 
   useEffect(() => {
