@@ -257,15 +257,18 @@ async function sendCoachMessage(db, env, auth, conversationId, input) {
   });
 }
 async function createContent(db, env, auth, input) {
-  const entitlementResult = await entitlement(db, auth.user.id, 'content_creator');
-  if (!entitlementResult.allowed) return fail(entitlementResult.reason, 403, 'feature_not_available');
-
   const contentType = cleanText(input?.contentType, 100, true);
   const tone = cleanText(input?.tone, 100, true);
   const length = cleanText(input?.length || 'medium', 30, true);
   const details = cleanText(input?.details, 5000, false);
   const partnerName = cleanText(input?.partnerName, 200, false);
   const language = cleanText(input?.language || 'en', 20, true);
+  const requestId = String(input?.requestId || crypto.randomUUID()).slice(0,120);
+  const reservation = await reserveTokenCharge(db,auth.user.id,'ai_content_generation',{
+    idempotencyKey:`ai_content:${auth.user.id}:${requestId}`,
+    metadata:{request_id:requestId,content_type:contentType},
+  });
+
   const lengthGuide = { short: '50-100 words', medium: '150-250 words', long: '300-400 words' }[length] || '150-250 words';
   const prompt = [
     `Create a ${tone} ${contentType} for a romantic partner.`,
@@ -276,9 +279,45 @@ async function createContent(db, env, auth, input) {
     'Make it heartfelt, natural, respectful, and ready for the member to personalize. Return only the requested content.',
   ].filter(Boolean).join('\n');
   const instructions = 'You create personalized relationship messages for One2OneLove members. Follow the requested tone and language. Avoid manipulative, coercive, hateful, or sexually exploitative content. Do not claim to know facts the member did not provide.';
-  const generated = await openAiText(env, { instructions, input: prompt, maxOutputTokens: 1000 });
-  await db.query(`INSERT INTO public.ai_usage_events(user_id,feature) VALUES($1::uuid,'content_creator')`, [auth.user.id]);
-  return json({ ok: true, content: generated.text, model: generated.model });
+  let generated=null;
+  try{
+    generated=await openAiText(env,{instructions,input:prompt,maxOutputTokens:1000});
+  }catch(error){
+    await releaseTokenReservation(db,reservation.id,'ai_provider_failed').catch(()=>{});
+    throw error;
+  }
+
+  try{
+    await db.query(`INSERT INTO public.ai_usage_events(user_id,feature) VALUES($1::uuid,'content_creator')`,[auth.user.id]);
+    await consumeTokenReservation(db,reservation.id);
+    await recordOpenAICostEvent(db,env,{
+      userId:auth.user.id,
+      featureCode:'ai_content_generation',
+      payload:generated.payload,
+      model:generated.model,
+      inputText:details||'',
+      outputText:generated.text,
+      contextText:instructions+'\n\n'+prompt,
+      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+      customerTokensCharged:Number(reservation.tokens||0),
+      metadata:{request_id:requestId,content_type:contentType,tone,length,language},
+    }).catch(error=>console.error('AI content cost telemetry failed',error));
+    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('AI content Auto-Replenish check failed',error));
+    return json({
+      ok:true,
+      content:generated.text,
+      model:generated.model,
+      tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
+    });
+  }catch(error){
+    await releaseTokenReservation(db,reservation.id,'content_persistence_failed').catch(()=>{});
+    await recordOpenAICostEvent(db,env,{
+      userId:auth.user.id,featureCode:'ai_content_generation',payload:generated.payload,model:generated.model,
+      inputText:details||'',outputText:generated.text,contextText:instructions+'\n\n'+prompt,
+      customerTokensCharged:0,metadata:{request_id:requestId,content_type:contentType,delivery_failed:true},
+    }).catch(()=>{});
+    throw error;
+  }
 }
 
 export async function handleAiRequest(request, env, url) {
