@@ -210,6 +210,12 @@ ALTER TABLE public.users
 ALTER TABLE public.users ALTER COLUMN subscription_plan SET DEFAULT 'Free';
 ALTER TABLE public.users ALTER COLUMN subscription_price SET DEFAULT 0;
 
+-- Retire stale Stripe-less active/trial access labels while preserving the historical plan/price fields for reconciliation.
+UPDATE public.users
+SET subscription_status='inactive',updated_at=now()
+WHERE stripe_subscription_id IS NULL
+  AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing');
+
 -- Every existing account receives an empty wallet/settings row without changing prior balances.
 INSERT INTO public.o2ol_token_wallets(user_id)
 SELECT id FROM public.users
