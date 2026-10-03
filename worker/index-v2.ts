@@ -169,7 +169,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    if (url.pathname.startsWith('/studio-media/')) {
+    if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
       const response = await handleStudioMediaRequest(request, env, url);
       if (response) return response;
     }
