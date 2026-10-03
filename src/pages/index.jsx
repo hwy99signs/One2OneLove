@@ -45,6 +45,7 @@ import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
 import Tokens from './Tokens';
+import Amora from './Amora';
 import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
@@ -195,6 +196,7 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Tokens" element={<Tokens />} />
+          <Route path="/Amora" element={<Amora />} />
           <Route path="/Subscription" element={<Navigate to="/Tokens" replace />} />
           <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Tokens?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
@@ -220,7 +222,7 @@ function PagesContent() {
           <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
-          <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
+          <Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />
           <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/Developer" element={<Navigate to="/Home" replace />} />
           <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
