@@ -2,11 +2,6 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
-    inputs:
-      hyperdrive_id:
-        description: "Cloudflare Hyperdrive ID connected ONLY to Neon branch o2ol-token-economy-prelaunch-20261003"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -20,6 +15,7 @@ jobs:
 
       # These are deliberately separate Prelaunch secret names. Do not silently
       # inherit or extract credentials from the Production Worker.
+      TOKEN_PRELAUNCH_DATABASE_URL: ${{ secrets.TOKEN_PRELAUNCH_DATABASE_URL }}
       OPENAI_API_KEY: ${{ secrets.TOKEN_PRELAUNCH_OPENAI_API_KEY }}
       STRIPE_SECRET_KEY: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_SECRET_KEY }}
       STRIPE_WEBHOOK_SECRET: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET }}
@@ -57,11 +53,7 @@ jobs:
               exit 1
             fi
           done
-          test -n "${{ inputs.hyperdrive_id }}"
-          if [ "${{ inputs.hyperdrive_id }}" = "$PRODUCTION_HYPERDRIVE_ID" ]; then
-            echo "Production Hyperdrive is forbidden for Token Prelaunch." >&2
-            exit 1
-          fi
+          echo "::add-mask::$TOKEN_PRELAUNCH_DATABASE_URL"
           for NAME in OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
             VALUE="${!NAME:-}"
             if [ -n "$VALUE" ]; then
@@ -71,39 +63,70 @@ jobs:
             fi
           done
 
-      - name: Prove Hyperdrive points only to Token Neon branch
+      - name: Create or reuse isolated Token Hyperdrive
+        id: hyperdrive
         shell: bash
         run: |
           set -euo pipefail
           AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs/${{ inputs.hyperdrive_id }}"             -o /tmp/token-hyperdrive.json
-          jq -e '.success == true' /tmp/token-hyperdrive.json >/dev/null
 
-          HOST=$(jq -r '.result.origin.host // .result.origin.hostname // ""' /tmp/token-hyperdrive.json)
-          DATABASE=$(jq -r '.result.origin.database // ""' /tmp/token-hyperdrive.json)
-          DB_USER=$(jq -r '.result.origin.user // ""' /tmp/token-hyperdrive.json)
-          echo "TOKEN_PRELAUNCH_HYPERDRIVE_HOST=$HOST"
-          echo "TOKEN_PRELAUNCH_HYPERDRIVE_DATABASE=$DATABASE"
-          echo "TOKEN_PRELAUNCH_HYPERDRIVE_USER=$DB_USER"
+          node <<'NODE' > /tmp/db-fields
+          const raw=process.env.TOKEN_PRELAUNCH_DATABASE_URL;
+          const u=new URL(raw);
+          console.log('DB_HOST='+u.hostname);
+          console.log('DB_PORT='+(u.port||'5432'));
+          console.log('DB_NAME='+u.pathname.replace(/^\//,''));
+          console.log('DB_USER='+decodeURIComponent(u.username));
+          console.log('DB_PASSWORD='+decodeURIComponent(u.password));
+          NODE
+          set +x
+          source /tmp/db-fields
+          echo "::add-mask::$DB_PASSWORD"
 
-          case "$HOST" in
-            "$EXPECTED_NEON_HOST_PREFIX".c-4.us-west-2.aws.neon.tech|            "$EXPECTED_NEON_HOST_PREFIX"-pooler.c-4.us-west-2.aws.neon.tech|            "$EXPECTED_NEON_HOST_PREFIX"-*.c-4.us-west-2.aws.neon.tech)
+          case "$DB_HOST" in
+            "$EXPECTED_NEON_HOST_PREFIX".c-4.us-west-2.aws.neon.tech|"$EXPECTED_NEON_HOST_PREFIX"-pooler.c-4.us-west-2.aws.neon.tech|"$EXPECTED_NEON_HOST_PREFIX"-*.c-4.us-west-2.aws.neon.tech)
               ;;
             *)
-              echo "Hyperdrive does not point to the isolated Token Neon branch." >&2
+              echo "Database URL does not point to the isolated Token Neon branch." >&2
               exit 1
               ;;
           esac
-          test "$DATABASE" = "$EXPECTED_NEON_DATABASE"
-          if [ "$DB_USER" != "$EXPECTED_NEON_ROLE" ]; then
-            echo "Hyperdrive must use the dedicated Token Prelaunch database role." >&2
-            exit 1
-          fi
-
-          if printf '%s' "$HOST" | grep -F 'ep-shiny-truth-ar740o0s' >/dev/null; then
+          test "$DB_NAME" = "$EXPECTED_NEON_DATABASE"
+          if printf '%s' "$DB_HOST" | grep -F 'ep-shiny-truth-ar740o0s' >/dev/null; then
             echo "Production Neon host is forbidden." >&2
             exit 1
           fi
+
+          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"             -o /tmp/hyperdrives.json
+          jq -e '.success == true' /tmp/hyperdrives.json >/dev/null
+
+          ID=$(jq -r --arg host "$DB_HOST" --arg db "$DB_NAME" --arg prod "$PRODUCTION_HYPERDRIVE_ID" '
+            .result[]? |
+            select(.id != $prod) |
+            select(.origin.host == $host and .origin.database == $db) |
+            .id' /tmp/hyperdrives.json | head -n1)
+
+          if [ -z "$ID" ]; then
+            jq -n               --arg name "one2onelove-token-prelaunch"               --arg db "$DB_NAME"               --arg host "$DB_HOST"               --arg password "$DB_PASSWORD"               --arg user "$DB_USER"               --argjson port "$DB_PORT"               '{
+                name:$name,
+                origin:{database:$db,host:$host,password:$password,port:$port,scheme:"postgresql",user:$user},
+                caching:{disabled:true},
+                origin_connection_limit:10
+              }' > /tmp/create-hyperdrive.json
+            curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/json'               --data @/tmp/create-hyperdrive.json               "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"               -o /tmp/create-hyperdrive-response.json
+            rm -f /tmp/create-hyperdrive.json
+            jq -e '.success == true' /tmp/create-hyperdrive-response.json >/dev/null
+            ID=$(jq -r '.result.id' /tmp/create-hyperdrive-response.json)
+          fi
+
+          test -n "$ID"
+          test "$ID" != "$PRODUCTION_HYPERDRIVE_ID"
+          echo "hyperdrive_id=$ID" >> "$GITHUB_OUTPUT"
+
+          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs/$ID"             -o /tmp/token-hyperdrive.json
+          jq -e --arg host "$DB_HOST" --arg db "$DB_NAME"             '.success == true and .result.origin.host == $host and .result.origin.database == $db'             /tmp/token-hyperdrive.json >/dev/null
+
+          echo "TOKEN_PRELAUNCH_HYPERDRIVE_READY=yes"
 
       - name: Build and bundle-check full Token Worker
         shell: bash
@@ -149,7 +172,7 @@ jobs:
             "hyperdrive": [
               {
                 "binding": "HYPERDRIVE",
-                "id": "${{ inputs.hyperdrive_id }}"
+                "id": "${{ steps.hyperdrive.outputs.hyperdrive_id }}"
               }
             ],
             "r2_buckets": [
