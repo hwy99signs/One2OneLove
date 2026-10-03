@@ -1,0 +1,81 @@
+name: Deploy O2OL Combined Prelaunch
+
+on:
+  push:
+    branches:
+      - qa/o2ol-combined-prelaunch-20260930
+    paths:
+      - "src/**"
+      - "public/**"
+      - "worker/mmiq-prelaunch-preview.ts"
+      - "worker/prelaunch-community-chat.ts"
+      - "worker/community-chat.ts"
+      - "worker/index.ts"
+      - "cloudflare/wrangler.combined-prelaunch.jsonc"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-o2ol-combined-prelaunch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify Cloudflare credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+
+      - name: Build combined prelaunch
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Deploy isolated combined prelaunch
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.combined-prelaunch.jsonc
+
+      - name: Verify preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTML_OK=no
+          for attempt in $(seq 1 18); do
+            HTML=$(curl -fsSL --max-time 20 "$PREVIEW_URL/DateIdeas" 2>/dev/null || true)
+            if printf '%s' "$HTML" | grep -qi '<!doctype html'; then
+              HTML_OK=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$HTML_OK" = yes
+          echo "COMBINED_PRELAUNCH_URL=$PREVIEW_URL"
+          echo "DATE_IDEAS_PREVIEW_URL=$PREVIEW_URL/DateIdeas"
+          STUDIO_HTML=$(curl -fsSL --max-time 20 "$PREVIEW_URL/O2OLStudio" 2>/dev/null || true)
+          printf '%s' "$STUDIO_HTML" | grep -qi '<!doctype html'
+          STUDIO_MEDIA_STATUS=$(curl -sS -I -o /dev/null -w '%{http_code}' --max-time 20 "$PREVIEW_URL/studio-media/season-1-episode-1.mp4" || true)
+          echo "O2OL_STUDIO_PREVIEW_URL=$PREVIEW_URL/O2OLStudio"
+          echo "STUDIO_MEDIA_STATUS=$STUDIO_MEDIA_STATUS"
+          CHAT_STATUS=$(curl -sS -o /tmp/chat-rooms.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/community-chat/rooms" || true)
+          echo "COMMUNITY_CHAT_STATUS=$CHAT_STATUS"
+          echo "COMMUNITY_CHAT_BODY=$(cat /tmp/chat-rooms.json 2>/dev/null || true)"
+          test "$CHAT_STATUS" = "200"
+          grep -F '"ok":true' /tmp/chat-rooms.json
+          BLOCKED_STATUS=$(curl -sS -o /tmp/blocked-api.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/love-notes" || true)
+          echo "OTHER_API_STATUS=$BLOCKED_STATUS"
+          test "$BLOCKED_STATUS" = "503"

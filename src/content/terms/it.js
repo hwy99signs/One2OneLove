@@ -80,12 +80,12 @@ export default [
     "Sei responsabile delle tue decisioni, comunicazioni, condotta e dell’utilizzo delle informazioni ottenute tramite One2OneLove. Le decisioni relative alle tue relazioni restano tue. Usa ragionevole prudenza prima di condividere informazioni personali, incontrare qualcuno, agire in base a consigli o inviare contenuti generati."
   ],
   [
-    "21. Piani di Abbonamento e Prova",
-    "One2OneLove può offrire una prova di 7 giorni con Accesso Completo che richiede una carta di credito o debito valida. All’inizio della prova non viene addebitato alcun costo ricorrente di abbonamento. La prova include accesso completo di livello Exclusive. Il primo invio di una Nota d’Amore via SMS consegnata da One2OneLove durante la prova è gratuito; ogni invio successivo costa US$0.29 e può essere addebitato al metodo di pagamento registrato. Salvo scelta di Exclusive o annullamento prima della fine della prova, la prova continua automaticamente come abbonamento Premiere a US$9.99 al mese. Exclusive costa US$19.99 al mese.",
+    "21. Open House, Piani di Abbonamento e Membri Fondatori",
+    "Durante l’Open House One2OneLove a tempo limitato, i visitatori possono esplorare le aree pubbliche designate senza creare un account o fornire una carta. Le azioni protette per membri, le funzioni con dati personali, la consegna a pagamento, l’IA, la messaggistica o altri servizi fatturabili possono richiedere un account, un abbonamento idoneo e/o un metodo di pagamento valido. I prezzi mensili regolari sono Premiere a US$9.99 e Exclusive a US$19.99, salvo diverso prezzo mostrato prima dell’acquisto. L’offerta Membri Fondatori è limitata ai primi 200 membri idonei. I membri #1–100 ricevono Exclusive gratis per 30 giorni con una carta valida; salvo scelta di Premiere o annullamento prima della fine del periodo gratuito, Exclusive continua automaticamente alla tariffa fondatore di US$15.99/mese finché l’abbonamento rimane attivo senza interruzioni. Se l’abbonamento termina e il membro torna in seguito, il badge permanente resta, ma la tariffa US$15.99 viene persa e si applicano i prezzi correnti. I membri #101–200 ricevono Premiere gratis per 30 giorni con carta valida e poi Premiere continua automaticamente al normale prezzo mensile salvo annullamento. I numeri di Membro Fondatore restano riservati e non vengono riutilizzati."
   ],
   [
-    "22. Addebiti per Note d’Amore via SMS",
-    "Durante la prova di Accesso Completo di 7 giorni, il primo invio di una Nota d’Amore via SMS consegnata da One2OneLove è gratuito e ogni invio successivo costa US$0.29. Gli addebiti di utilizzo possono essere raggruppati e fatturati al metodo di pagamento registrato e sono separati dal prezzo ricorrente dell’abbonamento. Il corpo di una Nota d’Amore personalizzata è limitato a 171 caratteri. Gli emoji aggiunti dall’utente non sono supportati nel testo personalizzato; il footer SMS brandizzato One2OneLove può includere il simbolo ❤️.",
+    "22. Note d’Amore via SMS e Altri Costi di Utilizzo",
+    "L’invio di Note d’Amore via SMS e le altre azioni fatturabili sono separati dalla navigazione gratuita dell’Open House. Il primo invio SMS idoneo può essere gratuito quando indicato dall’offerta di abbonamento applicabile; ogni invio successivo di una Nota d’Amore via SMS One2OneLove costa attualmente US$0.29, salvo diverso importo mostrato prima della conferma. Gli addebiti di utilizzo possono essere raggruppati e fatturati al metodo di pagamento registrato e sono separati dal prezzo ricorrente dell’abbonamento. Il corpo di una Nota d’Amore personalizzata è limitato a 171 caratteri. Gli emoji aggiunti dall’utente non sono supportati nel testo personalizzato; il footer SMS One2OneLove può includere il simbolo ❤️. Gli addebiti già maturati restano dovuti, salvo diversa previsione della legge applicabile."
   ],
   [
     "23. Annullamento e Fatturazione",
@@ -106,9 +106,5 @@ export default [
   [
     "27. Contatti",
     "Le domande sui presenti Termini o sulla piattaforma possono essere inviate a support@one2onelove.com."
-  ],
-  [
-    "25. Prova Gratuita, Abbonamenti, Costi delle Note d’Amore, Cancellazione e Rimborsi",
-    "La prova di Accesso Completo di 7 giorni richiede un metodo di pagamento valido. All’inizio della prova non viene addebitato alcun costo ricorrente di abbonamento. La prova offre accesso completo di livello Exclusive e include un invio gratuito di una Nota d’Amore via SMS One2OneLove. Ogni invio successivo costa US$0.29 e può essere raggruppato e addebitato al metodo di pagamento registrato, anche durante la prova. A meno che tu non annulli o scelga Exclusive prima della fine della prova, l’abbonamento continua automaticamente con Premiere a US$9.99 al mese. Exclusive costa US$19.99 al mese.",
   ]
 ];

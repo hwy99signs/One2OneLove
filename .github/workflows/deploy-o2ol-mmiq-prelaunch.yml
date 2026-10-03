@@ -1,0 +1,39 @@
+name: Deploy O2OL MyMatchIQ visual prelaunch
+
+on:
+  push:
+    branches:
+      - o2ol-password-reset-preview
+    paths:
+      - "src/**"
+      - "public/**"
+      - "worker/mmiq-prelaunch-preview.ts"
+      - "cloudflare/wrangler.mmiq-prelaunch.jsonc"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-o2ol-mmiq-prelaunch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-visual-preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: o2ol-password-reset-preview
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build current O2OL prelaunch UI
+        run: |
+          npm ci
+          npm run build
+      - name: Deploy isolated visual-only preview
+        run: npx --yes wrangler@latest deploy --config cloudflare/wrangler.mmiq-prelaunch.jsonc

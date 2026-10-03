@@ -13,13 +13,12 @@ const planMeta = {
 };
 
 const translations = {
-  en: { currentPlan: 'Current Plan', trial: 'Full Access Trial', viewPlans: 'View Plans & Billing Terms', planFeatures: 'Plan Features', perMonth: 'per month', moreFeatures: 'more features' },
-  es: { currentPlan: 'Plan Actual', trial: 'Prueba de Acceso Completo', viewPlans: 'Ver Planes y Condiciones de Facturación', planFeatures: 'Características del Plan', perMonth: 'por mes', moreFeatures: 'funciones más' },
-  fr: { currentPlan: 'Plan Actuel', trial: 'Essai Accès Complet', viewPlans: 'Voir les Formules et Conditions de Facturation', planFeatures: 'Fonctionnalités du Plan', perMonth: 'par mois', moreFeatures: 'fonctionnalités supplémentaires' },
-  it: { currentPlan: 'Piano Attuale', trial: 'Prova Accesso Completo', viewPlans: 'Vedi Piani e Condizioni di Fatturazione', planFeatures: 'Caratteristiche del Piano', perMonth: 'al mese', moreFeatures: 'altre funzionalità' },
-  de: { currentPlan: 'Aktueller Plan', trial: 'Vollzugriff-Test', viewPlans: 'Tarife & Abrechnungsbedingungen Anzeigen', planFeatures: 'Plan-Funktionen', perMonth: 'pro Monat', moreFeatures: 'weitere Funktionen' },
+  en: { currentPlan: 'Current Plan', founding: 'Founding Member Access', included: 'Founding period', viewPlans: 'View Plans & Billing Terms', planFeatures: 'Plan Features', perMonth: 'per month', moreFeatures: 'more features' },
+  es: { currentPlan: 'Plan Actual', founding: 'Acceso de Miembro Fundador', included: 'Período fundador', viewPlans: 'Ver Planes y Condiciones de Facturación', planFeatures: 'Características del Plan', perMonth: 'por mes', moreFeatures: 'funciones más' },
+  fr: { currentPlan: 'Plan Actuel', founding: 'Accès Membre Fondateur', included: 'Période fondateur', viewPlans: 'Voir les Formules et Conditions de Facturation', planFeatures: 'Fonctionnalités du Plan', perMonth: 'par mois', moreFeatures: 'fonctionnalités supplémentaires' },
+  it: { currentPlan: 'Piano Attuale', founding: 'Accesso Membro Fondatore', included: 'Periodo fondatore', viewPlans: 'Vedi Piani e Condizioni di Fatturazione', planFeatures: 'Caratteristiche del Piano', perMonth: 'al mese', moreFeatures: 'altre funzionalità' },
+  de: { currentPlan: 'Aktueller Plan', founding: 'Gründungsmitglied-Zugang', included: 'Gründungszeitraum', viewPlans: 'Tarife & Abrechnungsbedingungen Anzeigen', planFeatures: 'Plan-Funktionen', perMonth: 'pro Monat', moreFeatures: 'weitere Funktionen' },
 };
-
 
 export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const t = translations[currentLanguage] || translations.en;
@@ -31,9 +30,9 @@ export default function SubscriptionCard({ user, currentLanguage = 'en' }) {
   const planInfo = planMeta[userPlan];
   const planCopy = planData.plans[userPlan];
 
-  const heading = isTrial ? t.trial : planCopy.displayName;
-  const priceLabel = isTrial ? '7 days' : `US${planInfo.price}`;
-  const priceSub = isTrial ? 'subscription price not charged today' : t.perMonth;
+  const heading = isTrial ? t.founding : planCopy.displayName;
+  const priceLabel = isTrial ? t.included : `US${planInfo.price}`;
+  const priceSub = isTrial ? '' : t.perMonth;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>

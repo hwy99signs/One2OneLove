@@ -1,0 +1,118 @@
+name: O2OL Production Candidate Certification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Verify Production schema was prepared
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/o2ol-production-schema-prepared
+          grep -Fx 'o2ol-open-house-schema-v1' .github/o2ol-production-schema-prepared >/dev/null
+
+      - name: Verify Production app tree matches locked certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/restore/locked-o2ol-open-house-reconciled-final-20261003:refs/remotes/origin/o2ol-locked-candidate
+          git diff --exit-code origin/o2ol-locked-candidate -- . ':(exclude).github/**'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify Production remains separated from Live trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -A6 -F "on:" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          ! grep -A8 -F "paths:" .github/workflows/deploy-o2ol-production-neon.yml | grep -F ".github/workflows/deploy-o2ol-production-neon.yml" >/dev/null
+          grep -F ".github/deploy-o2ol-production-neon-trigger" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "Require verified Production schema preparation" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "o2ol-open-house-schema-v1" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+
+      - name: Build Production candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Dry compile Production Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc --outdir /tmp/o2ol-production-candidate
+
+      - name: Match Production runtime dependency audits
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --audit-level=high
+          npm --prefix worker audit --audit-level=high
+
+      - name: Report build-tool advisories separately
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! npm audit --audit-level=high; then
+            echo 'Non-shipped build-tool advisory detected. Runtime dependency audits passed.'
+          fi
+
+      - name: Verify Production schema migration set is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          for FILE in             neon-migrations/2026-09-30-mymatchiq-access-entitlements.sql             neon-migrations/2026-09-30-mymatchiq-bianca-intelligence.sql             neon-migrations/2026-09-30-mymatchiq-credit-wallet.sql             neon-migrations/2026-09-30-mymatchiq-intentional-members.sql             neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql             neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql             neon-migrations/2026-10-03-like-minded-schema.sql
+          do
+            test -s "$FILE"
+          done
+
+      - name: Verify Open House and Founding contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "export const FOUNDING_LIMIT = 200;" worker/founding-rules.js >/dev/null
+          grep -F "export const FOUNDING_FREE_DAYS = 30;" worker/founding-rules.js >/dev/null
+          grep -F "OPEN HOUSE BROWSING IS FREE!" src/pages/Subscription.jsx >/dev/null
+          grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
+          ! grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null
+
+      - name: Prepare Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Run exhaustive Production candidate UI/task certification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/o2ol-release-candidate-certification.mjs | tee /tmp/o2ol-production-candidate-certification.txt
+
+      - name: Upload Production candidate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-production-candidate-certification
+          path: /tmp/o2ol-production-candidate-certification.txt
+          if-no-files-found: warn

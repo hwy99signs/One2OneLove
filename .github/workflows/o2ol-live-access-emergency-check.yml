@@ -1,20 +1,26 @@
-name: O2OL Live Access Emergency Check
+name: O2OL Live Open House Access Check
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Deploy O2OL Production Neon
+    types:
+      - completed
     branches:
       - master
-    paths:
-      - .github/workflows/o2ol-live-access-emergency-check.yml
 
 permissions:
   contents: read
 
 jobs:
-  verify-live-access:
+  verify-live-open-house:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: master
 
       - name: Prepare Chrome
         shell: bash
@@ -25,7 +31,7 @@ jobs:
           test -n "$CHROME_BIN"
           echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
 
-      - name: Verify anonymous live routes are locked
+      - name: Verify anonymous Open House browsing is available
         shell: bash
         env:
           LIVE_URL: https://one2onelove.com
@@ -35,14 +41,21 @@ jobs:
           import { chromium } from 'playwright-core';
 
           const BASE=process.env.LIVE_URL.replace(/\/$/,'');
-          const protectedRoutes=[
+          const browseRoutes=[
+            '/',
             '/LoveNotes',
             '/DateIdeas',
             '/Community',
             '/MemoryLane',
             '/CoupleSupport',
             '/Games',
-            '/SharedJournals'
+            '/SharedJournals',
+            '/O2OLStudio',
+            '/Chat',
+            '/MyMatchIQ',
+            '/Subscription',
+            '/HelpCenter',
+            '/TermsOfService'
           ];
 
           const browser=await chromium.launch({
@@ -52,67 +65,114 @@ jobs:
           });
 
           try {
-            for (const route of protectedRoutes) {
+            for (const route of browseRoutes) {
               const context=await browser.newContext({
                 viewport:{width:390,height:844},
                 ignoreHTTPSErrors:false
               });
               const page=await context.newPage();
               const pageErrors=[];
-              const consoleErrors=[];
               page.on('pageerror',e=>pageErrors.push(String(e?.message||e)));
-              page.on('console',m=>{ if(m.type()==='error') consoleErrors.push(m.text()); });
               const response=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
-              await page.waitForTimeout(3500);
-              const authResponse=await page.evaluate(async()=>{
-                try {
-                  const r=await fetch('/api/auth/get-session',{credentials:'include',headers:{accept:'application/json'}});
-                  return {status:r.status,text:(await r.text()).slice(0,1000)};
-                } catch(e) {
-                  return {error:String(e)};
-                }
-              });
-              const finalUrl=new URL(page.url());
-              const finalPath=finalUrl.pathname.toLowerCase();
+              await page.waitForTimeout(900);
+              const finalPath=new URL(page.url()).pathname.toLowerCase();
               const text=(await page.locator('body').innerText().catch(()=>'' )).replace(/\s+/g,' ').trim();
-              console.log(JSON.stringify({
-                requested:route,
-                status:response?.status()??null,
-                finalPath,
-                body:text.slice(0,1000),
-                authResponse,
-                pageErrors,
-                consoleErrors
-              }));
-              if (!['/signin','/login'].includes(finalPath)) {
-                console.error('ACCESS_FAILURE '+route+' final='+finalPath);
-                process.exitCode=1;
-              }
+              console.log(JSON.stringify({requested:route,status:response?.status()??null,finalPath,body:text.slice(0,500),pageErrors}));
+              if (response?.status() !== 200) throw new Error(route+' returned '+response?.status());
+              if (['/signin','/login'].includes(finalPath)) throw new Error(route+' incorrectly redirected to Sign In');
+              if (text.length < 20) throw new Error(route+' rendered an empty page');
+              if (pageErrors.length) throw new Error(route+' page errors: '+pageErrors.join(' | '));
               await context.close();
             }
 
             const context=await browser.newContext({viewport:{width:390,height:844}});
             const page=await context.newPage();
-            await page.goto(BASE+'/SignIn',{waitUntil:'domcontentloaded',timeout:30000});
-            await page.waitForTimeout(700);
-            const body=(await page.locator('body').innerText()).replace(/\s+/g,' ').trim();
-            if (!/Sign Up/i.test(body)) throw new Error('Sign In page is missing the Sign Up path.');
+            await page.goto(BASE+'/',{waitUntil:'domcontentloaded',timeout:30000});
+            const explore=page.getByRole('button',{name:/Explore Free/i}).first();
+            await explore.click();
+            await page.waitForTimeout(350);
+            const toolsVisible=await page.locator('#open-house-tools').evaluate(el=>{
+              const r=el.getBoundingClientRect();
+              return r.top < innerHeight && r.bottom > 0;
+            });
+            if(!toolsVisible) throw new Error('Explore FREE did not reveal the tools area.');
             await context.close();
           } finally {
             await browser.close();
           }
           NODE
 
-      - name: Verify anonymous Love Notes API is locked
+      - name: Verify anonymous protected APIs remain locked
         shell: bash
+        env:
+          LIVE_URL: https://one2onelove.com
         run: |
           set -euo pipefail
-          CODE=$(curl -sS -o /tmp/love-note.json -w '%{http_code}' \
-            -H 'Content-Type: application/json' \
-            -X POST 'https://one2onelove.com/api/love-notes/send-sms' \
-            --data '{"note_title":"Access test","note_content":"Access test","recipient_phone":"+15555550123"}')
-          cat /tmp/love-note.json
-          echo
-          echo "HTTP=$CODE"
-          test "$CODE" = "401"
-          grep -F '"unauthorized"' /tmp/love-note.json >/dev/null
+
+          check_unauthorized () {
+            local method="$1"
+            local path="$2"
+            local body="${3:-}"
+            local out
+            out="$(mktemp)"
+            if [ "$method" = "GET" ]; then
+              code="$(curl -sS -o "$out" -w '%{http_code}' "$LIVE_URL$path")"
+            else
+              code="$(curl -sS -o "$out" -w '%{http_code}' -H 'Content-Type: application/json' -X "$method" "$LIVE_URL$path" --data "$body")"
+            fi
+            cat "$out"
+            echo
+            echo "$method $path HTTP=$code"
+            test "$code" = "401"
+          }
+
+          check_unauthorized GET /api/profile
+          check_unauthorized POST /api/billing/checkout '{"planName":"Premiere"}'
+          check_unauthorized POST /api/love-notes/send-sms '{"note_title":"Access test","note_content":"Access test","recipient_phone":"+15555550123"}'
+
+      - name: Verify current Open House information
+        shell: bash
+        env:
+          LIVE_URL: https://one2onelove.com
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import { chromium } from 'playwright-core';
+
+          const BASE=process.env.LIVE_URL.replace(/\/$/,'');
+          const checks=[
+            {
+              route:'/Subscription',
+              required:[/OPEN HOUSE BROWSING IS FREE!/i,/US\$9\.99/i,/US\$19\.99/i,/US\$15\.99/i,/Founding/i]
+            },
+            {
+              route:'/TermsOfService',
+              required:[/Open House/i,/Founding Members/i,/US\$15\.99\/month/i,/US\$9\.99/i,/US\$19\.99/i]
+            },
+            {
+              route:'/HelpCenter',
+              required:[/How the Open House works/i,/Founding Members and membership billing/i,/US\$15\.99/i]
+            }
+          ];
+
+          const browser=await chromium.launch({
+            headless:true,
+            executablePath:process.env.CHROME_BIN,
+            args:['--no-sandbox']
+          });
+          try {
+            for (const check of checks) {
+              const context=await browser.newContext({viewport:{width:390,height:844}});
+              const page=await context.newPage();
+              await page.goto(BASE+check.route,{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(900);
+              const text=(await page.locator('body').innerText()).replace(/\s+/g,' ').trim();
+              for (const pattern of check.required) {
+                if (!pattern.test(text)) throw new Error(check.route+' missing '+pattern);
+              }
+              await context.close();
+            }
+          } finally {
+            await browser.close();
+          }
+          NODE

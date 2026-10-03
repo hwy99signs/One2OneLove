@@ -26,6 +26,10 @@ export default function AdminAccess() {
   };
 
   useEffect(() => {
+    if (window.location.hostname === 'one2onelove-prelaunch.hwy99signs.workers.dev') {
+      window.location.replace('/Admin');
+      return;
+    }
     let active=true;
     (async()=>{
       try {

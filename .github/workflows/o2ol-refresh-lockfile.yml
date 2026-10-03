@@ -1,0 +1,43 @@
+name: O2OL Refresh Lockfile Metadata
+
+on:
+  push:
+    branches:
+      - qa/o2ol-combined-prelaunch-20260930
+    paths:
+      - .github/workflows/o2ol-refresh-lockfile.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/o2ol-combined-prelaunch-20260930
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Regenerate npm lockfile metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          git diff -- package-lock.json
+          if git diff --quiet -- package-lock.json; then
+            echo "Lockfile already canonical."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "Regenerate npm lockfile dependency metadata"
+          git push origin HEAD:qa/o2ol-combined-prelaunch-20260930

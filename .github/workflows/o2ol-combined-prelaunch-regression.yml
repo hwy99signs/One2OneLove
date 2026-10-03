@@ -1,0 +1,278 @@
+name: O2OL Combined Prelaunch Regression
+
+on:
+  push:
+    branches:
+      - qa/o2ol-combined-prelaunch-20260930
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "neon-migrations/**"
+      - ".github/workflows/o2ol-combined-prelaunch-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    env:
+      PREVIEW_URL: https://one2onelove-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build consolidated Prelaunch
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Static combined-feature security checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'path="/MyMatchIQ/Bianca"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Assessment"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Passport"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Credits"' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Meet"' src/pages/index.jsx
+          grep -F 'path="/LikeMinded"' src/pages/index.jsx
+          grep -F 'path="/O2OLStudio"' src/pages/index.jsx
+          grep -F "/o2olstudio" src/components/launch/LaunchAccessGate.jsx
+          grep -F 'studio/season-1/episode-1-who-should-apologize-first.mp4' worker/studio-media.ts
+          grep -F 'Enter Chat Room to Comment' src/pages/O2OLStudio.jsx
+          grep -F 'studio-who-should-apologize-first' src/pages/O2OLStudio.jsx src/pages/Chat.jsx worker/community-chat.ts
+          grep -F "biancaStart: 'CHAT with Bianca'" src/pages/MyMatchIQ.jsx
+          grep -F "const openBianca = () => navigate('/MyMatchIQ/Bianca')" src/pages/MyMatchIQ.jsx
+          grep -F "Chat Room Analytics" src/pages/Admin.jsx
+          grep -F "O2OL Show Voting" src/pages/Admin.jsx
+          grep -F "Conversation by Topic / # of Comments" src/pages/Admin.jsx
+          grep -F "o2ol_show_vote_responses" worker/admin.ts
+          grep -F "RELATIONSHIP_100_QUESTIONS" worker/admin.ts
+          grep -F "LIMITED-TIME OPEN HOUSE" src/pages/Layout.jsx
+          grep -F "LIMITED-TIME ONE2ONELOVE OPEN HOUSE" src/pages/Home.jsx
+          grep -F "Founding Members #1–100" src/pages/HelpCenter.jsx
+          grep -F "Open House, Memberships, Founding Members" src/pages/TermsOfService.jsx
+          grep -F 'US$15.99/month' src/pages/TermsOfService.jsx src/pages/HelpCenter.jsx
+          grep -F "hasFullMemberAccess" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx src/pages/CoupleActivities.jsx src/pages/CooperativeGames.jsx src/pages/LoveLanguageQuiz.jsx src/pages/ScratchGame.jsx
+          grep -F "'/memorylane'" src/components/launch/LaunchAccessGate.jsx
+          grep -F "'/relationshipgoals'" src/components/launch/LaunchAccessGate.jsx
+          grep -F "'/relationshipmilestones'" src/components/launch/LaunchAccessGate.jsx
+          grep -F "OpenHouseBrowseNotice" src/pages/MemoryLane.jsx src/pages/RelationshipGoals.jsx src/pages/RelationshipMilestones.jsx src/pages/SharedJournals.jsx src/pages/CouplesCalendar.jsx
+          grep -F "All Platforms" src/pages/Admin.jsx
+          grep -F "O2OL Chat Room" src/pages/Admin.jsx worker/admin.ts worker/prelaunch-community-chat.ts
+          grep -F "Facebook" src/pages/Admin.jsx worker/admin.ts worker/prelaunch-community-chat.ts
+          grep -F "LinkedIn" src/pages/Admin.jsx worker/admin.ts worker/prelaunch-community-chat.ts
+          grep -F "one2onelove-prelaunch.hwy99signs.workers.dev" src/components/admin/AdminMfaGate.jsx src/pages/AdminAccess.jsx src/pages/Admin.jsx
+          grep -F "Prelaunch read-only preview" src/pages/Admin.jsx
+          grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
+          grep -F "handlePrelaunchCommunityChatRequest" worker/mmiq-prelaunch-preview.ts
+          grep -F "prelaunch-chat/messages/" worker/prelaunch-community-chat.ts
+          if grep -F '"binding": "HYPERDRIVE"' cloudflare/wrangler.combined-prelaunch.jsonc; then echo "Unexpected Hyperdrive binding in isolated prelaunch"; exit 1; fi
+          grep -F "discoverable boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
+          grep -F "allow_invitations boolean NOT NULL DEFAULT false" neon-migrations/2026-09-30-mymatchiq-intentional-members.sql
+          grep -F "STRIPE_WEBHOOK_SECRET" worker/mymatchiq-credits.ts
+          grep -F "email_mismatch" worker/mymatchiq-legacy.ts
+          if grep -RE "password_hash|credential_hash|INSERT INTO .*neon_auth|UPDATE .*neon_auth" worker/mymatchiq-legacy.ts neon-migrations/2026-09-30-mymatchiq-legacy-claim-bridge.sql; then echo "Unsafe auth credential mutation found"; exit 1; fi
+          if grep -REi "MyMatchIQ (account|membership)|MyMatchIQ-Konto|cuenta MyMatchIQ|compte MyMatchIQ|account MyMatchIQ|membresía MyMatchIQ|abonnement MyMatchIQ" src/pages src/components/signup; then echo "Standalone MyMatchIQ account language found"; exit 1; fi
+          if grep -F "MMIQ_COPY" src/pages/Subscription.jsx; then echo "Retired MyMatchIQ subscription copy found"; exit 1; fi
+          if grep -F "product='mymatchiq'" src/pages/Subscription.jsx src/pages/SignIn.jsx src/pages/SignUp.jsx src/components/signup/LaunchRegularUserForm.jsx; then echo "Retired standalone MyMatchIQ product gate found"; exit 1; fi
+          if grep -REi "Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|guest-preview|Full Access Trial|Prueba de Acceso Completo|Essai.*Accès Complet|Prova.*Accesso Completo|Vollzugriff-Test" src/pages src/components src/data src/content; then echo "Retired access/trial language found"; exit 1; fi
+          grep -F 'path="/MyMatchIQ/SignIn" element={<Navigate to="/SignIn?source=mymatchiq-feature" replace />}' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />}' src/pages/index.jsx
+          grep -F 'path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />}' src/pages/index.jsx
+          grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
+          if grep -F "o2ol-password-reset-preview" .github/workflows/deploy-o2ol-production-neon.yml; then echo "Production workflow still references retired prelaunch branch"; exit 1; fi
+
+      - name: Prepare browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: Browser smoke combined O2OL MyMatchIQ Bianca Like Minded
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright-core';
+          const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
+          const routes=['/','/Subscription','/SignUp','/Admin','/O2OLStudio','/Chat','/Chat?room=studio-who-should-apologize-first&from=studio','/MyMatchIQ','/MyMatchIQ/Assessment','/MyMatchIQ/Passport','/MyMatchIQ/Bianca','/MyMatchIQ/Credits','/MyMatchIQ/Meet','/MyMatchIQ/Actions','/MyMatchIQ/Dashboard','/LikeMinded'];
+          const langs=['en','es','fr','it','de'];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
+          const failures=[];
+          try{
+            for(const lang of langs){
+              for(const route of routes){
+                const context=await browser.newContext({viewport:{width:390,height:844}});
+                await context.addInitScript(l=>localStorage.setItem('preferredLanguage',l),lang);
+                await context.route('**/api/auth/get-session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:{id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',emailVerified:true,email_verified:true,name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phoneNumberVerified:true},session:{id:'qa-session',userId:'00000000-0000-4000-8000-000000000001'}})}));
+                await context.route('**/api/profile',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({profile:{id:'00000000-0000-4000-8000-000000000001',email:'qa@example.invalid',name:'QA Member',role:'user',subscription_plan:'Exclusive',subscription_status:'active',phone_number_verified:true,phoneNumberVerified:true,phone_verification_required:true}})}));
+                await context.route('**/api/mymatchiq/**',async r=>{
+                  const u=new URL(r.request().url()), p=u.pathname;
+                  let body={ok:true};
+                  if(p.endsWith('/access')) body={ok:true,access:{tier:'Elite',source:'qa',grandfathered:false}};
+                  else if(p.endsWith('/bianca/profile')) body={ok:true,profile:{interaction_count:12,conversation_count:3,common_phrases:['you know'],context_depth_score:35}};
+                  else if(p.endsWith('/bianca/conversations')) body={ok:true,conversations:[]};
+                  else if(p.endsWith('/bianca/reports')) body={ok:true,reports:[]};
+                  else if(p.includes('/assessment/sessions/latest')) body={ok:true,session:null};
+                  else if(p.includes('/credits/wallet')) body={ok:true,wallet:{balance:0,auto_replenish_enabled:false}};
+                  else if(p.includes('/members')) body={ok:true,members:[],profile:null,invitations:[]};
+                  await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+                });
+                await context.route('**/api/like-minded/**',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,rooms:[],session:null})}));
+                const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(String(e.message||e)));
+                let res=null; try{
+                  res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+                  if(route==='/Admin') await page.getByText('Chat Room Analytics',{exact:false}).first().waitFor({state:'visible',timeout:15000});
+                  else await page.waitForTimeout(700);
+                }catch(e){errors.push(String(e.message||e));}
+                const dom=await page.evaluate(()=>{
+                  const overflowers=[...document.querySelectorAll('body *')].map(el=>{
+                    const r=el.getBoundingClientRect();
+                    return {tag:el.tagName,cls:String(el.className||'').slice(0,180),text:String(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim().slice(0,140),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width)};
+                  }).filter(x=>x.right>innerWidth+6||x.left<-6).slice(0,12);
+                  return {text:(document.querySelector('main')?.innerText||document.body?.innerText||'').replace(/\s+/g,' ').trim(),overflow:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth,broken:[...document.images].filter(i=>i.complete&&i.naturalWidth===0).map(i=>i.src),overflowers};
+                }).catch(()=>({text:'',overflow:0,broken:[],overflowers:[]}));
+                if(!res||res.status()!==200) failures.push({route,lang,kind:'status',status:res?.status()});
+                if(errors.length) failures.push({route,lang,kind:'pageerror',errors});
+                if(dom.text.length<20) failures.push({route,lang,kind:'empty'});
+                if(dom.overflow>6) failures.push({route,lang,kind:'overflow',pixels:dom.overflow,elements:dom.overflowers});
+                if(dom.broken.length) failures.push({route,lang,kind:'broken-images',count:dom.broken.length});
+                if(/undefined|\[object Object\]|NaN/.test(dom.text)) failures.push({route,lang,kind:'suspicious-text'});
+                if((route==='/Subscription'||route==='/SignUp') && /Guest Preview|Vista Previa de Invitado|Aperçu Invité|Anteprima Ospite|Gastvorschau|24[- ]?(hour|horas|heures|ore|stünd)|Full Access Trial|Prueba de Acceso Completo|Vollzugriff-Test/i.test(dom.text)) failures.push({route,lang,kind:'retired-access-copy',text:dom.text.slice(0,500)});
+
+                if(lang==='en' && route==='/'){
+                  try{
+                    const chatTile=page.getByRole('button',{name:/Chat Room/i}).first();
+                    await chatTile.click({timeout:7000});
+                    await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/chat',{timeout:7000});
+                  }catch(e){
+                    failures.push({route,lang,kind:'homepage-chat-room-navigation',error:String(e.message||e),url:page.url()});
+                  }
+                }
+
+                if(lang==='en' && route==='/O2OLStudio'){
+                  try{
+                    const studioChat=page.getByRole('link',{name:/Enter Chat Room to Comment/i}).first();
+                    await studioChat.click({timeout:7000});
+                    await page.waitForURL(u=>{
+                      const target=new URL(u);
+                      return target.pathname.toLowerCase()==='/chat' && target.searchParams.get('room')==='studio-who-should-apologize-first';
+                    },{timeout:7000});
+                  }catch(e){
+                    failures.push({route,lang,kind:'studio-chat-room-navigation',error:String(e.message||e),url:page.url()});
+                  }
+                }
+
+                if(lang==='en' && route==='/MyMatchIQ'){
+                  try{
+                    const biancaCta=page.getByRole('button',{name:/CHAT with Bianca/i}).first();
+                    await biancaCta.click({timeout:7000});
+                    await page.waitForURL(u=>new URL(u).pathname.toLowerCase()==='/mymatchiq/bianca',{timeout:7000});
+                  }catch(e){
+                    failures.push({route,lang,kind:'mymatchiq-bianca-navigation',error:String(e.message||e),url:page.url()});
+                  }
+                }
+
+                if(lang==='en' && route==='/Admin'){
+                  if(!/Chat Room Analytics/i.test(dom.text)) failures.push({route,lang,kind:'admin-chat-analytics-missing',text:dom.text.slice(0,800)});
+                  if(!/Prelaunch read-only preview/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-banner-missing',text:dom.text.slice(0,800)});
+                  for(const label of ['All Platforms','O2OL Chat Room','Facebook','Instagram','Threads','TikTok','X','Pinterest','LinkedIn']){
+                    if(!dom.text.includes(label)) failures.push({route,lang,kind:'admin-platform-tab-missing',label,text:dom.text.slice(0,1600)});
+                  }
+                  if(/Plans & Billing|Member Management|All Sign-ups/i.test(dom.text)) failures.push({route,lang,kind:'admin-preview-exposes-controls',text:dom.text.slice(0,1200)});
+                }
+
+                if(errors.length) failures.push({route,lang,kind:'pageerror-after-navigation',errors});
+                await context.close();
+              }
+            }
+          } finally { await browser.close(); }
+          if(failures.length){ console.error(JSON.stringify(failures,null,2)); process.exit(1); }
+          console.log('COMBINED_PRELAUNCH_BROWSER_REGRESSION=PASS');
+          NODE
+
+      - name: Anonymous Open House desktop and Android smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright-core';
+          const BASE=process.env.PREVIEW_URL.replace(/\/$/,'');
+          const routes=[
+            '/','/DateIdeas','/LoveNotes','/LoveLanguageQuiz','/MemoryLane','/PodcastsSupport',
+            '/RelationshipQuizzes','/RelationshipMilestones','/RelationshipGoals','/CommunicationPractice',
+            '/CoupleSupport','/ArticlesSupport','/CoupleActivities','/CooperativeGames','/WhatShouldTheyDo',
+            '/Games','/ScratchGame','/SharedJournals','/CouplesCalendar','/LGBTQSupport','/O2OLStudio','/Chat','/MyMatchIQ'
+          ];
+          const personalPreview=new Set(['/MemoryLane','/RelationshipMilestones','/RelationshipGoals','/SharedJournals','/CouplesCalendar','/CoupleActivities','/CooperativeGames','/ScratchGame']);
+          const viewports=[
+            {name:'desktop',width:1440,height:900},
+            {name:'android',width:390,height:844},
+          ];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--no-sandbox']});
+          const failures=[];
+          try{
+            for(const viewport of viewports){
+              for(const route of routes){
+                const context=await browser.newContext({viewport:{width:viewport.width,height:viewport.height}});
+                await context.addInitScript(()=>localStorage.setItem('preferredLanguage','en'));
+                const page=await context.newPage();
+                const errors=[];
+                page.on('pageerror',e=>errors.push(String(e.message||e)));
+                let res=null;
+                try{
+                  res=await page.goto(BASE+route,{waitUntil:'domcontentloaded',timeout:30000});
+                  await page.waitForTimeout(1100);
+                }catch(e){errors.push(String(e.message||e));}
+                const snap=await page.evaluate(()=>({
+                  text:(document.body?.innerText||'').replace(/\s+/g,' ').trim(),
+                  path:location.pathname,
+                  overflow:Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-innerWidth,
+                })).catch(()=>({text:'',path:'',overflow:0}));
+                if(!res||res.status()!==200) failures.push({viewport:viewport.name,route,kind:'status',status:res?.status()});
+                if(errors.length) failures.push({viewport:viewport.name,route,kind:'pageerror',errors});
+                if(snap.text.length<30) failures.push({viewport:viewport.name,route,kind:'empty'});
+                if(['/signin','/login','/subscription'].includes(String(snap.path||'').toLowerCase())) failures.push({viewport:viewport.name,route,kind:'unexpected-gate',finalPath:snap.path});
+                if(snap.overflow>6) failures.push({viewport:viewport.name,route,kind:'overflow',pixels:snap.overflow});
+                if(!/LIMITED-TIME OPEN HOUSE/i.test(snap.text)) failures.push({viewport:viewport.name,route,kind:'open-house-banner-missing'});
+                if(personalPreview.has(route) && !/Explore this feature free/i.test(snap.text)) failures.push({viewport:viewport.name,route,kind:'browse-notice-missing'});
+                await context.close();
+              }
+            }
+          } finally { await browser.close(); }
+          if(failures.length){ console.error(JSON.stringify(failures,null,2)); process.exit(1); }
+          console.log('OPEN_HOUSE_ANONYMOUS_DESKTOP_ANDROID=PASS');
+          NODE
+
+
+      - name: Open House security boundary smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="${PREVIEW_URL%/}"
+          profile_status="$(curl -sS -o /tmp/o2ol-profile.json -w '%{http_code}' "$BASE/api/profile")"
+          test "$profile_status" = "401"
+          rooms_status="$(curl -sS -o /tmp/o2ol-rooms.json -w '%{http_code}' "$BASE/api/community-chat/rooms")"
+          test "$rooms_status" = "200"
+          admin_status="$(curl -sS -o /tmp/o2ol-admin.json -w '%{http_code}' "$BASE/api/admin/dashboard")"
+          test "$admin_status" = "200"
+          admin_write_status="$(curl -sS -o /tmp/o2ol-admin-write.json -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' "$BASE/api/admin/member")"
+          test "$admin_write_status" = "405"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const admin=JSON.parse(fs.readFileSync('/tmp/o2ol-admin.json','utf8'));
+          if(admin?.readOnly!==true || admin?.preview!==true) throw new Error('Prelaunch Admin dashboard is not explicitly read-only.');
+          const denied=JSON.parse(fs.readFileSync('/tmp/o2ol-admin-write.json','utf8'));
+          if(denied?.readOnly!==true) throw new Error('Prelaunch Admin write denial is not explicitly read-only.');
+          console.log('OPEN_HOUSE_SECURITY_BOUNDARIES=PASS');
+          NODE
