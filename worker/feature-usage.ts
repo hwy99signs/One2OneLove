@@ -149,6 +149,10 @@ async function handleInteractionEvent(request, env) {
   return withDb(env, async (db) => {
     await ensureInteractionSchema(db);
 
+    if (route === '/__analytics-smoke' && request.headers.get('x-o2ol-analytics-smoke') === 'schema') {
+      return json({ ok:true, smoke:true, storageReady:true });
+    }
+
     let userId = null;
     let actorType = 'anonymous';
     let accessType = 'open_house';
