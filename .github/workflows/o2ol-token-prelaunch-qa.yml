@@ -258,6 +258,9 @@ jobs:
           grep -F "Disable Auto-Replenish before loading a controlled calibration package." worker/token-admin.ts
           grep -F "Disable Auto-Replenish before starting a controlled calibration session." worker/token-admin.ts
           grep -F "calibration_package_balance_mismatch" worker/token-admin.ts
+          grep -F "Calibration requires an active member with verified email and phone." worker/token-admin.ts
+          grep -F "calibration_member_not_ready" worker/token-admin.ts
+          grep -F "NOT VERIFIED/ACTIVE" src/pages/TokenSystemDashboard.jsx
           grep -F "transaction_type,package_code,provider,metadata" worker/token-admin.ts
           grep -F "'grant'" worker/token-admin.ts
           grep -F "Load Test Package" src/pages/TokenSystemDashboard.jsx
