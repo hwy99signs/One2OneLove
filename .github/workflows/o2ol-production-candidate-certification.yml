@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin refs/heads/restore/locked-o2ol-open-house-reconciled-final-20261003:refs/remotes/origin/o2ol-locked-candidate
+          git fetch origin refs/heads/restore/locked-o2ol-open-house-release-ready-20261003:refs/remotes/origin/o2ol-locked-candidate
           git diff --exit-code origin/o2ol-locked-candidate -- . ':(exclude).github/**'
 
       - uses: actions/setup-node@v4
