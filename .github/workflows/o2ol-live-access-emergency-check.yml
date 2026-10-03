@@ -136,5 +136,43 @@ jobs:
           LIVE_URL: https://one2onelove.com
         run: |
           set -euo pipefail
-          curl -fsS "$LIVE_URL/TermsOfService" | grep -F "root" >/dev/null
-          curl -fsS "$LIVE_URL/Subscription" | grep -F "root" >/dev/null
+          node --input-type=module - <<'NODE'
+          import { chromium } from 'playwright-core';
+
+          const BASE=process.env.LIVE_URL.replace(/\/$/,'');
+          const checks=[
+            {
+              route:'/Subscription',
+              required:[/OPEN HOUSE BROWSING IS FREE!/i,/US\$9\.99/i,/US\$19\.99/i,/US\$15\.99/i,/Founding/i]
+            },
+            {
+              route:'/TermsOfService',
+              required:[/Open House/i,/Founding Members/i,/US\$15\.99\/month/i,/US\$9\.99/i,/US\$19\.99/i]
+            },
+            {
+              route:'/HelpCenter',
+              required:[/How the Open House works/i,/Founding Members and membership billing/i,/US\$15\.99/i]
+            }
+          ];
+
+          const browser=await chromium.launch({
+            headless:true,
+            executablePath:process.env.CHROME_BIN,
+            args:['--no-sandbox']
+          });
+          try {
+            for (const check of checks) {
+              const context=await browser.newContext({viewport:{width:390,height:844}});
+              const page=await context.newPage();
+              await page.goto(BASE+check.route,{waitUntil:'domcontentloaded',timeout:30000});
+              await page.waitForTimeout(900);
+              const text=(await page.locator('body').innerText()).replace(/\s+/g,' ').trim();
+              for (const pattern of check.required) {
+                if (!pattern.test(text)) throw new Error(check.route+' missing '+pattern);
+              }
+              await context.close();
+            }
+          } finally {
+            await browser.close();
+          }
+          NODE
