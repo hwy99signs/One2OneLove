@@ -14,10 +14,11 @@ const COPY = {
   de: { title: "One2OneLove-Registrierung Abschließen", subtitle: "Ihr Tarif ist ausgewählt. Wählen Sie nun, wie Sie One2OneLove beitreten.", selectedPlan: "Ausgewählter Tarif", individual: "Privatmitglied", individualBody: "Erstellen Sie ein persönliches Mitgliedskonto für Beziehungstools, Community, Aktivitäten und Mitgliederfunktionen.", professional: "Fachkraft / Contributor", professionalBody: "Bewerben Sie sich als lizenzierter Therapeut oder Berater, Beziehungscoach oder Pädagoge, Creator oder Medien-Contributor, Organisation oder professioneller Partner.", continue: "Weiter", back: "Zurück zu den Tarifen" },
 };
 
-const PLAN_PRICE = { Premiere: "US$9.99/month", Exclusive: "US$19.99/month" };
+const PLAN_PRICE = { Basic: "FREE account · no card required", Premiere: "US$9.99/month", Exclusive: "US$19.99/month" };
 
 function canonicalPlan(value) {
   const raw = String(value || "").trim().toLowerCase();
+  if (raw === "basic" || raw === "free" || raw === "registered-free" || raw === "registered free") return "Basic";
   if (raw === "premiere" || raw === "premier") return "Premiere";
   if (raw === "exclusive") return "Exclusive";
   return null;
@@ -32,7 +33,7 @@ export default function SignUp() {
   const signupType = String(searchParams.get("type") || "").toLowerCase();
   const foundingIntent = searchParams.get("founding") === "1";
 
-  const effectivePlan = selectedPlan || 'Premiere';
+  const effectivePlan = selectedPlan || 'Basic';
   if (signupType === "individual") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 px-4 py-12">
@@ -59,7 +60,7 @@ export default function SignUp() {
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{t.title}</h1>
           <p className="text-xl text-gray-600">{t.subtitle}</p>
           <div className="mt-5 inline-flex items-center rounded-full border border-purple-200 bg-white px-5 py-2 font-bold text-purple-800 shadow-sm">
-            {t.selectedPlan}: {foundingIntent ? (effectivePlan === 'Exclusive' ? 'Founding Offer — Exclusive: 30 days FREE, then US$15.99/month while continuously subscribed' : 'Founding Offer — Premiere: 30 days FREE, then US$9.99/month') : `${effectivePlan} — ${PLAN_PRICE[effectivePlan]}`}
+            {t.selectedPlan}: {foundingIntent ? (effectivePlan === 'Exclusive' ? 'Founding Offer — Exclusive: 30 days FREE, then US$15.99/month while continuously subscribed' : 'Founding Offer — Premiere: 30 days FREE, then US$9.99/month') : `${effectivePlan === 'Basic' ? 'Registered Free' : effectivePlan} — ${PLAN_PRICE[effectivePlan]}`}
           </div>
         </div>
 

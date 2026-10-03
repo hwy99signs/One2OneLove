@@ -408,7 +408,17 @@ async function overview(db) {
              count(*) FILTER (
                WHERE COALESCE(p.is_verified,a."emailVerified",false)=true
                  AND COALESCE(p.phone_number_verified,false)=true
-             )::int AS verified
+             )::int AS verified,
+             count(*) FILTER (
+               WHERE p.id IS NOT NULL
+                 AND lower(COALESCE(p.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+             )::int AS registered_free,
+             count(*) FILTER (
+               WHERE NOT (
+                 COALESCE(p.is_verified,a."emailVerified",false)=true
+                 AND COALESCE(p.phone_number_verified,false)=true
+               )
+             )::int AS pending_verification
         FROM neon_auth."user" a
         FULL OUTER JOIN public.users p ON p.id=a.id
        WHERE COALESCE(a.role,'user') <> 'admin'`),
