@@ -58,9 +58,20 @@ function Pill({ children, tone = 'slate' }) {
   return <span className={cx('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold', styles[tone] || styles.slate)}>{children}</span>;
 }
 
-function Metric({ icon: Icon, label, value, note, tone='rose' }) {
+function Metric({ icon: Icon, label, value, note, tone='rose', onClick }) {
+  const interactiveProps = onClick ? {
+    role: 'button',
+    tabIndex: 0,
+    onClick,
+    onKeyDown: event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onClick();
+      }
+    },
+  } : {};
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div {...interactiveProps} className={cx('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm',onClick&&'cursor-pointer transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-amber-100')}>
       <div className="flex items-start justify-between gap-4">
         <div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{value}</p>{note && <p className="mt-1 text-xs text-slate-500">{note}</p>}</div>
         <div className={cx('rounded-xl p-2.5', toneMap[tone] || toneMap.rose)}><Icon size={20}/></div>
@@ -242,6 +253,7 @@ export default function Admin() {
   const [refreshing,setRefreshing] = useState(false);
   const [error,setError] = useState(null);
   const [query,setQuery] = useState('');
+  const [memberViewFilter,setMemberViewFilter] = useState('all');
   const [mobileNav,setMobileNav] = useState(false);
   const [memberActionId,setMemberActionId] = useState(null);
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
@@ -335,9 +347,12 @@ export default function Admin() {
 
   const filteredMembers = useMemo(() => {
     const members=data?.members || [], needle=query.trim().toLowerCase();
-    if (!needle) return members;
-    return members.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
-  },[data,query]);
+    const byVerification = memberViewFilter === 'pending-verification'
+      ? members.filter(m => m.auth_role !== 'admin' && !(m.is_verified && m.phone_verified))
+      : members;
+    if (!needle) return byVerification;
+    return byVerification.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
+  },[data,query,memberViewFilter]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading One2OneLove Admin</h1><p className="mt-2 text-sm text-slate-500">Verifying administrator access and loading platform data.</p></div></div>;
   if (error) {
@@ -364,6 +379,12 @@ export default function Admin() {
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
 
   const openAnalytics = () => window.location.assign('/Analytics');
+  const openPendingVerificationMembers = () => {
+    setQuery('');
+    setMemberViewFilter('pending-verification');
+    setSection('members');
+    setMobileNav(false);
+  };
 
   const handleMemberAction = async (member, action) => {
     if (member.auth_role === 'admin') return;
@@ -501,7 +522,7 @@ export default function Admin() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Metric icon={Users} label="Total Sign-ups" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
               <Metric icon={UserCheck} label="Registered Free Accounts" value={number(users.registered_free)} note="free member profiles · no paid subscription" tone="blue"/>
-              <Metric icon={Clock3} label="Pending Verification" value={number(users.pending_verification)} note="email and/or phone verification incomplete" tone="amber"/>
+              <Metric icon={Clock3} label="Pending Verification" value={number(users.pending_verification)} note="Click to view the accounts and missing verification step" tone="amber" onClick={openPendingVerificationMembers}/>
               <Metric icon={Heart} label="Love Notes Sent" value={number(love.sent_total)} note={`${number(love.sent_30d)} in the last 30 days`} tone="violet"/>
               <Metric icon={CalendarDays} label="People Using Scheduler" value={number(love.scheduler_users)} note={`${number(love.scheduler_users_30d)} in the last 30 days`} tone="blue"/>
               <Metric icon={TrendingUp} label="Feature Activity — 30 Days" value={number(features.reduce((sum,f)=>sum+Number(f.activity_30d||0),0))} note={`${features.filter(f=>Number(f.activity_30d||0)>0).length} features used · all visitors`} tone="green"/>
@@ -516,7 +537,7 @@ export default function Admin() {
                 <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total Sign-ups</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.total)}</p></div>
                 <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-700">Registered Free</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.registered_free)}</p></div>
                 <div className="rounded-xl bg-violet-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Subscribed</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.subscribed)}</p></div>
-                <div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-amber-700">Pending Verification</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.pending_verification)}</p></div>
+                <button type="button" onClick={openPendingVerificationMembers} className="rounded-xl bg-amber-50 p-4 text-left transition hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100"><p className="text-xs font-bold uppercase tracking-wide text-amber-700">Pending Verification</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.pending_verification)}</p><p className="mt-1 text-[11px] font-semibold text-amber-700">View accounts →</p></button>
                 <div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Fully Verified</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.verified)}</p></div>
                 <div className="rounded-xl bg-rose-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-rose-700">Auth Only / No Profile</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.auth_only_no_profile)}</p></div>
               </div>
@@ -757,6 +778,7 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Live member management, including pending email verification and profile-recovery states. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
+            {memberViewFilter==='pending-verification' && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div><strong>Pending Verification only</strong><span className="ml-2 text-amber-700">Showing accounts missing email and/or phone verification.</span></div><button type="button" onClick={()=>setMemberViewFilter('all')} className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-black text-amber-800 hover:bg-amber-100">Show all sign-ups</button></div>}
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                 <Search size={17} className="text-slate-400"/>
