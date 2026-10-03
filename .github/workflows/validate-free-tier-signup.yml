@@ -81,7 +81,7 @@ jobs:
 
             await free.click();
             await page.waitForURL(/\/SignUp\?plan=Basic&type=individual/);
-            if(!(await page.getByText(/Registered Free/i).isVisible())) throw new Error('Free signup is not identified as Registered Free');
+            await page.getByText(/Registered Free/i).waitFor({state:'visible',timeout:5000});
 
             await page.goto('http://127.0.0.1:4173/Subscription',{waitUntil:'domcontentloaded'});
             await page.waitForTimeout(250);
