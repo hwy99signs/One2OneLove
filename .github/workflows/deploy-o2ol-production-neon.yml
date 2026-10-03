@@ -122,6 +122,9 @@ jobs:
           grep -F "Founding Member free-period accounts are intentionally allowed to send:" worker/love-note-billing.ts >/dev/null
           grep -F "foundingPeriodSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
           grep -F "firstMembershipSendFree: true" worker/love-note-entitlements.ts >/dev/null
+          grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
+          grep -F "const writeAccess = await loveNoteWriteAccess(db, auth);" worker/love-note-entitlements.ts >/dev/null
+          grep -F "reason: 'subscription_required'" worker/love-note-entitlements.ts >/dev/null
           grep -F "OPEN HOUSE BROWSING IS FREE!" src/pages/Subscription.jsx >/dev/null
           grep -F "Founding Members Launch Offer" src/pages/Subscription.jsx >/dev/null
           grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx >/dev/null
