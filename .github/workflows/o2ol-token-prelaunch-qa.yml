@@ -237,6 +237,16 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Stripe Token webhook remains retry-safe
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "VALUES('stripe',\$1,\$2,\$3::uuid,\$4::jsonb,NULL)" worker/o2ol-tokens.ts
+          grep -F "if(existingEvent?.processed_at)return json({ok:true,duplicate:true});" worker/o2ol-tokens.ts
+          grep -F "SET processed_at=now()" worker/o2ol-tokens.ts
+          grep -F 'idempotencyKey:`stripe_checkout:${obj.id}`' worker/o2ol-tokens.ts
+          grep -F 'idempotencyKey:meta.idempotency_key||`stripe_auto:${obj.id}`' worker/o2ol-tokens.ts
+
       - name: Verify legacy public billing is fail-closed
         shell: bash
         run: |
