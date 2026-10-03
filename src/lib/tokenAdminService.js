@@ -29,3 +29,24 @@ export async function adjustTokenWallet(userId,delta,reason){
   });
   return parseJson(response);
 }
+
+
+export async function startTokenCalibration({userId,featureCode='all',packageCode=null,notes=''}) {
+  const response=await fetch('/api/token-admin/calibrations/start',{
+    method:'POST',
+    credentials:'include',
+    headers:{accept:'application/json','content-type':'application/json'},
+    body:JSON.stringify({userId,featureCode,packageCode,notes}),
+  });
+  return parseJson(response);
+}
+
+export async function endTokenCalibration(sessionId,notes='') {
+  const response=await fetch(`/api/token-admin/calibrations/${encodeURIComponent(sessionId)}/end`,{
+    method:'POST',
+    credentials:'include',
+    headers:{accept:'application/json','content-type':'application/json'},
+    body:JSON.stringify({notes}),
+  });
+  return parseJson(response);
+}
