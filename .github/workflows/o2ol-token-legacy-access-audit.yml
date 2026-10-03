@@ -29,4 +29,4 @@ jobs:
           grep -RInE 'US\$0\.29|\$0\.29|LOVE_NOTE_SEND_PRICE_CENTS = 29|firstMembershipSendFree|firstFreeAvailable' src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
           echo "=== LEGACY MMIQ CREDIT REFERENCES ==="
           grep -RInE 'mmiq_credit_wallets|mmiq_credit_transactions|mymatchiq/credits' src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
-          echo "LEGACY_ACCESS_AUDIT=COMPLETE"
+          echo "LEGACY_ACCESS_AUDIT=COMPLETE_AFTER_FREE_TOKEN_CONVERSION"
