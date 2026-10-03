@@ -1,6 +1,7 @@
 const VISITOR_KEY = 'o2ol.analytics.visitor';
 const SESSION_KEY = 'o2ol.analytics.session';
 const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess']);
+const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
 const FEATURE_BY_ROUTE = {
   '/memorylane': 'Memory Lane',
@@ -96,11 +97,21 @@ export function featureForPath(pathname) {
   return null;
 }
 
+function activeLanguage() {
+  try {
+    const language = String(window.localStorage.getItem('preferredLanguage') || 'en').toLowerCase();
+    return SUPPORTED_LANGUAGES.has(language) ? language : 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 function send(payload) {
   if (isAdminAnalyticsSurface()) return;
   const body = {
     visitorId: visitorId(),
     sessionId: sessionId(),
+    language: activeLanguage(),
     ...payload,
   };
 
