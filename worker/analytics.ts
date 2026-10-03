@@ -323,10 +323,10 @@ async function analytics(db, env) {
       WITH days AS (
         SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
       ), counts AS (
-        SELECT u.created_at::date AS day,count(*)::int AS signups
-          FROM public.users u
-          LEFT JOIN neon_auth."user" a ON a.id=u.id
-         WHERE u.created_at >= GREATEST(current_date-29, ${baselineSql})
+        SELECT COALESCE(u.created_at,a."createdAt")::date AS day,count(*)::int AS signups
+          FROM neon_auth."user" a
+          FULL OUTER JOIN public.users u ON u.id=a.id
+         WHERE COALESCE(u.created_at,a."createdAt") >= GREATEST(current_date-29, ${baselineSql})
            AND COALESCE(a.role,'user') <> 'admin'
          GROUP BY 1
       )
