@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { scheduledSmsReadiness, scheduledSmsReady, sendTwilioLoveNoteSms } from './scheduled-love-notes';
+import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
+import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
 import {
   CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
   LOVE_NOTE_SEND_PRICE_CENTS,
@@ -84,9 +86,8 @@ const DEFAULT_CATEGORY_IDS = [
   'playful','deep','future','morning','night','special',
   'dateIdeas','milestone','justBecause','apology','family','friends',
 ];
-function categoryLimit(plan) {
-  if (plan === 'Exclusive') return LOVE_NOTE_CATEGORY_IDS.length;
-  return 18;
+function categoryLimit(_plan) {
+  return LOVE_NOTE_CATEGORY_IDS.length;
 }
 function monthStart(dateText) {
   return `${String(dateText).slice(0, 7)}-01`;
@@ -131,35 +132,15 @@ async function planForUser(db, userId) {
 }
 
 async function loveNoteWriteAccess(db, auth) {
-  if (String(auth?.user?.role || '').toLowerCase() === 'admin') {
-    return { allowed: true, reason: 'admin' };
-  }
-
-  const result = await db.query(
-    `SELECT is_active,subscription_status,stripe_subscription_id,subscription_end_date
+  const result=await db.query(
+    `SELECT COALESCE(is_active,true) AS is_active,COALESCE(phone_number_verified,false) AS phone_verified
        FROM public.users WHERE id=$1::uuid LIMIT 1`,
     [auth.user.id],
   );
-  const row = result.rows[0] || {};
-  const status = String(row.subscription_status || '').toLowerCase();
-  const hasStripeSubscription = Boolean(row.stripe_subscription_id);
-  const endAt = row.subscription_end_date ? new Date(row.subscription_end_date) : null;
-  const hasAdminAccess = Boolean(endAt && !Number.isNaN(endAt.getTime()) && endAt.getTime() > Date.now());
-
-  const hasMembershipAccess =
-    row.is_active !== false &&
-    ['active', 'trial', 'trialing'].includes(status) &&
-    (hasStripeSubscription || hasAdminAccess);
-
-  if (!hasMembershipAccess) {
-    return {
-      allowed: false,
-      reason: 'subscription_required',
-      message: 'An active One2OneLove membership or Founding Member free period is required to use Love Notes sending features.',
-    };
-  }
-
-  return { allowed: true, reason: 'member' };
+  const row=result.rows[0]||{};
+  if(row.is_active===false)return {allowed:false,reason:'account_inactive',message:'This One2OneLove account is not active.'};
+  if(row.phone_verified!==true)return {allowed:false,reason:'phone_verification_required',message:'Phone verification is required before sending Love Notes.'};
+  return {allowed:true,reason:'free_verified_member'};
 }
 async function categoryPreferenceForDate(db, userId, quotaDate) {
   const plan = await planForUser(db, userId);
@@ -251,177 +232,119 @@ async function postSent(db, auth, body) {
 }
 
 async function postImmediateSms(db, env, auth, body) {
-  if (!scheduledSmsReady(env)) {
-    return fail('One2OneLove SMS delivery is not available yet.', 503, 'sms_delivery_not_ready');
-  }
+  if (!scheduledSmsReady(env)) return fail('One2OneLove SMS delivery is not available yet.',503,'sms_delivery_not_ready');
 
-  const title = cleanText(body.note_title, 250, true);
-  const content = validateLoveNoteBody(body.note_content);
+  const title=cleanText(body.note_title,250,true);
+  const content=validateLoveNoteBody(body.note_content);
   if (/\p{Extended_Pictographic}/u.test(title)) {
-    return fail('User-added emojis are not supported in Love Note SMS text. One2OneLove adds the ❤️ footer automatically.', 400, 'emoji_not_allowed');
+    return fail('User-added emojis are not supported in Love Note SMS text. One2OneLove adds the ❤️ footer automatically.',400,'emoji_not_allowed');
   }
-  const rawPhone = cleanText(body.recipient_phone || body.recipient_identifier, 100, true);
-  const recipientPhone = String(rawPhone || '').replace(/[\s().-]/g, '');
-  if (!/^\+[1-9]\d{7,14}$/.test(recipientPhone)) {
-    return fail('Enter a valid phone number with country code.', 400, 'invalid_phone');
-  }
+  const rawPhone=cleanText(body.recipient_phone||body.recipient_identifier,100,true);
+  const recipientPhone=String(rawPhone||'').replace(/[\s().-]/g,'');
+  if(!/^\+[1-9]\d{7,14}$/.test(recipientPhone))return fail('Enter a valid phone number with country code.',400,'invalid_phone');
 
-  const quotaDate = dateForTimezone(cleanText(body.timezone || body.client_timezone || 'UTC', 100, false) || 'UTC');
-  const sourceId = crypto.randomUUID();
-  let reservation = null;
+  const quotaDate=dateForTimezone(cleanText(body.timezone||body.client_timezone||'UTC',100,false)||'UTC');
+  const sourceId=crypto.randomUUID();
+  const requestId=String(body.requestId||crypto.randomUUID()).slice(0,120);
+  const reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
+    idempotencyKey:`love_note_sms:${auth.user.id}:${requestId}`,
+    metadata:{source_id:sourceId,recipient_type:'sms',request_id:requestId},
+  });
 
-  // Phase 1: reserve the founding-period/first-free or 29-cent entitlement and deliver the SMS.
-  // If Twilio fails, the DB transaction rolls back so no send is billed.
-  await db.query('BEGIN');
-  try {
+  let twilio=null;
+  try{
     await db.query(
       `INSERT INTO public.sent_love_notes
         (id,user_id,note_title,note_content,recipient_type,recipient_identifier,social_platform,created_by)
        VALUES($1::uuid,$2::uuid,$3,$4,'sms',$5,NULL,$2::uuid)`,
-      [sourceId, auth.user.id, title, content, recipientPhone],
+      [sourceId,auth.user.id,title,content,recipientPhone],
     );
-
-    reservation = await reserveLoveNoteSend(
-      db,
-      auth.user.id,
-      'direct',
-      sourceId,
-      quotaDate,
-      'reserved',
-    );
-
-    await sendTwilioLoveNoteSms(env, {
-      recipient_phone: recipientPhone,
-      note_title: title,
-      note_content: content,
-    });
-
-    await db.query('COMMIT');
-  } catch (error) {
-    await db.query('ROLLBACK').catch(() => null);
+    twilio=await sendTwilioLoveNoteSms(env,{recipient_phone:recipientPhone,note_title:title,note_content:content});
+  }catch(error){
+    await db.query('DELETE FROM public.sent_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[sourceId,auth.user.id]).catch(()=>{});
+    await releaseTokenReservation(db,reservation.id,'sms_delivery_failed').catch(()=>{});
     throw error;
   }
 
-  // Phase 2: after successful delivery, add the 29-cent Stripe invoice item
-  // (unless this is the complimentary first send) and consume the
-  // reservation. A transient Stripe error must never resend the SMS.
-  let billingPending = false;
-  let invoiceItemId = null;
-  await db.query('BEGIN');
-  try {
-    if (!reservation.free) {
-      const billed = await billReservedLoveNoteSend(env, db, auth.user.id, sourceId, 1);
-      invoiceItemId = billed?.invoiceItemId || null;
-    }
-    await consumeLoveNoteReservation(db, auth.user.id, sourceId);
-    await db.query('COMMIT');
-  } catch (billingError) {
-    await db.query('ROLLBACK').catch(() => null);
-    billingPending = true;
-    console.error('Delivered immediate Love Note billing pending', {
-      sourceId,
-      userId: auth.user.id,
-      message: billingError?.message,
-    });
-  }
+  await consumeTokenReservation(db,reservation.id);
+  const providerCostMicros=twilio?.price==null?null:Math.round(Math.abs(Number(twilio.price))*1000000);
+  await recordCostEvent(db,env,{
+    userId:auth.user.id,featureCode:'love_note_send',provider:'twilio',providerProduct:'programmable_sms',
+    providerRequestId:twilio?.messageId||null,
+    walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+    inputCharacters:countCharacters(content),
+    outputCharacters:countCharacters(twilio?.body||`${title}\n\n${content}\n\n❤️ One2OneLove`),
+    providerOutputUnits:Number(twilio?.numSegments||0),
+    providerCostMicros,
+    customerTokensCharged:Number(reservation.tokens||0),
+    metadata:{source_id:sourceId,request_id:requestId,recipient_country_hint:recipientPhone.slice(0,4),twilio_status:twilio?.status||null,twilio_price_unit:twilio?.priceUnit||'USD',cost_pending:providerCostMicros==null},
+  }).catch(error=>console.error('Love Note cost telemetry failed',error));
+  maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Love Note Auto-Replenish check failed',error));
 
   return json({
-    ok: true,
-    note: {
-      id: sourceId,
-      note_title: title,
-      note_content: content,
-      recipient_type: 'sms',
-      recipient_identifier: recipientPhone,
-    },
-    billing: {
-      free: reservation.free === true,
-      amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
-      invoiceItemId,
-      billingPending,
-    },
-    usage: await usageForDate(db, auth.user.id, quotaDate),
-  }, 201);
+    ok:true,
+    note:{id:sourceId,note_title:title,note_content:content,recipient_type:'sms',recipient_identifier:recipientPhone},
+    delivery:{provider:'twilio',messageId:twilio?.messageId||null,status:twilio?.status||null},
+    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
+    usage:await usageForDate(db,auth.user.id,quotaDate),
+  },201);
 }
 async function postScheduled(db, env, auth, body) {
-  const title = cleanText(body.note_title, 250, true);
-  const content = validateLoveNoteBody(body.note_content);
-  const scheduledDate = cleanText(body.scheduled_date, 10, true);
-  const scheduledTime = cleanText(body.scheduled_time, 8, true);
-  const scheduledTimezone = cleanText(body.scheduled_timezone || 'UTC', 100, true);
-  const rawPhone = cleanText(body.recipient_phone, 100, true);
-  const recipientPhone = String(rawPhone || '').replace(/[\s().-]/g, '');
-  const deliveryMethod = cleanText(body.delivery_method || 'sms', 20, true);
-  const language = cleanText(body.note_language || 'en', 10, true);
-  if (!validDateText(scheduledDate)) return fail('Invalid scheduled date.');
-  if (deliveryMethod !== 'sms') return fail('Only scheduled SMS delivery is enabled for this launch.', 400, 'unsupported_delivery_method');
-  if (!/^\+[1-9]\d{7,14}$/.test(recipientPhone)) return fail('Enter a valid phone number with country code.', 400, 'invalid_phone');
-  if (!scheduledSmsReady(env)) return fail('One2OneLove SMS delivery is not available yet.', 503, 'scheduled_sms_not_ready');
-  const zone = await db.query(`SELECT 1 FROM pg_timezone_names WHERE name=$1 LIMIT 1`, [scheduledTimezone]);
-  if (!zone.rowCount) return fail('Invalid scheduled_timezone.');
+  const title=cleanText(body.note_title,250,true);
+  const content=validateLoveNoteBody(body.note_content);
+  const scheduledDate=cleanText(body.scheduled_date,10,true);
+  const scheduledTime=cleanText(body.scheduled_time,8,true);
+  const scheduledTimezone=cleanText(body.scheduled_timezone||'UTC',100,true);
+  const rawPhone=cleanText(body.recipient_phone,100,true);
+  const recipientPhone=String(rawPhone||'').replace(/[\s().-]/g,'');
+  const deliveryMethod=cleanText(body.delivery_method||'sms',20,true);
+  const language=cleanText(body.note_language||'en',10,true);
+  if(!validDateText(scheduledDate))return fail('Invalid scheduled date.');
+  if(deliveryMethod!=='sms')return fail('Only scheduled SMS delivery is enabled for this launch.',400,'unsupported_delivery_method');
+  if(!/^\+[1-9]\d{7,14}$/.test(recipientPhone))return fail('Enter a valid phone number with country code.',400,'invalid_phone');
+  if(!scheduledSmsReady(env))return fail('One2OneLove SMS delivery is not available yet.',503,'scheduled_sms_not_ready');
+  const zone=await db.query('SELECT 1 FROM pg_timezone_names WHERE name=$1 LIMIT 1',[scheduledTimezone]);
+  if(!zone.rowCount)return fail('Invalid scheduled_timezone.');
 
-  await db.query('BEGIN');
-  try {
-    const result = await db.query(
-      `INSERT INTO public.scheduled_love_notes
-        (user_id,note_title,note_content,scheduled_date,scheduled_time,scheduled_timezone,
-         recipient_phone,delivery_method,note_language,status)
-       VALUES($1::uuid,$2,$3,$4::date,$5::time,$6,$7,$8,$9,'scheduled')
-       RETURNING id,note_title,note_content,scheduled_date,scheduled_time,scheduled_timezone,
-                 recipient_phone,delivery_method,note_language,status,created_at,updated_at`,
-      [auth.user.id, title, content, scheduledDate, scheduledTime, scheduledTimezone,
-       recipientPhone, deliveryMethod, language],
-    );
-    const reservation = await reserveLoveNoteSend(
-      db,
-      auth.user.id,
-      'scheduled',
-      result.rows[0].id,
-      scheduledDate,
-      'reserved',
-    );
-    await db.query('COMMIT');
-    return json({
-      ok: true,
-      note: result.rows[0],
-      billing: {
-        free: reservation.free === true,
-        amountCents: reservation.free ? 0 : LOVE_NOTE_SEND_PRICE_CENTS,
-        firstMembershipSendFree: true,
-        firstSendFree: true,
-        additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
-      },
-    }, 201);
-  } catch (error) {
-    await db.query('ROLLBACK');
+  const result=await db.query(
+    `INSERT INTO public.scheduled_love_notes
+      (user_id,note_title,note_content,scheduled_date,scheduled_time,scheduled_timezone,
+       recipient_phone,delivery_method,note_language,status)
+     VALUES($1::uuid,$2,$3,$4::date,$5::time,$6,$7,$8,$9,'scheduled')
+     RETURNING id,note_title,note_content,scheduled_date,scheduled_time,scheduled_timezone,
+               recipient_phone,delivery_method,note_language,status,created_at,updated_at`,
+    [auth.user.id,title,content,scheduledDate,scheduledTime,scheduledTimezone,recipientPhone,deliveryMethod,language],
+  );
+  const note=result.rows[0];
+  try{
+    const reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
+      idempotencyKey:`love_note_scheduled:${note.id}`,
+      metadata:{scheduled_note_id:note.id,scheduled_date:scheduledDate,recipient_type:'sms'},
+    });
+    return json({ok:true,note,tokens:{reserved:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+  }catch(error){
+    await db.query('DELETE FROM public.scheduled_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[note.id,auth.user.id]).catch(()=>{});
     throw error;
   }
 }
 async function cancelScheduled(db, auth, noteId) {
-  await db.query('BEGIN');
-  try {
-    const note = await db.query(
-      `SELECT id,status FROM public.scheduled_love_notes
-        WHERE id=$1::uuid AND user_id=$2::uuid FOR UPDATE`,
-      [noteId, auth.user.id],
-    );
-    if (!note.rows[0] || !['scheduled','failed'].includes(note.rows[0].status)) {
-      await db.query('ROLLBACK');
-      return fail('Scheduled note not found or cannot be cancelled.', 404, 'not_found');
-    }
-
-    await releaseLoveNoteReservation(db, auth.user.id, noteId);
-    const updated = await db.query(
-      `UPDATE public.scheduled_love_notes SET status='cancelled',updated_at=now()
-        WHERE id=$1::uuid AND user_id=$2::uuid RETURNING id,status,updated_at`,
-      [noteId, auth.user.id],
-    );
-    await db.query('COMMIT');
-    return json({ ok: true, note: updated.rows[0] });
-  } catch (error) {
-    await db.query('ROLLBACK');
-    throw error;
-  }
+  const note=(await db.query(
+    `SELECT id,status FROM public.scheduled_love_notes
+      WHERE id=$1::uuid AND user_id=$2::uuid LIMIT 1`,
+    [noteId,auth.user.id],
+  )).rows[0];
+  if(!note||!['scheduled','failed'].includes(note.status))return fail('Scheduled note not found or cannot be cancelled.',404,'not_found');
+  const reservation=(await db.query(
+    'SELECT id FROM public.o2ol_token_reservations WHERE idempotency_key=$1 LIMIT 1',
+    [`love_note_scheduled:${noteId}`],
+  )).rows[0];
+  if(reservation?.id)await releaseTokenReservation(db,reservation.id,'scheduled_note_cancelled');
+  const updated=(await db.query(
+    `UPDATE public.scheduled_love_notes SET status='cancelled',updated_at=now()
+      WHERE id=$1::uuid AND user_id=$2::uuid RETURNING id,status,updated_at`,
+    [noteId,auth.user.id],
+  )).rows[0];
+  return json({ok:true,note:updated});
 }
 
 export async function handleLoveNoteEntitlementRequest(request, env, url) {
@@ -474,11 +397,9 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
           ok: true,
           delivery: {
             ...scheduledSmsReadiness(env),
-            firstMembershipSendFree: true,
-            firstSendFree: true,
-            additionalSendPriceCents: LOVE_NOTE_SEND_PRICE_CENTS,
-            customNoteMaxCharacters: CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
-            foundingPeriodSendsAllowed: true,
+            tokenMode:true,
+            tokenFeatureCode:'love_note_send',
+            customNoteMaxCharacters:CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
           },
         });
       }
@@ -500,7 +421,11 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
   } catch (error) {
     console.error('Love Note entitlement error:', error?.message || error);
     return fail(error?.message || 'Unable to manage Love Note sending.', error?.status || 500, error?.code || 'love_note_entitlement_error', {
-      usage: error?.usage,
+      usage:error?.usage,
+      balance:error?.balance,
+      required:error?.required,
+      featureCode:error?.featureCode,
+      featureLabel:error?.featureLabel,
     });
   }
 }
