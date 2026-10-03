@@ -18,6 +18,20 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      - name: Verify Production schema was prepared
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/o2ol-production-schema-prepared
+          grep -Fx 'o2ol-open-house-schema-v1' .github/o2ol-production-schema-prepared >/dev/null
+
+      - name: Verify Production app tree matches locked certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/restore/locked-o2ol-open-house-reconciled-20261003:refs/remotes/origin/o2ol-locked-candidate
+          git diff --exit-code origin/o2ol-locked-candidate -- . ':(exclude).github/**'
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -30,6 +44,8 @@ jobs:
           grep -A6 -F "on:" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
           ! grep -A8 -F "paths:" .github/workflows/deploy-o2ol-production-neon.yml | grep -F ".github/workflows/deploy-o2ol-production-neon.yml" >/dev/null
           grep -F ".github/deploy-o2ol-production-neon-trigger" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "Require verified Production schema preparation" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
+          grep -F "o2ol-open-house-schema-v1" .github/workflows/deploy-o2ol-production-neon.yml >/dev/null
 
       - name: Build Production candidate
         shell: bash
