@@ -10,6 +10,7 @@ const TABS=[
   ['overview','Overview',Gauge],
   ['wallets','Wallets',WalletCards],
   ['economics','Usage & Costs',BarChart3],
+  ['burn','Package Burn Tests',Gauge],
   ['pricing','Pricing & Packages',Coins],
   ['founders','Founders',Gift],
   ['legacy','Legacy Reconciliation',History],
@@ -62,6 +63,30 @@ export default function TokenSystemDashboard(){
   const founderSummary=data?.founderSummary||{};
   const legacy=data?.legacySummary||{};
   const system=data?.systemCounts||{};
+
+  const burnRows=useMemo(()=>{
+    const packages=data?.packages||[];
+    const prices=(data?.featurePrices||[]).filter(row=>row.active&&Number(row.token_cost)>0);
+    return packages.filter(pkg=>pkg.active).map(pkg=>({
+      ...pkg,
+      featureBurn:prices.map(price=>({
+        feature_code:price.feature_code,
+        label:price.label,
+        pricing_unit:price.pricing_unit,
+        token_cost:Number(price.token_cost||0),
+        full_uses:Math.floor(Number(pkg.tokens||0)/Math.max(1,Number(price.token_cost||0))),
+        remainder:Number(pkg.tokens||0)%Math.max(1,Number(price.token_cost||0)),
+      })),
+    }));
+  },[data?.packages,data?.featurePrices]);
+
+  const packageCalibration=useMemo(()=>{
+    const rows=data?.calibrations||[];
+    return rows.filter(row=>row.package_code).map(row=>({
+      ...row,
+      burned:Math.max(0,Number(row.starting_balance||0)-Number((row.ending_balance??row.starting_balance)||0)),
+    }));
+  },[data?.calibrations]);
 
   const filteredWallets=useMemo(()=>{
     const q=query.trim().toLowerCase();
@@ -177,6 +202,37 @@ export default function TokenSystemDashboard(){
         <Panel title="Calibration Sessions" subtitle="Admin calibration sessions are separated from member economics so testing cannot contaminate live usage numbers.">
           {(data?.calibrations||[]).length?<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data.calibrations.map(row=><div key={row.id} className="rounded-xl bg-slate-50 p-4"><div className="flex justify-between gap-2"><div><div className="font-black">{row.feature_code}</div><div className="text-xs text-slate-400">{row.email||row.user_id}</div></div><Badge tone={row.ended_at?'green':'amber'}>{row.ended_at?'Complete':'Running'}</Badge></div><div className="mt-3 grid grid-cols-3 gap-2 text-xs"><div>Events<br/><strong>{n(row.cost_events)}</strong></div><div>Tokens<br/><strong>{n(row.customer_tokens_charged)}</strong></div><div>Cost<br/><strong>{money(Number(row.provider_cost_micros||0)/1000000)}</strong></div></div><div className="mt-3 text-xs text-slate-400">{dt(row.started_at)}</div></div>)}</div>:<Empty>No calibration sessions yet.</Empty>}
         </Panel>
+      </div>}
+
+      {tab==='burn'&&<div className="space-y-6 text-slate-900">
+        <Panel title="Package Burn Test Matrix" subtitle="Before you buy/test each package, this shows the maximum full metered uses at current calibration prices. It updates automatically when Token pricing changes.">
+          {burnRows.length?<div className="grid gap-4 xl:grid-cols-3">{burnRows.map(pkg=><div key={pkg.code} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div className="flex items-start justify-between gap-3"><div><div className="text-xl font-black">{pkg.label}</div><div className="mt-1 font-mono text-xs text-slate-400">{pkg.code}</div></div><div className="text-right"><div className="text-2xl font-black text-violet-700">{money(Number(pkg.amount_cents)/100)}</div><div className="text-xs font-bold text-amber-700">{n(pkg.tokens)} Tokens</div></div></div>
+            <div className="mt-4 space-y-2">{pkg.featureBurn.map(row=><div key={row.feature_code} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
+              <div><div className="text-sm font-bold">{row.label}</div><div className="text-xs text-slate-400">{n(row.token_cost)} Token{row.token_cost===1?'':'s'} / {row.pricing_unit}</div></div>
+              <div className="text-right"><div className="text-lg font-black">{n(row.full_uses)}</div><div className="text-[11px] text-slate-400">full uses{row.remainder?' + '+row.remainder+' Token'+(row.remainder===1?'':'s')+' left':''}</div></div>
+            </div>)}</div>
+          </div>)}</div>:<Empty>No active Token packages are configured.</Empty>}
+        </Panel>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <Panel title="Actual Package Burn Sessions" subtitle="Real calibration sessions tied to a package. This is where the $4.99 → $9.99 → $19.99 burn experiment becomes measurable rather than theoretical.">
+            {packageCalibration.length?<div className="space-y-3">{packageCalibration.map(row=><div key={row.id} className="rounded-xl border border-slate-200 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-black">{row.package_code} · {row.feature_code}</div><div className="text-xs text-slate-400">{row.email||row.user_id}</div></div><Badge tone={row.ended_at?'green':'amber'}>{row.ended_at?'Complete':'Running'}</Badge></div>
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs"><div>Start<br/><strong>{n(row.starting_balance)}</strong></div><div>End<br/><strong>{row.ending_balance==null?'—':n(row.ending_balance)}</strong></div><div>Burned<br/><strong className="text-amber-700">{row.ending_balance==null?'—':n(row.burned)}</strong></div><div>Provider Cost<br/><strong>{money(Number(row.provider_cost_micros||0)/1000000)}</strong></div></div>
+              <div className="mt-3 text-xs text-slate-400">{dt(row.started_at)}{row.ended_at?' → '+dt(row.ended_at):''}</div>
+            </div>)}</div>:<Empty>No package-linked burn session has been completed yet. The dashboard is ready to record them once testing begins.</Empty>}
+          </Panel>
+
+          <Panel title="Calibration Guardrails" subtitle="What to compare before we make Token prices final.">
+            <div className="space-y-3 text-sm leading-6 text-slate-600">
+              <div className="rounded-xl bg-slate-50 p-4"><strong className="text-slate-900">1. Package endurance.</strong> Measure how many normal conversations, reports, Love Notes, and game sessions actually consume each package.</div>
+              <div className="rounded-xl bg-slate-50 p-4"><strong className="text-slate-900">2. Provider expense.</strong> Compare actual AI/SMS/provider cost from the same sessions against what the customer paid for the package.</div>
+              <div className="rounded-xl bg-slate-50 p-4"><strong className="text-slate-900">3. User value.</strong> A package should last long enough to feel useful without allowing heavy use to become loss-making.</div>
+              <div className="rounded-xl bg-amber-50 p-4 text-amber-900"><strong>Pricing remains calibration-only.</strong> Nothing on this page declares the current Token quantities or feature charges final.</div>
+            </div>
+          </Panel>
+        </div>
       </div>}
 
       {tab==='pricing'&&<div className="grid gap-6 xl:grid-cols-2 text-slate-900">
