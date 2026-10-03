@@ -69,6 +69,10 @@ export default function TokenSystemDashboard(){
   const legacy=data?.legacySummary||{};
   const system=data?.systemCounts||{};
   const readiness=data?.environmentReadiness||{};
+  const coreEnvironmentReady=Boolean(readiness.hyperdrive&&readiness.mediaR2&&readiness.assets&&readiness.neonAuth&&readiness.prelaunch&&readiness.scheduledSmsDisabled);
+  const paymentProviderReady=Boolean(readiness.stripeSecret&&readiness.stripeWebhook);
+  const smsProviderReady=Boolean(readiness.twilioAccount&&readiness.twilioAuth&&readiness.twilioVerify);
+  const aiProviderReady=Boolean(readiness.openai);
   const readinessItems=[
     ['Hyperdrive → Token Neon',readiness.hyperdrive],
     ['Token Media R2',readiness.mediaR2],
@@ -378,6 +382,13 @@ export default function TokenSystemDashboard(){
           <Stat icon={History} label="Conversion Quotes" value={n(system.conversion_quotes)} tone="slate"/>
           <Stat icon={Gamepad2} label="Game Passes" value={n(system.game_passes)} tone="emerald"/>
         </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat icon={Database} label="Core Token Environment" value={coreEnvironmentReady?'READY':'NOT READY'} note="Database, Auth, R2, assets and Prelaunch isolation" tone={coreEnvironmentReady?'emerald':'amber'}/>
+          <Stat icon={Sparkles} label="AI Provider" value={aiProviderReady?'READY':'FAIL-CLOSED'} note="Bianca / Amora metered AI" tone={aiProviderReady?'emerald':'slate'}/>
+          <Stat icon={CreditCard} label="Payments" value={paymentProviderReady?'READY':'FAIL-CLOSED'} note="Token checkout and Auto-Replenish" tone={paymentProviderReady?'emerald':'slate'}/>
+          <Stat icon={Activity} label="SMS Provider" value={smsProviderReady?'READY':'FAIL-CLOSED'} note="Love Note SMS and phone verification" tone={smsProviderReady?'emerald':'slate'}/>
+        </div>
+
         <Panel title="Isolated Token Environment Readiness" subtitle="Presence-only status. No credential values are returned to the browser.">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {readinessItems.map(([label,ready])=><div key={label} className={"rounded-xl border p-4 "+(ready?"border-emerald-200 bg-emerald-50":"border-amber-200 bg-amber-50")}>
