@@ -4,7 +4,7 @@ import {
   Activity,ArrowLeft,BarChart3,Coins,CreditCard,Database,Gamepad2,Gauge,Gift,
   History,Loader2,RefreshCw,ShieldCheck,Sparkles,Users,WalletCards
 } from 'lucide-react';
-import {getTokenSystemDashboard,adjustTokenWallet,startTokenCalibration,endTokenCalibration} from '@/lib/tokenAdminService';
+import {getTokenSystemDashboard,adjustTokenWallet,startTokenCalibration,endTokenCalibration,loadTokenCalibrationPackage} from '@/lib/tokenAdminService';
 
 const TABS=[
   ['overview','Overview',Gauge],
@@ -145,6 +145,17 @@ export default function TokenSystemDashboard(){
     finally{setBusy('');}
   };
 
+  const loadTestPackage=async()=>{
+    if(!calUser||!calPackage){window.alert('Choose a non-Admin member/test account and a calibration Token package first.');return;}
+    if(!window.confirm('Load this calibration package into the selected test wallet? The wallet must currently be at zero. This is an audited test grant and is NOT recorded as revenue.'))return;
+    setCalBusy('load');
+    try{
+      await loadTokenCalibrationPackage({userId:calUser,packageCode:calPackage});
+      await load(true);
+    }catch(err){window.alert(err?.message||'Unable to load this calibration package.');}
+    finally{setCalBusy('');}
+  };
+
   const startBurnTest=async()=>{
     if(!calUser||!calPackage){window.alert('Choose a non-Admin member/test account and a Token package first.');return;}
     const notes=window.prompt('Optional test notes. Example: Starter package burn test — normal Bianca conversation mix.','')??'';
@@ -274,9 +285,12 @@ export default function TokenSystemDashboard(){
               <option value="all">All metered features</option>
               {(data?.featurePrices||[]).filter(row=>row.active).map(row=><option key={row.feature_code} value={row.feature_code}>{row.label}</option>)}
             </select>
-            <button onClick={startBurnTest} disabled={calBusy==='start'||!calUser||!calPackage} className="rounded-xl bg-violet-700 px-5 py-3 text-sm font-black text-white disabled:opacity-40">{calBusy==='start'?'Starting…':'Start Burn Test'}</button>
+            <div className="flex gap-2">
+              <button onClick={loadTestPackage} disabled={calBusy==='load'||!calUser||!calPackage} className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-black text-violet-800 disabled:opacity-40">{calBusy==='load'?'Loading…':'Load Test Package'}</button>
+              <button onClick={startBurnTest} disabled={calBusy==='start'||!calUser||!calPackage} className="rounded-xl bg-violet-700 px-5 py-3 text-sm font-black text-white disabled:opacity-40">{calBusy==='start'?'Starting…':'Start Burn Test'}</button>
+            </div>
           </div>
-          <div className="mt-3 text-xs text-slate-500">This control does not add, remove, or purchase Tokens. It only opens a measurement session around the account's real Token activity.</div>
+          <div className="mt-3 text-xs text-slate-500"><strong>Load Test Package</strong> adds exactly the selected calibration package as an audited non-revenue grant and requires a zero wallet. <strong>Start Burn Test</strong> then opens the measurement session around real Token activity.</div>
         </Panel>
         <Panel title="Projected Package Economics" subtitle="Uses the actual 30-day average provider cost per O2OL Token. This is provider-cost contribution only—not net profit and not a final price recommendation.">
           {Number(summary.tokens_charged_30d)>0?<div className="grid gap-4 xl:grid-cols-3">{projectedPackageEconomics.map(pkg=><div key={pkg.code} className="rounded-2xl border border-slate-200 bg-white p-5">
