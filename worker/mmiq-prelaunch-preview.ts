@@ -97,12 +97,17 @@ function prelaunchFoundingOffer() {
     offer:{
       available:true,
       existing:false,
-      foundingNumber:1,
-      cohort:'first100',
-      plan:'Exclusive',
-      freeDays:30,
-      recurringPriceCents:1599,
-      regularPriceCents:1999,
+      foundingLimit:200,
+      reservedCount:0,
+      remaining:200,
+      foundingNumber:null,
+      cohort:null,
+      status:null,
+      badgeRetained:true,
+      tokenBenefit:null,
+      economicsPendingCalibration:true,
+      recurringSubscriptionOffer:false,
+      accessModel:'free_tokens',
     },
   }, {
     headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' },
@@ -139,9 +144,12 @@ async function prelaunchProfile(request: Request, env: { NEON_AUTH_BASE_URL: str
       is_verified:true,
       phone_verification_required:false,
       phone_number_verified:true,
-      subscription_plan:'Premiere',
-      subscription_status:'trial',
+      subscription_plan:'Free',
+      subscription_price:0,
+      subscription_status:'inactive',
       stripe_subscription_id:null,
+      token_balance:0,
+      access_model:'free_tokens',
       prelaunch_profile:true,
     }
   }, {
@@ -188,11 +196,14 @@ export default {
     if (url.pathname === '/api/billing/config' && request.method === 'GET') {
       return Response.json({
         ok:true,preview:true,readOnly:true,
-        paid_checkout_ready:false,webhook_ready:false,
-        plans:['Premiere','Exclusive'],
-        founding_limit:200,founding_free_days:30,
-        regular_prices_cents:{Premiere:999,Exclusive:1999},
-        love_note_sms_price_cents:29,
+        access_model:'free_tokens',
+        free_account:true,
+        recurring_checkout_ready:false,
+        legacy_subscription_mutations_locked:true,
+        founding_limit:200,
+        founding_economics_pending_calibration:true,
+        token_wallet:'/api/tokens/wallet',
+        token_checkout:'/api/tokens/checkout',
       }, { headers:{ 'cache-control':'no-store','x-content-type-options':'nosniff' } });
     }
 
