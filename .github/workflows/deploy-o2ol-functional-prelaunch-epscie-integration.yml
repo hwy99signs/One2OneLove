@@ -1,5 +1,5 @@
 name: Deploy O2OL EPSCIE Functional Prelaunch Integration
-# Retry after retiring temporary EPSCIE test cron slot
+# Retry after explicitly deleting temporary EPSCIE test cron schedule
 
 on:
   push:
