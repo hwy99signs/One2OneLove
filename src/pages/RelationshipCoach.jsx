@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, Send, Sparkles, Plus, MessageCircle, Loader2, Trash2, ArrowLeft } from "lucide-react";
+import { Heart, Send, Sparkles, Plus, MessageCircle, Loader2, Trash2, ArrowLeft, Coins } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/Layout";
 import { toast } from "sonner";
@@ -17,53 +17,54 @@ import {
   listCoachMessages,
   sendCoachMessage,
 } from "@/lib/aiService";
+import { getTokenWallet } from "@/lib/tokenService";
 
 const translations = {
   en: {
-    title: "AI Relationship Coach", subtitle: "Get personalized advice, daily tips, and guidance to strengthen your relationship",
+    title: "Amora — Relationship Coach", subtitle: "Talk naturally with Amora about communication, conflict, boundaries, connection, expectations, or whatever is on your mind.",
     newChat: "New Conversation", yourConversations: "Your Conversations", startNewConversation: "Start New Conversation",
     typeMessage: "Type your message...", send: "Send", emptyState: "No conversations yet",
-    emptyStateDesc: "Start a new conversation with your AI relationship coach to get personalized advice!",
+    emptyStateDesc: "Start a conversation with Amora for practical relationship reflection and guidance.",
     quickPrompts: "Quick Prompts", dailyTip: "Give me a daily relationship tip", dateIdea: "Suggest a creative date idea",
     communicationHelp: "Help us communicate better", conflictResolution: "How to resolve conflicts peacefully",
     keepSparkAlive: "Tips to keep the spark alive", deleteConversation: "Delete conversation",
     conversationDeleted: "Conversation deleted", backToSupport: "Back to Support",
   },
   es: {
-    title: "Coach de Relaciones IA", subtitle: "Obtén consejos personalizados, tips diarios y orientación para fortalecer tu relación",
+    title: "Amora — Coach de Relaciones", subtitle: "Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.",
     newChat: "Nueva Conversación", yourConversations: "Tus Conversaciones", startNewConversation: "Iniciar Nueva Conversación",
     typeMessage: "Escribe tu mensaje...", send: "Enviar", emptyState: "Aún no hay conversaciones",
-    emptyStateDesc: "¡Inicia una nueva conversación con tu coach de relaciones IA para obtener consejos personalizados!",
+    emptyStateDesc: "Inicia una conversación con Amora para obtener reflexión y orientación práctica sobre relaciones.",
     quickPrompts: "Prompts Rápidos", dailyTip: "Dame un consejo diario para relaciones", dateIdea: "Sugiere una idea creativa de cita",
     communicationHelp: "Ayúdanos a comunicarnos mejor", conflictResolution: "Cómo resolver conflictos pacíficamente",
     keepSparkAlive: "Tips para mantener viva la chispa", deleteConversation: "Eliminar conversación",
     conversationDeleted: "Conversación eliminada", backToSupport: "Volver al Soporte",
   },
   fr: {
-    title: "Coach de Relations IA", subtitle: "Obtenez des conseils personnalisés, des astuces quotidiennes et des conseils pour renforcer votre relation",
+    title: "Amora — Coach Relationnelle", subtitle: "Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.",
     newChat: "Nouvelle Conversation", yourConversations: "Vos Conversations", startNewConversation: "Démarrer Nouvelle Conversation",
     typeMessage: "Tapez votre message...", send: "Envoyer", emptyState: "Pas encore de conversations",
-    emptyStateDesc: "Démarrez une nouvelle conversation avec votre coach de relations IA pour obtenir des conseils personnalisés!",
+    emptyStateDesc: "Commencez une conversation avec Amora pour une réflexion et des conseils relationnels pratiques.",
     quickPrompts: "Prompts Rapides", dailyTip: "Donnez-moi un conseil relationnel quotidien", dateIdea: "Suggérez une idée de rendez-vous créative",
     communicationHelp: "Aidez-nous à mieux communiquer", conflictResolution: "Comment résoudre les conflits pacifiquement",
     keepSparkAlive: "Conseils pour garder l'étincelle vivante", deleteConversation: "Supprimer la conversation",
     conversationDeleted: "Conversation supprimée", backToSupport: "Retour au Support",
   },
   it: {
-    title: "Coach di Relazioni IA", subtitle: "Ottieni consigli personalizzati, suggerimenti quotidiani e orientamento per rafforzare la tua relazione",
+    title: "Amora — Coach Relazionale", subtitle: "Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.",
     newChat: "Nuova Conversazione", yourConversations: "Le Tue Conversazioni", startNewConversation: "Inizia Nuova Conversazione",
     typeMessage: "Scrivi il tuo messaggio...", send: "Invia", emptyState: "Nessuna conversazione ancora",
-    emptyStateDesc: "Inizia una nuova conversazione con il tuo coach di relazioni IA per ottenere consigli personalizzati!",
+    emptyStateDesc: "Inizia una conversazione con Amora per una riflessione e una guida pratica sulle relazioni.",
     quickPrompts: "Prompt Rapidi", dailyTip: "Dammi un consiglio quotidiano per relazioni", dateIdea: "Suggerisci un'idea creativa per appuntamento",
     communicationHelp: "Aiutaci a comunicare meglio", conflictResolution: "Come risolvere i conflitti pacificamente",
     keepSparkAlive: "Consigli per mantenere viva la scintilla", deleteConversation: "Elimina conversazione",
     conversationDeleted: "Conversazione eliminata", backToSupport: "Torna al Supporto",
   },
   de: {
-    title: "KI-Beziehungscoach", subtitle: "Erhalten Sie personalisierte Ratschläge, tägliche Tipps und Anleitung zur Stärkung Ihrer Beziehung",
+    title: "Amora — Beziehungscoach", subtitle: "Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.",
     newChat: "Neues Gespräch", yourConversations: "Ihre Gespräche", startNewConversation: "Neues Gespräch Starten",
     typeMessage: "Geben Sie Ihre Nachricht ein...", send: "Senden", emptyState: "Noch keine Gespräche",
-    emptyStateDesc: "Starten Sie ein neues Gespräch mit Ihrem KI-Beziehungscoach, um personalisierte Ratschläge zu erhalten!",
+    emptyStateDesc: "Beginne ein Gespräch mit Amora für praktische Beziehungsreflexion und Orientierung.",
     quickPrompts: "Schnelle Prompts", dailyTip: "Gib mir einen täglichen Beziehungstipp", dateIdea: "Schlage eine kreative Date-Idee vor",
     communicationHelp: "Hilf uns besser zu kommunizieren", conflictResolution: "Wie man Konflikte friedlich löst",
     keepSparkAlive: "Tipps um den Funken am Leben zu halten", deleteConversation: "Gespräch löschen",
@@ -80,7 +81,16 @@ export default function RelationshipCoach() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
+  const { data: tokenWallet } = useQuery({
+    queryKey: ['o2olTokenWallet', user?.id],
+    queryFn: getTokenWallet,
+    enabled: !!user?.id,
+    staleTime: 10 * 1000,
+  });
+  const tokenBalance = Number(tokenWallet?.wallet?.balance || 0);
+  const amoraTokenCost = Number(tokenWallet?.featurePrices?.find(item => item.feature_code === 'amora_response')?.token_cost || 0);
 
   const { data: conversations = [] } = useQuery({
     queryKey: ['coach-conversations', user?.id],
@@ -152,7 +162,7 @@ export default function RelationshipCoach() {
     } catch (error) {
       setMessages(prev => prev.filter(message => !String(message.id).startsWith('local-')));
       setInputMessage(text);
-      toast.error(error?.message || 'Unable to reach the AI Relationship Coach.');
+      toast.error(error?.message || 'Unable to reach Amora.');
     } finally {
       setIsSending(false);
     }
@@ -166,6 +176,24 @@ export default function RelationshipCoach() {
     { id: 5, text: t.keepSparkAlive, icon: Sparkles },
   ];
 
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-purple-50 px-4 py-12">
+        <section className="mx-auto max-w-3xl rounded-[2rem] border border-rose-100 bg-white p-7 text-center shadow-xl sm:p-9">
+          <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="mx-auto h-auto w-full max-w-[360px] rounded-3xl shadow-xl" />
+          <div className="mt-6 text-xs font-black uppercase tracking-[.22em] text-rose-600">MEET AMORA</div>
+          <h1 className="mt-2 text-4xl font-black text-slate-900">{t.title}</h1>
+          <p className="mx-auto mt-4 max-w-2xl text-lg leading-7 text-slate-600">{t.subtitle}</p>
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950"><Coins className="mx-auto mb-2 h-5 w-5"/>Creating an account and viewing Amora are free. Each Amora response uses O2OL Tokens.</div>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach" className="rounded-full border border-slate-300 bg-white px-6 py-3 font-black text-slate-800">Sign In</Link>
+            <Link to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black text-white">Create FREE O2OL Account</Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -175,10 +203,15 @@ export default function RelationshipCoach() {
           </Link>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mb-6 shadow-xl"><Sparkles className="w-10 h-10 text-white" /></div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4 font-dancing">{t.title}</h1>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 text-center">
+          <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="mx-auto h-auto w-full max-w-[260px] rounded-3xl shadow-xl" />
+          <div className="mt-5 text-xs font-black uppercase tracking-[.22em] text-rose-600">MEET AMORA</div>
+          <h1 className="mt-2 text-5xl font-bold text-gray-900 mb-4 font-dancing">{t.title}</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+          <Link to="/Tokens?return=/RelationshipCoach" className="mx-auto mt-5 flex max-w-sm items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-amber-950 shadow-sm">
+            <span className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>O2OL Tokens</span>
+            <span className="font-black">{tokenBalance} <span className="text-xs font-bold text-amber-700">· {amoraTokenCost || 1}/reply</span></span>
+          </Link>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
