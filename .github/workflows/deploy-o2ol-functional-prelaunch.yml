@@ -146,12 +146,12 @@ jobs:
           set -euo pipefail
           npm ci
           npm run build
-          test -s dist/index.html
-          grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null
-          grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null
-          grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null
-          grep -F 'TOKEN_NOTICE_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null
-          grep -F 'signUpHref' src/pages/SignIn.jsx >/dev/null
+          test -s dist/index.html || { echo "Frontend build output missing." >&2; exit 1; }
+          grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null || { echo "Token wall contract missing." >&2; exit 1; }
+          grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null || { echo "Token Prelaunch environment marker missing." >&2; exit 1; }
+          grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null || { echo "Signup Token-intent notice missing." >&2; exit 1; }
+          grep -F 'TOKEN_NOTICE_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Immediate Token feature notice map missing." >&2; exit 1; }
+          grep -F 'signUpHref' src/pages/SignIn.jsx >/dev/null || { echo "Sign-in to role-selection signup handoff missing." >&2; exit 1; }
           if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
             echo "Bianca signup must pass through Individual / Professional selection." >&2
             exit 1
@@ -160,7 +160,7 @@ jobs:
             echo "Amora signup must pass through Individual / Professional selection." >&2
             exit 1
           fi
-          test "$TOKEN_MEDIA_BUCKET" = "one2onelove-token-prelaunch-media"
+          test "$TOKEN_MEDIA_BUCKET" = "one2onelove-token-prelaunch-media" || { echo "Token Prelaunch R2 bucket name mismatch." >&2; exit 1; }
           if [ "$TOKEN_MEDIA_BUCKET" = "one2onelove-media" ]; then
             echo "Production R2 bucket is forbidden for Token Prelaunch." >&2
             exit 1
