@@ -1,4 +1,4 @@
-import { sendO2OLTelemetry, epscieTelemetryConfigured } from './epscie-telemetry';
+import { sendO2OLTelemetry } from './epscie-telemetry';
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -11,19 +11,34 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function configured(env: any) {
+  return String(env?.O2OL_EPSCIE_ENABLED || '').toLowerCase() === 'true'
+    && Boolean(String(env?.O2OL_EPSCIE_KEY_ID || '').trim())
+    && Boolean(String(env?.O2OL_EPSCIE_SECRET || '').trim());
+}
+
 export default {
   async fetch(_request: Request, env: any): Promise<Response> {
-    return json({
-      ok: true,
-      app: 'one2onelove',
-      mode: 'epscie-prelaunch-connectivity',
-      configured: epscieTelemetryConfigured(env),
-      telemetry_enabled: String(env.O2OL_EPSCIE_ENABLED || '').toLowerCase() === 'true',
-      production_touched: false,
-    });
+    try {
+      return json({
+        ok: true,
+        app: 'one2onelove',
+        mode: 'epscie-prelaunch-connectivity',
+        configured: configured(env),
+        telemetry_enabled: String(env?.O2OL_EPSCIE_ENABLED || '').toLowerCase() === 'true',
+        production_touched: false,
+      });
+    } catch (error) {
+      return json({
+        ok: false,
+        app: 'one2onelove',
+        production_touched: false,
+        error: error instanceof Error ? error.message : String(error),
+      }, 500);
+    }
   },
 
-  async scheduled(_controller: ScheduledController, env: any, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_controller: any, env: any, ctx: any): Promise<void> {
     ctx.waitUntil((async () => {
       try {
         await sendO2OLTelemetry(env);
