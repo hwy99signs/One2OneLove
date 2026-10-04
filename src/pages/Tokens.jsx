@@ -115,7 +115,7 @@ export default function Tokens(){
    <Link to={createPageUrl('Home')} className="mb-5 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-white"><ArrowLeft className="h-4 w-4"/>{t.back}</Link>
    <div className="rounded-[30px] bg-gradient-to-br from-slate-950 via-violet-950 to-fuchsia-950 p-7 text-white shadow-2xl sm:p-10">
     <div className="flex flex-wrap items-center justify-between gap-6">
-     <div><div className="text-xs font-black uppercase tracking-[.2em] text-fuchsia-200">One2OneLove</div><h1 className="mt-2 text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mt-3 max-w-2xl text-white/70">{t.sub}</p></div>
+     <div><div className="text-xs font-black uppercase tracking-[.2em] text-fuchsia-200">One2OneLove</div><h1 className="mt-2 text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mt-3 max-w-2xl text-white/70">{t.sub}</p><div className="mt-4 inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-black text-amber-200">BASE VALUE · 1 TOKEN = $0.10</div></div>
      <div className="min-w-[190px] rounded-3xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur"><div className="text-xs font-black uppercase tracking-wider text-white/60">{t.balance}</div><div className="mt-1 text-5xl font-black">{state?.wallet?.balance||0}</div><div className="mt-1 text-sm text-fuchsia-200">TOKENS</div></div>
     </div>
    </div>
