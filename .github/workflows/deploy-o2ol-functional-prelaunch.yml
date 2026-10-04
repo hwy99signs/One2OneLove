@@ -47,6 +47,20 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Synchronize authoritative Token branch head
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REF_API="https://api.github.com/repos/hwy99signs/One2OneLove/git/ref/heads/prelaunch/o2ol-token-economy-prelaunch-20261003"
+          SOURCE_SHA=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$REF_API" | jq -r '.object.sha')
+          test -n "$SOURCE_SHA"
+          echo "AUTHORITATIVE_TOKEN_SOURCE_SHA=$SOURCE_SHA"
+          git fetch --no-tags --depth=1 origin "$SOURCE_SHA"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+
       - name: Require isolated core infrastructure and report optional providers
         shell: bash
         run: |
