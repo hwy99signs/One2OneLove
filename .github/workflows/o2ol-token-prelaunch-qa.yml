@@ -428,3 +428,5 @@ jobs:
 
       - name: Report QA marker
         run: echo "O2OL_TOKEN_PRELAUNCH_QA=PASS"
+
+# UX routing/token-notice certification trigger 2026-10-04
