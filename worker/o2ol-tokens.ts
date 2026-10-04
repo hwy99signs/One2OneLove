@@ -644,6 +644,86 @@ async function calibrationEnd(db,env,auth,input){
   )).rows[0];
   return {session:ended,summary,providerRefresh};
 }
+
+async function ensureContentUnlockSchema(db){
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.o2ol_token_content_unlocks (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id uuid NOT NULL,
+      feature_code text NOT NULL,
+      content_key text NOT NULL,
+      token_transaction_id uuid NULL,
+      tokens_charged integer NOT NULL DEFAULT 0,
+      metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+      unlocked_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE(user_id, feature_code, content_key)
+    )`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_o2ol_token_content_unlocks_user_feature
+    ON public.o2ol_token_content_unlocks(user_id,feature_code,unlocked_at DESC)`);
+  await db.query(`
+    INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,pricing_unit,active,calibration_only)
+    VALUES
+      ('date_idea_unlock','Date Idea unlock',1,'item',true,true),
+      ('podcast_episode_unlock','Podcast episode unlock',1,'episode',true,true),
+      ('premium_content_unlock','Premium content unlock',1,'item',true,true)
+    ON CONFLICT(feature_code) DO NOTHING`);
+}
+
+async function listContentUnlocks(db,userId,featureCode){
+  await ensureContentUnlockSchema(db);
+  const feature=String(featureCode||'').trim();
+  if(!feature)return [];
+  return (await db.query(
+    `SELECT feature_code,content_key,tokens_charged,unlocked_at,metadata
+       FROM public.o2ol_token_content_unlocks
+      WHERE user_id=$1::uuid AND feature_code=$2
+      ORDER BY unlocked_at DESC`,
+    [userId,feature],
+  )).rows;
+}
+
+async function unlockTokenContent(db,auth,input){
+  await ensureContentUnlockSchema(db);
+  const featureCode=String(input?.featureCode||'').trim();
+  const contentKey=String(input?.contentKey||'').trim().slice(0,180);
+  if(!featureCode||!contentKey)throw Object.assign(new Error('Feature and content key are required.'),{status:400,code:'unlock_target_required'});
+  const allowed=new Set(['date_idea_unlock','podcast_episode_unlock','premium_content_unlock']);
+  if(!allowed.has(featureCode))throw Object.assign(new Error('This content unlock type is not available.'),{status:400,code:'unlock_feature_invalid'});
+
+  const existing=(await db.query(
+    `SELECT feature_code,content_key,tokens_charged,unlocked_at,metadata
+       FROM public.o2ol_token_content_unlocks
+      WHERE user_id=$1::uuid AND feature_code=$2 AND content_key=$3 LIMIT 1`,
+    [auth.user.id,featureCode,contentKey],
+  )).rows[0];
+  if(existing)return {unlock:existing,reused:true,tokens:{charged:0}};
+
+  const idempotencyKey=String(input?.idempotencyKey||`unlock:${featureCode}:${contentKey}:${auth.user.id}`).slice(0,220);
+  const reservation=await reserveTokenCharge(db,auth.user.id,featureCode,{
+    idempotencyKey,
+    metadata:{content_key:contentKey,source:String(input?.source||'content_unlock').slice(0,120)},
+  });
+
+  try{
+    const row=(await db.query(
+      `INSERT INTO public.o2ol_token_content_unlocks
+        (user_id,feature_code,content_key,token_transaction_id,tokens_charged,metadata)
+       VALUES($1::uuid,$2,$3,$4::uuid,$5,$6::jsonb)
+       ON CONFLICT(user_id,feature_code,content_key) DO UPDATE SET content_key=EXCLUDED.content_key
+       RETURNING feature_code,content_key,tokens_charged,unlocked_at,metadata`,
+      [
+        auth.user.id,featureCode,contentKey,reservation.transaction_id||null,
+        Number(reservation.tokens||0),JSON.stringify({source:String(input?.source||'content_unlock').slice(0,120)}),
+      ],
+    )).rows[0];
+    await consumeTokenReservation(db,reservation.id);
+    return {unlock:row,reused:false,tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}};
+  }catch(error){
+    if(reservation?.id)await releaseTokenReservation(db,reservation.id,'content_unlock_failed').catch(()=>{});
+    throw error;
+  }
+}
+
 async function walletPayload(db,userId){
   const state=await ensureTokenWallet(db,userId);
   const activeCalibration=(await db.query(
@@ -678,6 +758,14 @@ export async function handleO2OLTokenRequest(request,env,url){
       await requireVerifiedMember(db,auth);
       if(url.pathname==='/api/tokens/wallet'&&request.method==='GET')return json({ok:true,...await walletPayload(db,auth.user.id)});
       if(url.pathname==='/api/tokens/packages'&&request.method==='GET')return json({ok:true,packages:await tokenPackages(db),featurePrices:await featurePrices(db)});
+      if(url.pathname==='/api/tokens/unlocks'&&request.method==='GET'){
+        const featureCode=url.searchParams.get('featureCode')||'';
+        return json({ok:true,unlocks:await listContentUnlocks(db,auth.user.id,featureCode)});
+      }
+      if(url.pathname==='/api/tokens/unlocks'&&request.method==='POST'){
+        return json({ok:true,...await unlockTokenContent(db,auth,await readJson(request))},201);
+      }
+
       if(url.pathname==='/api/tokens/checkout'&&request.method==='POST')return createCheckout(request,db,env,auth,await readJson(request));
       if(url.pathname==='/api/tokens/checkout/confirm'&&request.method==='POST'){
         const input=await readJson(request);const tx=await confirmCheckout(db,env,auth,input?.sessionId);
