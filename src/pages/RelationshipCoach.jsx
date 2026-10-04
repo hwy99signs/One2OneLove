@@ -28,7 +28,7 @@ const translations = {
     quickPrompts: "Quick Prompts", dailyTip: "Give me a daily relationship tip", dateIdea: "Suggest a creative date idea",
     communicationHelp: "Help us communicate better", conflictResolution: "How to resolve conflicts peacefully",
     keepSparkAlive: "Tips to keep the spark alive", deleteConversation: "Delete conversation",
-    conversationDeleted: "Conversation deleted", backToSupport: "Back to Support", meet:"MEET AMORA", tokenNote:"{t.tokenNote}", signIn:"Sign In", createAccount:"Create FREE O2OL Account", reply:"reply",
+    conversationDeleted: "Conversation deleted", backToSupport: "Back to Support", meet:"MEET AMORA", tokenNote:"Creating an account and viewing Amora are free. Each Amora response uses O2OL Tokens.", signIn:"Sign In", createAccount:"Create FREE O2OL Account", reply:"reply",
   },
   es: {
     title: "Amora — Coach de Relaciones", subtitle: "Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.",
