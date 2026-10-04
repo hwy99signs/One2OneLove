@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, foundingIntent = false }) {
+export default function LaunchRegularUserForm({ onBack, foundingIntent = false, returnTo = '' }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
@@ -214,7 +214,10 @@ export default function LaunchRegularUserForm({ onBack, foundingIntent = false }
               </Button>
             </>
           ) : (
-            <Button type="button" onClick={() => navigate(foundingIntent ? '/SignIn?redirect=%2FTokens%3Ffounding%3D1' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
+            <Button type="button" onClick={() => {
+              const intended = foundingIntent ? '/Tokens?founding=1' : (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/Home');
+              navigate(`/SignIn?source=account-created&redirect=${encodeURIComponent(intended)}`);
+            }} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
           )}
         </CardContent>
       </Card>
