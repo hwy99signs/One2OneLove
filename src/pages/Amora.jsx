@@ -40,7 +40,7 @@ export default function Amora(){
    <img src="/assets/amora-o2ol-portrait.webp" alt="Amora" className="mx-auto w-56 rounded-3xl border border-white/15 shadow-xl"/>
    <p className="mt-6 text-xs font-black uppercase tracking-[.22em] text-rose-200">{t.eyebrow}</p><h1 className="mt-2 text-4xl font-black">{t.title}</h1><p className="mx-auto mt-4 max-w-2xl text-white/75">{t.intro}</p>
    <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200/20 bg-amber-950/25 p-4 text-sm leading-6 text-amber-50"><Coins className="mx-auto mb-2 h-5 w-5"/>{t.tokenNote}</div>
-   <div className="mt-7 flex flex-wrap justify-center gap-3"><Link to="/SignIn?source=amora" className="rounded-full border border-white/30 bg-white/10 px-6 py-3 font-black">{t.signIn}</Link><Link to="/SignUp?source=amora&type=individual" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black">{t.create}</Link></div>
+   <div className="mt-7 flex flex-wrap justify-center gap-3"><Link to="/SignIn?source=amora&token=1&redirect=/Amora" className="rounded-full border border-white/30 bg-white/10 px-6 py-3 font-black">{t.signIn}</Link><Link to="/SignUp?source=amora&token=1&feature=amora&return=/Amora" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black">{t.create}</Link></div>
   </section>
  </main>;
 
