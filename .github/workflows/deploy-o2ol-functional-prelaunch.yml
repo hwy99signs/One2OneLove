@@ -149,10 +149,13 @@ jobs:
           test -s dist/index.html
           grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null
           grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null
-          if grep -REn 'MEDIA\.(put|delete)\(' worker; then
-            echo "R2 write operation detected. Shared media bucket must remain read-only in Prelaunch." >&2
+          test "$TOKEN_MEDIA_BUCKET" = "one2onelove-token-prelaunch-media"
+          if [ "$TOKEN_MEDIA_BUCKET" = "one2onelove-media" ]; then
+            echo "Production R2 bucket is forbidden for Token Prelaunch." >&2
             exit 1
           fi
+          grep -REn 'MEDIA\.(put|delete)\(' worker >/tmp/token-r2-write-sites.txt || true
+          echo "TOKEN_PRELAUNCH_R2_WRITE_SITES=$(wc -l </tmp/token-r2-write-sites.txt | tr -d ' ')"
 
       - name: Generate isolated Wrangler configs
         shell: bash
