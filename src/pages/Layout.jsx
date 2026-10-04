@@ -391,23 +391,25 @@ function LanguageContent({ children, currentPageName }) {
       {/* Header */}
       <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
         <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-3 sm:px-5'} h-[96px] flex items-center justify-between gap-2 sm:gap-5`}>
-          <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className="w-[168px] sm:w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
-            <img 
-              src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
-              alt={isMyMatchIQPage ? 'MyMatchIQ Logo' : 'One2One Love Logo'}
-              width="220"
-              height="88"
-              className={isMyMatchIQPage ? 'h-[72px] w-[168px] sm:w-[220px] object-contain object-left' : 'h-[88px] w-[168px] sm:w-[220px] object-contain object-left'}
-              onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-            />
-          </Link>
-          
-          <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
+          <div className="flex h-[88px] shrink-0 items-center gap-2 sm:gap-3">
+            <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className={`${isMyMatchIQPage ? 'w-[126px] sm:w-[180px]' : 'w-[168px] sm:w-[220px]'} h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center`}>
+              <img 
+                src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
+                alt={isMyMatchIQPage ? 'MyMatchIQ Logo' : 'One2One Love Logo'}
+                width="220"
+                height="88"
+                className={isMyMatchIQPage ? 'h-[68px] w-full object-contain object-left' : 'h-[88px] w-[168px] sm:w-[220px] object-contain object-left'}
+                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+              />
+            </Link>
             {isMyMatchIQPage && (
-              <Link to="/Home" aria-label="One to One Love" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
-                <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] scale-[1.2] object-contain" />
+              <Link to="/Home" aria-label="Return to One2OneLove" title="Return to One2OneLove" className="inline-flex h-12 w-[66px] shrink-0 items-center justify-center rounded-full border border-white/30 bg-white px-1.5 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:h-14 sm:w-[82px] sm:px-2">
+                <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove — return home" className="h-10 w-full object-contain sm:h-12" />
               </Link>
             )}
+          </div>
+          
+          <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
             {!isMyMatchIQPage && (
               <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.24)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
                 <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-10 w-[76px] scale-[1.2] object-contain" />
