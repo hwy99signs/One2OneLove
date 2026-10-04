@@ -2,11 +2,6 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - prelaunch/o2ol-token-economy-prelaunch-20261003
-    paths:
-      - ".github/token-prelaunch-deploy-trigger"
 
 permissions:
   contents: read
