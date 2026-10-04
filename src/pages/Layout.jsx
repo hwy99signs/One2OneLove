@@ -18,27 +18,27 @@ import {
 const translations = {
   en: {
     nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", buyTokens:"BUY TOKENS", language:"Language", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
-    actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
+    actionMenu: { sendLoveNote: "Send A Love Note", amora: "Talk with Amora", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
     announcement: { label: "LIMITED-TIME OPEN HOUSE", text: "Explore One2OneLove FREE — no account required to browse. Sign up only when you want to save, post, or use protected member features." }
   },
   es: {
     nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", buyTokens:"COMPRAR TOKENS", language:"Idioma", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
-    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
+    actionMenu: { sendLoveNote: "Enviar una Nota de Amor", amora: "Hablar con Amora", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
     announcement: { label: "JORNADA DE PUERTAS ABIERTAS — TIEMPO LIMITADO", text: "Explora One2OneLove GRATIS — no necesitas una cuenta para navegar. Regístrate solo cuando quieras guardar, publicar o usar funciones protegidas para miembros." }
   },
   fr: {
     nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", buyTokens:"ACHETER DES JETONS", language:"Langue", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
-    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
+    actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", amora: "Parler avec Amora", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
     announcement: { label: "PORTES OUVERTES — DURÉE LIMITÉE", text: "Explorez One2OneLove GRATUITEMENT — aucun compte n’est nécessaire pour parcourir le site. Inscrivez-vous seulement pour enregistrer, publier ou utiliser des fonctions membres protégées." }
   },
   it: {
     nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", buyTokens:"ACQUISTA TOKEN", language:"Lingua", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
-    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
+    actionMenu: { sendLoveNote: "Invia una Nota d'Amore", amora: "Parla con Amora", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
     announcement: { label: "OPEN HOUSE — TEMPO LIMITATO", text: "Esplora One2OneLove GRATIS — non serve un account per navigare. Registrati solo quando vuoi salvare, pubblicare o usare funzioni protette per i membri." }
   },
   de: {
     nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", buyTokens:"TOKENS KAUFEN", language:"Sprache", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
-    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
+    actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", amora: "Mit Amora sprechen", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
     announcement: { label: "OPEN HOUSE — NUR FÜR KURZE ZEIT", text: "Erkunde One2OneLove KOSTENLOS — zum Stöbern ist kein Konto erforderlich. Registriere dich erst, wenn du speichern, posten oder geschützte Mitgliederfunktionen nutzen möchtest." }
   },
   nl: {
@@ -450,6 +450,7 @@ function LanguageContent({ children, currentPageName }) {
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
                   <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
                   <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
+                  <Link to={createPageUrl("RelationshipCoach")} className="flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-rose-50 to-fuchsia-50 px-3 py-2 text-left font-black text-rose-700 hover:from-rose-100 hover:to-fuchsia-100" onClick={() => setActionOpen(false)}>♥ {t.actionMenu.amora || 'Talk with Amora'}</Link>
                   <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
                   <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
                   <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🎮 {t.actionMenu.games}</Link>
@@ -598,6 +599,17 @@ function LanguageContent({ children, currentPageName }) {
                       >
                         <Heart className="w-4 h-4" />
                         {t.actionMenu.sendLoveNote}
+                      </Link>
+                      <Link
+                        to={createPageUrl("RelationshipCoach")}
+                        className="flex items-center gap-2 bg-gradient-to-r from-rose-500/30 to-fuchsia-500/30 px-3 py-2.5 font-black text-white transition-all hover:from-rose-500/45 hover:to-fuchsia-500/45"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setMobileActionOpen(false);
+                        }}
+                      >
+                        <Heart className="w-4 h-4" />
+                        {t.actionMenu.amora || 'Talk with Amora'}
                       </Link>
                       <Link
                         to={createPageUrl("LGBTQSupport")}
