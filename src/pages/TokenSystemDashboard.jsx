@@ -22,6 +22,7 @@ const money=value=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD
 const dt=value=>value?new Date(value).toLocaleString():'—';
 const pct=(num,den)=>Number(den)>0?((Number(num)/Number(den))*100).toFixed(1)+'%':'—';
 const calibrationReady=row=>Boolean(row?.is_active&&row?.email_verified&&row?.phone_verified);
+const NOMINAL_TOKEN_VALUE=0.10;
 
 function Card({children,className=''}){return <div className={'rounded-2xl border border-slate-200 bg-white shadow-sm '+className}>{children}</div>;}
 function Panel({title,subtitle,children,right=null}){return <Card><div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-5 py-4"><div><h2 className="text-lg font-black text-slate-950">{title}</h2>{subtitle&&<p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>{right}</div><div className="p-5">{children}</div></Card>;}
@@ -110,10 +111,13 @@ export default function TokenSystemDashboard(){
     const avgProviderCostPerToken=charged>0?providerCost/charged:0;
     return (data?.packages||[]).filter(pkg=>pkg.active).map(pkg=>{
       const revenue=Number(pkg.amount_cents||0)/100;
+      const nominalRetailValue=Number(pkg.tokens||0)*NOMINAL_TOKEN_VALUE;
+      const effectivePricePerToken=Number(pkg.tokens||0)>0?revenue/Number(pkg.tokens||0):0;
+      const packageDiscountPct=nominalRetailValue>0?((nominalRetailValue-revenue)/nominalRetailValue)*100:null;
       const estimatedProviderCost=avgProviderCostPerToken*Number(pkg.tokens||0);
       const providerContribution=revenue-estimatedProviderCost;
       const providerMarginPct=revenue>0?(providerContribution/revenue)*100:null;
-      return {...pkg,revenue,avgProviderCostPerToken,estimatedProviderCost,providerContribution,providerMarginPct};
+      return {...pkg,revenue,nominalRetailValue,effectivePricePerToken,packageDiscountPct,avgProviderCostPerToken,estimatedProviderCost,providerContribution,providerMarginPct};
     });
   },[data?.packages,summary.provider_cost_micros_30d,summary.tokens_charged_30d]);
 
@@ -227,6 +231,7 @@ export default function TokenSystemDashboard(){
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Separate monitoring for the Free Account + O2OL Token architecture. The existing Admin dashboard remains independent and unchanged.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge tone="green">Free Account Model</Badge>
+              <Badge tone="amber">Nominal Token Value: $0.10</Badge>
               <Badge tone="amber">Calibration Mode</Badge>
               <Badge tone="violet">Admin MFA Protected</Badge>
               {data?.generatedAt&&<Badge>Updated {new Date(data.generatedAt).toLocaleTimeString()}</Badge>}<Badge tone="blue">Auto-refresh 15 min</Badge>
