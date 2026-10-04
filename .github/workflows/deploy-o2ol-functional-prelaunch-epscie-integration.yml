@@ -1,0 +1,339 @@
+name: Deploy O2OL EPSCIE Functional Prelaunch Integration
+
+on:
+  push:
+    branches:
+      - integration/o2ol-epscie-functional-prelaunch-20261004
+    paths:
+      - ".github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml"
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-prelaunch-20261003
+    paths:
+      - ".github/token-prelaunch-deploy-trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # These are deliberately separate Prelaunch secret names. Do not silently
+      # inherit or extract credentials from the Production Worker.
+      TOKEN_PRELAUNCH_DATABASE_URL: ${{ secrets.TOKEN_PRELAUNCH_DATABASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.TOKEN_PRELAUNCH_OPENAI_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET }}
+      TWILIO_ACCOUNT_SID: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN }}
+      TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID }}
+
+      WORKER_NAME: one2onelove-token-prelaunch
+      PREVIEW_URL: https://one2onelove-token-prelaunch.hwy99signs.workers.dev
+      TOKEN_MEDIA_BUCKET: one2onelove-token-prelaunch-media
+      EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls
+      EXPECTED_NEON_DATABASE: one2onelove
+      EXPECTED_NEON_ROLE: o2ol_token_hyperdrive
+      PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf
+      NEON_AUTH_BASE_URL: https://ep-super-silence-arbl98ls.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/o2ol-epscie-functional-prelaunch-20261004
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Synchronize authoritative Token branch head
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REF_API="https://api.github.com/repos/hwy99signs/One2OneLove/git/ref/heads/integration/o2ol-epscie-functional-prelaunch-20261004"
+          SOURCE_SHA=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$REF_API" | jq -r '.object.sha')
+          test -n "$SOURCE_SHA"
+          echo "AUTHORITATIVE_TOKEN_SOURCE_SHA=$SOURCE_SHA"
+          git fetch --no-tags --depth=1 origin "$SOURCE_SHA"
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+
+      - name: Require isolated core infrastructure and report optional providers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for NAME in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID TOKEN_PRELAUNCH_DATABASE_URL; do
+            VALUE="${!NAME:-}"
+            if [ -z "$VALUE" ]; then
+              echo "Missing required Token Prelaunch infrastructure secret: $NAME" >&2
+              exit 1
+            fi
+          done
+          echo "::add-mask::$TOKEN_PRELAUNCH_DATABASE_URL"
+          for NAME in OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+            VALUE="${!NAME:-}"
+            if [ -n "$VALUE" ]; then
+              echo "$NAME=present"
+            else
+              echo "$NAME=missing (feature remains fail-closed)"
+            fi
+          done
+
+      - name: Create or reuse isolated Token Hyperdrive
+        id: hyperdrive
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+
+          node <<'NODE' > /tmp/db-fields
+          const raw=process.env.TOKEN_PRELAUNCH_DATABASE_URL;
+          const u=new URL(raw);
+          console.log('DB_HOST='+u.hostname);
+          console.log('DB_PORT='+(u.port||'5432'));
+          console.log('DB_NAME='+u.pathname.replace(/^\//,''));
+          console.log('DB_USER='+decodeURIComponent(u.username));
+          console.log('DB_PASSWORD='+decodeURIComponent(u.password));
+          NODE
+          set +x
+          source /tmp/db-fields
+          echo "::add-mask::$DB_PASSWORD"
+
+          case "$DB_HOST" in
+            "$EXPECTED_NEON_HOST_PREFIX".c-4.us-west-2.aws.neon.tech|"$EXPECTED_NEON_HOST_PREFIX"-pooler.c-4.us-west-2.aws.neon.tech|"$EXPECTED_NEON_HOST_PREFIX"-*.c-4.us-west-2.aws.neon.tech)
+              ;;
+            *)
+              echo "Database URL does not point to the isolated Token Neon branch." >&2
+              exit 1
+              ;;
+          esac
+          test "$DB_NAME" = "$EXPECTED_NEON_DATABASE"
+          if [ "$DB_USER" != "$EXPECTED_NEON_ROLE" ]; then
+            echo "Hyperdrive must use the dedicated Token Prelaunch database role." >&2
+            exit 1
+          fi
+          if printf '%s' "$DB_HOST" | grep -F 'ep-shiny-truth-ar740o0s' >/dev/null; then
+            echo "Production Neon host is forbidden." >&2
+            exit 1
+          fi
+
+          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"             -o /tmp/hyperdrives.json
+          jq -e '.success == true' /tmp/hyperdrives.json >/dev/null
+
+          ID=$(jq -r --arg host "$DB_HOST" --arg db "$DB_NAME" --arg prod "$PRODUCTION_HYPERDRIVE_ID" '
+            .result[]? |
+            select(.id != $prod) |
+            select(.origin.host == $host and .origin.database == $db) |
+            .id' /tmp/hyperdrives.json | head -n1)
+
+          if [ -z "$ID" ]; then
+            jq -n               --arg name "one2onelove-token-prelaunch"               --arg db "$DB_NAME"               --arg host "$DB_HOST"               --arg password "$DB_PASSWORD"               --arg user "$DB_USER"               --argjson port "$DB_PORT"               '{
+                name:$name,
+                origin:{database:$db,host:$host,password:$password,port:$port,scheme:"postgresql",user:$user},
+                caching:{disabled:true},
+                origin_connection_limit:10
+              }' > /tmp/create-hyperdrive.json
+            curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/json'               --data @/tmp/create-hyperdrive.json               "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"               -o /tmp/create-hyperdrive-response.json
+            rm -f /tmp/create-hyperdrive.json
+            jq -e '.success == true' /tmp/create-hyperdrive-response.json >/dev/null
+            ID=$(jq -r '.result.id' /tmp/create-hyperdrive-response.json)
+          fi
+
+          test -n "$ID"
+          if [ "$ID" = "$PRODUCTION_HYPERDRIVE_ID" ]; then
+            echo "Production Hyperdrive is forbidden for Token Prelaunch." >&2
+            exit 1
+          fi
+          echo "hyperdrive_id=$ID" >> "$GITHUB_OUTPUT"
+
+          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs/$ID"             -o /tmp/token-hyperdrive.json
+          jq -e --arg host "$DB_HOST" --arg db "$DB_NAME"             '.success == true and .result.origin.host == $host and .result.origin.database == $db'             /tmp/token-hyperdrive.json >/dev/null
+
+          echo "TOKEN_PRELAUNCH_HYPERDRIVE_READY=yes"
+
+      - name: Build and bundle-check full Token Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -s dist/index.html || { echo "Frontend build output missing." >&2; exit 1; }
+          grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null || { echo "Token wall contract missing." >&2; exit 1; }
+          grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null || { echo "Token Prelaunch environment marker missing." >&2; exit 1; }
+          grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null || { echo "Signup Token-intent notice missing." >&2; exit 1; }
+          grep -F 'TOKEN_NOTICE_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Immediate Token feature notice map missing." >&2; exit 1; }
+          grep -F 'signUpHref' src/pages/SignIn.jsx >/dev/null || { echo "Sign-in to role-selection signup handoff missing." >&2; exit 1; }
+          grep -F "unlockTokenContent" src/pages/DateIdeas.jsx src/lib/tokenService.js >/dev/null || { echo "Date Ideas Token unlock client missing." >&2; exit 1; }
+          grep -F "o2ol_token_content_unlocks" worker/o2ol-tokens.ts neon-migrations/2026-10-04-o2ol-token-content-unlocks.sql >/dev/null || { echo "Persistent Token content unlock schema missing." >&2; exit 1; }
+          grep -F "date_idea_unlock" worker/o2ol-tokens.ts src/pages/DateIdeas.jsx >/dev/null || { echo "Date Idea Token price/unlock contract missing." >&2; exit 1; }
+          grep -F "/assets/o2ol-approved-logo.png" src/pages/Layout.jsx >/dev/null || { echo "Approved O2OL logo missing from MMIQ header." >&2; exit 1; }
+          grep -F "podcast_episode_unlock" src/components/podcasts/PodcastPlayerDialog.jsx src/data/podcastLibrary.js >/dev/null || { echo "Podcast Token unlock readiness missing." >&2; exit 1; }
+          grep -F "tokenLanding" src/pages/SignIn.jsx >/dev/null || { echo "Post-auth Buy Tokens routing missing." >&2; exit 1; }
+          grep -F "Skip for now" src/pages/Tokens.jsx >/dev/null || { echo "Buy Tokens skip control missing." >&2; exit 1; }
+          grep -F "BUY TOKENS" src/pages/Layout.jsx >/dev/null || { echo "Persistent Buy Tokens header control missing." >&2; exit 1; }
+          grep -F "startTokenCheckout(code,returnTo)" src/pages/Tokens.jsx >/dev/null || { echo "Token checkout destination preservation missing." >&2; exit 1; }
+          grep -F "(10 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Value package bonus message missing." >&2; exit 1; }
+          grep -F "(50 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Best Value package bonus message missing." >&2; exit 1; }
+          test -s public/assets/amora-relationship-coach-official.jpg || { echo "Approved Amora image asset missing." >&2; exit 1; }
+          test "$(wc -c < public/assets/amora-relationship-coach-official.jpg)" -gt 12000 || { echo "Amora image asset is unexpectedly small/broken." >&2; exit 1; }
+          grep -F "radial-gradient(circle at 12% 0%, #7f1d4e" src/pages/RelationshipCoach.jsx >/dev/null || { echo "Amora rich visual treatment missing." >&2; exit 1; }
+          grep -F "Amora — Relationship Coach" src/pages/RelationshipCoach.jsx >/dev/null || { echo "Existing Relationship Coach is not branded as Amora." >&2; exit 1; }
+          grep -F "/assets/amora-relationship-coach-official.jpg" src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx >/dev/null || { echo "Canonical Amora image is not wired into required surfaces." >&2; exit 1; }
+          grep -F 'to="/RelationshipCoach"' src/pages/Amora.jsx >/dev/null || { echo "Legacy Amora route does not consolidate to Relationship Coach." >&2; exit 1; }
+          grep -F 'createPageUrl("RelationshipCoach")' src/pages/Layout.jsx >/dev/null || { echo "Talk with Amora action navigation missing." >&2; exit 1; }
+          grep -F "'/relationshipcoach':'Talk with Amora'" src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Amora Token notice on Relationship Coach route missing." >&2; exit 1; }
+          grep -F 'path="/RelationshipCoach" element={<RelationshipCoach />}' src/pages/index.jsx >/dev/null || { echo "Relationship Coach must render directly; redirect loops are forbidden." >&2; exit 1; }
+          if grep -F 'path="/RelationshipCoach" element={<Navigate to="/Amora"' src/pages/index.jsx >/dev/null; then echo "Relationship Coach redirect loop detected." >&2; exit 1; fi
+          if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
+            echo "Bianca signup must pass through Individual / Professional selection." >&2
+            exit 1
+          fi
+          if grep -F 'source=amora&type=individual' src/pages/Amora.jsx 2>/dev/null; then
+            echo "Amora signup must pass through Individual / Professional selection." >&2
+            exit 1
+          fi
+          test "$TOKEN_MEDIA_BUCKET" = "one2onelove-token-prelaunch-media" || { echo "Token Prelaunch R2 bucket name mismatch." >&2; exit 1; }
+          if [ "$TOKEN_MEDIA_BUCKET" = "one2onelove-media" ]; then
+            echo "Production R2 bucket is forbidden for Token Prelaunch." >&2
+            exit 1
+          fi
+          grep -REn 'MEDIA\.(put|delete)\(' worker >/tmp/token-r2-write-sites.txt || true
+          echo "TOKEN_PRELAUNCH_R2_WRITE_SITES=$(wc -l </tmp/token-r2-write-sites.txt | tr -d ' ')"
+
+      - name: Generate isolated Wrangler configs
+        shell: bash
+        run: |
+          set -euo pipefail
+          make_config() {
+            TARGET="$1"
+            WORKERS_DEV="$2"
+            PREVIEW_URLS="$3"
+            cat > "$TARGET" <<EOF
+          {
+            "name": "$WORKER_NAME",
+            "main": "$GITHUB_WORKSPACE/worker/index-v2.ts",
+            "compatibility_date": "2026-09-11",
+            "compatibility_flags": ["nodejs_compat"],
+            "workers_dev": $WORKERS_DEV,
+            "preview_urls": $PREVIEW_URLS,
+            "assets": {
+              "directory": "$GITHUB_WORKSPACE/dist",
+              "binding": "ASSETS",
+              "not_found_handling": "single-page-application",
+              "run_worker_first": ["/api/*", "/studio-media/*"]
+            },
+            "vars": {
+              "NEON_AUTH_BASE_URL": "$NEON_AUTH_BASE_URL",
+              "PRELAUNCH_ENVIRONMENT": "true",
+              "SCHEDULED_SMS_ENABLED": "false",
+              "O2OL_RELEASE_VERSION": "token-functional-prelaunch"
+            },
+            "services": [
+              {
+                "binding": "EPSCIE_SERVICE",
+                "service": "epscie-core"
+              }
+            ],
+            "hyperdrive": [
+              {
+                "binding": "HYPERDRIVE",
+                "id": "${{ steps.hyperdrive.outputs.hyperdrive_id }}"
+              }
+            ],
+            "r2_buckets": [
+              {
+                "binding": "MEDIA",
+                "bucket_name": "$TOKEN_MEDIA_BUCKET"
+              }
+            ]
+          }
+          EOF
+          }
+          make_config /tmp/wrangler.token-bootstrap.jsonc false false
+          make_config /tmp/wrangler.token-live.jsonc true true
+          npx --yes wrangler@latest deploy --dry-run --config /tmp/wrangler.token-live.jsonc
+
+      - name: Bootstrap isolated Worker without public workers.dev route
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest deploy --config /tmp/wrangler.token-bootstrap.jsonc
+
+      - name: Install available Token Prelaunch provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          put_secret_if_present() {
+            NAME="$1"
+            VALUE="$2"
+            if [ -n "$VALUE" ]; then
+              printf '%s' "$VALUE" | npx --yes wrangler@latest secret put "$NAME" --name "$WORKER_NAME"
+              echo "$NAME=installed"
+            else
+              echo "$NAME=not installed; corresponding feature remains fail-closed"
+            fi
+          }
+          put_secret_if_present OPENAI_API_KEY "$OPENAI_API_KEY"
+          put_secret_if_present STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
+          put_secret_if_present STRIPE_WEBHOOK_SECRET "$STRIPE_WEBHOOK_SECRET"
+          put_secret_if_present TWILIO_ACCOUNT_SID "$TWILIO_ACCOUNT_SID"
+          put_secret_if_present TWILIO_AUTH_TOKEN "$TWILIO_AUTH_TOKEN"
+          put_secret_if_present TWILIO_VERIFY_SERVICE_SID "$TWILIO_VERIFY_SERVICE_SID"
+
+      - name: Verify any supplied provider secrets were installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=$(npx --yes wrangler@latest secret list --name "$WORKER_NAME" 2>&1)
+          for NAME in OPENAI_API_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+            VALUE="${!NAME:-}"
+            if [ -n "$VALUE" ]; then
+              printf '%s\n' "$OUT" | grep -F "$NAME" >/dev/null
+            fi
+          done
+
+      - name: Publish Token Prelaunch on workers.dev only
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@latest deploy --config /tmp/wrangler.token-live.jsonc
+
+      - name: Verify Token Prelaunch isolation and fail-closed APIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          CODE=""
+          for attempt in $(seq 1 24); do
+            CODE=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/health" || true)
+            [ "$CODE" = "200" ] && break
+            sleep 5
+          done
+          test "$CODE" = "200"
+          jq -e '.ok == true and .production == false and .environment == "token-prelaunch" and .accessModel == "free_tokens"' /tmp/health.json >/dev/null
+
+          # Token purchase APIs require a verified member.
+          TOKENS_STATUS=$(curl -sS -o /tmp/tokens.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/tokens/packages" || true)
+          test "$TOKENS_STATUS" = "401"
+          grep -F 'unauthorized' /tmp/tokens.json >/dev/null
+
+          # Legacy recurring checkout must never reopen.
+          LEGACY_STATUS=$(curl -sS -o /tmp/legacy.json -w '%{http_code}' --max-time 20 -X POST "$PREVIEW_URL/api/billing/checkout" -H 'content-type: application/json' --data '{}' || true)
+          test "$LEGACY_STATUS" = "401"
+
+          # Public Founder snapshot must advertise Token-era economics only.
+          FOUNDING_STATUS=$(curl -sS -o /tmp/founding.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/billing/founding-offer" || true)
+          test "$FOUNDING_STATUS" = "200"
+          jq -e '.offer.accessModel == "free_tokens" and .offer.recurringSubscriptionOffer == false and .offer.economicsPendingCalibration == true' /tmp/founding.json >/dev/null
+
+          # Studio/chat/profile media use only the isolated Prelaunch R2 bucket.
+          STUDIO_STATUS=$(curl -sS -o /tmp/studio.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/studio/episodes" || true)
+          test "$STUDIO_STATUS" = "200"
+
+          echo "TOKEN_PRELAUNCH_URL=$PREVIEW_URL"
