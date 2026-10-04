@@ -15,5 +15,8 @@
       "binding": "EPSCIE_SERVICE",
       "service": "epscie-core"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": []
+  }
 }
