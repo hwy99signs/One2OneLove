@@ -144,8 +144,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "DEPLOY_COMMIT=$(git rev-parse HEAD)"
+          grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null || { echo "Signup Token-intent notice missing BEFORE build." >&2; exit 1; }
+          echo "SIGNUP_BLOB_BEFORE=$(git hash-object src/pages/SignUp.jsx)"
           npm ci
           npm run build
+          echo "SIGNUP_BLOB_AFTER=$(git hash-object src/pages/SignUp.jsx)"
+          git status --short src/pages/SignUp.jsx || true
           test -s dist/index.html || { echo "Frontend build output missing." >&2; exit 1; }
           grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null || { echo "Token wall contract missing." >&2; exit 1; }
           grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null || { echo "Token Prelaunch environment marker missing." >&2; exit 1; }
