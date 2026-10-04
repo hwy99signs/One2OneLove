@@ -15,6 +15,14 @@ const OPEN_HOUSE_COPY = {
   de:{eyebrow:'ONE2ONELOVE OPEN HOUSE — NUR FÜR KURZE ZEIT',title:'One2OneLove KOSTENLOS Erkunden',body:'Zum Stöbern ist kein Konto erforderlich. Sieh dich zuerst um; erstelle erst dann ein Konto, wenn du speichern, posten oder geschützte Mitgliederfunktionen nutzen möchtest.',explore:'Kostenlos Erkunden',studio:'O2OL Studio Ansehen'}
 };
 
+const AMORA_COPY = {
+  en:{eyebrow:'MEET AMORA',title:'Your One2OneLove Relationship Coach',body:'Talk naturally with Amora about communication, conflict, boundaries, connection, expectations, or whatever is on your mind.',cta:'Talk with Amora',token:'O2OL Tokens per reply'},
+  es:{eyebrow:'CONOCE A AMORA',title:'Tu Coach de Relaciones One2OneLove',body:'Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.',cta:'Hablar con Amora',token:'Tokens O2OL por respuesta'},
+  fr:{eyebrow:'DÉCOUVREZ AMORA',title:'Votre Coach Relationnelle One2OneLove',body:'Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.',cta:'Parler avec Amora',token:'Jetons O2OL par réponse'},
+  it:{eyebrow:'CONOSCI AMORA',title:'La Tua Coach Relazionale One2OneLove',body:'Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.',cta:'Parla con Amora',token:'Token O2OL per risposta'},
+  de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.',cta:'Mit Amora sprechen',token:'O2OL Tokens pro Antwort'}
+};
+
 const STUDIO_COPY = {
   en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 1',title:'Who Should Apologize First?',body:'See Bianca in an actual O2OL Studio conversation and explore a relationship question from more than one point of view.',watch:'Watch Episode 1'},
   es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 1',title:'Who Should Apologize First?',body:'Mira a Bianca en una conversación real de O2OL Studio y explora una pregunta de relación desde más de un punto de vista.',watch:'Ver Episodio 1'},
@@ -69,6 +77,7 @@ export default function Home() {
   const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
   const openHouse = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
+  const amora = AMORA_COPY[currentLanguage] || AMORA_COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
   const [publicStats, setPublicStats] = useState(null);
   const go = page => navigate(createPageUrl(page));
@@ -152,6 +161,20 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
+          <button type="button" onClick={() => go('RelationshipCoach')} className="group mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
+            <div className="flex items-center justify-center bg-[#16070f] p-4">
+              <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
+            </div>
+            <div className="flex flex-col justify-center p-6 sm:p-8">
+              <div className="text-xs font-black uppercase tracking-[.2em] text-rose-600">{amora.eyebrow}</div>
+              <h3 className="mt-2 text-3xl font-black text-slate-950">{amora.title}</h3>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">{amora.body}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-5 py-2.5 text-sm font-black text-white shadow-md">{amora.cta}</span>
+                <span className="text-xs font-black uppercase tracking-wide text-amber-700">🪙 {amora.token}</span>
+              </div>
+            </div>
+          </button>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map(([icon,labelKey,page,gradient,tag],index) => (
               <button key={page} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${tag === 'matchiq' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
