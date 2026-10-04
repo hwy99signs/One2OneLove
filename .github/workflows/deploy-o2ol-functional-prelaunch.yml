@@ -170,6 +170,7 @@ jobs:
           grep -F "o2ol_token_content_unlocks" worker/o2ol-tokens.ts neon-migrations/2026-10-04-o2ol-token-content-unlocks.sql >/dev/null || { echo "Persistent Token content unlock schema missing." >&2; exit 1; }
           grep -F "date_idea_unlock" worker/o2ol-tokens.ts src/pages/DateIdeas.jsx >/dev/null || { echo "Date Idea Token price/unlock contract missing." >&2; exit 1; }
           grep -F "/assets/o2ol-approved-logo.png" src/pages/Layout.jsx >/dev/null || { echo "Approved O2OL logo missing from MMIQ header." >&2; exit 1; }
+          grep -F "podcast_episode_unlock" src/components/podcasts/PodcastPlayerDialog.jsx src/data/podcastLibrary.js >/dev/null || { echo "Podcast Token unlock readiness missing." >&2; exit 1; }
           if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
             echo "Bianca signup must pass through Individual / Professional selection." >&2
             exit 1
