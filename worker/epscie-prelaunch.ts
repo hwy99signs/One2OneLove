@@ -18,8 +18,20 @@ function configured(env: any) {
 }
 
 export default {
-  async fetch(_request: Request, env: any): Promise<Response> {
+  async fetch(request: Request, env: any): Promise<Response> {
     try {
+      const url = new URL(request.url);
+      if (url.pathname === '/probe') {
+        const result = await sendO2OLTelemetry(env);
+        return json({
+          ok: true,
+          app: 'one2onelove',
+          mode: 'epscie-prelaunch-probe',
+          sent: result.sent === true,
+          status: result.status ?? null,
+          production_touched: false,
+        });
+      }
       return json({
         ok: true,
         app: 'one2onelove',
