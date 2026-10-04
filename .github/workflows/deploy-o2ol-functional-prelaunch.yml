@@ -228,8 +228,15 @@ jobs:
             "vars": {
               "NEON_AUTH_BASE_URL": "$NEON_AUTH_BASE_URL",
               "PRELAUNCH_ENVIRONMENT": "true",
-              "SCHEDULED_SMS_ENABLED": "false"
+              "SCHEDULED_SMS_ENABLED": "false",
+              "O2OL_RELEASE_VERSION": "token-functional-prelaunch"
             },
+            "services": [
+              {
+                "binding": "EPSCIE_SERVICE",
+                "service": "epscie-core"
+              }
+            ],
             "hyperdrive": [
               {
                 "binding": "HYPERDRIVE",
