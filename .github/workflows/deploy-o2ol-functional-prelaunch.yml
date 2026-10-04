@@ -2,6 +2,11 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-prelaunch-20261003
+    paths:
+      - ".github/token-prelaunch-deploy-trigger"
 
 permissions:
   contents: read
@@ -170,6 +175,8 @@ jobs:
           grep -F "Skip for now" src/pages/Tokens.jsx >/dev/null || { echo "Buy Tokens skip control missing." >&2; exit 1; }
           grep -F "BUY TOKENS" src/pages/Layout.jsx >/dev/null || { echo "Persistent Buy Tokens header control missing." >&2; exit 1; }
           grep -F "startTokenCheckout(code,returnTo)" src/pages/Tokens.jsx >/dev/null || { echo "Token checkout destination preservation missing." >&2; exit 1; }
+          grep -F "(10 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Value package bonus message missing." >&2; exit 1; }
+          grep -F "(50 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Best Value package bonus message missing." >&2; exit 1; }
           if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
             echo "Bianca signup must pass through Individual / Professional selection." >&2
             exit 1
