@@ -28,7 +28,7 @@ const translations = {
     quickPrompts: "Quick Prompts", dailyTip: "Give me a daily relationship tip", dateIdea: "Suggest a creative date idea",
     communicationHelp: "Help us communicate better", conflictResolution: "How to resolve conflicts peacefully",
     keepSparkAlive: "Tips to keep the spark alive", deleteConversation: "Delete conversation",
-    conversationDeleted: "Conversation deleted", backToSupport: "Back to Support",
+    conversationDeleted: "Conversation deleted", backToSupport: "Back to Support", meet:"MEET AMORA", tokenNote:"{t.tokenNote}", signIn:"Sign In", createAccount:"Create FREE O2OL Account", reply:"reply",
   },
   es: {
     title: "Amora — Coach de Relaciones", subtitle: "Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.",
@@ -38,7 +38,7 @@ const translations = {
     quickPrompts: "Prompts Rápidos", dailyTip: "Dame un consejo diario para relaciones", dateIdea: "Sugiere una idea creativa de cita",
     communicationHelp: "Ayúdanos a comunicarnos mejor", conflictResolution: "Cómo resolver conflictos pacíficamente",
     keepSparkAlive: "Tips para mantener viva la chispa", deleteConversation: "Eliminar conversación",
-    conversationDeleted: "Conversación eliminada", backToSupport: "Volver al Soporte",
+    conversationDeleted: "Conversación eliminada", backToSupport: "Volver al Soporte", meet:"CONOCE A AMORA", tokenNote:"Crear una cuenta y ver a Amora es gratis. Cada respuesta de Amora usa Tokens O2OL.", signIn:"Iniciar Sesión", createAccount:"Crear Cuenta O2OL GRATIS", reply:"respuesta",
   },
   fr: {
     title: "Amora — Coach Relationnelle", subtitle: "Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.",
@@ -48,7 +48,7 @@ const translations = {
     quickPrompts: "Prompts Rapides", dailyTip: "Donnez-moi un conseil relationnel quotidien", dateIdea: "Suggérez une idée de rendez-vous créative",
     communicationHelp: "Aidez-nous à mieux communiquer", conflictResolution: "Comment résoudre les conflits pacifiquement",
     keepSparkAlive: "Conseils pour garder l'étincelle vivante", deleteConversation: "Supprimer la conversation",
-    conversationDeleted: "Conversation supprimée", backToSupport: "Retour au Support",
+    conversationDeleted: "Conversation supprimée", backToSupport: "Retour au Support", meet:"DÉCOUVREZ AMORA", tokenNote:"Créer un compte et voir Amora est gratuit. Chaque réponse d’Amora utilise des Jetons O2OL.", signIn:"Se Connecter", createAccount:"Créer un Compte O2OL GRATUIT", reply:"réponse",
   },
   it: {
     title: "Amora — Coach Relazionale", subtitle: "Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.",
@@ -58,7 +58,7 @@ const translations = {
     quickPrompts: "Prompt Rapidi", dailyTip: "Dammi un consiglio quotidiano per relazioni", dateIdea: "Suggerisci un'idea creativa per appuntamento",
     communicationHelp: "Aiutaci a comunicare meglio", conflictResolution: "Come risolvere i conflitti pacificamente",
     keepSparkAlive: "Consigli per mantenere viva la scintilla", deleteConversation: "Elimina conversazione",
-    conversationDeleted: "Conversazione eliminata", backToSupport: "Torna al Supporto",
+    conversationDeleted: "Conversazione eliminata", backToSupport: "Torna al Supporto", meet:"CONOSCI AMORA", tokenNote:"Creare un account e vedere Amora è gratuito. Ogni risposta di Amora usa Token O2OL.", signIn:"Accedi", createAccount:"Crea Account O2OL GRATUITO", reply:"risposta",
   },
   de: {
     title: "Amora — Beziehungscoach", subtitle: "Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.",
@@ -68,7 +68,7 @@ const translations = {
     quickPrompts: "Schnelle Prompts", dailyTip: "Gib mir einen täglichen Beziehungstipp", dateIdea: "Schlage eine kreative Date-Idee vor",
     communicationHelp: "Hilf uns besser zu kommunizieren", conflictResolution: "Wie man Konflikte friedlich löst",
     keepSparkAlive: "Tipps um den Funken am Leben zu halten", deleteConversation: "Gespräch löschen",
-    conversationDeleted: "Gespräch gelöscht", backToSupport: "Zurück zum Support",
+    conversationDeleted: "Gespräch gelöscht", backToSupport: "Zurück zum Support", meet:"LERNE AMORA KENNEN", tokenNote:"Ein Konto zu erstellen und Amora anzusehen ist kostenlos. Jede Antwort von Amora verwendet O2OL Tokens.", signIn:"Anmelden", createAccount:"KOSTENLOSES O2OL-Konto erstellen", reply:"Antwort",
   }
 };
 
@@ -103,6 +103,7 @@ export default function RelationshipCoach() {
     mutationFn: createCoachConversation,
     onSuccess: (newConv) => {
       queryClient.invalidateQueries({ queryKey: ['coach-conversations', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['o2olTokenWallet', user?.id] });
       setCurrentConversationId(newConv.id);
       setMessages([]);
     },
@@ -181,13 +182,13 @@ export default function RelationshipCoach() {
       <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-purple-50 px-4 py-12">
         <section className="mx-auto max-w-3xl rounded-[2rem] border border-rose-100 bg-white p-7 text-center shadow-xl sm:p-9">
           <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="mx-auto h-auto w-full max-w-[360px] rounded-3xl shadow-xl" />
-          <div className="mt-6 text-xs font-black uppercase tracking-[.22em] text-rose-600">MEET AMORA</div>
+          <div className="mt-6 text-xs font-black uppercase tracking-[.22em] text-rose-600">{t.meet}</div>
           <h1 className="mt-2 text-4xl font-black text-slate-900">{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-7 text-slate-600">{t.subtitle}</p>
           <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950"><Coins className="mx-auto mb-2 h-5 w-5"/>Creating an account and viewing Amora are free. Each Amora response uses O2OL Tokens.</div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach" className="rounded-full border border-slate-300 bg-white px-6 py-3 font-black text-slate-800">Sign In</Link>
-            <Link to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black text-white">Create FREE O2OL Account</Link>
+            <Link to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach" className="rounded-full border border-slate-300 bg-white px-6 py-3 font-black text-slate-800">{t.signIn}</Link>
+            <Link to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black text-white">{t.createAccount}</Link>
           </div>
         </section>
       </main>
@@ -205,12 +206,12 @@ export default function RelationshipCoach() {
 
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 text-center">
           <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="mx-auto h-auto w-full max-w-[260px] rounded-3xl shadow-xl" />
-          <div className="mt-5 text-xs font-black uppercase tracking-[.22em] text-rose-600">MEET AMORA</div>
+          <div className="mt-5 text-xs font-black uppercase tracking-[.22em] text-rose-600">{t.meet}</div>
           <h1 className="mt-2 text-5xl font-bold text-gray-900 mb-4 font-dancing">{t.title}</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
           <Link to="/Tokens?return=/RelationshipCoach" className="mx-auto mt-5 flex max-w-sm items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-amber-950 shadow-sm">
             <span className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>O2OL Tokens</span>
-            <span className="font-black">{tokenBalance} <span className="text-xs font-bold text-amber-700">· {amoraTokenCost || 1}/reply</span></span>
+            <span className="font-black">{tokenBalance} <span className="text-xs font-bold text-amber-700">· {amoraTokenCost || 1}/{t.reply}</span></span>
           </Link>
         </motion.div>
 
