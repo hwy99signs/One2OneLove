@@ -24,6 +24,7 @@ const TOKEN_COMPAT_ROUTES=new Set([
 ]);
 
 const TOKEN_NOTICE_ROUTES={
+  '/dateideas':'Locked Date Ideas',
   '/mymatchiq/bianca':'Chat with Bianca',
   '/amora':'Talk with Amora',
   '/lovenotes':'Sending Love Notes',
