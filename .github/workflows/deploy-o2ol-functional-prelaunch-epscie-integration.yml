@@ -6,11 +6,8 @@ on:
       - integration/o2ol-epscie-functional-prelaunch-20261004
     paths:
       - ".github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml"
-  push:
-    branches:
-      - prelaunch/o2ol-token-economy-prelaunch-20261003
-    paths:
-      - ".github/token-prelaunch-deploy-trigger"
+      - "worker/epscie-telemetry.ts"
+      - "worker/index-v2.ts"
 
 permissions:
   contents: read
@@ -241,6 +238,9 @@ jobs:
                 "service": "epscie-core"
               }
             ],
+            "triggers": {
+              "crons": ["*/5 * * * *"]
+            },
             "hyperdrive": [
               {
                 "binding": "HYPERDRIVE",
