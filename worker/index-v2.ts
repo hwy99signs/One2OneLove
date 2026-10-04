@@ -44,6 +44,7 @@ import { handleGameAccessRequest } from './game-access';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
+import { sendO2OLTelemetry, epscieTelemetryConfigured } from './epscie-telemetry';
 
 
 const SOCIAL_PAGE_META = {
@@ -169,6 +170,19 @@ async function socialPageResponse(request, env, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname === '/api/epscie/status') {
+      return new Response(JSON.stringify({
+        ok:true,
+        app:'one2onelove',
+        configured:epscieTelemetryConfigured(env),
+        enabled:String(env.O2OL_EPSCIE_ENABLED || '').toLowerCase()==='true',
+        environment:String(env.PRELAUNCH_ENVIRONMENT || '').toLowerCase()==='true'?'prelaunch':'production',
+      }), {
+        status:200,
+        headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'},
+      });
+    }
 
     if (url.pathname === '/api/health') {
       const prelaunch = String(env.PRELAUNCH_ENVIRONMENT || '').toLowerCase() === 'true';
@@ -418,6 +432,14 @@ export default {
   },
 
   async scheduled(controller, env, ctx) {
-    return baseWorker.scheduled(controller, env, ctx);
+    const base = baseWorker.scheduled(controller, env, ctx);
+    ctx.waitUntil((async () => {
+      try {
+        await sendO2OLTelemetry(env);
+      } catch (error) {
+        console.error('O2OL EPSCIE telemetry error:', error instanceof Error ? error.message : String(error));
+      }
+    })());
+    return base;
   },
 };
