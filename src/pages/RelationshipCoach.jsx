@@ -180,16 +180,45 @@ export default function RelationshipCoach() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-purple-50 px-4 py-12">
-        <section className="mx-auto max-w-3xl rounded-[2rem] border border-rose-100 bg-white p-7 text-center shadow-xl sm:p-9">
-          <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="mx-auto h-auto w-full max-w-[360px] rounded-3xl shadow-xl" />
-          <div className="mt-6 text-xs font-black uppercase tracking-[.22em] text-rose-600">{t.meet}</div>
-          <h1 className="mt-2 text-4xl font-black text-slate-900">{t.title}</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg leading-7 text-slate-600">{t.subtitle}</p>
-          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950"><Coins className="mx-auto mb-2 h-5 w-5"/>{t.tokenNote}</div>
+      <main
+        className="min-h-screen bg-[#09030f] px-4 py-12 text-white"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 12% 0%, #7f1d4e 0%, transparent 30%), radial-gradient(circle at 88% 12%, #3b1978 0%, transparent 30%), radial-gradient(circle at 50% 100%, #0e7490 0%, transparent 34%)',
+        }}
+      >
+        <section className="mx-auto max-w-3xl rounded-[2rem] border border-fuchsia-200/25 bg-black/35 p-7 text-center shadow-2xl backdrop-blur sm:p-9">
+          <div className="relative mx-auto w-fit">
+            <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-fuchsia-500/20 to-cyan-400/20 blur-2xl" />
+            <img
+              src="/assets/amora-relationship-coach-official.webp"
+              alt="Amora — One2OneLove Relationship Coach"
+              className="relative mx-auto h-auto w-full max-w-[330px] rounded-3xl border border-white/15 shadow-[0_24px_70px_rgba(236,72,153,0.28)]"
+            />
+          </div>
+
+          <div className="mt-7 text-xs font-black uppercase tracking-[.24em] text-rose-200">{t.meet}</div>
+          <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{t.title}</h1>
+          <p className="mx-auto mt-4 max-w-2xl text-lg leading-7 text-white/75">{t.subtitle}</p>
+
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200/25 bg-amber-300/10 p-4 text-sm font-semibold leading-6 text-amber-50 shadow-lg">
+            <Coins className="mx-auto mb-2 h-5 w-5 text-amber-300" />
+            {t.tokenNote}
+          </div>
+
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach" className="rounded-full border border-slate-300 bg-white px-6 py-3 font-black text-slate-800">{t.signIn}</Link>
-            <Link to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black text-white">{t.createAccount}</Link>
+            <Link
+              to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach"
+              className="rounded-full border border-white/30 bg-white/10 px-6 py-3 font-black text-white shadow-md transition hover:bg-white/15"
+            >
+              {t.signIn}
+            </Link>
+            <Link
+              to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach"
+              className="rounded-full bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 px-6 py-3 font-black text-white shadow-[0_12px_30px_rgba(217,70,239,0.3)] transition hover:brightness-110"
+            >
+              {t.createAccount}
+            </Link>
           </div>
         </section>
       </main>
@@ -197,89 +226,206 @@ export default function RelationshipCoach() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="mb-6">
-          <Link to={createPageUrl("CoupleSupport")} className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all">
-            <ArrowLeft size={20} className="mr-2" />{t.backToSupport}
+    <main
+      className="min-h-screen bg-[#09030f] px-3 py-6 text-white sm:px-6 sm:py-8"
+      style={{
+        backgroundImage:
+          'radial-gradient(circle at 12% 0%, #7f1d4e 0%, transparent 28%), radial-gradient(circle at 88% 12%, #3b1978 0%, transparent 28%), radial-gradient(circle at 50% 100%, #0e7490 0%, transparent 32%)',
+      }}
+    >
+      <section className="mx-auto max-w-7xl">
+        <div className="mb-5">
+          <Link
+            to={createPageUrl("CoupleSupport")}
+            className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white/70 transition-all hover:bg-white/10 hover:text-white"
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            {t.backToSupport}
           </Link>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 text-center">
-          <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="mx-auto h-auto w-full max-w-[260px] rounded-3xl shadow-xl" />
-          <div className="mt-5 text-xs font-black uppercase tracking-[.22em] text-rose-600">{t.meet}</div>
-          <h1 className="mt-2 text-5xl font-bold text-gray-900 mb-4 font-dancing">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
-          <Link to="/Tokens?return=/RelationshipCoach" className="mx-auto mt-5 flex max-w-sm items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-amber-950 shadow-sm">
-            <span className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>O2OL Tokens</span>
-            <span className="font-black">{tokenBalance} <span className="text-xs font-bold text-amber-700">· {amoraTokenCost || 1}/{t.reply}</span></span>
-          </Link>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 rounded-[2rem] border border-fuchsia-200/20 bg-black/30 p-6 text-center shadow-2xl backdrop-blur sm:p-8"
+        >
+          <div className="grid items-center gap-6 md:grid-cols-[220px_1fr] md:text-left">
+            <div className="relative mx-auto">
+              <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-fuchsia-500/20 to-cyan-400/20 blur-2xl" />
+              <img
+                src="/assets/amora-relationship-coach-official.webp"
+                alt="Amora — One2OneLove Relationship Coach"
+                className="relative w-full max-w-[220px] rounded-3xl border border-white/15 shadow-[0_20px_55px_rgba(236,72,153,0.25)]"
+              />
+            </div>
+
+            <div>
+              <div className="text-xs font-black uppercase tracking-[.24em] text-rose-200">{t.meet}</div>
+              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{t.title}</h1>
+              <p className="mt-3 max-w-3xl text-lg leading-7 text-white/70">{t.subtitle}</p>
+
+              <Link
+                to="/Tokens?return=/RelationshipCoach"
+                className="mt-5 flex max-w-sm items-center justify-between rounded-2xl border border-amber-200/25 bg-amber-300/10 px-5 py-3 text-amber-50 shadow-lg transition hover:bg-amber-300/15"
+              >
+                <span className="inline-flex items-center gap-2 font-black">
+                  <Coins className="h-5 w-5 text-amber-300" />
+                  O2OL Tokens
+                </span>
+                <span className="font-black">
+                  {tokenBalance}
+                  <span className="ml-1 text-xs font-bold text-amber-200">· {amoraTokenCost || 1}/{t.reply}</span>
+                </span>
+              </Link>
+            </div>
+          </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-4">
-              <Button onClick={() => createConversationMutation.mutate()} className="w-full mb-4 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700" disabled={createConversationMutation.isPending}>
-                <Plus className="w-4 h-4 mr-2" />{t.newChat}
-              </Button>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">{t.yourConversations}</h3>
-              <div className="space-y-2">
-                {conversations.map((conv) => (
-                  <div key={conv.id} className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${currentConversationId === conv.id ? 'bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-pink-300' : 'bg-gray-50 hover:bg-gray-100'}`}>
-                    <button onClick={() => loadConversation(conv.id)} className="flex-1 text-left">
-                      <p className="text-sm font-medium text-gray-900 truncate">{conv.metadata?.name || conv.title || 'Coaching Session'}</p>
-                      <p className="text-xs text-gray-500">{new Date(conv.created_date || conv.created_at).toLocaleDateString()}</p>
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); if (window.confirm('Are you sure you want to delete this conversation?')) deleteConversationMutation.mutate(conv.id); }} className="text-gray-400 hover:text-red-600 transition-colors ml-2" title={t.deleteConversation}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {conversations.length === 0 && <div className="text-center py-6"><MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" /><p className="text-sm text-gray-500">{t.emptyState}</p></div>}
+        <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+          <aside className="rounded-[1.75rem] border border-fuchsia-200/20 bg-black/35 p-5 shadow-xl backdrop-blur">
+            <Button
+              onClick={() => createConversationMutation.mutate()}
+              className="w-full bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 font-black text-white hover:brightness-110"
+              disabled={createConversationMutation.isPending}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t.newChat}
+            </Button>
+
+            <h3 className="mb-3 mt-5 text-sm font-semibold text-white/70">{t.yourConversations}</h3>
+            <div className="space-y-2">
+              {conversations.map((conv) => (
+                <div
+                  key={conv.id}
+                  className={`flex items-center justify-between rounded-xl pr-2 transition-all ${
+                    currentConversationId === conv.id
+                      ? 'border border-fuchsia-300/25 bg-fuchsia-500/25'
+                      : 'bg-white/[0.05] hover:bg-white/10'
+                  }`}
+                >
+                  <button onClick={() => loadConversation(conv.id)} className="min-w-0 flex-1 px-3 py-2 text-left">
+                    <p className="truncate text-sm font-medium text-white">{conv.metadata?.name || conv.title || 'Coaching Session'}</p>
+                    <p className="text-xs text-white/45">{new Date(conv.created_date || conv.created_at).toLocaleDateString()}</p>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm('Are you sure you want to delete this conversation?')) deleteConversationMutation.mutate(conv.id);
+                    }}
+                    className="ml-2 rounded-lg p-2 text-white/35 transition-colors hover:bg-white/10 hover:text-rose-300"
+                    title={t.deleteConversation}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+
+              {conversations.length === 0 && (
+                <div className="py-7 text-center">
+                  <MessageCircle className="mx-auto mb-2 h-11 w-11 text-fuchsia-300/50" />
+                  <p className="text-sm text-white/45">{t.emptyState}</p>
+                </div>
+              )}
+            </div>
+          </aside>
+
+          <section className="flex min-h-[620px] flex-col overflow-hidden rounded-[1.75rem] border border-white/15 bg-black/35 shadow-2xl backdrop-blur">
+            <div className="border-b border-white/10 bg-gradient-to-r from-rose-500/10 via-fuchsia-500/10 to-cyan-400/10 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <MessageCircle className="h-6 w-6 text-fuchsia-200" />
+                <div>
+                  <h2 className="font-black">{t.title}</h2>
+                  <p className="text-xs text-white/50">{t.tokenNote}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg h-[600px] flex flex-col">
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {!currentConversationId && messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center">
-                    <Sparkles className="w-16 h-16 text-gray-300 mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">{t.emptyState}</h3>
-                    <p className="text-gray-500 mb-6 max-w-md">{t.emptyStateDesc}</p>
-                    <div className="w-full max-w-md">
-                      <p className="text-sm font-semibold text-gray-700 mb-3">{t.quickPrompts}</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {quickPrompts.map((prompt) => {
-                          const Icon = prompt.icon;
-                          return <button key={prompt.id} onClick={() => handleSendMessage(prompt.text)} className="flex items-center gap-3 p-3 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg hover:from-pink-100 hover:to-purple-100 transition-all text-left border border-pink-200"><Icon className="w-5 h-5 text-pink-600" /><span className="text-sm text-gray-700">{prompt.text}</span></button>;
-                        })}
-                      </div>
+            <div className="flex-1 space-y-4 overflow-y-auto p-5">
+              {!currentConversationId && messages.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center text-center">
+                  <Sparkles className="mb-4 h-14 w-14 text-fuchsia-300/60" />
+                  <h3 className="mb-2 text-xl font-semibold text-white/70">{t.emptyState}</h3>
+                  <p className="mb-6 max-w-md text-white/50">{t.emptyStateDesc}</p>
+
+                  <div className="w-full max-w-md">
+                    <p className="mb-3 text-sm font-semibold text-white/65">{t.quickPrompts}</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {quickPrompts.map((prompt) => {
+                        const Icon = prompt.icon;
+                        return (
+                          <button
+                            key={prompt.id}
+                            onClick={() => handleSendMessage(prompt.text)}
+                            className="flex items-center gap-3 rounded-xl border border-fuchsia-200/15 bg-white/[0.06] p-3 text-left text-white/80 transition-all hover:bg-white/10"
+                          >
+                            <Icon className="h-5 w-5 text-fuchsia-300" />
+                            <span className="text-sm">{prompt.text}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                ) : (
-                  <>
-                    {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
-                    {isSending && <div className="flex gap-3 justify-start"><div className="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-pink-500" /></div><div className="bg-white border border-gray-200 rounded-2xl px-4 py-2.5"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div></div>}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
+                  {isSending && (
+                    <div className="flex justify-start gap-3">
+                      <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500/30 to-fuchsia-500/30">
+                        <div className="h-1.5 w-1.5 rounded-full bg-fuchsia-300" />
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-2.5">
+                        <Loader2 className="h-4 w-4 animate-spin text-white/60" />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+
+            <div className="border-t border-white/10 bg-black/10 p-4">
+              <div className="flex gap-3">
+                <Input
+                  placeholder={t.typeMessage}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className="h-12 flex-1 border-white/15 bg-slate-950/75 text-white placeholder:text-white/35 focus-visible:ring-fuchsia-400"
+                  disabled={isSending}
+                />
+                <Button
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputMessage.trim() || isSending}
+                  className="h-12 bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 px-6 text-white hover:brightness-110"
+                >
+                  {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Send className="mr-2 h-5 w-5" />{t.send}</>}
+                </Button>
               </div>
 
-              <div className="border-t border-gray-200 p-4 bg-gray-50">
-                <div className="flex gap-3">
-                  <Input placeholder={t.typeMessage} value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} className="flex-1 h-12" disabled={isSending} />
-                  <Button onClick={() => handleSendMessage()} disabled={!inputMessage.trim() || isSending} className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 h-12 px-6">
-                    {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5 mr-2" />{t.send}</>}
-                  </Button>
+              {currentConversationId && messages.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {quickPrompts.slice(0, 3).map((prompt) => (
+                    <button
+                      key={prompt.id}
+                      onClick={() => handleSendMessage(prompt.text)}
+                      disabled={isSending}
+                      className="rounded-full border border-fuchsia-200/15 bg-white/[0.06] px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
+                    >
+                      {prompt.text}
+                    </button>
+                  ))}
                 </div>
-                {currentConversationId && messages.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{quickPrompts.slice(0, 3).map((prompt) => <button key={prompt.id} onClick={() => handleSendMessage(prompt.text)} disabled={isSending} className="text-xs px-3 py-1.5 bg-white rounded-full border border-pink-200 text-gray-700 hover:bg-pink-50 transition-colors disabled:opacity-50">{prompt.text}</button>)}</div>}
-              </div>
+              )}
             </div>
-          </div>
+          </section>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
