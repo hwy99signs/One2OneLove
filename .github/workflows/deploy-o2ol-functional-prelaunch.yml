@@ -147,7 +147,7 @@ jobs:
           npm ci
           npm run build
           test -s dist/index.html
-          grep -F "accessModel:'free_tokens'" worker/o2ol-tokens.ts >/dev/null
+          grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null
           grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null
           if grep -REn 'MEDIA\.(put|delete)\(' worker; then
             echo "R2 write operation detected. Shared media bucket must remain read-only in Prelaunch." >&2
