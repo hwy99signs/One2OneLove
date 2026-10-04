@@ -66,7 +66,7 @@ export async function sendO2OLTelemetry(env) {
 
   const started = Date.now();
   const payload = buildO2OLTelemetry(env, 0);
-  const response = await fetch(endpoint, {
+  const request = new Request(endpoint, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -76,6 +76,16 @@ export async function sendO2OLTelemetry(env) {
     },
     body: JSON.stringify(payload),
   });
+
+  // Workers in the same Cloudflare account must communicate through a
+  // Service Binding rather than recursively fetching each other's workers.dev
+  // hostnames. Fall back to normal fetch only outside Cloudflare/service-binding
+  // deployments (for local development and independent hosts).
+  const transport = env.EPSCIE_SERVICE && typeof env.EPSCIE_SERVICE.fetch === 'function'
+    ? env.EPSCIE_SERVICE
+    : { fetch: (input) => fetch(input) };
+
+  const response = await transport.fetch(request);
 
   const elapsed = Date.now() - started;
   if (!response.ok) {
