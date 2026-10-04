@@ -160,6 +160,7 @@ export default function RelationshipCoach() {
         return [...withoutOptimistic, result.userMessage, result.message];
       });
       queryClient.invalidateQueries({ queryKey: ['coach-conversations', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['o2olTokenWallet', user?.id] });
     } catch (error) {
       setMessages(prev => prev.filter(message => !String(message.id).startsWith('local-')));
       setInputMessage(text);
@@ -185,7 +186,7 @@ export default function RelationshipCoach() {
           <div className="mt-6 text-xs font-black uppercase tracking-[.22em] text-rose-600">{t.meet}</div>
           <h1 className="mt-2 text-4xl font-black text-slate-900">{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-7 text-slate-600">{t.subtitle}</p>
-          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950"><Coins className="mx-auto mb-2 h-5 w-5"/>Creating an account and viewing Amora are free. Each Amora response uses O2OL Tokens.</div>
+          <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950"><Coins className="mx-auto mb-2 h-5 w-5"/>{t.tokenNote}</div>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach" className="rounded-full border border-slate-300 bg-white px-6 py-3 font-black text-slate-800">{t.signIn}</Link>
             <Link to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach" className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-6 py-3 font-black text-white">{t.createAccount}</Link>
