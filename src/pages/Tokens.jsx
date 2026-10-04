@@ -124,7 +124,7 @@ export default function Tokens(){
     <h2 className="text-2xl font-black text-slate-950">{t.packages}</h2>
     <div className="mt-4 grid gap-4 md:grid-cols-3">
      {packages.map((pkg,i)=><div key={pkg.code} className={'rounded-[26px] border bg-white p-6 shadow-sm '+(i===1?'border-violet-300 ring-2 ring-violet-100':'border-slate-200')}>
-      <div className="text-sm font-black uppercase tracking-wide text-violet-600">{pkg.label}</div><div className="mt-2 text-4xl font-black">{pkg.tokens} <span className="text-lg text-slate-500">tokens</span></div><div className="mt-1 text-2xl font-black text-slate-800">{money(pkg.amount_cents)}</div>
+      <div className="text-sm font-black uppercase tracking-wide text-violet-600">{pkg.label}</div><div className="mt-2 text-4xl font-black">{pkg.tokens} <span className="text-lg text-slate-500">tokens</span>{pkg.code==='value'&&<span className="ml-2 align-middle text-sm font-black text-emerald-600">(10 Bonus Tokens)</span>}{pkg.code==='best_value'&&<span className="ml-2 align-middle text-sm font-black text-emerald-600">(50 Bonus Tokens)</span>}</div><div className="mt-1 text-2xl font-black text-slate-800">{money(pkg.amount_cents)}</div>
       <button onClick={()=>buy(pkg.code)} disabled={!!busy} className="mt-5 w-full rounded-2xl bg-slate-950 px-4 py-3 font-black text-white disabled:opacity-50">{busy===pkg.code?t.checkout:t.buy}</button>
       {pkg.calibration_only&&<div className="mt-3 text-center text-[11px] font-bold text-amber-600">PRELAUNCH CALIBRATION PACKAGE</div>}
      </div>)}
