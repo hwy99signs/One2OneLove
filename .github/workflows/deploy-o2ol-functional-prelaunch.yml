@@ -2,6 +2,11 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-prelaunch-20261003
+    paths:
+      - ".github/token-prelaunch-deploy-trigger"
 
 permissions:
   contents: read
@@ -178,6 +183,8 @@ jobs:
           grep -F 'to="/RelationshipCoach"' src/pages/Amora.jsx >/dev/null || { echo "Legacy Amora route does not consolidate to Relationship Coach." >&2; exit 1; }
           grep -F 'createPageUrl("RelationshipCoach")' src/pages/Layout.jsx >/dev/null || { echo "Talk with Amora action navigation missing." >&2; exit 1; }
           grep -F "'/relationshipcoach':'Talk with Amora'" src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Amora Token notice on Relationship Coach route missing." >&2; exit 1; }
+          grep -F 'path="/RelationshipCoach" element={<RelationshipCoach />}' src/pages/index.jsx >/dev/null || { echo "Relationship Coach must render directly; redirect loops are forbidden." >&2; exit 1; }
+          if grep -F 'path="/RelationshipCoach" element={<Navigate to="/Amora"' src/pages/index.jsx >/dev/null; then echo "Relationship Coach redirect loop detected." >&2; exit 1; fi
           if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
             echo "Bianca signup must pass through Individual / Professional selection." >&2
             exit 1
