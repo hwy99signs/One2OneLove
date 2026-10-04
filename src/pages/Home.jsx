@@ -163,7 +163,7 @@ export default function Home() {
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
           <button type="button" onClick={() => go('RelationshipCoach')} className="group mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
             <div className="flex items-center justify-center bg-[#16070f] p-4">
-              <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
+              <img src="/assets/amora-relationship-coach-official.jpg" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
             </div>
             <div className="flex flex-col justify-center p-6 sm:p-8">
               <div className="text-xs font-black uppercase tracking-[.2em] text-rose-600">{amora.eyebrow}</div>
