@@ -172,11 +172,11 @@ jobs:
           grep -F "startTokenCheckout(code,returnTo)" src/pages/Tokens.jsx >/dev/null || { echo "Token checkout destination preservation missing." >&2; exit 1; }
           grep -F "(10 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Value package bonus message missing." >&2; exit 1; }
           grep -F "(50 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Best Value package bonus message missing." >&2; exit 1; }
-          test -s public/assets/amora-relationship-coach-official.webp || { echo "Approved Amora image asset missing." >&2; exit 1; }
-          test "$(wc -c < public/assets/amora-relationship-coach-official.webp)" -gt 12000 || { echo "Amora image asset is unexpectedly small/broken." >&2; exit 1; }
+          test -s public/assets/amora-relationship-coach-official.jpg || { echo "Approved Amora image asset missing." >&2; exit 1; }
+          test "$(wc -c < public/assets/amora-relationship-coach-official.jpg)" -gt 12000 || { echo "Amora image asset is unexpectedly small/broken." >&2; exit 1; }
           grep -F "radial-gradient(circle at 12% 0%, #7f1d4e" src/pages/RelationshipCoach.jsx >/dev/null || { echo "Amora rich visual treatment missing." >&2; exit 1; }
           grep -F "Amora — Relationship Coach" src/pages/RelationshipCoach.jsx >/dev/null || { echo "Existing Relationship Coach is not branded as Amora." >&2; exit 1; }
-          grep -F "/assets/amora-relationship-coach-official.webp" src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx >/dev/null || { echo "Canonical Amora image is not wired into required surfaces." >&2; exit 1; }
+          grep -F "/assets/amora-relationship-coach-official.jpg" src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx >/dev/null || { echo "Canonical Amora image is not wired into required surfaces." >&2; exit 1; }
           grep -F 'to="/RelationshipCoach"' src/pages/Amora.jsx >/dev/null || { echo "Legacy Amora route does not consolidate to Relationship Coach." >&2; exit 1; }
           grep -F 'createPageUrl("RelationshipCoach")' src/pages/Layout.jsx >/dev/null || { echo "Talk with Amora action navigation missing." >&2; exit 1; }
           grep -F "'/relationshipcoach':'Talk with Amora'" src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Amora Token notice on Relationship Coach route missing." >&2; exit 1; }
