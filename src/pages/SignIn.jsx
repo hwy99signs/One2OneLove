@@ -56,11 +56,13 @@ export default function SignIn() {
         try { sessionStorage.removeItem('o2ol-admin-mfa-code-sent-at'); } catch {}
         await endAdminMfa().catch(() => null);
       }
-      const target = phoneRequired && !phoneVerified
-        ? `/VerifyPhone${safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`
-        : role === 'admin'
-          ? '/AdminAccess'
-          : safeRedirect || createPageUrl('Home');
+      const postAuthReturn = safeRedirect || createPageUrl('Home');
+      const tokenLanding = `/Tokens?onboarding=1&return=${encodeURIComponent(postAuthReturn)}`;
+      const target = role === 'admin'
+        ? '/AdminAccess'
+        : phoneRequired && !phoneVerified
+          ? `/VerifyPhone?redirect=${encodeURIComponent(tokenLanding)}`
+          : tokenLanding;
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
     }
