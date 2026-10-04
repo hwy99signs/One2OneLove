@@ -2,6 +2,11 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-prelaunch-20261003
+    paths:
+      - ".github/token-prelaunch-deploy-trigger"
 
 permissions:
   contents: read
@@ -144,6 +149,17 @@ jobs:
           test -s dist/index.html
           grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null
           grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null
+          grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null
+          grep -F 'TOKEN_NOTICE_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null
+          grep -F 'signUpHref' src/pages/SignIn.jsx >/dev/null
+          if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
+            echo "Bianca signup must pass through Individual / Professional selection." >&2
+            exit 1
+          fi
+          if grep -F 'source=amora&type=individual' src/pages/Amora.jsx 2>/dev/null; then
+            echo "Amora signup must pass through Individual / Professional selection." >&2
+            exit 1
+          fi
           test "$TOKEN_MEDIA_BUCKET" = "one2onelove-token-prelaunch-media"
           if [ "$TOKEN_MEDIA_BUCKET" = "one2onelove-media" ]; then
             echo "Production R2 bucket is forbidden for Token Prelaunch." >&2
