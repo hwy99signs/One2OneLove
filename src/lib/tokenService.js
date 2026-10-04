@@ -37,3 +37,14 @@ export function tokenRequiredDetails(error){
   const e=error?.payload?.error||{};
   return {balance:Number(e.balance||0),required:Number(e.required||0),featureCode:e.featureCode||null,featureLabel:e.featureLabel||null};
 }
+
+export async function listTokenUnlocks(featureCode){
+  const query=new URLSearchParams({featureCode:String(featureCode||'')});
+  return apiRequest('/api/tokens/unlocks?'+query.toString());
+}
+export async function unlockTokenContent({featureCode,contentKey,source='content_unlock',idempotencyKey=null}){
+  return apiRequest('/api/tokens/unlocks',{
+    method:'POST',
+    body:{featureCode,contentKey,source,...(idempotencyKey?{idempotencyKey}:{})},
+  });
+}
