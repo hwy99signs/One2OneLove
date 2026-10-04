@@ -10,6 +10,12 @@
     "PRELAUNCH_ENVIRONMENT": "true",
     "O2OL_RELEASE_VERSION": "epscie-prelaunch-v1"
   },
+  "services": [
+    {
+      "binding": "EPSCIE_SERVICE",
+      "service": "epscie-core"
+    }
+  ],
   "triggers": {
     "crons": ["* * * * *"]
   }
