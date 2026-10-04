@@ -2,6 +2,11 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-prelaunch-20261003
+    paths:
+      - ".github/token-prelaunch-deploy-trigger"
 
 permissions:
   contents: read
@@ -161,6 +166,10 @@ jobs:
           grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null || { echo "Signup Token-intent notice missing." >&2; exit 1; }
           grep -F 'TOKEN_NOTICE_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Immediate Token feature notice map missing." >&2; exit 1; }
           grep -F 'signUpHref' src/pages/SignIn.jsx >/dev/null || { echo "Sign-in to role-selection signup handoff missing." >&2; exit 1; }
+          grep -F "unlockTokenContent" src/pages/DateIdeas.jsx src/lib/tokenService.js >/dev/null || { echo "Date Ideas Token unlock client missing." >&2; exit 1; }
+          grep -F "o2ol_token_content_unlocks" worker/o2ol-tokens.ts neon-migrations/2026-10-04-o2ol-token-content-unlocks.sql >/dev/null || { echo "Persistent Token content unlock schema missing." >&2; exit 1; }
+          grep -F "date_idea_unlock" worker/o2ol-tokens.ts src/pages/DateIdeas.jsx >/dev/null || { echo "Date Idea Token price/unlock contract missing." >&2; exit 1; }
+          grep -F "/assets/o2ol-approved-logo.png" src/pages/Layout.jsx >/dev/null || { echo "Approved O2OL logo missing from MMIQ header." >&2; exit 1; }
           if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
             echo "Bianca signup must pass through Individual / Professional selection." >&2
             exit 1
