@@ -33,7 +33,7 @@ export default function MyMatchIQAssessment(){
 
  async function begin(){
   if(!isAuthenticated){
-    navigate('/SignUp?source=mymatchiq-assessment&type=individual');
+    navigate('/SignUp?source=mymatchiq-assessment&return=/MyMatchIQ/Assessment');
     return;
   }
   setAnswers([]);setSaveError('');setStarted(true);
@@ -55,7 +55,7 @@ export default function MyMatchIQAssessment(){
 
  const current=questions[Math.min(answers.length,Math.max(questions.length-1,0))];
  const reset=()=>begin();
- const casualHref=isAuthenticated ? '/MyMatchIQ/Bianca' : '/SignUp?source=mymatchiq-bianca&type=individual';
+ const casualHref=isAuthenticated ? '/MyMatchIQ/Bianca' : '/SignUp?source=mymatchiq-bianca&token=1&feature=bianca&return=/MyMatchIQ/Bianca';
 
  return <main className="min-h-screen bg-[#070312] px-4 py-10 text-white sm:px-6" style={{backgroundImage:'radial-gradient(circle at 16% 0%, #5b126f 0%, transparent 32%), radial-gradient(circle at 86% 20%, #162e78 0%, transparent 32%)'}}>
   <section className="mx-auto max-w-5xl">
