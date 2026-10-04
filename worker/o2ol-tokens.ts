@@ -307,6 +307,9 @@ async function createCheckout(request,db,env,auth,input){
   if(!pkg)return fail('Invalid token package.',400,'invalid_package');
   const customer=await ensureStripeCustomer(db,env,auth);
   const origin=new URL(request.url).origin;
+  const requestedReturn=String(input?.returnTo||'').trim();
+  const safeReturn=requestedReturn.startsWith('/')&&!requestedReturn.startsWith('//')?requestedReturn:'/Home';
+  const encodedReturn=encodeURIComponent(safeReturn);
   const checkout=await stripeRequest(env,'POST','/checkout/sessions',{
     mode:'payment',
     customer,
@@ -314,8 +317,8 @@ async function createCheckout(request,db,env,auth,input){
     'line_items[0][price_data][unit_amount]':pkg.amount_cents,
     'line_items[0][price_data][product_data][name]':`One2OneLove — ${pkg.label} Token Package`,
     'line_items[0][quantity]':1,
-    success_url:`${origin}/Tokens?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:`${origin}/Tokens?checkout=cancelled`,
+    success_url:`${origin}/Tokens?checkout=success&session_id={CHECKOUT_SESSION_ID}&return=${encodedReturn}`,
+    cancel_url:`${origin}/Tokens?checkout=cancelled&return=${encodedReturn}`,
     client_reference_id:auth.user.id,
     'metadata[user_id]':auth.user.id,
     'metadata[purpose]':'o2ol_token_purchase',
