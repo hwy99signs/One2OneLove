@@ -1,0 +1,99 @@
+name: O2OL Token Prelaunch Studio Media Sync
+
+on:
+  push:
+    branches:
+      - integration/o2ol-github-reconciliation-20261006
+    paths:
+      - ".github/workflows/o2ol-token-prelaunch-studio-media-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-studio-media:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SOURCE_BUCKET: one2onelove-media
+      TARGET_BUCKET: one2onelove-token-prelaunch-media
+      OBJECT_KEY: studio/season-1/episode-1-who-should-apologize-first.mp4
+      EXPECTED_SOURCE_BYTES: "115079454"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Require Cloudflare credentials and enforce bucket isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+          test "$SOURCE_BUCKET" = "one2onelove-media"
+          test "$TARGET_BUCKET" = "one2onelove-token-prelaunch-media"
+          test "$SOURCE_BUCKET" != "$TARGET_BUCKET"
+          test "$OBJECT_KEY" = "studio/season-1/episode-1-who-should-apologize-first.mp4"
+
+      - name: Download immutable live Episode 1 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_FILE="$RUNNER_TEMP/o2ol-episode-1-source.mp4"
+          npx --yes wrangler@4.147.0 r2 object get "$SOURCE_BUCKET/$OBJECT_KEY" --file "$SOURCE_FILE" --remote
+          SOURCE_BYTES=$(stat -c%s "$SOURCE_FILE")
+          test "$SOURCE_BYTES" = "$EXPECTED_SOURCE_BYTES"
+          SOURCE_SHA=$(sha256sum "$SOURCE_FILE" | awk '{print $1}')
+          echo "SOURCE_FILE=$SOURCE_FILE" >> "$GITHUB_ENV"
+          echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+          echo "SOURCE_BYTES=$SOURCE_BYTES" >> "$GITHUB_ENV"
+          echo "Episode 1 source: $SOURCE_BYTES bytes, sha256=$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Refuse to overwrite a different Token Prelaunch object
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_EXISTING="$RUNNER_TEMP/o2ol-episode-1-existing.mp4"
+          set +e
+          npx --yes wrangler@4.147.0 r2 object get "$TARGET_BUCKET/$OBJECT_KEY" --file "$TARGET_EXISTING" --remote >"$RUNNER_TEMP/target-get.log" 2>&1
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -eq 0 ]; then
+            TARGET_SHA=$(sha256sum "$TARGET_EXISTING" | awk '{print $1}')
+            TARGET_BYTES=$(stat -c%s "$TARGET_EXISTING")
+            if [ "$TARGET_SHA" != "$SOURCE_SHA" ] || [ "$TARGET_BYTES" != "$SOURCE_BYTES" ]; then
+              echo "A different Token Prelaunch Episode 1 object already exists. Refusing to overwrite it." >&2
+              exit 1
+            fi
+            echo "TARGET_ALREADY_MATCHES=true" >> "$GITHUB_ENV"
+            echo "Token Prelaunch Episode 1 already matches source; upload not needed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "TARGET_ALREADY_MATCHES=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Copy Episode 1 into isolated Token Prelaunch R2
+        if: env.TARGET_ALREADY_MATCHES != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.147.0 r2 object put "$TARGET_BUCKET/$OBJECT_KEY" \
+            --file "$SOURCE_FILE" \
+            --content-type "video/mp4" \
+            --remote
+
+      - name: Verify Token Prelaunch object byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERIFY_FILE="$RUNNER_TEMP/o2ol-episode-1-verify.mp4"
+          npx --yes wrangler@4.147.0 r2 object get "$TARGET_BUCKET/$OBJECT_KEY" --file "$VERIFY_FILE" --remote
+          VERIFY_BYTES=$(stat -c%s "$VERIFY_FILE")
+          VERIFY_SHA=$(sha256sum "$VERIFY_FILE" | awk '{print $1}')
+          test "$VERIFY_BYTES" = "$SOURCE_BYTES"
+          test "$VERIFY_SHA" = "$SOURCE_SHA"
+          echo "Verified Token Prelaunch Episode 1: $VERIFY_BYTES bytes, sha256=$VERIFY_SHA" >> "$GITHUB_STEP_SUMMARY"
