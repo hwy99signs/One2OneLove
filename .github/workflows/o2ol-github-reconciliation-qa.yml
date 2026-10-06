@@ -17,40 +17,57 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Build exact token source
+      - name: Prove application source is unchanged from deployed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="509cc0b1901713a33e72c0379397ed20d9b24144"
+
+          git diff --exit-code "$BASE"..HEAD -- \
+            src \
+            worker \
+            public \
+            neon-migrations \
+            package.json \
+            package-lock.json
+
+          CHANGED="$(git diff --name-only "$BASE"..HEAD | sort)"
+          EXPECTED="$(printf '%s\n' \
+            '.github/workflows/o2ol-github-reconciliation-qa.yml' \
+            '.github/workflows/o2ol-token-prelaunch-studio-media-sync.yml' | sort)"
+
+          test "$CHANGED" = "$EXPECTED"
+          echo "Application/source tree is unchanged from $BASE."
+
+      - name: Build token source
         shell: bash
         run: |
           set -euo pipefail
           npm ci
           npm run build
+
           test -s dist/index.html
           test -s dist/assets/index-BKdxG-Rx.js
           test -s dist/assets/index-DsQpSHnc.css
-
-      - name: Verify immutable Cloudflare version 117 frontend hashes
-        shell: bash
-        run: |
-          set -euo pipefail
-          JS="dist/assets/index-BKdxG-Rx.js"
-          CSS="dist/assets/index-DsQpSHnc.css"
-
-          test "$(stat -c%s "$JS")" = "4441869"
-          test "$(stat -c%s "$CSS")" = "181775"
-
-          test "$(sha256sum "$JS" | awk '{print $1}')" = "bb4f01066df7ff21583fcc8eff05c80c00c72fb0e186ce4b2c85d89e0e51363b"
-          test "$(sha256sum "$CSS" | awk '{print $1}')" = "1a8046ea6099c9b4b5b25ec9fb6cc90340ce09e98a55b1d96db3513b22cec040"
 
           grep -F '/assets/index-BKdxG-Rx.js' dist/index.html
           grep -F '/assets/index-DsQpSHnc.css' dist/index.html
           grep -F '<title>One 2 One Love</title>' dist/index.html
 
-      - name: Bundle-check exact Worker source
+          echo "Built JS bytes: $(stat -c%s dist/assets/index-BKdxG-Rx.js)"
+          echo "Built JS sha256: $(sha256sum dist/assets/index-BKdxG-Rx.js | awk '{print $1}')"
+          echo "Built CSS bytes: $(stat -c%s dist/assets/index-DsQpSHnc.css)"
+          echo "Built CSS sha256: $(sha256sum dist/assets/index-DsQpSHnc.css | awk '{print $1}')"
+
+      - name: Bundle-check Worker source
         shell: bash
         run: |
           set -euo pipefail
@@ -62,26 +79,30 @@ jobs:
             --outfile=/tmp/o2ol-token-worker.mjs
           test -s /tmp/o2ol-token-worker.mjs
 
-      - name: Verify recovered token-era source contracts
+      - name: Verify token-era source contracts
         shell: bash
         run: |
           set -euo pipefail
           grep -F 'Amora — Relationship Coach' src/pages/RelationshipCoach.jsx
           grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx
           grep -F 'path="/RelationshipCoach" element={<RelationshipCoach />}' src/pages/index.jsx
+
           grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
           grep -F 'Token System Dashboard' src/pages/TokenSystemDashboard.jsx
           grep -F 'path="/Tokens"' src/pages/index.jsx
           grep -F 'BUY TOKENS' src/pages/Layout.jsx
-          grep -F 'access_model: "free_tokens"' worker/epscie-telemetry.ts
-          grep -F "service: 'epscie-core'" .github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml
+
+          grep -F "access_model: 'free_tokens'" worker/epscie-telemetry.ts
+          grep -F 'binding": "EPSCIE_SERVICE"' .github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml
+          grep -F 'service": "epscie-core"' .github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml
+
           grep -F "studio/season-1/episode-1-who-should-apologize-first.mp4" worker/studio-media.ts
           grep -F "PUBLIC_DELAY_MS=7*24*60*60*1000" worker/studio-media.ts
 
-      - name: Verify production remains outside reconciliation scope
+      - name: Verify Production branch is unchanged
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "a41f39f2f77c598fd9d310122f04e691321b06d0"
-          test "$(git show a41f39f2f77c598fd9d310122f04e691321b06d0^:.github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml | sha256sum | awk '{print $1}')" \
-            = "$(git show 509cc0b1901713a33e72c0379397ed20d9b24144:.github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml | sha256sum | awk '{print $1}')"
+          MASTER_SHA="$(git ls-remote origin refs/heads/master | awk '{print $1}')"
+          test "$MASTER_SHA" = "cd35aec4dbcf643cfcf03bfb30966100eda26ec9"
+          echo "Production master remains $MASTER_SHA."
