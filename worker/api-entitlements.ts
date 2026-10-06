@@ -78,7 +78,7 @@ export async function enforceApiEntitlement(request, env, url) {
   // post. The community-chat handler enforces sign-in itself for writes,
   // presence and moderation actions, so the entitlement gate steps aside
   // for these paths only.
-  if (url.pathname.startsWith('/api/community-chat')) return null;
+  
   
   const required = requiredPlan(url.pathname);
   if (!required) return null;
