@@ -1,0 +1,67 @@
+name: O2OL Amora Page QA
+
+on:
+  push:
+    branches:
+      - integration/o2ol-github-reconciliation-20261006
+    paths:
+      - "src/pages/Amora.jsx"
+      - "src/pages/RelationshipCoach.jsx"
+      - "src/pages/index.jsx"
+      - ".github/workflows/o2ol-amora-page-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify approved Amora image is unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s public/assets/amora-relationship-coach-official.jpg
+          ACTUAL="$(sha256sum public/assets/amora-relationship-coach-official.jpg | awk '{print $1}')"
+          EXPECTED="b8cf5575719b244b62ac6b4e7f42cf632d503339f5a5e9b0e1567263a0f4c0df"
+          test "$ACTUAL" = "$EXPECTED"
+          echo "Approved Amora photo verified: $ACTUAL"
+
+      - name: Verify canonical Amora routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "import RelationshipCoach from './RelationshipCoach';" src/pages/Amora.jsx
+          grep -F 'return <RelationshipCoach />;' src/pages/Amora.jsx
+          grep -F '<Route path="/Amora" element={<Amora />} />' src/pages/index.jsx
+          grep -F '<Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />' src/pages/index.jsx
+          grep -F "'/amora': 'Amora — Relationship Coach'" src/pages/index.jsx
+          grep -F "'/relationshipcoach': 'Amora — Relationship Coach'" src/pages/index.jsx
+
+      - name: Verify Amora flows return to Amora
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx
+          grep -F 'redirect=/Amora' src/pages/RelationshipCoach.jsx
+          grep -F 'return=/Amora' src/pages/RelationshipCoach.jsx
+          if grep -F 'return=/RelationshipCoach' src/pages/RelationshipCoach.jsx; then
+            echo "Legacy return target still present" >&2
+            exit 1
+          fi
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -s dist/index.html
