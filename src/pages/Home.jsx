@@ -23,6 +23,14 @@ const AMORA_COPY = {
   de:{eyebrow:'LERNE AMORA KENNEN',title:'Deine One2OneLove Beziehungscoachin',body:'Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.',cta:'Mit Amora sprechen',token:'O2OL Tokens pro Antwort'}
 };
 
+const BIANCA_COPY = {
+  en:{eyebrow:'MEET BIANCA',title:'Your MyMatchIQ Compatibility Guide',body:'Talk naturally with Bianca about compatibility, personality patterns, relationship questions, and what your assessment insights mean.',cta:'Talk with Bianca',token:'O2OL Tokens per reply'},
+  es:{eyebrow:'CONOCE A BIANCA',title:'Tu Guía de Compatibilidad MyMatchIQ',body:'Habla naturalmente con Bianca sobre compatibilidad, patrones de personalidad, preguntas de relación y lo que significan tus resultados.',cta:'Hablar con Bianca',token:'Tokens O2OL por respuesta'},
+  fr:{eyebrow:'DÉCOUVREZ BIANCA',title:'Votre Guide de Compatibilité MyMatchIQ',body:'Parlez naturellement avec Bianca de compatibilité, de schémas de personnalité, de questions relationnelles et de la signification de vos résultats.',cta:'Parler avec Bianca',token:'Jetons O2OL par réponse'},
+  it:{eyebrow:'CONOSCI BIANCA',title:'La Tua Guida alla Compatibilità MyMatchIQ',body:'Parla naturalmente con Bianca di compatibilità, schemi di personalità, domande relazionali e del significato dei tuoi risultati.',cta:'Parla con Bianca',token:'Token O2OL per risposta'},
+  de:{eyebrow:'LERNE BIANCA KENNEN',title:'Dein MyMatchIQ Kompatibilitäts-Guide',body:'Sprich natürlich mit Bianca über Kompatibilität, Persönlichkeitsmuster, Beziehungsfragen und darüber, was deine Ergebnisse bedeuten.',cta:'Mit Bianca sprechen',token:'O2OL Tokens pro Antwort'}
+};
+
 const STUDIO_COPY = {
   en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 1',title:'Who Should Apologize First?',body:'See Bianca in an actual O2OL Studio conversation and explore a relationship question from more than one point of view.',watch:'Watch Episode 1'},
   es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 1',title:'Who Should Apologize First?',body:'Mira a Bianca en una conversación real de O2OL Studio y explora una pregunta de relación desde más de un punto de vista.',watch:'Ver Episodio 1'},
@@ -55,7 +63,6 @@ const COPY = {
 };
 
 const TOOLS = [
-  ['✦','MyMatchIQ','MyMatchIQ','from-slate-950 via-indigo-800 to-fuchsia-700','matchiq'],
   ['💗','loveNotes','LoveNotes','from-rose-500 to-pink-600'],
   ['💬','loveLanguage','LoveLanguageQuiz','from-violet-600 to-purple-600'],
   ['🗓️','dateIdeas','DateIdeas','from-cyan-500 to-blue-600'],
@@ -78,6 +85,7 @@ export default function Home() {
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
   const openHouse = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
   const amora = AMORA_COPY[currentLanguage] || AMORA_COPY.en;
+  const bianca = BIANCA_COPY[currentLanguage] || BIANCA_COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
   const [publicStats, setPublicStats] = useState(null);
   const go = page => navigate(createPageUrl(page));
@@ -161,7 +169,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
-          <button type="button" onClick={() => go('RelationshipCoach')} className="group mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
+          <button type="button" onClick={() => go('Amora')} className="group mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
             <div className="flex items-center justify-center bg-[#16070f] p-4">
               <img src="/assets/amora-relationship-coach-official.webp?v=20261006-portrait" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
             </div>
@@ -172,6 +180,20 @@ export default function Home() {
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <span className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-5 py-2.5 text-sm font-black text-white shadow-md">{amora.cta}</span>
                 <span className="text-xs font-black uppercase tracking-wide text-amber-700">🪙 {amora.token}</span>
+              </div>
+            </div>
+          </button>
+          <button type="button" onClick={() => navigate('/MyMatchIQ/Bianca')} className="group mx-auto mt-5 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-indigo-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
+            <div className="flex items-center justify-center bg-[#071426] p-4">
+              <img src="/assets/bianca-mymatchiq-portrait-v2.webp" alt="Bianca — MyMatchIQ Compatibility Guide" className="h-auto w-full max-w-[170px] rounded-2xl border border-sky-200/20 shadow-lg" />
+            </div>
+            <div className="flex flex-col justify-center p-6 sm:p-8">
+              <div className="text-xs font-black uppercase tracking-[.2em] text-sky-700">{bianca.eyebrow}</div>
+              <h3 className="mt-2 text-3xl font-black text-slate-950">{bianca.title}</h3>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">{bianca.body}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 px-5 py-2.5 text-sm font-black text-white shadow-md">{bianca.cta}</span>
+                <span className="text-xs font-black uppercase tracking-wide text-amber-700">🪙 {bianca.token}</span>
               </div>
             </div>
           </button>
