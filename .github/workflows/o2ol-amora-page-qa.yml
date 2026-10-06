@@ -25,15 +25,15 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Verify approved Amora image is unchanged
+      - name: Verify approved Amora portrait is unchanged
         shell: bash
         run: |
           set -euo pipefail
-          test -s public/assets/amora-relationship-coach-official.jpg
-          ACTUAL="$(sha256sum public/assets/amora-relationship-coach-official.jpg | awk '{print $1}')"
-          EXPECTED="b8cf5575719b244b62ac6b4e7f42cf632d503339f5a5e9b0e1567263a0f4c0df"
-          test "$ACTUAL" = "$EXPECTED"
-          echo "Approved Amora photo verified: $ACTUAL"
+          test -s public/assets/amora-relationship-coach-official.webp
+          ACTUAL_BLOB="$(git rev-parse HEAD:public/assets/amora-relationship-coach-official.webp)"
+          EXPECTED_BLOB="706a5ed18086a9789268276067b5d55ca0583fb5"
+          test "$ACTUAL_BLOB" = "$EXPECTED_BLOB"
+          echo "Approved Amora portrait verified: $ACTUAL_BLOB"
 
       - name: Verify canonical Amora routing
         shell: bash
@@ -50,7 +50,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx
+          grep -F '/assets/amora-relationship-coach-official.webp?v=20261006-portrait' src/pages/RelationshipCoach.jsx
+          grep -F '/assets/amora-relationship-coach-official.webp?v=20261006-portrait' src/pages/Home.jsx
+          grep -F "/assets/amora-relationship-coach-official.webp?v=20261006-portrait" src/pages/CoupleSupport.jsx
+          if grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx; then
+            echo "Blank Amora JPG placeholder is still referenced" >&2
+            exit 1
+          fi
           grep -F 'redirect=/Amora' src/pages/RelationshipCoach.jsx
           grep -F 'return=/Amora' src/pages/RelationshipCoach.jsx
           if grep -F 'return=/RelationshipCoach' src/pages/RelationshipCoach.jsx; then
