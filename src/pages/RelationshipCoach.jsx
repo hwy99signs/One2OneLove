@@ -208,13 +208,13 @@ export default function RelationshipCoach() {
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link
-              to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach"
+              to="/SignIn?source=amora&token=1&redirect=/Amora"
               className="rounded-full border border-white/30 bg-white/10 px-6 py-3 font-black text-white shadow-md transition hover:bg-white/15"
             >
               {t.signIn}
             </Link>
             <Link
-              to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach"
+              to="/SignUp?source=amora&token=1&feature=amora&return=/Amora"
               className="rounded-full bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 px-6 py-3 font-black text-white shadow-[0_12px_30px_rgba(217,70,239,0.3)] transition hover:brightness-110"
             >
               {t.createAccount}
@@ -265,7 +265,7 @@ export default function RelationshipCoach() {
               <p className="mt-3 max-w-3xl text-lg leading-7 text-white/70">{t.subtitle}</p>
 
               <Link
-                to="/Tokens?return=/RelationshipCoach"
+                to="/Tokens?return=/Amora"
                 className="mt-5 flex max-w-sm items-center justify-between rounded-2xl border border-amber-200/25 bg-amber-300/10 px-5 py-3 text-amber-50 shadow-lg transition hover:bg-amber-300/15"
               >
                 <span className="inline-flex items-center gap-2 font-black">
