@@ -40,7 +40,7 @@ export default function CoupleSupport() {
   const [search, setSearch] = useState('');
 
   const resources = [
-    { id:'amora', type:'interactive', icon:Heart, image:'/assets/amora-relationship-coach-official.jpg', label:t.amora, link:'RelationshipCoach', gradient:'from-rose-500 to-fuchsia-600' },
+    { id:'amora', type:'interactive', icon:Heart, image:'/assets/amora-relationship-coach-official.webp?v=20261006-portrait', label:t.amora, link:'Amora', gradient:'from-rose-500 to-fuchsia-600' },
     { id:'goals', type:'interactive', icon:Target, label:t.goals, link:'RelationshipGoals', gradient:'from-pink-500 to-rose-500' },
     { id:'quizzes', type:'interactive', icon:Brain, label:t.quizzes, link:'RelationshipQuizzes', gradient:'from-purple-500 to-violet-500' },
     { id:'communication', type:'interactive', icon:MessageCircle, label:t.communication, link:'CommunicationPractice', gradient:'from-cyan-500 to-blue-500' },
