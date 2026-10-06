@@ -1,10 +1,13 @@
-name: O2OL Amora Token Prelaunch Deploy
+name: O2OL Persona Cards Token Prelaunch Deploy
 
 on:
   push:
     branches:
       - integration/o2ol-github-reconciliation-20261006
     paths:
+      - "src/pages/Home.jsx"
+      - "src/pages/RelationshipCoach.jsx"
+      - "src/pages/MyMatchIQBianca.jsx"
       - ".github/workflows/o2ol-amora-token-prelaunch-deploy.yml"
   workflow_dispatch:
 
@@ -43,21 +46,59 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Verify Amora page + approved photo before deploy
+      - name: Verify Amora + Bianca cards, portraits, routes, and themes
         shell: bash
         run: |
           set -euo pipefail
+
           test -s public/assets/amora-relationship-coach-official.webp
           test "$(git rev-parse HEAD:public/assets/amora-relationship-coach-official.webp)" = "706a5ed18086a9789268276067b5d55ca0583fb5"
+
+          test -s public/assets/bianca-mymatchiq-portrait-v2.webp
+          test "$(git rev-parse HEAD:public/assets/bianca-mymatchiq-portrait-v2.webp)" = "cfbc2ac7efa596625d45493258fa552c09df1ef4"
+
           grep -F '<Route path="/Amora" element={<Amora />} />' src/pages/index.jsx
-          grep -F '<Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />' src/pages/index.jsx
-          grep -F '/assets/amora-relationship-coach-official.webp?v=20261006-portrait' src/pages/RelationshipCoach.jsx
+          grep -F '<Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />' src/pages/index.jsx
+
           grep -F '/assets/amora-relationship-coach-official.webp?v=20261006-portrait' src/pages/Home.jsx
-          grep -F "/assets/amora-relationship-coach-official.webp?v=20261006-portrait" src/pages/CoupleSupport.jsx
-          if grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx; then
+          grep -F '/assets/bianca-mymatchiq-portrait-v2.webp' src/pages/Home.jsx
+
+          if grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/Home.jsx src/pages/RelationshipCoach.jsx; then
             echo "Blank Amora JPG placeholder is still referenced." >&2
             exit 1
           fi
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const home = fs.readFileSync('src/pages/Home.jsx','utf8');
+          const amora = fs.readFileSync('src/pages/RelationshipCoach.jsx','utf8');
+          const bianca = fs.readFileSync('src/pages/MyMatchIQBianca.jsx','utf8');
+
+          const amoraPos = home.indexOf("onClick={() => go('Amora')}");
+          const biancaPos = home.indexOf("onClick={() => navigate('/MyMatchIQ/Bianca')}");
+          const toolsPos = home.indexOf('{TOOLS.map');
+          if (!(amoraPos >= 0 && biancaPos > amoraPos && toolsPos > biancaPos)) {
+            throw new Error('Homepage persona card order is not Amora -> Bianca -> tools.');
+          }
+
+          const toolsStart = home.indexOf('const TOOLS = [');
+          const toolsEnd = home.indexOf('export default function Home()', toolsStart);
+          const toolsBlock = home.slice(toolsStart, toolsEnd);
+          if (toolsBlock.includes("'MyMatchIQ'")) {
+            throw new Error('Legacy purple MyMatchIQ tool tab is still present below the persona cards.');
+          }
+
+          if (!home.includes('const BIANCA_COPY = {')) throw new Error('Bianca homepage copy block is missing.');
+          if (!home.includes("from-blue-600 via-indigo-600 to-cyan-500")) throw new Error('Bianca card cool theme is missing.');
+          if (!home.includes("from-rose-600 via-pink-600 to-amber-500")) throw new Error('Amora card warm theme is missing.');
+
+          if (!amora.includes("bg-[#16070f]") || !amora.includes("#8b1e3f") || !amora.includes("#9a3412")) {
+            throw new Error('Amora warm rose/plum/gold page theme is missing.');
+          }
+          if (!bianca.includes("bg-[#03101f]") || !bianca.includes("#0f3a66") || !bianca.includes("#1e3a8a")) {
+            throw new Error('Bianca cool navy/indigo page theme is missing.');
+          }
+          NODE
 
       - name: Build
         shell: bash
