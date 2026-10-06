@@ -47,10 +47,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(sha256sum public/assets/amora-relationship-coach-official.jpg | awk '{print $1}')" = "b8cf5575719b244b62ac6b4e7f42cf632d503339f5a5e9b0e1567263a0f4c0df"
+          test -s public/assets/amora-relationship-coach-official.webp
+          test "$(git rev-parse HEAD:public/assets/amora-relationship-coach-official.webp)" = "706a5ed18086a9789268276067b5d55ca0583fb5"
           grep -F '<Route path="/Amora" element={<Amora />} />' src/pages/index.jsx
           grep -F '<Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />' src/pages/index.jsx
-          grep -F '/assets/amora-relationship-coach-official.jpg?v=20261006' src/pages/RelationshipCoach.jsx
+          grep -F '/assets/amora-relationship-coach-official.webp?v=20261006-portrait' src/pages/RelationshipCoach.jsx
+          grep -F '/assets/amora-relationship-coach-official.webp?v=20261006-portrait' src/pages/Home.jsx
+          grep -F "/assets/amora-relationship-coach-official.webp?v=20261006-portrait" src/pages/CoupleSupport.jsx
+          if grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx; then
+            echo "Blank Amora JPG placeholder is still referenced." >&2
+            exit 1
+          fi
 
       - name: Build
         shell: bash
