@@ -5,9 +5,93 @@
     <link rel="icon" type="image/png" href="/assets/o2ol-approved-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>One 2 One Love</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f7f2e7;
+      }
+      #o2ol-boot {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 24px;
+        box-sizing: border-box;
+        text-align: center;
+        color: #1c2b4a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      #o2ol-boot img {
+        width: 112px;
+        height: 112px;
+        object-fit: contain;
+      }
+      #o2ol-boot .o2ol-boot-tagline {
+        margin: 0;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        color: #8a7f63;
+      }
+      #o2ol-boot-msg {
+        margin: 0;
+        font-size: 15px;
+        color: #44506a;
+      }
+      #o2ol-boot-reload {
+        display: none;
+        background-color: #cf102d;
+        color: #ffffff;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 26px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Boot placeholder: shown only until the app mounts and replaces it.
+        If the JavaScript bundle fails to load or crashes before React can
+        render, this stays on screen instead of a blank white page, and the
+        watchdog below offers a reload after 12 seconds.
+      -->
+      <div id="o2ol-boot">
+        <img src="/assets/o2ol-approved-logo.png" alt="One2OneLove" width="112" height="112" />
+        <p class="o2ol-boot-tagline">LOVE. GROW. EVOLVE. TOGETHER.</p>
+        <p id="o2ol-boot-msg">Loading&hellip;</p>
+        <button id="o2ol-boot-reload" type="button">Reload the page</button>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var reloadBtn = document.getElementById('o2ol-boot-reload');
+        if (reloadBtn) {
+          reloadBtn.addEventListener('click', function () {
+            window.location.reload();
+          });
+        }
+        // Boot watchdog: if the app has not mounted after 12 seconds, the
+        // boot placeholder is still on screen — say so and offer a reload
+        // rather than leaving the visitor on a silent page.
+        setTimeout(function () {
+          var boot = document.getElementById('o2ol-boot');
+          if (!boot) return;
+          var msg = document.getElementById('o2ol-boot-msg');
+          if (msg) {
+            msg.textContent =
+              'This is taking longer than usual. Check your connection, or reload the page.';
+          }
+          if (reloadBtn) reloadBtn.style.display = 'inline-block';
+        }, 12000);
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

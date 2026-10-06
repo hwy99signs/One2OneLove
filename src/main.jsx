@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
+import RootErrorBoundary from '@/components/system/RootErrorBoundary.jsx'
 import { installRuntimeLocalization } from '@/utils/runtimeLocalization'
 import { installStaticUiLocalization } from '@/utils/staticUiLocalization'
 import { installI18nFallbackLocalization } from '@/utils/i18nFallbackLocalization'
@@ -75,5 +76,7 @@ document.addEventListener('click', (event) => {
 window.addEventListener('popstate', scrollPageToTop)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <App />
+        <RootErrorBoundary>
+        <App />
+    </RootErrorBoundary>
 )
