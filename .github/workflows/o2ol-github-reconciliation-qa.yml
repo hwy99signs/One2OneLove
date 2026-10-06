@@ -1,0 +1,87 @@
+name: O2OL GitHub Reconciliation QA
+
+on:
+  push:
+    branches:
+      - integration/o2ol-github-reconciliation-20261006
+    paths:
+      - ".github/workflows/o2ol-github-reconciliation-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build exact token source
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -s dist/index.html
+          test -s dist/assets/index-BKdxG-Rx.js
+          test -s dist/assets/index-DsQpSHnc.css
+
+      - name: Verify immutable Cloudflare version 117 frontend hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          JS="dist/assets/index-BKdxG-Rx.js"
+          CSS="dist/assets/index-DsQpSHnc.css"
+
+          test "$(stat -c%s "$JS")" = "4441869"
+          test "$(stat -c%s "$CSS")" = "181775"
+
+          test "$(sha256sum "$JS" | awk '{print $1}')" = "bb4f01066df7ff21583fcc8eff05c80c00c72fb0e186ce4b2c85d89e0e51363b"
+          test "$(sha256sum "$CSS" | awk '{print $1}')" = "1a8046ea6099c9b4b5b25ec9fb6cc90340ce09e98a55b1d96db3513b22cec040"
+
+          grep -F '/assets/index-BKdxG-Rx.js' dist/index.html
+          grep -F '/assets/index-DsQpSHnc.css' dist/index.html
+          grep -F '<title>One 2 One Love</title>' dist/index.html
+
+      - name: Bundle-check exact Worker source
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes esbuild@0.25.10 worker/index-v2.ts \
+            --bundle \
+            --platform=browser \
+            --format=esm \
+            --external:pg \
+            --outfile=/tmp/o2ol-token-worker.mjs
+          test -s /tmp/o2ol-token-worker.mjs
+
+      - name: Verify recovered token-era source contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'Amora — Relationship Coach' src/pages/RelationshipCoach.jsx
+          grep -F '/assets/amora-relationship-coach-official.jpg' src/pages/RelationshipCoach.jsx
+          grep -F 'path="/RelationshipCoach" element={<RelationshipCoach />}' src/pages/index.jsx
+          grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
+          grep -F 'Token System Dashboard' src/pages/TokenSystemDashboard.jsx
+          grep -F 'path="/Tokens"' src/pages/index.jsx
+          grep -F 'BUY TOKENS' src/pages/Layout.jsx
+          grep -F 'access_model: "free_tokens"' worker/epscie-telemetry.ts
+          grep -F "service: 'epscie-core'" .github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml
+          grep -F "studio/season-1/episode-1-who-should-apologize-first.mp4" worker/studio-media.ts
+          grep -F "PUBLIC_DELAY_MS=7*24*60*60*1000" worker/studio-media.ts
+
+      - name: Verify production remains outside reconciliation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "a41f39f2f77c598fd9d310122f04e691321b06d0"
+          test "$(git show a41f39f2f77c598fd9d310122f04e691321b06d0^:.github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml | sha256sum | awk '{print $1}')" \
+            = "$(git show 509cc0b1901713a33e72c0379397ed20d9b24144:.github/workflows/deploy-o2ol-functional-prelaunch-epscie-integration.yml | sha256sum | awk '{print $1}')"
