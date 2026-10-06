@@ -181,15 +181,15 @@ export default function RelationshipCoach() {
   if (!isAuthenticated) {
     return (
       <main
-        className="min-h-screen bg-[#09030f] px-4 py-12 text-white"
+        className="min-h-screen bg-[#16070f] px-4 py-12 text-white"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 12% 0%, #7f1d4e 0%, transparent 30%), radial-gradient(circle at 88% 12%, #3b1978 0%, transparent 30%), radial-gradient(circle at 50% 100%, #0e7490 0%, transparent 34%)',
+            'radial-gradient(circle at 12% 0%, #8b1e3f 0%, transparent 30%), radial-gradient(circle at 88% 12%, #5b102d 0%, transparent 30%), radial-gradient(circle at 50% 100%, #9a3412 0%, transparent 34%)',
         }}
       >
-        <section className="mx-auto max-w-3xl rounded-[2rem] border border-fuchsia-200/25 bg-black/35 p-7 text-center shadow-2xl backdrop-blur sm:p-9">
+        <section className="mx-auto max-w-3xl rounded-[2rem] border border-rose-200/25 bg-black/35 p-7 text-center shadow-2xl backdrop-blur sm:p-9">
           <div className="relative mx-auto w-fit">
-            <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-fuchsia-500/20 to-cyan-400/20 blur-2xl" />
+            <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-pink-500/25 to-amber-400/20 blur-2xl" />
             <img
               src="/assets/amora-relationship-coach-official.webp?v=20261006-portrait"
               alt="Amora — One2OneLove Relationship Coach"
@@ -215,7 +215,7 @@ export default function RelationshipCoach() {
             </Link>
             <Link
               to="/SignUp?source=amora&token=1&feature=amora&return=/Amora"
-              className="rounded-full bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 px-6 py-3 font-black text-white shadow-[0_12px_30px_rgba(217,70,239,0.3)] transition hover:brightness-110"
+              className="rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 px-6 py-3 font-black text-white shadow-[0_12px_30px_rgba(217,70,239,0.3)] transition hover:brightness-110"
             >
               {t.createAccount}
             </Link>
@@ -227,10 +227,10 @@ export default function RelationshipCoach() {
 
   return (
     <main
-      className="min-h-screen bg-[#09030f] px-3 py-6 text-white sm:px-6 sm:py-8"
+      className="min-h-screen bg-[#16070f] px-3 py-6 text-white sm:px-6 sm:py-8"
       style={{
         backgroundImage:
-          'radial-gradient(circle at 12% 0%, #7f1d4e 0%, transparent 28%), radial-gradient(circle at 88% 12%, #3b1978 0%, transparent 28%), radial-gradient(circle at 50% 100%, #0e7490 0%, transparent 32%)',
+          'radial-gradient(circle at 12% 0%, #8b1e3f 0%, transparent 28%), radial-gradient(circle at 88% 12%, #5b102d 0%, transparent 28%), radial-gradient(circle at 50% 100%, #9a3412 0%, transparent 32%)',
       }}
     >
       <section className="mx-auto max-w-7xl">
@@ -247,11 +247,11 @@ export default function RelationshipCoach() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 rounded-[2rem] border border-fuchsia-200/20 bg-black/30 p-6 text-center shadow-2xl backdrop-blur sm:p-8"
+          className="mb-8 rounded-[2rem] border border-rose-200/20 bg-black/30 p-6 text-center shadow-2xl backdrop-blur sm:p-8"
         >
           <div className="grid items-center gap-6 md:grid-cols-[220px_1fr] md:text-left">
             <div className="relative mx-auto">
-              <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-fuchsia-500/20 to-cyan-400/20 blur-2xl" />
+              <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-pink-500/25 to-amber-400/20 blur-2xl" />
               <img
                 src="/assets/amora-relationship-coach-official.webp?v=20261006-portrait"
                 alt="Amora — One2OneLove Relationship Coach"
@@ -282,10 +282,10 @@ export default function RelationshipCoach() {
         </motion.div>
 
         <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-          <aside className="rounded-[1.75rem] border border-fuchsia-200/20 bg-black/35 p-5 shadow-xl backdrop-blur">
+          <aside className="rounded-[1.75rem] border border-rose-200/20 bg-black/35 p-5 shadow-xl backdrop-blur">
             <Button
               onClick={() => createConversationMutation.mutate()}
-              className="w-full bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 font-black text-white hover:brightness-110"
+              className="w-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 font-black text-white hover:brightness-110"
               disabled={createConversationMutation.isPending}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -299,7 +299,7 @@ export default function RelationshipCoach() {
                   key={conv.id}
                   className={`flex items-center justify-between rounded-xl pr-2 transition-all ${
                     currentConversationId === conv.id
-                      ? 'border border-fuchsia-300/25 bg-fuchsia-500/25'
+                      ? 'border border-rose-300/25 bg-rose-500/25'
                       : 'bg-white/[0.05] hover:bg-white/10'
                   }`}
                 >
@@ -322,7 +322,7 @@ export default function RelationshipCoach() {
 
               {conversations.length === 0 && (
                 <div className="py-7 text-center">
-                  <MessageCircle className="mx-auto mb-2 h-11 w-11 text-fuchsia-300/50" />
+                  <MessageCircle className="mx-auto mb-2 h-11 w-11 text-rose-300/50" />
                   <p className="text-sm text-white/45">{t.emptyState}</p>
                 </div>
               )}
@@ -330,9 +330,9 @@ export default function RelationshipCoach() {
           </aside>
 
           <section className="flex min-h-[620px] flex-col overflow-hidden rounded-[1.75rem] border border-white/15 bg-black/35 shadow-2xl backdrop-blur">
-            <div className="border-b border-white/10 bg-gradient-to-r from-rose-500/10 via-fuchsia-500/10 to-cyan-400/10 px-5 py-4">
+            <div className="border-b border-white/10 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-amber-400/10 px-5 py-4">
               <div className="flex items-center gap-3">
-                <MessageCircle className="h-6 w-6 text-fuchsia-200" />
+                <MessageCircle className="h-6 w-6 text-rose-200" />
                 <div>
                   <h2 className="font-black">{t.title}</h2>
                   <p className="text-xs text-white/50">{t.tokenNote}</p>
@@ -343,7 +343,7 @@ export default function RelationshipCoach() {
             <div className="flex-1 space-y-4 overflow-y-auto p-5">
               {!currentConversationId && messages.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
-                  <Sparkles className="mb-4 h-14 w-14 text-fuchsia-300/60" />
+                  <Sparkles className="mb-4 h-14 w-14 text-rose-300/60" />
                   <h3 className="mb-2 text-xl font-semibold text-white/70">{t.emptyState}</h3>
                   <p className="mb-6 max-w-md text-white/50">{t.emptyStateDesc}</p>
 
@@ -356,9 +356,9 @@ export default function RelationshipCoach() {
                           <button
                             key={prompt.id}
                             onClick={() => handleSendMessage(prompt.text)}
-                            className="flex items-center gap-3 rounded-xl border border-fuchsia-200/15 bg-white/[0.06] p-3 text-left text-white/80 transition-all hover:bg-white/10"
+                            className="flex items-center gap-3 rounded-xl border border-rose-200/15 bg-white/[0.06] p-3 text-left text-white/80 transition-all hover:bg-white/10"
                           >
-                            <Icon className="h-5 w-5 text-fuchsia-300" />
+                            <Icon className="h-5 w-5 text-rose-300" />
                             <span className="text-sm">{prompt.text}</span>
                           </button>
                         );
@@ -371,8 +371,8 @@ export default function RelationshipCoach() {
                   {messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
                   {isSending && (
                     <div className="flex justify-start gap-3">
-                      <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500/30 to-fuchsia-500/30">
-                        <div className="h-1.5 w-1.5 rounded-full bg-fuchsia-300" />
+                      <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500/30 to-amber-500/25">
+                        <div className="h-1.5 w-1.5 rounded-full bg-rose-300" />
                       </div>
                       <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-2.5">
                         <Loader2 className="h-4 w-4 animate-spin text-white/60" />
@@ -396,13 +396,13 @@ export default function RelationshipCoach() {
                       handleSendMessage();
                     }
                   }}
-                  className="h-12 flex-1 border-white/15 bg-slate-950/75 text-white placeholder:text-white/35 focus-visible:ring-fuchsia-400"
+                  className="h-12 flex-1 border-white/15 bg-slate-950/75 text-white placeholder:text-white/35 focus-visible:ring-rose-400"
                   disabled={isSending}
                 />
                 <Button
                   onClick={() => handleSendMessage()}
                   disabled={!inputMessage.trim() || isSending}
-                  className="h-12 bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 px-6 text-white hover:brightness-110"
+                  className="h-12 bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 px-6 text-white hover:brightness-110"
                 >
                   {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Send className="mr-2 h-5 w-5" />{t.send}</>}
                 </Button>
@@ -415,7 +415,7 @@ export default function RelationshipCoach() {
                       key={prompt.id}
                       onClick={() => handleSendMessage(prompt.text)}
                       disabled={isSending}
-                      className="rounded-full border border-fuchsia-200/15 bg-white/[0.06] px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
+                      className="rounded-full border border-rose-200/15 bg-white/[0.06] px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 disabled:opacity-50"
                     >
                       {prompt.text}
                     </button>
