@@ -47,7 +47,6 @@ import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
 import Tokens from './Tokens';
 import Amora from './Amora';
-import RelationshipCoach from './RelationshipCoach';
 import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
@@ -71,7 +70,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, Tokens, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, RelationshipCoach,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, Amora,
 };
 
 const FEATURE_BY_ROUTE = {
@@ -106,6 +105,8 @@ const FEATURE_BY_ROUTE = {
   '/chat': 'Community Chat',
   '/subscription': 'Tokens / Billing',
   '/tokens': 'Tokens / Billing',
+  '/amora': 'Amora — Relationship Coach',
+  '/relationshipcoach': 'Amora — Relationship Coach',
   '/o2olstudio': 'O2OL Studio',
   '/mymatchiq': 'MyMatchIQ',
 };
@@ -224,7 +225,7 @@ function PagesContent() {
           <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
-          <Route path="/RelationshipCoach" element={<RelationshipCoach />} />
+          <Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />
           <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/Developer" element={<Navigate to="/Home" replace />} />
           <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
