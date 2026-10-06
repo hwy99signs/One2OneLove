@@ -191,7 +191,7 @@ export default function RelationshipCoach() {
           <div className="relative mx-auto w-fit">
             <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-fuchsia-500/20 to-cyan-400/20 blur-2xl" />
             <img
-              src="/assets/amora-relationship-coach-official.jpg"
+              src="/assets/amora-relationship-coach-official.jpg?v=20261006"
               alt="Amora — One2OneLove Relationship Coach"
               className="relative mx-auto h-auto w-full max-w-[330px] rounded-3xl border border-white/15 shadow-[0_24px_70px_rgba(236,72,153,0.28)]"
             />
@@ -253,7 +253,7 @@ export default function RelationshipCoach() {
             <div className="relative mx-auto">
               <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-rose-500/30 via-fuchsia-500/20 to-cyan-400/20 blur-2xl" />
               <img
-                src="/assets/amora-relationship-coach-official.jpg"
+                src="/assets/amora-relationship-coach-official.jpg?v=20261006"
                 alt="Amora — One2OneLove Relationship Coach"
                 className="relative w-full max-w-[220px] rounded-3xl border border-white/15 shadow-[0_20px_55px_rgba(236,72,153,0.25)]"
               />
