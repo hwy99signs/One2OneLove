@@ -73,6 +73,13 @@ function adminAccessActive(row) {
 }
 
 export async function enforceApiEntitlement(request, env, url) {
+  // Community chat is a free feature (owner decision, 2026-10-06): guests
+  // may read rooms and messages, and any verified signed-in member may
+  // post. The community-chat handler enforces sign-in itself for writes,
+  // presence and moderation actions, so the entitlement gate steps aside
+  // for these paths only.
+  if (url.pathname.startsWith('/api/community-chat')) return null;
+  
   const required = requiredPlan(url.pathname);
   if (!required) return null;
 
