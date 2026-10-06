@@ -169,7 +169,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
-          <button type="button" onClick={() => go('Amora')} className="group mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
+          <button type="button" onClick={() => go('Amora')} className="group mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-amber-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
             <div className="flex items-center justify-center bg-[#16070f] p-4">
               <img src="/assets/amora-relationship-coach-official.webp?v=20261006-portrait" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
             </div>
@@ -178,7 +178,7 @@ export default function Home() {
               <h3 className="mt-2 text-3xl font-black text-slate-950">{amora.title}</h3>
               <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">{amora.body}</p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-600 px-5 py-2.5 text-sm font-black text-white shadow-md">{amora.cta}</span>
+                <span className="rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 px-5 py-2.5 text-sm font-black text-white shadow-md">{amora.cta}</span>
                 <span className="text-xs font-black uppercase tracking-wide text-amber-700">🪙 {amora.token}</span>
               </div>
             </div>
