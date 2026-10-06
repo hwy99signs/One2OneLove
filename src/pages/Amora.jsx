@@ -1,6 +1,6 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import RelationshipCoach from './RelationshipCoach';
 
-export default function Amora(){
-  return <Navigate to="/RelationshipCoach" replace />;
+export default function Amora() {
+  return <RelationshipCoach />;
 }
