@@ -87,7 +87,7 @@ const copy = {
     empty: 'No messages yet. Be the first to start the conversation.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
     signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
-    prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
+    prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'After watching Episode 1, who do you think should apologize first — and why?'],
       'general-connection': ['O2OL', 'What is one small thing that makes you feel genuinely connected to someone?'],
@@ -104,7 +104,7 @@ const copy = {
     empty: 'Aún no hay mensajes. Sé la primera persona en iniciar la conversación.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
     signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
-    prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
+    prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Después de ver el Episodio 1, ¿quién crees que debería disculparse primero y por qué?'],
       'general-connection': ['O2OL', '¿Qué pequeño detalle te hace sentir realmente conectado con alguien?'],
@@ -121,7 +121,7 @@ const copy = {
     empty: 'Aucun message pour le moment. Lancez la conversation.', placeholder: 'Partagez vos pensées avec respect…', send: 'Envoyer',
     signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.',
     guidelines: 'Respectez le salon', guidelinesBody: 'Soyez bienveillant. Pas de harcèlement, menaces, haine, contenu sexuel explicite, attaques personnelles ou partage d’informations privées d’autrui.',
-    prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
+    prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', emptyRooms:'Aucune conversation n’est disponible pour le moment.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Après avoir regardé l’épisode 1, qui devrait selon vous s’excuser en premier — et pourquoi ?'],
       'general-connection': ['O2OL', 'Quel petit geste vous fait vous sentir réellement connecté à quelqu’un ?'],
@@ -138,7 +138,7 @@ const copy = {
     empty: 'Ancora nessun messaggio. Inizia tu la conversazione.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
     signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.',
     guidelines: 'Rispetta la stanza', guidelinesBody: 'Sii gentile. Niente molestie, minacce, odio, contenuti sessuali espliciti, attacchi personali o condivisione di informazioni private altrui.',
-    prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
+    prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', emptyRooms:'Nessuna conversazione è disponibile al momento.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Dopo aver visto l’Episodio 1, chi pensi dovrebbe scusarsi per primo — e perché?'],
       'general-connection': ['O2OL', 'Qual è una piccola cosa che ti fa sentire davvero connesso a qualcuno?'],
@@ -155,7 +155,7 @@ const copy = {
     empty: 'Noch keine Nachrichten. Starte das Gespräch.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
     signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.',
     guidelines: 'Respektiere den Raum', guidelinesBody: 'Sei freundlich. Keine Belästigung, Drohungen, Hassrede, explizit sexuelle Inhalte, persönlichen Angriffe oder Weitergabe privater Informationen anderer.',
-    prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
+    prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', emptyRooms:'Derzeit sind keine Gespräche verfügbar.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Wer sollte sich nach Episode 1 deiner Meinung nach zuerst entschuldigen — und warum?'],
       'general-connection': ['O2OL', 'Welche kleine Sache lässt dich echte Verbundenheit mit jemandem spüren?'],
@@ -241,9 +241,12 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [loadingRooms, setLoadingRooms] = useState(true);
+  const [roomsError, setRoomsError] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
+  const sectionRef = useRef(null);
+  const userPickedRoomRef = useRef(false);
 
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || rooms[0] || null, [rooms, selectedRoomId]);
   const roomLabel = selectedRoom ? (labels[selectedRoom.slug] || [selectedRoom.name, selectedRoom.description]) : null;
@@ -254,6 +257,7 @@ export default function Chat() {
   const loadRooms = async () => {
     try {
       const data = await getCommunityChatRooms(lgbtqMode ? 'lgbtq' : 'general');
+      setRoomsError(false);
       setRooms(data);
       setSelectedRoomId(current => {
         const requested = requestedRoomSlug ? data.find(room => room.slug === requestedRoomSlug) : null;
@@ -262,6 +266,7 @@ export default function Chat() {
         return data[0]?.id || null;
       });
     } catch (error) {
+      setRoomsError(true);
       console.error('Unable to load chat rooms:', error);
       toast.error(currentLanguage === 'en' ? (error?.message || t.loadRoomsError) : t.loadRoomsError);
     } finally {
@@ -343,6 +348,15 @@ export default function Chat() {
   }, [selectedRoomId, selectedTopicId, isAuthenticated, lgbtqMode]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length, selectedRoomId]);
+
+  // On phones the room list stacks above the conversation, so a tapped room
+  // used to highlight in place while its conversation sat off-screen below.
+  // After a deliberate tap, bring the conversation into view.
+  useEffect(() => {
+    if (!userPickedRoomRef.current) return;
+    userPickedRoomRef.current = false;
+    if (window.innerWidth < 1024) sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedRoomId]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -427,11 +441,12 @@ export default function Chat() {
             </div>
             {loadingRooms ? <p className="px-2 py-6 text-sm text-slate-500">{t.loading}</p> : (
               <div className="space-y-2">
+                {rooms.length === 0 && <p className="px-2 py-4 text-sm text-slate-500">{roomsError ? t.loadRoomsError : t.emptyRooms}</p>}
                 {rooms.map(room => {
                   const label = labels[room.slug] || [room.name, room.description];
                   const active = room.id === selectedRoom?.id;
                   return (
-                    <button key={room.id} type="button" onClick={() => setSelectedRoomId(room.id)} className={`w-full rounded-2xl border p-4 text-left transition ${active ? 'border-purple-300 bg-purple-50 shadow-sm' : 'border-slate-200 bg-white hover:border-purple-200 hover:bg-purple-50/40'}`}>
+                    <button key={room.id} type="button" onClick={() => { userPickedRoomRef.current = true; setSelectedRoomId(room.id); }} className={`w-full rounded-2xl border p-4 text-left transition ${active ? 'border-purple-300 bg-purple-50 shadow-sm' : 'border-slate-200 bg-white hover:border-purple-200 hover:bg-purple-50/40'}`}>
                       <div className="flex items-start gap-3"><span className="text-2xl">{room.icon || '💬'}</span><div className="min-w-0 flex-1"><p className="font-extrabold text-slate-900">{label[0]}</p><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{label[1]}</p></div></div>
                       <div className="mt-3 flex gap-3 text-xs font-semibold text-slate-500"><span className="inline-flex items-center gap-1"><Users size={14}/>{room.online_count} {t.online}</span><span>{room.message_count} {t.messages}</span></div>
                     </button>
@@ -441,7 +456,7 @@ export default function Chat() {
             )}
           </aside>
 
-          <section className="overflow-hidden rounded-3xl border border-purple-100 bg-white shadow-sm">
+          <section ref={sectionRef} className="overflow-hidden rounded-3xl border border-purple-100 bg-white shadow-sm">
             {selectedRoom ? (
               <>
                 <div className="border-b border-slate-200 bg-gradient-to-r from-purple-600 to-pink-500 p-5 text-white">
@@ -503,7 +518,22 @@ export default function Chat() {
                   <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500"><ShieldCheck className="mt-0.5 shrink-0 text-emerald-600" size={15}/><span><strong className="text-slate-700">{t.guidelines}:</strong> {t.guidelinesBody}</span></div>
                 </div>
               </>
-            ) : <div className="grid min-h-[500px] place-items-center text-slate-500">{t.loading}</div>}
+            ) : loadingRooms ? <div className="grid min-h-[500px] place-items-center text-slate-500">{t.loading}</div> : (
+              <div className="grid min-h-[500px] place-items-center p-6 text-center">
+                <div>
+                  <MessageCircle className="mx-auto mb-3 text-purple-200" size={54}/>
+                  <p className="font-semibold text-slate-600">{roomsError ? t.loadRoomsError : t.emptyRooms}</p>
+                  {!isAuthenticated ? (
+                    <>
+                      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{t.readOnly}</p>
+                      <Link to={createPageUrl('SignIn')} className="mt-4 inline-flex items-center gap-1 rounded-lg bg-amber-600 px-4 py-2 font-bold text-white"><LogIn size={15}/>{t.signIn}</Link>
+                    </>
+                  ) : (
+                    <button type="button" onClick={loadRooms} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-bold text-white"><RefreshCw size={15}/>{t.refresh}</button>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </div>
