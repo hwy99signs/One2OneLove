@@ -124,6 +124,7 @@ function LanguageProvider({ children }) {
     }
     setCurrentLanguage(languageCode);
     localStorage.setItem('preferredLanguage', languageCode);
+    window.dispatchEvent(new Event('o2ol:language'));
   };
 
   return (
