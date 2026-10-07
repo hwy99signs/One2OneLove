@@ -110,6 +110,13 @@ async function ensureChatSafetySchema(db) {
            '🎬',true,now()
      WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='studio-who-should-apologize-first')
   `);
+  await db.query(`
+    INSERT INTO public.chat_rooms(id,slug,name,description,icon,is_active,created_at)
+    SELECT gen_random_uuid(),'relationship-100','Relationship 100 — What Matters Most in Your Relationship?',
+           'What matters most in YOUR relationship? Divide 100% across money, communication, intimacy, faith and more — then see how everyone else divided theirs. Voting closes Wednesday, October 7 at midnight CT · Results revealed Friday, October 9',
+           '💯',true,now()
+     WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='relationship-100')
+  `);
 }
 
 async function listRooms(db, scope = 'general') {
