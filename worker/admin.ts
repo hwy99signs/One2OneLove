@@ -403,10 +403,10 @@ async function overview(db) {
       SELECT count(*)::int AS total,
              count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '7 days')::int AS new_7d,
              count(*) FILTER (WHERE p.id IS NOT NULL AND COALESCE(p.is_active,true)=false)::int AS inactive,
-             count(*) FILTER (WHERE COALESCE(p.is_verified,a."emailVerified",false)=true)::int AS email_verified,
+             count(*) FILTER (WHERE (COALESCE(p.is_verified,false)=true OR COALESCE(a."emailVerified",false)=true))::int AS email_verified,
              count(*) FILTER (WHERE COALESCE(p.phone_number_verified,false)=true)::int AS phone_verified,
              count(*) FILTER (
-               WHERE COALESCE(p.is_verified,a."emailVerified",false)=true
+               WHERE (COALESCE(p.is_verified,false)=true OR COALESCE(a."emailVerified",false)=true)
                  AND COALESCE(p.phone_number_verified,false)=true
              )::int AS verified,
              count(*) FILTER (
@@ -422,7 +422,7 @@ async function overview(db) {
              count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '24 hours')::int AS signups_24h,
              count(*) FILTER (
                WHERE NOT (
-                 COALESCE(p.is_verified,a."emailVerified",false)=true
+                 (COALESCE(p.is_verified,false)=true OR COALESCE(a."emailVerified",false)=true)
                  AND COALESCE(p.phone_number_verified,false)=true
                )
              )::int AS pending_verification
@@ -507,7 +507,7 @@ async function members(db) {
            COALESCE(u.user_type,'regular') AS user_type,
            u.relationship_status,u.location,
            COALESCE(u.is_active,true) AS is_active,
-           COALESCE(a."emailVerified",u.is_verified,false) AS is_verified,
+           (COALESCE(a."emailVerified",false)=true OR COALESCE(u.is_verified,false)=true) AS is_verified,
            COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
            CASE
              WHEN u.id IS NULL THEN 'Signup Pending'
