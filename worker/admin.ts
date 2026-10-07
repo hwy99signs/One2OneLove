@@ -174,8 +174,8 @@ const RELATIONSHIP_100_QUESTIONS = [
 ];
 
 const O2OL_SHOW_TOPIC = {
-  slug:'studio-who-should-apologize-first',
-  title:'Who Should Apologize First?',
+  slug:'relationship-100',
+  title:'Relationship 100 — What Matters Most in Your Relationship?',
 };
 
 async function ensureO2OLShowVotingSchema(db) {
