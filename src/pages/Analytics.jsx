@@ -8,6 +8,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
+import { featureForPath, prettifyRoute, controlTypeName } from '../lib/interactionAnalytics';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
@@ -22,6 +23,38 @@ function shortDateTime(value) {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
 }
+// Recent Click Details display derivation. New clicks are always stored
+// with a name (client derivation + server backstop), so a row reaching this
+// fallback has NO stored label — it was recorded before complete labeling,
+// and the panel says so honestly while still showing the best name the
+// stored facts (destination, route, control type) support. No row renders
+// without a name.
+function storedDestinationName(destination) {
+  const text = String(destination || '').trim();
+  if (!text) return null;
+  if (text.startsWith('external:')) {
+    const host = text.slice('external:'.length).trim();
+    return host ? `External — ${host}` : null;
+  }
+  return featureForPath(text) || prettifyRoute(text);
+}
+function clickDisplayName(row) {
+  if (row.control_key) return row.control_key;
+  const place = storedDestinationName(row.destination)
+    || featureForPath(row.route)
+    || prettifyRoute(row.route);
+  return `${place} — ${controlTypeName(row.control_type)} (older event)`;
+}
+function clickFeatureDestination(row) {
+  if (row.feature) return row.feature;
+  if (row.destination && !String(row.destination).startsWith('external:')) {
+    const named = featureForPath(row.destination);
+    if (named) return named;
+  }
+  if (row.destination) return row.destination;
+  return featureForPath(row.route) || '—';
+}
+
 function Panel({ title, subtitle, children }) {
   return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4"><h2 className="font-bold text-slate-900">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>{children}</section>;
 }
@@ -245,12 +278,12 @@ export default function Analytics() {
         </div>
 
         <div className="mt-6">
-          <Panel title="Recent Click Details" subtitle="The most recent on-site clicks from non-admin visitors. New labeled controls show exactly what was pressed and where it leads.">
+          <Panel title="Recent Click Details" subtitle="The most recent on-site clicks from non-admin visitors. Every new click is recorded with a name — a control without its own label is named from its text, its destination, or its page. Rows marked (older event) were recorded before complete labeling; they show the best name their stored page and destination support.">
             {/* Vertical scroll window: sticky header + exactly 12 rows visible. Header = 16px line (text-xs) + 16px padding (py-2) + 1px border = 33px; row = 20px line (text-sm) + 24px padding (py-3) = 44px; 33 + 12 x 44 = 561px. */}
             <div className="overflow-auto" style={{ maxHeight: 561 }}>
               <table className="min-w-full text-sm">
                 <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Time</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Audience</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Source</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Page</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Clicked</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Feature / Destination</th></tr></thead>
-                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{row.actor_type==='anonymous'?'Anonymous':(row.access_type==='subscribed'?'Subscribed':'Registered free')}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{row.control_key||`Unlabeled ${row.control_type||'control'} (older event)`}</td><td className="px-3 py-3">{row.feature||row.destination||'—'}</td></tr>)}</tbody>
+                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{row.actor_type==='anonymous'?'Anonymous':(row.access_type==='subscribed'?'Subscribed':'Registered free')}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{clickDisplayName(row)}</td><td className="px-3 py-3">{clickFeatureDestination(row)}</td></tr>)}</tbody>
               </table>
               {!(data?.recentClicks||[]).length && <div className="py-8 text-center text-sm text-slate-500">No non-admin clicks have been recorded in this 30-day window yet.</div>}
             </div>

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { deriveClickControlKey, deriveClickFeature } from './click-labels.js';
 
 const TRACKABLE_FEATURES = new Set([
   'Love Notes',
@@ -151,7 +152,7 @@ async function handleInteractionEvent(request, env) {
     ? destinationRaw.slice(0, 300)
     : cleanPath(destinationRaw);
   const featureRaw = clean(body?.feature, 100);
-  const feature = featureRaw && TRACKABLE_FEATURES.has(featureRaw) ? featureRaw : null;
+  const clientFeature = featureRaw && TRACKABLE_FEATURES.has(featureRaw) ? featureRaw : null;
   const controlType = clean(body?.controlType, 40);
   const controlKey = clean(body?.controlKey, 160);
   const language = cleanLanguage(body?.language);
@@ -162,6 +163,20 @@ async function handleInteractionEvent(request, env) {
   if (route.toLowerCase().startsWith('/admin') || route.toLowerCase().startsWith('/analytics')) {
     return new Response(null,{ status:204 });
   }
+
+  // Click-label completeness backstop: no click or feature action may be
+  // stored nameless, even if the client sent no label (older clients,
+  // icon-only controls). Derivation uses only facts stored with the event
+  // (destination, route, control type) — see worker/click-labels.js.
+  const derivedFeature = clientFeature
+    || deriveClickFeature({ destination, route });
+  const feature = derivedFeature && TRACKABLE_FEATURES.has(derivedFeature)
+    ? derivedFeature
+    : null;
+  const storedControlKey = controlKey
+    || ((eventType === 'click' || eventType === 'action')
+      ? deriveClickControlKey({ destination, route, controlType })
+      : null);
 
   const auth = await session(request, env, false);
 
@@ -208,7 +223,7 @@ async function handleInteractionEvent(request, env) {
       `INSERT INTO public.interaction_events
         (user_id,visitor_id,session_id,actor_type,access_type,subscription_plan,subscription_status,event_type,route,feature,control_type,control_key,destination,language,traffic_source)
        VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-      [userId,visitorId,sessionId,actorType,accessType,subscriptionPlan,subscriptionStatus,eventType,route,feature,controlType,controlKey,destination,language,trafficSource],
+      [userId,visitorId,sessionId,actorType,accessType,subscriptionPlan,subscriptionStatus,eventType,route,feature,controlType,storedControlKey,destination,language,trafficSource],
     );
 
     return json({ ok:true });
