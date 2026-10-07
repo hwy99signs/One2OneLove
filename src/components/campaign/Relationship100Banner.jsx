@@ -87,20 +87,20 @@ export default function Relationship100Banner() {
   const action = votingOpen ? t.votingAction : t.closedAction;
 
   return (
-    <div className="w-full bg-gradient-to-r from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] text-[#f7f2e7]">
+    <div className="w-full bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 text-[#f7f2e7]">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-3 text-center sm:text-left">
-        <span className="flex items-center gap-2 text-sm font-bold tracking-[0.14em]">
+        <span className="flex items-center gap-2 text-base font-bold tracking-[0.14em]">
           <Heart className="h-4 w-4 fill-[#d4a24e] text-[#d4a24e]" aria-hidden="true" />
           RELATIONSHIP 100
         </span>
-        <span className="text-sm leading-snug">{text}</span>
+        <span className="text-base leading-snug">{text}</span>
         <a
           href="/chat"
-          className="rounded-full bg-[#d4a24e] px-4 py-1.5 text-sm font-semibold text-[#1c2b4a] transition hover:bg-[#e2b566]"
+          className="rounded-full bg-[#d4a24e] px-4 py-1.5 text-base font-semibold text-[#1c2b4a] transition hover:bg-[#e2b566]"
         >
           {action}
         </a>
-        <span className="w-full text-xs text-[#e8dcc3] sm:w-auto">{meta}</span>
+        <span className="w-full text-sm text-white/85 sm:w-auto">{meta}</span>
       </div>
     </div>
   );
