@@ -72,15 +72,23 @@ function language() {
 
 export default function Relationship100Banner() {
   const [now, setNow] = useState(() => Date.now());
+  const [lang, setLang] = useState(language);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60 * 1000);
-    return () => clearInterval(id);
+    const onLang = () => setLang(language());
+    window.addEventListener('o2ol:language', onLang);
+    const poll = setInterval(onLang, 2000);
+    return () => {
+      clearInterval(id);
+      clearInterval(poll);
+      window.removeEventListener('o2ol:language', onLang);
+    };
   }, []);
 
   if (now >= CAMPAIGN_ENDS_UTC) return null;
 
-  const t = COPY[language()];
+  const t = COPY[lang];
   const votingOpen = now < VOTING_CLOSES_UTC;
   const text = votingOpen ? t.votingText : t.closedText;
   const meta = votingOpen ? t.votingMeta : t.closedMeta;
