@@ -2,6 +2,7 @@
 import { Client } from 'pg';
 import { consumeTokenReservation, releaseTokenReservation } from './o2ol-tokens';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
+import { isRecipientOptedOut } from './love-note-credit';
 
 const MAX_BATCH = 20;
 const MAX_ATTEMPTS = 3;
@@ -28,7 +29,7 @@ export function scheduledSmsReadiness(env) {
     provider:'twilio',
     providerConfigured:smsProviderReady(env),
     scheduledSmsReady:scheduledSmsReady(env),
-    billingMode:'o2ol_tokens',
+    billingMode:'o2ol_credit',
     tokenFeatureCode:'love_note_send',
   };
 }
@@ -218,8 +219,22 @@ export async function dispatchDueScheduledLoveNotes(env) {
   return withDb(env,async db=>{
     const cancelled=await cancelIneligibleDue(db);
     const claimed=await claimDue(db);
-    let sent=0,failed=0,retried=0;
+    let sent=0,failed=0,retried=0,cancelledOptOut=0;
     for(const note of claimed){
+      // Recipient STOP is honored before ANY send — including sends booked
+      // before the opt-out arrived. The Credit reservation is released.
+      if(await isRecipientOptedOut(db,note.recipient_phone).catch(()=>false)){
+        const reservation=await tokenReservationForScheduledNote(db,note.id);
+        if(reservation?.id)await releaseTokenReservation(db,reservation.id,'recipient_opted_out').catch(()=>{});
+        await db.query(
+          `UPDATE public.scheduled_love_notes
+              SET status='cancelled',failure_reason='Recipient opted out of text messages (STOP).',updated_at=now()
+            WHERE id=$1::uuid AND status='processing'`,
+          [note.id],
+        );
+        cancelledOptOut+=1;
+        continue;
+      }
       let delivery=null;
       try{
         delivery=await sendTwilioLoveNoteSms(env,note);
@@ -232,6 +247,6 @@ export async function dispatchDueScheduledLoveNotes(env) {
         if(outcome.retry)retried+=1;else failed+=1;
       }
     }
-    return {ready:true,cancelled,claimed:claimed.length,sent,failed,retried};
+    return {ready:true,cancelled,cancelledOptOut,claimed:claimed.length,sent,failed,retried};
   });
 }

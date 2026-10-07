@@ -84,6 +84,14 @@ export async function sendLoveNoteSms(data) {
   }
 }
 
+// Server-side price quote for a recipient number: the regional Credit price
+// is always shown before sending. Returns null when no quote is available.
+export async function getLoveNotePriceQuote(phone) {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const payload = await apiRequest(`/api/love-notes/price?phone=${encodeURIComponent(phone)}&tz=${encodeURIComponent(timezone)}`);
+  return payload?.quote || null;
+}
+
 export async function getLoveNoteDeliveryReadiness() {
   const payload = await apiRequest('/api/love-notes/delivery-readiness');
   return payload?.delivery || { scheduledSmsReady: false };
