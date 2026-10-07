@@ -24,6 +24,7 @@ import { handleStoriesRequest } from './stories';
 import { handleCommunitiesRequest } from './communities';
 import { handleChatRequest } from './chat';
 import { handleCommunityChatRequest } from './community-chat';
+import { handleVotingRequest } from './voting';
 import { handleBillingRequest } from './billing';
 import { handleEngagementRequest } from './engagement';
 import { handleReviewsRequest } from './reviews';
@@ -355,6 +356,11 @@ export default {
 
     if (url.pathname.startsWith('/api/community-chat')) {
       const response = await handleCommunityChatRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/voting')) {
+      const response = await handleVotingRequest(request, env, url);
       if (response) return response;
     }
 

@@ -17,6 +17,8 @@ import {
   reportCommunityChatMessage,
   muteCommunityChatUser,
 } from '@/lib/communityChatService';
+import VotingCard from '@/components/chat/VotingCard';
+import { questionForRoom } from '@/lib/votingQuestions';
 
 const lgbtqCopy = {
   en: {
@@ -251,6 +253,7 @@ export default function Chat() {
   const prompt = selectedRoom
     ? (selectedRoom.slug === 'lgbtq-community' ? lt.prompt : (t.prompts[selectedRoom.slug] || ['O2OL', t.defaultPrompt]))
     : null;
+  const votingQuestion = selectedRoom ? questionForRoom(selectedRoom.slug) : null;
 
   const loadRooms = async () => {
     try {
@@ -500,6 +503,10 @@ export default function Chat() {
                   <div className="border-b border-purple-100 bg-purple-50 p-4 sm:p-5">
                     <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white font-black text-purple-700 shadow-sm">{prompt[0] === 'Amora' ? 'A' : 'O'}</div><div><p className="text-xs font-black uppercase tracking-wide text-purple-600">{t.prompt} · {prompt[0]}</p><p className="mt-1 font-semibold leading-6 text-slate-800">{prompt[1]}</p></div></div>
                   </div>
+                )}
+
+                {votingQuestion && (
+                  <VotingCard key={votingQuestion.slug} question={votingQuestion} language={currentLanguage} isAuthenticated={isAuthenticated} />
                 )}
 
                 <div className="h-[52vh] min-h-[420px] overflow-y-auto p-4 sm:p-6">
