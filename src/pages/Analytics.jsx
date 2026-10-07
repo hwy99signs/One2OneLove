@@ -32,6 +32,58 @@ function ChartFrame({ children, height = 300 }) {
   return <div style={{ height }} className="w-full">{children}</div>;
 }
 
+// "Most-Used Features" is a labeled bar list, not a Recharts category-axis
+// chart: Recharts drops category labels that would overlap (default
+// interval="preserveEnd"), which hid feature names while their bars kept
+// rendering. Here every feature prints its full name once, each series gets
+// its own bar, and the value is printed at the end of the bar — no bar can
+// render without a name or a readable number. Stored feature values are
+// already display names; anything unexpected shows its raw value rather
+// than disappearing.
+const FEATURE_RANK_SERIES = [
+  { key: 'page_views', name: 'Feature opens', color: '#e11d48' },
+  { key: 'clicks', name: 'Clicks', color: '#2563eb' },
+  { key: 'actions', name: 'Actions', color: '#059669' },
+];
+function FeatureRankList({ rows }) {
+  const list = rows || [];
+  if (!list.length) return <div className="py-8 text-center text-sm text-slate-500">No feature activity has been recorded in this 30-day window yet.</div>;
+  const max = Math.max(1, ...list.flatMap(row => FEATURE_RANK_SERIES.map(series => Number(row[series.key] || 0))));
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1">
+        {FEATURE_RANK_SERIES.map(series => (
+          <span key={series.key} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: series.color }} />{series.name}</span>
+        ))}
+      </div>
+      <div className="space-y-4">
+        {list.map((row, index) => (
+          <div key={`${row.feature || 'unnamed'}-${index}`}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <p className="text-sm font-bold text-slate-900">{row.feature || 'Unnamed feature'}</p>
+              <p className="text-xs text-slate-500">{number(row.activity)} total · {number(row.users)} unique visitors / users</p>
+            </div>
+            <div className="mt-1.5 space-y-1">
+              {FEATURE_RANK_SERIES.map(series => {
+                const value = Number(row[series.key] || 0);
+                return (
+                  <div key={series.key} className="flex items-center gap-2">
+                    <span className="w-24 shrink-0 text-xs text-slate-500">{series.name}</span>
+                    <div className="h-3.5 min-w-0 flex-1 rounded bg-slate-100">
+                      <div className="h-3.5 rounded" style={{ width: `${value ? Math.max(1.5, (value / max) * 100) : 0}%`, background: series.color }} />
+                    </div>
+                    <span className="w-12 shrink-0 text-right text-xs font-bold text-slate-900">{number(value)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Analytics() {
   const [data,setData] = useState(null);
   const [loading,setLoading] = useState(true);
@@ -219,7 +271,7 @@ export default function Analytics() {
           </Panel>
 
           <Panel title="Most-Used Features — All Visitors" subtitle="Actual feature opens, clicks and meaningful feature actions from anonymous visitors, registered-free users and subscribers. Admin activity is excluded.">
-            <ChartFrame height={360}><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.featureRankAll||[]} layout="vertical" margin={{ top: 5,right: 20,left: 35,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="feature" width={135}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="page_views" name="Feature opens"/><Bar dataKey="clicks" name="Clicks"/><Bar dataKey="actions" name="Actions"/></BarChart></ResponsiveContainer></ChartFrame>
+            <FeatureRankList rows={data?.featureRankAll || []} />
           </Panel>
 
           <Panel title="Daily Feature Activity — All Visitors" subtitle="Shows feature opens, ordinary clicks and meaningful actions such as opening a podcast, using an LGBTQ+ resource or selecting a Love Note category.">

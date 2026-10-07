@@ -303,7 +303,7 @@ async function analytics(db, env) {
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
      GROUP BY e.feature
      ORDER BY activity DESC,e.feature ASC
-     LIMIT 20
+     LIMIT 50
   `) : { rows:[] };
 
   const recentClicksPromise = interactionReady ? db.query(`
