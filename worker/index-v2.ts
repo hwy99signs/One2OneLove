@@ -1,5 +1,6 @@
 // @ts-nocheck
 import baseWorker from './index';
+import { sendProductionSiteHealth,handlePrivateAdminHealth } from './epscie-health';
 import { handleAdminRequest } from './admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
@@ -167,6 +168,7 @@ async function socialPageResponse(request, env, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
     if (url.pathname.startsWith('/studio-media/')) {
       const response = await handleStudioMediaRequest(request, env, url);
@@ -385,6 +387,9 @@ export default {
   },
 
   async scheduled(controller, env, ctx) {
-    return baseWorker.scheduled(controller, env, ctx);
+    if(new Date(controller.scheduledTime || Date.now()).getUTCMinutes()%5===0){
+      ctx.waitUntil(sendProductionSiteHealth(env).catch(()=>console.error('O2OL production health report delivery failed')));
+    }
+    return baseWorker.scheduled(controller,env,ctx);
   },
 };
