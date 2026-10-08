@@ -72,21 +72,21 @@ const LanguageContext = createContext();
 const FOOTER_COPY = {
   en: {
     loveGrow: "Love. Grow. Evolve. Together.", footerBody: "One2OneLove is designed to support healthier connection, thoughtful communication, self-reflection, shared memories, and real conversations about relationships—while welcoming people from every background.",
-    supportCol: "Support", company: "Company", help: "Help Center", contact: "Contact Us", privacy: "Privacy Policy", terms: "Terms of Service", about: "About Us", reviews: "Reviews", suggestions: "Suggestions",
+    supportCol: "Support", company: "Company", help: "Help Center", contact: "Contact Us", privacy: "Privacy Policy", terms: "Terms of Service", about: "About Us", reviews: "Reviews", suggestions: "Suggestions", reportProblem: "Report a problem",
     copyright: "© 2026 One2OneLove. Made with ❤️ for people pursuing and building healthier love and relationships."
   },
   es: {
     loveGrow: "Ama. Crece. Evoluciona. Juntos.", footerBody: "One2OneLove apoya conexiones más saludables, comunicación reflexiva, autorreflexión, recuerdos compartidos y conversaciones reales.",
-    supportCol: "Soporte", company: "Compañía", help: "Centro de ayuda", contact: "Contáctanos", privacy: "Privacidad", terms: "Términos de servicio", about: "Sobre nosotros", reviews: "Reseñas", suggestions: "Sugerencias", copyright: "© 2026 One2OneLove. Hecho con ❤️ para relaciones más saludables."
+    supportCol: "Soporte", company: "Compañía", help: "Centro de ayuda", contact: "Contáctanos", privacy: "Privacidad", terms: "Términos de servicio", about: "Sobre nosotros", reviews: "Reseñas", suggestions: "Sugerencias", reportProblem: "Reportar un problema", copyright: "© 2026 One2OneLove. Hecho con ❤️ para relaciones más saludables."
   },
   fr: {
-    loveGrow: "Aimez. Grandissez. Évoluez. Ensemble.", footerBody: "One2OneLove favorise une connexion plus saine, une communication réfléchie, l’introspection, les souvenirs partagés et de vraies conversations.", supportCol: "Aide", company: "Entreprise", help: "Centre d’aide", contact: "Contact", privacy: "Confidentialité", terms: "Conditions d’utilisation", about: "À propos", reviews: "Avis", suggestions: "Suggestions", copyright: "© 2026 One2OneLove. Fait avec ❤️ pour des relations plus saines."
+    loveGrow: "Aimez. Grandissez. Évoluez. Ensemble.", footerBody: "One2OneLove favorise une connexion plus saine, une communication réfléchie, l’introspection, les souvenirs partagés et de vraies conversations.", supportCol: "Aide", company: "Entreprise", help: "Centre d’aide", contact: "Contact", privacy: "Confidentialité", terms: "Conditions d’utilisation", about: "À propos", reviews: "Avis", suggestions: "Suggestions", reportProblem: "Signaler un problème", copyright: "© 2026 One2OneLove. Fait avec ❤️ pour des relations plus saines."
   },
   it: {
-    loveGrow: "Ama. Cresci. Evolvi. Insieme.", footerBody: "One2OneLove sostiene connessioni più sane, comunicazione consapevole, autoriflessione, ricordi condivisi e conversazioni reali.", supportCol: "Supporto", company: "Azienda", help: "Centro assistenza", contact: "Contatti", privacy: "Privacy", terms: "Termini di servizio", about: "Chi siamo", reviews: "Recensioni", suggestions: "Suggerimenti", copyright: "© 2026 One2OneLove. Creato con ❤️ per relazioni più sane."
+    loveGrow: "Ama. Cresci. Evolvi. Insieme.", footerBody: "One2OneLove sostiene connessioni più sane, comunicazione consapevole, autoriflessione, ricordi condivisi e conversazioni reali.", supportCol: "Supporto", company: "Azienda", help: "Centro assistenza", contact: "Contatti", privacy: "Privacy", terms: "Termini di servizio", about: "Chi siamo", reviews: "Recensioni", suggestions: "Suggerimenti", reportProblem: "Segnala un problema", copyright: "© 2026 One2OneLove. Creato con ❤️ per relazioni più sane."
   },
   de: {
-    loveGrow: "Lieben. Wachsen. Entwickeln. Gemeinsam.", footerBody: "One2OneLove unterstützt gesündere Verbindung, achtsame Kommunikation, Selbstreflexion, gemeinsame Erinnerungen und echte Gespräche.", supportCol: "Support", company: "Unternehmen", help: "Hilfe-Center", contact: "Kontakt", privacy: "Datenschutz", terms: "Nutzungsbedingungen", about: "Über uns", reviews: "Bewertungen", suggestions: "Vorschläge", copyright: "© 2026 One2OneLove. Mit ❤️ für gesündere Beziehungen."
+    loveGrow: "Lieben. Wachsen. Entwickeln. Gemeinsam.", footerBody: "One2OneLove unterstützt gesündere Verbindung, achtsame Kommunikation, Selbstreflexion, gemeinsame Erinnerungen und echte Gespräche.", supportCol: "Support", company: "Unternehmen", help: "Hilfe-Center", contact: "Kontakt", privacy: "Datenschutz", terms: "Nutzungsbedingungen", about: "Über uns", reviews: "Bewertungen", suggestions: "Vorschläge", reportProblem: "Ein Problem melden", copyright: "© 2026 One2OneLove. Mit ❤️ für gesündere Beziehungen."
   }
 };
 
@@ -856,7 +856,7 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               </div>
               <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><a href="mailto:support@one2onelove.com" className="block text-left py-1 hover:text-yellow-200">{fT.reportProblem}</a></div>
             </div>
             <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
           </footer>
