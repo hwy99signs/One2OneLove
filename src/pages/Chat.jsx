@@ -326,13 +326,18 @@ export default function Chat() {
     if (!selectedRoomId) return;
     loadMessages(selectedRoomId);
     if (lgbtqMode) loadTopics(selectedRoomId);
-    const messageTimer = window.setInterval(() => loadMessages(selectedRoomId, true), 3000);
-    const roomTimer = window.setInterval(loadRooms, 10000);
-    const topicTimer = lgbtqMode ? window.setInterval(() => loadTopics(selectedRoomId), 10000) : null;
+    // Poll intervals are unchanged while the tab is visible (chat still
+    // feels live), but a hidden/background tab must not poll at full rate
+    // forever — forgotten chat tabs were a top driver of the Oct 7
+    // database query burn. Polling resumes on the next tick once visible.
+    const tabHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const messageTimer = window.setInterval(() => { if (!tabHidden()) loadMessages(selectedRoomId, true); }, 3000);
+    const roomTimer = window.setInterval(() => { if (!tabHidden()) loadRooms(); }, 10000);
+    const topicTimer = lgbtqMode ? window.setInterval(() => { if (!tabHidden()) loadTopics(selectedRoomId); }, 10000) : null;
     let presenceTimer;
     if (isAuthenticated) {
       touchCommunityChatPresence(selectedRoomId).catch(() => {});
-      presenceTimer = window.setInterval(() => touchCommunityChatPresence(selectedRoomId).catch(() => {}), 45000);
+      presenceTimer = window.setInterval(() => { if (!tabHidden()) touchCommunityChatPresence(selectedRoomId).catch(() => {}); }, 45000);
     }
     return () => {
       window.clearInterval(messageTimer);
