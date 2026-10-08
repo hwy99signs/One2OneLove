@@ -63,7 +63,7 @@ console.log('--- Server backstop (worker/click-labels.js) ---');
 check('ingest: no label, destination /lovenotes', serverDerive({ controlKey: null, destination: '/lovenotes', route: '/home', controlType: 'a' }), 'Love Notes');
 check('ingest: no label, no destination, /chat button', serverDerive({ controlKey: null, destination: null, route: '/chat', controlType: 'button' }), 'Community Chat — button');
 check('ingest: no label, external destination', serverDerive({ controlKey: null, destination: 'external:therapistaid.com', route: '/lgbtqsupport', controlType: 'a' }), 'External — therapistaid.com');
-check('ingest: no label, /signin button', serverDerive({ controlKey: null, destination: null, route: '/signin', controlType: 'button' }), 'Signin — button');
+check('ingest: no label, /signin button', serverDerive({ controlKey: null, destination: null, route: '/signin', controlType: 'button' }), 'Sign In — button');
 check('ingest: existing label is never overwritten', serverDerive({ controlKey: 'home-tool-dateideas', destination: '/dateideas', route: '/home', controlType: 'a' }), 'home-tool-dateideas');
 check('feature: from destination /o2olstudio', deriveClickFeature({ feature: null, destination: '/o2olstudio', route: '/' }), 'O2OL Studio');
 check('feature: from route /chat', deriveClickFeature({ feature: null, destination: null, route: '/chat' }), 'Community Chat');

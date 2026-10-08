@@ -3,6 +3,17 @@ import { Client } from 'pg';
 import { deriveClickControlKey, deriveClickFeature } from './click-labels.js';
 
 const TRACKABLE_FEATURES = new Set([
+  'Home',
+  'About Us',
+  'Sign In',
+  'Sign Up',
+  'Forgot Password',
+  'Help Center',
+  'Contact Us',
+  'Privacy Policy',
+  'Terms of Service',
+  'TikTok Post',
+  'Credit Wallet',
   'Love Notes',
   'Love Note Scheduler',
   'Date Ideas',

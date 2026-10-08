@@ -8,6 +8,19 @@ const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess','/developer'])
 const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
 const FEATURE_BY_ROUTE = {
+  '/': 'Home',
+  '/home': 'Home',
+  '/aboutus': 'About Us',
+  '/signin': 'Sign In',
+  '/login': 'Sign In',
+  '/signup': 'Sign Up',
+  '/forgotpassword': 'Forgot Password',
+  '/helpcenter': 'Help Center',
+  '/contactus': 'Contact Us',
+  '/privacypolicy': 'Privacy Policy',
+  '/termsofservice': 'Terms of Service',
+  '/tiktokpost': 'TikTok Post',
+  '/credit': 'Credit Wallet',
   '/memorylane': 'Memory Lane',
   '/lovenotes': 'Love Notes',
   '/sendcredits': 'Love Notes',

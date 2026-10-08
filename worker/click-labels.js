@@ -11,6 +11,19 @@
 // Keep the two maps in sync when routes are added.
 
 export const FEATURE_BY_ROUTE = {
+  '/': 'Home',
+  '/home': 'Home',
+  '/aboutus': 'About Us',
+  '/signin': 'Sign In',
+  '/login': 'Sign In',
+  '/signup': 'Sign Up',
+  '/forgotpassword': 'Forgot Password',
+  '/helpcenter': 'Help Center',
+  '/contactus': 'Contact Us',
+  '/privacypolicy': 'Privacy Policy',
+  '/termsofservice': 'Terms of Service',
+  '/tiktokpost': 'TikTok Post',
+  '/credit': 'Credit Wallet',
   '/memorylane': 'Memory Lane',
   '/lovenotes': 'Love Notes',
   '/sendcredits': 'Love Notes',
