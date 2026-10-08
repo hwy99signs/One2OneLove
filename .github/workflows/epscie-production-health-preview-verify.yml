@@ -20,3 +20,4 @@ jobs:
       - run: npm run build
       - run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc --outdir /tmp/o2ol-health-check
       - run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.epscie-admin-health.preview.jsonc --outdir /tmp/o2ol-admin-health-check
+      - run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.epscie-admin-health.production.jsonc --outdir /tmp/o2ol-admin-production-check
