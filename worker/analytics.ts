@@ -58,6 +58,11 @@ function analyticsBaselineSql(env) {
 
 async function analytics(db, env) {
   const baselineSql = analyticsBaselineSql(env);
+  // Day boundaries follow the owner's timezone (America/Chicago), not the
+  // database session timezone (UTC): "today" on the dashboard must mean the
+  // owner's today, and daily buckets must match the window filter exactly.
+  const todaySql = `(now() AT TIME ZONE 'America/Chicago')::date`;
+  const windowStartSql = `((${todaySql} - 29) AT TIME ZONE 'America/Chicago')`;
   const interactionSchema = await db.query(`
     SELECT
       to_regclass('public.interaction_events') IS NOT NULL AS ready,
@@ -77,15 +82,15 @@ async function analytics(db, env) {
   const zeroSiteUsage = () => db.query(`
     SELECT to_char(day,'YYYY-MM-DD') AS date,
            0::int AS page_views,0::int AS clicks,0::int AS visitors
-      FROM generate_series(current_date-29,current_date,interval '1 day') AS day
+      FROM generate_series(${todaySql}-29,${todaySql},interval '1 day') AS day
      ORDER BY day
   `);
 
   const siteUsagePromise = interactionReady ? db.query(`
     WITH days AS (
-      SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+      SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
     ), usage AS (
-      SELECT e.created_at::date AS day,
+      SELECT (e.created_at AT TIME ZONE 'America/Chicago')::date AS day,
              count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
              count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
              count(*) FILTER (WHERE e.event_type='action')::int AS actions,
@@ -95,7 +100,7 @@ async function analytics(db, env) {
              END)::int AS visitors
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
        GROUP BY 1
     )
@@ -119,7 +124,7 @@ async function analytics(db, env) {
       count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+     WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `) : { rows:[{ page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 }] };
 
@@ -145,7 +150,7 @@ async function analytics(db, env) {
              count(DISTINCT e.visitor_id) FILTER (WHERE e.actor_type='anonymous')::int AS anonymous_visitors
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.language IN ('en','es','fr','it','de')
          AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
        GROUP BY e.language
@@ -193,7 +198,7 @@ async function analytics(db, env) {
              count(DISTINCT e.session_id) FILTER (WHERE e.event_type='click')::int AS engaged_sessions
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.traffic_source IN ('facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other')
          AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
        GROUP BY e.traffic_source
@@ -223,14 +228,14 @@ async function analytics(db, env) {
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+     WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND e.traffic_source IS NULL
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   ` : `
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+     WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `) : { rows:[{ events:0 }] };
 
@@ -238,22 +243,22 @@ async function analytics(db, env) {
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+     WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.language IS NULL OR e.language NOT IN ('en','es','fr','it','de'))
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   ` : `
     SELECT count(*)::int AS events
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+     WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
   `) : { rows:[{ events:0 }] };
 
   const featureDailyAllPromise = interactionReady ? db.query(`
     WITH days AS (
-      SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+      SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
     ), activity AS (
-      SELECT e.created_at::date AS day,
+      SELECT (e.created_at AT TIME ZONE 'America/Chicago')::date AS day,
              count(*)::int AS events,
              count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
              count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
@@ -264,7 +269,7 @@ async function analytics(db, env) {
              END)::int AS users
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-       WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.feature IS NOT NULL
          AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
        GROUP BY 1
@@ -280,7 +285,7 @@ async function analytics(db, env) {
   `) : db.query(`
     SELECT to_char(day,'YYYY-MM-DD') AS date,
            0::int AS events,0::int AS page_views,0::int AS clicks,0::int AS actions,0::int AS users
-      FROM generate_series(current_date-29,current_date,interval '1 day') AS day
+      FROM generate_series(${todaySql}-29,${todaySql},interval '1 day') AS day
      ORDER BY day
   `);
 
@@ -298,7 +303,7 @@ async function analytics(db, env) {
            count(DISTINCT e.user_id) FILTER (WHERE e.actor_type='registered')::int AS registered_users
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
-     WHERE e.created_at>=GREATEST(current_date-29, ${baselineSql})
+     WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND e.feature IS NOT NULL
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
      GROUP BY e.feature
@@ -312,7 +317,7 @@ async function analytics(db, env) {
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
      WHERE e.event_type='click'
-       AND e.created_at>=GREATEST(current_date-29, ${baselineSql})
+       AND e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
      ORDER BY e.created_at DESC
      LIMIT 50
@@ -321,12 +326,12 @@ async function analytics(db, env) {
   const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown, trafficSources, trafficSourceUnknown, featureDailyAll, featureRankAll, recentClicks] = await Promise.all([
     db.query(`
       WITH days AS (
-        SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+        SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
       ), counts AS (
-        SELECT COALESCE(u.created_at,a."createdAt")::date AS day,count(*)::int AS signups
+        SELECT (COALESCE(u.created_at,a."createdAt") AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS signups
           FROM neon_auth."user" a
           FULL OUTER JOIN public.users u ON u.id=a.id
-         WHERE COALESCE(u.created_at,a."createdAt") >= GREATEST(current_date-29, ${baselineSql})
+         WHERE COALESCE(u.created_at,a."createdAt") >= GREATEST(${windowStartSql}, ${baselineSql})
            AND COALESCE(a.role,'user') <> 'admin'
          GROUP BY 1
       )
@@ -335,16 +340,16 @@ async function analytics(db, env) {
        ORDER BY days.day`),
     db.query(`
       WITH days AS (
-        SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+        SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
       ), direct AS (
-        SELECT COALESCE(sent_date,created_at)::date AS day,count(*)::int AS direct_sent
+        SELECT (COALESCE(sent_date,created_at) AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS direct_sent
           FROM public.sent_love_notes
-         WHERE COALESCE(sent_date,created_at) >= GREATEST(current_date-29, ${baselineSql})
+         WHERE COALESCE(sent_date,created_at) >= GREATEST(${windowStartSql}, ${baselineSql})
          GROUP BY 1
       ), scheduled AS (
-        SELECT created_at::date AS day,count(*)::int AS scheduled
+        SELECT (created_at AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS scheduled
           FROM public.scheduled_love_notes
-         WHERE created_at >= GREATEST(current_date-29, ${baselineSql})
+         WHERE created_at >= GREATEST(${windowStartSql}, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -356,14 +361,14 @@ async function analytics(db, env) {
        ORDER BY days.day`),
     db.query(`
       WITH days AS (
-        SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+        SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
       ), health AS (
-        SELECT COALESCE(sent_at,last_attempt_at,updated_at,created_at)::date AS day,
+        SELECT (COALESCE(sent_at,last_attempt_at,updated_at,created_at) AT TIME ZONE 'America/Chicago')::date AS day,
                count(*) FILTER (WHERE lower(COALESCE(status,'')) IN ('sent','passed','delivered') OR sent_at IS NOT NULL)::int AS passed,
                count(*) FILTER (WHERE lower(COALESCE(status,''))='failed')::int AS failed,
                count(*) FILTER (WHERE lower(COALESCE(status,'')) IN ('scheduled','pending'))::int AS pending
           FROM public.scheduled_love_notes
-         WHERE COALESCE(sent_at,last_attempt_at,updated_at,created_at) >= GREATEST(current_date-29, ${baselineSql})
+         WHERE COALESCE(sent_at,last_attempt_at,updated_at,created_at) >= GREATEST(${windowStartSql}, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -374,11 +379,11 @@ async function analytics(db, env) {
        ORDER BY days.day`),
     db.query(`
       WITH days AS (
-        SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+        SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
       ), activity AS (
-        SELECT created_at::date AS day,count(*)::int AS events,count(DISTINCT user_id)::int AS users
+        SELECT (created_at AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS events,count(DISTINCT user_id)::int AS users
           FROM public.feature_usage_events
-         WHERE created_at >= GREATEST(current_date-29, ${baselineSql})
+         WHERE created_at >= GREATEST(${windowStartSql}, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -403,19 +408,19 @@ async function analytics(db, env) {
       )
       SELECT feature,count(*)::int AS activity,count(DISTINCT user_id)::int AS users
         FROM activity
-       WHERE occurred_at >= GREATEST(current_date-29, ${baselineSql}) AND user_id IS NOT NULL
+       WHERE occurred_at >= GREATEST(${windowStartSql}, ${baselineSql}) AND user_id IS NOT NULL
        GROUP BY feature
        ORDER BY activity DESC,feature ASC
        LIMIT 12`),
     db.query(`
       WITH days AS (
-        SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+        SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
       ), posts AS (
-        SELECT created_at::date AS day,count(*)::int AS posts FROM public.community_posts
-         WHERE created_at>=GREATEST(current_date-29, ${baselineSql}) GROUP BY 1
+        SELECT (created_at AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS posts FROM public.community_posts
+         WHERE created_at>=GREATEST(${windowStartSql}, ${baselineSql}) GROUP BY 1
       ), comments AS (
-        SELECT created_at::date AS day,count(*)::int AS comments FROM public.post_comments
-         WHERE created_at>=GREATEST(current_date-29, ${baselineSql}) GROUP BY 1
+        SELECT (created_at AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS comments FROM public.post_comments
+         WHERE created_at>=GREATEST(${windowStartSql}, ${baselineSql}) GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,
              COALESCE(posts.posts,0)::int AS posts,
@@ -424,11 +429,11 @@ async function analytics(db, env) {
        ORDER BY days.day`),
     db.query(`
       WITH days AS (
-        SELECT generate_series(current_date-29,current_date,interval '1 day')::date AS day
+        SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
       ), counts AS (
-        SELECT created_at::date AS day,count(*)::int AS payments
+        SELECT (created_at AT TIME ZONE 'America/Chicago')::date AS day,count(*)::int AS payments
           FROM public.payment_history
-         WHERE created_at>=GREATEST(current_date-29, ${baselineSql})
+         WHERE created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          GROUP BY 1
       )
       SELECT to_char(days.day,'YYYY-MM-DD') AS date,COALESCE(counts.payments,0)::int AS payments
