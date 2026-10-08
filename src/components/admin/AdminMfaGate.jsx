@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAdminMfaStatus } from '@/lib/adminMfaService';
+import { ADMIN_AUTH_REDIRECT, claimAutoRedirect } from '@/lib/activityGuard';
 
 const wait = (ms) => new Promise(resolve => window.setTimeout(resolve, ms));
 const isPrelaunchAdminPreview = () => window.location.hostname === 'one2onelove-prelaunch.hwy99signs.workers.dev';
@@ -35,7 +36,12 @@ export default function AdminMfaGate({ children }) {
             return;
           }
 
-          window.location.replace('/AdminAccess');
+          // Guarded against Admin <-> AdminAccess bounce loops: if the
+          // redirect budget is spent, stay on this screen instead of
+          // reloading forever (2026-10-08 polling fix).
+          if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
+            window.location.replace('/AdminAccess');
+          }
           return;
         } catch (error) {
           lastError = error;
@@ -53,6 +59,10 @@ export default function AdminMfaGate({ children }) {
       }
 
       if (!active) return;
+      // Same loop guard: if these redirects have already bounced too many
+      // times in the last minute, stay on the checking screen rather than
+      // reloading again.
+      if (!claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) return;
       if (lastError?.status === 403) window.location.replace('/Home');
       else if (lastError?.status === 428) window.location.replace('/AdminAccess');
       else if (lastError?.status === 401) window.location.replace('/SignIn');

@@ -8,6 +8,12 @@ import {
 } from 'lucide-react';
 import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
+import {
+  ADMIN_AUTH_REDIRECT,
+  ADMIN_IDLE_LIMIT_MS,
+  claimAutoRedirect,
+  isIdleFor,
+} from '../lib/activityGuard';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
@@ -294,9 +300,20 @@ export default function Admin() {
       if (!refresh || !dataRef.current) {
         setError(err);
       } else if (err?.status === 428) {
-        window.location.replace('/AdminAccess');
+        // Guarded: if the admin auth screens start bouncing (Admin <->
+        // AdminAccess), stop redirecting and surface the error instead of
+        // reloading forever (2026-10-08 polling fix).
+        if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
+          window.location.replace('/AdminAccess');
+        } else {
+          setError(err);
+        }
       } else if (err?.status === 401) {
-        window.location.replace('/SignIn');
+        if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
+          window.location.replace('/SignIn');
+        } else {
+          setError(err);
+        }
       } else {
         console.warn('Admin background refresh failed; keeping the current dashboard visible.', err);
       }
@@ -314,6 +331,7 @@ export default function Admin() {
     let active = true;
     const refreshIfDue = () => {
       if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
       if (elapsed >= AUTO_REFRESH_MS) load(true);
     };
@@ -331,6 +349,7 @@ export default function Admin() {
     let active = true;
     const keepAdminSessionAlive = () => {
       if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       touchAdminMfa().catch(error => {
         // Do not eject the Admin for a transient heartbeat failure. The next
         // successful request can recover through the signed Admin MFA cookie.
