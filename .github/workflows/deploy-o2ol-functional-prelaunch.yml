@@ -149,6 +149,8 @@ jobs:
 
           echo "TOKEN_PRELAUNCH_HYPERDRIVE_READY=yes"
 
+      # Bundle-check assertions updated 2026-10-08 for the Credit model
+      # (was token-model checks: BUY TOKENS / Tokens.jsx / bonus-token strings).
       - name: Build and bundle-check full Token Worker
         shell: bash
         run: |
@@ -156,31 +158,41 @@ jobs:
           npm ci
           npm run build
           test -s dist/index.html || { echo "Frontend build output missing." >&2; exit 1; }
-          grep -F "Buy Tokens To Access" worker/o2ol-tokens.ts >/dev/null || { echo "Token wall contract missing." >&2; exit 1; }
+          grep -F "Add Credit To Access" worker/o2ol-tokens.ts >/dev/null || { echo "Credit wall contract missing." >&2; exit 1; }
+          grep -F "code:'credit_required'" worker/o2ol-tokens.ts >/dev/null || { echo "Credit-required error contract missing." >&2; exit 1; }
           grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null || { echo "Token Prelaunch environment marker missing." >&2; exit 1; }
-          grep -F 'tokenIntent' src/pages/SignUp.jsx >/dev/null || { echo "Signup Token-intent notice missing." >&2; exit 1; }
-          grep -F 'TOKEN_NOTICE_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Immediate Token feature notice map missing." >&2; exit 1; }
-          grep -F 'signUpHref' src/pages/SignIn.jsx >/dev/null || { echo "Sign-in to role-selection signup handoff missing." >&2; exit 1; }
+          grep -F 'source=buy-credit' src/pages/Credit.jsx >/dev/null || { echo "Credit signup handoff (source=buy-credit) missing." >&2; exit 1; }
+          grep -F 'PUBLIC_ROUTES' src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Launch public-route map missing." >&2; exit 1; }
+          grep -F "createPageUrl('SignUp')" src/pages/SignIn.jsx >/dev/null || { echo "Sign-in to role-selection signup handoff missing." >&2; exit 1; }
           grep -F "unlockTokenContent" src/pages/DateIdeas.jsx src/lib/tokenService.js >/dev/null || { echo "Date Ideas Token unlock client missing." >&2; exit 1; }
           grep -F "o2ol_token_content_unlocks" worker/o2ol-tokens.ts neon-migrations/2026-10-04-o2ol-token-content-unlocks.sql >/dev/null || { echo "Persistent Token content unlock schema missing." >&2; exit 1; }
           grep -F "date_idea_unlock" worker/o2ol-tokens.ts src/pages/DateIdeas.jsx >/dev/null || { echo "Date Idea Token price/unlock contract missing." >&2; exit 1; }
           grep -F "/assets/o2ol-approved-logo.png" src/pages/Layout.jsx >/dev/null || { echo "Approved O2OL logo missing from MMIQ header." >&2; exit 1; }
           grep -F "podcast_episode_unlock" src/components/podcasts/PodcastPlayerDialog.jsx src/data/podcastLibrary.js >/dev/null || { echo "Podcast Token unlock readiness missing." >&2; exit 1; }
-          grep -F "tokenLanding" src/pages/SignIn.jsx >/dev/null || { echo "Post-auth Buy Tokens routing missing." >&2; exit 1; }
-          grep -F "Skip for now" src/pages/Tokens.jsx >/dev/null || { echo "Buy Tokens skip control missing." >&2; exit 1; }
-          grep -F "BUY TOKENS" src/pages/Layout.jsx >/dev/null || { echo "Persistent Buy Tokens header control missing." >&2; exit 1; }
-          grep -F "startTokenCheckout(code,returnTo)" src/pages/Tokens.jsx >/dev/null || { echo "Token checkout destination preservation missing." >&2; exit 1; }
-          grep -F "(10 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Value package bonus message missing." >&2; exit 1; }
-          grep -F "(50 Bonus Tokens)" src/pages/Tokens.jsx >/dev/null || { echo "Best Value package bonus message missing." >&2; exit 1; }
+          grep -F 'SignIn?source=buy-credit' src/pages/Credit.jsx >/dev/null || { echo "Post-auth Credit routing (wallet sign-in handoff) missing." >&2; exit 1; }
+          test -s src/pages/Credit.jsx || { echo "Credit wallet page missing." >&2; exit 1; }
+          if [ -e src/pages/Tokens.jsx ]; then echo "Token-era wallet page (Tokens.jsx) must not return." >&2; exit 1; fi
+          grep -F "Skip for now" src/pages/Credit.jsx >/dev/null || { echo "Credit wallet skip control missing." >&2; exit 1; }
+          grep -F "BUY CREDIT" src/pages/Credit.jsx >/dev/null || { echo "Credit wallet title copy missing." >&2; exit 1; }
+          grep -F "Add Credit To Access" src/pages/Credit.jsx >/dev/null || { echo "Credit wallet access copy missing." >&2; exit 1; }
+          grep -F "startTokenCheckout(code,returnTo)" src/pages/Credit.jsx >/dev/null || { echo "Credit checkout destination preservation missing." >&2; exit 1; }
+          grep -F 'path="/Credit" element={<Credit />}' src/pages/index.jsx >/dev/null || { echo "Credit wallet route registration missing." >&2; exit 1; }
+          grep -F "/api/love-notes/price" worker/love-note-entitlements.ts >/dev/null || { echo "Love Note Credit price route missing." >&2; exit 1; }
+          grep -F "ensureCreditSchema" worker/love-note-credit.ts >/dev/null || { echo "Credit schema ensure missing." >&2; exit 1; }
+          grep -F "o2ol_credit_promo_redemptions" worker/love-note-credit.ts >/dev/null || { echo "Credit promo schema missing." >&2; exit 1; }
+          if grep -Rn 'BUY TOKENS' src/ >/dev/null; then echo "Token-era BUY TOKENS copy must not return to src." >&2; exit 1; fi
+          if grep -Rn 'O2OL Tokens' src/ >/dev/null; then echo "Token-era O2OL Tokens currency copy must not return to src." >&2; exit 1; fi
+          if grep -Rn 'Buy Tokens' src/ >/dev/null; then echo "Token-era Buy Tokens copy must not return to src." >&2; exit 1; fi
+          if grep -Rn 'Bonus Tokens' src/ >/dev/null; then echo "Token-era bonus-token copy must not return to src." >&2; exit 1; fi
+          if grep -RnE 'TOKEN_NOTICE_ROUTES|TOKEN_COMPAT_ROUTES|tokenIntent|tokenLanding' src/ >/dev/null; then echo "Token-era notice/intent plumbing must not return to src." >&2; exit 1; fi
+          if grep -RnF '"/Tokens"' src/ >/dev/null; then echo "Token-era /Tokens route references must not return to src." >&2; exit 1; fi
           test -s public/assets/amora-relationship-coach-official.jpg || { echo "Approved Amora image asset missing." >&2; exit 1; }
           test "$(wc -c < public/assets/amora-relationship-coach-official.jpg)" -gt 12000 || { echo "Amora image asset is unexpectedly small/broken." >&2; exit 1; }
           grep -F "radial-gradient(circle at 12% 0%, #7f1d4e" src/pages/RelationshipCoach.jsx >/dev/null || { echo "Amora rich visual treatment missing." >&2; exit 1; }
           grep -F "Amora — Relationship Coach" src/pages/RelationshipCoach.jsx >/dev/null || { echo "Existing Relationship Coach is not branded as Amora." >&2; exit 1; }
           grep -F "/assets/amora-relationship-coach-official.jpg" src/pages/RelationshipCoach.jsx src/pages/Home.jsx src/pages/CoupleSupport.jsx >/dev/null || { echo "Canonical Amora image is not wired into required surfaces." >&2; exit 1; }
           grep -F 'to="/RelationshipCoach"' src/pages/Amora.jsx >/dev/null || { echo "Legacy Amora route does not consolidate to Relationship Coach." >&2; exit 1; }
-          grep -F 'createPageUrl("RelationshipCoach")' src/pages/Layout.jsx >/dev/null || { echo "Talk with Amora action navigation missing." >&2; exit 1; }
-          grep -F "'/relationshipcoach':'Talk with Amora'" src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Amora Token notice on Relationship Coach route missing." >&2; exit 1; }
-          grep -F 'path="/RelationshipCoach" element={<RelationshipCoach />}' src/pages/index.jsx >/dev/null || { echo "Relationship Coach must render directly; redirect loops are forbidden." >&2; exit 1; }
+          grep -F 'path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />}' src/pages/index.jsx >/dev/null || { echo "Relationship Coach route must consolidate to Couple Support." >&2; exit 1; }
           if grep -F 'path="/RelationshipCoach" element={<Navigate to="/Amora"' src/pages/index.jsx >/dev/null; then echo "Relationship Coach redirect loop detected." >&2; exit 1; fi
           if grep -F 'source=mymatchiq-bianca&type=individual' src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx 2>/dev/null; then
             echo "Bianca signup must pass through Individual / Professional selection." >&2
