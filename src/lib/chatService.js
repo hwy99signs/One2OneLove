@@ -105,6 +105,9 @@ function makePoller(fetcher, callback, intervalMs = 3000) {
   let last = '';
   const run = async () => {
     if (!active) return;
+    // Do not poll from a hidden/background tab (query-burn fix, Oct 7):
+    // the next scheduled tick after the tab is visible again resumes it.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     try {
       const value = await fetcher();
       const signature = JSON.stringify(value);

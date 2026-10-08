@@ -396,8 +396,12 @@ export default {
       try {
         const result = await dispatchDueScheduledLoveNotes(env);
         if (!result.ready) {
-          const dueCount = await dueLoveNotesCheck(env);
-          console.log(`Scheduled Love Notes due: ${dueCount}. Scheduled SMS remains dormant until provider and launch approval are configured.`);
+          // Dormant path: do NOT touch the database here. This cron fires
+          // every minute, and the old due-count check burned 1 query/min
+          // (1,440/day) purely to write this log line — a real contributor
+          // to the Oct 7 Hyperdrive cap blowout. When SMS dispatch is
+          // enabled, dispatchDueScheduledLoveNotes does the real DB work.
+          console.log('Scheduled SMS remains dormant until provider and launch approval are configured.');
           return;
         }
         console.log('Scheduled Love Notes dispatch complete', result);

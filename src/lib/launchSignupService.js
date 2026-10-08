@@ -26,7 +26,8 @@ export async function registerLaunchUser({
   termsVersion,
   privacyPolicyAcknowledged,
   age18Confirmed,
-  foundingIntent = false
+  selectedPlan = 'Premiere',
+  freeAccount = false,
 }) {
   try {
     const payload = await apiRequest('/api/launch-signup', {
@@ -41,7 +42,8 @@ export async function registerLaunchUser({
         termsVersion,
         privacyPolicyAcknowledged,
         age18Confirmed,
-        foundingIntent
+        selectedPlan,
+        freeAccount,
       },
     });
 
@@ -54,8 +56,6 @@ export async function registerLaunchUser({
       profileReady: payload?.profileReady !== false,
       recoveryPending: payload?.recoveryPending === true,
       resumed: payload?.resumed === true,
-      accessModel: payload?.accessModel || 'free_tokens',
-      freeAccount: payload?.freeAccount !== false,
     };
   } catch (error) {
     return { success: false, error: error?.message || 'Account creation failed.' };

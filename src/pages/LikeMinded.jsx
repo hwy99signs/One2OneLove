@@ -408,6 +408,8 @@ export default function LikeMinded() {
     if (!room?.code) return;
     let active = true;
     const load = async () => {
+      // Skip polls from a hidden tab (query-burn fix, Oct 7).
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       try {
         const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code), { method:'GET', headers:{} });
         if (active) {
@@ -429,6 +431,8 @@ export default function LikeMinded() {
     if (screen !== 'lobby' || !inLobby) return;
     let active = true;
     const load = async () => {
+      // Skip polls from a hidden tab (query-burn fix, Oct 7).
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       try {
         const data = await api('/api/like-minded/lobby', { method:'GET', headers:{} });
         if (active) {

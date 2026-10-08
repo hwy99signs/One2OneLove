@@ -9,9 +9,14 @@ const stopHeartbeat = () => {
   heartbeatInterval = null;
 };
 
+const tabHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
 const startHeartbeat = () => {
   stopHeartbeat();
   heartbeatInterval = window.setInterval(() => {
+    // Skip heartbeats from hidden tabs (query-burn fix, Oct 7): a
+    // backgrounded tab does not need to keep its presence row hot.
+    if (tabHidden()) return;
     apiRequest('/api/presence/heartbeat', { method: 'POST', body: {} }).catch(() => {});
   }, 30000);
 };
@@ -74,6 +79,7 @@ export const subscribeToPresence = (callback, userIds = null) => {
   unsubscribeFromPresence();
   let previous = '';
   const poll = async () => {
+    if (tabHidden()) return;
     const data = userIds?.length ? await getMultipleUserPresence(userIds) : await getOnlineUsers();
     const signature = JSON.stringify(data);
     if (signature !== previous) {

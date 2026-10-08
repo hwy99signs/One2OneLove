@@ -49,7 +49,15 @@ function cleanReportReason(value) {
   return text;
 }
 
+// Schema bootstrap is idempotent DDL; running it on every request cost 9
+// statements per chat poll and was the largest single driver of the Oct 7
+// Hyperdrive query burn. Run it once per isolate instead (same pattern as
+// worker/feature-usage.ts interactionSchemaReady); the flag is only set
+// after every statement succeeds, so a failure retries on the next request.
+let chatSafetySchemaReady = false;
+
 async function ensureChatSafetySchema(db) {
+  if (chatSafetySchemaReady) return;
   await db.query(`
     CREATE TABLE IF NOT EXISTS public.chat_room_reports (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -110,6 +118,7 @@ async function ensureChatSafetySchema(db) {
            '🎬',true,now()
      WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='studio-who-should-apologize-first')
   `);
+  chatSafetySchemaReady = true;
 }
 
 async function listRooms(db, scope = 'general') {

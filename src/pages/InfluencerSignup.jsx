@@ -5,6 +5,7 @@ import ContributorProfessionalApplication from "@/components/signup/ContributorP
 export default function InfluencerSignup() {
   const [searchParams] = useSearchParams();
   const plan = String(searchParams.get("plan") || "").toLowerCase();
-  if (!["premiere", "premier", "exclusive"].includes(plan)) return <Navigate to="/Subscription?signup=1" replace />;
+  const freeAccount = searchParams.get("account") === "free";
+  if (!freeAccount && !["premiere", "premier", "exclusive"].includes(plan)) return <Navigate to="/Subscription?signup=1" replace />;
   return <ContributorProfessionalApplication />;
 }

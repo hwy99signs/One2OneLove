@@ -1,6 +1,6 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Briefcase, Building2, Coins, Mic2 } from "lucide-react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, BadgeCheck, Briefcase, Building2, Mic2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
@@ -61,49 +61,44 @@ export default function ProfessionalSignup() {
   const [searchParams, setSearchParams] = useSearchParams();
   const t = COPY[currentLanguage] || COPY.en;
   const selectedType = searchParams.get("type");
-  const tokenIntent = searchParams.get("token") === "1";
-  const source = searchParams.get("source") || "";
-  const returnTo = searchParams.get("return") || "";
-  const feature = searchParams.get("feature") || "";
-  const tokenFeature = feature === "amora" ? "Talk with Amora" : feature === "bianca" ? "Chat with Bianca" : "this Token feature";
-  const preservedQuery = () => {
-    const q = new URLSearchParams();
-    if (source) q.set("source", source);
-    if (returnTo) q.set("return", returnTo);
-    if (tokenIntent) q.set("token", "1");
-    if (feature) q.set("feature", feature);
-    return q;
-  };
+  const selectedPlanRaw = String(searchParams.get("plan") || "").toLowerCase();
+  const selectedPlan = selectedPlanRaw === "exclusive" ? "Exclusive" : ["premiere", "premier"].includes(selectedPlanRaw) ? "Premiere" : null;
+  const freeAccount = searchParams.get("account") === "free";
+  const foundingIntent = searchParams.get("founding") === "1";
+  const membershipQuery = freeAccount
+    ? "account=free"
+    : selectedPlan
+      ? `plan=${encodeURIComponent(selectedPlan)}${foundingIntent ? "&founding=1" : ""}`
+      : "";
+
+  if (!freeAccount && !selectedPlan) return <Navigate to="/Subscription?signup=1" replace />;
 
   if (["coach", "organization"].includes(selectedType)) {
     return <ProfessionalApplication mode={selectedType} />;
   }
 
   const openApplication = (key) => {
-    const q = preservedQuery();
     if (key === "licensed") {
-      navigate(createPageUrl("TherapistSignup") + (q.toString() ? "?" + q.toString() : ""));
+      navigate(`${createPageUrl("TherapistSignup")}?${membershipQuery}`);
       return;
     }
     if (key === "contributor") {
-      navigate(createPageUrl("InfluencerSignup") + (q.toString() ? "?" + q.toString() : ""));
+      navigate(`${createPageUrl("InfluencerSignup")}?${membershipQuery}`);
       return;
     }
-    q.set("type", key);
-    setSearchParams(q);
+    setSearchParams(freeAccount ? { type: key, account: "free" } : { type: key, plan: selectedPlan, ...(foundingIntent ? { founding: "1" } : {}) });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 px-4 py-12">
       <div className="max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => { const q=preservedQuery(); navigate('/SignUp'+(q.toString()?'?'+q.toString():'')); }} className="mb-8 text-gray-600">
+        <Button variant="ghost" onClick={() => navigate(freeAccount ? "/SignUp?account=free" : `/SignUp?plan=${encodeURIComponent(selectedPlan)}${foundingIntent ? "&founding=1" : ""}`)} className="mb-8 text-gray-600">
           <ArrowLeft className="w-5 h-5 mr-2" />{t.back}
         </Button>
 
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{t.title}</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
-          {tokenIntent&&<div className="mx-auto mt-5 max-w-4xl rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-left text-amber-950 shadow-lg"><div className="flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>O2OL TOKENS</div><p className="mt-1 text-sm font-semibold leading-6">You came here from {tokenFeature}. Professional signup is free, but using that feature consumes O2OL Tokens after account approval/verification.</p></div>}
           <p className="mt-5 max-w-4xl mx-auto rounded-2xl bg-white/80 border border-purple-100 p-4 text-gray-700 shadow-sm">{t.note}</p>
         </div>
 

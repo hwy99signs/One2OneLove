@@ -6,7 +6,7 @@ import SignIn from './SignIn';
 import SignUp from './SignUp';
 import AdminAccess from './AdminAccess';
 import Admin from './Admin';
-import TokenSystemDashboard from './TokenSystemDashboard';
+import Analytics from './Analytics';
 import AdminMfaGate from '@/components/admin/AdminMfaGate.jsx';
 import MemoryLane from './MemoryLane';
 import LoveNotes from './LoveNotes';
@@ -45,9 +45,6 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
-import Tokens from './Tokens';
-import Amora from './Amora';
-import RelationshipCoach from './RelationshipCoach';
 import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
@@ -56,58 +53,23 @@ import InfluencerSignup from './InfluencerSignup';
 import MyMatchIQ from './MyMatchIQ';
 import MyMatchIQAssessment from './MyMatchIQAssessment';
 import MyMatchIQBianca from './MyMatchIQBianca';
+import MyMatchIQCredits from './MyMatchIQCredits';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
 import O2OLStudio from './O2OLStudio';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
-import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, TokenSystemDashboard, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
-  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, Tokens, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, RelationshipCoach,
-};
-
-const FEATURE_BY_ROUTE = {
-  '/memorylane': 'Memory Lane',
-  '/lovenotes': 'Love Notes',
-  '/sendcredits': 'Love Notes',
-  '/couplesupport': 'Relationship Support',
-  '/lovelanguagequiz': 'Love Language Quiz',
-  '/dateideas': 'Date Ideas',
-  '/profile': 'Member Profile',
-  '/invite': 'Invite & Share',
-  '/podcastssupport': 'Podcasts',
-  '/articlessupport': 'Articles',
-  '/relationshipquizzes': 'Relationship Quizzes',
-  '/anniversarytracker': 'Anniversary Tracker',
-  '/dashboard': 'Member Profile',
-  '/community': 'Community Chat',
-  '/relationshipmilestones': 'Relationship Milestones',
-  '/relationshipgoals': 'Relationship Goals',
-  '/communicationpractice': 'Communication Practice',
-  '/couplesprofile': 'Couples Profile',
-  '/coupleactivities': 'Couple Activities',
-  '/cooperativegames': 'Relationship Games',
-  '/whatshouldtheydo': 'What Should They Do?',
-  '/games': 'What Should They Do?',
-  '/scratchgame': 'Scratch Game',
-  '/likeminded': 'Like Minded?',
-  '/sharedjournals': 'Shared Journals',
-  '/couplesdashboard': 'Couples Dashboard',
-  '/couplescalendar': 'Couples Calendar',
-  '/lgbtqsupport': 'LGBTQ+ Support',
-  '/chat': 'Community Chat',
-  '/subscription': 'Tokens / Billing',
-  '/tokens': 'Tokens / Billing',
-  '/o2olstudio': 'O2OL Studio',
-  '/mymatchiq': 'MyMatchIQ',
+  LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
 function _getCurrentPage(url) {
@@ -118,20 +80,8 @@ function _getCurrentPage(url) {
   return pageName || 'Home';
 }
 
-function trackFeatureView(pathname, isAuthenticated, user) {
-  const feature = FEATURE_BY_ROUTE[String(pathname || '').toLowerCase()];
-  if (!feature || !isAuthenticated || String(user?.role || '').toLowerCase() === 'admin') return;
-  fetch('/api/feature-usage', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ feature, eventType: 'view', route: pathname }),
-  }).catch(() => {});
-}
-
 function PagesContent() {
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
   const currentPage = _getCurrentPage(location.pathname);
 
   useEffect(() => {
@@ -141,8 +91,8 @@ function PagesContent() {
   }, [location.pathname]);
 
   useEffect(() => {
-    trackFeatureView(location.pathname, isAuthenticated, user);
-  }, [location.pathname, isAuthenticated, user?.role]);
+    trackPageView(location.pathname);
+  }, [location.pathname]);
 
   return (
     <Layout currentPageName={currentPage}>
@@ -157,7 +107,7 @@ function PagesContent() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/AdminAccess" element={<AdminAccess />} />
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
-          <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
+          <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
           <Route path="/MemoryLane" element={<MemoryLane />} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
           <Route path="/SendCredits" element={<SendCredits />} />
@@ -197,10 +147,8 @@ function PagesContent() {
           <Route path="/Chat" element={<Chat />} />
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/Tokens" element={<Tokens />} />
-          <Route path="/Amora" element={<Amora />} />
-          <Route path="/Subscription" element={<Navigate to="/Tokens" replace />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Tokens?source=mymatchiq-feature" replace />} />
+          <Route path="/Subscription" element={<Subscription />} />
+          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
@@ -212,7 +160,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
-          <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Tokens?source=mymatchiq" replace />} />
+          <Route path="/MyMatchIQ/Credits" element={<MyMatchIQCredits />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
@@ -224,12 +172,12 @@ function PagesContent() {
           <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
-          <Route path="/RelationshipCoach" element={<RelationshipCoach />} />
+          <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
           <Route path="/Developer" element={<Navigate to="/Home" replace />} />
           <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
           <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
-          <Route path="/PremiumFeatures" element={<Navigate to="/Tokens" replace />} />
+          <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
           <Route path="/FindFriends" element={<Navigate to="/Community" replace />} />
           <Route path="/FriendRequests" element={<Navigate to="/Community" replace />} />
           <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />

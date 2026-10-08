@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertTriangle, ArrowLeft, BarChart3, CalendarDays, CheckCircle2,
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
+
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -56,9 +58,20 @@ function Pill({ children, tone = 'slate' }) {
   return <span className={cx('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold', styles[tone] || styles.slate)}>{children}</span>;
 }
 
-function Metric({ icon: Icon, label, value, note, tone='rose' }) {
+function Metric({ icon: Icon, label, value, note, tone='rose', onClick }) {
+  const interactiveProps = onClick ? {
+    role: 'button',
+    tabIndex: 0,
+    onClick,
+    onKeyDown: event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onClick();
+      }
+    },
+  } : {};
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div {...interactiveProps} className={cx('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm',onClick&&'cursor-pointer transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-amber-100')}>
       <div className="flex items-start justify-between gap-4">
         <div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{value}</p>{note && <p className="mt-1 text-xs text-slate-500">{note}</p>}</div>
         <div className={cx('rounded-xl p-2.5', toneMap[tone] || toneMap.rose)}><Icon size={20}/></div>
@@ -134,6 +147,7 @@ const O2OL_SHOW_PLATFORM_META = [
   ['threads','Threads'],
   ['tiktok','TikTok'],
   ['x','X'],
+  ['youtube','YouTube'],
   ['pinterest','Pinterest'],
   ['linkedin','LinkedIn'],
 ];
@@ -162,6 +176,7 @@ function platformVotingRows(showVoting={}) {
     }
     return {
       id,label,
+      connected:found.connected === true,
       validResponses:valid,
       excludedResponses:Number(found.excludedResponses||0),
       excludedReasons:Array.isArray(found.excludedReasons)?found.excludedReasons:[],
@@ -202,7 +217,7 @@ function combinedPlatformVoting(platforms=[],showVoting={}) {
   const womanRaw=platforms.reduce((sum,item)=>sum+Number(item.rawTotals?.expenseSplit?.woman||0),0);
   const latest=platforms.map(item=>item.lastUpdated).filter(Boolean).sort((a,b)=>new Date(b)-new Date(a))[0]||null;
   return {
-    id:'all',label:'All Platforms',validResponses,excludedResponses,commentCount,lastUpdated:latest,
+    id:'all',label:'All Platforms',connected:true,connectedPlatforms:platforms.filter(item=>item.connected).length,validResponses,excludedResponses,commentCount,lastUpdated:latest,
     excludedReasons:platforms.flatMap(item=>item.excludedReasons||[]),
     relationship100,
     expenseSplit:{
@@ -238,13 +253,19 @@ export default function Admin() {
   const [refreshing,setRefreshing] = useState(false);
   const [error,setError] = useState(null);
   const [query,setQuery] = useState('');
+  const [memberViewFilter,setMemberViewFilter] = useState('all');
   const [mobileNav,setMobileNav] = useState(false);
   const [memberActionId,setMemberActionId] = useState(null);
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
   const [votingPlatform,setVotingPlatform] = useState('all');
+  const dataRef = useRef(null);
+  const loadInFlightRef = useRef(false);
+  const lastRefreshAtRef = useRef(0);
 
   const load = async (refresh=false) => {
+    if (loadInFlightRef.current) return;
+    loadInFlightRef.current = true;
     refresh ? setRefreshing(true) : setLoading(true);
     if (!refresh) setError(null);
     const fetchBundle = async () => Promise.all([getAdminDashboard(),getAdminAnalytics()]);
@@ -265,10 +286,12 @@ export default function Admin() {
       if (!result) throw lastError || new Error('Unable to load Admin dashboard.');
       const [dashboardData,analyticsData] = result;
       setData(dashboardData);
+      dataRef.current = dashboardData;
       setAnalytics(analyticsData);
+      lastRefreshAtRef.current = Date.now();
       setError(null);
     } catch (err) {
-      if (!refresh || !data) {
+      if (!refresh || !dataRef.current) {
         setError(err);
       } else if (err?.status === 428) {
         window.location.replace('/AdminAccess');
@@ -278,12 +301,29 @@ export default function Admin() {
         console.warn('Admin background refresh failed; keeping the current dashboard visible.', err);
       }
     } finally {
+      loadInFlightRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
   };
   useEffect(() => {
     load(false);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refreshIfDue = () => {
+      if (!active || document.visibilityState !== 'visible') return;
+      const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
+      if (elapsed >= AUTO_REFRESH_MS) load(true);
+    };
+    const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshIfDue);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshIfDue);
+    };
   }, []);
 
   useEffect(() => {
@@ -307,9 +347,12 @@ export default function Admin() {
 
   const filteredMembers = useMemo(() => {
     const members=data?.members || [], needle=query.trim().toLowerCase();
-    if (!needle) return members;
-    return members.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
-  },[data,query]);
+    const byVerification = memberViewFilter === 'pending-verification'
+      ? members.filter(m => m.auth_role !== 'admin' && !(m.is_verified && m.phone_verified))
+      : members;
+    if (!needle) return byVerification;
+    return byVerification.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
+  },[data,query,memberViewFilter]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading One2OneLove Admin</h1><p className="mt-2 text-sm text-slate-500">Verifying administrator access and loading platform data.</p></div></div>;
   if (error) {
@@ -319,7 +362,8 @@ export default function Admin() {
 
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
-  const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {};
+  const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, clickAnalytics=data?.clickAnalytics || {};
+  const clickSummary=clickAnalytics.summary || {};
   const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
   const featureWindows=topFeatureActivity.windows || [7,14,21,30];
@@ -335,6 +379,12 @@ export default function Admin() {
   const direct=analytics?.directDelivery || { sent:love.sent_total,passed:0,failed:0,pending:0,receiptTrackingActive:false };
 
   const openAnalytics = () => window.location.assign('/Analytics');
+  const openPendingVerificationMembers = () => {
+    setQuery('');
+    setMemberViewFilter('pending-verification');
+    setSection('members');
+    setMobileNav(false);
+  };
 
   const handleMemberAction = async (member, action) => {
     if (member.auth_role === 'admin') return;
@@ -462,27 +512,41 @@ export default function Admin() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:flex-nowrap sm:gap-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3"><button className="rounded-lg border border-slate-200 p-2 lg:hidden" onClick={()=>setMobileNav(true)}><Menu size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Operations Dashboard</p><h1 className="text-lg font-bold text-slate-900">{visibleSections.find(s=>s.id===section)?.label}</h1></div></div>
-            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Preview'}</Pill><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Production'}</Pill><span className="hidden md:inline-flex"><Pill tone="green">Auto-refresh · 15 min</Pill></span><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
           </div>
         </header>
 
         <div className="px-4 py-6 sm:px-6 lg:px-8">
           {section==='overview' && <div>
-            <Heading title="Platform Overview" subtitle="A quick operating view of users, tiers, Love Notes, moderation and the features members are actually using."/>
+            <Heading title="Platform Overview" subtitle="A quick operating view of users, tiers, Love Notes, moderation and the features visitors and members are actually using."/>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric icon={Users} label="Total Members" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
+              <Metric icon={Users} label="Total Sign-ups" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
+              <Metric icon={UserCheck} label="Registered Free Accounts" value={number(users.registered_free)} note="free member profiles · no paid subscription" tone="blue"/>
+              <Metric icon={Clock3} label="Pending Verification" value={number(users.pending_verification)} note="Click to view the accounts and missing verification step" tone="amber" onClick={openPendingVerificationMembers}/>
               <Metric icon={Heart} label="Love Notes Sent" value={number(love.sent_total)} note={`${number(love.sent_30d)} in the last 30 days`} tone="violet"/>
               <Metric icon={CalendarDays} label="People Using Scheduler" value={number(love.scheduler_users)} note={`${number(love.scheduler_users_30d)} in the last 30 days`} tone="blue"/>
-              <Metric icon={TrendingUp} label="Feature Activity — 30 Days" value={number(features.reduce((sum,f)=>sum+Number(f.activity_30d||0),0))} note={`${features.filter(f=>Number(f.activity_30d||0)>0).length} features with activity`} tone="green"/>
+              <Metric icon={TrendingUp} label="Feature Activity — 30 Days" value={number(features.reduce((sum,f)=>sum+Number(f.activity_30d||0),0))} note={`${features.filter(f=>Number(f.activity_30d||0)>0).length} features used · all visitors`} tone="green"/>
               <Metric icon={FileCheck2} label="Pending Applications" value={number(summary.applications?.pending_total)} note="Professional and contributor applications" tone="blue"/>
               <Metric icon={MessageSquareText} label="Moderation Queue" value={number(summary.moderation?.pending_total)} note="Posts, comments, stories and reviews" tone="amber"/>
               <Metric icon={CreditCard} label="Payments Recorded" value={number(summary.payments?.recorded_payments)} note={`${number(summary.payments?.payments_this_month)} this month`} tone="violet"/>
-              <Metric icon={UserCheck} label="Verified Profiles" value={number(users.verified)} note={`${number(users.inactive)} inactive profiles`} tone="green"/>
+              <Metric icon={UserCheck} label="Fully Verified Members" value={number(users.verified)} note={`Email ${number(users.email_verified)} · Phone ${number(users.phone_verified)} · both required`} tone="green"/>
             </div>
 
+            <Panel title="Signup & Free Account Funnel" subtitle="Separates people visiting signup from accounts that were actually created. These are real account records, not anonymous clicks." className="mt-6">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total Sign-ups</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.total)}</p></div>
+                <div className="rounded-xl bg-blue-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-700">Registered Free</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.registered_free)}</p></div>
+                <div className="rounded-xl bg-violet-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Subscribed</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.subscribed)}</p></div>
+                <button type="button" onClick={openPendingVerificationMembers} className="rounded-xl bg-amber-50 p-4 text-left transition hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100"><p className="text-xs font-bold uppercase tracking-wide text-amber-700">Pending Verification</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.pending_verification)}</p><p className="mt-1 text-[11px] font-semibold text-amber-700">View accounts →</p></button>
+                <div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Fully Verified</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.verified)}</p></div>
+                <div className="rounded-xl bg-rose-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-rose-700">Auth Only / No Profile</p><p className="mt-1 text-2xl font-black text-slate-900">{number(users.auth_only_no_profile)}</p></div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs"><Pill tone="blue">{number(users.signups_today)} signups today</Pill><Pill tone="purple">{number(users.signups_24h)} in the last 24 hours</Pill></div>
+            </Panel>
+
             <div className="mt-6 grid gap-6 xl:grid-cols-3">
-              <Panel title="Tier Breakdown" subtitle="All three launch tiers are always shown, including zero-count tiers.">
-                <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">members</p></div>)}</div>
+              <Panel title="Membership Breakdown" subtitle="Registered Free plus both paid membership tiers are always shown, including zero-count groups.">
+                <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">accounts</p></div>)}</div>
               </Panel>
               <Panel title="Scheduled Love Note Delivery Health" subtitle="How scheduled Love Notes are performing after they enter the scheduler.">
                 <DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/>
@@ -498,9 +562,10 @@ export default function Admin() {
               <div className="grid gap-4 xl:grid-cols-2">
                 <FeatureActivityCard
                   title="Subscription / Billing"
-                  subtitle="Member accounts created with a Stripe card/subscription connection versus accounts without one."
+                  subtitle="Page accesses plus member accounts created with or without a Stripe subscription connection."
                   windows={featureWindows}
                   rows={[
+                    {label:'Page accesses',values:topFeatureActivity.subscriptionBilling?.accesses},
                     {label:'With CC',values:topFeatureActivity.subscriptionBilling?.withCard},
                     {label:'Without CC',values:topFeatureActivity.subscriptionBilling?.withoutCard},
                   ]}
@@ -510,7 +575,7 @@ export default function Admin() {
                   subtitle="Page usage and saved/favorited date ideas."
                   windows={featureWindows}
                   rows={[
-                    {label:'Used',values:topFeatureActivity.dateIdeas?.used},
+                    {label:'Page accesses',values:topFeatureActivity.dateIdeas?.used},
                     {label:'Saved',values:topFeatureActivity.dateIdeas?.saved},
                   ]}
                   topTitle="Top 5 saved date ideas"
@@ -530,6 +595,7 @@ export default function Admin() {
                   subtitle="Love Notes sent and scheduled, with the most-used note categories."
                   windows={featureWindows}
                   rows={[
+                    {label:'Page accesses',values:topFeatureActivity.loveNotes?.accesses},
                     {label:'Sent',values:topFeatureActivity.loveNotes?.sent},
                     {label:'Scheduled',values:topFeatureActivity.loveNotes?.scheduled},
                   ]}
@@ -558,17 +624,32 @@ export default function Admin() {
           </div>}
 
           {section==='feature-usage' && <div>
-            <Heading title="Feature Usage Analytics" subtitle="See which features attract users, how many members use them, how often they are used, and when they were last active."/>
+            <Heading title="Feature & Click Analytics" subtitle="Tracks normal UI clicks from non-registered Open House visitors, registered users without a paid subscription, and subscribed members. Administrator activity is excluded."/>
+            <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric icon={Activity} label="All Clicks" value={number(clickSummary.clicks_30d)} note={`${number(clickSummary.total_clicks)} since analytics baseline`} tone="blue"/>
+              <Metric icon={Users} label="Non-Registered Clicks" value={number(clickSummary.anonymous_30d)} note={`${number(clickSummary.unique_anonymous_30d)} unique anonymous visitors · 30 days`} tone="violet"/>
+              <Metric icon={UserCheck} label="Registered Free Clicks" value={number(clickSummary.registered_free_30d)} note={`${number(clickSummary.unique_registered_free_30d)} unique registered-free users · 30 days`} tone="amber"/>
+              <Metric icon={CreditCard} label="Subscribed Clicks" value={number(clickSummary.subscribed_30d)} note={`${number(clickSummary.unique_subscribed_30d)} unique subscribed users · 30 days`} tone="green"/>
+            </div>
+            <div className={cx('mb-5 rounded-xl border p-4 text-sm',clickAnalytics.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{clickAnalytics.trackingMessage || 'All-visitor click tracking has not produced data yet.'}</div>
+            <div className="mb-6 grid gap-6 xl:grid-cols-2">
+              <Panel title="Top Clicked Pages — 30 Days">
+                {(clickAnalytics.topRoutes||[]).length?<div className="space-y-2">{clickAnalytics.topRoutes.map(item=><div key={item.route} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="min-w-0 truncate font-semibold">{item.route}</span><strong>{number(item.clicks)}</strong></div><div className="mt-1 text-xs text-slate-500">Anonymous {number(item.anonymous)} · Registered free {number(item.registered_free)} · Subscribed {number(item.subscribed)}</div></div>)}</div>:<Empty>No public clicks recorded yet.</Empty>}
+              </Panel>
+              <Panel title="Top Clicked Features — 30 Days">
+                {(clickAnalytics.topFeatures||[]).length?<div className="space-y-2">{clickAnalytics.topFeatures.map(item=><div key={item.feature} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><span className="min-w-0 truncate font-semibold">{item.feature}</span><strong>{number(item.clicks)}</strong></div><div className="mt-1 text-xs text-slate-500">Anonymous {number(item.anonymous)} · Registered free {number(item.registered_free)} · Subscribed {number(item.subscribed)}</div></div>)}</div>:<Empty>No feature clicks recorded yet.</Empty>}
+              </Panel>
+            </div>
             <div className={cx('mb-5 rounded-xl border p-4 text-sm',featureUsage.liveTracking?'border-emerald-200 bg-emerald-50 text-emerald-800':'border-amber-200 bg-amber-50 text-amber-800')}>{featureUsage.trackingMessage}</div>
             <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="min-w-[900px]">
                 <div className="grid grid-cols-[2.2fr_1fr_1fr_1fr_1.2fr_1fr_1.5fr] items-center border-b border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                   <div>Feature</div>
-                  <div>Unique Users</div>
+                  <div>Unique Visitors / Users</div>
                   <div>7 Days</div>
                   <div>30 Days</div>
                   <div>Total Activity</div>
-                  <div>Avg / User</div>
+                  <div>Avg / Visitor</div>
                   <div>Last Used</div>
                 </div>
                 <div className="divide-y divide-slate-100">
@@ -595,7 +676,7 @@ export default function Admin() {
             <Heading title="Chat Room Analytics" subtitle="O2OL Show voting, audience demographics and live conversation volume by topic."/>
             {isPrelaunchAdminPreview && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>Prelaunch read-only preview:</strong> Admin verification is temporarily bypassed only on this isolated preview URL. Chat comment counts come from the prelaunch R2 Chat data. Production member, billing and Admin-control data are not exposed here.</div>}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <Metric icon={BarChart3} label="O2OL Show Votes" value={number(allPlatformsVoting.validResponses)} note="valid responses across all platform buckets" tone="violet"/>
+              <Metric icon={BarChart3} label="O2OL Show Votes" value={number(allPlatformsVoting.validResponses)} note="recorded responses from connected voting sources" tone="violet"/>
               <Metric icon={MessageSquareText} label="Chat Comments" value={number(totalConversationComments)} note="approved comments across tracked topics" tone="blue"/>
               <Metric icon={Users} label="Conversation Topics" value={number(conversationTopics.length)} note="rooms and member-created topics" tone="green"/>
               <Metric icon={Clock3} label="Last Show Update" value={allPlatformsVoting.lastUpdated?'Recorded':'—'} note={allPlatformsVoting.lastUpdated?date(allPlatformsVoting.lastUpdated):'No responses yet'} tone="amber"/>
@@ -605,6 +686,7 @@ export default function Admin() {
               title="O2OL Show Voting"
               subtitle={`TOPIC: ${showVoting.topicTitle||'Who Should Apologize First?'} · ${selectedVoting.label} · ${number(selectedVoting.validResponses)} valid response${Number(selectedVoting.validResponses||0)===1?'':'s'} · Admin sees live anonymous aggregates; public averages remain on the approved 7-day reveal schedule.`}
             >
+              {votingPlatform!=='all' && selectedVoting.connected===false && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><strong>{selectedVoting.label} is not connected to O2OL Show vote ingestion yet.</strong> A zero here means no connected data source, not proof that the platform had zero public votes or comments.</div>}
               <div className="mb-5 overflow-x-auto pb-1">
                 <div className="flex min-w-max gap-2">
                   {[['all','All Platforms'],...O2OL_SHOW_PLATFORM_META].map(([id,label])=><button
@@ -696,6 +778,7 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Live member management, including pending email verification and profile-recovery states. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
+            {memberViewFilter==='pending-verification' && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div><strong>Pending Verification only</strong><span className="ml-2 text-amber-700">Showing accounts missing email and/or phone verification.</span></div><button type="button" onClick={()=>setMemberViewFilter('all')} className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-black text-amber-800 hover:bg-amber-100">Show all sign-ups</button></div>}
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                 <Search size={17} className="text-slate-400"/>
@@ -743,11 +826,12 @@ export default function Admin() {
                         </select>
                         <select
                           disabled={busy}
-                          value={m.subscription_plan==='Exclusive'?'Exclusive':'Premiere'}
-                          onChange={event=>handleChangeTier(m,event.target.value)}
+                          value={m.subscription_plan==='Registered Free'?'':(m.subscription_plan==='Exclusive'?'Exclusive':'Premiere')}
+                          onChange={event=>{ if(event.target.value) handleChangeTier(m,event.target.value); }}
                           className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-700 outline-none disabled:opacity-50"
                           aria-label={`Change membership tier for ${m.email}`}
                         >
+                          <option value="" disabled>Set tier…</option>
                           <option value="Premiere">Premiere</option>
                           <option value="Exclusive">Exclusive</option>
                         </select>
@@ -771,7 +855,7 @@ export default function Admin() {
 
           {section==='moderation' && <div><Heading title="Moderation Queue" subtitle="Pending community, story and review content in one place."/>{moderation.length?<div className="space-y-3">{moderation.map(item=><div key={`${item.content_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-slate-400">{String(item.content_type||'').replaceAll('_',' ')}</p><p className="mt-1 font-bold">{item.title||'Untitled content'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div>{item.excerpt&&<p className="mt-3 text-sm leading-6 text-slate-600">{item.excerpt}</p>}<p className="mt-3 text-xs text-slate-400">Submitted {date(item.created_at)}</p></div>)}</div>:<Empty>No items waiting in moderation.</Empty>}</div>}
 
-          {section==='system' && <div><Heading title="System" subtitle="Administrator roles, AI usage and migration history. Secrets and credentials are never displayed."/><div className="grid gap-6 lg:grid-cols-3"><Panel title="AI Usage — 30 Days" className="lg:col-span-2">{(data?.system?.aiUsage30d||[]).length?<div className="space-y-2">{data.system.aiUsage30d.map(item=><div key={item.feature} className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="font-semibold">{item.feature}</span><span className="text-sm text-slate-500">{number(item.uses)} uses · {number(item.users)} users</span></div>)}</div>:<Empty>No AI usage recorded.</Empty>}</Panel><Panel title="Auth Roles">{(data?.system?.authRoles||[]).map(item=><div key={item.role} className="mb-2 flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="capitalize">{item.role}</span><strong>{number(item.count)}</strong></div>)}</Panel></div><Panel title="Migration History" className="mt-6">{(data?.system?.migrations||[]).length?<div className="space-y-2">{data.system.migrations.map(item=><div key={`${item.migration_key}-${item.applied_at}`} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><span className="font-mono text-sm font-semibold">{item.migration_key}</span><span className="text-xs text-slate-400">{date(item.applied_at)}</span></div>{item.notes&&<p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div>)}</div>:<Empty>No migration records found.</Empty>}</Panel></div>}
+          {section==='system' && <div><Heading title="System" subtitle="Administrator roles, AI usage and migration history. Secrets and credentials are never displayed."/><div className="grid gap-6 lg:grid-cols-3"><Panel title="AI Usage — 30 Days" className="lg:col-span-2">{(data?.system?.aiUsage30d||[]).length?<div className="space-y-2">{data.system.aiUsage30d.map(item=><div key={item.feature} className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="font-semibold">{item.feature}</span><span className="text-sm text-slate-500">{number(item.uses)} uses · {number(item.users)} users</span></div>)}</div>:<Empty>No AI usage recorded.</Empty>}</Panel><Panel title="Non-Admin Auth Roles">{(data?.system?.authRoles||[]).map(item=><div key={item.role} className="mb-2 flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="capitalize">{item.role}</span><strong>{number(item.count)}</strong></div>)}</Panel></div><Panel title="Migration History" className="mt-6">{(data?.system?.migrations||[]).length?<div className="space-y-2">{data.system.migrations.map(item=><div key={`${item.migration_key}-${item.applied_at}`} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><span className="font-mono text-sm font-semibold">{item.migration_key}</span><span className="text-xs text-slate-400">{date(item.applied_at)}</span></div>{item.notes&&<p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div>)}</div>:<Empty>No migration records found.</Empty>}</Panel></div>}
         </div>
       </main>
     </div>

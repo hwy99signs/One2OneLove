@@ -100,15 +100,15 @@ async function launchReadiness(env) {
             AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
         ) AS legacy_entitlement_rows,
         COALESCE((
-          SELECT column_default = '''Free''::text'
+          SELECT column_default = '''Premiere''::text'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_plan'
-        ),false) AS free_default_ready,
+        ),false) AS premiere_default_ready,
         COALESCE((
-          SELECT column_default = '0'
+          SELECT column_default = '9.99'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_price'
-        ),false) AS zero_price_default_ready,
+        ),false) AS price_default_ready,
         COALESCE((
           SELECT column_default = '''inactive''::text'
           FROM information_schema.columns
@@ -149,12 +149,18 @@ function registrationContext(body) {
   const termsAcceptedAt = clean(body.termsAcceptedAt, 100, true);
   const privacyAcknowledged = body.privacyPolicyAcknowledged === true;
   const age18Confirmed = body.age18Confirmed === true;
-  const foundingIntent = body.foundingIntent === true;
+  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Premiere';
+  const selectedPlan = selectedPlanRaw.toLowerCase() === 'exclusive'
+    ? 'Exclusive'
+    : ['premiere', 'premier'].includes(selectedPlanRaw.toLowerCase()) ? 'Premiere'
+    : null;
+  const freeAccount = body.freeAccount === true;
 
   if (!/^\S+@\S+\.\S+$/.test(email || '')) throw new Error('Please enter a valid email address.');
   if (!/^[A-Z]{2}$/.test(country || '')) throw new Error('Please select a valid country.');
   if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) throw new Error('Please select one of the supported One2OneLove languages.');
   if (!privacyAcknowledged || !age18Confirmed) throw new Error('Privacy acknowledgement and 18+ confirmation are required.');
+  if (!selectedPlan) throw new Error('Please choose Premiere or Exclusive before creating an account.');
 
   const acceptedDate = new Date(termsAcceptedAt);
   if (Number.isNaN(acceptedDate.getTime())) throw new Error('Terms acceptance date is invalid.');
@@ -166,43 +172,10 @@ function registrationContext(body) {
     preferredLanguage,
     termsVersion,
     termsAcceptedAt: acceptedDate.toISOString(),
-    accessModel: 'free_tokens',
-    foundingIntent,
+    selectedPlan,
+    freeAccount,
+    selectedPrice: freeAccount ? 0 : selectedPlan === 'Exclusive' ? 19.99 : 9.99,
   };
-}
-
-async function reserveFoundingTokenMember(db,userId) {
-  await db.query("SELECT pg_advisory_xact_lock(hashtext('one2onelove_founding_members'))");
-  await db.query(`
-    DELETE FROM public.founding_members
-     WHERE status='reserved'
-       AND activated_at IS NULL
-       AND reservation_expires_at IS NOT NULL
-       AND reservation_expires_at<=now()
-  `);
-  const existing=(await db.query(
-    `SELECT founding_number,cohort,status,badge_retained,reservation_expires_at
-       FROM public.founding_members WHERE user_id=$1::uuid LIMIT 1`,
-    [userId],
-  )).rows[0]||null;
-  if(existing)return existing;
-
-  const next=(await db.query(`
-    SELECT n
-      FROM generate_series(1,200) n
-     WHERE NOT EXISTS (SELECT 1 FROM public.founding_members f WHERE f.founding_number=n)
-     ORDER BY n LIMIT 1
-  `)).rows[0]?.n;
-  if(!next)return null;
-  const foundingNumber=Number(next);
-  const cohort=foundingNumber<=100?'first100':'second100';
-  return (await db.query(
-    `INSERT INTO public.founding_members
-      (user_id,founding_number,cohort,status,badge_retained,founding_rate_forfeited,reservation_expires_at)
-     VALUES($1::uuid,$2,$3,'reserved',true,false,now()+interval '48 hours')
-     RETURNING founding_number,cohort,status,badge_retained,reservation_expires_at`,
-    [userId,foundingNumber,cohort],
-  )).rows[0];
 }
 
 async function persistRegistration(db, user, registration) {
@@ -212,7 +185,7 @@ async function persistRegistration(db, user, registration) {
       `INSERT INTO public.signup_consents
         (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
          privacy_policy_acknowledged,age_18_confirmed,signup_source)
-       SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_free_token_launch'
+       SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_launch'
        FROM neon_auth."user" WHERE id=$1::uuid AND lower(email)=lower($2)
        ON CONFLICT (user_id, terms_version) DO UPDATE SET
          country=EXCLUDED.country,
@@ -223,52 +196,17 @@ async function persistRegistration(db, user, registration) {
       [user.id, registration.email, registration.country, registration.preferredLanguage, registration.termsVersion, registration.termsAcceptedAt],
     );
 
-    // New consumer accounts are FREE. Legacy paid tier fields remain only for
-    // historical migration/reconciliation and are not an access entitlement.
+    // This write is idempotent. A retry after a slow Worker/Database response
+    // repairs the member profile without creating a duplicate account.
     await db.query(
       `INSERT INTO public.users
         (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-       VALUES ($1::uuid,$2,$3,'regular',true,'Free',0,'inactive')
+       VALUES ($1::uuid,$2,$3,'regular',true,$4,$5,'inactive')
        ON CONFLICT (id) DO UPDATE SET
          email=EXCLUDED.email,
          name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name)`,
-      [user.id, registration.email, registration.name],
+      [user.id, registration.email, registration.name, registration.selectedPlan, registration.selectedPrice],
     );
-
-    await db.query(
-      `INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid)
-       ON CONFLICT(user_id) DO NOTHING`,
-      [user.id],
-    );
-    await db.query(
-      `INSERT INTO public.o2ol_auto_replenish_settings(user_id) VALUES($1::uuid)
-       ON CONFLICT(user_id) DO NOTHING`,
-      [user.id],
-    );
-
-    // Reserve the Founder number immediately, but do not activate the badge until
-    // verified phone completion. Token economics remain deliberately unassigned.
-    if (registration.foundingIntent) {
-      const founding=await reserveFoundingTokenMember(db,user.id);
-      if(founding){
-        await db.query(
-          `INSERT INTO public.o2ol_founding_token_benefits
-            (user_id,monthly_tokens,months_total,months_granted,status,metadata)
-           VALUES($1::uuid,0,6,0,'pending',$2::jsonb)
-           ON CONFLICT(user_id) DO UPDATE SET
-             metadata=public.o2ol_founding_token_benefits.metadata||EXCLUDED.metadata,
-             updated_at=now()`,
-          [user.id,JSON.stringify({
-            founding_intent:true,
-            founding_number:Number(founding.founding_number),
-            founding_cohort:founding.cohort,
-            badge_activation:'after_phone_verification',
-            economics_pending_calibration:true,
-          })],
-        );
-      }
-    }
-
     await db.query('COMMIT');
     return true;
   } catch (error) {
@@ -342,14 +280,15 @@ async function launchReadinessResponse(request, env) {
   const phoneVerificationReady = identity.phoneReady;
   const publicLaunchIdentityGateReady = identity.ready;
   const legacyEntitlementRows = Number(readiness.legacy_entitlement_rows || 0);
-  const freeAccountDefaultsReady = Boolean(
-    readiness.free_default_ready &&
-    readiness.zero_price_default_ready &&
+  const billingDefaultsReady = Boolean(
+    readiness.premiere_default_ready &&
+    readiness.price_default_ready &&
     readiness.status_default_ready
   );
-  // Paid tier state is migration history only. Free account creation depends on
-  // verified identity plus FREE/0 defaults; tokens are purchased separately.
-  const billingDataReady = freeAccountDefaultsReady;
+  // Legacy migrated rows may still carry historical active/$0 values. They are
+  // informational only because both browser and API access gates independently
+  // require a Stripe-backed subscription for non-admin paid access.
+  const billingDataReady = billingDefaultsReady;
 
   return json({
     ok: true,
@@ -366,10 +305,8 @@ async function launchReadinessResponse(request, env) {
       phoneVerificationSchemaReady,
       publicLaunchIdentityGateReady,
       legacyEntitlementRows,
-      freeAccountDefaultsReady,
-      billingDefaultsReady: freeAccountDefaultsReady,
+      billingDefaultsReady,
       billingDataReady,
-      accessModel: 'free_tokens',
     },
   });
 }
@@ -414,8 +351,7 @@ async function registerLaunchUser(request, env) {
         verificationMethod: readiness.verification_method || 'otp',
         verificationEmailExpected: true,
         openHouseBrowsingFree: true,
-        accessModel: 'free_tokens',
-        freeAccount: true,
+        selectedPlan: registration.selectedPlan,
         profileReady: resumed.profileReady,
         recoveryPending: !resumed.profileReady,
         resumed: true,
@@ -447,8 +383,7 @@ async function registerLaunchUser(request, env) {
     verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
     openHouseBrowsingFree: true,
-    accessModel: 'free_tokens',
-    freeAccount: true,
+    selectedPlan: registration.selectedPlan,
     profileReady,
     recoveryPending: !profileReady,
   }, profileReady ? 201 : 202);
@@ -531,7 +466,7 @@ async function verifyLaunchEmail(request, env) {
 
   if (!verified) return fail('Email verification did not complete. Request a new code and try again.', 409, 'verification_incomplete');
   if (!profileReady) return fail('Email verified, but this account is outside the 48-hour automatic recovery window. Please contact support for help.', 410, 'reinstatement_window_expired');
-  return json({ ok: true, success: true, verified: true, profileReady, recoveryPending: !profileReady, accessModel:'free_tokens', freeAccount:true }, profileReady ? 200 : 202);
+  return json({ ok: true, success: true, verified: true, profileReady, recoveryPending: !profileReady }, profileReady ? 200 : 202);
 }
 
 export async function handleLaunchAuthRequest(request, env, url) {

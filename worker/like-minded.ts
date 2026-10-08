@@ -39,7 +39,14 @@ function code(){
   return Array.from(a,n=>alphabet[n%alphabet.length]).join('');
 }
 
+// Idempotent DDL bootstrap; running it on every request cost 8 statements
+// per Like-Minded poll (room state polls every 1.8 s). Run once per isolate
+// (same pattern as worker/feature-usage.ts); flag set only after success so
+// a failure retries on the next request.
+let likeMindedSchemaReady = false;
+
 async function ensureSchema(db){
+  if (likeMindedSchemaReady) return;
   await db.query(`
     CREATE TABLE IF NOT EXISTS public.like_minded_rooms(
       id uuid PRIMARY KEY,
@@ -104,6 +111,7 @@ async function ensureSchema(db){
   await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_rooms_code ON public.like_minded_rooms(code)');
   await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_lobby ON public.like_minded_player_settings(available,in_lobby,updated_at DESC)');
   await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_answers_room ON public.like_minded_answers(room_id,set_number,question_no)');
+  likeMindedSchemaReady = true;
 }
 
 async function requirePremiumGamePass(db,userId){
