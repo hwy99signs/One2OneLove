@@ -44,6 +44,7 @@ import { handleGameAccessRequest } from './game-access';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
+import { handleTwilioMessagingWebhook } from './twilio-webhooks';
 
 
 const SOCIAL_PAGE_META = {
@@ -204,6 +205,11 @@ export default {
     if (url.pathname.startsWith('/api/phone-verification')) {
       const response = await handlePhoneVerificationRequest(request, env, url);
       if (response) return response;
+    }
+
+    // Twilio inbound messaging (STOP/START opt-outs) — signature-verified, no session.
+    if (url.pathname === '/api/webhooks/twilio/messaging') {
+      return handleTwilioMessagingWebhook(request, env);
     }
 
     // Token purchase/webhook/calibration has its own verified-member and Stripe-signature gates.

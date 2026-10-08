@@ -48,7 +48,7 @@ async function adminIdentity(db,userId){
 async function tokenDashboard(db){
   const [
     summary,packages,featurePrices,featureEconomics,wallets,transactions,reservations,
-    founders,founderSummary,calibrations,recentCostEvents,conversionQuotes,legacySummary,gameSummary,systemCounts
+    founders,founderSummary,calibrations,recentCostEvents,conversionQuotes,legacySummary,gameSummary,systemCounts,creditPromo
   ]=await Promise.all([
     db.query(`
       SELECT
@@ -183,7 +183,38 @@ async function tokenDashboard(db){
         (SELECT count(*) FROM public.o2ol_calibration_sessions)::int AS calibration_sessions,
         (SELECT count(*) FROM public.o2ol_subscription_conversion_quotes)::int AS conversion_quotes,
         (SELECT count(*) FROM public.o2ol_game_access_passes)::int AS game_passes
-    `)
+    `),
+    // Credit promo + free-note aggregates (tables are created lazily by the
+    // Credit engine; guard so the dashboard works before the first send).
+    db.query(`
+      SELECT
+        to_regclass('public.o2ol_credit_promo_months') IS NOT NULL AS promo_ready,
+        to_regclass('public.o2ol_credit_promo_redemptions') IS NOT NULL AS redemptions_ready,
+        to_regclass('public.o2ol_credit_free_note_grants') IS NOT NULL AS grants_ready,
+        to_regclass('public.o2ol_sms_optouts') IS NOT NULL AS optouts_ready
+    `).then(async guard=>{
+      const g=guard.rows[0]||{};
+      const out={promoMonth:null,promoRedemptions:0,freeGrants30d:0,smsOptOuts:0};
+      if(g.promo_ready){
+        out.promoMonth=(await db.query(
+          `SELECT month_key,pot_balance_cents,redemptions FROM public.o2ol_credit_promo_months ORDER BY month_key DESC LIMIT 1`
+        )).rows[0]||null;
+      }
+      if(g.redemptions_ready){
+        out.promoRedemptions=Number((await db.query('SELECT count(*)::int AS n FROM public.o2ol_credit_promo_redemptions')).rows[0]?.n||0);
+      }
+      if(g.grants_ready){
+        out.freeGrants30d=Number((await db.query(
+          `SELECT count(*)::int AS n FROM public.o2ol_credit_free_note_grants WHERE created_at>=now()-interval '30 days'`
+        )).rows[0]?.n||0);
+      }
+      if(g.optouts_ready){
+        out.smsOptOuts=Number((await db.query(
+          'SELECT count(*)::int AS n FROM public.o2ol_sms_optouts WHERE opted_out=true'
+        )).rows[0]?.n||0);
+      }
+      return {rows:[out]};
+    })
   ]);
 
   return {
@@ -202,6 +233,9 @@ async function tokenDashboard(db){
     legacySummary:legacySummary.rows[0]||{},
     gameSummary:gameSummary.rows,
     systemCounts:systemCounts.rows[0]||{},
+    creditPromo:creditPromo.rows[0]||{},
+    // Wallet unit is one US cent of Credit (balances display as dollars).
+    creditUnit:'USD_CENTS',
   };
 }
 

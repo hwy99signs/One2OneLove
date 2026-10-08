@@ -18,8 +18,8 @@ export async function startPaymentMethodSetup(){
 export async function confirmPaymentMethodSetup(sessionId){
   return apiRequest('/api/tokens/payment-method/confirm',{method:'POST',body:{sessionId}});
 }
-export async function updateAutoReplenish({enabled,packageCode,triggerBalance}){
-  return apiRequest('/api/tokens/auto-replenish',{method:'PUT',body:{enabled,packageCode,triggerBalance}});
+export async function updateAutoReplenish({enabled,packageCode,triggerBalance,monthlyCapCents,consentGiven}){
+  return apiRequest('/api/tokens/auto-replenish',{method:'PUT',body:{enabled,packageCode,triggerBalance,monthlyCapCents,consentGiven}});
 }
 export async function startCostCalibration({featureCode,packageCode=null,notes=''}) {
   return apiRequest('/api/tokens/calibration/start',{method:'POST',body:{featureCode,packageCode,notes}});
@@ -31,7 +31,7 @@ export async function getCalibrationHistory(){
   return apiRequest('/api/tokens/calibration/history');
 }
 export function isTokensRequiredError(error){
-  return error?.status===402 && error?.payload?.error?.code==='tokens_required';
+  return error?.status===402 && ['tokens_required','credit_required'].includes(error?.payload?.error?.code);
 }
 export function tokenRequiredDetails(error){
   const e=error?.payload?.error||{};
