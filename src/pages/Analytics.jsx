@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
 import { featureForPath, prettifyRoute, controlTypeName } from '../lib/interactionAnalytics';
+import { ADMIN_IDLE_LIMIT_MS, isIdleFor } from '../lib/activityGuard';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
@@ -203,6 +204,7 @@ export default function Analytics() {
     let active = true;
     const refreshIfDue = () => {
       if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       if (Date.now() - Number(lastRefreshAtRef.current || 0) >= AUTO_REFRESH_MS) load(true);
     };
     const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);

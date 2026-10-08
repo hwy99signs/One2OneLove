@@ -6,6 +6,12 @@ import {
   signInWithEmail,
   signOutAuth,
 } from '@/lib/apiClient';
+import {
+  isDocumentHidden,
+  isIdleFor,
+  onResumeFromIdle,
+  USER_IDLE_LIMIT_MS,
+} from '@/lib/activityGuard';
 
 const AuthContext = createContext(null);
 
@@ -77,19 +83,31 @@ export function AuthProvider({ children }) {
 
     refresh();
 
+    // Session/profile keep-alive discipline (2026-10-08): never poll a
+    // hidden tab, and stop entirely once the page has seen no interaction
+    // for USER_IDLE_LIMIT_MS (5 min). A returning user's first interaction
+    // after an idle stop triggers one refresh via onResumeFromIdle below.
     const interval = window.setInterval(() => {
-      if (mounted) refreshUserProfile({ preserveOnNull: true });
+      if (!mounted || isDocumentHidden() || isIdleFor(USER_IDLE_LIMIT_MS)) return;
+      refreshUserProfile({ preserveOnNull: true });
     }, 5 * 60 * 1000);
 
     const onVisibility = () => {
-      if (document.visibilityState === 'visible' && mounted) refreshUserProfile({ preserveOnNull: true });
+      if (document.visibilityState === 'visible' && mounted && !isIdleFor(USER_IDLE_LIMIT_MS)) {
+        refreshUserProfile({ preserveOnNull: true });
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
+
+    const unsubscribeResume = onResumeFromIdle(USER_IDLE_LIMIT_MS, () => {
+      if (mounted && !isDocumentHidden()) refreshUserProfile({ preserveOnNull: true });
+    });
 
     return () => {
       mounted = false;
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisibility);
+      unsubscribeResume();
     };
   }, []);
 
