@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Clock3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserSubscription } from '@/lib/stripeService';
+import { claimAutoRedirect, isDocumentHidden, TRIAL_REDIRECT } from '@/lib/activityGuard';
 import { useQuery } from '@tanstack/react-query';
 
 const COPY = {
@@ -69,10 +70,26 @@ export default function AccessCountdownBanner() {
     return null;
   }, [isAuthenticated, user, subscription, t.trial]);
 
+  // Expired-trial redirect discipline (2026-10-08 polling fix): this effect
+  // used to re-fire on every 1s tick once the trial ended and assign
+  // /Subscription unconditionally — on /Subscription itself that is an
+  // unbounded full-page-reload loop, and every reload re-fires the session,
+  // profile and MFA-status requests. Now: at most one attempt per mount, no
+  // redirect while hidden, never when already on /Subscription, and a
+  // session-wide budget of one forced redirect per 10 minutes.
+  const trialRedirectAttemptedRef = useRef(false);
   useEffect(() => {
     if (!state || now < state.end) return;
+    if (trialRedirectAttemptedRef.current) return;
+    if (isDocumentHidden()) return;
+    if (window.location.pathname.toLowerCase().startsWith('/subscription')) return;
+    trialRedirectAttemptedRef.current = true;
     refetch().finally(() => {
-      window.setTimeout(() => window.location.assign('/Subscription'), 500);
+      window.setTimeout(() => {
+        if (isDocumentHidden()) return;
+        if (!claimAutoRedirect(TRIAL_REDIRECT.key, TRIAL_REDIRECT.limit, TRIAL_REDIRECT.windowMs)) return;
+        window.location.assign('/Subscription');
+      }, 500);
     });
   }, [state, now, refetch]);
 
