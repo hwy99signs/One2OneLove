@@ -879,12 +879,15 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               </div>
               <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><a href="mailto:support@one2onelove.com" className="block text-left py-1 hover:text-yellow-200">{fT.reportProblem}</a></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><a href="mailto:technicalsupport@erantpropertyservices.com,support@one2onelove.com" className="block text-left py-1 hover:text-yellow-200">{fT.reportProblem}</a></div>
             </div>
             <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
           </footer>
         </>
       )}
+
+      {/* Report a problem — fixed tab, visible at all times */}
+      <a href="mailto:technicalsupport@erantpropertyservices.com,support@one2onelove.com" className="fixed bottom-0 right-4 z-50 rounded-t-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-lg hover:bg-red-700">{fT.reportProblem}</a>
     </div>
   );
 }

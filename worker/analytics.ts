@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
+import { getEdgeCounts } from './cloudflare-edge.js';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -556,12 +557,18 @@ export async function handleAnalyticsRequest(request, env, url) {
   const mfaFallback = auth ? null : await getVerifiedAdminMfaIdentity(request, env);
   if (!auth && !mfaFallback) return fail('Authentication required.',401,'unauthorized');
 
+  // Cloudflare edge counts ride along in the same payload. The fetch is
+  // independent of the database, so it starts now and runs in parallel;
+  // it is cached ~15 minutes inside cloudflare-edge.js and never throws.
+  const edgeCountsPromise = getEdgeCounts(env).catch(() => ({ connected:false, reason:'unavailable' }));
+
   try {
     return await withDb(env, async (db) => {
       const admin = mfaFallback?.admin || await requireAdmin(db, auth.user.id);
       if (!admin) return fail('Administrator access required.',403,'forbidden');
       const data = await analytics(db, env);
-      return json({ ok:true,admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
+      const edgeCounts = await edgeCountsPromise;
+      return json({ ok:true,admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data,edgeCounts });
     });
   } catch (error) {
     console.error('One2OneLove analytics API error', error);

@@ -117,6 +117,57 @@ function FeatureRankList({ rows }) {
   );
 }
 
+function EdgeStat({ label, value }) {
+  return <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-black text-slate-900">{number(value)}</p></div>;
+}
+
+// "At the Door — Cloudflare Counts": the edge view of the same traffic the
+// Site Usage panel records from inside the app. Cloudflare counts every
+// arrival (bots, crawlers and link previews included), so these numbers
+// always run higher — the panel says so in its own subtitle rather than
+// letting the gap look like missing data. Days are Cloudflare's UTC days,
+// shown as reported. When the Cloudflare connection is not configured on
+// this Worker yet, the panel renders a calm explanation naming the exact
+// missing setting — never an error dump.
+function EdgeCountsPanel({ edge, tooltipStyle }) {
+  const definition = 'Counts every arrival at the site, including bots, crawlers and link previews. These numbers will always be higher than the visitor activity recorded inside the site.';
+  if (!edge || !edge.connected) {
+    const missing = Array.isArray(edge?.missing) && edge.missing.length
+      ? edge.missing
+      : ['CLOUDFLARE_ANALYTICS_TOKEN', 'CLOUDFLARE_ZONE_ID'];
+    return (
+      <Panel title="At the Door — Cloudflare Counts" subtitle={definition}>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <p className="font-semibold text-slate-900">Edge counts not connected yet</p>
+          {edge?.reason === 'unavailable' ? (
+            <p className="mt-1">Cloudflare did not return counts on the last check. Nothing is broken on the site — this panel tries again on the next refresh.</p>
+          ) : (
+            <p className="mt-1">This panel lights up once {missing.map((name, index) => (<span key={name}>{index > 0 ? ' and ' : ''}<code className="rounded bg-slate-200/70 px-1.5 py-0.5 text-xs font-semibold text-slate-800">{name}</code></span>))} {missing.length === 1 ? 'is' : 'are'} added to this Worker&rsquo;s settings. Until then there is nothing to show here — the in-site counts above keep working as always.</p>
+          )}
+        </div>
+      </Panel>
+    );
+  }
+  return (
+    <Panel title="At the Door — Cloudflare Counts" subtitle={definition}>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Today so far · {shortDate(edge.today?.date)}</p>
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <EdgeStat label="Visits (unique visitors)" value={edge.today?.visits}/>
+        <EdgeStat label="Pageviews" value={edge.today?.pageViews}/>
+        <EdgeStat label="Requests" value={edge.today?.requests}/>
+      </div>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Last 30 days</p>
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <EdgeStat label="Visits (unique visitors)" value={edge.totals?.visits}/>
+        <EdgeStat label="Pageviews" value={edge.totals?.pageViews}/>
+        <EdgeStat label="Requests" value={edge.totals?.requests}/>
+      </div>
+      <ChartFrame height={300}><ResponsiveContainer width="100%" height="100%"><LineChart data={edge.days || []} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="requests" name="Requests" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="pageViews" name="Pageviews" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visits" name="Visits" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+      <p className="mt-4 text-xs leading-5 text-slate-500">Days are Cloudflare&rsquo;s own days (UTC), shown exactly as Cloudflare reports them; today&rsquo;s row is still counting. Counts refresh about every 15 minutes.</p>
+    </Panel>
+  );
+}
+
 export default function Analytics() {
   const [data,setData] = useState(null);
   const [loading,setLoading] = useState(true);
@@ -239,6 +290,10 @@ export default function Analytics() {
             </div>
             <ChartFrame height={340}><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.siteUsage||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="page_views" name="Page views" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="clicks" name="Clicks" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visitors" name="Unique visitors / day" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
+        </div>
+
+        <div className="mt-6">
+          <EdgeCountsPanel edge={data?.edgeCounts} tooltipStyle={tooltipStyle}/>
         </div>
 
         <div className="mt-6">
