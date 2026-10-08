@@ -862,6 +862,9 @@ function LanguageContent({ children, currentPageName }) {
           </footer>
         </>
       )}
+
+      {/* Report a problem — fixed tab, visible at all times */}
+      <a href="mailto:support@one2onelove.com" className="fixed bottom-0 right-4 z-50 rounded-t-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-lg hover:bg-red-700">{fT.reportProblem}</a>
     </div>
   );
 }
