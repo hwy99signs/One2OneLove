@@ -85,7 +85,7 @@ const copy = {
     title: 'One2OneLove Chat Rooms', subtitle: 'Real conversations about love, dating, marriage and relationships.', back: 'Back',
     online: 'active now', messages: 'messages', choose: 'Choose a conversation', loading: 'Loading conversations…',
     empty: 'No messages yet. Be the first to start the conversation.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
-    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 NEW · Vote now — closes Wed midnight', featuredBadgeClosed: '💯 Voting closed · Results Fri Oct 9',
+    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 NEW · Vote now — voting is open', featuredBadgeClosed: '💯 Voting closed · Results Fri Oct 9',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
     prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
@@ -103,7 +103,7 @@ const copy = {
     title: 'Salas de Chat One2OneLove', subtitle: 'Conversaciones reales sobre amor, citas, matrimonio y relaciones.', back: 'Volver',
     online: 'activos ahora', messages: 'mensajes', choose: 'Elige una conversación', loading: 'Cargando conversaciones…',
     empty: 'Aún no hay mensajes. Sé la primera persona en iniciar la conversación.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
-    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 NUEVO · Vota ahora — cierra el miércoles a medianoche', featuredBadgeClosed: '💯 Votación cerrada · Resultados el viernes 9 de octubre',
+    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 NUEVO · Vota ahora — la votación sigue abierta', featuredBadgeClosed: '💯 Votación cerrada · Resultados el viernes 9 de octubre',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
     prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
@@ -121,7 +121,7 @@ const copy = {
     title: 'Salons One2OneLove', subtitle: 'De vraies conversations sur l’amour, les rencontres, le mariage et les relations.', back: 'Retour',
     online: 'actifs maintenant', messages: 'messages', choose: 'Choisissez une conversation', loading: 'Chargement des conversations…',
     empty: 'Aucun message pour le moment. Lancez la conversation.', placeholder: 'Partagez vos pensées avec respect…', send: 'Envoyer',
-    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 NOUVEAU · Votez maintenant — fin mercredi à minuit', featuredBadgeClosed: '💯 Vote terminé · Résultats vendredi 9 octobre',
+    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 NOUVEAU · Votez maintenant — vote ouvert', featuredBadgeClosed: '💯 Vote terminé · Résultats vendredi 9 octobre',
     guidelines: 'Respectez le salon', guidelinesBody: 'Soyez bienveillant. Pas de harcèlement, menaces, haine, contenu sexuel explicite, attaques personnelles ou partage d’informations privées d’autrui.',
     prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', emptyRooms:'Aucune conversation n’est disponible pour le moment.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
@@ -139,7 +139,7 @@ const copy = {
     title: 'Stanze Chat One2OneLove', subtitle: 'Conversazioni vere su amore, incontri, matrimonio e relazioni.', back: 'Indietro',
     online: 'attivi ora', messages: 'messaggi', choose: 'Scegli una conversazione', loading: 'Caricamento conversazioni…',
     empty: 'Ancora nessun messaggio. Inizia tu la conversazione.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
-    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 NOVITÀ · Vota ora — chiude mercoledì a mezzanotte', featuredBadgeClosed: '💯 Votazione chiusa · Risultati venerdì 9 ottobre',
+    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 NOVITÀ · Vota ora — votazioni aperte', featuredBadgeClosed: '💯 Votazione chiusa · Risultati venerdì 9 ottobre',
     guidelines: 'Rispetta la stanza', guidelinesBody: 'Sii gentile. Niente molestie, minacce, odio, contenuti sessuali espliciti, attacchi personali o condivisione di informazioni private altrui.',
     prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', emptyRooms:'Nessuna conversazione è disponibile al momento.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
@@ -157,7 +157,7 @@ const copy = {
     title: 'One2OneLove Chaträume', subtitle: 'Echte Gespräche über Liebe, Dating, Ehe und Beziehungen.', back: 'Zurück',
     online: 'jetzt aktiv', messages: 'Nachrichten', choose: 'Wähle ein Gespräch', loading: 'Gespräche werden geladen…',
     empty: 'Noch keine Nachrichten. Starte das Gespräch.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
-    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 NEU · Jetzt abstimmen — endet Mittwoch um Mitternacht', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse Freitag, 9. Oktober',
+    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 NEU · Jetzt abstimmen — Abstimmung offen', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse Freitag, 9. Oktober',
     guidelines: 'Respektiere den Raum', guidelinesBody: 'Sei freundlich. Keine Belästigung, Drohungen, Hassrede, explizit sexuelle Inhalte, persönlichen Angriffe oder Weitergabe privater Informationen anderer.',
     prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', emptyRooms:'Derzeit sind keine Gespräche verfügbar.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
@@ -458,7 +458,7 @@ export default function Chat() {
                   const active = room.id === selectedRoom?.id;
                   const featured = room.slug === 'relationship-100';
                   const nowMs = Date.now();
-                  const featuredBadge = featured ? (nowMs < Date.UTC(2026, 9, 8, 5, 0) ? t.featuredBadgeOpen : nowMs < Date.UTC(2026, 9, 10, 5, 0) ? t.featuredBadgeClosed : null) : null;
+                  const featuredBadge = featured ? t.featuredBadgeOpen : null; // Owner decision 2026-10-07: voting stays open — badge no longer flips to closed.
                   return (
                     <button key={room.id} type="button" onClick={() => { userPickedRoomRef.current = true; setSelectedRoomId(room.id); }} className={`w-full rounded-2xl border p-4 text-left transition ${featured ? `border-amber-400 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] shadow-md r100-glow ${active ? 'ring-2 ring-amber-300' : 'hover:border-amber-300'}` : active ? 'border-purple-300 bg-purple-50 shadow-sm' : 'border-slate-200 bg-white hover:border-purple-200 hover:bg-purple-50/40'}`}>
                       <div className="flex items-start gap-3"><span className="text-2xl">{room.icon || '💬'}</span><div className="min-w-0 flex-1"><p className={featured ? 'font-extrabold text-[#f7f2e7]' : 'font-extrabold text-slate-900'}>{label[0]}</p><p className={featured ? 'mt-1 text-xs leading-5 text-[#f7f2e7]/75' : 'mt-1 line-clamp-2 text-xs leading-5 text-slate-500'}>{label[1]}</p></div></div>
