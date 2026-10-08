@@ -1,6 +1,9 @@
 const VISITOR_KEY = 'o2ol.analytics.visitor';
 const SESSION_KEY = 'o2ol.analytics.session';
 const SOURCE_KEY = 'o2ol.analytics.source';
+const QUEUE_KEY = 'o2ol.analytics.queue';
+const QUEUE_MAX = 50;
+const QUEUE_TTL_MS = 24 * 60 * 60 * 1000;
 const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess','/developer']);
 const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
@@ -180,6 +183,63 @@ function trafficSource() {
   }
 }
 
+// Delivery with a durable retry queue. Analytics used to be fire-and-forget:
+// when the ingest endpoint was unreachable (e.g. the 2026-10-07 database
+// outage), every event in that window was lost permanently. Failed sends now
+// persist in localStorage (bounded, 24h TTL) and flush on install, when the
+// browser comes back online, and when the tab becomes visible again. Only
+// transient failures are queued (network errors, 429, 5xx) — a 4xx means the
+// event itself is invalid and retrying it would never succeed.
+function loadQueue() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(QUEUE_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    const cutoff = Date.now() - QUEUE_TTL_MS;
+    return parsed.filter((item) => item && item.body && Number(item.t) > cutoff);
+  } catch {
+    return [];
+  }
+}
+
+function saveQueue(items) {
+  try {
+    window.localStorage.setItem(QUEUE_KEY, JSON.stringify(items.slice(-QUEUE_MAX)));
+  } catch {}
+}
+
+function enqueue(body) {
+  const items = loadQueue();
+  items.push({ t: Date.now(), body });
+  saveQueue(items);
+}
+
+let flushingQueue = false;
+
+function deliver(body, requeueOnFailure) {
+  fetch('/api/interaction-events', {
+    method: 'POST',
+    credentials: 'include',
+    keepalive: true,
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then((response) => {
+    if (!response.ok && (response.status === 429 || response.status >= 500) && requeueOnFailure) {
+      enqueue(body);
+    }
+  }).catch(() => {
+    if (requeueOnFailure) enqueue(body);
+  });
+}
+
+function flushQueue() {
+  if (flushingQueue || typeof window === 'undefined') return;
+  const items = loadQueue();
+  if (!items.length) return;
+  flushingQueue = true;
+  saveQueue([]);
+  for (const item of items) deliver(item.body, true);
+  flushingQueue = false;
+}
 function send(payload) {
   if (isAdminAnalyticsSurface()) return;
   const body = {
@@ -190,13 +250,7 @@ function send(payload) {
     ...payload,
   };
 
-  fetch('/api/interaction-events', {
-    method: 'POST',
-    credentials: 'include',
-    keepalive: true,
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  }).catch(() => {});
+  deliver(body, true);
 }
 
 export function trackPageView(pathname) {
@@ -227,6 +281,12 @@ export function trackFeatureActionEvent(feature, detail) {
 export function installClickAnalytics() {
   if (typeof document === 'undefined' || document.documentElement.dataset.o2olClickAnalytics === 'on') return;
   document.documentElement.dataset.o2olClickAnalytics = 'on';
+
+  flushQueue();
+  window.addEventListener('online', flushQueue);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') flushQueue();
+  });
 
   document.addEventListener('click', (event) => {
     if (isAdminAnalyticsSurface()) return;
