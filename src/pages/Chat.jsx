@@ -12,6 +12,7 @@ import {
   createCommunityChatTopic,
   sendCommunityChatMessage,
   touchCommunityChatPresence,
+  beaconLeaveCommunityChatRoom,
   deleteCommunityChatMessage,
   reportCommunityChatMessage,
   muteCommunityChatUser,
@@ -346,6 +347,25 @@ export default function Chat() {
       if (presenceTimer) window.clearInterval(presenceTimer);
     };
   }, [selectedRoomId, selectedTopicId, isAuthenticated, lgbtqMode]);
+
+  // Chat-close rule (Oct 7): stepping out of a room closes it. Presence is
+  // per-room, so this effect is keyed on the room (not the topic): when the
+  // member switches rooms, leaves the page (unmount), or the tab closes /
+  // is hidden for good (pagehide), a beacon leave deletes their presence
+  // row immediately and the room drops to empty instead of burning polls
+  // and presence until a timeout. Re-entering is a fresh join — the
+  // polling effect above re-touches presence and reloads messages.
+  // Guests hold no presence row, so there is nothing for them to leave.
+  useEffect(() => {
+    if (!selectedRoomId || !isAuthenticated) return undefined;
+    const roomId = selectedRoomId;
+    const leave = () => { beaconLeaveCommunityChatRoom(roomId); };
+    window.addEventListener('pagehide', leave);
+    return () => {
+      window.removeEventListener('pagehide', leave);
+      leave();
+    };
+  }, [selectedRoomId, isAuthenticated]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length, selectedRoomId]);
 

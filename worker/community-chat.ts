@@ -130,7 +130,7 @@ async function listRooms(db, scope = 'general') {
       LEFT JOIN (
         SELECT room_id,count(*) AS online_count
           FROM public.chat_room_presence
-         WHERE last_seen > now() - interval '5 minutes'
+         WHERE last_seen > now() - interval '60 seconds'
          GROUP BY room_id
       ) p ON p.room_id=r.id
       LEFT JOIN (
@@ -206,6 +206,17 @@ async function listMessages(db, roomId, url, viewerId = null) {
   }));
 }
 
+// Presence lifecycle (chat-close rule, Oct 7): a member is "in" a room only
+// while their presence row is fresh. The client heartbeat runs every 45 s
+// (src/pages/Chat.jsx), so occupancy counts rows seen within the last
+// 60 seconds — one beat plus grace; two missed beats and the member is
+// gone. Leaving is normally explicit: the client calls the /leave route
+// below (including via sendBeacon on pagehide) and the row is deleted at
+// once, so an emptied room closes immediately instead of lingering for
+// the TTL. The TTL only covers exits the leave signal never survives
+// (crash, killed tab, lost network). Expired rows are never counted and
+// are overwritten on rejoin; no sweeper query runs for them, so a dormant
+// room costs zero queries.
 async function touchPresence(db, roomId, userId) {
   await db.query(`
     INSERT INTO public.chat_room_presence(room_id,user_id,last_seen)
@@ -371,6 +382,22 @@ export async function handleCommunityChatRequest(request, env, url) {
         const room = await db.query('SELECT 1 FROM public.chat_rooms WHERE id=$1::uuid AND is_active=true', [roomId]);
         if (!room.rowCount) return fail('Chat room not found.', 404, 'not_found');
         await touchPresence(db, roomId, auth.user.id);
+        return json({ ok: true });
+      }
+
+      // Explicit leave: stepping out closes the chat for this member. The
+      // presence row is deleted in one statement, so occupancy drops to
+      // zero the moment the last member leaves. Deliberately no room
+      // existence check — leaving must succeed even if the room was
+      // deactivated, and an idempotent no-op DELETE keeps the exit path
+      // (often a sendBeacon during page teardown) as cheap as possible.
+      const leaveMatch = url.pathname.match(/^\/api\/community-chat\/rooms\/([0-9a-f-]{36})\/leave$/i);
+      if (leaveMatch && request.method === 'POST') {
+        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
+        await db.query(
+          'DELETE FROM public.chat_room_presence WHERE room_id=$1::uuid AND user_id=$2::uuid',
+          [leaveMatch[1], auth.user.id],
+        );
         return json({ ok: true });
       }
 

@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient';
+import { apiRequest, beaconJson } from './apiClient';
 
 export async function getCommunityChatRooms(scope = 'general') {
   const query = scope === 'lgbtq' ? '?scope=lgbtq' : '';
@@ -39,6 +39,22 @@ export async function touchCommunityChatPresence(roomId) {
     method: 'POST',
     body: {},
   });
+}
+
+// Explicit leave: stepping out of a room closes it for this member — the
+// server deletes the presence row immediately instead of waiting for the
+// presence TTL, so an empty room reads empty (and burns nothing) at once.
+export async function leaveCommunityChatRoom(roomId) {
+  await apiRequest(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/leave`, {
+    method: 'POST',
+    body: {},
+  });
+}
+
+// Leave variant for page teardown (tab close / navigate away), where a
+// normal request would be aborted before it lands.
+export function beaconLeaveCommunityChatRoom(roomId) {
+  return beaconJson(`/api/community-chat/rooms/${encodeURIComponent(roomId)}/leave`, {});
 }
 
 export async function deleteCommunityChatMessage(messageId) {
