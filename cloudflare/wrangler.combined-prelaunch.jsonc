@@ -14,7 +14,8 @@
   },
   "vars": {
     "NEON_AUTH_BASE_URL": "https://ep-royal-darkness-ars10dcl.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth",
-    "PRELAUNCH_ENVIRONMENT": "true"
+    "PRELAUNCH_ENVIRONMENT": "true",
+    "CLOUDFLARE_ZONE_ID": "449881ec0e315b87e822418a09714875"
   },
   "r2_buckets": [
     {
