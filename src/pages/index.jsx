@@ -60,6 +60,7 @@ import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
 import O2OLStudio from './O2OLStudio';
+import TikTokPost from './TikTokPost';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
@@ -207,6 +208,7 @@ function PagesContent() {
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
+          <Route path="/TikTokPost" element={<TikTokPost />} />
           <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
           <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />

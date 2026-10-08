@@ -45,6 +45,7 @@ import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
 import { handleTwilioMessagingWebhook } from './twilio-webhooks';
+import { handleTikTokRequest } from './tiktok';
 
 
 const SOCIAL_PAGE_META = {
@@ -210,6 +211,13 @@ export default {
     // Twilio inbound messaging (STOP/START opt-outs) — signature-verified, no session.
     if (url.pathname === '/api/webhooks/twilio/messaging') {
       return handleTwilioMessagingWebhook(request, env);
+    }
+
+    // TikTok posting has its own verified-session + OAuth-state gates inside
+    // the module (the OAuth callback is a cross-site top-level redirect).
+    if (url.pathname.startsWith('/api/tiktok')) {
+      const response = await handleTikTokRequest(request, env, url);
+      if (response) return response;
     }
 
     // Token purchase/webhook/calibration has its own verified-member and Stripe-signature gates.
