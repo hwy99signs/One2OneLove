@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "o2ol-admin-health-production",
+  "main": "../worker/epscie-admin-health-reporter.ts",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "vars": {
+    "O2OL_MONITOR_ENV": "production",
+    "O2OL_EPSCIE_ADMIN_ENABLED": "false"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "ef44564dbfca4e1bb13176ee568aaddf"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  }
+}

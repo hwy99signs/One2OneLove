@@ -1,0 +1,23 @@
+name: O2OL EPSCIE production-health preview validation
+on:
+  push:
+    branches:
+      - feature/epscie-production-dual-health-preview-20261008
+  pull_request:
+    branches:
+      - master
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run build
+      - run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc --outdir /tmp/o2ol-health-check
+      - run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.epscie-admin-health.preview.jsonc --outdir /tmp/o2ol-admin-health-check
+      - run: npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.epscie-admin-health.production.jsonc --outdir /tmp/o2ol-admin-production-check
