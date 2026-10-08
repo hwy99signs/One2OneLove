@@ -77,6 +77,8 @@ const translations = {
     howItWorksItem2: "• The recipient will see it came from Love Notes",
     howItWorksItem3: "• They'll get a link to create their own account",
     howItWorksItem4: "• Perfect for surprising your partner!",
+    anonTitle: "Your name stays off it — unless you sign it",
+    anonBody: "Your note arrives as a text from One2OneLove showing only your title, your words, and a ❤️ One2OneLove sign-off. Your name and number are never attached, so the person receiving it won't know it came from you — unless you choose to sign the note yourself.",
     shareViaSocial: "📱 Or Share Via Social Media",
     pleaseEnterPhone: "Please enter recipient phone number",
     pleaseSelectDateTime: "Please select date and time for scheduling",
@@ -188,6 +190,8 @@ const translations = {
     howItWorksItem2: "• El destinatario verá que vino de Love Notes",
     howItWorksItem3: "• Recibirá un enlace para crear su propia cuenta",
     howItWorksItem4: "• ¡Perfecto para sorprender a tu pareja!",
+    anonTitle: "Tu nombre no aparece — a menos que lo firmes",
+    anonBody: "Tu nota llega como un mensaje de texto de One2OneLove que muestra solo tu título, tus palabras y la firma ❤️ One2OneLove. Tu nombre y tu número nunca se adjuntan, así que la persona que la reciba no sabrá que viene de ti — a menos que decidas firmar la nota.",
     shareViaSocial: "📱 O Comparte por Redes Sociales",
     openingText: "Nota de Amor enviada por One2OneLove.",
     smsBillingPending: "Nota de Amor entregada. El uso de Crédito aún se está finalizando.",
@@ -301,6 +305,8 @@ const translations = {
     howItWorksItem2: "• Le destinataire verra qu'elle vient de Love Notes",
     howItWorksItem3: "• Il recevra un lien pour créer son propre compte",
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
+    anonTitle: "Votre nom n’apparaît pas — sauf si vous signez",
+    anonBody: "Votre note arrive par SMS, envoyée par One2OneLove, avec seulement votre titre, vos mots et la signature ❤️ One2OneLove. Votre nom et votre numéro ne sont jamais joints, donc la personne qui la reçoit ne saura pas qu’elle vient de vous — à moins que vous ne choisissiez de signer la note vous-même.",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
     openingText: "Note d’Amour envoyée par One2OneLove.",
     smsBillingPending: "Note d’Amour livrée. L’utilisation du Crédit est en cours de finalisation.",
@@ -414,6 +420,8 @@ const translations = {
     howItWorksItem2: "• Il destinatario vedrà che proviene da Love Notes",
     howItWorksItem3: "• Riceverà un link per creare il proprio account",
     howItWorksItem4: "• Perfetto per sorprendere il tuo partner!",
+    anonTitle: "Il tuo nome non compare — a meno che non lo firmi tu",
+    anonBody: "La tua nota arriva come un SMS da One2OneLove che mostra solo il titolo, le tue parole e la firma ❤️ One2OneLove. Il tuo nome e il tuo numero non vengono mai allegati, quindi chi la riceve non saprà che viene da te — a meno che tu non scelga di firmare la nota.",
     shareViaSocial: "📱 O Condividi Tramite Social Media",
     openingText: "Nota d’Amore inviata da One2OneLove.",
     smsBillingPending: "Nota d’Amore consegnata. L’utilizzo del Credito è in fase di finalizzazione.",
@@ -527,6 +535,8 @@ const translations = {
     howItWorksItem2: "• Der Empfänger sieht, dass sie von Love Notes kam",
     howItWorksItem3: "• Er erhält einen Link, um sein eigenes Konto zu erstellen",
     howItWorksItem4: "• Perfekt, um deinen Partner zu überraschen!",
+    anonTitle: "Dein Name erscheint nicht — es sei denn, du unterschreibst",
+    anonBody: "Deine Liebesbotschaft kommt als SMS von One2OneLove an und zeigt nur deinen Titel, deine Worte und die Signatur ❤️ One2OneLove. Dein Name und deine Nummer werden nie angehängt, also weiß die Person, die sie erhält, nicht, dass sie von dir kommt — es sei denn, du entscheidest dich, die Botschaft selbst zu unterschreiben.",
     shareViaSocial: "📱 Oder Teilen über Social Media",
     openingText: "Liebesnachricht von One2OneLove gesendet.",
     smsBillingPending: "Liebesnachricht zugestellt. Die Credit-Nutzung wird noch abgeschlossen.",
@@ -2007,6 +2017,15 @@ export default function LoveNotes() {
                     <li>{t.howItWorksItem3}</li>
                     <li>{t.howItWorksItem4}</li>
                   </ul>
+                </div>
+
+                <div className="bg-purple-50 rounded-xl p-4">
+                  <h4 className="flex items-center gap-2 text-sm font-bold text-purple-900 mb-2">
+                    {t.anonTitle}
+                  </h4>
+                  <p className="text-xs text-purple-800">
+                    {t.anonBody}
+                  </p>
                 </div>
 
                 <div>
