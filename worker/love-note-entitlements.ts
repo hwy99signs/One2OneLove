@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { Client } from 'pg';
-import { scheduledSmsReadiness, scheduledSmsReady, smsProviderReady, sendTwilioLoveNoteSms } from './scheduled-love-notes';
+import { scheduledSmsReadiness, scheduledSmsReady, smsProviderReady, sendTwilioLoveNoteSms, ensureScheduledSignatureSchema } from './scheduled-love-notes';
 import { reserveTokenCharge, reserveCreditCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
-import { CREDIT_CONFIG, resolveSmsRegion, publicPriceTable } from './credit-config';
+import { CREDIT_CONFIG, resolveSmsRegion, publicPriceTable, smsBodyFor } from './credit-config';
 import {
   ensureCreditSchema, assertSmsBodyWithinCap, isRecipientOptedOut, assertNotOptedOut,
   assertSendRateLimit, tryRedeemFirstFreeSend, rollbackFirstFreeSend,
@@ -68,6 +68,52 @@ function validateLoveNoteBody(value) {
     });
   }
   return content;
+}
+// ---------------------------------------------------------------------------
+// Signature model (owner, 2026-10-08). The name at the foot of a Love Note
+// is the sender's FIRST NAME FROM ACCOUNT CREATION — never a username,
+// never an email-derived value, never a per-note input. Storage found:
+// signup collects ONE full-name field ("Your Name" in
+// LaunchRegularUserForm), sent as `name` to Neon Auth at account creation
+// and seeded into public.users.name; there is NO first-name column, so the
+// first name is the first whitespace-delimited token of that stored name.
+// Guards: a stored value that IS an email address, equals the account's
+// email prefix, or is the 'Member' placeholder counts as NO first name.
+//
+// HARD RULE (owner, 2026-10-08): "They cannot send messages without a
+// first name." An account with no first name on file cannot send Love
+// Notes at all — immediate or scheduled — and Send Anonymous does NOT
+// bypass it: the requirement is having a first name on the account,
+// whether or not it will be printed. Signed is the default (first name
+// prints at the foot); Send Anonymous is an opt-in that prints no name.
+// ---------------------------------------------------------------------------
+function firstNameFromAccountName(fullName, email) {
+  const name = String(fullName || '').replace(/\s+/g, ' ').trim();
+  if (!name || name.includes('@')) return null;
+  const emailPrefix = String(email || '').split('@')[0].trim();
+  if (emailPrefix && name.toLowerCase() === emailPrefix.toLowerCase()) return null;
+  if (name === 'Member') return null;
+  return name.split(' ')[0] || null;
+}
+async function accountFirstName(db, auth) {
+  const row = (await db.query(
+    'SELECT name FROM public.users WHERE id=$1::uuid LIMIT 1',
+    [auth.user.id],
+  )).rows[0];
+  return firstNameFromAccountName(row?.name, auth.user.email);
+}
+async function resolveSignature(db, auth, body) {
+  const firstName = await accountFirstName(db, auth);
+  if (!firstName) {
+    throw Object.assign(new Error('A first name is required on your account before you can send Love Notes.'), {
+      status: 403,
+      code: 'first_name_required',
+    });
+  }
+  if (body.send_anonymous === true || body.send_anonymous === 'true') {
+    return { senderName: null, sendAnonymous: true };
+  }
+  return { senderName: firstName, sendAnonymous: false };
 }
 const LOVE_NOTE_CATEGORY_IDS = [
   'romantic','lgbtqRomantic','lgbtqSupport','lgbtqMilestone','sweet','playful','deep',
@@ -255,8 +301,11 @@ async function postImmediateSms(db, env, auth, body) {
   if(region.excluded){
     return fail('SMS delivery is not offered to this destination. You can still share this Love Note free by WhatsApp, email or social media.',422,'sms_region_unavailable',{country:region.country,reason:region.reason});
   }
-  // Total SMS body (title + content + footer) hard cap: never over 3 segments.
-  assertSmsBodyWithinCap(title,content);
+  // Total SMS body (title + content + footer + signature line when
+  // signed) hard cap: never over 3 segments. The signature is inside the
+  // cap, so it is resolved BEFORE the cap assertion.
+  const {senderName,sendAnonymous}=await resolveSignature(db,auth,body);
+  assertSmsBodyWithinCap(title,content,senderName);
   // Recipient STOP/opt-out is honored before any send.
   assertNotOptedOut(await isRecipientOptedOut(db,recipientPhone));
   await assertSendRateLimit(db,auth.user.id);
@@ -313,7 +362,7 @@ async function postImmediateSms(db, env, auth, body) {
        VALUES($1::uuid,$2::uuid,$3,$4,'sms',$5,NULL,$2::uuid)`,
       [sourceId,auth.user.id,title,content,recipientPhone],
     );
-    twilio=await sendTwilioLoveNoteSms(env,{recipient_phone:recipientPhone,note_title:title,note_content:content});
+    twilio=await sendTwilioLoveNoteSms(env,{recipient_phone:recipientPhone,note_title:title,note_content:content,sender_name:senderName,send_anonymous:sendAnonymous});
   }catch(error){
     await db.query('DELETE FROM public.sent_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[sourceId,auth.user.id]).catch(()=>{});
     if(promo)await rollbackFirstFreeSend(db,promo.redemptionId).catch(()=>{});
@@ -331,7 +380,7 @@ async function postImmediateSms(db, env, auth, body) {
     providerRequestId:twilio?.messageId||null,
     walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
     inputCharacters:countCharacters(content),
-    outputCharacters:countCharacters(twilio?.body||`${title}\n\n${content}\n\n❤️ One2OneLove`),
+    outputCharacters:countCharacters(twilio?.body||smsBodyFor(title,content,senderName)),
     providerOutputUnits:Number(twilio?.numSegments||0),
     providerCostMicros,
     customerTokensCharged:Number(reservation.tokens||0),
@@ -342,7 +391,7 @@ async function postImmediateSms(db, env, auth, body) {
   const usage=await usageForDate(db,auth.user.id,quotaDate);
   return json({
     ok:true,
-    note:{id:sourceId,note_title:title,note_content:content,recipient_type:'sms',recipient_identifier:recipientPhone},
+    note:{id:sourceId,note_title:title,note_content:content,recipient_type:'sms',recipient_identifier:recipientPhone,sender_name:senderName,send_anonymous:sendAnonymous},
     delivery:{provider:'twilio',messageId:twilio?.messageId||null,status:twilio?.status||null},
     credit:{charged:Number(reservation.tokens||0),balance:usage.creditBalance,priceCents:region.priceCents,region:region.region,regionLabel:region.regionLabel,free:freeKind},
     tokens:{charged:Number(reservation.tokens||0),balance:usage.creditBalance},
@@ -373,17 +422,19 @@ async function postScheduled(db, env, auth, body) {
   if(region.excluded){
     return fail('SMS delivery is not offered to this destination. You can still share this Love Note free by WhatsApp, email or social media.',422,'sms_region_unavailable',{country:region.country,reason:region.reason});
   }
-  assertSmsBodyWithinCap(title,content);
+  const {senderName,sendAnonymous}=await resolveSignature(db,auth,body);
+  assertSmsBodyWithinCap(title,content,senderName);
   assertNotOptedOut(await isRecipientOptedOut(db,recipientPhone));
 
+  await ensureScheduledSignatureSchema(db);
   const result=await db.query(
     `INSERT INTO public.scheduled_love_notes
       (user_id,note_title,note_content,scheduled_date,scheduled_time,scheduled_timezone,
-       recipient_phone,delivery_method,note_language,status)
-     VALUES($1::uuid,$2,$3,$4::date,$5::time,$6,$7,$8,$9,'scheduled')
+       recipient_phone,delivery_method,note_language,status,sender_name,send_anonymous)
+     VALUES($1::uuid,$2,$3,$4::date,$5::time,$6,$7,$8,$9,'scheduled',$10,$11)
      RETURNING id,note_title,note_content,scheduled_date,scheduled_time,scheduled_timezone,
-               recipient_phone,delivery_method,note_language,status,created_at,updated_at`,
-    [auth.user.id,title,content,scheduledDate,scheduledTime,scheduledTimezone,recipientPhone,deliveryMethod,language],
+               recipient_phone,delivery_method,note_language,status,sender_name,send_anonymous,created_at,updated_at`,
+    [auth.user.id,title,content,scheduledDate,scheduledTime,scheduledTimezone,recipientPhone,deliveryMethod,language,senderName,sendAnonymous],
   );
   const note=result.rows[0];
   try{

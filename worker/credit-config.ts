@@ -218,9 +218,17 @@ export function accountTierBaseCents(phone) {
   };
 }
 
-// Full SMS body exactly as Twilio sends it.
-export function smsBodyFor(title, content) {
-  return `${title}\n\n${content}${SMS_FOOTER}`;
+// Full SMS body exactly as Twilio sends it. When senderName is given the
+// note is SIGNED (the default): the name sits at the foot of the note,
+// directly above the One2OneLove sign-off. The signature lives INSIDE the
+// 201-char body cap (owner ruling, 2026-10-08): signing adds exactly the
+// name's characters plus 3 — the "—", the space after it, and the line
+// break before the ❤️ sign-off. No senderName (Send Anonymous) composes
+// exactly the unsigned body.
+export function smsBodyFor(title, content, senderName = null) {
+  const name = String(senderName || '').replace(/\s+/g, ' ').trim();
+  if (!name) return `${title}\n\n${content}${SMS_FOOTER}`;
+  return `${title}\n\n${content}\n\n— ${name}\n❤️ One2OneLove`;
 }
 
 export function publicPriceTable() {

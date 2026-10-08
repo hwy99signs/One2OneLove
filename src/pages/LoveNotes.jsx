@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useLanguage } from "@/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,11 @@ import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from "@/l
 
 const LOVE_NOTE_MAX_CHARACTERS = 171;
 const clampLoveNote = (value) => Array.from(String(value || '')).slice(0, LOVE_NOTE_MAX_CHARACTERS).join('');
+// Total SMS body limit — title + note + signature line + sign-off — mirrored
+// from CREDIT_CONFIG.maxSmsBodyCharacters in worker/credit-config.ts; the
+// server enforces the same cap on the fully composed body.
+const SMS_BODY_MAX_CHARACTERS = 201;
+const SMS_SIGNOFF_TEXT = '❤️ One2OneLove';
 
 const translations = {
   en: {
@@ -77,8 +82,14 @@ const translations = {
     howItWorksItem2: "• The recipient will see it came from Love Notes",
     howItWorksItem3: "• They'll get a link to create their own account",
     howItWorksItem4: "• Perfect for surprising your partner!",
-    anonTitle: "Your name stays off it — unless you sign it",
-    anonBody: "Your note arrives as a text from One2OneLove showing only your title, your words, and a ❤️ One2OneLove sign-off. Your name and number are never attached, so the person receiving it won't know it came from you — unless you choose to sign the note yourself.",
+    anonTitle: "Your name signs your note",
+    anonBody: "Your name appears at the foot of your note, so they know it's from you. Rather stay a secret admirer? Check 'Send Anonymous' and your note arrives with no name attached — just your title, your words, and a ❤️ One2OneLove sign-off.",
+    senderNameLimitNote: "Your name is included in the character limit of the note.",
+    sendAnonymous: "Send Anonymous",
+    signatureSignedAs: "Signed with your account first name:",
+    signatureSourceNote: "Your note is signed with the first name on your account — not a username.",
+    signatureFirstNameRequired: "You need a first name on your account before you can send Love Notes.",
+    signatureOverLimit: "With your name, this note is over the 201-character limit. Check Send Anonymous to send it without a signature.",
     shareViaSocial: "📱 Or Share Via Social Media",
     pleaseEnterPhone: "Please enter recipient phone number",
     pleaseSelectDateTime: "Please select date and time for scheduling",
@@ -190,8 +201,14 @@ const translations = {
     howItWorksItem2: "• El destinatario verá que vino de Love Notes",
     howItWorksItem3: "• Recibirá un enlace para crear su propia cuenta",
     howItWorksItem4: "• ¡Perfecto para sorprender a tu pareja!",
-    anonTitle: "Tu nombre no aparece — a menos que lo firmes",
-    anonBody: "Tu nota llega como un mensaje de texto de One2OneLove que muestra solo tu título, tus palabras y la firma ❤️ One2OneLove. Tu nombre y tu número nunca se adjuntan, así que la persona que la reciba no sabrá que viene de ti — a menos que decidas firmar la nota.",
+    anonTitle: "Tu nombre firma tu nota",
+    anonBody: "Tu nombre aparece al final de tu nota, para que sepan que viene de ti. ¿Prefieres seguir siendo un admirador secreto? Marca 'Enviar como anónimo' y tu nota llegará sin ningún nombre: solo tu título, tus palabras y la firma ❤️ One2OneLove.",
+    senderNameLimitNote: "Tu nombre está incluido en el límite de caracteres de la nota.",
+    sendAnonymous: "Enviar como anónimo",
+    signatureSignedAs: "Firmado con el primer nombre de tu cuenta:",
+    signatureSourceNote: "Tu nota se firma con el primer nombre de tu cuenta, no con un nombre de usuario.",
+    signatureFirstNameRequired: "Necesitas un primer nombre en tu cuenta antes de poder enviar Notas de Amor.",
+    signatureOverLimit: "Con tu nombre, esta nota supera el límite de 201 caracteres. Marca Enviar como anónimo para enviarla sin firma.",
     shareViaSocial: "📱 O Comparte por Redes Sociales",
     openingText: "Nota de Amor enviada por One2OneLove.",
     smsBillingPending: "Nota de Amor entregada. El uso de Crédito aún se está finalizando.",
@@ -305,8 +322,14 @@ const translations = {
     howItWorksItem2: "• Le destinataire verra qu'elle vient de Love Notes",
     howItWorksItem3: "• Il recevra un lien pour créer son propre compte",
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
-    anonTitle: "Votre nom n’apparaît pas — sauf si vous signez",
-    anonBody: "Votre note arrive par SMS, envoyée par One2OneLove, avec seulement votre titre, vos mots et la signature ❤️ One2OneLove. Votre nom et votre numéro ne sont jamais joints, donc la personne qui la reçoit ne saura pas qu’elle vient de vous — à moins que vous ne choisissiez de signer la note vous-même.",
+    anonTitle: "Votre nom signe votre note",
+    anonBody: "Votre nom apparaît au bas de votre note, pour qu’ils sachent qu’elle vient de vous. Vous préférez rester un admirateur secret ? Cochez « Envoyer anonymement » et votre note arrivera sans aucun nom : juste votre titre, vos mots et la signature ❤️ One2OneLove.",
+    senderNameLimitNote: "Votre nom est inclus dans la limite de caractères de la note.",
+    sendAnonymous: "Envoyer anonymement",
+    signatureSignedAs: "Signé avec le prénom de votre compte :",
+    signatureSourceNote: "Votre note est signée avec le prénom figurant sur votre compte — pas un nom d’utilisateur.",
+    signatureFirstNameRequired: "Vous devez avoir un prénom sur votre compte avant de pouvoir envoyer des Notes d’Amour.",
+    signatureOverLimit: "Avec votre nom, cette note dépasse la limite de 201 caractères. Cochez Envoyer anonymement pour l’envoyer sans signature.",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
     openingText: "Note d’Amour envoyée par One2OneLove.",
     smsBillingPending: "Note d’Amour livrée. L’utilisation du Crédit est en cours de finalisation.",
@@ -420,8 +443,14 @@ const translations = {
     howItWorksItem2: "• Il destinatario vedrà che proviene da Love Notes",
     howItWorksItem3: "• Riceverà un link per creare il proprio account",
     howItWorksItem4: "• Perfetto per sorprendere il tuo partner!",
-    anonTitle: "Il tuo nome non compare — a meno che non lo firmi tu",
-    anonBody: "La tua nota arriva come un SMS da One2OneLove che mostra solo il titolo, le tue parole e la firma ❤️ One2OneLove. Il tuo nome e il tuo numero non vengono mai allegati, quindi chi la riceve non saprà che viene da te — a meno che tu non scelga di firmare la nota.",
+    anonTitle: "Il tuo nome firma la tua nota",
+    anonBody: "Il tuo nome compare in calce alla tua nota, così sapranno che viene da te. Preferisci restare un ammiratore segreto? Seleziona 'Invia in forma anonima' e la tua nota arriverà senza alcun nome: solo il titolo, le tue parole e la firma ❤️ One2OneLove.",
+    senderNameLimitNote: "Il tuo nome è incluso nel limite di caratteri della nota.",
+    sendAnonymous: "Invia in forma anonima",
+    signatureSignedAs: "Firmato con il nome del tuo account:",
+    signatureSourceNote: "La tua nota viene firmata con il nome presente sul tuo account, non con un nome utente.",
+    signatureFirstNameRequired: "Devi avere un nome sul tuo account prima di poter inviare Note d’amore.",
+    signatureOverLimit: "Con il tuo nome, questa nota supera il limite di 201 caratteri. Seleziona Invia in forma anonima per inviarla senza firma.",
     shareViaSocial: "📱 O Condividi Tramite Social Media",
     openingText: "Nota d’Amore inviata da One2OneLove.",
     smsBillingPending: "Nota d’Amore consegnata. L’utilizzo del Credito è in fase di finalizzazione.",
@@ -535,8 +564,14 @@ const translations = {
     howItWorksItem2: "• Der Empfänger sieht, dass sie von Love Notes kam",
     howItWorksItem3: "• Er erhält einen Link, um sein eigenes Konto zu erstellen",
     howItWorksItem4: "• Perfekt, um deinen Partner zu überraschen!",
-    anonTitle: "Dein Name erscheint nicht — es sei denn, du unterschreibst",
-    anonBody: "Deine Liebesbotschaft kommt als SMS von One2OneLove an und zeigt nur deinen Titel, deine Worte und die Signatur ❤️ One2OneLove. Dein Name und deine Nummer werden nie angehängt, also weiß die Person, die sie erhält, nicht, dass sie von dir kommt — es sei denn, du entscheidest dich, die Botschaft selbst zu unterschreiben.",
+    anonTitle: "Dein Name unterschreibt deine Botschaft",
+    anonBody: "Dein Name erscheint am Ende deiner Botschaft, damit sie wissen, dass sie von dir kommt. Lieber ein heimlicher Verehrer bleiben? Aktiviere 'Anonym senden', und deine Botschaft kommt ganz ohne Namen an — nur mit deinem Titel, deinen Worten und der Signatur ❤️ One2OneLove.",
+    senderNameLimitNote: "Dein Name ist im Zeichenlimit der Botschaft enthalten.",
+    sendAnonymous: "Anonym senden",
+    signatureSignedAs: "Signiert mit dem Vornamen deines Kontos:",
+    signatureSourceNote: "Deine Botschaft wird mit dem Vornamen auf deinem Konto signiert — nicht mit einem Benutzernamen.",
+    signatureFirstNameRequired: "Du brauchst einen Vornamen auf deinem Konto, bevor du Liebesbotschaften senden kannst.",
+    signatureOverLimit: "Mit deinem Namen überschreitet diese Botschaft das Limit von 201 Zeichen. Aktiviere Anonym senden, um sie ohne Signatur zu senden.",
     shareViaSocial: "📱 Oder Teilen über Social Media",
     openingText: "Liebesnachricht von One2OneLove gesendet.",
     smsBillingPending: "Liebesnachricht zugestellt. Die Credit-Nutzung wird noch abgeschlossen.",
@@ -894,6 +929,8 @@ export default function LoveNotes() {
   const [selectedNote, setSelectedNote] = useState(null);
   const [sendModalNote, setSendModalNote] = useState(null);
   const [recipientPhone, setRecipientPhone] = useState('');
+  const [sendAnonymous, setSendAnonymous] = useState(false);
+  const [signatureError, setSignatureError] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
@@ -914,6 +951,65 @@ export default function LoveNotes() {
   // Fetch current user
   const { user: currentUser } = useAuth();
   const hasMemberAccess = Boolean(currentUser?.id);
+
+  // Account first name — the ONLY signature source (owner, 2026-10-08).
+  // Signup collects one full-name field ("Your Name"); the first name is
+  // its first whitespace-delimited token. It is never a username and never
+  // derived from the email: mergeUser() in AuthContext falls back to the
+  // email prefix, and then to the literal 'Member', when no genuine name
+  // exists — both count as NO first name here, as does a stored value that
+  // is itself an email address. The server derives the same first name
+  // from the account record (public.users.name) and enforces the same
+  // rule, so this display always matches what will actually print.
+  const accountFirstName = useMemo(() => {
+    const fullName = String(currentUser?.name || '').replace(/\s+/g, ' ').trim();
+    if (!fullName || fullName.includes('@')) return '';
+    const emailPrefix = String(currentUser?.email || '').split('@')[0].trim();
+    if (emailPrefix && fullName.toLowerCase() === emailPrefix.toLowerCase()) return '';
+    if (fullName === 'Member') return '';
+    return fullName.split(' ')[0] || '';
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (sendModalNote) {
+      setSendAnonymous(false);
+      setSignatureError('');
+    }
+  }, [sendModalNote]);
+
+  // Signature math — the same composed-body count the server enforces
+  // (worker/credit-config.ts smsBodyFor, code points via Array.from):
+  // signing adds the name plus 3 characters ("—", the space after it, and
+  // the line break before the ❤️ sign-off). The "\n\n" separators and the
+  // sign-off are part of every body, signed or not; Send Anonymous adds 0.
+  const effectiveSenderName = sendAnonymous ? '' : accountFirstName;
+  const signatureShare = !effectiveSenderName
+    ? 0
+    : Array.from(effectiveSenderName).length + 3;
+  const dialogBodyCharacters = sendModalNote
+    ? Array.from(sendModalNote.title || '').length + 2
+      + Array.from(sendModalNote.content || '').length + signatureShare + 2
+      + Array.from(SMS_SIGNOFF_TEXT).length
+    : 0;
+
+  const validateSignatureForSend = () => {
+    // HARD RULE (owner, 2026-10-08): "They cannot send messages without a
+    // first name." No first name on the account blocks the send outright —
+    // Send Anonymous does NOT bypass it — and the server rejects the same
+    // sends (403 first_name_required). This is the same rule, applied in
+    // the dialog before the request is made.
+    if (!accountFirstName) {
+      setSignatureError(t.signatureFirstNameRequired);
+      toast.error(t.signatureFirstNameRequired);
+      return false;
+    }
+    if (dialogBodyCharacters > SMS_BODY_MAX_CHARACTERS) {
+      setSignatureError(t.signatureOverLimit);
+      return false;
+    }
+    setSignatureError('');
+    return true;
+  };
   const openHouseCopy = OPEN_HOUSE_LOVE_NOTES_COPY[currentLanguage] || OPEN_HOUSE_LOVE_NOTES_COPY.en;
   const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
   const [openHouseLockReason, setOpenHouseLockReason] = useState('category');
@@ -1146,6 +1242,10 @@ export default function LoveNotes() {
       return;
     }
 
+    if (!validateSignatureForSend()) {
+      return;
+    }
+
     scheduleMutation.mutate({
       note_title: sendModalNote.title,
       note_content: sendModalNote.content,
@@ -1154,6 +1254,7 @@ export default function LoveNotes() {
       recipient_phone: recipientPhone,
       delivery_method: 'sms',
       note_language: currentLanguage,
+      send_anonymous: sendAnonymous,
       status: 'scheduled'
     });
   };
@@ -1212,11 +1313,13 @@ export default function LoveNotes() {
     if (limitCheckResult === null) return;
 
     if (method === 'text') {
+      if (!validateSignatureForSend()) return;
       try {
         const result = await sendLoveNoteSms({
           note_title: note.title,
           note_content: note.content,
           recipient_phone: recipientPhone,
+          send_anonymous: sendAnonymous,
         });
         queryClient.invalidateQueries({ queryKey: ['sentLoveNotes'] });
         queryClient.invalidateQueries({ queryKey: ['loveNoteUsage'] });
@@ -1900,6 +2003,8 @@ export default function LoveNotes() {
                   onClick={() => {
                     setSendModalNote(null);
                     setRecipientPhone('');
+                    setSendAnonymous(false);
+                    setSignatureError('');
                     setIsScheduling(false);
                     setScheduleDate('');
                     setScheduleTime('');
@@ -1920,8 +2025,8 @@ export default function LoveNotes() {
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {sendModalNote.content}
                   </p>
-                  <div className="mt-2 text-right text-xs text-gray-500">
-                    {Array.from(sendModalNote.content || '').length}/{LOVE_NOTE_MAX_CHARACTERS}
+                  <div className={`mt-2 text-right text-xs ${dialogBodyCharacters > SMS_BODY_MAX_CHARACTERS ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                    {dialogBodyCharacters}/{SMS_BODY_MAX_CHARACTERS}
                   </div>
                 </div>
 
@@ -1941,6 +2046,45 @@ export default function LoveNotes() {
                   <p className="text-xs text-gray-500 mt-1">
                     {hasMemberAccess ? t.recipientPhoneDesc : openHouseCopy.sendBody}
                   </p>
+                </div>
+
+                <div>
+                  {accountFirstName ? (
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold text-gray-900">{t.signatureSignedAs}</span>{' '}
+                      <span className={sendAnonymous ? 'line-through opacity-60' : 'font-semibold text-gray-900'}>{accountFirstName}</span>
+                    </p>
+                  ) : (
+                    <p className="flex items-start gap-1.5 text-sm font-medium text-red-600">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      {t.signatureFirstNameRequired}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t.signatureSourceNote}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t.senderNameLimitNote}
+                  </p>
+                  <label htmlFor="love-note-send-anonymous" className="flex items-center gap-2 mt-3 text-sm text-gray-700 cursor-pointer">
+                    <input
+                      id="love-note-send-anonymous"
+                      type="checkbox"
+                      checked={sendAnonymous}
+                      onChange={(e) => {
+                        setSendAnonymous(e.target.checked);
+                        if (signatureError) setSignatureError('');
+                      }}
+                      className="h-4 w-4 accent-purple-600"
+                    />
+                    {t.sendAnonymous}
+                  </label>
+                  {signatureError && accountFirstName && (
+                    <p className="flex items-center gap-1 text-xs text-red-600 mt-2">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      {signatureError}
+                    </p>
+                  )}
                 </div>
 
                 {scheduledSmsReady && (
@@ -2094,6 +2238,8 @@ export default function LoveNotes() {
                   onClick={() => {
                     setSendModalNote(null);
                     setRecipientPhone('');
+                    setSendAnonymous(false);
+                    setSignatureError('');
                     setIsScheduling(false);
                     setScheduleDate('');
                     setScheduleTime('');

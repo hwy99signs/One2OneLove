@@ -2,6 +2,7 @@
 import { Client } from 'pg';
 import { consumeTokenReservation, releaseTokenReservation } from './o2ol-tokens';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
+import { smsBodyFor } from './credit-config';
 import { isRecipientOptedOut } from './love-note-credit';
 
 const MAX_BATCH = 20;
@@ -40,6 +41,43 @@ async function withDb(env, fn) {
   try { return await fn(db); } finally { await db.end(); }
 }
 
+// ---------------------------------------------------------------------------
+// Signature columns on scheduled_love_notes (owner, 2026-10-08): a booked
+// note persists how the sender chose to sign — sender_name + send_anonymous
+// — so the dispatcher composes the same SMS body as an immediate send.
+// Lazy-ensure DDL tolerance, same pattern as the other workers: on the
+// preview database the connecting role does not own this pre-existing
+// table, so an ensure DDL statement against an already-in-shape object can
+// fail with 42501 (must be owner). The full DDL set is pre-applied by the
+// table owner via preview-schema-preapply.sql; here, skip ONLY the benign
+// already-in-shape codes (42501 insufficient_privilege, 42701
+// duplicate_column, 42P07 duplicate_table) per statement and continue. Any
+// other error still throws, and the DML that follows surfaces a genuinely
+// missing column loudly.
+// ---------------------------------------------------------------------------
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
+let signatureSchemaEnsured = false;
+export async function ensureScheduledSignatureSchema(db) {
+  if (signatureSchemaEnsured) return;
+  await ensureDdl(db, `ALTER TABLE public.scheduled_love_notes ADD COLUMN IF NOT EXISTS sender_name text`);
+  await ensureDdl(db, `ALTER TABLE public.scheduled_love_notes ADD COLUMN IF NOT EXISTS send_anonymous boolean NOT NULL DEFAULT false`);
+  signatureSchemaEnsured = true;
+}
+
+// The name that prints at the foot of a note, or null when the note goes
+// unsigned: Send Anonymous was chosen, or no name was stored (notes booked
+// before the signature model have no name and keep today's unsigned body —
+// a name is never invented for them).
+function signatureNameFor(note) {
+  if (note?.send_anonymous) return null;
+  return String(note?.sender_name || '').replace(/\s+/g, ' ').trim() || null;
+}
+
 export async function sendTwilioLoveNoteSms(env, note) {
   const to = cleanPhone(note.recipient_phone);
   if (!to) {
@@ -50,7 +88,7 @@ export async function sendTwilioLoveNoteSms(env, note) {
 
   const params = new URLSearchParams();
   params.set('To', to);
-  params.set('Body', `${note.note_title}\n\n${note.note_content}\n\n❤️ One2OneLove`);
+  params.set('Body', smsBodyFor(note.note_title, note.note_content, signatureNameFor(note)));
   if (env.TWILIO_MESSAGING_SERVICE_SID) params.set('MessagingServiceSid', env.TWILIO_MESSAGING_SERVICE_SID);
   else params.set('From', env.TWILIO_FROM_NUMBER);
 
@@ -159,7 +197,7 @@ async function claimDue(db) {
       `UPDATE public.scheduled_love_notes
           SET status='processing',attempts=attempts+1,last_attempt_at=now(),failure_reason=NULL,updated_at=now()
         WHERE id=ANY($1::uuid[])
-        RETURNING id,user_id,note_title,note_content,recipient_phone,delivery_method,scheduled_date,attempts`,
+        RETURNING id,user_id,note_title,note_content,recipient_phone,delivery_method,scheduled_date,attempts,sender_name,send_anonymous`,
       [ids],
     );
     await db.query('COMMIT');
@@ -188,7 +226,7 @@ async function finalizeDeliveredTokens(db,env,note,delivery){
     providerRequestId:delivery?.messageId||null,
     walletTransactionId:reservation.transaction_id||null,
     inputCharacters:countCharacters(note.note_content),
-    outputCharacters:countCharacters(delivery?.body||`${note.note_title}\n\n${note.note_content}\n\n❤️ One2OneLove`),
+    outputCharacters:countCharacters(delivery?.body||smsBodyFor(note.note_title, note.note_content, signatureNameFor(note))),
     providerOutputUnits:Number(delivery?.numSegments||0),
     providerCostMicros,
     customerTokensCharged:Number(reservation.tokens||0),
@@ -217,6 +255,7 @@ export async function dispatchDueScheduledLoveNotes(env) {
   if(!scheduledSmsReady(env))return {ready:false,claimed:0,sent:0,failed:0,retried:0};
 
   return withDb(env,async db=>{
+    await ensureScheduledSignatureSchema(db);
     const cancelled=await cancelIneligibleDue(db);
     const claimed=await claimDue(db);
     let sent=0,failed=0,retried=0,cancelledOptOut=0;

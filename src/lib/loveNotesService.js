@@ -72,6 +72,7 @@ export async function sendLoveNoteSms(data) {
         note_title: data.note_title,
         note_content: data.note_content,
         recipient_phone: data.recipient_phone,
+        send_anonymous: data.send_anonymous === true,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         requestId: globalThis.crypto?.randomUUID?.() || `love-note-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       },
@@ -116,6 +117,7 @@ export async function scheduleLoveNote(data) {
         recipient_phone: data.recipient_phone,
         delivery_method: data.delivery_method || 'sms',
         note_language: data.note_language || 'en',
+        send_anonymous: data.send_anonymous === true,
       },
     });
     notifyUsageChanged();

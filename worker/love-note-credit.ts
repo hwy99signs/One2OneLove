@@ -109,10 +109,14 @@ export async function ensureCreditSchema(db) {
 }
 
 // ---------------------------------------------------------------------------
-// Character cap — total SMS body (title + content + footer) <= 201 chars.
+// Character cap — total SMS body (title + content + footer, plus the
+// signature line "— {name}" when the note is signed) <= 201 chars. The
+// sender's name is included in the limit (owner ruling, 2026-10-08):
+// signing shrinks the room left for title + content by the composed
+// signature line's length; Send Anonymous leaves the full cap to the note.
 // ---------------------------------------------------------------------------
-export function assertSmsBodyWithinCap(title, content) {
-  const total = countCharacters(smsBodyFor(title, content));
+export function assertSmsBodyWithinCap(title, content, senderName = null) {
+  const total = countCharacters(smsBodyFor(title, content, senderName));
   if (total > CREDIT_CONFIG.maxSmsBodyCharacters) {
     throw httpError(
       `This Love Note is ${total} characters as an SMS (limit ${CREDIT_CONFIG.maxSmsBodyCharacters}). Shorten the title or note so it fits in 3 text segments.`,

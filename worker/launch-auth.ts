@@ -162,6 +162,19 @@ function registrationContext(body) {
   if (!privacyAcknowledged || !age18Confirmed) throw new Error('Privacy acknowledgement and 18+ confirmation are required.');
   if (!selectedPlan) throw new Error('Please choose Premiere or Exclusive before creating an account.');
 
+  // FIRST NAME is mandatory at account creation (owner, 2026-10-08): it is
+  // the signature printed at the foot of Love Notes and messages, and —
+  // coupled with the email and phone verifications — it helps deter fake
+  // accounts. Signup collects ONE name field, so the first name is the
+  // first whitespace-delimited token of the stored name. clean() above
+  // already rejects a missing or whitespace-only name; this states the
+  // first-name rule explicitly, in the same validation pattern, so account
+  // creation fails without a first name. Sign-in is NOT affected: legacy
+  // accounts without a first name keep site access and are only blocked
+  // from sending Love Notes until a first name is on the account.
+  const firstName = String(name || '').split(/\s+/).filter(Boolean)[0] || '';
+  if (!firstName) throw new Error('Please enter your first name. A first name is required to create an account.');
+
   const acceptedDate = new Date(termsAcceptedAt);
   if (Number.isNaN(acceptedDate.getTime())) throw new Error('Terms acceptance date is invalid.');
 
