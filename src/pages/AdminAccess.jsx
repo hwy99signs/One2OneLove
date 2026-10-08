@@ -3,6 +3,11 @@ import { ArrowLeft, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { getAdminMfaStatus, requestAdminMfaCode, verifyAdminMfaCode } from '@/lib/adminMfaService';
+import { ADMIN_AUTH_REDIRECT, claimAutoRedirect } from '@/lib/activityGuard';
+
+const claimAdminAuthRedirect = () => claimAutoRedirect(
+  ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs,
+);
 
 export default function AdminAccess() {
   const navigate = useNavigate();
@@ -19,8 +24,8 @@ export default function AdminAccess() {
       setSent(true);
       if (notify) toast.success('A new administrator verification code was sent.');
     } catch (error) {
-      if (error?.status === 401) return window.location.replace('/SignIn');
-      if (error?.status === 403) return window.location.replace('/Home');
+      if (error?.status === 401 && claimAdminAuthRedirect()) return window.location.replace('/SignIn');
+      if (error?.status === 403 && claimAdminAuthRedirect()) return window.location.replace('/Home');
       toast.error(error?.message || 'Unable to send the administrator verification code.');
     }
   };
@@ -36,12 +41,18 @@ export default function AdminAccess() {
         const status=await getAdminMfaStatus();
         if(!active) return;
         setEmail(status?.email || 'your admin email');
-        if(status?.verified) return window.location.replace('/Admin');
+        if(status?.verified) {
+          // Guarded against Admin <-> AdminAccess bounce loops: if the
+          // redirect budget is spent, stay on this page instead of
+          // reloading forever (2026-10-08 polling fix).
+          if (claimAdminAuthRedirect()) return window.location.replace('/Admin');
+          return;
+        }
         await sendCode(false);
       } catch(error) {
         if(!active) return;
-        if(error?.status===401) window.location.replace('/SignIn');
-        else if(error?.status===403) window.location.replace('/Home');
+        if(error?.status===401 && claimAdminAuthRedirect()) window.location.replace('/SignIn');
+        else if(error?.status===403 && claimAdminAuthRedirect()) window.location.replace('/Home');
         else toast.error(error?.message || 'Unable to verify administrator access.');
       } finally { if(active) setLoading(false); }
     })();
