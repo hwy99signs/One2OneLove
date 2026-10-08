@@ -141,9 +141,9 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
       console.error("Error generating note:", error);
       if (isTokensRequiredError(error)) {
         const info=tokenRequiredDetails(error);
-        toast.error("Buy Tokens To Access",{
-          description:`${info.required||tokenCost||1} token${Number(info.required||tokenCost||1)===1?'':'s'} required. Current balance: ${info.balance||tokenBalance||0}.`,
-          action:{label:"Buy Tokens",onClick:()=>window.location.assign('/Tokens?return=/LoveNotes')},
+        toast.error("Add Credit To Access",{
+          description:`${'$'+(Number(info.required||tokenCost||1)/100).toFixed(2)} Credit required. Current balance: ${'$'+(Number(info.balance||tokenBalance||0)/100).toFixed(2)}.`,
+          action:{label:"Add Credit",onClick:()=>window.location.assign('/Credit?return=/LoveNotes')},
         });
       } else {
         toast.error(language === "en" ? (error?.message || t.error) : t.error);
@@ -254,10 +254,10 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
             <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-2 font-black text-amber-900"><Coins className="h-5 w-5"/>O2OL Tokens</span>
-              <span className="font-black text-amber-900">{tokenCost || '—'} token{tokenCost===1?'':'s'} · Balance {tokenBalance}</span>
+              <span className="inline-flex items-center gap-2 font-black text-amber-900"><Coins className="h-5 w-5"/>Credit</span>
+              <span className="font-black text-amber-900">{tokenCost?'$'+(Number(tokenCost)/100).toFixed(2)+' Credit':'—'} · Balance {'$'+(Number(tokenBalance||0)/100).toFixed(2)}</span>
             </div>
-            <p className="mt-1 text-xs text-amber-800">Tokens are charged only when the AI-generated Love Note is successfully created.</p>
+            <p className="mt-1 text-xs text-amber-800">Credit is charged only when the AI-generated Love Note is successfully created.</p>
           </div>
 
           <div className="bg-purple-50 rounded-xl p-4">

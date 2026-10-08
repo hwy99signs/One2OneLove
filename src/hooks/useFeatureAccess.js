@@ -1,40 +1,54 @@
-import {useAuth} from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasFeatureAccess } from '@/lib/stripeService';
 
-function verifiedFreeMember(user){
-  if(!user?.id)return false;
-  if(String(user?.role||'').toLowerCase()==='admin')return true;
-  // Email verification is guaranteed by the authenticated member session.
-  // When phone state is present, honor it; otherwise the server identity gate
-  // remains authoritative for protected actions.
-  return user?.phone_number_verified === false ? false : true;
-}
+const canonicalPlan = (plan) => {
+  const value = String(plan || '').trim().toLowerCase();
+  if (value === 'exclusive') return 'Exclusive';
+  return 'Premiere';
+};
 
-export const useFeatureAccess=(feature)=>{
-  const {user}=useAuth();
+export const useFeatureAccess = (feature) => {
+  const { user } = useAuth();
   return {
-    hasAccess:verifiedFreeMember(user),
-    accessModel:'free_tokens',
-    feature,
+    hasAccess: hasFeatureAccess(feature, user),
+    plan: canonicalPlan(user?.subscription_plan),
+    status: user?.subscription_status || 'inactive',
     user,
   };
 };
 
-// Compatibility alias for legacy callers. A recurring paid plan is no longer
-// an access prerequisite; this now means a signed-in verified member session.
-export const useHasPaidPlan=()=>{
-  const {user}=useAuth();
-  return verifiedFreeMember(user);
+export const useHasPaidPlan = () => {
+  const { user } = useAuth();
+  const status = String(user?.subscription_status || '').toLowerCase();
+  if (String(user?.role || '').toLowerCase() === 'admin') return true;
+  return Boolean(user?.stripe_subscription_id && ['active', 'trial', 'trialing'].includes(status));
 };
 
-export const useCanUpgrade=()=>false;
+export const useCanUpgrade = () => {
+  const { user } = useAuth();
+  return canonicalPlan(user?.subscription_plan) === 'Premiere';
+};
 
-export const useFeatureLimits=()=>({
-  accessModel:'free_tokens',
-  tokenMetered:true,
-  loveNoteSms:'tokens',
-  aiResponses:'tokens',
-  premiumGames:'tokens',
-  freeSharing:true,
-});
+export const useFeatureLimits = () => {
+  const { user } = useAuth();
+  const plan = canonicalPlan(user?.subscription_plan);
+  const limits = {
+    Premiere: {
+      loveNoteSmsPrice: 0.29,
+      firstPaidSmsLoveNoteFree: true,
+      dateIdeas: 8,
+      aiQuestions: 50,
+      quizzes: 'advanced',
+    },
+    Exclusive: {
+      loveNoteSmsPrice: 0.29,
+      firstPaidSmsLoveNoteFree: true,
+      dateIdeas: 'unlimited',
+      aiQuestions: 'unlimited',
+      quizzes: 'advanced',
+    },
+  };
+  return limits[plan] || limits.Premiere;
+};
 
 export default useFeatureAccess;

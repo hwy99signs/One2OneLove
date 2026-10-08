@@ -118,8 +118,8 @@ const OPEN_HOUSE_COPY = {
     locked: 'LOCKED',
     membersOnly: 'Members Only',
     lockedTitle: 'There is more waiting inside',
-    lockedBody: 'This Date Idea is locked. Create a FREE account, then use O2OL Tokens to unlock it. Once unlocked, it stays unlocked for your account.',
-    unlock: 'Unlock with O2OL Tokens',
+    lockedBody: 'This Date Idea is locked. Create a FREE account, then use Credit to unlock it. Once unlocked, it stays unlocked for your account.',
+    unlock: 'Unlock with Credit',
     signIn: 'Sign In',
     saveGate: 'Create an account to save, schedule, and track Date Ideas.',
     memberAction: 'Become a Member'
@@ -129,44 +129,44 @@ const OPEN_HOUSE_COPY = {
     locked: 'BLOQUEADO',
     membersOnly: 'Solo miembros',
     lockedTitle: 'Hay mucho más por descubrir',
-    lockedBody: 'Esta idea de cita está bloqueada. Crea una cuenta GRATIS y usa Tokens O2OL para desbloquearla. Una vez desbloqueada, permanece disponible en tu cuenta.',
-    unlock: 'Desbloquear con Tokens O2OL',
+    lockedBody: 'Esta idea de cita está bloqueada. Crea una cuenta GRATIS y usa Crédito para desbloquearla. Una vez desbloqueada, permanece disponible en tu cuenta.',
+    unlock: 'Desbloquear con Crédito',
     signIn: 'Iniciar sesión',
     saveGate: 'Crea una cuenta para guardar, programar y seguir tus ideas de citas.',
-    memberAction: 'Desbloquear con Tokens O2OL'
+    memberAction: 'Desbloquear con Crédito'
   },
   fr: {
     badge: 'PORTES OUVERTES',
     locked: 'VERROUILLÉ',
     membersOnly: 'Membres uniquement',
     lockedTitle: 'Il y en a encore beaucoup à découvrir',
-    lockedBody: 'Cette idée de rendez-vous est verrouillée. Créez un compte GRATUIT puis utilisez des Jetons O2OL pour la déverrouiller. Elle restera ensuite disponible sur votre compte.',
-    unlock: 'Déverrouiller avec des Jetons O2OL',
+    lockedBody: 'Cette idée de rendez-vous est verrouillée. Créez un compte GRATUIT puis utilisez du Crédit pour la déverrouiller. Elle restera ensuite disponible sur votre compte.',
+    unlock: 'Déverrouiller avec du Crédit',
     signIn: 'Se connecter',
     saveGate: 'Créez un compte pour enregistrer, planifier et suivre vos idées de rendez-vous.',
-    memberAction: 'Déverrouiller avec des Jetons O2OL'
+    memberAction: 'Déverrouiller avec du Crédit'
   },
   it: {
     badge: 'PORTE APERTE',
     locked: 'BLOCCATO',
     membersOnly: 'Solo membri',
     lockedTitle: 'C’è molto altro da scoprire',
-    lockedBody: 'Questa idea è bloccata. Crea un account GRATUITO e usa Token O2OL per sbloccarla. Dopo lo sblocco resterà disponibile nel tuo account.',
-    unlock: 'Sblocca con Token O2OL',
+    lockedBody: 'Questa idea è bloccata. Crea un account GRATUITO e usa Credito per sbloccarla. Dopo lo sblocco resterà disponibile nel tuo account.',
+    unlock: 'Sblocca con Credito',
     signIn: 'Accedi',
     saveGate: 'Crea un account per salvare, programmare e monitorare le idee per gli appuntamenti.',
-    memberAction: 'Sblocca con Token O2OL'
+    memberAction: 'Sblocca con Credito'
   },
   de: {
     badge: 'TAG DER OFFENEN TÜR',
     locked: 'GESPERRT',
     membersOnly: 'Nur für Mitglieder',
     lockedTitle: 'Es gibt noch viel mehr zu entdecken',
-    lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende O2OL Tokens zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
-    unlock: 'Mit O2OL Tokens Freischalten',
+    lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende Credit zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
+    unlock: 'Mit Credit Freischalten',
     signIn: 'Anmelden',
     saveGate: 'Erstelle ein Konto, um Date-Ideen zu speichern, zu planen und zu verfolgen.',
-    memberAction: 'Mit O2OL Tokens Freischalten'
+    memberAction: 'Mit Credit Freischalten'
   }
 };
 
@@ -803,16 +803,16 @@ export default function DateIdeas() {
                         {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
                         {dateIdeaTokenCost} O2OL Token{dateIdeaTokenCost === 1 ? '' : 's'} · {openHouseCopy.unlock}
                       </Button>
-                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Tokens?return=/DateIdeas" className="ml-2 font-black underline">Buy Tokens</Link></div>}
+                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit</Link></div>}
                     </>
                   ) : (
                     <>
-                      <Link to="/SignUp?source=date-ideas&token=1&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                      <Link to="/SignUp?source=date-ideas&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
                         <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Tokens
+                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Credit
                         </Button>
                       </Link>
-                      <Link to="/SignIn?source=date-ideas&token=1&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                      <Link to="/SignIn?source=date-ideas&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
                         <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
                       </Link>
                     </>

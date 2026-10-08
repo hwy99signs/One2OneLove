@@ -303,7 +303,7 @@ const translations = {
     howItWorksItem4: "• Parfait pour surprendre votre partenaire!",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
     openingText: "Note d’Amour envoyée par One2OneLove.",
-    smsBillingPending: "Note d’Amour livrée. L’utilisation des Jetons est en cours de finalisation.",
+    smsBillingPending: "Note d’Amour livrée. L’utilisation du Crédit est en cours de finalisation.",
     openingWhatsApp: "Ouverture de WhatsApp...",
     openingFacebook: "Ouverture de Facebook...",
     copiedInstagram: "Copié! Coller dans Instagram",
@@ -316,11 +316,11 @@ const translations = {
     petNameDesc: 'Ajouté aux notes contenant "amour".',
     specialPlaceDesc: "Ajouté aux notes de 'Souvenirs'.",
     sendingLimits: "📊 Envoi et Facturation des Notes d’Amour",
-    firstPaidSend: "Portefeuille de Jetons O2OL",
+    firstPaidSend: "Portefeuille de Crédit",
     freeFirstSend: "Aucun frais récurrent",
-    firstSendUsed: "Mesuré en Jetons",
+    firstSendUsed: "Payé avec du Crédit",
     additionalSms: "Livraison SMS One2OneLove",
-    billedWithSubscription: "Le coût en Jetons est affiché avant l’envoi",
+    billedWithSubscription: "Le prix est affiché avant l’envoi",
     partnerNotes: "Notes au Partenaire",
     smsNotes: "SMS aux Autres",
     socialMedia: "Réseaux Sociaux",
@@ -1333,7 +1333,7 @@ export default function LoveNotes() {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">Credit Balance</div>
                   <div className="mt-2 text-3xl font-black text-purple-600">{money(creditBalance)}</div>
-                  <Link to="/Tokens?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Add Credit</Link>
+                  <Link to="/Credit?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Add Credit</Link>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">One2OneLove SMS</div>
@@ -1665,7 +1665,7 @@ export default function LoveNotes() {
               </div>
               <div className="mt-6 flex flex-col gap-2">
                 <Link
-                  to={currentUser ? '/Tokens?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
+                  to={currentUser ? '/Credit?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
                   onClick={() => setShowOpenHouseLock(false)}
                 >
                   <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">

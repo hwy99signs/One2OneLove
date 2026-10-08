@@ -28,7 +28,7 @@ const translations = {
     quickPrompts: "Quick Prompts", dailyTip: "Give me a daily relationship tip", dateIdea: "Suggest a creative date idea",
     communicationHelp: "Help us communicate better", conflictResolution: "How to resolve conflicts peacefully",
     keepSparkAlive: "Tips to keep the spark alive", deleteConversation: "Delete conversation",
-    conversationDeleted: "Conversation deleted", backToSupport: "Back to Support", meet:"MEET AMORA", tokenNote:"Creating an account and viewing Amora are free. Each Amora response uses O2OL Tokens.", signIn:"Sign In", createAccount:"Create FREE O2OL Account", reply:"reply",
+    conversationDeleted: "Conversation deleted", backToSupport: "Back to Support", meet:"MEET AMORA", tokenNote:"Creating an account and viewing Amora are free. Each Amora response uses Credit.", signIn:"Sign In", createAccount:"Create FREE O2OL Account", reply:"reply",
   },
   es: {
     title: "Amora — Coach de Relaciones", subtitle: "Habla naturalmente con Amora sobre comunicación, conflictos, límites, conexión, expectativas o lo que tengas en mente.",
@@ -38,7 +38,7 @@ const translations = {
     quickPrompts: "Prompts Rápidos", dailyTip: "Dame un consejo diario para relaciones", dateIdea: "Sugiere una idea creativa de cita",
     communicationHelp: "Ayúdanos a comunicarnos mejor", conflictResolution: "Cómo resolver conflictos pacíficamente",
     keepSparkAlive: "Tips para mantener viva la chispa", deleteConversation: "Eliminar conversación",
-    conversationDeleted: "Conversación eliminada", backToSupport: "Volver al Soporte", meet:"CONOCE A AMORA", tokenNote:"Crear una cuenta y ver a Amora es gratis. Cada respuesta de Amora usa Tokens O2OL.", signIn:"Iniciar Sesión", createAccount:"Crear Cuenta O2OL GRATIS", reply:"respuesta",
+    conversationDeleted: "Conversación eliminada", backToSupport: "Volver al Soporte", meet:"CONOCE A AMORA", tokenNote:"Crear una cuenta y ver a Amora es gratis. Cada respuesta de Amora usa Crédito.", signIn:"Iniciar Sesión", createAccount:"Crear Cuenta O2OL GRATIS", reply:"respuesta",
   },
   fr: {
     title: "Amora — Coach Relationnelle", subtitle: "Parlez naturellement avec Amora de communication, conflit, limites, connexion, attentes ou de ce qui vous préoccupe.",
@@ -48,7 +48,7 @@ const translations = {
     quickPrompts: "Prompts Rapides", dailyTip: "Donnez-moi un conseil relationnel quotidien", dateIdea: "Suggérez une idée de rendez-vous créative",
     communicationHelp: "Aidez-nous à mieux communiquer", conflictResolution: "Comment résoudre les conflits pacifiquement",
     keepSparkAlive: "Conseils pour garder l'étincelle vivante", deleteConversation: "Supprimer la conversation",
-    conversationDeleted: "Conversation supprimée", backToSupport: "Retour au Support", meet:"DÉCOUVREZ AMORA", tokenNote:"Créer un compte et voir Amora est gratuit. Chaque réponse d’Amora utilise des Jetons O2OL.", signIn:"Se Connecter", createAccount:"Créer un Compte O2OL GRATUIT", reply:"réponse",
+    conversationDeleted: "Conversation supprimée", backToSupport: "Retour au Support", meet:"DÉCOUVREZ AMORA", tokenNote:"Créer un compte et voir Amora est gratuit. Chaque réponse d’Amora utilise du Crédit.", signIn:"Se Connecter", createAccount:"Créer un Compte O2OL GRATUIT", reply:"réponse",
   },
   it: {
     title: "Amora — Coach Relazionale", subtitle: "Parla naturalmente con Amora di comunicazione, conflitti, confini, connessione, aspettative o di ciò che hai in mente.",
@@ -58,7 +58,7 @@ const translations = {
     quickPrompts: "Prompt Rapidi", dailyTip: "Dammi un consiglio quotidiano per relazioni", dateIdea: "Suggerisci un'idea creativa per appuntamento",
     communicationHelp: "Aiutaci a comunicare meglio", conflictResolution: "Come risolvere i conflitti pacificamente",
     keepSparkAlive: "Consigli per mantenere viva la scintilla", deleteConversation: "Elimina conversazione",
-    conversationDeleted: "Conversazione eliminata", backToSupport: "Torna al Supporto", meet:"CONOSCI AMORA", tokenNote:"Creare un account e vedere Amora è gratuito. Ogni risposta di Amora usa Token O2OL.", signIn:"Accedi", createAccount:"Crea Account O2OL GRATUITO", reply:"risposta",
+    conversationDeleted: "Conversazione eliminata", backToSupport: "Torna al Supporto", meet:"CONOSCI AMORA", tokenNote:"Creare un account e vedere Amora è gratuito. Ogni risposta di Amora usa Credito.", signIn:"Accedi", createAccount:"Crea Account O2OL GRATUITO", reply:"risposta",
   },
   de: {
     title: "Amora — Beziehungscoach", subtitle: "Sprich natürlich mit Amora über Kommunikation, Konflikte, Grenzen, Verbindung, Erwartungen oder was dir gerade durch den Kopf geht.",
@@ -68,7 +68,7 @@ const translations = {
     quickPrompts: "Schnelle Prompts", dailyTip: "Gib mir einen täglichen Beziehungstipp", dateIdea: "Schlage eine kreative Date-Idee vor",
     communicationHelp: "Hilf uns besser zu kommunizieren", conflictResolution: "Wie man Konflikte friedlich löst",
     keepSparkAlive: "Tipps um den Funken am Leben zu halten", deleteConversation: "Gespräch löschen",
-    conversationDeleted: "Gespräch gelöscht", backToSupport: "Zurück zum Support", meet:"LERNE AMORA KENNEN", tokenNote:"Ein Konto zu erstellen und Amora anzusehen ist kostenlos. Jede Antwort von Amora verwendet O2OL Tokens.", signIn:"Anmelden", createAccount:"KOSTENLOSES O2OL-Konto erstellen", reply:"Antwort",
+    conversationDeleted: "Gespräch gelöscht", backToSupport: "Zurück zum Support", meet:"LERNE AMORA KENNEN", tokenNote:"Ein Konto zu erstellen und Amora anzusehen ist kostenlos. Jede Antwort von Amora verwendet Credit.", signIn:"Anmelden", createAccount:"KOSTENLOSES O2OL-Konto erstellen", reply:"Antwort",
   }
 };
 
@@ -208,13 +208,13 @@ export default function RelationshipCoach() {
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link
-              to="/SignIn?source=amora&token=1&redirect=/RelationshipCoach"
+              to="/SignIn?source=amora&redirect=/RelationshipCoach"
               className="rounded-full border border-white/30 bg-white/10 px-6 py-3 font-black text-white shadow-md transition hover:bg-white/15"
             >
               {t.signIn}
             </Link>
             <Link
-              to="/SignUp?source=amora&token=1&feature=amora&return=/RelationshipCoach"
+              to="/SignUp?source=amora&feature=amora&return=/RelationshipCoach"
               className="rounded-full bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-600 px-6 py-3 font-black text-white shadow-[0_12px_30px_rgba(217,70,239,0.3)] transition hover:brightness-110"
             >
               {t.createAccount}
@@ -265,16 +265,16 @@ export default function RelationshipCoach() {
               <p className="mt-3 max-w-3xl text-lg leading-7 text-white/70">{t.subtitle}</p>
 
               <Link
-                to="/Tokens?return=/RelationshipCoach"
+                to="/Credit?return=/RelationshipCoach"
                 className="mt-5 flex max-w-sm items-center justify-between rounded-2xl border border-amber-200/25 bg-amber-300/10 px-5 py-3 text-amber-50 shadow-lg transition hover:bg-amber-300/15"
               >
                 <span className="inline-flex items-center gap-2 font-black">
                   <Coins className="h-5 w-5 text-amber-300" />
-                  O2OL Tokens
+                  Credit
                 </span>
                 <span className="font-black">
-                  {tokenBalance}
-                  <span className="ml-1 text-xs font-bold text-amber-200">· {amoraTokenCost || 1}/{t.reply}</span>
+                  {'$'+(Number(tokenBalance||0)/100).toFixed(2)}
+                  <span className="ml-1 text-xs font-bold text-amber-200">· {'$'+(Number(amoraTokenCost||1)/100).toFixed(2)}/{t.reply}</span>
                 </span>
               </Link>
             </div>

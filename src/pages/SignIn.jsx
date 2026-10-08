@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Coins, Eye, EyeOff, Heart, Loader2, Lock, Mail, ShieldCheck, UserCheck, X } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Heart, Loader2, Lock, Mail, ShieldCheck, UserCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/Layout';
 import { toast } from 'sonner';
@@ -27,21 +27,12 @@ export default function SignIn() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
 
-  const searchParams = (() => { try { return new URLSearchParams(window.location.search); } catch { return new URLSearchParams(); } })();
   const safeRedirect = (() => {
-    const value = searchParams.get('redirect');
-    return value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+    try {
+      const value = new URLSearchParams(window.location.search).get('redirect');
+      return value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+    } catch { return null; }
   })();
-  const source = String(searchParams.get('source') || '').toLowerCase();
-  const tokenIntent = searchParams.get('token') === '1' || ['mymatchiq-bianca','amora','love-notes','premium-game'].some(value => source.includes(value));
-  const tokenFeature = source.includes('amora') ? 'Talk with Amora' : source.includes('bianca') ? 'Chat with Bianca' : source.includes('love') ? 'Love Notes' : 'this feature';
-  const signUpParams = new URLSearchParams();
-  if (source) signUpParams.set('source', source);
-  if (tokenIntent) signUpParams.set('token', '1');
-  if (source.includes('amora')) signUpParams.set('feature', 'amora');
-  if (source.includes('bianca')) signUpParams.set('feature', 'bianca');
-  if (safeRedirect) signUpParams.set('return', safeRedirect);
-  const signUpHref = '/SignUp' + (signUpParams.toString() ? '?' + signUpParams.toString() : '');
   const shellClass = 'bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4';
   const cardClass = 'bg-white shadow-2xl';
 
@@ -56,13 +47,11 @@ export default function SignIn() {
         try { sessionStorage.removeItem('o2ol-admin-mfa-code-sent-at'); } catch {}
         await endAdminMfa().catch(() => null);
       }
-      const postAuthReturn = safeRedirect || createPageUrl('Home');
-      const tokenLanding = `/Tokens?onboarding=1&return=${encodeURIComponent(postAuthReturn)}`;
-      const target = role === 'admin'
-        ? '/AdminAccess'
-        : phoneRequired && !phoneVerified
-          ? `/VerifyPhone?redirect=${encodeURIComponent(tokenLanding)}`
-          : tokenLanding;
+      const target = phoneRequired && !phoneVerified
+        ? `/VerifyPhone${safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`
+        : role === 'admin'
+          ? '/AdminAccess'
+          : safeRedirect || createPageUrl('Home');
       window.setTimeout(() => window.location.replace(target), 100);
       return true;
     }
@@ -152,11 +141,10 @@ export default function SignIn() {
         <Link to={createPageUrl('Home')} aria-label={t.signIn.close} className="absolute right-6 top-6 text-gray-400 transition-colors hover:text-gray-600"><X size={24}/></Link>
         <div className="mb-2 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-lg"><Heart className="h-6 w-6 fill-white text-white"/></div><h1 className="text-3xl font-bold text-gray-900">{t.signIn.title}</h1></div>
         <p className="mb-5 text-center text-gray-600">{t.signIn.subtitle}</p>
-        {tokenIntent&&<div className="mb-5 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-sm"><div className="flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>O2OL TOKENS</div><p className="mt-1 text-sm font-semibold leading-6">{tokenFeature} uses O2OL Tokens. Existing members can sign in now; new members will choose Individual or Professional before creating their FREE account.</p></div>}
 
         <div className="mb-6 grid grid-cols-2 rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Account access">
           <div role="tab" aria-selected="true" className="rounded-lg bg-white px-4 py-2.5 text-center font-semibold text-pink-600 shadow-sm">{t.signIn.signInButton}</div>
-          <Link role="tab" aria-selected="false" to={signUpHref} className="rounded-lg px-4 py-2.5 text-center font-semibold text-gray-600 transition-colors hover:bg-white hover:text-pink-600">{t.signIn.signUpTab}</Link>
+          <Link role="tab" aria-selected="false" to={createPageUrl('SignUp')} className="rounded-lg px-4 py-2.5 text-center font-semibold text-gray-600 transition-colors hover:bg-white hover:text-pink-600">{t.signIn.signUpTab}</Link>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

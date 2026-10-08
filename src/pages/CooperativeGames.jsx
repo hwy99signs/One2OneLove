@@ -28,7 +28,7 @@ const translations = {
     whatShouldName: "What Should They Do?",
     whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered.",
     likeMindedName: "Like Minded?",
-    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"O2OL TOKENS"
+    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"CREDIT"
   },
   es: {
     title: "Juegos de Relaciones",
@@ -45,7 +45,7 @@ const translations = {
     whatShouldName: "¿Qué Deberían Hacer?",
     whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas.",
     likeMindedName: "¿Piensan Igual?",
-    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"TOKENS O2OL"
+    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"CRÉDITO"
   },
   fr: {
     title: "Jeux Relationnels",
@@ -62,7 +62,7 @@ const translations = {
     whatShouldName: "Que Devraient-Ils Faire ?",
     whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres.",
     likeMindedName: "Même Longueur d’Onde ?",
-    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"JETONS O2OL"
+    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"CRÉDIT"
   },
   it: {
     title: "Giochi Relazionali",
@@ -79,7 +79,7 @@ const translations = {
     whatShouldName: "Cosa Dovrebbero Fare?",
     whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri.",
     likeMindedName: "Sulla Stessa Lunghezza d’Onda?",
-    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"TOKEN O2OL"
+    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"CREDITO"
   },
   de: {
     title: "Beziehungsspiele",
@@ -96,7 +96,7 @@ const translations = {
     whatShouldName: "Was Sollten Sie Tun?",
     whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben.",
     likeMindedName: "Gleich Gesinnt?",
-    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"O2OL TOKENS"
+    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"CREDIT"
   }
 };
 

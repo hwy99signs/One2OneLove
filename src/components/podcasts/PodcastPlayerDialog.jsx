@@ -201,19 +201,19 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
 
           {selectedNeedsTokens ? (
             <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
-              <div className="flex items-center gap-2 font-black"><Lock className="h-5 w-5"/>O2OL TOKENS</div>
-              <p className="mt-1 text-sm font-semibold">This episode is locked. Unlock it once with O2OL Tokens and it stays available for your account.</p>
+              <div className="flex items-center gap-2 font-black"><Lock className="h-5 w-5"/>CREDIT</div>
+              <p className="mt-1 text-sm font-semibold">This episode is locked. Unlock it once with Credit and it stays available for your account.</p>
               {user?.id ? (
                 <Button onClick={unlockEpisode} disabled={unlockingEpisode} className="mt-3 w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
                   {unlockingEpisode?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Coins className="mr-2 h-4 w-4"/>}
-                  {podcastTokenCost} O2OL Token{podcastTokenCost===1?'':'s'} · Unlock Episode
+                  {'$'+(Number(podcastTokenCost||0)/100).toFixed(2)} Credit · Unlock Episode
                 </Button>
               ) : (
-                <Link to={`/SignUp?source=podcasts&token=1&feature=podcasts&return=/PodcastsSupport`} onClick={onClose}>
-                  <Button className="mt-3 w-full bg-gradient-to-r from-purple-600 to-pink-600 font-black">Create FREE Account · Then Unlock with Tokens</Button>
+                <Link to={`/SignUp?source=podcasts&feature=podcasts&return=/PodcastsSupport`} onClick={onClose}>
+                  <Button className="mt-3 w-full bg-gradient-to-r from-purple-600 to-pink-600 font-black">Create FREE Account · Then Unlock with Credit</Button>
                 </Link>
               )}
-              {unlockError&&<div className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-semibold">{unlockError}<Link to="/Tokens?return=/PodcastsSupport" onClick={onClose} className="ml-2 font-black underline">Buy Tokens</Link></div>}
+              {unlockError&&<div className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-semibold">{unlockError}<Link to="/Credit?return=/PodcastsSupport" onClick={onClose} className="ml-2 font-black underline">Add Credit</Link></div>}
             </div>
           ) : (
             <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-6 hover:opacity-90" disabled={!selectedEpisode || isResolving} onClick={playEpisode}>

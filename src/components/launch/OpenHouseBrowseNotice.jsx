@@ -5,11 +5,11 @@ import { useLanguage } from '@/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 
 const COPY = {
-  en:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Explore this feature free', body:'You can look around without an account. Sign in or create an account when you want to save personal information, post, or use protected member actions.', signIn:'Sign In', signUp:'Create Account', memberAction:'Token Wallet', protected:'Personal actions stay private and protected.' },
-  es:{ eyebrow:'JORNADA DE PUERTAS ABIERTAS ONE2ONELOVE', title:'Explora esta función gratis', body:'Puedes explorar sin una cuenta. Inicia sesión o crea una cuenta cuando quieras guardar información personal, publicar o usar acciones protegidas para miembros.', signIn:'Iniciar sesión', signUp:'Crear cuenta', memberAction:'Billetera de Tokens', protected:'Las acciones personales permanecen privadas y protegidas.' },
-  fr:{ eyebrow:'PORTES OUVERTES ONE2ONELOVE', title:'Explorez cette fonction gratuitement', body:'Vous pouvez parcourir cette fonction sans compte. Connectez-vous ou créez un compte pour enregistrer des informations personnelles, publier ou utiliser des actions membres protégées.', signIn:'Se connecter', signUp:'Créer un compte', memberAction:'Portefeuille de Jetons', protected:'Les actions personnelles restent privées et protégées.' },
-  it:{ eyebrow:'OPEN HOUSE ONE2ONELOVE', title:'Esplora questa funzione gratis', body:'Puoi esplorare senza un account. Accedi o crea un account quando vuoi salvare informazioni personali, pubblicare o usare azioni protette per i membri.', signIn:'Accedi', signUp:'Crea account', memberAction:'Portafoglio Token', protected:'Le azioni personali restano private e protette.' },
-  de:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Diese Funktion kostenlos erkunden', body:'Du kannst diese Funktion ohne Konto ansehen. Melde dich an oder erstelle ein Konto, wenn du persönliche Informationen speichern, posten oder geschützte Mitgliederaktionen nutzen möchtest.', signIn:'Anmelden', signUp:'Konto erstellen', memberAction:'Token-Wallet', protected:'Persönliche Aktionen bleiben privat und geschützt.' }
+  en:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Explore this feature free', body:'You can look around without an account. Sign in or create an account when you want to save personal information, post, or use protected member actions.', signIn:'Sign In', signUp:'Create Account', memberAction:'Membership Options', protected:'Personal actions stay private and protected.' },
+  es:{ eyebrow:'JORNADA DE PUERTAS ABIERTAS ONE2ONELOVE', title:'Explora esta función gratis', body:'Puedes explorar sin una cuenta. Inicia sesión o crea una cuenta cuando quieras guardar información personal, publicar o usar acciones protegidas para miembros.', signIn:'Iniciar sesión', signUp:'Crear cuenta', memberAction:'Opciones de Membresía', protected:'Las acciones personales permanecen privadas y protegidas.' },
+  fr:{ eyebrow:'PORTES OUVERTES ONE2ONELOVE', title:'Explorez cette fonction gratuitement', body:'Vous pouvez parcourir cette fonction sans compte. Connectez-vous ou créez un compte pour enregistrer des informations personnelles, publier ou utiliser des actions membres protégées.', signIn:'Se connecter', signUp:'Créer un compte', memberAction:'Options d’Abonnement', protected:'Les actions personnelles restent privées et protégées.' },
+  it:{ eyebrow:'OPEN HOUSE ONE2ONELOVE', title:'Esplora questa funzione gratis', body:'Puoi esplorare senza un account. Accedi o crea un account quando vuoi salvare informazioni personali, pubblicare o usare azioni protette per i membri.', signIn:'Accedi', signUp:'Crea account', memberAction:'Opzioni di Abbonamento', protected:'Le azioni personali restano private e protette.' },
+  de:{ eyebrow:'ONE2ONELOVE OPEN HOUSE', title:'Diese Funktion kostenlos erkunden', body:'Du kannst diese Funktion ohne Konto ansehen. Melde dich an oder erstelle ein Konto, wenn du persönliche Informationen speichern, posten oder geschützte Mitgliederaktionen nutzen möchtest.', signIn:'Anmelden', signUp:'Konto erstellen', memberAction:'Mitgliedschaftsoptionen', protected:'Persönliche Aktionen bleiben privat und geschützt.' }
 };
 
 export default function OpenHouseBrowseNotice({ compact=false }) {
@@ -27,7 +27,7 @@ export default function OpenHouseBrowseNotice({ compact=false }) {
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           {user?.id ? (
-            <Link to="/Tokens?source=open-house" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-800">{t.memberAction}</Link>
+            <Link to="/Subscription?source=open-house" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-800">{t.memberAction}</Link>
           ) : (
             <>
               <Link to="/SignIn?source=open-house" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50">{t.signIn}</Link>
