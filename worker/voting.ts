@@ -90,10 +90,24 @@ function canonicalIdentity(value, allowNotPartnered = false) {
   return null;
 }
 
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 async function ensureVotingSchema(db) {
   // Base table: identical DDL to worker/admin.ts ensureO2OLShowVotingSchema
   // so whichever module runs first creates the same store.
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_show_vote_responses (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       topic_slug text NOT NULL,
@@ -106,18 +120,18 @@ async function ensureVotingSchema(db) {
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE INDEX IF NOT EXISTS idx_o2ol_show_votes_topic_created
       ON public.o2ol_show_vote_responses(topic_slug,created_at DESC)
   `);
   // One ballot per member: the member column the original scaffold lacked,
   // plus a partial unique index (legacy/anonymous rows with no member stay
   // untouched and unconstrained).
-  await db.query(`
+  await ensureDdl(db, `
     ALTER TABLE public.o2ol_show_vote_responses
     ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES public.users(id) ON DELETE SET NULL
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE UNIQUE INDEX IF NOT EXISTS idx_o2ol_show_votes_topic_user
       ON public.o2ol_show_vote_responses(topic_slug, user_id)
       WHERE user_id IS NOT NULL

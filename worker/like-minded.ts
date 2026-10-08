@@ -45,9 +45,23 @@ function code(){
 // a failure retries on the next request.
 let likeMindedSchemaReady = false;
 
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 async function ensureSchema(db){
   if (likeMindedSchemaReady) return;
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_rooms(
       id uuid PRIMARY KEY,
       code varchar(12) UNIQUE NOT NULL,
@@ -65,7 +79,7 @@ async function ensureSchema(db){
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_answers(
       room_id uuid NOT NULL REFERENCES public.like_minded_rooms(id) ON DELETE CASCADE,
       set_number int NOT NULL,
@@ -77,7 +91,7 @@ async function ensureSchema(db){
       PRIMARY KEY(room_id,set_number,question_no,user_id)
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_player_settings(
       user_id uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
       available boolean NOT NULL DEFAULT false,
@@ -89,7 +103,7 @@ async function ensureSchema(db){
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_blocks(
       blocker_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
       blocked_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -97,7 +111,7 @@ async function ensureSchema(db){
       PRIMARY KEY(blocker_user_id,blocked_user_id)
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_reports(
       id uuid PRIMARY KEY,
       reporting_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -108,9 +122,9 @@ async function ensureSchema(db){
       created_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_rooms_code ON public.like_minded_rooms(code)');
-  await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_lobby ON public.like_minded_player_settings(available,in_lobby,updated_at DESC)');
-  await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_answers_room ON public.like_minded_answers(room_id,set_number,question_no)');
+  await ensureDdl(db, 'CREATE INDEX IF NOT EXISTS idx_like_minded_rooms_code ON public.like_minded_rooms(code)');
+  await ensureDdl(db, 'CREATE INDEX IF NOT EXISTS idx_like_minded_lobby ON public.like_minded_player_settings(available,in_lobby,updated_at DESC)');
+  await ensureDdl(db, 'CREATE INDEX IF NOT EXISTS idx_like_minded_answers_room ON public.like_minded_answers(room_id,set_number,question_no)');
   likeMindedSchemaReady = true;
 }
 

@@ -33,8 +33,22 @@ async function withDb(env,fn){
   await db.connect();
   try{return await fn(db);}finally{await db.end();}
 }
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 async function ensureScratchTable(db){
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_game_launch_tickets (
       token_hash text PRIMARY KEY,
       user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -42,7 +56,7 @@ async function ensureScratchTable(db){
       expires_at timestamptz NOT NULL,
       created_at timestamptz NOT NULL DEFAULT now()
     )`);
-  await db.query(`CREATE INDEX IF NOT EXISTS idx_o2ol_game_launch_tickets_user
+  await ensureDdl(db, `CREATE INDEX IF NOT EXISTS idx_o2ol_game_launch_tickets_user
     ON public.o2ol_game_launch_tickets(user_id,expires_at DESC)`);
 }
 async function verifiedMember(db,userId){

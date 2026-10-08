@@ -21,16 +21,30 @@ function httpError(message, status, code, extra = {}) {
 // neon-migrations/2026-10-07-o2ol-credit-love-notes.sql)
 // ---------------------------------------------------------------------------
 let schemaEnsured = false;
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 export async function ensureCreditSchema(db) {
   if (schemaEnsured) return;
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_sms_optouts (
       phone_number text PRIMARY KEY,
       opted_out boolean NOT NULL DEFAULT true,
       source text NOT NULL DEFAULT 'twilio_inbound',
       updated_at timestamptz NOT NULL DEFAULT now()
     )`);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_credit_promo_months (
       month_key text PRIMARY KEY,
       pot_balance_cents integer NOT NULL CHECK (pot_balance_cents >= 0),
@@ -38,7 +52,7 @@ export async function ensureCreditSchema(db) {
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     )`);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_credit_promo_redemptions (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id uuid NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
@@ -48,7 +62,7 @@ export async function ensureCreditSchema(db) {
       estimated_cost_cents integer NOT NULL CHECK (estimated_cost_cents >= 0),
       created_at timestamptz NOT NULL DEFAULT now()
     )`);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_credit_free_note_grants (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -59,19 +73,19 @@ export async function ensureCreditSchema(db) {
       request_key text,
       created_at timestamptz NOT NULL DEFAULT now()
     )`);
-  await db.query(`
+  await ensureDdl(db, `
     ALTER TABLE public.o2ol_credit_free_note_grants
       ADD COLUMN IF NOT EXISTS request_key text`);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE INDEX IF NOT EXISTS idx_o2ol_credit_free_grants_user_kind_created
       ON public.o2ol_credit_free_note_grants(user_id,kind,created_at DESC)`);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE UNIQUE INDEX IF NOT EXISTS idx_o2ol_credit_free_grants_request_key
       ON public.o2ol_credit_free_note_grants(request_key) WHERE request_key IS NOT NULL`);
-  await db.query(`
+  await ensureDdl(db, `
     ALTER TABLE public.o2ol_auto_replenish_settings
       ADD COLUMN IF NOT EXISTS monthly_cap_cents integer CHECK (monthly_cap_cents IS NULL OR monthly_cap_cents >= 0)`);
-  await db.query(`
+  await ensureDdl(db, `
     ALTER TABLE public.o2ol_auto_replenish_settings
       ADD COLUMN IF NOT EXISTS consent_at timestamptz`);
   // Credit purchase packages (mirrors the 2026-10-07 migration): pure dollar
