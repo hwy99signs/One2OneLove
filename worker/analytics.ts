@@ -508,8 +508,7 @@ async function analytics(db, env) {
 
 
 async function publicStats(db, env) {
-  const baselineSql = analyticsBaselineSql(env);
-  // ZZTESTLINE
+  const baselineSql = analyticsBaselineSql(env)
   const [notes, week, month, year] = await Promise.all([
     db.query(`SELECT count(*)::int AS count FROM public.sent_love_notes WHERE COALESCE(sent_date,created_at) >= ${baselineSql}`),
     db.query(`SELECT COALESCE(max(note_count),0)::int AS count FROM (
