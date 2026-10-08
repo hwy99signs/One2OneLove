@@ -1,5 +1,6 @@
 import { getPrelaunchChatAdminSnapshot, handlePrelaunchCommunityChatRequest } from './prelaunch-community-chat';
 import { handleStudioMediaRequest } from './studio-media';
+import { handleTikTokRequest } from './tiktok';
 
 function copyAuthResponseHeaders(upstreamHeaders: Headers) {
   const headers = new Headers(upstreamHeaders);
@@ -227,6 +228,15 @@ export default {
 
     if (url.pathname === '/api/profile') {
       return prelaunchProfile(request, env);
+    }
+
+    // TikTok posting is wired into the prelaunch preview so the sandbox demo
+    // can be filmed end-to-end. The module enforces its own verified-session
+    // and OAuth-state gates and degrades gracefully until TIKTOK_CLIENT_KEY /
+    // TIKTOK_CLIENT_SECRET and the HYPERDRIVE binding are configured here.
+    if (url.pathname.startsWith('/api/tiktok')) {
+      const response = await handleTikTokRequest(request, env, url);
+      if (response) return response;
     }
 
     if (url.pathname.startsWith('/api/')) {
