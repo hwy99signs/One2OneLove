@@ -23,6 +23,11 @@ const translations = {
       title: "My Profile",
       memberSince: "Member since", 
       personalInfo: "Personal Information", 
+      accountName: "Account Name",
+      enterAccountName: "Enter your name",
+      accountNameHelp: "This is the name on your account. Its first name signs your Love Notes.",
+      accountNameBlank: "Your name can't be blank — your account needs a first name.",
+      accountNameNotEmail: "Your name can't be an email address.",
       relationshipInfo: "Relationship Info", 
       email: "Email", 
       location: "Location", 
@@ -138,6 +143,11 @@ const translations = {
       title: "Mi Perfil",
       memberSince: "Miembro desde", 
       personalInfo: "Información Personal", 
+      accountName: "Nombre de la Cuenta",
+      enterAccountName: "Ingresa tu nombre",
+      accountNameHelp: "Este es el nombre de tu cuenta. Su primer nombre firma tus Notas de Amor.",
+      accountNameBlank: "Tu nombre no puede estar vacío: tu cuenta necesita un primer nombre.",
+      accountNameNotEmail: "Tu nombre no puede ser una dirección de correo electrónico.",
       relationshipInfo: "Información de Relación", 
       email: "Correo Electrónico", 
       location: "Ubicación", 
@@ -253,6 +263,11 @@ const translations = {
       title: "Mon Profil",
       memberSince: "Membre depuis", 
       personalInfo: "Informations Personnelles", 
+      accountName: "Nom du Compte",
+      enterAccountName: "Entrez votre nom",
+      accountNameHelp: "C'est le nom sur votre compte. Son prénom signe vos Notes d'Amour.",
+      accountNameBlank: "Votre nom ne peut pas être vide — votre compte a besoin d'un prénom.",
+      accountNameNotEmail: "Votre nom ne peut pas être une adresse e-mail.",
       relationshipInfo: "Informations sur la Relation", 
       email: "E-mail", 
       location: "Localisation", 
@@ -368,6 +383,11 @@ const translations = {
       title: "Il Mio Profilo",
       memberSince: "Membro dal", 
       personalInfo: "Informazioni Personali", 
+      accountName: "Nome dell'Account",
+      enterAccountName: "Inserisci il tuo nome",
+      accountNameHelp: "Questo è il nome sul tuo account. Il suo primo nome firma le tue Note d'Amore.",
+      accountNameBlank: "Il tuo nome non può essere vuoto: il tuo account ha bisogno di un primo nome.",
+      accountNameNotEmail: "Il tuo nome non può essere un indirizzo email.",
       relationshipInfo: "Informazioni sulla Relazione", 
       email: "Email", 
       location: "Posizione", 
@@ -483,6 +503,11 @@ const translations = {
       title: "Mein Profil",
       memberSince: "Mitglied seit", 
       personalInfo: "Persönliche Informationen", 
+      accountName: "Kontoname",
+      enterAccountName: "Geben Sie Ihren Namen ein",
+      accountNameHelp: "Dies ist der Name auf Ihrem Konto. Sein Vorname unterschreibt Ihre Liebesbotschaften.",
+      accountNameBlank: "Ihr Name darf nicht leer sein — Ihr Konto braucht einen Vornamen.",
+      accountNameNotEmail: "Ihr Name kann keine E-Mail-Adresse sein.",
       relationshipInfo: "Beziehungsinformationen", 
       email: "E-Mail", 
       location: "Standort", 
@@ -598,6 +623,11 @@ const translations = {
       title: "Mijn Profiel",
       memberSince: "Lid sinds", 
       personalInfo: "Persoonlijke Informatie", 
+      accountName: "Accountnaam",
+      enterAccountName: "Voer uw naam in",
+      accountNameHelp: "Dit is de naam op uw account. De voornaam ondertekent uw Liefdebriefjes.",
+      accountNameBlank: "Uw naam mag niet leeg zijn — uw account heeft een voornaam nodig.",
+      accountNameNotEmail: "Uw naam kan geen e-mailadres zijn.",
       relationshipInfo: "Relatie Informatie", 
       email: "E-mail", 
       location: "Locatie", 
@@ -700,6 +730,11 @@ const translations = {
       title: "Meu Perfil",
       memberSince: "Membro desde", 
       personalInfo: "Informações Pessoais", 
+      accountName: "Nome da Conta",
+      enterAccountName: "Digite seu nome",
+      accountNameHelp: "Este é o nome da sua conta. O primeiro nome assina suas Notas de Amor.",
+      accountNameBlank: "Seu nome não pode ficar em branco — sua conta precisa de um primeiro nome.",
+      accountNameNotEmail: "Seu nome não pode ser um endereço de e-mail.",
       relationshipInfo: "Informações do Relacionamento", 
       email: "E-mail", 
       location: "Localização", 
@@ -972,6 +1007,7 @@ export default function Profile() {
 
   const handleEdit = () => {
     setEditData({
+      name: user?.name || "",
       location: user?.location || "",
       partner_email: user?.partner_email || "",
       anniversary_date: user?.anniversary_date || "",
@@ -983,7 +1019,25 @@ export default function Profile() {
   };
 
   const handleSave = () => {
-    updateProfileMutation.mutate(editData);
+    const data = { ...editData };
+    // Only send the account name when it actually changed, and guard it
+    // the same way the server does: the account's first name signs Love
+    // Notes, so the name can never be blanked out or set to an email.
+    if ((data.name ?? '') === (user?.name ?? '')) {
+      delete data.name;
+    } else {
+      const name = String(data.name || '').replace(/\s+/g, ' ').trim();
+      if (!name) {
+        toast.error(t.profile.accountNameBlank);
+        return;
+      }
+      if (name.includes('@')) {
+        toast.error(t.profile.accountNameNotEmail);
+        return;
+      }
+      data.name = name;
+    }
+    updateProfileMutation.mutate(data);
   };
 
   const handleCancel = () => {
@@ -1573,6 +1627,25 @@ export default function Profile() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <User className="w-5 h-5 text-pink-500 mt-0.5" />
+                  <div className="flex-1">
+                    <p id="profile-account-name-label" className="text-sm text-gray-500">{t.profile.accountName}</p>
+                    {isEditing ? (
+                      <>
+                        <Input
+                          aria-labelledby="profile-account-name-label"
+                          value={editData.name}
+                          onChange={(e) => setEditData({...editData, name: e.target.value})}
+                          placeholder={t.profile.enterAccountName}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{t.profile.accountNameHelp}</p>
+                      </>
+                    ) : (
+                      <p className="font-medium text-gray-900">{user?.name || t.profile.notSet}</p>
+                    )}
+                  </div>
+                </div>
                 <div className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-pink-500 mt-0.5" />
                   <div className="flex-1">

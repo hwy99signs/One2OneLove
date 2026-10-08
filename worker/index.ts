@@ -197,6 +197,17 @@ async function profileRoute(request, env, auth) {
         value = JSON.stringify(value.slice(0, 50));
         values.push(value);
         sets.push(`${key}=$${values.length}::jsonb`);
+      } else if (key === 'name') {
+        // Account-name guards mirror the Love Note signature rules
+        // (worker/love-note-entitlements.ts firstNameFromAccountName):
+        // the account's first name signs Love Notes and an account
+        // with no first name cannot send, so a profile save must
+        // never blank the name out or set it to an email address.
+        const name = String(rawValue ?? '').replace(/\s+/g, ' ').trim();
+        if (!name) return error("Account name can't be blank. A first name is required on your account.");
+        if (name.includes('@')) return error("Account name can't be an email address.");
+        values.push(name);
+        sets.push(`name=$${values.length}`);
       } else {
         if (typeof value === 'string' && value.length > 5000) return error(`${key} is too long.`);
         values.push(value === '' ? null : value);
