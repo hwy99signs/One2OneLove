@@ -1,0 +1,26 @@
+name: Deploy O2OL EPSCIE Independent Admin Reporter
+on:
+  push:
+    branches: [master]
+    paths:
+      - .github/deploy-o2ol-epscie-admin-trigger
+permissions:
+  contents: read
+jobs:
+  deploy-admin-reporter:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm --prefix worker install --no-audit --no-fund
+      - run: npx wrangler deploy --dry-run --config cloudflare/wrangler.epscie-admin-health.production.jsonc
+      - name: Deploy admin-side production monitor disabled until credential activation
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          npx wrangler deploy --config cloudflare/wrangler.epscie-admin-health.production.jsonc
