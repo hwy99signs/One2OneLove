@@ -18,6 +18,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       APEX_URL: https://one2onelove.com
       WWW_URL: https://www.one2onelove.com
+      PROMOTED_OPENAI_API_KEY: ${{ secrets.TOKEN_PRELAUNCH_OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s .github/o2ol-production-schema-prepared
-          grep -Fx 'o2ol-open-house-schema-v1' .github/o2ol-production-schema-prepared >/dev/null
+          grep -Fx 'o2ol-free-tokens-production-v1' .github/o2ol-production-schema-prepared >/dev/null
 
       - name: Build production application
         shell: bash
@@ -115,57 +116,58 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Open House and Founding Member launch contract
+      - name: Verify final Free plus O2OL Tokens production contract
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "export const FOUNDING_LIMIT = 200;" worker/founding-rules.js >/dev/null
-          grep -F "export const FOUNDING_FIRST_COHORT_END = 100;" worker/founding-rules.js >/dev/null
-          grep -F "export const FOUNDING_FREE_DAYS = 30;" worker/founding-rules.js >/dev/null
-          grep -F "export const FOUNDING_EXCLUSIVE_RATE_CENTS = 1599;" worker/founding-rules.js >/dev/null
-          grep -F "CREATE TABLE IF NOT EXISTS public.founding_members" neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql >/dev/null
-          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_rooms" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
-          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_reports" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
-          grep -F "ALTER TABLE public.users ALTER COLUMN subscription_price SET DEFAULT 9.99;" neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql >/dev/null
-          grep -F "/api/billing/founding-offer" worker/billing.ts >/dev/null
-          grep -F "subscription_data[trial_period_days]" worker/billing.ts >/dev/null
-          grep -F "String(foundingOffer.freeDays)" worker/billing.ts >/dev/null
-          grep -F "founding_offer_unavailable" worker/billing.ts >/dev/null
-          grep -F "founding_rate_forfeited=true" worker/billing.ts >/dev/null
-          grep -F "const effectiveLevel = planLevel(row.subscription_plan);" worker/api-entitlements.ts >/dev/null
-          grep -F "const plan = storedPlan;" worker/ai.ts >/dev/null
-          grep -F "return { storedPlan: stored, effectivePlan: stored" worker/love-note-entitlements.ts >/dev/null
-          grep -F "Founding Member free-period accounts are intentionally allowed to send:" worker/love-note-billing.ts >/dev/null
-          grep -F "foundingPeriodSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "firstMembershipSendFree: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
-          grep -F "const writeAccess = await loveNoteWriteAccess(db, auth);" worker/love-note-entitlements.ts >/dev/null
-          grep -F "reason: 'subscription_required'" worker/love-note-entitlements.ts >/dev/null
-          grep -F "OPEN HOUSE BROWSING IS FREE!" src/pages/Subscription.jsx >/dev/null
-          grep -F "Founding Members Launch Offer" src/pages/Subscription.jsx >/dev/null
-          grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx >/dev/null
-          ! grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null
-          ! grep -RInE "status === 'trial' \? 'Exclusive'|\['trial', 'trialing'\].*\? 'Exclusive'" src worker 2>/dev/null
 
-      - name: Verify Love Notes launch entitlements are present
-        shell: bash
-        run: |
-          set -euo pipefail
-          grep -F "/api/love-notes/categories" worker/love-note-entitlements.ts >/dev/null
-          grep -F "/api/love-notes/send-sms" worker/love-note-entitlements.ts >/dev/null
-          grep -F "function categoryLimit(plan)" worker/love-note-entitlements.ts >/dev/null
-          grep -F "return 18;" worker/love-note-entitlements.ts >/dev/null
-          grep -F "export const LOVE_NOTE_SEND_PRICE_CENTS = 29;" worker/love-note-billing.ts >/dev/null
-          grep -F "export const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;" worker/love-note-billing.ts >/dev/null
-          grep -F "Founding Member free-period accounts are intentionally allowed to send:" worker/love-note-billing.ts >/dev/null
-          grep -F "foundingPeriodSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "firstMembershipSendFree: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "sendLoveNoteSms" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "aiPersonalizationReady" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "code: 'email_verification_required'" worker/identity-gate.ts >/dev/null
-          grep -F "code: 'phone_verification_required'" worker/identity-gate.ts >/dev/null
-          ! grep -F "setInterval(" src/pages/Subscription.jsx >/dev/null
+          # Free-account identity and retired recurring subscription model.
+          grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx >/dev/null
+          grep -F '<Navigate to="/Tokens" replace' src/pages/Subscription.jsx >/dev/null
+          grep -F "legacy_subscription_model_retired" worker/billing.ts >/dev/null
+          grep -F "Recurring One2OneLove subscriptions are retired" src/lib/stripeService.js >/dev/null
+
+          # Token economy and feature metering.
+          grep -F "Free: { questionCount:225, dimensionCount:15 }" src/lib/mymatchiqAssessment.js >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'bianca_response'" worker/mymatchiq-ai.ts >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'love_note_send'" worker/love-note-entitlements.ts >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'like_minded_session'" worker/game-access.ts >/dev/null
+          grep -F "payment_method_saved:Boolean(state.settings?.payment_method_reference)" worker/o2ol-tokens.ts >/dev/null
+          grep -F "'metadata[idempotency_key]':marker" worker/o2ol-tokens.ts >/dev/null
+
+          # Credit-era wallet mutation is forbidden.
+          if grep -F "ensureCreditSchema(db)" worker/o2ol-tokens.ts; then
+            echo 'Credit-era schema mutation survived in Token API.' >&2
+            exit 1
+          fi
+          if grep -F "/Credit?checkout" worker/o2ol-tokens.ts || grep -F "/Credit?payment_method" worker/o2ol-tokens.ts; then
+            echo 'Credit-era checkout return URL survived in Token API.' >&2
+            exit 1
+          fi
+          if grep -F "credit_5','Add $5 Credit" worker/love-note-credit.ts; then
+            echo 'Love Note safety helper can still mutate Credit packages.' >&2
+            exit 1
+          fi
+          grep -F "SAFETY-SCHEMA ONLY" worker/love-note-credit.ts >/dev/null
+
+          # Final production schema package is present and exact.
+          grep -F "('starter','Starter',50,499,true,false,10)" neon-migrations/2026-10-09-o2ol-final-free-tokens-production.sql >/dev/null
+          grep -F "('value','Value',110,999,true,false,20)" neon-migrations/2026-10-09-o2ol-final-free-tokens-production.sql >/dev/null
+          grep -F "('best_value','Best Value',250,1999,true,false,30)" neon-migrations/2026-10-09-o2ol-final-free-tokens-production.sql >/dev/null
+          grep -F "('love_note_send','Love Note send',3,'send',true,false" neon-migrations/2026-10-09-o2ol-final-free-tokens-production.sql >/dev/null
+          grep -F "'item','episode'" neon-migrations/2026-10-04-o2ol-token-content-unlocks.sql >/dev/null
+          grep -F "visitor_identity_links" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql >/dev/null
+
+          # Owner visibility / UX cleanup contract.
+          grep -F "async function visitorRegistry(db)" worker/admin.ts >/dev/null
+          grep -F "online_now" worker/admin.ts >/dev/null
+          grep -F "Administrator activity is intentionally excluded" src/pages/Admin.jsx >/dev/null
+          grep -F "Support & Problem Reports" src/pages/Admin.jsx >/dev/null
+          grep -F 'path="*" element={<NotFound />}' src/pages/index.jsx >/dev/null
+          grep -F "data-desktop-action-trigger" src/pages/Layout.jsx >/dev/null
+          grep -F "/Suggestions?mode=problem" src/pages/Layout.jsx >/dev/null
+          test -s public/assets/amora-relationship-coach-official.webp
 
       - name: Verify production deployment configuration
         shell: bash
@@ -176,22 +178,25 @@ jobs:
           grep -F '"pattern": "www.one2onelove.com/*"' cloudflare/wrangler.production.jsonc >/dev/null
           npx --yes wrangler@latest deploy --dry-run --config cloudflare/wrangler.production.jsonc
 
+      - name: Promote approved OpenAI provider secret to production
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PROMOTED_OPENAI_API_KEY"
+          printf '%s' "$PROMOTED_OPENAI_API_KEY" | npx --yes wrangler@latest secret put OPENAI_API_KEY --name one2onelove-launch >/dev/null
+
       - name: Verify production Worker runtime secrets
         shell: bash
         run: |
           set -euo pipefail
           SECRETS_OUT=$(npx --yes wrangler@latest secret list --name one2onelove-launch 2>&1)
-          for REQUIRED in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID; do
+          for REQUIRED in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET TWILIO_ACCOUNT_SID TWILIO_AUTH_TOKEN TWILIO_VERIFY_SERVICE_SID OPENAI_API_KEY; do
             if ! printf '%s\n' "$SECRETS_OUT" | grep -F "$REQUIRED" >/dev/null; then
               echo "Missing required production Worker secret: $REQUIRED" >&2
               exit 1
             fi
           done
-          if printf '%s\n' "$SECRETS_OUT" | grep -F 'OPENAI_API_KEY' >/dev/null; then
-            echo "Optional AI provider: configured"
-          else
-            echo "Optional AI provider: not configured; AI Coach/Content Creator will remain unavailable until OPENAI_API_KEY is added."
-          fi
+
 
       - name: Verify Cloudflare O2OL zone and routes access
         shell: bash
