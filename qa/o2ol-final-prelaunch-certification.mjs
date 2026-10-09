@@ -132,7 +132,9 @@ try{
       await action.click({timeout:8000});
       const desktopMenu=page.locator('#desktop-action-menu');
       const expanded=await action.getAttribute('aria-expanded');
-      if(expanded==='true' && await desktopMenu.isVisible().catch(()=>false) && await desktopMenu.getByText('Send A Love Note',{exact:true}).isVisible().catch(()=>false)) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open',JSON.stringify({...actionDiagnostic,expanded}));
+      const menuVisible=await desktopMenu.isVisible().catch(()=>false);
+      const loveNoteLinkVisible=await desktopMenu.getByRole('link',{name:/Send A Love Note/i}).isVisible().catch(()=>false);
+      if(expanded==='true' && menuVisible && loveNoteLinkVisible) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open',JSON.stringify({...actionDiagnostic,expanded,menuVisible,loveNoteLinkVisible}));
     }else{
       fail('Desktop Action controlled button missing',JSON.stringify(actionDiagnostic));
     }
