@@ -6,8 +6,8 @@ export async function getTokenWallet(){
 export async function getTokenPackages(){
   return apiRequest('/api/tokens/packages');
 }
-export async function startTokenCheckout(packageCode,returnTo=null){
-  return apiRequest('/api/tokens/checkout',{method:'POST',body:{packageCode,...(returnTo?{returnTo}:{})}});
+export async function startTokenCheckout(packageCode,returnTo=null,customAmountCents=null){
+  return apiRequest('/api/tokens/checkout',{method:'POST',body:{packageCode,...(returnTo?{returnTo}:{}),...(customAmountCents!=null?{customAmountCents}:{})}});
 }
 export async function confirmTokenCheckout(sessionId){
   return apiRequest('/api/tokens/checkout/confirm',{method:'POST',body:{sessionId}});
