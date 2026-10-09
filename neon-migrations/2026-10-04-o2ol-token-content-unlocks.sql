@@ -16,12 +16,6 @@ CREATE TABLE IF NOT EXISTS public.o2ol_token_content_unlocks (
 CREATE INDEX IF NOT EXISTS idx_o2ol_token_content_unlocks_user_feature
   ON public.o2ol_token_content_unlocks(user_id, feature_code, unlocked_at DESC);
 
-ALTER TABLE public.o2ol_token_feature_prices
-  DROP CONSTRAINT IF EXISTS o2ol_token_feature_prices_pricing_unit_check;
-ALTER TABLE public.o2ol_token_feature_prices
-  ADD CONSTRAINT o2ol_token_feature_prices_pricing_unit_check
-  CHECK (pricing_unit IN ('action','response','session','minute','send','report','item','episode'));
-
 INSERT INTO public.o2ol_token_feature_prices
   (feature_code,label,token_cost,pricing_unit,active,calibration_only)
 VALUES

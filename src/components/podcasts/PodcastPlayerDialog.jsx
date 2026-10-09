@@ -92,7 +92,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
     } catch (error) {
       if (isTokensRequiredError(error)) {
         const info=tokenRequiredDetails(error);
-        setUnlockError(`You need ${info.required || podcastTokenCost} O2OL Token${Number(info.required || podcastTokenCost)===1?'':'s'} to unlock this episode. Current balance: ${info.balance || 0}.`);
+        setUnlockError(`You need ${(Number(info.required || podcastTokenCost || 0)/100).toFixed(2)} Credit to unlock this episode. Current balance: ${(Number(info.balance || 0)/100).toFixed(2)}.`);
       } else {
         setUnlockError(error?.message || 'Unable to unlock this episode.');
       }

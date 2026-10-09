@@ -622,7 +622,7 @@ async function visitorRegistry(db) {
         u.username,u.email,u.name,
         COALESCE(u.marketing_email_opt_in,false) AS marketing_email_opt_in,
         CASE WHEN r.resolved_user_id IS NULL THEN 'Anonymous Visitor'
-             WHEN COALESCE(p.purchase_count,0)>0 THEN 'Token Buyer'
+             WHEN COALESCE(p.purchase_count,0)>0 THEN 'Credit Buyer'
              ELSE 'Registered Free' END AS audience_status,
         COALESCE(p.purchase_count,0)::int AS purchase_count,
         COALESCE(p.paid_cents,0)::bigint AS paid_cents

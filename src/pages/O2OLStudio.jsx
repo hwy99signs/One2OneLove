@@ -16,7 +16,7 @@ const COPY={
     talk:'Talk with Bianca',
     chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',
-    note:'Current Studio episodes are immediate for free verified O2OL accounts. Public visitors receive the replay seven days after release. Bianca and other metered premium actions use O2OL Tokens.', replay:'Public replay opens', freeNow:'Create a FREE account to watch now', signIn:'Sign In'
+    note:'Current Studio episodes are immediate for free verified O2OL accounts. Public visitors receive the replay seven days after release. Bianca and other metered premium actions use Credit.', replay:'Public replay opens', freeNow:'Create a FREE account to watch now', signIn:'Sign In'
   },
   es:{
     eyebrow:'O2OL Studio Show',
@@ -29,7 +29,7 @@ const COPY={
     talk:'Hablar con Bianca',
     chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',
-    note:'Los episodios actuales de Studio están disponibles de inmediato para cuentas O2OL gratuitas y verificadas. Los visitantes reciben la repetición siete días después. Bianca y otras funciones premium usan Tokens O2OL.', replay:'La repetición pública abre', freeNow:'Crea una cuenta GRATIS para verlo ahora', signIn:'Iniciar Sesión'
+    note:'Los episodios actuales de Studio están disponibles de inmediato para cuentas O2OL gratuitas y verificadas. Los visitantes reciben la repetición siete días después. Bianca y otras funciones premium usan Crédito.', replay:'La repetición pública abre', freeNow:'Crea una cuenta GRATIS para verlo ahora', signIn:'Iniciar Sesión'
   },
   fr:{
     eyebrow:'O2OL Studio Show',
@@ -42,7 +42,7 @@ const COPY={
     talk:'Parler avec Bianca',
     chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',
-    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent des Tokens O2OL.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
+    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent du Crédit.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
   },
   it:{
     eyebrow:'O2OL Studio Show',
@@ -55,7 +55,7 @@ const COPY={
     talk:'Parla con Bianca',
     chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',
-    note:'Gli episodi Studio attuali sono immediati per gli account O2OL gratuiti e verificati. Il pubblico riceve la replica dopo sette giorni. Bianca e le altre funzioni premium a consumo usano Token O2OL.', replay:'La replica pubblica apre', freeNow:'Crea un account GRATUITO per guardare ora', signIn:'Accedi'
+    note:'Gli episodi Studio attuali sono immediati per gli account O2OL gratuiti e verificati. Il pubblico riceve la replica dopo sette giorni. Bianca e le altre funzioni premium a consumo usano Credito.', replay:'La replica pubblica apre', freeNow:'Crea un account GRATUITO per guardare ora', signIn:'Accedi'
   },
   de:{
     eyebrow:'O2OL Studio Show',
@@ -68,7 +68,7 @@ const COPY={
     talk:'Mit Bianca Sprechen',
     chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',
-    note:'Aktuelle Studio-Folgen sind für kostenlose verifizierte O2OL-Konten sofort verfügbar. Öffentliche Besucher erhalten die Wiederholung sieben Tage später. Bianca und andere Premium-Aktionen verwenden O2OL Tokens.', replay:'Öffentliche Wiederholung ab', freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen', signIn:'Anmelden'
+    note:'Aktuelle Studio-Folgen sind für kostenlose verifizierte O2OL-Konten sofort verfügbar. Öffentliche Besucher erhalten die Wiederholung sieben Tage später. Bianca und andere Premium-Aktionen verwenden Credit.', replay:'Öffentliche Wiederholung ab', freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen', signIn:'Anmelden'
   }
 };
 

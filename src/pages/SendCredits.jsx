@@ -1,10 +1,5 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
-export default function SendCredits() {
-  const navigate = useNavigate();
-  useEffect(() => {
-    navigate('/Subscription', { replace: true });
-  }, [navigate]);
-  return null;
+export default function SendCredits(){
+  return <Navigate to="/Credit" replace />;
 }
