@@ -1,2 +1,4 @@
-deployed_run=37968145629
-purpose=final browser certification after controlled desktop Action menu deployment
+deployed_run=37967885087
+certified_source=5906389232e85a3692114a39be6e4d8b151a0e90
+qa_diagnostic=a78d50aca51d1e71ad43f1223eaba1e4c60d82e0
+purpose=diagnose live desktop Action bundle identity and continue full browser QA
