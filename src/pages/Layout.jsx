@@ -17,27 +17,27 @@ import {
 
 const translations = {
   en: {
-    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", language:"Language", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
+    nav: { home: "Home", action: "Action", profile: "Profile", signIn: "Sign In", signUp: "Sign Up", invite: "Invite", community: "Community", aiCreator: "AI Content Creator", lgbtq: "LGBTQ+ Support", developer: "Dev", requests: "Requests", chat: "Chat", signOut: "Sign Out", language:"Language", buyTokens:"BUY TOKENS", openMenu:"Open navigation menu", closeMenu:"Close navigation menu" },
     actionMenu: { sendLoveNote: "Send A Love Note", coupleSupport: "Relationship Support", lgbtqSupport: "LGBTQ+ Support", relationshipQuizzes: "Relationship Quizzes", relationshipMilestones: "Milestones & Anniversaries", relationshipGoals: "Relationship Goals", dateIdeas: "Date Ideas", memoryLane: "Memory Lane", games: "Games", aiCreator: "AI Content Creator", winCruise: "Win Prizes!" },
     announcement: { label: "LIMITED-TIME OPEN HOUSE", text: "Explore One2OneLove FREE — no account required to browse. Sign up only when you want to save, post, or use protected member features." }
   },
   es: {
-    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", language:"Idioma", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
+    nav: { home: "Inicio", action: "Acción", profile: "Perfil", signIn: "Iniciar Sesión", signUp: "Registrarse", invite: "Invitar", community: "Comunidad", aiCreator: "Creador de Contenido IA", lgbtq: "Apoyo LGBTQ+", developer: "Dev", requests: "Solicitudes", chat: "Chat", signOut: "Cerrar Sesión", language:"Idioma", buyTokens:"COMPRAR TOKENS", openMenu:"Abrir menú de navegación", closeMenu:"Cerrar menú de navegación" },
     actionMenu: { sendLoveNote: "Enviar una Nota de Amor", coupleSupport: "Apoyo para Relaciones", lgbtqSupport: "Apoyo LGBTQ+", relationshipQuizzes: "Cuestionarios de Relaciones", relationshipMilestones: "Hitos y Aniversarios", relationshipGoals: "Metas de Relación", dateIdeas: "Ideas para Citas", memoryLane: "Carril de Recuerdos", games: "Juegos", aiCreator: "Creador de Contenido IA", winCruise: "¡Gana Premios!" },
     announcement: { label: "JORNADA DE PUERTAS ABIERTAS — TIEMPO LIMITADO", text: "Explora One2OneLove GRATIS — no necesitas una cuenta para navegar. Regístrate solo cuando quieras guardar, publicar o usar funciones protegidas para miembros." }
   },
   fr: {
-    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", language:"Langue", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
+    nav: { home: "Accueil", action: "Action", profile: "Profil", signIn: "Se Connecter", signUp: "S'inscrire", invite: "Inviter", community: "Communauté", aiCreator: "Créateur de Contenu IA", lgbtq: "Soutien LGBTQ+", developer: "Dev", requests: "Demandes", chat: "Chat", signOut: "Se Déconnecter", language:"Langue", buyTokens:"ACHETER DES TOKENS", openMenu:"Ouvrir le menu de navigation", closeMenu:"Fermer le menu de navigation" },
     actionMenu: { sendLoveNote: "Envoyer une Note d'Amour", coupleSupport: "Soutien aux Relations", lgbtqSupport: "Soutien LGBTQ+", relationshipQuizzes: "Quiz sur les Relations", relationshipMilestones: "Jalons et Anniversaires", relationshipGoals: "Objectifs de Relation", dateIdeas: "Idées de Rendez-vous", memoryLane: "Allée des Souvenirs", games: "Jeux", aiCreator: "Créateur de Contenu IA", winCruise: "Gagnez des Prix!" },
     announcement: { label: "PORTES OUVERTES — DURÉE LIMITÉE", text: "Explorez One2OneLove GRATUITEMENT — aucun compte n’est nécessaire pour parcourir le site. Inscrivez-vous seulement pour enregistrer, publier ou utiliser des fonctions membres protégées." }
   },
   it: {
-    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", language:"Lingua", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
+    nav: { home: "Home", action: "Azione", profile: "Profilo", signIn: "Accedi", signUp: "Iscriviti", invite: "Invita", community: "Comunità", aiCreator: "Creatore de Contenuti IA", lgbtq: "Supporto LGBTQ+", developer: "Dev", requests: "Richieste", chat: "Chat", signOut: "Esci", language:"Lingua", buyTokens:"ACQUISTA TOKEN", openMenu:"Apri menu di navigazione", closeMenu:"Chiudi menu di navigazione" },
     actionMenu: { sendLoveNote: "Invia una Nota d'Amore", coupleSupport: "Supporto per Relazioni", lgbtqSupport: "Supporto LGBTQ+", relationshipQuizzes: "Quiz sulle Relazioni", relationshipMilestones: "Traguardi e Anniversari", relationshipGoals: "Obiettivi di Relazione", dateIdeas: "Idee per Appuntamenti", memoryLane: "Viale dei Ricordi", games: "Giochi", aiCreator: "Creatore de Contenuti IA", winCruise: "Vinci Premi!" },
     announcement: { label: "OPEN HOUSE — TEMPO LIMITATO", text: "Esplora One2OneLove GRATIS — non serve un account per navigare. Registrati solo quando vuoi salvare, pubblicare o usare funzioni protette per i membri." }
   },
   de: {
-    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", language:"Sprache", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
+    nav: { home: "Startseite", action: "Aktion", profile: "Profil", signIn: "Anmelden", signUp: "Registrieren", invite: "Einladen", community: "Gemeinschaft", aiCreator: "KI-Content-Ersteller", lgbtq: "LGBTQ+ Unterstützung", developer: "Dev", requests: "Anfragen", chat: "Chat", signOut: "Abmelden", language:"Sprache", buyTokens:"TOKENS KAUFEN", openMenu:"Navigationsmenü öffnen", closeMenu:"Navigationsmenü schließen" },
     actionMenu: { sendLoveNote: "Eine Liebesbotschaft Senden", coupleSupport: "Beziehungsunterstützung", lgbtqSupport: "LGBTQ+ Unterstützung", relationshipQuizzes: "Beziehungsquiz", relationshipMilestones: "Meilensteine & Jahrestage", relationshipGoals: "Beziehungsziele", dateIdeas: "Date-Ideen", memoryLane: "Erinnerungsgasse", games: "Spiele", aiCreator: "KI-Content-Ersteller", winCruise: "Gewinne Preise!" },
     announcement: { label: "OPEN HOUSE — NUR FÜR KURZE ZEIT", text: "Erkunde One2OneLove KOSTENLOS — zum Stöbern ist kein Konto erforderlich. Registriere dich erst, wenn du speichern, posten oder geschützte Mitgliederfunktionen nutzen möchtest." }
   },
@@ -91,11 +91,11 @@ const FOOTER_COPY = {
 };
 
 const MMIQ_FOOTER_COPY = {
-  en: { tagline:'Compatibility. Insights. Stronger Relationships.', body:'MyMatchIQ helps people explore compatibility, gain clarity, recognize red flags earlier, and make more intentional relationship decisions.', support:'MyMatchIQ Support', explore:'Explore MyMatchIQ', home:'MyMatchIQ Home', passport:'Compatibility Passport', credits:'MyMatchIQ Credits', insights:'Compatibility Insights', gettingStarted:'Getting Started', invite:'Invite a Connection', workspace:'MyMatchIQ Workspace', signIn:'Sign In to One2OneLove', copyright:'MyMatchIQ — a One2OneLove feature.' },
-  es: { tagline:'Compatibilidad. Claridad. Relaciones Más Fuertes.', body:'MyMatchIQ ayuda a explorar la compatibilidad, ganar claridad, reconocer señales de alerta antes y tomar decisiones relacionales más intencionales.', support:'Soporte MyMatchIQ', explore:'Explora MyMatchIQ', home:'Inicio MyMatchIQ', passport:'Pasaporte de Compatibilidad', credits:'Créditos MyMatchIQ', insights:'Insights de Compatibilidad', gettingStarted:'Primeros Pasos', invite:'Invitar a una Conexión', workspace:'Espacio MyMatchIQ', signIn:'Iniciar Sesión en One2OneLove', copyright:'MyMatchIQ — una función de One2OneLove.' },
-  fr: { tagline:'Compatibilité. Clarté. Relations Plus Fortes.', body:'MyMatchIQ vous aide à explorer la compatibilité, gagner en clarté, reconnaître les signaux d’alerte plus tôt et prendre des décisions relationnelles plus intentionnelles.', support:'Assistance MyMatchIQ', explore:'Explorer MyMatchIQ', home:'Accueil MyMatchIQ', passport:'Passeport de Compatibilité', credits:'Crédits MyMatchIQ', insights:'Insights de Compatibilité', gettingStarted:'Bien Commencer', invite:'Inviter une Connexion', workspace:'Espace MyMatchIQ', signIn:'Se Connecter à One2OneLove', copyright:'MyMatchIQ — une fonctionnalité de One2OneLove.' },
-  it: { tagline:'Compatibilità. Chiarezza. Relazioni Più Forti.', body:'MyMatchIQ aiuta a esplorare la compatibilità, ottenere chiarezza, riconoscere prima i segnali di allarme e prendere decisioni relazionali più intenzionali.', support:'Supporto MyMatchIQ', explore:'Esplora MyMatchIQ', home:'Home MyMatchIQ', passport:'Passaporto di Compatibilità', credits:'Crediti MyMatchIQ', insights:'Insight di Compatibilità', gettingStarted:'Per Iniziare', invite:'Invita una Connessione', workspace:'Spazio MyMatchIQ', signIn:'Accedi a One2OneLove', copyright:'MyMatchIQ — una funzione di One2OneLove.' },
-  de: { tagline:'Kompatibilität. Klarheit. Stärkere Beziehungen.', body:'MyMatchIQ hilft dabei, Kompatibilität zu erkunden, Klarheit zu gewinnen, Warnsignale früher zu erkennen und bewusstere Beziehungsentscheidungen zu treffen.', support:'MyMatchIQ Support', explore:'MyMatchIQ Entdecken', home:'MyMatchIQ Startseite', passport:'Kompatibilitäts-Pass', credits:'MyMatchIQ-Credits', insights:'Kompatibilitäts-Einblicke', gettingStarted:'Erste Schritte', invite:'Eine Verbindung Einladen', workspace:'MyMatchIQ-Bereich', signIn:'Bei One2OneLove Anmelden', copyright:'MyMatchIQ — eine Funktion von One2OneLove.' },
+  en: { tagline:'Compatibility. Insights. Stronger Relationships.', body:'MyMatchIQ helps people explore compatibility, gain clarity, recognize red flags earlier, and make more intentional relationship decisions.', support:'MyMatchIQ Support', explore:'Explore MyMatchIQ', home:'MyMatchIQ Home', passport:'Compatibility Passport', credits:'O2OL Tokens', insights:'Compatibility Insights', gettingStarted:'Getting Started', invite:'Invite a Connection', workspace:'MyMatchIQ Workspace', signIn:'Sign In to One2OneLove', copyright:'MyMatchIQ — a One2OneLove feature.' },
+  es: { tagline:'Compatibilidad. Claridad. Relaciones Más Fuertes.', body:'MyMatchIQ ayuda a explorar la compatibilidad, ganar claridad, reconocer señales de alerta antes y tomar decisiones relacionales más intencionales.', support:'Soporte MyMatchIQ', explore:'Explora MyMatchIQ', home:'Inicio MyMatchIQ', passport:'Pasaporte de Compatibilidad', credits:'Tokens O2OL', insights:'Insights de Compatibilidad', gettingStarted:'Primeros Pasos', invite:'Invitar a una Conexión', workspace:'Espacio MyMatchIQ', signIn:'Iniciar Sesión en One2OneLove', copyright:'MyMatchIQ — una función de One2OneLove.' },
+  fr: { tagline:'Compatibilité. Clarté. Relations Plus Fortes.', body:'MyMatchIQ vous aide à explorer la compatibilité, gagner en clarté, reconnaître les signaux d’alerte plus tôt et prendre des décisions relationnelles plus intentionnelles.', support:'Assistance MyMatchIQ', explore:'Explorer MyMatchIQ', home:'Accueil MyMatchIQ', passport:'Passeport de Compatibilité', credits:'Jetons O2OL', insights:'Insights de Compatibilité', gettingStarted:'Bien Commencer', invite:'Inviter une Connexion', workspace:'Espace MyMatchIQ', signIn:'Se Connecter à One2OneLove', copyright:'MyMatchIQ — une fonctionnalité de One2OneLove.' },
+  it: { tagline:'Compatibilità. Chiarezza. Relazioni Più Forti.', body:'MyMatchIQ aiuta a esplorare la compatibilità, ottenere chiarezza, riconoscere prima i segnali di allarme e prendere decisioni relazionali più intenzionali.', support:'Supporto MyMatchIQ', explore:'Esplora MyMatchIQ', home:'Home MyMatchIQ', passport:'Passaporto di Compatibilità', credits:'Token O2OL', insights:'Insight di Compatibilità', gettingStarted:'Per Iniziare', invite:'Invita una Connessione', workspace:'Spazio MyMatchIQ', signIn:'Accedi a One2OneLove', copyright:'MyMatchIQ — una funzione di One2OneLove.' },
+  de: { tagline:'Kompatibilität. Klarheit. Stärkere Beziehungen.', body:'MyMatchIQ hilft dabei, Kompatibilität zu erkunden, Klarheit zu gewinnen, Warnsignale früher zu erkennen und bewusstere Beziehungsentscheidungen zu treffen.', support:'MyMatchIQ Support', explore:'MyMatchIQ Entdecken', home:'MyMatchIQ Startseite', passport:'Kompatibilitäts-Pass', credits:'O2OL Tokens', insights:'Kompatibilitäts-Einblicke', gettingStarted:'Erste Schritte', invite:'Eine Verbindung Einladen', workspace:'MyMatchIQ-Bereich', signIn:'Bei One2OneLove Anmelden', copyright:'MyMatchIQ — eine Funktion von One2OneLove.' },
 };
 
 const FacebookIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 hover:text-yellow-200 transition-colors"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>);
@@ -155,7 +155,7 @@ const languages = [
 function LanguageContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [actionOpen, setActionOpen] = useState(false);
+  const [desktopActionOpen, setDesktopActionOpen] = useState(false);
   const [mobileActionOpen, setMobileActionOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -163,7 +163,7 @@ function LanguageContent({ children, currentPageName }) {
   const t = translations[currentLanguage] || translations.en;
   const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
   const mT = MMIQ_FOOTER_COPY[currentLanguage] || MMIQ_FOOTER_COPY.en;
-  const closeTimeoutRef = useRef(null);
+  const desktopActionRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const mobileMenuButtonRef = useRef(null);
 
@@ -218,7 +218,7 @@ function LanguageContent({ children, currentPageName }) {
   const { data: conversations = [], refetch: refetchConversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: getMyConversations,
-    enabled: !!user && isAuthenticated && location.pathname.toLowerCase() !== '/subscription',
+    enabled: !!user && isAuthenticated && !['/subscription','/tokens'].includes(location.pathname.toLowerCase()),
     refetchInterval: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -233,25 +233,12 @@ function LanguageContent({ children, currentPageName }) {
     return total + count;
   }, 0);
 
-  const handleMouseEnter = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-    }
-    setActionOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setActionOpen(false);
-    }, 300);
-  };
-
   const handleSignIn = () => {
     navigate(createPageUrl("SignIn"));
   };
 
   const handleSignUp = () => {
-    navigate("/Subscription?signup=1");
+    navigate("/SignUp");
   };
 
   const handleSignOut = async (e) => {
@@ -291,10 +278,21 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
+    const closeDesktopAction = (event) => {
+      if (desktopActionRef.current?.contains(event.target)) return;
+      setDesktopActionOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setDesktopActionOpen(false);
+        desktopActionRef.current?.querySelector('[data-desktop-action-trigger]')?.focus();
       }
+    };
+    document.addEventListener('pointerdown', closeDesktopAction);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeDesktopAction);
+      document.removeEventListener('keydown', closeOnEscape);
     };
   }, []);
 
@@ -417,47 +415,51 @@ function LanguageContent({ children, currentPageName }) {
             <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
             <div
+              ref={desktopActionRef}
               className="relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) setActionOpen(false);
-              }}
             >
               <button
                 type="button"
-                aria-haspopup="true"
-                aria-expanded={actionOpen}
+                data-desktop-action-trigger
+                aria-haspopup="menu"
                 aria-controls="desktop-action-menu"
-                onClick={() => setActionOpen((open) => !open)}
-                className={mmiqHeaderButton('from-violet-500 to-fuchsia-600')}
+                aria-expanded={desktopActionOpen}
+                onClick={() => setDesktopActionOpen((open) => !open)}
+                className={`${mmiqHeaderButton('from-violet-500 to-fuchsia-600')} cursor-pointer`}
               >
                 ♡ {t.nav.action} ▾
               </button>
-              {actionOpen && isMyMatchIQPage && (
+              {desktopActionOpen && isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 rounded-xl bg-white p-2 text-sm font-normal text-slate-800 shadow-xl z-50">
-                  <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ</Link>
-                  <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧠 Compatibility Passport</Link>
-                  <Link to="/MyMatchIQ/Credits" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>◈ {mT.credits}</Link>
-                  <Link to="/MyMatchIQ/Meet" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>🤝 Meet Intentional Members</Link>
-                  <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>✦ MyMatchIQ Dashboard</Link>
-                  <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setActionOpen(false)}>💌 Invite with intention</Link>
+                  <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ</Link>
+                  <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🧠 Compatibility Passport</Link>
+                  <Link to="/Tokens?source=mymatchiq" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>◈ {mT.credits}</Link>
+                  <Link to="/MyMatchIQ/Meet" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🤝 Meet Intentional Members</Link>
+                  <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ Dashboard</Link>
+                  <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💌 Invite with intention</Link>
                 </div>
               )}
-              {actionOpen && !isMyMatchIQPage && (
+              {desktopActionOpen && !isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
-                  <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
-                  <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
-                  <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
-                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
-                  <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🎮 {t.actionMenu.games}</Link>
-                  <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
-                  <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}</Link>
-                  <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>📷 {t.actionMenu.memoryLane}</Link>
-                  <Link to={createPageUrl("CoupleSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setActionOpen(false)}>👥 {t.actionMenu.coupleSupport}</Link>
+                  <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
+                  <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
+                  <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
+                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
+                  <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎮 {t.actionMenu.games}</Link>
+                  <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
+                  <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}</Link>
+                  <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>📷 {t.actionMenu.memoryLane}</Link>
+                  <Link to={createPageUrl("CoupleSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>👥 {t.actionMenu.coupleSupport}</Link>
                 </div>
               )}
             </div>
+
+            <Link
+              to="/Tokens"
+              className={isMyMatchIQPage ? mmiqHeaderButton('from-amber-400 to-orange-500') : 'rounded-full bg-yellow-300 px-3 py-2 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-200'}
+            >
+              {t.nav.buyTokens || 'BUY TOKENS'}
+            </Link>
 
             {isAuthenticated ? (
               <>
@@ -710,6 +712,15 @@ function LanguageContent({ children, currentPageName }) {
                 <div className="border-t border-white/20 my-1.5"></div>
                 
 
+                <Link
+                  to="/Tokens"
+                  className="flex items-center gap-2 rounded-lg bg-yellow-300 px-3 py-2.5 font-black text-blue-900 transition hover:bg-yellow-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Gift className="h-4 w-4" />
+                  {t.nav.buyTokens || 'BUY TOKENS'}
+                </Link>
+
                 {/* Chat - Only show when authenticated */}
                 {isAuthenticated && (
                   <Link
@@ -822,7 +833,7 @@ function LanguageContent({ children, currentPageName }) {
                 <h4 className="mb-4 text-xl font-black">{mT.explore}</h4>
                 <FooterLink onClick={() => navigate('/MyMatchIQ')}>{mT.home}</FooterLink>
                 <FooterLink onClick={() => navigate('/MyMatchIQ/Assessment')}>{mT.passport}</FooterLink>
-                <FooterLink onClick={() => navigate('/MyMatchIQ/Credits')}>{mT.credits}</FooterLink>
+                <FooterLink onClick={() => navigate('/Tokens?source=mymatchiq')}>{mT.credits}</FooterLink>
                 <FooterLink onClick={() => navigate('/MyMatchIQ/Actions')}>{mT.insights}</FooterLink>
               </div>
               <div>
@@ -857,15 +868,15 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               </div>
               <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><a href="mailto:technicalsupport@erantpropertyservices.com,support@one2onelove.com" className="block text-left py-1 hover:text-yellow-200">{fT.reportProblem}</a></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><FooterLink onClick={() => navigate('/Suggestions?mode=problem')}>{fT.reportProblem}</FooterLink></div>
             </div>
             <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
           </footer>
         </>
       )}
-        <a href="mailto:technicalsupport@erantpropertyservices.com,support@one2onelove.com" aria-label={fT.reportProblem}
+        <button type="button" onClick={() => navigate('/Suggestions?mode=problem')} aria-label={fT.reportProblem}
           className="fixed bottom-0 right-4 z-50 rounded-t-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-red-700">
-          {fT.reportProblem}</a>
+          {fT.reportProblem}</button>
     </div>
   );
 }

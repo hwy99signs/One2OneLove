@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, ChevronRight, Copy, Globe2, HeartHandshake,
   LockKeyhole, MessageCircle, Radio, RotateCcw, ShieldCheck, Sparkles,
-  Trophy, UserRound, Users
+  Trophy, UserRound, Users, Coins
 } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from '@/lib/tokenService';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -30,13 +31,13 @@ const UI = {
     keepPlaying:'Keep Playing', finish:'Finish Self-Check', yourAnswer:'Your answer', waiting:'Waiting for the other player…',
     room:'Game Room', roomCode:'Room code', copyInvite:'Copy Invite Link', copied:'Copied', player2:'Waiting for Player 2',
     createRoom:'Create Invitation', joinRoom:'Join a Room', join:'Join', codePlaceholder:'Enter room code',
-    signin:'Sign in to use multiplayer', signinBody:'Solo Self-Check works without an account. Invitations and the live Player Lobby use your verified O2OL account.',
+    signin:'Sign in to use multiplayer', signinBody:'Create a free verified O2OL account, then use O2OL Tokens to start a Like Minded session.',
     available:'Available now', lobbyEmpty:'No other players are available right now.', leaveLobby:'Leave Player Lobby',
     location:'General location', city:'City', state:'State / Region (optional)', country:'Country', enterLobby:'Enter Player Lobby',
     locationNote:'Only your first name and general location are shown. Never your street address or precise location.',
     inviteToPlay:'Invite to Play', block:'Block', report:'Report', score:'Like-Minded Score', matches:'matches',
     talk:'Talk About It', talkPrompt:'What made each of you choose that answer?', difference:'Different answers', match:'You matched', back:'Back to Relationship Games',
-    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.',
+    category:'Category', questionDepth:'Depth', reset:'Start Over', unavailable:'Multiplayer service is not available in this preview yet.', premium:'Premium Token Game',premiumBody:'Like Minded uses O2OL Tokens. One purchase opens a timed play session; you are not charged again while that pass remains active.',buyTokens:'Buy Tokens To Access',startPremium:'Start Token Session',
     categoriesList:['Relationship Goals','Communication','Values','Family','Lifestyle','Money & Ambition','Boundaries','Future Priorities','Fun Scenarios','Humor','Activities','Food & Travel','Entertainment','Daily Preferences','Wild Card']
   },
   es: {
@@ -57,13 +58,13 @@ const UI = {
     keepPlaying:'Seguir Jugando', finish:'Finalizar', yourAnswer:'Tu respuesta', waiting:'Esperando al otro jugador…',
     room:'Sala de Juego', roomCode:'Código', copyInvite:'Copiar Enlace', copied:'Copiado', player2:'Esperando al Jugador 2',
     createRoom:'Crear Invitación', joinRoom:'Unirse a una Sala', join:'Unirse', codePlaceholder:'Ingresa el código',
-    signin:'Inicia sesión para multijugador', signinBody:'La autoevaluación funciona sin cuenta. Las invitaciones y la sala usan tu cuenta O2OL verificada.',
+    signin:'Inicia sesión para multijugador', signinBody:'Crea una cuenta O2OL gratuita y verificada, luego usa Tokens O2OL para iniciar una sesión de Like Minded.',
     available:'Disponibles ahora', lobbyEmpty:'No hay otros jugadores disponibles ahora.', leaveLobby:'Salir de la Sala',
     location:'Ubicación general', city:'Ciudad', state:'Estado / Región (opcional)', country:'País', enterLobby:'Entrar a la Sala',
     locationNote:'Solo se muestra tu nombre y ubicación general. Nunca tu dirección ni ubicación exacta.',
     inviteToPlay:'Invitar a Jugar', block:'Bloquear', report:'Reportar', score:'Puntuación Like-Minded', matches:'coincidencias',
     talk:'Hablar de Esto', talkPrompt:'¿Qué hizo que cada uno eligiera esa respuesta?', difference:'Respuestas diferentes', match:'Coincidieron', back:'Volver a Juegos',
-    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.',
+    category:'Categoría', questionDepth:'Profundidad', reset:'Empezar de Nuevo', unavailable:'El servicio multijugador aún no está disponible en esta vista previa.', premium:'Juego Premium con Tokens',premiumBody:'Like Minded usa Tokens O2OL. Una compra abre una sesión temporal; no vuelves a pagar mientras el pase siga activo.',buyTokens:'Comprar Tokens para Acceder',startPremium:'Iniciar Sesión con Tokens',
     categoriesList:['Metas de Relación','Comunicación','Valores','Familia','Estilo de Vida','Dinero y Ambición','Límites','Prioridades Futuras','Escenarios Divertidos','Humor','Actividades','Comida y Viajes','Entretenimiento','Preferencias Diarias','Comodín']
   },
   fr: {
@@ -84,13 +85,13 @@ const UI = {
     keepPlaying:'Continuer', finish:'Terminer', yourAnswer:'Votre réponse', waiting:'En attente de l’autre joueur…',
     room:'Salle de Jeu', roomCode:'Code', copyInvite:'Copier le Lien', copied:'Copié', player2:'En attente du Joueur 2',
     createRoom:'Créer une Invitation', joinRoom:'Rejoindre une Salle', join:'Rejoindre', codePlaceholder:'Entrez le code',
-    signin:'Connectez-vous pour le multijoueur', signinBody:'L’auto-évaluation fonctionne sans compte. Les invitations et le salon utilisent votre compte O2OL vérifié.',
+    signin:'Connectez-vous pour le multijoueur', signinBody:'Créez un compte O2OL gratuit et vérifié, puis utilisez des Jetons O2OL pour démarrer une session Like Minded.',
     available:'Disponibles maintenant', lobbyEmpty:'Aucun autre joueur n’est disponible.', leaveLobby:'Quitter le Salon',
     location:'Localisation générale', city:'Ville', state:'État / Région (facultatif)', country:'Pays', enterLobby:'Entrer dans le Salon',
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
     talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
-    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.',
+    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'Jeu Premium à Jetons',premiumBody:'Like Minded utilise des Jetons O2OL. Un achat ouvre une session de jeu limitée dans le temps; aucun nouveau débit tant que le pass reste actif.',buyTokens:'Acheter des Jetons pour Accéder',startPremium:'Démarrer la Session',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
   it: {
@@ -111,13 +112,13 @@ const UI = {
     keepPlaying:'Continua', finish:'Termina', yourAnswer:'La tua risposta', waiting:'In attesa dell’altro giocatore…',
     room:'Stanza di Gioco', roomCode:'Codice', copyInvite:'Copia Link', copied:'Copiato', player2:'In attesa del Giocatore 2',
     createRoom:'Crea Invito', joinRoom:'Entra in una Stanza', join:'Entra', codePlaceholder:'Inserisci il codice',
-    signin:'Accedi per il multigiocatore', signinBody:'L’auto-valutazione funziona senza account. Inviti e lobby usano il tuo account O2OL verificato.',
+    signin:'Accedi per il multigiocatore', signinBody:'Crea un account O2OL gratuito e verificato, quindi usa Token O2OL per avviare una sessione Like Minded.',
     available:'Disponibili ora', lobbyEmpty:'Nessun altro giocatore è disponibile.', leaveLobby:'Esci dalla Lobby',
     location:'Posizione generale', city:'Città', state:'Stato / Regione (opzionale)', country:'Paese', enterLobby:'Entra nella Lobby',
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
     talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
-    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.',
+    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'Gioco Premium a Token',premiumBody:'Like Minded usa Token O2OL. Un acquisto apre una sessione temporanea; nessun nuovo addebito finché il pass resta attivo.',buyTokens:'Acquista Token per Accedere',startPremium:'Avvia Sessione Token',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
   de: {
@@ -138,13 +139,13 @@ const UI = {
     keepPlaying:'Weiterspielen', finish:'Selbst-Check Beenden', yourAnswer:'Deine Antwort', waiting:'Warte auf die andere Person…',
     room:'Spielraum', roomCode:'Raumcode', copyInvite:'Einladungslink Kopieren', copied:'Kopiert', player2:'Warte auf Spieler 2',
     createRoom:'Einladung Erstellen', joinRoom:'Raum Beitreten', join:'Beitreten', codePlaceholder:'Raumcode eingeben',
-    signin:'Für Mehrspieler anmelden', signinBody:'Der Selbst-Check funktioniert ohne Konto. Einladungen und Lobby nutzen dein verifiziertes O2OL-Konto.',
+    signin:'Für Mehrspieler anmelden', signinBody:'Erstelle ein kostenloses verifiziertes O2OL-Konto und verwende dann O2OL Tokens, um eine Like Minded-Sitzung zu starten.',
     available:'Jetzt verfügbar', lobbyEmpty:'Zurzeit sind keine anderen Spieler verfügbar.', leaveLobby:'Lobby Verlassen',
     location:'Allgemeiner Standort', city:'Stadt', state:'Bundesland / Region (optional)', country:'Land', enterLobby:'Lobby Betreten',
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
     talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
-    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.',
+    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'Premium-Token-Spiel',premiumBody:'Like Minded verwendet O2OL Tokens. Ein Kauf öffnet eine zeitlich begrenzte Spielsitzung; solange der Pass aktiv ist, wird nicht erneut berechnet.',buyTokens:'Tokens Kaufen für Zugriff',startPremium:'Token-Sitzung Starten',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };
@@ -251,7 +252,11 @@ function api(path, options={}) {
     ...options,
   }).then(async (res) => {
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error?.message || data?.message || 'Request failed');
+    if (!res.ok) {
+      const error=new Error(data?.error?.message || data?.message || 'Request failed');
+      error.status=res.status; error.payload=data;
+      throw error;
+    }
     return data;
   });
 }
@@ -303,6 +308,11 @@ export default function LikeMinded() {
   const [inLobby,setInLobby] = useState(false);
   const [available,setAvailable] = useState(false);
   const [showTalk,setShowTalk] = useState(false);
+  const [gamePass,setGamePass]=useState(null);
+  const [tokenBalance,setTokenBalance]=useState(0);
+  const [tokenCost,setTokenCost]=useState(0);
+  const [tokenPrompt,setTokenPrompt]=useState(false);
+  const [accessLoading,setAccessLoading]=useState(false);
 
   const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
   const activeCanonicalCategory = CANONICAL_CATEGORIES[(categoryIndex + questionNo - 1) % CANONICAL_CATEGORIES.length];
@@ -310,44 +320,96 @@ export default function LikeMinded() {
   const answers = ANSWERS[lang] || ANSWERS.en;
   const displayCategory = t.categoriesList[CANONICAL_CATEGORIES.indexOf(activeCanonicalCategory)] || activeCanonicalCategory;
 
-  useEffect(() => {
-    const pending = new URLSearchParams(window.location.search).get('room');
-    if (!pending) return;
-    const normalized=pending.toUpperCase();
-    setRoomCode(normalized);
-    if (!isAuthenticated) {
-      setScreen('invite');
-      return;
+  const refreshTokenState=async()=>{
+    if(!isAuthenticated){setGamePass(null);setTokenBalance(0);return null;}
+    try{
+      const [wallet,access]=await Promise.all([
+        getTokenWallet(),
+        api('/api/games/like-minded/access',{method:'GET',headers:{}}),
+      ]);
+      setTokenBalance(Number(wallet?.wallet?.balance||0));
+      setTokenCost(Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||2));
+      setGamePass(access?.pass||null);
+      return access?.pass||null;
+    }catch(error){
+      if(error?.status===402||isTokensRequiredError(error)){setGamePass(null);}
+      return null;
     }
-    let active=true;
-    api('/api/like-minded/rooms/join', {
-      method:'POST',
-      body:JSON.stringify({ code:normalized, language:lang }),
-    }).then(data => {
-      if (!active) return;
-      setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code);
-      if (data.room?.category) setCategory(data.room.category);
-      if (data.room?.depth) setDepth(data.room.depth);
-      if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
-      setLocked(Boolean(data.room?.my_locked));
-      setScreen('room');
-    }).catch(err => {
-      if (active) { setApiError(err.message); setScreen('invite'); }
-    });
-    return () => { active=false; };
-  }, [isAuthenticated]);
+  };
+  const handlePremiumError=(error)=>{
+    if(isTokensRequiredError(error)||error?.payload?.error?.code==='tokens_required'){
+      const info=tokenRequiredDetails(error);
+      setTokenBalance(Number(info.balance||tokenBalance||0));
+      if(info.required)setTokenCost(Number(info.required));
+      setTokenPrompt(true);
+      setApiError(`${t.buyTokens} — ${info.required||tokenCost||2} tokens required. Balance: ${info.balance||0}.`);
+      return true;
+    }
+    setApiError(error?.message||t.unavailable);
+    return false;
+  };
+  const ensurePremiumAccess=async()=>{
+    if(!isAuthenticated){
+      window.location.assign('/SignUp?source=like-minded&type=individual');
+      return false;
+    }
+    if(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())return true;
+    setAccessLoading(true);setApiError('');setTokenPrompt(false);
+    try{
+      const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const data=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
+      setGamePass(data.pass||null);
+      if(data?.tokens?.balance!=null)setTokenBalance(Number(data.tokens.balance));
+      else await refreshTokenState();
+      return true;
+    }catch(error){
+      handlePremiumError(error);return false;
+    }finally{setAccessLoading(false);}
+  };
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    api('/api/like-minded/settings', { method:'GET', headers:{} })
-      .then(data => setAvailable(Boolean(data.settings?.available)))
-      .catch(() => {});
-  }, [isAuthenticated]);
+    const pending=new URLSearchParams(window.location.search).get('room');
+    if(!pending)return;
+    const normalized=pending.toUpperCase();
+    setRoomCode(normalized);
+    if(!isAuthenticated){setScreen('invite');return;}
+    let active=true;
+    (async()=>{
+      const pass=await refreshTokenState();
+      if(!active)return;
+      // Opening an invite never spends tokens automatically.
+      if(!pass){setTokenPrompt(true);setScreen('invite');return;}
+      try{
+        const data=await api('/api/like-minded/rooms/join',{method:'POST',body:JSON.stringify({code:normalized,language:lang})});
+        if(!active)return;
+        setRoom(data.room);setRoomState(data.room);setRoomUrl(data.room?.code);
+        if(data.room?.category)setCategory(data.room.category);
+        if(data.room?.depth)setDepth(data.room.depth);
+        if(data.room?.current_question_no)setQuestionNo(data.room.current_question_no);
+        setLocked(Boolean(data.room?.my_locked));setScreen('room');
+      }catch(error){if(active){handlePremiumError(error);setScreen('invite');}}
+    })();
+    return()=>{active=false};
+  },[isAuthenticated]);
+
+  useEffect(() => {
+    if(!isAuthenticated)return;
+    let active=true;
+    refreshTokenState().then(pass=>{
+      if(!active||!pass)return;
+      api('/api/like-minded/settings',{method:'GET',headers:{}})
+        .then(data=>{if(active)setAvailable(Boolean(data.settings?.available));})
+        .catch(()=>{});
+    });
+    return()=>{active=false};
+  },[isAuthenticated]);
 
   useEffect(() => {
     if (!room?.code) return;
     let active = true;
     const load = async () => {
+      // Skip polls from a hidden tab (query-burn fix, Oct 7).
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       try {
         const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code), { method:'GET', headers:{} });
         if (active) {
@@ -369,6 +431,8 @@ export default function LikeMinded() {
     if (screen !== 'lobby' || !inLobby) return;
     let active = true;
     const load = async () => {
+      // Skip polls from a hidden tab (query-burn fix, Oct 7).
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       try {
         const data = await api('/api/like-minded/lobby', { method:'GET', headers:{} });
         if (active) {
@@ -397,7 +461,8 @@ export default function LikeMinded() {
     setRoom(null); setRoomState(null); setRoomCode(''); setSelected(null); setLocked(false); setShowTalk(false); setScreen('home');
   };
 
-  const startSolo = () => {
+  const startSolo = async () => {
+    if(!(await ensurePremiumAccess()))return;
     setScreen('solo'); setQuestionNo(1); setSetNo(1); setSelected(null); setLocked(false); setCheckpoint(false);
   };
 
@@ -414,6 +479,7 @@ export default function LikeMinded() {
   };
 
   const createRoom = async () => {
+    if(!(await ensurePremiumAccess()))return;
     setApiError('');
     try {
       const data = await api('/api/like-minded/rooms', {
@@ -425,10 +491,11 @@ export default function LikeMinded() {
       if (data.room?.depth) setDepth(data.room.depth);
       if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
       setScreen('room');
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const joinRoom = async () => {
+    if(!(await ensurePremiumAccess()))return;
     setApiError('');
     try {
       const data = await api('/api/like-minded/rooms/join', {
@@ -440,7 +507,7 @@ export default function LikeMinded() {
       if (data.room?.depth) setDepth(data.room.depth);
       if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
       setScreen('room');
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const lockRoomAnswer = async () => {
@@ -453,7 +520,7 @@ export default function LikeMinded() {
       });
       setLocked(true);
       setRoomState(data.room || roomState);
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const nextRoomQuestion = async () => {
@@ -463,7 +530,7 @@ export default function LikeMinded() {
       const data = await api('/api/like-minded/rooms/' + encodeURIComponent(room.code) + '/next', { method:'POST', body:'{}' });
       setRoomState(data.room); setQuestionNo(data.room?.current_question_no || questionNo + 1);
       setSelected(null); setLocked(false); setShowTalk(false);
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const copyInvite = async () => {
@@ -474,15 +541,17 @@ export default function LikeMinded() {
 
   const toggleAvailability = async () => {
     if (!isAuthenticated || inLobby) return;
+    if(!(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())){setTokenPrompt(true);setApiError(t.buyTokens);return;}
     setApiError('');
     try {
       const next=!available;
       const data=await api('/api/like-minded/settings',{method:'POST',body:JSON.stringify({available:next,language:lang})});
       setAvailable(Boolean(data.available));
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const enterLobby = async () => {
+    if(!(await ensurePremiumAccess()))return;
     setApiError('');
     try {
       await api('/api/like-minded/lobby', {
@@ -490,7 +559,7 @@ export default function LikeMinded() {
         body:JSON.stringify({ available:true, inLobby:true, city, stateRegion, country }),
       });
       setInLobby(true); setAvailable(true);
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const leaveLobby = async () => {
@@ -501,6 +570,7 @@ export default function LikeMinded() {
   };
 
   const joinInvite = async (code) => {
+    if(!(await ensurePremiumAccess()))return;
     setRoomCode(code);
     setApiError('');
     try {
@@ -513,24 +583,25 @@ export default function LikeMinded() {
       if (data.room?.depth) setDepth(data.room.depth);
       if (data.room?.current_question_no) setQuestionNo(data.room.current_question_no);
       setScreen('room');
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const blockPlayer = async (playerId) => {
     try {
       await api('/api/like-minded/blocks', { method:'POST', body:JSON.stringify({ userId:playerId }) });
       setLobbyUsers(list => list.filter(p => p.user_id !== playerId));
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const reportPlayer = async (playerId) => {
     try {
       await api('/api/like-minded/reports', { method:'POST', body:JSON.stringify({ userId:playerId, context:'Reported from Like Minded Player Lobby' }) });
       setLobbyUsers(list => list.filter(p => p.user_id !== playerId));
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const invitePlayer = async (playerId) => {
+    if(!(await ensurePremiumAccess()))return;
     setApiError('');
     try {
       const data = await api('/api/like-minded/rooms', {
@@ -538,7 +609,7 @@ export default function LikeMinded() {
         body:JSON.stringify({ category, depth, language:lang, invitedUserId:playerId }),
       });
       setRoom(data.room); setRoomState(data.room); setRoomUrl(data.room?.code); setScreen('room');
-    } catch (err) { setApiError(err.message); }
+    } catch (err) { handlePremiumError(err); }
   };
 
   const modeHeader = (
@@ -647,7 +718,7 @@ export default function LikeMinded() {
                   <div className="mt-3 flex gap-2"><input value={roomCode} onChange={e=>setRoomCode(e.target.value.toUpperCase())} placeholder={t.codePlaceholder} className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 font-black uppercase tracking-widest"/><button onClick={joinRoom} className="rounded-2xl bg-slate-950 px-5 py-3 font-black text-white">{t.join}</button></div>
                 </>
               )}
-              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
+              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}{tokenPrompt&&<Link to="/Tokens?return=/LikeMinded" className="ml-3 inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 font-black text-amber-950"><Coins className="h-4 w-4"/>{t.buyTokens}</Link>}</div>}
             </div>
           </div>
         </div>
@@ -701,7 +772,7 @@ export default function LikeMinded() {
                 {showTalk && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-center font-bold text-violet-950">{t.talkPrompt}</div>}
                 <div className="grid gap-3 sm:grid-cols-2"><button onClick={()=>setShowTalk(v=>!v)} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800"><MessageCircle className="mr-2 inline h-5 w-5"/>{t.talk}</button><button onClick={nextRoomQuestion} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion}<ChevronRight className="ml-2 inline h-5 w-5"/></button></div>
               </div>}
-            {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
+            {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}{tokenPrompt&&<Link to="/Tokens?return=/LikeMinded" className="ml-3 inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 font-black text-amber-950"><Coins className="h-4 w-4"/>{t.buyTokens}</Link>}</div>}
           </div>
         </div>
       </div>
@@ -720,7 +791,7 @@ export default function LikeMinded() {
               <Users className="h-10 w-10 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.lobby}</h1><p className="mt-2 text-slate-600">{t.locationNote}</p>
               <div className="mt-6 grid gap-4"><label className="text-sm font-black">{t.city}<input value={city} onChange={e=>setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label><label className="text-sm font-black">{t.state}<input value={stateRegion} onChange={e=>setStateRegion(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label><label className="text-sm font-black">{t.country}<input value={country} onChange={e=>setCountry(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label></div>
               <button onClick={enterLobby} disabled={!city.trim() || !country.trim()} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 font-black text-white disabled:opacity-40">{t.enterLobby}</button>
-              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
+              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}{tokenPrompt&&<Link to="/Tokens?return=/LikeMinded" className="ml-3 inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 font-black text-amber-950"><Coins className="h-4 w-4"/>{t.buyTokens}</Link>}</div>}
             </div>
           ) : (
             <>
@@ -834,6 +905,13 @@ export default function LikeMinded() {
               <span className="font-bold">{available ? t.available : 'Unavailable'}</span>
             </div>
           )}
+
+          <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
+              {isAuthenticated ? <Link to="/Tokens?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':`${tokenCost||2} Tokens · Balance ${tokenBalance}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+            </div>
+          </div>
 
           <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-3 gap-2.5 sm:mt-6 sm:gap-4">
             <ModeCard

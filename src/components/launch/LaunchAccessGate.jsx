@@ -1,138 +1,142 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 
-const PUBLIC_ROUTES = new Set([
+const PUBLIC_INFORMATION_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
-  '/invite', '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice',
-  '/reviews', '/leavereview', '/suggestions', '/subscription', '/payment-success', '/paymentsuccess',
-  '/dateideas', '/lovenotes', '/lovelanguagequiz', '/memorylane', '/podcastssupport',
-  '/relationshipquizzes', '/relationshipmilestones', '/relationshipgoals', '/communicationpractice',
-  '/couplesupport', '/articlessupport', '/coupleactivities', '/cooperativegames',
-  '/whatshouldtheydo', '/games', '/scratchgame', '/sharedjournals', '/couplescalendar',
-  '/lgbtqsupport', '/o2olstudio', '/chat', '/community',
-  '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup', '/likeminded',
-  '/mymatchiq', '/mymatchiq/meet', '/mymatchiq/assessment', '/mymatchiq/bianca', '/mymatchiq/credits', '/mymatchiq/actions', '/mymatchiq/dashboard',
-  '/mymatchiq/invite', '/mymatchiq/signin', '/mymatchiq/signup', '/mymatchiq/subscription',
+  '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
+  '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
+  '/adminaccess',
+  '/winacruise','/counselingsupport','/influencerssupport','/aicontentcreator','/meditation',
+  '/developer','/leaderboard','/achievements','/findfriends','/friendrequests',
 ]);
 
-const PLAN_LEVEL = {
-  Premiere: 1,
-  Premier: 1,
-  Exclusive: 2,
-};
-
-const REQUIRED_PLAN = {
-  '/memorylane': 'Premiere',
-  '/lovenotes': 'Premiere',
-  '/lovelanguagequiz': 'Premiere',
-  '/dateideas': 'Premiere',
-  '/profile': 'Premiere',
-  '/relationshipquizzes': 'Premiere',
-  '/anniversarytracker': 'Premiere',
-  '/dashboard': 'Premiere',
-  '/community': 'Premiere',
-  '/chat': 'Premiere',
-  '/podcastssupport': 'Premiere',
-  '/relationshipmilestones': 'Premiere',
-  '/relationshipgoals': 'Premiere',
-  '/communicationpractice': 'Premiere',
-  '/coupleactivities': 'Premiere',
-  '/cooperativegames': 'Premiere',
-  '/whatshouldtheydo': 'Premiere',
-  '/games': 'Premiere',
-  '/scratchgame': 'Premiere',
-  '/sharedjournals': 'Premiere',
-  '/couplescalendar': 'Premiere',
-  '/lgbtqsupport': 'Premiere',
-  '/couplesupport': 'Exclusive',
-  '/articlessupport': 'Exclusive',
-  '/couplesprofile': 'Exclusive',
-  '/couplesdashboard': 'Exclusive',
-};
+const KNOWN_APP_ROUTES = new Set([
+  '/',
+  '/aboutus',
+  '/achievements',
+  '/admin',
+  '/adminaccess',
+  '/aicontentcreator',
+  '/amora',
+  '/analytics',
+  '/anniversarytracker',
+  '/articlessupport',
+  '/blog',
+  '/chat',
+  '/communicationpractice',
+  '/community',
+  '/contactus',
+  '/cooperativegames',
+  '/counselingsupport',
+  '/coupleactivities',
+  '/couplescalendar',
+  '/couplesdashboard',
+  '/couplesprofile',
+  '/couplesupport',
+  '/credit',
+  '/dashboard',
+  '/dateideas',
+  '/developer',
+  '/findfriends',
+  '/forgotpassword',
+  '/friendrequests',
+  '/games',
+  '/helpcenter',
+  '/home',
+  '/influencersignup',
+  '/influencerssupport',
+  '/invite',
+  '/leaderboard',
+  '/leavereview',
+  '/lgbtqsupport',
+  '/likeminded',
+  '/login',
+  '/lovelanguagequiz',
+  '/lovenotes',
+  '/meditation',
+  '/memorylane',
+  '/mymatchiq',
+  '/mymatchiq/actions',
+  '/mymatchiq/assessment',
+  '/mymatchiq/bianca',
+  '/mymatchiq/credits',
+  '/mymatchiq/dashboard',
+  '/mymatchiq/invite',
+  '/mymatchiq/meet',
+  '/mymatchiq/passport',
+  '/mymatchiq/signin',
+  '/mymatchiq/signup',
+  '/mymatchiq/subscription',
+  '/o2olstudio',
+  '/payment-success',
+  '/paymentsuccess',
+  '/podcastssupport',
+  '/premiumfeatures',
+  '/privacypolicy',
+  '/professionals',
+  '/professionalsignup',
+  '/profile',
+  '/relationshipcoach',
+  '/relationshipgoals',
+  '/relationshipmilestones',
+  '/relationshipquizzes',
+  '/reviews',
+  '/scratchgame',
+  '/sendcredits',
+  '/sharedjournals',
+  '/signin',
+  '/signup',
+  '/subscription',
+  '/suggestions',
+  '/termsofservice',
+  '/therapistsignup',
+  '/tiktokpost',
+  '/tokens',
+  '/tokensystemdashboard',
+  '/verifyphone',
+  '/whatshouldtheydo',
+  '/winacruise',
+]);
 
 const LOADING_COPY = {
-  en: 'Loading your One2OneLove access…',
-  es: 'Cargando tu acceso a One2OneLove…',
-  fr: 'Chargement de votre accès One2OneLove…',
-  it: 'Caricamento del tuo accesso One2OneLove…',
-  de: 'Ihr One2OneLove-Zugang wird geladen…',
+  en:'Loading your One2OneLove access…',
+  es:'Cargando tu acceso a One2OneLove…',
+  fr:'Chargement de votre accès One2OneLove…',
+  it:'Caricamento del tuo accesso One2OneLove…',
+  de:'Ihr One2OneLove-Zugang wird geladen…',
 };
 
-function adminAccessActive(user) {
-  if (!user?.subscription_end_date) return false;
-  const end = new Date(user.subscription_end_date);
-  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
-}
-
-
-function currentPlanFor(user) {
-  const stored = String(user?.subscription_plan || 'Premiere');
-  if (stored.toLowerCase() === 'exclusive') return 'Exclusive';
-  return 'Premiere';
-}
-
-function preferredLanguage() {
-  try {
-    const value = localStorage.getItem('preferredLanguage') || 'en';
-    return LOADING_COPY[value] ? value : 'en';
-  } catch (_) {
-    return 'en';
-  }
+function preferredLanguage(){
+  try{
+    const value=String(localStorage.getItem('preferredLanguage')||'en').toLowerCase();
+    return LOADING_COPY[value]?value:'en';
+  }catch{return 'en';}
 }
 
 export default function LaunchAccessGate({ pathname, children }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const route = String(pathname || '/').toLowerCase().replace(/\/$/, '') || '/';
+  const { user,isAuthenticated,isLoading }=useAuth();
+  const route=String(pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
+  const isKnown=KNOWN_APP_ROUTES.has(route);
+  const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown;
 
-  const isPublicRoute = PUBLIC_ROUTES.has(route);
-
-  if (isLoading && !isPublicRoute) {
-    const language = preferredLanguage();
-    return (
-      <div className="flex min-h-[55vh] items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-pink-500 border-t-transparent" />
-          <p className="text-sm font-medium text-gray-600">{LOADING_COPY[language]}</p>
-        </div>
+  if(isLoading && !isPublic){
+    const language=preferredLanguage();
+    return <div className="flex min-h-[55vh] items-center justify-center bg-white">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"/>
+        <p className="text-sm font-medium text-gray-600">{LOADING_COPY[language]}</p>
       </div>
-    );
+    </div>;
   }
 
-  if (!isAuthenticated || !user) {
-    return isPublicRoute ? children : <Navigate to="/SignIn" replace />;
+  if(!isAuthenticated || !user){
+    return isPublic ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
   }
 
-  // Open House routes remain browseable whether or not the visitor is signed in.
-  // Protected writes and personal data remain guarded by the API/member controls.
-  if (isPublicRoute) return children;
-
-  if (route === '/verifyphone') return children;
-
-  const phoneRequired = user.phone_verification_required === true;
-  const phoneVerified = user.phoneNumberVerified === true || user.phone_number_verified === true;
-  if (phoneRequired && !phoneVerified) return <Navigate to="/VerifyPhone" replace />;
-
-  const role = String(user.role || '').toLowerCase();
-  if (role === 'admin') return children;
-
-  if (route === '/subscription' || route === '/payment-success' || route === '/paymentsuccess') return children;
-  if (route === '/sendcredits') return <Navigate to="/Subscription" replace />;
-
-  const status = String(user.subscription_status || '').toLowerCase();
-  const hasStripeSubscription = Boolean(user.stripe_subscription_id);
-  const hasAdminAccess = adminAccessActive(user);
-  if (!['active', 'trial', 'trialing'].includes(status) || (!hasStripeSubscription && !hasAdminAccess)) {
-    return <Navigate to="/Subscription?setup=required" replace />;
-  }
-
-  const required = REQUIRED_PLAN[route];
-  if (!required) return children;
-
-  const current = currentPlanFor(user);
-  if ((PLAN_LEVEL[current] || 0) < (PLAN_LEVEL[required] || 0)) {
-    return <Navigate to={`/Subscription?required=${encodeURIComponent(required)}`} replace />;
-  }
-
+  // Registered Free is the site access identity. Feature-specific APIs/components
+  // decide whether an action is free or requires O2OL Tokens.
+  // Phone verification remains a feature-level requirement where applicable
+  // (for example, participating in Chat), not a global browsing gate.
   return children;
 }

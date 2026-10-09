@@ -49,8 +49,30 @@ function cleanReportReason(value) {
   return text;
 }
 
+// Schema bootstrap is idempotent DDL; running it on every request cost 9
+// statements per chat poll and was the largest single driver of the Oct 7
+// Hyperdrive query burn. Run it once per isolate instead (same pattern as
+// worker/feature-usage.ts interactionSchemaReady); the flag is only set
+// after every statement succeeds, so a failure retries on the next request.
+let chatSafetySchemaReady = false;
+
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 async function ensureChatSafetySchema(db) {
-  await db.query(`
+  if (chatSafetySchemaReady) return;
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.chat_room_reports (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       room_id uuid NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
@@ -65,7 +87,7 @@ async function ensureChatSafetySchema(db) {
       UNIQUE(message_id, reporter_id)
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.chat_room_topics (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       room_id uuid NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
@@ -76,19 +98,19 @@ async function ensureChatSafetySchema(db) {
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     ALTER TABLE public.chat_room_messages
     ADD COLUMN IF NOT EXISTS topic_id uuid REFERENCES public.chat_room_topics(id) ON DELETE SET NULL
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE INDEX IF NOT EXISTS idx_chat_room_topics_room_created
       ON public.chat_room_topics(room_id,created_at DESC)
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE INDEX IF NOT EXISTS idx_chat_room_messages_topic
       ON public.chat_room_messages(topic_id,created_at)
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.chat_user_mutes (
       owner_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
       muted_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -117,6 +139,7 @@ async function ensureChatSafetySchema(db) {
            '💯',true,now()
      WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='relationship-100')
   `);
+  chatSafetySchemaReady = true;
 }
 
 async function listRooms(db, scope = 'general') {
@@ -128,7 +151,7 @@ async function listRooms(db, scope = 'general') {
       LEFT JOIN (
         SELECT room_id,count(*) AS online_count
           FROM public.chat_room_presence
-         WHERE last_seen > now() - interval '5 minutes'
+         WHERE last_seen > now() - interval '60 seconds'
          GROUP BY room_id
       ) p ON p.room_id=r.id
       LEFT JOIN (
@@ -204,6 +227,17 @@ async function listMessages(db, roomId, url, viewerId = null) {
   }));
 }
 
+// Presence lifecycle (chat-close rule, Oct 7): a member is "in" a room only
+// while their presence row is fresh. The client heartbeat runs every 45 s
+// (src/pages/Chat.jsx), so occupancy counts rows seen within the last
+// 60 seconds — one beat plus grace; two missed beats and the member is
+// gone. Leaving is normally explicit: the client calls the /leave route
+// below (including via sendBeacon on pagehide) and the row is deleted at
+// once, so an emptied room closes immediately instead of lingering for
+// the TTL. The TTL only covers exits the leave signal never survives
+// (crash, killed tab, lost network). Expired rows are never counted and
+// are overwritten on rejoin; no sweeper query runs for them, so a dormant
+// room costs zero queries.
 async function touchPresence(db, roomId, userId) {
   await db.query(`
     INSERT INTO public.chat_room_presence(room_id,user_id,last_seen)
@@ -369,6 +403,22 @@ export async function handleCommunityChatRequest(request, env, url) {
         const room = await db.query('SELECT 1 FROM public.chat_rooms WHERE id=$1::uuid AND is_active=true', [roomId]);
         if (!room.rowCount) return fail('Chat room not found.', 404, 'not_found');
         await touchPresence(db, roomId, auth.user.id);
+        return json({ ok: true });
+      }
+
+      // Explicit leave: stepping out closes the chat for this member. The
+      // presence row is deleted in one statement, so occupancy drops to
+      // zero the moment the last member leaves. Deliberately no room
+      // existence check — leaving must succeed even if the room was
+      // deactivated, and an idempotent no-op DELETE keeps the exit path
+      // (often a sendBeacon during page teardown) as cheap as possible.
+      const leaveMatch = url.pathname.match(/^\/api\/community-chat\/rooms\/([0-9a-f-]{36})\/leave$/i);
+      if (leaveMatch && request.method === 'POST') {
+        if (!auth) return fail('Authentication required.', 401, 'unauthorized');
+        await db.query(
+          'DELETE FROM public.chat_room_presence WHERE room_id=$1::uuid AND user_id=$2::uuid',
+          [leaveMatch[1], auth.user.id],
+        );
         return json({ ok: true });
       }
 

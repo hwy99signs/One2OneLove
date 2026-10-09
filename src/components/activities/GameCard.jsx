@@ -31,6 +31,7 @@ export default function GameCard({ game, index }) {
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 mb-4">{game.description}</p>
+          {game.accessLabel && <div className="mb-4 inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">{game.accessLabel}</div>}
           {game.href ? (
             <a href={game.href}>
               <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">

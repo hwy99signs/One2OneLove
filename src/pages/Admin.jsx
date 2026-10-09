@@ -26,6 +26,7 @@ const sections = [
   { id: 'love-notes', label: 'Love Notes', icon: Heart },
   { id: 'applications', label: 'Applications', icon: FileCheck2 },
   { id: 'moderation', label: 'Moderation', icon: MessageSquareText },
+  { id: 'support', label: 'Support & Reports', icon: MessageSquareText },
   { id: 'system', label: 'System', icon: Activity },
 ];
 
@@ -331,22 +332,16 @@ export default function Admin() {
     let active = true;
     const refreshIfDue = () => {
       if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
       if (elapsed >= AUTO_REFRESH_MS) load(true);
     };
-    const refreshOnReturn = () => {
-      if (!active || document.visibilityState !== 'visible') return;
-      const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
-      if (elapsed >= 60 * 1000) load(true);
-    };
     const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
-    document.addEventListener('visibilitychange', refreshOnReturn);
-    window.addEventListener('focus', refreshOnReturn);
+    document.addEventListener('visibilitychange', refreshIfDue);
     return () => {
       active = false;
       window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', refreshOnReturn);
-      window.removeEventListener('focus', refreshOnReturn);
+      document.removeEventListener('visibilitychange', refreshIfDue);
     };
   }, []);
 
@@ -388,7 +383,7 @@ export default function Admin() {
       filtered=members.filter(m => m.auth_role !== 'admin' && (m.subscription_plan === 'Registered Free' || m.subscription_status === 'registered_free'));
     }
     if (!needle) return filtered;
-    return filtered.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.subscription_status,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
+    return filtered.filter(m => [m.name,m.username,m.email,m.location,m.subscription_plan,m.subscription_status,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
   },[data,query,memberViewFilter]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading One2OneLove Admin</h1><p className="mt-2 text-sm text-slate-500">Verifying administrator access and loading platform data.</p></div></div>;
@@ -400,6 +395,8 @@ export default function Admin() {
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
   const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, clickAnalytics=data?.clickAnalytics || {};
+  const visitorRegistry=data?.visitorRegistry || {}, visitorFunnel=visitorRegistry.funnel || {}, visitorRows=visitorRegistry.visitors || [];
+  const supportFeedback=data?.supportFeedback || {}, supportSummary=supportFeedback.summary || {}, supportRows=supportFeedback.recent || [];
   const clickSummary=clickAnalytics.summary || {};
   const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
@@ -556,6 +553,7 @@ export default function Admin() {
         <div className="px-4 py-6 sm:px-6 lg:px-8">
           {section==='overview' && <div>
             <Heading title="Platform Overview" subtitle="A quick operating view of users, tiers, Love Notes, moderation and the features visitors and members are actually using."/>
+            <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900"><strong>Analytics rules:</strong> Administrator activity is intentionally excluded from visitor, click and feature-usage totals so your own testing does not inflate audience numbers. “Today” and “this month” use America/Chicago; rolling 24-hour and 7/30-day windows remain true elapsed-time windows.</div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Metric icon={Users} label="Total Sign-ups" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
               <Metric icon={UserCheck} label="Registered Free Accounts" value={number(users.registered_free)} note="free member profiles · no paid subscription" tone="blue"/>
@@ -712,7 +710,7 @@ export default function Admin() {
           {section==='chat-room' && <div>
             <Heading title="Chat Room Analytics" subtitle="O2OL Show voting, audience demographics and live conversation volume by topic."/>
             {isPrelaunchAdminPreview && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>Prelaunch read-only preview:</strong> Admin verification is temporarily bypassed only on this isolated preview URL. Chat comment counts come from the prelaunch R2 Chat data. Production member, billing and Admin-control data are not exposed here.</div>}
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <Metric icon={BarChart3} label="O2OL Show Votes" value={number(allPlatformsVoting.validResponses)} note="recorded responses from connected voting sources" tone="violet"/>
               <Metric icon={MessageSquareText} label="Chat Comments" value={number(totalConversationComments)} note="approved comments across tracked topics" tone="blue"/>
               <Metric icon={Users} label="Conversation Topics" value={number(conversationTopics.length)} note="rooms and member-created topics" tone="green"/>
@@ -815,6 +813,13 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Registered Free accounts remain visible here even when they have never purchased a subscription."/>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <Metric icon={Activity} label="On Site Now" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
+              <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
+              <Metric icon={UserCheck} label="Registered Free" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
+              <Metric icon={CreditCard} label="Token Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid token purchase" tone="violet"/>
+              <Metric icon={TrendingUp} label="Paid Activity" value={money(Number(visitorFunnel.paid_activity_cents||0)/100)} note="token purchases + auto-replenish" tone="green"/>
+            </div>
             <div className="mb-4 flex flex-wrap gap-2">
               <button type="button" onClick={()=>{setMemberViewFilter('all');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='all'?'border-slate-900 bg-slate-900 text-white':'border-slate-200 bg-white text-slate-700')}>All Sign-ups · {number(memberCounts.all)}</button>
               <button type="button" onClick={()=>{setMemberViewFilter('registered-free');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='registered-free'?'border-blue-600 bg-blue-600 text-white':'border-blue-200 bg-blue-50 text-blue-800')}>Registered Free · {number(memberCounts.registeredFree)}</button>
@@ -846,9 +851,9 @@ export default function Admin() {
                 const signupState = !m.auth_ready ? 'Authentication record missing' : !m.profile_ready ? 'Profile recovery pending' : !m.is_verified ? 'Email verification pending' : (!protectedAdmin && !m.phone_verified ? 'Phone verification pending' : null);
                 return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
-                  <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
+                  <td className="px-4 py-3"><div className="font-semibold">{m.username?('@'+m.username):(m.name||'Unnamed member')}</div>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
-                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill>{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
+                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Registered Free'}</Pill>{m.token_buyer&&<div className="mt-1"><Pill tone="violet">Token Buyer</Pill></div>}{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
@@ -888,6 +893,42 @@ export default function Admin() {
                 </tr>;
               })}</tbody>
             </table></TableShell>
+
+            <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that Registered Free member." className="mt-6">
+              {visitorRows.length ? <TableShell><table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Visitor / Member</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">First / Last Seen</th>
+                    <th className="px-4 py-3 text-right">Visits</th>
+                    <th className="px-4 py-3">Source / Language</th>
+                    <th className="px-4 py-3">Activity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {visitorRows.map(v=><tr key={v.visitor_id} className="align-top hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-900">{v.username?('@'+v.username):(v.email||('Visitor '+String(v.visitor_id).slice(0,8)))}</div>
+                      {v.email&&<div className="text-xs text-slate-500">{v.email}</div>}
+                      <div className="mt-1 font-mono text-[10px] text-slate-400">{String(v.visitor_id).slice(0,24)}</div>
+                      {v.user_id&&<div className="mt-1 text-[11px] font-semibold text-slate-500">Promo email: {v.marketing_email_opt_in?'Yes':'No'}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Pill tone={v.audience_status==='Token Buyer'?'violet':v.audience_status==='Registered Free'?'blue':'slate'}>{v.audience_status||'Anonymous Visitor'}</Pill>{v.is_online&&<div className="mt-1"><Pill tone="green">On site now</Pill></div>}
+                      {Number(v.paid_cents||0)>0&&<div className="mt-1 text-xs font-bold text-emerald-700">{(Number(v.paid_cents)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} paid</div>}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500"><div>{date(v.first_seen)}</div><div className="mt-1 font-semibold text-slate-700">{date(v.last_seen)}</div></td>
+                    <td className="px-4 py-3 text-right font-black text-slate-900">{number(v.visits)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600"><div className="font-semibold">{v.original_source||'direct'}</div><div className="mt-1 uppercase">{v.language||'en'}</div></td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      <div><strong>{number(v.page_views)}</strong> views · <strong>{number(v.clicks)}</strong> clicks · <strong>{number(v.actions)}</strong> actions</div>
+                      {v.current_route&&<div className="mt-1 font-semibold text-blue-700">Current/last route: {v.current_route}</div>}<div className="mt-1 max-w-md break-words text-slate-400">{(v.features||[]).slice(0,6).join(' · ') || (v.pages||[]).slice(0,6).join(' · ') || 'No labeled feature activity yet'}</div>
+                    </td>
+                  </tr>)}
+                </tbody>
+              </table></TableShell> : <Empty>No pre-launch visitor activity has been recorded yet. The registry will populate automatically as visitors use the final pre-launch build.</Empty>}
+            </Panel>
           </div>}
 
           {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
@@ -897,6 +938,25 @@ export default function Admin() {
           {section==='applications' && <div><Heading title="Professional Applications" subtitle="Licensed professionals, relationship professionals and contributors."/>{applications.length?<div className="grid gap-4 lg:grid-cols-2">{applications.map(item=><div key={`${item.application_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.applicant_name||'Unnamed applicant'}</p><p className="text-sm text-slate-500">{item.email||'No email'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div><div className="mt-3 text-sm text-slate-600"><div>Type: {String(item.application_type||'').replaceAll('_',' ')}</div><div>Submitted: {date(item.created_at)}</div>{item.rejection_reason&&<div className="mt-2 rounded-lg bg-rose-50 p-2 text-rose-700">{item.rejection_reason}</div>}</div></div>)}</div>:<Empty>No professional applications yet.</Empty>}</div>}
 
           {section==='moderation' && <div><Heading title="Moderation Queue" subtitle="Pending community, story and review content in one place."/>{moderation.length?<div className="space-y-3">{moderation.map(item=><div key={`${item.content_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-slate-400">{String(item.content_type||'').replaceAll('_',' ')}</p><p className="mt-1 font-bold">{item.title||'Untitled content'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div>{item.excerpt&&<p className="mt-3 text-sm leading-6 text-slate-600">{item.excerpt}</p>}<p className="mt-3 text-xs text-slate-400">Submitted {date(item.created_at)}</p></div>)}</div>:<Empty>No items waiting in moderation.</Empty>}</div>}
+
+          {section==='support' && <div>
+            <Heading title="Support & Problem Reports" subtitle="In-site support submissions and bug reports. The public support identity is support@one2onelove.com; no ERANT technical-support address is exposed to visitors."/>
+            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+              <Metric icon={MessageSquareText} label="All Reports" value={number(supportSummary.total)} note="suggestions + support + bug reports" tone="blue"/>
+              <Metric icon={AlertTriangle} label="New / Unreviewed" value={number(supportSummary.new_count)} note="status = new" tone="amber"/>
+              <Metric icon={Activity} label="Open Bug Reports" value={number(supportSummary.bug_count)} note="bug reports not closed" tone="rose"/>
+            </div>
+            {supportRows.length?<TableShell><table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Type</th><th className="px-4 py-3">From</th><th className="px-4 py-3">Message</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Received</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">{supportRows.map(item=><tr key={item.id} className="align-top hover:bg-slate-50">
+                <td className="px-4 py-3"><Pill tone={item.suggestion_type==='bug'?'red':'blue'}>{String(item.suggestion_type||'other').replaceAll('_',' ')}</Pill></td>
+                <td className="px-4 py-3"><div className="font-semibold">{item.name||'Anonymous'}</div><div className="text-xs text-slate-500">{item.email||'No email supplied'}</div></td>
+                <td className="max-w-xl whitespace-pre-wrap px-4 py-3 leading-6 text-slate-700">{item.suggestion}</td>
+                <td className="px-4 py-3"><Pill tone={statusTone(item.status)}>{item.status||'new'}</Pill></td>
+                <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{date(item.created_at)}</td>
+              </tr>)}</tbody>
+            </table></TableShell>:<Empty>No support or problem reports yet.</Empty>}
+          </div>}
 
           {section==='system' && <div><Heading title="System" subtitle="Administrator roles, AI usage and migration history. Secrets and credentials are never displayed."/><div className="grid gap-6 lg:grid-cols-3"><Panel title="AI Usage — 30 Days" className="lg:col-span-2">{(data?.system?.aiUsage30d||[]).length?<div className="space-y-2">{data.system.aiUsage30d.map(item=><div key={item.feature} className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="font-semibold">{item.feature}</span><span className="text-sm text-slate-500">{number(item.uses)} uses · {number(item.users)} users</span></div>)}</div>:<Empty>No AI usage recorded.</Empty>}</Panel><Panel title="Non-Admin Auth Roles">{(data?.system?.authRoles||[]).map(item=><div key={item.role} className="mb-2 flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="capitalize">{item.role}</span><strong>{number(item.count)}</strong></div>)}</Panel></div><Panel title="Migration History" className="mt-6">{(data?.system?.migrations||[]).length?<div className="space-y-2">{data.system.migrations.map(item=><div key={`${item.migration_key}-${item.applied_at}`} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><span className="font-mono text-sm font-semibold">{item.migration_key}</span><span className="text-xs text-slate-400">{date(item.applied_at)}</span></div>{item.notes&&<p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div>)}</div>:<Empty>No migration records found.</Empty>}</Panel></div>}
         </div>

@@ -1,0 +1,60 @@
+name: O2OL Token Prelaunch Infra Audit
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - ".github/workflows/o2ol-token-prelaunch-infra-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  hyperdrive-readonly-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read Cloudflare Hyperdrive metadata only
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN_NEON_HOST: ep-super-silence-arbl98ls-pooler.c-4.us-west-2.aws.neon.tech
+          PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+          response="$(curl -fsS             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/hyperdrive/configs")"
+          export RESPONSE="$response"
+          python - <<'PY'
+          import json, os, sys
+          data=json.loads(os.environ["RESPONSE"])
+          if not data.get("success"):
+              print("Cloudflare Hyperdrive metadata query failed.", file=sys.stderr)
+              sys.exit(1)
+          target=os.environ["TOKEN_NEON_HOST"]
+          production=os.environ["PRODUCTION_HYPERDRIVE_ID"]
+          safe=[]
+          matches=[]
+          for item in data.get("result") or []:
+              origin=item.get("origin") or {}
+              row={
+                  "id":item.get("id"),
+                  "name":item.get("name"),
+                  "host":origin.get("host"),
+                  "database":origin.get("database"),
+                  "port":origin.get("port"),
+              }
+              safe.append(row)
+              if origin.get("host")==target:
+                  matches.append(row)
+          print(json.dumps({"hyperdrives":safe,"token_branch_matches":matches},indent=2))
+          if any(row.get("id")==production for row in matches):
+              print("SAFETY FAILURE: Production Hyperdrive points at Token Prelaunch Neon host.",file=sys.stderr)
+              sys.exit(2)
+          if not matches:
+              print("NO_ISOLATED_TOKEN_HYPERDRIVE_MATCH")
+              sys.exit(3)
+          print("ISOLATED_TOKEN_HYPERDRIVE_MATCH")
+          PY

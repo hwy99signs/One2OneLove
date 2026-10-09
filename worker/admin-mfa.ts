@@ -186,9 +186,23 @@ function clearMfaCookie() {
 }
 
 
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 async function ensureAdminMfaSessionTable(env) {
   return withDb(env, async (db) => {
-    await db.query(`
+    await ensureDdl(db, `
       CREATE TABLE IF NOT EXISTS public.admin_mfa_sessions (
         token_hash text PRIMARY KEY,
         admin_user_id uuid NOT NULL REFERENCES neon_auth."user"(id) ON DELETE CASCADE,
@@ -197,7 +211,7 @@ async function ensureAdminMfaSessionTable(env) {
         last_seen_at timestamptz NOT NULL DEFAULT now()
       )
     `);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_admin_mfa_sessions_user_expiry ON public.admin_mfa_sessions(admin_user_id,expires_at)`);
+    await ensureDdl(db, `CREATE INDEX IF NOT EXISTS idx_admin_mfa_sessions_user_expiry ON public.admin_mfa_sessions(admin_user_id,expires_at)`);
     await db.query(`DELETE FROM public.admin_mfa_sessions WHERE expires_at <= now()`);
   });
 }

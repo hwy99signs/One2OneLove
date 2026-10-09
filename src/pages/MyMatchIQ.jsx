@@ -11,7 +11,7 @@ const COPY = {
     biancaBody: 'I will guide you through thoughtful questions and help you turn your answers into a private Personality & Relationship Pattern Report.',
     biancaNote: 'For self-reflection only — not therapy, diagnosis, or a guarantee of compatibility.',
     biancaStart: 'CHAT with Bianca',
-    biancaCredits: 'Explore credits', biancaWatch:'See Bianca in Conversation', biancaWatchSub:'O2OL Studio — Season 1, Episode 1',
+    biancaCredits: 'O2OL Tokens', biancaWatch:'See Bianca in Conversation', biancaWatchSub:'O2OL Studio — Season 1, Episode 1',
     heroAlt: 'MyMatchIQ — When the intention is real, the connection follows.',
     benefitsLabel: 'MyMatchIQ relationship benefits',
     features: [
@@ -24,7 +24,7 @@ const COPY = {
   es: {
     assessment: 'Realizar la evaluación',
     meetMembers: 'Conoce miembros intencionales',
-    biancaEyebrow: 'Conoce a Bianca — tu guía MyMatchIQ', biancaTitle: 'Hola, soy Bianca.', biancaBody: 'Te guiaré con preguntas reflexivas y te ayudaré a convertir tus respuestas en un Informe Privado de Patrones de Personalidad y Relaciones.', biancaNote: 'Solo para autorreflexión; no es terapia, diagnóstico ni garantía de compatibilidad.', biancaStart: 'CHATEAR con Bianca', biancaCredits: 'Explorar créditos', biancaWatch:'Ver a Bianca en Conversación', biancaWatchSub:'O2OL Studio — Temporada 1, Episodio 1',
+    biancaEyebrow: 'Conoce a Bianca — tu guía MyMatchIQ', biancaTitle: 'Hola, soy Bianca.', biancaBody: 'Te guiaré con preguntas reflexivas y te ayudaré a convertir tus respuestas en un Informe Privado de Patrones de Personalidad y Relaciones.', biancaNote: 'Solo para autorreflexión; no es terapia, diagnóstico ni garantía de compatibilidad.', biancaStart: 'CHATEAR con Bianca', biancaCredits: 'Tokens O2OL', biancaWatch:'Ver a Bianca en Conversación', biancaWatchSub:'O2OL Studio — Temporada 1, Episodio 1',
     heroAlt: 'MyMatchIQ — Cuando la intención es real, la conexión sigue.',
     benefitsLabel: 'Beneficios relacionales de MyMatchIQ',
     features: [
@@ -37,7 +37,7 @@ const COPY = {
   fr: {
     assessment: 'Faire l’évaluation',
     meetMembers: 'Rencontrer des membres intentionnels',
-    biancaEyebrow: 'Rencontrez Bianca — votre guide MyMatchIQ', biancaTitle: 'Bonjour, je suis Bianca.', biancaBody: 'Je vous guiderai avec des questions réfléchies et vous aiderai à transformer vos réponses en un Rapport Privé sur vos Schémas de Personnalité et de Relation.', biancaNote: 'Pour l’autoréflexion uniquement — ce n’est ni une thérapie, ni un diagnostic, ni une garantie de compatibilité.', biancaStart: 'CHATTER avec Bianca', biancaCredits: 'Découvrir les crédits', biancaWatch:'Voir Bianca en Conversation', biancaWatchSub:'O2OL Studio — Saison 1, Épisode 1',
+    biancaEyebrow: 'Rencontrez Bianca — votre guide MyMatchIQ', biancaTitle: 'Bonjour, je suis Bianca.', biancaBody: 'Je vous guiderai avec des questions réfléchies et vous aiderai à transformer vos réponses en un Rapport Privé sur vos Schémas de Personnalité et de Relation.', biancaNote: 'Pour l’autoréflexion uniquement — ce n’est ni une thérapie, ni un diagnostic, ni une garantie de compatibilité.', biancaStart: 'CHATTER avec Bianca', biancaCredits: 'Jetons O2OL', biancaWatch:'Voir Bianca en Conversation', biancaWatchSub:'O2OL Studio — Saison 1, Épisode 1',
     heroAlt: 'MyMatchIQ — Quand l’intention est réelle, la connexion suit.',
     benefitsLabel: 'Avantages relationnels de MyMatchIQ',
     features: [
@@ -50,7 +50,7 @@ const COPY = {
   it: {
     assessment: 'Fai la valutazione',
     meetMembers: 'Incontra membri intenzionali',
-    biancaEyebrow: 'Conosci Bianca — la tua guida MyMatchIQ', biancaTitle: 'Ciao, sono Bianca.', biancaBody: 'Ti guiderò attraverso domande ponderate e ti aiuterò a trasformare le risposte in un Rapporto Privato sui Pattern di Personalità e Relazione.', biancaNote: 'Solo per autoriflessione: non è terapia, diagnosi né una garanzia di compatibilità.', biancaStart: 'CHAT con Bianca', biancaCredits: 'Scopri i crediti', biancaWatch:'Guarda Bianca in Conversazione', biancaWatchSub:'O2OL Studio — Stagione 1, Episodio 1',
+    biancaEyebrow: 'Conosci Bianca — la tua guida MyMatchIQ', biancaTitle: 'Ciao, sono Bianca.', biancaBody: 'Ti guiderò attraverso domande ponderate e ti aiuterò a trasformare le risposte in un Rapporto Privato sui Pattern di Personalità e Relazione.', biancaNote: 'Solo per autoriflessione: non è terapia, diagnosi né una garanzia di compatibilità.', biancaStart: 'CHAT con Bianca', biancaCredits: 'Token O2OL', biancaWatch:'Guarda Bianca in Conversazione', biancaWatchSub:'O2OL Studio — Stagione 1, Episodio 1',
     heroAlt: 'MyMatchIQ — Quando l’intenzione è reale, la connessione segue.',
     benefitsLabel: 'Benefici relazionali di MyMatchIQ',
     features: [
@@ -63,7 +63,7 @@ const COPY = {
   de: {
     assessment: 'Assessment starten',
     meetMembers: 'Absichtsvolle Mitglieder treffen',
-    biancaEyebrow: 'Lernen Sie Bianca kennen — Ihre MyMatchIQ-Begleiterin', biancaTitle: 'Hallo, ich bin Bianca.', biancaBody: 'Ich führe Sie durch durchdachte Fragen und helfe Ihnen, Ihre Antworten in einen privaten Bericht über Persönlichkeits- und Beziehungsmuster zu verwandeln.', biancaNote: 'Nur zur Selbstreflexion — keine Therapie, Diagnose oder Garantie für Kompatibilität.', biancaStart: 'CHAT mit Bianca', biancaCredits: 'Credits entdecken', biancaWatch:'Bianca im Gespräch Sehen', biancaWatchSub:'O2OL Studio — Staffel 1, Folge 1',
+    biancaEyebrow: 'Lernen Sie Bianca kennen — Ihre MyMatchIQ-Begleiterin', biancaTitle: 'Hallo, ich bin Bianca.', biancaBody: 'Ich führe Sie durch durchdachte Fragen und helfe Ihnen, Ihre Antworten in einen privaten Bericht über Persönlichkeits- und Beziehungsmuster zu verwandeln.', biancaNote: 'Nur zur Selbstreflexion — keine Therapie, Diagnose oder Garantie für Kompatibilität.', biancaStart: 'CHAT mit Bianca', biancaCredits: 'O2OL Tokens', biancaWatch:'Bianca im Gespräch Sehen', biancaWatchSub:'O2OL Studio — Staffel 1, Folge 1',
     heroAlt: 'MyMatchIQ — Wenn die Absicht echt ist, folgt die Verbindung.',
     benefitsLabel: 'Beziehungsvorteile von MyMatchIQ',
     features: [
@@ -97,7 +97,7 @@ export default function MyMatchIQ() {
   const openAssessment = () => navigate('/MyMatchIQ/Assessment');
   const openBianca = () => navigate('/MyMatchIQ/Bianca');
   const openMeetMembers = () => navigate('/MyMatchIQ/Meet');
-  const openCredits = () => navigate('/MyMatchIQ/Credits');
+  const openCredits = () => navigate('/Tokens?source=mymatchiq');
   const openStudio = () => navigate('/O2OLStudio?from=mymatchiq');
 
   return (

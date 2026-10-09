@@ -8,6 +8,19 @@ const ADMIN_PATHS = new Set(['/admin','/analytics','/adminaccess','/developer'])
 const SUPPORTED_LANGUAGES = new Set(['en','es','fr','it','de']);
 
 const FEATURE_BY_ROUTE = {
+  '/': 'Home',
+  '/home': 'Home',
+  '/aboutus': 'About Us',
+  '/signin': 'Sign In',
+  '/login': 'Sign In',
+  '/signup': 'Sign Up',
+  '/forgotpassword': 'Forgot Password',
+  '/helpcenter': 'Help Center',
+  '/contactus': 'Contact Us',
+  '/privacypolicy': 'Privacy Policy',
+  '/termsofservice': 'Terms of Service',
+  '/tiktokpost': 'TikTok Post',
+  '/credit': 'Credit Wallet',
   '/memorylane': 'Memory Lane',
   '/lovenotes': 'Love Notes',
   '/sendcredits': 'Love Notes',
@@ -96,6 +109,11 @@ function visitorId() {
 
 function sessionId() {
   return storageId(window.sessionStorage, SESSION_KEY);
+}
+
+export function getAnalyticsVisitorId() {
+  if (typeof window === 'undefined') return null;
+  return visitorId();
 }
 
 function safeText(value, max = 160) {
@@ -240,6 +258,7 @@ function flushQueue() {
   for (const item of items) deliver(item.body, true);
   flushingQueue = false;
 }
+
 function send(payload) {
   if (isAdminAnalyticsSurface()) return;
   const body = {
@@ -251,6 +270,59 @@ function send(payload) {
   };
 
   deliver(body, true);
+}
+
+// Human-readable name for a route with no feature mapping, e.g.
+// '/signin' -> 'Signin', '/' -> 'Home'. Mirrors worker/click-labels.js.
+export function prettifyRoute(pathname) {
+  const clean = String(pathname || '').toLowerCase().replace(/\/$/, '') || '/';
+  if (clean === '/') return 'Home';
+  const last = clean.split('/').filter(Boolean).pop() || '';
+  const words = last.replace(/[-_]+/g, ' ').trim();
+  if (!words) return 'Home';
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+const CONTROL_TYPE_NAMES = {
+  a: 'link', button: 'button', summary: 'expander', label: 'label',
+  input: 'input', select: 'dropdown', textarea: 'text field',
+};
+
+export function controlTypeName(controlType) {
+  const base = String(controlType || '').toLowerCase().split(':')[0].split('[')[0].trim();
+  return CONTROL_TYPE_NAMES[base] || base || 'control';
+}
+
+// Derive a usable name for a clicked control, in priority order:
+// (a) explicit analytics id, (b) visible text (or the value of a submit /
+// button input, or the alt of an image inside the control), (c) aria-label /
+// title / name / id, (d) a destination-derived name, (e) a route +
+// control-type fallback ("Community Chat — button"). A click always has a
+// route, so this ALWAYS returns a name — a click can no longer be recorded
+// nameless. Pure: the DOM handler builds the descriptor; tests reuse this.
+export function deriveClickControlKey(descriptor = {}) {
+  const {
+    analyticsId, text, imageAlt, ariaLabel, title, name, id,
+    destination, route, controlType,
+  } = descriptor;
+  const destinationName = destination
+    ? (featureForPath(destination) || prettifyRoute(destination))
+    : null;
+  const candidates = [
+    safeText(analyticsId),
+    safeText(text),
+    safeText(imageAlt),
+    safeText(ariaLabel),
+    safeText(title),
+    safeText(name),
+    safeText(id),
+    destinationName,
+  ];
+  for (const candidate of candidates) {
+    if (candidate) return candidate;
+  }
+  const place = featureForPath(route) || prettifyRoute(route);
+  return safeText(`${place} — ${controlTypeName(controlType)}`, 160);
 }
 
 export function trackPageView(pathname) {
@@ -317,20 +389,45 @@ export function installClickAnalytics() {
       try { return new URL(href, window.location.origin).hostname; } catch { return null; }
     })() : null;
 
-    // Deliberately do not read textContent, input values, form fields, messages,
-    // or query strings. Only stable control metadata is recorded.
-    const controlKey =
-      safeText(control.getAttribute('data-analytics-id')) ||
-      safeText(control.getAttribute('aria-label')) ||
-      safeText(control.getAttribute('title')) ||
-      safeText(control.getAttribute('name')) ||
-      safeText(control.id);
+    // Label derivation (see deriveClickControlKey). Privacy guard: visible
+    // text is read ONLY from the clicked control itself, and never when the
+    // control wraps a form field (composers, journal editors, inputs) — so
+    // typed user content can never become a "label". Input values, messages
+    // and query strings are never read.
+    const tagName = control.tagName?.toLowerCase() || '';
+    const isButtonInput = control instanceof HTMLInputElement
+      && ['submit', 'button', 'reset'].includes(control.type);
+    const wrapsFormField = !isButtonInput
+      && typeof control.querySelector === 'function'
+      && !!control.querySelector('input,textarea,select');
+    const visibleText = isButtonInput
+      ? safeText(control.value)
+      : (wrapsFormField ? null : safeText(control.innerText || control.textContent));
+    const imageAlt = wrapsFormField
+      ? null
+      : safeText(control.querySelector?.('img[alt]')?.getAttribute('alt'));
+    const role = safeText(control.getAttribute('role'), 40);
+    const controlType = role
+      || (tagName === 'input' ? `input:${control.getAttribute('type') || 'text'}` : tagName);
+
+    const controlKey = deriveClickControlKey({
+      analyticsId: control.getAttribute('data-analytics-id'),
+      text: visibleText,
+      imageAlt,
+      ariaLabel: control.getAttribute('aria-label'),
+      title: control.getAttribute('title'),
+      name: control.getAttribute('name'),
+      id: control.id,
+      destination: sameSiteDestination,
+      route: currentRoute,
+      controlType,
+    });
 
     send({
       eventType: 'click',
       route: currentRoute,
       feature: featureForPath(sameSiteDestination || currentRoute),
-      controlType: safeText(control.tagName?.toLowerCase(), 40),
+      controlType: safeText(controlType, 40),
       controlKey,
       destination: sameSiteDestination || (externalDestination ? 'external:' + externalDestination : null),
     });

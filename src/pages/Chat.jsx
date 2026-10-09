@@ -12,10 +12,13 @@ import {
   createCommunityChatTopic,
   sendCommunityChatMessage,
   touchCommunityChatPresence,
+  beaconLeaveCommunityChatRoom,
   deleteCommunityChatMessage,
   reportCommunityChatMessage,
   muteCommunityChatUser,
 } from '@/lib/communityChatService';
+import VotingCard from '@/components/chat/VotingCard';
+import { questionForRoom } from '@/lib/votingQuestions';
 
 const lgbtqCopy = {
   en: {
@@ -84,8 +87,8 @@ const copy = {
   en: {
     title: 'One2OneLove Chat Rooms', subtitle: 'Real conversations about love, dating, marriage and relationships.', back: 'Back',
     online: 'active now', messages: 'messages', choose: 'Choose a conversation', loading: 'Loading conversations…',
-    empty: 'No messages yet. Be the first to start the conversation.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
-    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 NEW · Vote now — voting is open', featuredBadgeClosed: '💯 Voting closed · Results Fri Oct 9',
+    empty: 'The conversation starter is above. Be the first to answer and get this room talking.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
+    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 Voting closed · Results saved', featuredBadgeClosed: '💯 Voting closed · Results saved',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
     prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
@@ -101,8 +104,8 @@ const copy = {
   es: {
     title: 'Salas de Chat One2OneLove', subtitle: 'Conversaciones reales sobre amor, citas, matrimonio y relaciones.', back: 'Volver',
     online: 'activos ahora', messages: 'mensajes', choose: 'Elige una conversación', loading: 'Cargando conversaciones…',
-    empty: 'Aún no hay mensajes. Sé la primera persona en iniciar la conversación.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
-    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 NUEVO · Vota ahora — la votación sigue abierta', featuredBadgeClosed: '💯 Votación cerrada · Resultados el viernes 9 de octubre',
+    empty: 'El tema para conversar está arriba. Sé la primera persona en responder y dar vida a esta sala.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
+    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 Votación cerrada · Resultados guardados', featuredBadgeClosed: '💯 Votación cerrada · Resultados guardados',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
     prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
@@ -119,7 +122,7 @@ const copy = {
     title: 'Salons One2OneLove', subtitle: 'De vraies conversations sur l’amour, les rencontres, le mariage et les relations.', back: 'Retour',
     online: 'actifs maintenant', messages: 'messages', choose: 'Choisissez une conversation', loading: 'Chargement des conversations…',
     empty: 'Aucun message pour le moment. Lancez la conversation.', placeholder: 'Partagez vos pensées avec respect…', send: 'Envoyer',
-    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 NOUVEAU · Votez maintenant — vote ouvert', featuredBadgeClosed: '💯 Vote terminé · Résultats vendredi 9 octobre',
+    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 Vote terminé · Résultats enregistrés', featuredBadgeClosed: '💯 Vote terminé · Résultats enregistrés',
     guidelines: 'Respectez le salon', guidelinesBody: 'Soyez bienveillant. Pas de harcèlement, menaces, haine, contenu sexuel explicite, attaques personnelles ou partage d’informations privées d’autrui.',
     prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', emptyRooms:'Aucune conversation n’est disponible pour le moment.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
@@ -135,8 +138,8 @@ const copy = {
   it: {
     title: 'Stanze Chat One2OneLove', subtitle: 'Conversazioni vere su amore, incontri, matrimonio e relazioni.', back: 'Indietro',
     online: 'attivi ora', messages: 'messaggi', choose: 'Scegli una conversazione', loading: 'Caricamento conversazioni…',
-    empty: 'Ancora nessun messaggio. Inizia tu la conversazione.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
-    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 NOVITÀ · Vota ora — votazioni aperte', featuredBadgeClosed: '💯 Votazione chiusa · Risultati venerdì 9 ottobre',
+    empty: 'Lo spunto di conversazione è qui sopra. Sii la prima persona a rispondere e ad animare la stanza.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
+    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 Votazione chiusa · Risultati salvati', featuredBadgeClosed: '💯 Votazione chiusa · Risultati salvati',
     guidelines: 'Rispetta la stanza', guidelinesBody: 'Sii gentile. Niente molestie, minacce, odio, contenuti sessuali espliciti, attacchi personali o condivisione di informazioni private altrui.',
     prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', emptyRooms:'Nessuna conversazione è disponibile al momento.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
@@ -152,8 +155,8 @@ const copy = {
   de: {
     title: 'One2OneLove Chaträume', subtitle: 'Echte Gespräche über Liebe, Dating, Ehe und Beziehungen.', back: 'Zurück',
     online: 'jetzt aktiv', messages: 'Nachrichten', choose: 'Wähle ein Gespräch', loading: 'Gespräche werden geladen…',
-    empty: 'Noch keine Nachrichten. Starte das Gespräch.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
-    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 NEU · Jetzt abstimmen — Abstimmung offen', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse Freitag, 9. Oktober',
+    empty: 'Der Gesprächsimpuls steht oben. Sei die erste Person, die antwortet und den Raum ins Gespräch bringt.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
+    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse gespeichert',
     guidelines: 'Respektiere den Raum', guidelinesBody: 'Sei freundlich. Keine Belästigung, Drohungen, Hassrede, explizit sexuelle Inhalte, persönlichen Angriffe oder Weitergabe privater Informationen anderer.',
     prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', emptyRooms:'Derzeit sind keine Gespräche verfügbar.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
@@ -253,6 +256,7 @@ export default function Chat() {
   const prompt = selectedRoom
     ? (selectedRoom.slug === 'lgbtq-community' ? lt.prompt : (t.prompts[selectedRoom.slug] || ['O2OL', t.defaultPrompt]))
     : null;
+  const votingQuestion = selectedRoom ? questionForRoom(selectedRoom.slug) : null;
 
   const loadRooms = async () => {
     try {
@@ -331,13 +335,18 @@ export default function Chat() {
     if (!selectedRoomId) return;
     loadMessages(selectedRoomId);
     if (lgbtqMode) loadTopics(selectedRoomId);
-    const messageTimer = window.setInterval(() => loadMessages(selectedRoomId, true), 3000);
-    const roomTimer = window.setInterval(loadRooms, 10000);
-    const topicTimer = lgbtqMode ? window.setInterval(() => loadTopics(selectedRoomId), 10000) : null;
+    // Poll intervals are unchanged while the tab is visible (chat still
+    // feels live), but a hidden/background tab must not poll at full rate
+    // forever — forgotten chat tabs were a top driver of the Oct 7
+    // database query burn. Polling resumes on the next tick once visible.
+    const tabHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const messageTimer = window.setInterval(() => { if (!tabHidden()) loadMessages(selectedRoomId, true); }, 3000);
+    const roomTimer = window.setInterval(() => { if (!tabHidden()) loadRooms(); }, 10000);
+    const topicTimer = lgbtqMode ? window.setInterval(() => { if (!tabHidden()) loadTopics(selectedRoomId); }, 10000) : null;
     let presenceTimer;
     if (isAuthenticated) {
       touchCommunityChatPresence(selectedRoomId).catch(() => {});
-      presenceTimer = window.setInterval(() => touchCommunityChatPresence(selectedRoomId).catch(() => {}), 45000);
+      presenceTimer = window.setInterval(() => { if (!tabHidden()) touchCommunityChatPresence(selectedRoomId).catch(() => {}); }, 45000);
     }
     return () => {
       window.clearInterval(messageTimer);
@@ -346,6 +355,25 @@ export default function Chat() {
       if (presenceTimer) window.clearInterval(presenceTimer);
     };
   }, [selectedRoomId, selectedTopicId, isAuthenticated, lgbtqMode]);
+
+  // Chat-close rule (Oct 7): stepping out of a room closes it. Presence is
+  // per-room, so this effect is keyed on the room (not the topic): when the
+  // member switches rooms, leaves the page (unmount), or the tab closes /
+  // is hidden for good (pagehide), a beacon leave deletes their presence
+  // row immediately and the room drops to empty instead of burning polls
+  // and presence until a timeout. Re-entering is a fresh join — the
+  // polling effect above re-touches presence and reloads messages.
+  // Guests hold no presence row, so there is nothing for them to leave.
+  useEffect(() => {
+    if (!selectedRoomId || !isAuthenticated) return undefined;
+    const roomId = selectedRoomId;
+    const leave = () => { beaconLeaveCommunityChatRoom(roomId); };
+    window.addEventListener('pagehide', leave);
+    return () => {
+      window.removeEventListener('pagehide', leave);
+      leave();
+    };
+  }, [selectedRoomId, isAuthenticated]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length, selectedRoomId]);
 
@@ -439,7 +467,7 @@ export default function Chat() {
               <h2 className="font-black text-slate-900">{t.choose}</h2>
               <button type="button" onClick={loadRooms} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={t.refresh}><RefreshCw size={17}/></button>
             </div>
-            {loadingRooms ? <p className="px-2 py-6 text-sm text-slate-500">{t.loading}</p> : (
+            {loadingRooms ? <p role="status" aria-live="polite" className="px-2 py-6 text-sm text-slate-500">{t.loading}</p> : (
               <div className="space-y-2">
                 <style>{`@keyframes r100Glow{0%{box-shadow:0 0 0 0 rgba(251,191,36,0)}25%{box-shadow:0 0 0 5px rgba(251,191,36,.55)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}.r100-glow{animation:r100Glow 2s ease-out 1}@media (prefers-reduced-motion: reduce){.r100-glow{animation:none}}`}</style>
                 {rooms.length === 0 && <p className="px-2 py-4 text-sm text-slate-500">{roomsError ? t.loadRoomsError : t.emptyRooms}</p>}
@@ -495,6 +523,10 @@ export default function Chat() {
                   <div className="border-b border-purple-100 bg-purple-50 p-4 sm:p-5">
                     <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white font-black text-purple-700 shadow-sm">{prompt[0] === 'Amora' ? 'A' : 'O'}</div><div><p className="text-xs font-black uppercase tracking-wide text-purple-600">{t.prompt} · {prompt[0]}</p><p className="mt-1 font-semibold leading-6 text-slate-800">{prompt[1]}</p></div></div>
                   </div>
+                )}
+
+                {votingQuestion && (
+                  <VotingCard key={votingQuestion.slug} question={votingQuestion} language={currentLanguage} isAuthenticated={isAuthenticated} />
                 )}
 
                 <div className="h-[52vh] min-h-[420px] overflow-y-auto p-4 sm:p-6">

@@ -27,6 +27,10 @@ export async function handleLaunchReadinessRequest(request, env, url) {
         to_regclass('public.signup_consents') IS NOT NULL AS consents_ready,
         to_regclass('public.love_note_category_preferences') IS NOT NULL AS category_preferences_ready,
         to_regclass('public.suggestions') IS NOT NULL AS suggestions_ready,
+        to_regclass('public.o2ol_token_wallets') IS NOT NULL AS token_wallets_ready,
+        to_regclass('public.o2ol_token_transactions') IS NOT NULL AS token_transactions_ready,
+        to_regclass('public.o2ol_token_feature_prices') IS NOT NULL AS token_prices_ready,
+        to_regclass('public.o2ol_token_packages') IS NOT NULL AS token_packages_ready,
         COALESCE((pc.email_and_password->>'requireEmailVerification')::boolean,false) AS email_required,
         COALESCE((pc.email_and_password->>'sendVerificationEmailOnSignUp')::boolean,false) AS email_on_signup,
         COALESCE(pc.email_and_password->>'emailVerificationMethod','') AS email_method,
@@ -56,15 +60,15 @@ export async function handleLaunchReadinessRequest(request, env, url) {
             AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
         ) AS legacy_entitlement_rows,
         COALESCE((
-          SELECT column_default = '''Premiere''::text'
+          SELECT column_default = '''Free''::text'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_plan'
-        ),false) AS premiere_default_ready,
+        ),false) AS free_default_ready,
         COALESCE((
-          SELECT column_default = '9.99'
+          SELECT column_default = '0'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_price'
-        ),false) AS price_default_ready,
+        ),false) AS zero_price_default_ready,
         COALESCE((
           SELECT column_default = '''inactive''::text'
           FROM information_schema.columns
@@ -169,14 +173,16 @@ export async function handleLaunchReadinessRequest(request, env, url) {
     const phoneVerificationReady = phoneVerificationProviderConfigured && phoneVerificationSchemaReady;
     const identityReady = emailVerificationReady && emailDeliveryReady && phoneVerificationReady;
 
-    const billingDefaultsReady = Boolean(row.premiere_default_ready && row.price_default_ready && row.status_default_ready);
-    const stripeCheckoutReady = Boolean(
-      env.STRIPE_SECRET_KEY &&
-      env.STRIPE_PRICE_PREMIERE &&
-      env.STRIPE_PRICE_EXCLUSIVE
+    const accountDefaultsReady = Boolean(row.free_default_ready && row.zero_price_default_ready && row.status_default_ready);
+    const tokenSchemaReady = Boolean(
+      row.token_wallets_ready &&
+      row.token_transactions_ready &&
+      row.token_prices_ready &&
+      row.token_packages_ready
     );
+    const stripeTokenCheckoutReady = Boolean(env.STRIPE_SECRET_KEY);
     const stripeWebhookReady = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET);
-    const billingProviderReady = stripeCheckoutReady && stripeWebhookReady;
+    const tokenPaymentProviderReady = stripeTokenCheckoutReady && stripeWebhookReady;
 
     const sms = scheduledSmsReadiness(env);
     const aiProviderReady = Boolean(env.OPENAI_API_KEY);
@@ -185,10 +191,11 @@ export async function handleLaunchReadinessRequest(request, env, url) {
       row.consents_ready &&
       row.category_preferences_ready &&
       row.suggestions_ready &&
-      billingDefaultsReady
+      accountDefaultsReady &&
+      tokenSchemaReady
     );
 
-    const requiredLaunchReady = Boolean(identityReady && billingProviderReady && requiredDatabaseReady);
+    const requiredLaunchReady = Boolean(identityReady && tokenPaymentProviderReady && requiredDatabaseReady);
 
     return json({
       ok: true,
@@ -200,7 +207,13 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           signupConsentsReady: row.consents_ready === true,
           loveNoteCategoryPreferencesReady: row.category_preferences_ready === true,
           suggestionsReady: row.suggestions_ready === true,
-          billingDefaultsReady,
+          accountDefaultsReady,
+          billingDefaultsReady: accountDefaultsReady,
+          tokenSchemaReady,
+          tokenWalletsReady: row.token_wallets_ready === true,
+          tokenTransactionsReady: row.token_transactions_ready === true,
+          tokenPricesReady: row.token_prices_ready === true,
+          tokenPackagesReady: row.token_packages_ready === true,
           requiredDatabaseReady,
         },
         identity: {
@@ -224,9 +237,13 @@ export async function handleLaunchReadinessRequest(request, env, url) {
           requiredIdentityReady: identityReady,
         },
         billing: {
-          stripeCheckoutReady,
+          accessModel: 'free_tokens',
+          recurringSubscriptionCheckoutReady: false,
+          stripeTokenCheckoutReady,
+          stripeCheckoutReady: stripeTokenCheckoutReady,
           stripeWebhookReady,
-          billingProviderReady,
+          tokenPaymentProviderReady,
+          billingProviderReady: tokenPaymentProviderReady,
           legacyEntitlementRows: Number(row.legacy_entitlement_rows || 0),
           legacyRowsProtectedByStripeGates: true,
         },

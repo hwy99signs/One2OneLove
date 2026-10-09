@@ -9,12 +9,8 @@ import {
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
-import {
-  ADMIN_AUTH_REDIRECT,
-  ADMIN_IDLE_LIMIT_MS,
-  claimAutoRedirect,
-  isIdleFor,
-} from '../lib/activityGuard';
+import { featureForPath, prettifyRoute, controlTypeName } from '../lib/interactionAnalytics';
+import { ADMIN_IDLE_LIMIT_MS, isIdleFor } from '../lib/activityGuard';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
@@ -29,6 +25,38 @@ function shortDateTime(value) {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
 }
+// Recent Click Details display derivation. New clicks are always stored
+// with a name (client derivation + server backstop), so a row reaching this
+// fallback has NO stored label — it was recorded before complete labeling,
+// and the panel says so honestly while still showing the best name the
+// stored facts (destination, route, control type) support. No row renders
+// without a name.
+function storedDestinationName(destination) {
+  const text = String(destination || '').trim();
+  if (!text) return null;
+  if (text.startsWith('external:')) {
+    const host = text.slice('external:'.length).trim();
+    return host ? `External — ${host}` : null;
+  }
+  return featureForPath(text) || prettifyRoute(text);
+}
+function clickDisplayName(row) {
+  if (row.control_key) return row.control_key;
+  const place = storedDestinationName(row.destination)
+    || featureForPath(row.route)
+    || prettifyRoute(row.route);
+  return `${place} — ${controlTypeName(row.control_type)} (older event)`;
+}
+function clickFeatureDestination(row) {
+  if (row.feature) return row.feature;
+  if (row.destination && !String(row.destination).startsWith('external:')) {
+    const named = featureForPath(row.destination);
+    if (named) return named;
+  }
+  if (row.destination) return row.destination;
+  return featureForPath(row.route) || '—';
+}
+
 function Panel({ title, subtitle, children }) {
   return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4"><h2 className="font-bold text-slate-900">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>{children}</section>;
 }
@@ -37,6 +65,109 @@ function Metric({ icon: Icon, label, value, note }) {
 }
 function ChartFrame({ children, height = 300 }) {
   return <div style={{ height }} className="w-full">{children}</div>;
+}
+
+// "Most-Used Features" is a labeled bar list, not a Recharts category-axis
+// chart: Recharts drops category labels that would overlap (default
+// interval="preserveEnd"), which hid feature names while their bars kept
+// rendering. Here every feature prints its full name once, each series gets
+// its own bar, and the value is printed at the end of the bar — no bar can
+// render without a name or a readable number. Stored feature values are
+// already display names; anything unexpected shows its raw value rather
+// than disappearing.
+const FEATURE_RANK_SERIES = [
+  { key: 'page_views', name: 'Feature opens', color: '#e11d48' },
+  { key: 'clicks', name: 'Clicks', color: '#2563eb' },
+  { key: 'actions', name: 'Actions', color: '#059669' },
+];
+function FeatureRankList({ rows }) {
+  const list = rows || [];
+  if (!list.length) return <div className="py-8 text-center text-sm text-slate-500">No feature activity has been recorded in this 30-day window yet.</div>;
+  const max = Math.max(1, ...list.flatMap(row => FEATURE_RANK_SERIES.map(series => Number(row[series.key] || 0))));
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1">
+        {FEATURE_RANK_SERIES.map(series => (
+          <span key={series.key} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: series.color }} />{series.name}</span>
+        ))}
+      </div>
+      <div className="space-y-4">
+        {list.map((row, index) => (
+          <div key={`${row.feature || 'unnamed'}-${index}`}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <p className="text-sm font-bold text-slate-900">{row.feature || 'Unnamed feature'}</p>
+              <p className="text-xs text-slate-500">{number(row.activity)} total · {number(row.users)} unique visitors / users</p>
+            </div>
+            <div className="mt-1.5 space-y-1">
+              {FEATURE_RANK_SERIES.map(series => {
+                const value = Number(row[series.key] || 0);
+                return (
+                  <div key={series.key} className="flex items-center gap-2">
+                    <span className="w-24 shrink-0 text-xs text-slate-500">{series.name}</span>
+                    <div className="h-3.5 min-w-0 flex-1 rounded bg-slate-100">
+                      <div className="h-3.5 rounded" style={{ width: `${value ? Math.max(1.5, (value / max) * 100) : 0}%`, background: series.color }} />
+                    </div>
+                    <span className="w-12 shrink-0 text-right text-xs font-bold text-slate-900">{number(value)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EdgeStat({ label, value }) {
+  return <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-black text-slate-900">{number(value)}</p></div>;
+}
+
+// "At the Door — Cloudflare Counts": the edge view of the same traffic the
+// Site Usage panel records from inside the app. Cloudflare counts every
+// arrival (bots, crawlers and link previews included), so these numbers
+// always run higher — the panel says so in its own subtitle rather than
+// letting the gap look like missing data. Days are Cloudflare's UTC days,
+// shown as reported. When the Cloudflare connection is not configured on
+// this Worker yet, the panel renders a calm explanation naming the exact
+// missing setting — never an error dump.
+function EdgeCountsPanel({ edge, tooltipStyle }) {
+  const definition = 'Counts every arrival at the site, including bots, crawlers and link previews. These numbers will always be higher than the visitor activity recorded inside the site.';
+  if (!edge || !edge.connected) {
+    const missing = Array.isArray(edge?.missing) && edge.missing.length
+      ? edge.missing
+      : ['CLOUDFLARE_ANALYTICS_TOKEN', 'CLOUDFLARE_ZONE_ID'];
+    return (
+      <Panel title="At the Door — Cloudflare Counts" subtitle={definition}>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <p className="font-semibold text-slate-900">Edge counts not connected yet</p>
+          {edge?.reason === 'unavailable' ? (
+            <p className="mt-1">Cloudflare did not return counts on the last check. Nothing is broken on the site — this panel tries again on the next refresh.</p>
+          ) : (
+            <p className="mt-1">This panel lights up once {missing.map((name, index) => (<span key={name}>{index > 0 ? ' and ' : ''}<code className="rounded bg-slate-200/70 px-1.5 py-0.5 text-xs font-semibold text-slate-800">{name}</code></span>))} {missing.length === 1 ? 'is' : 'are'} added to this Worker&rsquo;s settings. Until then there is nothing to show here — the in-site counts above keep working as always.</p>
+          )}
+        </div>
+      </Panel>
+    );
+  }
+  return (
+    <Panel title="At the Door — Cloudflare Counts" subtitle={definition}>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Today so far · {shortDate(edge.today?.date)}</p>
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <EdgeStat label="Visits (unique visitors)" value={edge.today?.visits}/>
+        <EdgeStat label="Pageviews" value={edge.today?.pageViews}/>
+        <EdgeStat label="Requests" value={edge.today?.requests}/>
+      </div>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Last 30 days</p>
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <EdgeStat label="Visits (unique visitors)" value={edge.totals?.visits}/>
+        <EdgeStat label="Pageviews" value={edge.totals?.pageViews}/>
+        <EdgeStat label="Requests" value={edge.totals?.requests}/>
+      </div>
+      <ChartFrame height={300}><ResponsiveContainer width="100%" height="100%"><LineChart data={edge.days || []} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Legend/><Line type="monotone" dataKey="requests" name="Requests" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="pageViews" name="Pageviews" strokeWidth={3} dot={false}/><Line type="monotone" dataKey="visits" name="Visits" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
+      <p className="mt-4 text-xs leading-5 text-slate-500">Days are Cloudflare&rsquo;s own days (UTC), shown exactly as Cloudflare reports them; today&rsquo;s row is still counting. Counts refresh about every 15 minutes.</p>
+    </Panel>
+  );
 }
 
 export default function Analytics() {
@@ -54,30 +185,15 @@ export default function Analytics() {
     loadInFlightRef.current = true;
     refresh ? setRefreshing(true) : setLoading(true);
     if (!refresh) setError(null);
-    setRefreshError(null);
     try {
       const next = await getAdminAnalytics();
       setData(next);
       dataRef.current = next;
       lastRefreshAtRef.current = Date.now();
       setError(null);
-      setRefreshError(null);
     } catch (err) {
-      if (err?.status === 428) {
-        if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
-          window.location.replace('/AdminAccess');
-        } else {
-          setError(err);
-        }
-      } else if (err?.status === 401) {
-        if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
-          window.location.replace('/SignIn');
-        } else {
-          setError(err);
-        }
-      } else if (!refresh || !dataRef.current || err?.status === 403) {
-        setError(err);
-      } else {
+      if (!refresh || !dataRef.current || [401,403].includes(err?.status)) setError(err);
+      else {
         setRefreshError(err);
         console.warn('Analytics refresh failed; displayed values may be stale.', err);
       }
@@ -93,20 +209,15 @@ export default function Analytics() {
     let active = true;
     const refreshIfDue = () => {
       if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       if (Date.now() - Number(lastRefreshAtRef.current || 0) >= AUTO_REFRESH_MS) load(true);
     };
-    const refreshOnReturn = () => {
-      if (!active || document.visibilityState !== 'visible') return;
-      if (Date.now() - Number(lastRefreshAtRef.current || 0) >= 60 * 1000) load(true);
-    };
     const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
-    document.addEventListener('visibilitychange', refreshOnReturn);
-    window.addEventListener('focus', refreshOnReturn);
+    document.addEventListener('visibilitychange', refreshIfDue);
     return () => {
       active = false;
       window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', refreshOnReturn);
-      window.removeEventListener('focus', refreshOnReturn);
+      document.removeEventListener('visibilitychange', refreshIfDue);
     };
   }, []);
 
@@ -114,7 +225,6 @@ export default function Analytics() {
     let active = true;
     const keepAdminSessionAlive = () => {
       if (!active || document.visibilityState !== 'visible') return;
-      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       touchAdminMfa().catch(err => {
         setRefreshError(current => current || err);
         console.warn('Analytics Admin session heartbeat missed.', err);
@@ -208,6 +318,10 @@ export default function Analytics() {
         </div>
 
         <div className="mt-6">
+          <EdgeCountsPanel edge={data?.edgeCounts} tooltipStyle={tooltipStyle}/>
+        </div>
+
+        <div className="mt-6">
           <Panel title="Traffic by Platform" subtitle="Rolling 30-day attribution for the source that brought each visit to One2OneLove. UTM source is used when present; otherwise a privacy-safe referring-platform match is used.">
             {topTrafficSource && <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Top Traffic Source</p>
@@ -244,11 +358,12 @@ export default function Analytics() {
         </div>
 
         <div className="mt-6">
-          <Panel title="Recent Click Details" subtitle="The most recent on-site clicks from non-admin visitors. New labeled controls show exactly what was pressed and where it leads.">
-            <div className="overflow-x-auto">
+          <Panel title="Recent Click Details" subtitle="The most recent on-site clicks from non-admin visitors. Every new click is recorded with a name — a control without its own label is named from its text, its destination, or its page. Rows marked (older event) were recorded before complete labeling; they show the best name their stored page and destination support.">
+            {/* Vertical scroll window: sticky header + exactly 12 rows visible. Header = 16px line (text-xs) + 16px padding (py-2) + 1px border = 33px; row = 20px line (text-sm) + 24px padding (py-3) = 44px; 33 + 12 x 44 = 561px. */}
+            <div className="overflow-auto" style={{ maxHeight: 561 }}>
               <table className="min-w-full text-sm">
-                <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="px-3 py-2">Time</th><th className="px-3 py-2">Audience</th><th className="px-3 py-2">Source</th><th className="px-3 py-2">Page</th><th className="px-3 py-2">Clicked</th><th className="px-3 py-2">Feature / Destination</th></tr></thead>
-                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{row.actor_type==='anonymous'?'Anonymous':(row.access_type==='subscribed'?'Subscribed':'Registered free')}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{row.control_key||`Unlabeled ${row.control_type||'control'} (older event)`}</td><td className="px-3 py-3">{row.feature||row.destination||'—'}</td></tr>)}</tbody>
+                <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Time</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Audience</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Source</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Page</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Clicked</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Feature / Destination</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{row.actor_type==='anonymous'?'Anonymous':(row.access_type==='subscribed'?'Subscribed':'Registered free')}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{clickDisplayName(row)}</td><td className="px-3 py-3">{clickFeatureDestination(row)}</td></tr>)}</tbody>
               </table>
               {!(data?.recentClicks||[]).length && <div className="py-8 text-center text-sm text-slate-500">No non-admin clicks have been recorded in this 30-day window yet.</div>}
             </div>
@@ -269,7 +384,7 @@ export default function Analytics() {
           </Panel>
 
           <Panel title="Most-Used Features — All Visitors" subtitle="Actual feature opens, clicks and meaningful feature actions from anonymous visitors, registered-free users and subscribers. Admin activity is excluded.">
-            <ChartFrame height={360}><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.featureRankAll||[]} layout="vertical" margin={{ top: 5,right: 20,left: 35,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" allowDecimals={false}/><YAxis type="category" dataKey="feature" width={135}/><Tooltip contentStyle={tooltipStyle}/><Legend/><Bar dataKey="page_views" name="Feature opens"/><Bar dataKey="clicks" name="Clicks"/><Bar dataKey="actions" name="Actions"/></BarChart></ResponsiveContainer></ChartFrame>
+            <FeatureRankList rows={data?.featureRankAll || []} />
           </Panel>
 
           <Panel title="Daily Feature Activity — All Visitors" subtitle="Shows feature opens, ordinary clicks and meaningful actions such as opening a podcast, using an LGBTQ+ resource or selecting a Love Note category.">

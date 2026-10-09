@@ -58,6 +58,36 @@ export async function apiRequest(path, options = {}) {
   return payload;
 }
 
+// Fire-and-forget JSON POST that survives page teardown (tab close, app
+// switch, navigation away). Used for "leave" signals that must still be
+// delivered while the page is being destroyed, where a normal fetch would
+// be aborted. Prefers navigator.sendBeacon; falls back to a keepalive
+// fetch. Same-origin, so the session cookie rides along either way.
+// Returns true when a delivery channel accepted the payload.
+export function beaconJson(path, body = {}) {
+  const payload = JSON.stringify(body);
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (navigator.sendBeacon(path, blob)) return true;
+    }
+  } catch {
+    // sendBeacon unavailable or rejected — fall through to keepalive fetch.
+  }
+  try {
+    fetch(path, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: payload,
+      credentials: 'include',
+      keepalive: true,
+    }).catch(() => {});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getAuthSession() {
   const payload = await apiRequest('/api/auth/get-session');
   const user = payload?.user ?? payload?.data?.user ?? null;

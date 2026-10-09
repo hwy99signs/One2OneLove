@@ -1,0 +1,118 @@
+name: O2OL Token Infrastructure Readiness
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - ".github/workflows/o2ol-token-infra-readiness.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    env:
+      TOKEN_PRELAUNCH_HYPERDRIVE_ID_SECRET: ${{ secrets.TOKEN_PRELAUNCH_HYPERDRIVE_ID }}
+      TOKEN_PRELAUNCH_HYPERDRIVE_ID_VAR: ${{ vars.TOKEN_PRELAUNCH_HYPERDRIVE_ID }}
+      TOKEN_PRELAUNCH_DATABASE_URL: ${{ secrets.TOKEN_PRELAUNCH_DATABASE_URL }}
+      TOKEN_PRELAUNCH_OPENAI_API_KEY: ${{ secrets.TOKEN_PRELAUNCH_OPENAI_API_KEY }}
+      TOKEN_PRELAUNCH_STRIPE_SECRET_KEY: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_SECRET_KEY }}
+      TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET }}
+      TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID }}
+      TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN }}
+      TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report isolated Prelaunch capability flags
+        shell: bash
+        run: |
+          set -euo pipefail
+          present() {
+            local NAME="$1"
+            local VALUE="$2"
+            if [ -n "$VALUE" ]; then
+              echo "$NAME=present"
+            else
+              echo "$NAME=missing"
+            fi
+          }
+
+          HYPERDRIVE_ID="${TOKEN_PRELAUNCH_HYPERDRIVE_ID_SECRET:-${TOKEN_PRELAUNCH_HYPERDRIVE_ID_VAR:-}}"
+          present TOKEN_PRELAUNCH_HYPERDRIVE_ID "$HYPERDRIVE_ID"
+          present TOKEN_PRELAUNCH_DATABASE_URL "$TOKEN_PRELAUNCH_DATABASE_URL"
+          present TOKEN_PRELAUNCH_OPENAI_API_KEY "$TOKEN_PRELAUNCH_OPENAI_API_KEY"
+          present TOKEN_PRELAUNCH_STRIPE_SECRET_KEY "$TOKEN_PRELAUNCH_STRIPE_SECRET_KEY"
+          present TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET "$TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET"
+          present TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID "$TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID"
+          present TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN "$TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN"
+          present TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID "$TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID"
+          present CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
+          present CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
+
+          echo "No secret values were printed."
+
+      - name: Discover existing isolated Cloudflare resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          EXPECTED_HOST_PREFIX="ep-super-silence-arbl98ls"
+          PRODUCTION_HYPERDRIVE_ID="ef44564dbfca4e1bb13176ee568aaddf"
+          EXPECTED_ROLE="o2ol_token_hyperdrive"
+
+          curl -fsS -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/hyperdrive/configs"             -o /tmp/hyperdrives.json
+          jq -e '.success == true' /tmp/hyperdrives.json >/dev/null
+
+          MATCHES=$(jq -r --arg p "$EXPECTED_HOST_PREFIX" --arg prod "$PRODUCTION_HYPERDRIVE_ID" '
+            .result[]? |
+            select(.id != $prod) |
+            select(((.origin.host // .origin.hostname // "") | startswith($p))) |
+            [.id, (.name // ""), (.origin.host // .origin.hostname // ""), (.origin.database // ""), (.origin.user // "")] |
+            @tsv
+          ' /tmp/hyperdrives.json)
+
+          if [ -n "$MATCHES" ]; then
+            echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCHES_BEGIN"
+            printf '%s\n' "$MATCHES"
+            echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCHES_END"
+            if ! printf '%s\n' "$MATCHES" | awk -F '\t' -v role="$EXPECTED_ROLE" '$5 == role { found=1 } END { exit(found?0:1) }'; then
+              echo "TOKEN_PRELAUNCH_HYPERDRIVE_ROLE_MATCH=missing"
+            else
+              echo "TOKEN_PRELAUNCH_HYPERDRIVE_ROLE_MATCH=present"
+            fi
+          else
+            echo "TOKEN_PRELAUNCH_HYPERDRIVE_MATCH=missing"
+          fi
+
+          R2_CODE=$(curl -sS -o /tmp/r2-buckets.json -w '%{http_code}' \
+            -H "$AUTH" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets" || true)
+          echo "TOKEN_PRELAUNCH_R2_HTTP=$R2_CODE"
+          if [ "$R2_CODE" = "200" ]; then
+            jq -e '.success == true' /tmp/r2-buckets.json >/dev/null
+            if jq -e '.result.buckets[]? | select(.name=="one2onelove-token-prelaunch-media")' /tmp/r2-buckets.json >/dev/null; then
+              echo "TOKEN_PRELAUNCH_R2=present"
+            else
+              echo "TOKEN_PRELAUNCH_R2=missing"
+            fi
+          else
+            echo "TOKEN_PRELAUNCH_R2=unreadable"
+          fi
+
+          WORKER_NAME="one2onelove-token-prelaunch"
+          SECRET_CODE=$(curl -sS -o /tmp/worker-secrets.json -w '%{http_code}'             -H "$AUTH"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME/secrets" || true)
+          echo "TOKEN_PRELAUNCH_WORKER_SECRET_HTTP=$SECRET_CODE"
+          if [ "$SECRET_CODE" = "200" ]; then
+            jq -e '.success == true' /tmp/worker-secrets.json >/dev/null
+            echo "TOKEN_PRELAUNCH_WORKER_SECRET_NAMES_BEGIN"
+            jq -r '.result[]?.name' /tmp/worker-secrets.json | sort
+            echo "TOKEN_PRELAUNCH_WORKER_SECRET_NAMES_END"
+          else
+            echo "TOKEN_PRELAUNCH_WORKER=not_found_or_unreadable"
+          fi
+

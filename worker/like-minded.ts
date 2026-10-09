@@ -8,7 +8,7 @@ const HEADERS = {
 };
 
 function json(data,status=200){ return new Response(JSON.stringify(data),{status,headers:HEADERS}); }
-function fail(message,status=400,code='bad_request'){ return json({ok:false,error:{code,message}},status); }
+function fail(message,status=400,code='bad_request',extra={}){ return json({ok:false,error:{code,message,...extra}},status); }
 
 async function session(request,env){
   const cookie=request.headers.get('cookie');
@@ -39,8 +39,29 @@ function code(){
   return Array.from(a,n=>alphabet[n%alphabet.length]).join('');
 }
 
+// Idempotent DDL bootstrap; running it on every request cost 8 statements
+// per Like-Minded poll (room state polls every 1.8 s). Run once per isolate
+// (same pattern as worker/feature-usage.ts); flag set only after success so
+// a failure retries on the next request.
+let likeMindedSchemaReady = false;
+
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
+}
+
 async function ensureSchema(db){
-  await db.query(`
+  if (likeMindedSchemaReady) return;
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_rooms(
       id uuid PRIMARY KEY,
       code varchar(12) UNIQUE NOT NULL,
@@ -58,7 +79,7 @@ async function ensureSchema(db){
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_answers(
       room_id uuid NOT NULL REFERENCES public.like_minded_rooms(id) ON DELETE CASCADE,
       set_number int NOT NULL,
@@ -70,7 +91,7 @@ async function ensureSchema(db){
       PRIMARY KEY(room_id,set_number,question_no,user_id)
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_player_settings(
       user_id uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
       available boolean NOT NULL DEFAULT false,
@@ -82,7 +103,7 @@ async function ensureSchema(db){
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_blocks(
       blocker_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
       blocked_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -90,7 +111,7 @@ async function ensureSchema(db){
       PRIMARY KEY(blocker_user_id,blocked_user_id)
     )
   `);
-  await db.query(`
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.like_minded_reports(
       id uuid PRIMARY KEY,
       reporting_user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -101,9 +122,32 @@ async function ensureSchema(db){
       created_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_rooms_code ON public.like_minded_rooms(code)');
-  await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_lobby ON public.like_minded_player_settings(available,in_lobby,updated_at DESC)');
-  await db.query('CREATE INDEX IF NOT EXISTS idx_like_minded_answers_room ON public.like_minded_answers(room_id,set_number,question_no)');
+  await ensureDdl(db, 'CREATE INDEX IF NOT EXISTS idx_like_minded_rooms_code ON public.like_minded_rooms(code)');
+  await ensureDdl(db, 'CREATE INDEX IF NOT EXISTS idx_like_minded_lobby ON public.like_minded_player_settings(available,in_lobby,updated_at DESC)');
+  await ensureDdl(db, 'CREATE INDEX IF NOT EXISTS idx_like_minded_answers_room ON public.like_minded_answers(room_id,set_number,question_no)');
+  likeMindedSchemaReady = true;
+}
+
+async function requirePremiumGamePass(db,userId){
+  await db.query(`UPDATE public.o2ol_game_access_passes SET status='expired'
+    WHERE user_id=$1::uuid AND game='like_minded' AND status='active' AND expires_at<=now()`,[userId]);
+  const pass=(await db.query(
+    `SELECT id,tokens_charged,started_at,expires_at FROM public.o2ol_game_access_passes
+      WHERE user_id=$1::uuid AND game='like_minded' AND status='active' AND expires_at>now()
+      ORDER BY expires_at DESC LIMIT 1`,
+    [userId],
+  )).rows[0];
+  if(pass)return pass;
+  const wallet=(await db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId])).rows[0];
+  const price=(await db.query(
+    `SELECT token_cost,label FROM public.o2ol_token_feature_prices
+      WHERE feature_code='like_minded_session' AND active=true LIMIT 1`
+  )).rows[0];
+  throw Object.assign(new Error('Buy Tokens To Access'),{
+    status:402,code:'tokens_required',
+    balance:Number(wallet?.balance||0),required:Number(price?.token_cost||2),
+    featureCode:'like_minded_session',featureLabel:price?.label||'Like Minded session',
+  });
 }
 
 async function roomState(db,room,userId){
@@ -185,6 +229,10 @@ export async function handleLikeMindedRequest(request,env,url){
     return await withDb(env,async(db)=>{
       await ensureSchema(db);
       const body=['POST','PATCH','PUT'].includes(request.method)?await readJson(request):{};
+
+      // Blocking/reporting stays available for safety even if a paid game pass has expired.
+      const safetyRoute=url.pathname==='/api/like-minded/blocks'||url.pathname==='/api/like-minded/reports';
+      if(!safetyRoute)await requirePremiumGamePass(db,auth.user.id);
 
       if(url.pathname==='/api/like-minded/settings'){
         const current=await db.query('SELECT * FROM public.like_minded_player_settings WHERE user_id=$1::uuid',[auth.user.id]);

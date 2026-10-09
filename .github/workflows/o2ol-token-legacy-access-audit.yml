@@ -1,0 +1,32 @@
+name: O2OL Token Legacy Access Audit
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - ".github/workflows/o2ol-token-legacy-access-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inventory legacy access and billing references
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== SUBSCRIPTION PLAN REFERENCES ==="
+          grep -RInE 'subscription_plan|subscription_status|stripe_subscription_id' src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+          echo "=== TIER LABEL REFERENCES ==="
+          grep -RInE "['\"](Premiere|Premier|Exclusive|Elite)['\"]|planLevel\(|effectivePlan|tierLevel" src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+          echo "=== CARD ACCESS REFERENCES ==="
+          grep -RInEi 'card_on_file|card_required|requireCard|add card|card is required|credit/debit card.*required' src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+          echo "=== OLD DIRECT USAGE BILLING REFERENCES ==="
+          grep -RInE 'US\$0\.29|\$0\.29|LOVE_NOTE_SEND_PRICE_CENTS = 29|firstMembershipSendFree|firstFreeAvailable' src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+          echo "=== LEGACY MMIQ CREDIT REFERENCES ==="
+          grep -RInE 'mmiq_credit_wallets|mmiq_credit_transactions|mymatchiq/credits' src worker             --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' || true
+          echo "LEGACY_ACCESS_AUDIT=COMPLETE_AFTER_ADMIN_HARDENING"

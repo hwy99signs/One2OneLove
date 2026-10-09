@@ -1,0 +1,57 @@
+name: O2OL Token Prelaunch Provider Readiness
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - ".github/workflows/o2ol-token-prelaunch-provider-readiness.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  provider-readiness:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      TOKEN_PRELAUNCH_OPENAI_API_KEY: ${{ secrets.TOKEN_PRELAUNCH_OPENAI_API_KEY }}
+      TOKEN_PRELAUNCH_STRIPE_SECRET_KEY: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_SECRET_KEY }}
+      TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET: ${{ secrets.TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET }}
+      TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID }}
+      TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN }}
+      TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID: ${{ secrets.TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID }}
+      TOKEN_PRELAUNCH_HYPERDRIVE_ID: ${{ secrets.TOKEN_PRELAUNCH_HYPERDRIVE_ID }}
+
+    steps:
+      - name: Report isolated provider readiness without revealing values
+        shell: bash
+        run: |
+          set -euo pipefail
+          check() {
+            name="$1"
+            value="$2"
+            if [ -n "$value" ]; then
+              echo "$name=present"
+            else
+              echo "$name=missing"
+            fi
+          }
+
+          check CLOUDFLARE_API_TOKEN "${CLOUDFLARE_API_TOKEN:-}"
+          check CLOUDFLARE_ACCOUNT_ID "${CLOUDFLARE_ACCOUNT_ID:-}"
+          check TOKEN_PRELAUNCH_OPENAI_API_KEY "${TOKEN_PRELAUNCH_OPENAI_API_KEY:-}"
+          check TOKEN_PRELAUNCH_STRIPE_SECRET_KEY "${TOKEN_PRELAUNCH_STRIPE_SECRET_KEY:-}"
+          check TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET "${TOKEN_PRELAUNCH_STRIPE_WEBHOOK_SECRET:-}"
+          check TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID "${TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID:-}"
+          check TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN "${TOKEN_PRELAUNCH_TWILIO_AUTH_TOKEN:-}"
+          check TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID "${TOKEN_PRELAUNCH_TWILIO_VERIFY_SERVICE_SID:-}"
+          check TOKEN_PRELAUNCH_HYPERDRIVE_ID "${TOKEN_PRELAUNCH_HYPERDRIVE_ID:-}"
+
+          # Cloudflare management access is the only prerequisite expected to
+          # already exist. Provider credentials are intentionally isolated and
+          # may remain missing until the functional Token preview is connected.
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"

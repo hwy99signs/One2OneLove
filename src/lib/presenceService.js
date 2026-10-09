@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient';
+import { apiRequest, beaconJson } from './apiClient';
 
 let heartbeatInterval = null;
 let pollInterval = null;
@@ -9,9 +9,14 @@ const stopHeartbeat = () => {
   heartbeatInterval = null;
 };
 
+const tabHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
 const startHeartbeat = () => {
   stopHeartbeat();
   heartbeatInterval = window.setInterval(() => {
+    // Skip heartbeats from hidden tabs (query-burn fix, Oct 7): a
+    // backgrounded tab does not need to keep its presence row hot.
+    if (tabHidden()) return;
     apiRequest('/api/presence/heartbeat', { method: 'POST', body: {} }).catch(() => {});
   }, 30000);
 };
@@ -74,6 +79,7 @@ export const subscribeToPresence = (callback, userIds = null) => {
   unsubscribeFromPresence();
   let previous = '';
   const poll = async () => {
+    if (tabHidden()) return;
     const data = userIds?.length ? await getMultipleUserPresence(userIds) : await getOnlineUsers();
     const signature = JSON.stringify(data);
     if (signature !== previous) {
@@ -83,6 +89,9 @@ export const subscribeToPresence = (callback, userIds = null) => {
   };
   poll().catch(() => {});
   pollInterval = window.setInterval(() => poll().catch(() => {}), 15000);
+  // Terminal exit tears the poller down, same rule as the chat pollers:
+  // a page that has gone away must not leave a live interval behind.
+  window.addEventListener('pagehide', unsubscribeFromPresence);
   return { unsubscribe: unsubscribeFromPresence };
 };
 
@@ -97,6 +106,16 @@ const handleVisibilityChange = () => {
 };
 const handleBrowserOnline = () => setUserOnline().catch(() => {});
 const handleBrowserOffline = () => setUserOffline().catch(() => {});
+// Chat-close rule (Oct 7): pagehide is stepping out for good, not a pause —
+// stop the heartbeat and beacon an explicit offline so presence does not
+// linger past the exit. A bfcache-parked page (event.persisted) is exempt:
+// it may be restored, and the visibility handler marks the user back
+// online when it becomes visible again.
+const handlePageHide = (event) => {
+  if (event?.persisted) return;
+  stopHeartbeat();
+  beaconJson('/api/presence', { status: 'offline' });
+};
 
 export const initializePresence = async () => {
   try {
@@ -108,6 +127,7 @@ export const initializePresence = async () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('online', handleBrowserOnline);
     window.addEventListener('offline', handleBrowserOffline);
+    window.addEventListener('pagehide', handlePageHide);
     visibilityBound = true;
   }
 };
@@ -120,6 +140,7 @@ export const cleanupPresence = async () => {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('online', handleBrowserOnline);
     window.removeEventListener('offline', handleBrowserOffline);
+    window.removeEventListener('pagehide', handlePageHide);
     visibilityBound = false;
   }
 };

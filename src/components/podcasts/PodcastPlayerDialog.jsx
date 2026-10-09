@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ExternalLink, Loader2, Mic, PlayCircle, ShieldCheck } from "lucide-react";
+import { Coins, ExternalLink, Loader2, Lock, Mic, PlayCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 import {
   formatEpisodeDate,
   formatEpisodeDuration,
@@ -21,11 +24,16 @@ const isMatureEpisode = (episode) => {
 };
 
 export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
+  const { user } = useAuth();
   const [metadata, setMetadata] = useState(null);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState("");
   const [resolvedEpisode, setResolvedEpisode] = useState(null);
   const [isResolving, setIsResolving] = useState(false);
   const [resolveError, setResolveError] = useState("");
+  const [unlockedEpisodeKeys, setUnlockedEpisodeKeys] = useState(new Set());
+  const [unlockingEpisode, setUnlockingEpisode] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
+  const [podcastTokenCost, setPodcastTokenCost] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -45,11 +53,56 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
     };
   }, [podcast]);
 
+  useEffect(() => {
+    let active = true;
+    if (!podcast || !user?.id) {
+      setUnlockedEpisodeKeys(new Set());
+      setPodcastTokenCost(1);
+      return undefined;
+    }
+    Promise.all([
+      listTokenUnlocks('podcast_episode_unlock'),
+      getTokenWallet(),
+    ]).then(([unlockData,walletData]) => {
+      if (!active) return;
+      setUnlockedEpisodeKeys(new Set((unlockData?.unlocks || []).map(item => String(item.content_key))));
+      setPodcastTokenCost(Number(walletData?.featurePrices?.find(item => item.feature_code === 'podcast_episode_unlock')?.token_cost || 1));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [podcast?.id, user?.id]);
+
   const selectedEpisode = podcast?.episodes?.find((episode) => episode.id === selectedEpisodeId) || null;
   const selectedIsMature = isMatureEpisode(selectedEpisode);
+  const selectedUnlockKey = podcast && selectedEpisode ? `${podcast.id}:${selectedEpisode.id}` : "";
+  const selectedNeedsTokens = selectedEpisode?.tokenLocked === true && !unlockedEpisodeKeys.has(selectedUnlockKey);
+
+  const unlockEpisode = async () => {
+    if (!podcast || !selectedEpisode || !user?.id || unlockingEpisode) return;
+    setUnlockingEpisode(true);
+    setUnlockError("");
+    try {
+      const result = await unlockTokenContent({
+        featureCode:'podcast_episode_unlock',
+        contentKey:selectedUnlockKey,
+        source:'podcasts',
+        idempotencyKey:`podcast:${user.id}:${selectedUnlockKey}`,
+      });
+      setUnlockedEpisodeKeys(current => new Set([...current, selectedUnlockKey]));
+      if (result?.tokens?.charged != null) setPodcastTokenCost(Number(result.tokens.charged || podcastTokenCost));
+    } catch (error) {
+      if (isTokensRequiredError(error)) {
+        const info=tokenRequiredDetails(error);
+        setUnlockError(`You need ${info.required || podcastTokenCost} O2OL Token${Number(info.required || podcastTokenCost)===1?'':'s'} to unlock this episode. Current balance: ${info.balance || 0}.`);
+      } else {
+        setUnlockError(error?.message || 'Unable to unlock this episode.');
+      }
+    } finally {
+      setUnlockingEpisode(false);
+    }
+  };
 
   const playEpisode = async () => {
-    if (!podcast || !selectedEpisode) return;
+    if (!podcast || !selectedEpisode || selectedNeedsTokens) return;
     setIsResolving(true);
     setResolveError("");
     setResolvedEpisode(null);
@@ -128,6 +181,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
                 setSelectedEpisodeId(event.target.value);
                 setResolvedEpisode(null);
                 setResolveError("");
+                setUnlockError("");
               }}
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
             >
@@ -145,9 +199,27 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
             </div>
           )}
 
-          <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-6 hover:opacity-90" disabled={!selectedEpisode || isResolving} onClick={playEpisode}>
-            {isResolving ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{t.loadingAudio}</> : <><PlayCircle className="mr-2 h-5 w-5" />{t.listenNow}</>}
-          </Button>
+          {selectedNeedsTokens ? (
+            <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
+              <div className="flex items-center gap-2 font-black"><Lock className="h-5 w-5"/>CREDIT</div>
+              <p className="mt-1 text-sm font-semibold">This episode is locked. Unlock it once with Credit and it stays available for your account.</p>
+              {user?.id ? (
+                <Button onClick={unlockEpisode} disabled={unlockingEpisode} className="mt-3 w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                  {unlockingEpisode?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Coins className="mr-2 h-4 w-4"/>}
+                  {'$'+(Number(podcastTokenCost||0)/100).toFixed(2)} Credit · Unlock Episode
+                </Button>
+              ) : (
+                <Link to={`/SignUp?source=podcasts&feature=podcasts&return=/PodcastsSupport`} onClick={onClose}>
+                  <Button className="mt-3 w-full bg-gradient-to-r from-purple-600 to-pink-600 font-black">Create FREE Account · Then Unlock with Credit</Button>
+                </Link>
+              )}
+              {unlockError&&<div className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-semibold">{unlockError}<Link to="/Credit?return=/PodcastsSupport" onClick={onClose} className="ml-2 font-black underline">Add Credit</Link></div>}
+            </div>
+          ) : (
+            <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-6 hover:opacity-90" disabled={!selectedEpisode || isResolving} onClick={playEpisode}>
+              {isResolving ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{t.loadingAudio}</> : <><PlayCircle className="mr-2 h-5 w-5" />{t.listenNow}</>}
+            </Button>
+          )}
 
           {resolvedEpisode?.resolved && resolvedEpisode?.embedUrl && (
             <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4">
