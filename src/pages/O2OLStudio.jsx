@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BrainCircuit, Film, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,6 +68,8 @@ const EPISODE_TITLES={
 export default function O2OLStudio(){
   const {currentLanguage}=useLanguage();
   const {isAuthenticated}=useAuth();
+  const [searchParams]=useSearchParams();
+  const requestedEpisodeId=searchParams.get('episode');
   const t=COPY[currentLanguage]||COPY.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
   const [episode,setEpisode]=useState(null);
@@ -78,11 +80,16 @@ export default function O2OLStudio(){
     setVideoUnavailable(false);
     fetch('/api/studio/episodes',{credentials:'include'})
       .then(async res=>{const data=await res.json();if(!res.ok)throw new Error(data?.error?.message||'Unable to load Studio access.');return data;})
-      .then(data=>{if(active)setEpisode(data?.episodes?.[0]||null);})
+      .then(data=>{
+        if(!active)return;
+        const episodes=Array.isArray(data?.episodes)?data.episodes:[];
+        const requested=requestedEpisodeId?episodes.find(item=>item?.id===requestedEpisodeId):null;
+        setEpisode(requested||episodes[0]||null);
+      })
       .catch(()=>{if(active)setEpisode(null);})
       .finally(()=>{if(active)setLoading(false);});
     return()=>{active=false};
-  },[isAuthenticated]);
+  },[isAuthenticated,requestedEpisodeId]);
 
   const localizedTitle=EPISODE_TITLES[currentLanguage]?.[episode?.id]||EPISODE_TITLES.en[episode?.id]||episode?.title||'O2OL Studio';
   const chatRoom=episode?.chatRoom||'studio-who-should-apologize-first';
