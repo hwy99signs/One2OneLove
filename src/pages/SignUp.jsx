@@ -12,7 +12,7 @@ const COPY = {
     subtitle:"Start with a Registered Free account. No credit card is required.",
     account:"Account",
     free:"Registered Free — FREE account · no card required",
-    founding:"Founding Member intent is preserved with the Free + Tokens launch model.",
+    founding:"Founding Member intent is preserved with the Free + Credit model.",
     individual:"Individual Member",
     individualBody:"Create a personal account for One2OneLove relationship tools, community, activities and member features.",
     professional:"Professional / Contributor",
@@ -22,7 +22,7 @@ const COPY = {
   },
   es: {
     title:"Crea Tu Cuenta de One2OneLove",subtitle:"Comienza con una cuenta Registrada Gratis. No se requiere tarjeta.",account:"Cuenta",
-    free:"Registrado Gratis — cuenta GRATIS · sin tarjeta",founding:"Tu intención de Miembro Fundador se conserva con el modelo Gratis + Tokens.",
+    free:"Registrado Gratis — cuenta GRATIS · sin tarjeta",founding:"Tu intención de Miembro Fundador se conserva con el modelo Gratis + Créditos.",
     individual:"Miembro Individual",individualBody:"Crea una cuenta personal para herramientas, comunidad, actividades y funciones de One2OneLove.",
     professional:"Profesional / Colaborador",professionalBody:"Solicita acceso como terapeuta o consejero con licencia, coach o educador, creador, colaborador de medios, organización o socio profesional.",
     continue:"Continuar",back:"Volver a One2OneLove",
@@ -36,7 +36,7 @@ const COPY = {
   },
   it: {
     title:"Crea il Tuo Account One2OneLove",subtitle:"Inizia con un account Registrato Gratuito. Nessuna carta richiesta.",account:"Account",
-    free:"Registrato Gratuito — account GRATIS · senza carta",founding:"La tua intenzione di Membro Fondatore resta valida con il modello Gratis + Token.",
+    free:"Registrato Gratuito — account GRATIS · senza carta",founding:"La tua intenzione di Membro Fondatore resta valida con il modello Gratis + Credito.",
     individual:"Membro Individuale",individualBody:"Crea un account personale per strumenti relazionali, community, attività e funzioni per membri.",
     professional:"Professionista / Contributor",professionalBody:"Candidati come terapeuta o consulente abilitato, coach o educatore, creator, contributor media, organizzazione o partner professionale.",
     continue:"Continua",back:"Torna a One2OneLove",
