@@ -8,7 +8,6 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
-import { ADMIN_IDLE_LIMIT_MS, isIdleFor } from '../lib/activityGuard';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
@@ -68,15 +67,20 @@ export default function Analytics() {
     let active = true;
     const refreshIfDue = () => {
       if (!active || document.visibilityState !== 'visible') return;
-      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       if (Date.now() - Number(lastRefreshAtRef.current || 0) >= AUTO_REFRESH_MS) load(true);
     };
+    const refreshOnReturn = () => {
+      if (!active || document.visibilityState !== 'visible') return;
+      if (Date.now() - Number(lastRefreshAtRef.current || 0) >= 60 * 1000) load(true);
+    };
     const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
-    document.addEventListener('visibilitychange', refreshIfDue);
+    document.addEventListener('visibilitychange', refreshOnReturn);
+    window.addEventListener('focus', refreshOnReturn);
     return () => {
       active = false;
       window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', refreshIfDue);
+      document.removeEventListener('visibilitychange', refreshOnReturn);
+      window.removeEventListener('focus', refreshOnReturn);
     };
   }, []);
 
