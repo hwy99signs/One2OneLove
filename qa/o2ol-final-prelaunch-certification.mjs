@@ -12,7 +12,7 @@ const fulfill=(route,status,body)=>route.fulfill({status,contentType:'applicatio
 
 const USERS={
   free:{id:'00000000-0000-4000-8000-000000000101',email:'free.qa@example.invalid',name:'Free QA',role:'user'},
-  token:{id:'00000000-0000-4000-8000-000000000102',email:'token.qa@example.invalid',name:'Token QA',role:'user'},
+  credit:{id:'00000000-0000-4000-8000-000000000102',email:'credit.qa@example.invalid',name:'Credit QA',role:'user'},
   admin:{id:'00000000-0000-4000-8000-000000000103',email:'admin.qa@example.invalid',name:'Admin QA',role:'admin'},
 };
 
@@ -26,14 +26,22 @@ async function installMocks(context,mode){
     }}));
   }
   await context.route('**/api/feature-usage',r=>fulfill(r,200,{ok:true}));
-  await context.route('**/api/tokens/wallet',r=>fulfill(r,200,{ok:true,wallet:{balance:mode==='token'?50:0},featurePrices:[
-    {feature_code:'bianca_response',token_cost:1},{feature_code:'amora_response',token_cost:1},
-    {feature_code:'like_minded_session',token_cost:2},{feature_code:'love_note_send',token_cost:1},{feature_code:'date_idea_unlock',token_cost:1}
-  ],settings:{payment_method_saved:false}}));
+  await context.route('**/api/tokens/wallet',r=>fulfill(r,200,{ok:true,wallet:{balance:mode==='credit'?500:0},featurePrices:[
+    {feature_code:'bianca_response',label:'Bianca reply',token_cost:29,pricing_unit:'reply',active:true},
+    {feature_code:'amora_response',label:'Amora reply',token_cost:29,pricing_unit:'reply',active:true},
+    {feature_code:'like_minded_session',label:'Like Minded session',token_cost:199,pricing_unit:'session',active:true},
+    {feature_code:'love_note_send',label:'Love Note SMS',token_cost:29,pricing_unit:'send',active:true},
+    {feature_code:'date_idea_unlock',label:'Date Idea unlock',token_cost:49,pricing_unit:'unlock',active:true},
+    {feature_code:'podcast_episode_unlock',label:'Podcast episode',token_cost:99,pricing_unit:'episode',active:true}
+  ],packages:[
+    {code:'credit_5',label:'Add $5 Credit',tokens:500,amount_cents:500,active:true,calibration_only:false},
+    {code:'credit_10',label:'Add $10 Credit',tokens:1000,amount_cents:1000,active:true,calibration_only:false},
+    {code:'credit_20',label:'Add $20 Credit',tokens:2000,amount_cents:2000,active:true,calibration_only:false}
+  ],transactions:[],settings:{payment_method_saved:false,enabled:false,package_code:'credit_10',trigger_balance:500,monthly_cap_cents:5000,consent_at:null},credit:{currency:'Credit',unit:'USD_CENTS'}}));
   await context.route('**/api/tokens/packages',r=>fulfill(r,200,{ok:true,packages:[
-    {package_code:'starter',name:'Starter',price_cents:499,tokens:50,bonus_tokens:0,active:true},
-    {package_code:'plus',name:'Plus',price_cents:999,tokens:110,bonus_tokens:10,active:true},
-    {package_code:'max',name:'Max',price_cents:1999,tokens:250,bonus_tokens:50,active:true}
+    {code:'credit_5',label:'Add $5 Credit',amount_cents:500,tokens:500,active:true,calibration_only:false},
+    {code:'credit_10',label:'Add $10 Credit',amount_cents:1000,tokens:1000,active:true,calibration_only:false},
+    {code:'credit_20',label:'Add $20 Credit',amount_cents:2000,tokens:2000,active:true,calibration_only:false}
   ]}));
   await context.route('**/api/tokens/unlocks**',r=>fulfill(r,200,{ok:true,unlocks:[]}));
   await context.route('**/api/studio/episodes',r=>fulfill(r,200,{ok:true,episodes:[{
@@ -70,9 +78,9 @@ async function installMocks(context,mode){
   }
 }
 
-async function open(browser,path,{mode=null,viewport={width:1440,height:900}}={}){
+async function open(browser,path,{mode=null,viewport={width:1440,height:900},language='en'}={}){
   const context=await browser.newContext({viewport});
-  await context.addInitScript(()=>localStorage.setItem('preferredLanguage','en'));
+  await context.addInitScript(lang=>localStorage.setItem('preferredLanguage',lang),language);
   await installMocks(context,mode);
   const page=await context.newPage();
   const errors=[];
@@ -99,8 +107,8 @@ try{
   {
     const {context,page}=await open(browser,'/');
     const body=await page.locator('body').innerText();
-    if(/CREDIT PER REPLY/i.test(body)) fail('Homepage Credit-era Amora copy');
-    else pass('Homepage uses Token Amora copy');
+    if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
+    else fail('Homepage Credit Amora copy missing');
     const amora=page.locator('img[src*="amora-relationship-coach-official.webp"]').first();
     if(await amora.count()){
       const size=await amora.evaluate(i=>({w:i.naturalWidth,h:i.naturalHeight}));
@@ -189,18 +197,49 @@ try{
     const body=await page.locator('body').innerText();
     if(/Create your free One2OneLove account/i.test(body)) fail('Registered Free unexpectedly gated '+path);
     else pass('Registered Free opens '+path);
-    if(/\bCredit\b|\bCrédito\b|\bCrédit\b|\bCredito\b/i.test(body)) fail('Visible Credit wording '+path);
+    if(/BUY TOKENS|O2OL Tokens|Tokens O2OL|Jetons O2OL|Token O2OL/i.test(body)) fail('Retired Token wording visible '+path);
     await noOverflow(page,'Registered Free '+path);
     await context.close();
   }
 
-  // Token member checks.
-  for(const path of ['/Tokens','/Amora','/LikeMinded','/MyMatchIQ/Bianca']){
-    const {context,page}=await open(browser,path,{mode:'token'});
+  // Credit member checks.
+  for(const path of ['/Credit','/Amora','/LikeMinded','/MyMatchIQ/Bianca']){
+    const {context,page}=await open(browser,path,{mode:'credit'});
     const body=await page.locator('body').innerText();
-    if(/\bCredit\b|\bCrédito\b|\bCrédit\b|\bCredito\b/i.test(body)) fail('Token member sees Credit wording '+path);
-    else pass('Token member sees Token model '+path);
+    if(/\bCredit\b|\bCrédito\b|\bCrédit\b|\bCredito\b/i.test(body)) pass('Credit member sees Credit model '+path);
+    else fail('Credit wording missing '+path);
+    if(/BUY TOKENS|O2OL Tokens|Tokens O2OL|Jetons O2OL|Token O2OL/i.test(body)) fail('Retired Token wording visible to Credit member '+path);
     await context.close();
+  }
+
+  // Legacy Tokens URL is compatibility-only and must land on Credit.
+  {
+    const {context,page}=await open(browser,'/Tokens',{mode:'credit'});
+    await page.waitForTimeout(150);
+    if(new URL(page.url()).pathname==='/Credit') pass('Legacy Tokens URL redirects to Credit'); else fail('Legacy Tokens URL did not redirect',page.url());
+    await context.close();
+  }
+
+  // Legal pages: all five launch languages must be 18+ and Credit-based.
+  const legalLanguages=[
+    ['en',/Adults 18 and Older|adults age 18 or older/i,/Credit/i,/October 9, 2026/i],
+    ['es',/Adultos de 18 años o más/i,/Crédito/i,/9 de Octubre de 2026/i],
+    ['fr',/Adultes de 18 ans et plus/i,/Crédit/i,/9 Octobre 2026/i],
+    ['it',/Adulti di 18 anni o più/i,/Credito/i,/9 Ottobre 2026/i],
+    ['de',/Erwachsene ab 18 Jahren/i,/Credit/i,/9\. Oktober 2026/i],
+  ];
+  for(const [language,adultPattern,creditPattern,datePattern] of legalLanguages){
+    let x=await open(browser,'/TermsOfService',{language});
+    let body=await x.page.locator('body').innerText();
+    if(adultPattern.test(body) && creditPattern.test(body) && datePattern.test(body) && !/under 13|menores? de 13|moins de 13|minori di 13|unter 13/i.test(body)) pass('Terms 18+ Credit '+language);
+    else fail('Terms legal mismatch '+language,body.slice(0,1200));
+    await x.context.close();
+
+    x=await open(browser,'/PrivacyPolicy',{language});
+    body=await x.page.locator('body').innerText();
+    if(/18/.test(body) && creditPattern.test(body) && /\$0\.00/.test(body) && datePattern.test(body) && !/under 13|menores? de 13|moins de 13|minori di 13|unter 13/i.test(body)) pass('Privacy 18+ Credit '+language);
+    else fail('Privacy legal mismatch '+language,body.slice(0,1200));
+    await x.context.close();
   }
 
   // Problem report is in-site and confirms receipt.
@@ -234,12 +273,12 @@ try{
     await context.close();
   }
 
-  // Studio source-facing UI has no staging/Credit language.
+  // Studio source-facing UI has no staging or retired Token language.
   {
     const {context,page}=await open(browser,'/O2OLStudio',{mode:'free'});
     const body=await page.locator('body').innerText();
     if(/media storage yet|staged for O2OL Studio/i.test(body)) fail('Studio staging copy visible'); else pass('Studio audience copy clean');
-    if(/\bCredit\b|\bCrédito\b|\bCrédit\b|\bCredito\b/i.test(body)) fail('Studio Credit copy visible'); else pass('Studio Token wording clean');
+    if(/BUY TOKENS|O2OL Tokens|Tokens O2OL|Jetons O2OL|Token O2OL/i.test(body)) fail('Studio retired Token copy visible'); else pass('Studio Credit wording clean');
     await noOverflow(page,'Studio mobile',{});
     await context.close();
   }
