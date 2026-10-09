@@ -45,6 +45,8 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
+import Tokens from './Tokens';
+import TokenSystemDashboard from './TokenSystemDashboard';
 import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
 import ProfessionalSignup from './ProfessionalSignup';
@@ -65,7 +67,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Tokens, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
@@ -110,6 +112,7 @@ function PagesContent() {
           <Route path="/AdminAccess" element={<AdminAccess />} />
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
           <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
+          <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
           <Route path="/MemoryLane" element={<MemoryLane />} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
           <Route path="/SendCredits" element={<SendCredits />} />
@@ -149,8 +152,9 @@ function PagesContent() {
           <Route path="/Chat" element={<Chat />} />
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/Subscription" element={<Subscription />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Subscription?source=mymatchiq-feature" replace />} />
+          <Route path="/Tokens" element={<Tokens />} />
+          <Route path="/Subscription" element={<Navigate to="/Tokens" replace />} />
+          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Tokens?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
@@ -163,7 +167,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
-          <Route path="/MyMatchIQ/Credits" element={<MyMatchIQCredits />} />
+          <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Tokens?source=mymatchiq" replace />} />
           <Route path="/Credit" element={<Credit />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
