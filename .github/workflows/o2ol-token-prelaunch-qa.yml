@@ -5,6 +5,7 @@ on:
     branches:
       - prelaunch/o2ol-token-economy-20261003
       - prelaunch/final-consolidated-20261009
+      - fix/o2ol-production-token-promotion-gate-20261009
     paths:
       - "src/**"
       - "worker/**"
