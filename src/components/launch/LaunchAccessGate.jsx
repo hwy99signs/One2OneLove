@@ -4,7 +4,7 @@ import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 
 const PUBLIC_INFORMATION_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
-  '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews',
+  '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
   '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
   '/adminaccess',
   '/winacruise','/counselingsupport','/influencerssupport','/aicontentcreator','/meditation',
