@@ -42,7 +42,7 @@ const COPY={
     talk:'Parler avec Bianca',
     chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',
-    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent des Tokens O2OL.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
+    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent du Crédit.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
   },
   it:{
     eyebrow:'O2OL Studio Show',
