@@ -1,6 +1,33 @@
 -- O2OL lightweight Registered Free identity + visitor stitching.
 -- Additive and idempotent. Prelaunch first; production only through approved promotion.
 
+CREATE TABLE IF NOT EXISTS public.interaction_events (
+  id bigserial PRIMARY KEY,
+  user_id uuid,
+  visitor_id text NOT NULL,
+  session_id text NOT NULL,
+  actor_type text NOT NULL CHECK (actor_type IN ('anonymous','registered')),
+  access_type text NOT NULL CHECK (access_type IN ('open_house','registered_free','subscribed')),
+  subscription_plan text,
+  subscription_status text,
+  event_type text NOT NULL CHECK (event_type IN ('click','page_view','action')),
+  route text NOT NULL,
+  feature text,
+  control_type text,
+  control_key text,
+  destination text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  language text,
+  traffic_source text
+);
+CREATE INDEX IF NOT EXISTS interaction_events_created_at_idx ON public.interaction_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS interaction_events_route_idx ON public.interaction_events(route,created_at DESC);
+CREATE INDEX IF NOT EXISTS interaction_events_user_idx ON public.interaction_events(user_id,created_at DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS interaction_events_visitor_idx ON public.interaction_events(visitor_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS interaction_events_language_idx ON public.interaction_events(language,created_at DESC);
+CREATE INDEX IF NOT EXISTS interaction_events_traffic_source_idx ON public.interaction_events(traffic_source,created_at DESC);
+
+
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS username text,
   ADD COLUMN IF NOT EXISTS marketing_email_opt_in boolean NOT NULL DEFAULT false,
