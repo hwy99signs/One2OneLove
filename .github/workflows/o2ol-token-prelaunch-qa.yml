@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - prelaunch/o2ol-token-economy-20261003
+      - prelaunch/final-consolidated-20261009
     paths:
       - "src/**"
       - "worker/**"
@@ -84,8 +85,6 @@ jobs:
           grep -F "Calibration must use a non-Admin test/member account." worker/token-admin.ts
           grep -F "activeCalibrationSession" worker/o2ol-cost-ledger.ts
           grep -F "calibration_session_id" worker/o2ol-cost-ledger.ts
-          test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
-          test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
 
       - name: Verify stale Stripe-less memberships are normalized inactive
         shell: bash
@@ -101,8 +100,11 @@ jobs:
           set -euo pipefail
           grep -F "'Free'" worker/launch-auth.ts
           grep -F "subscription_price,subscription_status" worker/launch-auth.ts
-          grep -F 'VALUES ($1::uuid,$2,$3,'\''regular'\'',true,'\''Free'\'',0,'\''inactive'\'')' worker/launch-auth.ts
+          grep -F "'Free',0,'inactive'" worker/launch-auth.ts
           grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts
+          grep -F "visitor_identity_links" worker/launch-auth.ts
+          grep -F "marketingEmailOptIn" worker/launch-auth.ts
+          grep -F "username_taken" worker/launch-auth.ts
           grep -F "founding_intent" worker/launch-auth.ts
           grep -F "badge_activated:true" worker/phone-verification.ts
           grep -F "const TERMS_VERSION = '2026-10-03';" src/components/signup/LaunchRegularUserForm.jsx
@@ -165,7 +167,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "Current member access is FREE after verification" src/components/launch/LaunchAccessGate.jsx
+          grep -F "QuickAccountGate" src/components/launch/LaunchAccessGate.jsx
+          grep -F "feature-specific APIs/components" src/components/launch/LaunchAccessGate.jsx
+          grep -F "Username" src/components/launch/QuickAccountGate.jsx
+          grep -F "marketingEmailOptIn" src/components/launch/QuickAccountGate.jsx
           grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
           grep -F "accessModel:'free_tokens'" worker/ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts
@@ -291,13 +296,20 @@ jobs:
             exit 1
           fi
 
-      - name: Verify original Admin dashboard is untouched
+      - name: Verify Admin audience intelligence contract
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
-          test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
-          test "$(git hash-object worker/admin.ts)" = "29c521a6ac79d212670fdbc29361571d4c39e34e"
+          grep -F "Visitor Registry / Audience Intelligence" src/pages/Admin.jsx
+          grep -F "Anonymous Visitors" src/pages/Admin.jsx
+          grep -F "Registered Free" src/pages/Admin.jsx
+          grep -F "Token Buyers" src/pages/Admin.jsx
+          grep -F "Paid Activity" src/pages/Admin.jsx
+          grep -F "async function visitorRegistry(db)" worker/admin.ts
+          grep -F "marketing_email_opt_in" worker/admin.ts
+          grep -F "visitor_identity_links" worker/admin.ts
+          grep -F "CREATE TABLE IF NOT EXISTS public.interaction_events" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
+          grep -F "CREATE TABLE IF NOT EXISTS public.visitor_identity_links" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
 
       - name: Verify Token dashboard is separate and MFA-protected
         shell: bash
@@ -421,7 +433,7 @@ jobs:
           set -euo pipefail
           grep -F "branches:" .github/workflows/deploy-o2ol-production-neon.yml
           grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
-          if grep -F "prelaunch/o2ol-token-economy-20261003" .github/workflows/deploy-o2ol-production-neon.yml; then
+          if grep -E "prelaunch/(o2ol-token-economy-20261003|final-consolidated-20261009)" .github/workflows/deploy-o2ol-production-neon.yml; then
             echo "Production workflow must not target Token Prelaunch." >&2
             exit 1
           fi
