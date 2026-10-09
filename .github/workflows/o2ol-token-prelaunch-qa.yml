@@ -335,6 +335,70 @@ jobs:
             exit 1
           fi
 
+      - name: Verify final prelaunch UX cleanup contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Amora: preserved approved asset + Token experience.
+          test -s public/assets/amora-relationship-coach-official.webp
+          test "$(wc -c < public/assets/amora-relationship-coach-official.webp)" -gt 12000
+          grep -F 'src="/assets/amora-relationship-coach-official.webp"' src/pages/Home.jsx
+          grep -F "go('Amora')" src/pages/Home.jsx
+          grep -F "Each Amora response uses O2OL Tokens." src/pages/Amora.jsx
+
+          # Owner visibility / Central-time contract.
+          grep -F "America/Chicago" worker/admin.ts
+          grep -F "online_now" worker/admin.ts
+          grep -F "current_route" worker/admin.ts
+          grep -F "async function supportFeedback(db)" worker/admin.ts
+          grep -F "Administrator activity is intentionally excluded" src/pages/Admin.jsx
+          grep -F "On Site Now" src/pages/Admin.jsx
+          grep -F "Support & Problem Reports" src/pages/Admin.jsx
+
+          # Navigation, support identity, 404 and deferred-route behavior.
+          grep -F "desktopActionRef" src/pages/Layout.jsx
+          if grep -F "handleMouseEnter" src/pages/Layout.jsx; then
+            echo "Hover/click Action-menu conflict survived." >&2
+            exit 1
+          fi
+          if grep -F "technicalsupport@erantpropertyservices.com" src/pages/Layout.jsx; then
+            echo "ERANT technical-support address is still exposed publicly." >&2
+            exit 1
+          fi
+          grep -F "/Suggestions?mode=problem" src/pages/Layout.jsx
+          grep -F "Report a Problem" src/pages/Suggestions.jsx
+          grep -F "SUPPORT REQUEST" src/pages/ContactUs.jsx
+          grep -F 'path="*" element={<NotFound />}' src/pages/index.jsx
+          grep -F 'FeatureUnavailable feature="Win a Cruise"' src/pages/index.jsx
+
+          # Studio / Chat cleanup.
+          grep -F 'preload="auto"' src/pages/O2OLStudio.jsx
+          grep -F 'poster="/assets/o2ol-studio-bianca-card.webp"' src/pages/O2OLStudio.jsx
+          if grep -F "not available from media storage yet" src/pages/O2OLStudio.jsx; then
+            echo "Public Studio staging sentence survived." >&2
+            exit 1
+          fi
+          if grep -E "Vote now|Vota ahora|Votez maintenant|Vota ora|Jetzt abstimmen|Oct 9|9 octobre|9 ottobre|9\. Oktober" src/pages/Chat.jsx; then
+            echo "Stale voting/date copy survived." >&2
+            exit 1
+          fi
+
+          # Locked labels must no longer be deliberately abbreviated.
+          grep -F "return String(name || '').trim() || '•••';" src/pages/LoveNotes.jsx
+          grep -F "return String(title || '').trim() || '•••';" src/pages/DateIdeas.jsx
+
+          # Active customer surfaces must speak Tokens, not the abandoned Credit UI model.
+          ACTIVE_TOKEN_SURFACES=(
+            src/pages/Home.jsx src/pages/Layout.jsx src/pages/O2OLStudio.jsx src/pages/Amora.jsx
+            src/pages/LoveNotes.jsx src/pages/DateIdeas.jsx src/pages/MyMatchIQ.jsx
+            src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx src/pages/LikeMinded.jsx
+          )
+          if grep -RInE '\bCredit\b|\bCrédito(s)?\b|\bCrédit(s)?\b|\bCredito\b' "${ACTIVE_TOKEN_SURFACES[@]}" 2>/dev/null; then
+            echo "Credit-era customer copy remains on an active Token surface." >&2
+            exit 1
+          fi
+
       - name: Audit shipped runtime dependencies
         shell: bash
         run: |
