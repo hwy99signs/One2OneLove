@@ -491,7 +491,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY=.github/workflows/deploy-o2ol-functional-prelaunch.yml
-          grep -F "name: Deploy O2OL Token Functional Prelaunch" "$DEPLOY"
+          grep -F "name: Deploy O2OL Credit Functional Prelaunch" "$DEPLOY"
           grep -F "ref: prelaunch/final-consolidated-20261009" "$DEPLOY"
           grep -F "main\": \"\$GITHUB_WORKSPACE/worker/index-v2.ts" "$DEPLOY"
           grep -F "EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls" "$DEPLOY"
@@ -503,7 +503,7 @@ jobs:
           grep -F "TOKEN_PRELAUNCH_STRIPE_SECRET_KEY" "$DEPLOY"
           grep -F "TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID" "$DEPLOY"
           grep -F "feature remains fail-closed" "$DEPLOY"
-          grep -F "Install available Token Prelaunch provider secrets" "$DEPLOY"
+          grep -F "Install available Credit Prelaunch provider secrets" "$DEPLOY"
           grep -F "Verify any supplied provider secrets were installed" "$DEPLOY"
           grep -F '"workers_dev": $WORKERS_DEV' "$DEPLOY"
           grep -F "make_config /tmp/wrangler.token-bootstrap.jsonc false false" "$DEPLOY"
