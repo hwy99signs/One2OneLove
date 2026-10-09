@@ -146,7 +146,7 @@ function registrationContext(body) {
   const name = quickAccount ? username : clean(body.name, 200, true);
   const email = clean(body.email, 320, true)?.toLowerCase();
   const countryRaw = clean(body.country, 2, !quickAccount);
-  const country = countryRaw ? countryRaw.toUpperCase() : null;
+  const country = countryRaw ? countryRaw.toUpperCase() : (quickAccount ? 'ZZ' : null);
   const preferredLanguage = (clean(body.preferredLanguage, 10, false) || 'en').toLowerCase();
   const termsVersion = clean(body.termsVersion, 100, false) || (quickAccount ? '2026-10-09-quick' : '2026-10-03');
   const termsAcceptedAt = clean(body.termsAcceptedAt, 100, false) || new Date().toISOString();
