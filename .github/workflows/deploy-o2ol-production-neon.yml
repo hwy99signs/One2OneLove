@@ -356,7 +356,7 @@ jobs:
             for attempt in $(seq 1 24); do
               CODE=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
               echo "$BASE/api/health attempt $attempt -> $CODE"
-              if [ "$CODE" = "200" ] && grep -F '"service":"one2onelove-api"' /tmp/health.json >/dev/null 2>&1; then
+              if [ "$CODE" = "200" ] && jq -e '.ok == true and .app == "one2onelove" and .environment == "production" and .production == true' /tmp/health.json >/dev/null 2>&1; then
                 PASS=yes
                 break
               fi
@@ -383,6 +383,29 @@ jobs:
             test "$ANALYTICS_CODE" = "200"
             jq -e '.ok == true and .smoke == true and .storageReady == true' /tmp/analytics-smoke.json >/dev/null
           done
+          curl -fsS --max-time 20 "$APEX_URL/api/launch-readiness" -o /tmp/launch-readiness.json
+          jq -e '
+            .ok == true and
+            .readiness.requiredLaunchReady == true and
+            .readiness.productionPromotionReady == true and
+            .readiness.database.accountDefaultsReady == true and
+            .readiness.database.tokenSchemaReady == true and
+            .readiness.database.requiredDatabaseReady == true and
+            .readiness.identity.requiredIdentityReady == true and
+            .readiness.billing.billingProviderReady == true and
+            .readiness.billing.legacyEntitlementRows == 0
+          ' /tmp/launch-readiness.json >/dev/null
+
+          curl -fsS --max-time 20 "$APEX_URL/api/launch-signup/readiness" -o /tmp/signup-readiness.json
+          jq -e '
+            .ok == true and
+            .readiness.publicLaunchIdentityGateReady == true and
+            .readiness.freeAccountDefaultsReady == true and
+            .readiness.billingDefaultsReady == true and
+            .readiness.billingDataReady == true and
+            .readiness.legacyEntitlementRows == 0
+          ' /tmp/signup-readiness.json >/dev/null
+
           echo 'O2OL_PRODUCTION_NEON_VERIFIED=yes'
           echo 'O2OL_MEMBER_AUDIT_BEGIN'
           curl -fsS --max-time 20 "$APEX_URL/api/launch-readiness" | jq -c '.readiness.memberAudit'
