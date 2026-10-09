@@ -11,64 +11,64 @@ const COPY={
     title:'Who Should Apologize First?',
     body:'See Bianca in an actual O2OL Studio conversation and watch how relationship questions can be explored from more than one point of view.',
     bianca:'Featuring Bianca in conversation',
-    unavailable:'Episode 1 is staged for O2OL Studio, but the video file is not available from media storage yet.',
+    unavailable:'This episode is temporarily unavailable. Please try again shortly.',
     test:'Take the MyMatchIQ Compatibility Test',
     talk:'Talk with Bianca',
     chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',
-    note:'Current Studio episodes are immediate for free verified O2OL accounts. Public visitors receive the replay seven days after release. Bianca and other metered premium actions use Credit.', replay:'Public replay opens', freeNow:'Create a FREE account to watch now', signIn:'Sign In'
+    note:'Current Studio episodes are immediate for free verified O2OL accounts. Public visitors receive the replay seven days after release. Bianca and other metered premium actions use O2OL Tokens.', replay:'Public replay opens', freeNow:'Create a FREE account to watch now', signIn:'Sign In'
   },
   es:{
     eyebrow:'O2OL Studio Show',
     season:'Temporada 1 • Episodio 1',
-    title:'Who Should Apologize First?',
+    title:'¿Quién debería disculparse primero?',
     body:'Mira a Bianca en una conversación real de O2OL Studio y observa cómo una pregunta de relación puede explorarse desde más de un punto de vista.',
     bianca:'Con Bianca en conversación',
-    unavailable:'El Episodio 1 está preparado para O2OL Studio, pero el archivo de video aún no está disponible en el almacenamiento multimedia.',
+    unavailable:'Este episodio no está disponible temporalmente. Inténtalo de nuevo en unos momentos.',
     test:'Hacer la Prueba de Compatibilidad MyMatchIQ',
     talk:'Hablar con Bianca',
     chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',
-    note:'Los episodios actuales de Studio están disponibles de inmediato para cuentas O2OL gratuitas y verificadas. Los visitantes reciben la repetición siete días después. Bianca y otras funciones premium usan Crédito.', replay:'La repetición pública abre', freeNow:'Crea una cuenta GRATIS para verlo ahora', signIn:'Iniciar Sesión'
+    note:'Los episodios actuales de Studio están disponibles de inmediato para cuentas O2OL gratuitas y verificadas. Los visitantes reciben la repetición siete días después. Bianca y otras funciones premium usan Tokens O2OL.', replay:'La repetición pública abre', freeNow:'Crea una cuenta GRATIS para verlo ahora', signIn:'Iniciar Sesión'
   },
   fr:{
     eyebrow:'O2OL Studio Show',
     season:'Saison 1 • Épisode 1',
-    title:'Who Should Apologize First?',
+    title:'Qui devrait s’excuser en premier ?',
     body:'Découvrez Bianca dans une véritable conversation O2OL Studio et voyez comment une question relationnelle peut être explorée sous plusieurs angles.',
     bianca:'Avec Bianca en conversation',
-    unavailable:'L’épisode 1 est prêt pour O2OL Studio, mais le fichier vidéo n’est pas encore disponible dans le stockage média.',
+    unavailable:'Cet épisode est temporairement indisponible. Veuillez réessayer dans quelques instants.',
     test:'Faire le Test de Compatibilité MyMatchIQ',
     talk:'Parler avec Bianca',
     chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',
-    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent du Crédit.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
+    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent des Tokens O2OL.', replay:'La rediffusion publique ouvre', freeNow:'Créez un compte GRATUIT pour regarder maintenant', signIn:'Se Connecter'
   },
   it:{
     eyebrow:'O2OL Studio Show',
     season:'Stagione 1 • Episodio 1',
-    title:'Who Should Apologize First?',
+    title:'Chi dovrebbe scusarsi per primo?',
     body:'Guarda Bianca in una vera conversazione O2OL Studio e scopri come una domanda relazionale può essere esplorata da più punti di vista.',
     bianca:'Con Bianca in conversazione',
-    unavailable:'L’Episodio 1 è pronto per O2OL Studio, ma il file video non è ancora disponibile nello storage multimediale.',
+    unavailable:'Questo episodio non è temporaneamente disponibile. Riprova tra poco.',
     test:'Fai il Test di Compatibilità MyMatchIQ',
     talk:'Parla con Bianca',
     chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',
-    note:'Gli episodi Studio attuali sono immediati per gli account O2OL gratuiti e verificati. Il pubblico riceve la replica dopo sette giorni. Bianca e le altre funzioni premium a consumo usano Credito.', replay:'La replica pubblica apre', freeNow:'Crea un account GRATUITO per guardare ora', signIn:'Accedi'
+    note:'Gli episodi Studio attuali sono immediati per gli account O2OL gratuiti e verificati. Il pubblico riceve la replica dopo sette giorni. Bianca e le altre funzioni premium a consumo usano Token O2OL.', replay:'La replica pubblica apre', freeNow:'Crea un account GRATUITO per guardare ora', signIn:'Accedi'
   },
   de:{
     eyebrow:'O2OL Studio Show',
     season:'Staffel 1 • Folge 1',
-    title:'Who Should Apologize First?',
+    title:'Wer sollte sich zuerst entschuldigen?',
     body:'Erleben Sie Bianca in einem echten O2OL-Studio-Gespräch und sehen Sie, wie Beziehungsfragen aus mehreren Blickwinkeln betrachtet werden können.',
     bianca:'Mit Bianca im Gespräch',
-    unavailable:'Folge 1 ist für O2OL Studio vorbereitet, aber die Videodatei ist im Medienspeicher noch nicht verfügbar.',
+    unavailable:'Diese Folge ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.',
     test:'MyMatchIQ-Kompatibilitätstest Starten',
     talk:'Mit Bianca Sprechen',
     chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',
-    note:'Aktuelle Studio-Folgen sind für kostenlose verifizierte O2OL-Konten sofort verfügbar. Öffentliche Besucher erhalten die Wiederholung sieben Tage später. Bianca und andere Premium-Aktionen verwenden Credit.', replay:'Öffentliche Wiederholung ab', freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen', signIn:'Anmelden'
+    note:'Aktuelle Studio-Folgen sind für kostenlose verifizierte O2OL-Konten sofort verfügbar. Öffentliche Besucher erhalten die Wiederholung sieben Tage später. Bianca und andere Premium-Aktionen verwenden O2OL Tokens.', replay:'Öffentliche Wiederholung ab', freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen', signIn:'Anmelden'
   }
 };
 
@@ -111,7 +111,8 @@ export default function O2OLStudio(){
                 className="aspect-video w-full bg-black"
                 controls
                 playsInline
-                preload="metadata"
+                preload="auto"
+                poster="/assets/o2ol-studio-bianca-card.webp"
                 src={episode.mediaPath || "/studio-media/season-1-episode-1.mp4"}
                 onError={()=>setVideoUnavailable(true)}
               >
