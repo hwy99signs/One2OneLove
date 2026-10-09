@@ -28,6 +28,10 @@ export async function registerLaunchUser({
   age18Confirmed,
   selectedPlan = 'Premiere',
   freeAccount = false,
+  username = null,
+  quickAccount = false,
+  marketingEmailOptIn = false,
+  visitorId = null,
 }) {
   try {
     const payload = await apiRequest('/api/launch-signup', {
@@ -44,6 +48,10 @@ export async function registerLaunchUser({
         age18Confirmed,
         selectedPlan,
         freeAccount,
+        username,
+        quickAccount,
+        marketingEmailOptIn,
+        visitorId,
       },
     });
 
@@ -88,4 +96,32 @@ export async function verifyLaunchEmail(email, otp, signupContext = null) {
   } catch (error) {
     return { success: false, error: error?.message || 'The verification code is invalid or expired.' };
   }
+}
+
+
+export async function registerQuickUser({
+  username,
+  email,
+  password,
+  marketingEmailOptIn = false,
+  visitorId = null,
+  preferredLanguage = 'en',
+}) {
+  return registerLaunchUser({
+    name: username,
+    username,
+    email,
+    password,
+    country: null,
+    preferredLanguage,
+    termsAcceptedAt: new Date().toISOString(),
+    termsVersion: '2026-10-09-quick',
+    privacyPolicyAcknowledged: true,
+    age18Confirmed: true,
+    selectedPlan: 'Free',
+    freeAccount: true,
+    quickAccount: true,
+    marketingEmailOptIn,
+    visitorId,
+  });
 }
