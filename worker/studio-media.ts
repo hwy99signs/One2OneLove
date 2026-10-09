@@ -1,16 +1,30 @@
 // @ts-nocheck
 import { Client } from 'pg';
 
-const EPISODE={
-  id:'season-1-episode-1',
-  season:1,
-  episode:1,
-  title:'Who Should Apologize First?',
-  key:'studio/season-1/episode-1-who-should-apologize-first.mp4',
-  path:'/studio-media/season-1-episode-1.mp4',
-  // First public/live O2OL Open House release. Anonymous replay opens 7 days later.
-  releasedAt:'2026-10-03T00:00:00.000Z',
-};
+const EPISODES=[
+  {
+    id:'season-1-episode-2',
+    season:1,
+    episode:2,
+    title:'Who Pays for the First Date?',
+    key:'studio/season-1/episode-2-who-pays-for-the-first-date.mp4',
+    path:'/studio-media/season-1-episode-2.mp4',
+    chatRoom:'studio-who-pays-for-the-first-date',
+    posterPath:'/assets/o2ol-hero.png',
+    releasedAt:'2026-10-09T22:00:00.000Z',
+  },
+  {
+    id:'season-1-episode-1',
+    season:1,
+    episode:1,
+    title:'Who Should Apologize First?',
+    key:'studio/season-1/episode-1-who-should-apologize-first.mp4',
+    path:'/studio-media/season-1-episode-1.mp4',
+    chatRoom:'studio-who-should-apologize-first',
+    posterPath:'/assets/o2ol-studio-bianca-card.webp',
+    releasedAt:'2026-10-03T00:00:00.000Z',
+  },
+];
 const PUBLIC_DELAY_MS=7*24*60*60*1000;
 
 function error(message,status=404,extraHeaders={}){
@@ -21,8 +35,13 @@ function error(message,status=404,extraHeaders={}){
     ...extraHeaders,
   }});
 }
-function publicAvailableAt(){
-  return new Date(new Date(EPISODE.releasedAt).getTime()+PUBLIC_DELAY_MS);
+function publicAvailableAt(episode){
+  return new Date(new Date(episode.releasedAt).getTime()+PUBLIC_DELAY_MS);
+}
+function mediaBucket(env){
+  // Functional Prelaunch may bind the shared published Studio library as
+  // STUDIO_MEDIA while keeping all other preview media isolated in MEDIA.
+  return env.STUDIO_MEDIA||env.MEDIA||null;
 }
 async function sessionUser(request,env){
   const cookie=request.headers.get('cookie');
@@ -52,16 +71,16 @@ async function verifiedFreeMember(request,env){
     return Boolean(row?.is_active!==false&&row?.phone_verified===true);
   }finally{await db.end();}
 }
-async function accessState(request,env){
+async function accessState(request,env,episode){
   const member=await verifiedFreeMember(request,env).catch(()=>false);
-  const availableAt=publicAvailableAt();
+  const availableAt=publicAvailableAt(episode);
   const publicAvailable=Date.now()>=availableAt.getTime();
   return {
     member,
     publicAvailable,
     canWatch:member||publicAvailable,
     publicAvailableAt:availableAt.toISOString(),
-    releasedAt:EPISODE.releasedAt,
+    releasedAt:episode.releasedAt,
   };
 }
 function json(data,status=200){
@@ -91,26 +110,34 @@ function parseRange(value,size){
 }
 
 export async function handleStudioMediaRequest(request,env,url){
+  const bucket=mediaBucket(env);
+
   if(url.pathname==='/api/studio/episodes'){
     if(request.method!=='GET')return json({ok:false,error:{code:'method_not_allowed',message:'Method not allowed.'}},405);
-    const access=await accessState(request,env);
-    const mediaReady=Boolean(env.MEDIA&&await env.MEDIA.head(EPISODE.key).catch(()=>null));
-    return json({
-      ok:true,
-      episodes:[{
-        id:EPISODE.id,season:EPISODE.season,episode:EPISODE.episode,title:EPISODE.title,
-        releasedAt:access.releasedAt,publicAvailableAt:access.publicAvailableAt,
-        publicAvailable:access.publicAvailable,memberAvailable:access.member,
-        canWatch:access.canWatch&&mediaReady,mediaReady,
-        mediaPath:access.canWatch&&mediaReady?EPISODE.path:null,
-      }],
-    });
+    const member=await verifiedFreeMember(request,env).catch(()=>false);
+    const episodes=await Promise.all(EPISODES.map(async episode=>{
+      const availableAt=publicAvailableAt(episode);
+      const publicAvailable=Date.now()>=availableAt.getTime();
+      const canWatch=member||publicAvailable;
+      const mediaReady=Boolean(bucket&&await bucket.head(episode.key).catch(()=>null));
+      return {
+        id:episode.id,season:episode.season,episode:episode.episode,title:episode.title,
+        releasedAt:episode.releasedAt,publicAvailableAt:availableAt.toISOString(),
+        publicAvailable,memberAvailable:member,
+        canWatch:canWatch&&mediaReady,mediaReady,
+        mediaPath:canWatch&&mediaReady?episode.path:null,
+        chatRoom:episode.chatRoom,
+        posterPath:episode.posterPath,
+      };
+    }));
+    return json({ok:true,episodes});
   }
 
-  if(url.pathname!==EPISODE.path)return null;
+  const episode=EPISODES.find(item=>item.path===url.pathname);
+  if(!episode)return null;
   if(!['GET','HEAD'].includes(request.method))return error('Method not allowed.',405);
 
-  const access=await accessState(request,env);
+  const access=await accessState(request,env,episode);
   if(!access.canWatch){
     return error(
       'Create a free verified One2OneLove account to watch this episode now. The public replay opens seven days after release.',
@@ -118,9 +145,9 @@ export async function handleStudioMediaRequest(request,env,url){
       {'x-o2ol-public-available-at':access.publicAvailableAt},
     );
   }
-  if(!env.MEDIA)return error('Studio media storage is not configured.',503);
+  if(!bucket)return error('Studio media storage is not configured.',503);
 
-  const head=await env.MEDIA.head(EPISODE.key);
+  const head=await bucket.head(episode.key);
   if(!head)return error('Episode media is not available yet.',404);
 
   const range=parseRange(request.headers.get('range'),head.size);
@@ -142,13 +169,13 @@ export async function handleStudioMediaRequest(request,env,url){
     return new Response(null,{status:200,headers});
   }
   if(range){
-    const object=await env.MEDIA.get(EPISODE.key,{range:{offset:range.offset,length:range.length}});
+    const object=await bucket.get(episode.key,{range:{offset:range.offset,length:range.length}});
     if(!object)return error('Episode media is not available yet.',404);
     headers.set('content-length',String(range.length));
     headers.set('content-range',`bytes ${range.start}-${range.end}/${head.size}`);
     return new Response(object.body,{status:206,headers});
   }
-  const object=await env.MEDIA.get(EPISODE.key);
+  const object=await bucket.get(episode.key);
   if(!object)return error('Episode media is not available yet.',404);
   headers.set('content-length',String(head.size));
   return new Response(object.body,{status:200,headers});
