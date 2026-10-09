@@ -1,7 +1,7 @@
-o2ol-production-custom-credit-studio-episode2-2026-10-09T23:13Z
-certified_source=f4ab51884de2eca6fc5f9c3c1fb7afc2389ff383
-promotion_merge=f49581fe24c99eea4a888c6b07d388fbaafc318a
-prelaunch_deployment=cloudflare:b874f824-04a1-4ee6-b659-5c44704c0b54
-prelaunch_browser_qa=38003095564
-prelaunch_browser_result=61-passed-0-failed
-git_restore_branch=rollback/o2ol-production-before-custom-credit-studio-20261009
+o2ol-production-studio-routing-home-episode2-fix-2026-10-09T23:48Z
+certified_source=72dd0b56dbbf20538c6e6e1b690da976e0b4f411
+promotion_merge=599f131cfbc9af4cd214b97c3f05af8290027285
+prelaunch_deployment=cloudflare:7f02cf89-ca51-4bc4-9366-ad1a3d7f4eaa
+prelaunch_browser_qa=38006026268
+prelaunch_browser_result=65-passed-0-failed
+git_restore_branch=rollback/o2ol-production-before-studio-routing-home-fix-20261009
