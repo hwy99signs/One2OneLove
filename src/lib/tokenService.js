@@ -9,6 +9,9 @@ export async function getTokenPackages(){
 export async function startTokenCheckout(packageCode,returnTo=null){
   return apiRequest('/api/tokens/checkout',{method:'POST',body:{packageCode,...(returnTo?{returnTo}:{})}});
 }
+export async function startCustomCreditCheckout(amountCents,returnTo=null){
+  return apiRequest('/api/tokens/checkout',{method:'POST',body:{customAmountCents:amountCents,...(returnTo?{returnTo}:{})}});
+}
 export async function confirmTokenCheckout(sessionId){
   return apiRequest('/api/tokens/checkout/confirm',{method:'POST',body:{sessionId}});
 }
