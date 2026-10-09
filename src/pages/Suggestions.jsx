@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, ArrowLeft, Send, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -89,11 +89,23 @@ const translations = {
   }
 };
 
+const problemCopy = {
+  en:{title:'Report a Problem',subtitle:'Tell us what went wrong. Your report is stored inside One2OneLove for the Admin team to review.',label:'What happened?',submit:'Submit Problem Report',success:'Your problem report was received. Thank you — the One2OneLove team can now review it.',placeholder:'Describe what you expected, what happened, and which page or feature you were using.'},
+  es:{title:'Reportar un Problema',subtitle:'Cuéntanos qué salió mal. Tu reporte se guarda dentro de One2OneLove para revisión del equipo Admin.',label:'¿Qué ocurrió?',submit:'Enviar Reporte',success:'Recibimos tu reporte. Gracias — el equipo de One2OneLove ya puede revisarlo.',placeholder:'Describe qué esperabas, qué ocurrió y qué página o función estabas usando.'},
+  fr:{title:'Signaler un Problème',subtitle:'Dites-nous ce qui ne va pas. Votre signalement est enregistré dans One2OneLove pour examen par l’équipe Admin.',label:'Que s’est-il passé ?',submit:'Envoyer le Signalement',success:'Votre signalement a été reçu. Merci — l’équipe One2OneLove peut maintenant l’examiner.',placeholder:'Décrivez ce que vous attendiez, ce qui s’est passé et la page ou fonction utilisée.'},
+  it:{title:'Segnala un Problema',subtitle:'Dicci cosa non ha funzionato. La segnalazione viene salvata in One2OneLove per la revisione del team Admin.',label:'Cosa è successo?',submit:'Invia Segnalazione',success:'La segnalazione è stata ricevuta. Grazie — il team One2OneLove ora può esaminarla.',placeholder:'Descrivi cosa ti aspettavi, cosa è successo e quale pagina o funzione stavi usando.'},
+  de:{title:'Problem Melden',subtitle:'Beschreibe, was nicht funktioniert hat. Dein Bericht wird in One2OneLove für das Admin-Team gespeichert.',label:'Was ist passiert?',submit:'Problembericht Senden',success:'Dein Problembericht wurde empfangen. Danke — das One2OneLove-Team kann ihn jetzt prüfen.',placeholder:'Beschreibe, was du erwartet hast, was passiert ist und welche Seite oder Funktion du verwendet hast.'},
+};
+
 export default function Suggestions() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
-  const [formData, setFormData] = useState({ name: "", email: "", type: "feature", suggestion: "" });
+  const problem = problemCopy[currentLanguage] || problemCopy.en;
+  const [searchParams] = useSearchParams();
+  const problemMode = searchParams.get('mode') === 'problem';
+  const [formData, setFormData] = useState({ name: "", email: "", type: problemMode ? "bug" : "feature", suggestion: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [submitted,setSubmitted] = useState(false);
   const [storageReady, setStorageReady] = useState(null);
 
   useEffect(() => {
@@ -110,8 +122,9 @@ export default function Suggestions() {
     setSubmitting(true);
     try {
       await apiRequest('/api/suggestions', { method: 'POST', body: formData });
-      toast.success(t.successMessage);
-      setFormData({ name: "", email: "", type: "feature", suggestion: "" });
+      toast.success(problemMode ? problem.success : t.successMessage);
+      setSubmitted(true);
+      setFormData({ name: "", email: "", type: problemMode ? "bug" : "feature", suggestion: "" });
     } catch (error) {
       console.error('Suggestion submission failed:', error);
       toast.error(t.errorMessage);
@@ -134,14 +147,14 @@ export default function Suggestions() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full mb-6 shadow-xl">
             <Lightbulb className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{t.subtitle}</p>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">{problemMode ? problem.title : t.title}</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">{problemMode ? problem.subtitle : t.subtitle}</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="shadow-2xl">
             <CardHeader>
-              <CardTitle className="text-2xl">💡 {t.suggestion}</CardTitle>
+              <CardTitle className="text-2xl">{problemMode ? '🛠️ '+problem.label : '💡 '+t.suggestion}</CardTitle>
             </CardHeader>
             <CardContent>
               {storageReady === false && (
@@ -149,6 +162,7 @@ export default function Suggestions() {
                   {t.unavailable}
                 </div>
               )}
+              {submitted && <div role="status" className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{problemMode ? problem.success : t.successMessage}</div>}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -160,21 +174,21 @@ export default function Suggestions() {
                     <Input id="suggestion-email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-12" />
                   </div>
                 </div>
-                <div>
+                {!problemMode && <div>
                   <label htmlFor="suggestion-type" className="block text-sm font-medium text-gray-700 mb-2">{t.suggestionType}</label>
                   <select id="suggestion-type" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full h-12 px-4 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     {Object.entries(t.types).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
-                </div>
+                </div>}
                 <div>
                   <label htmlFor="suggestion-text" className="block text-sm font-medium text-gray-700 mb-2">{t.suggestion}</label>
-                  <Textarea id="suggestion-text" value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={t.placeholder} />
+                  <Textarea id="suggestion-text" value={formData.suggestion} onChange={(e) => setFormData({...formData, suggestion: e.target.value})} required className="h-40" placeholder={problemMode ? problem.placeholder : t.placeholder} />
                 </div>
                 <Button type="submit" disabled={submitting || storageReady !== true} className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-lg">
                   {submitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
-                  {t.submit}
+                  {problemMode ? problem.submit : t.submit}
                 </Button>
               </form>
             </CardContent>
