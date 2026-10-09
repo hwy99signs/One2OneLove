@@ -155,6 +155,7 @@ const languages = [
 function LanguageContent({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [desktopActionOpen, setDesktopActionOpen] = useState(false);
   const [mobileActionOpen, setMobileActionOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -279,12 +280,12 @@ function LanguageContent({ children, currentPageName }) {
   useEffect(() => {
     const closeDesktopAction = (event) => {
       if (desktopActionRef.current?.contains(event.target)) return;
-      desktopActionRef.current?.removeAttribute('open');
+      setDesktopActionOpen(false);
     };
     const closeOnEscape = (event) => {
       if (event.key === 'Escape') {
-        desktopActionRef.current?.removeAttribute('open');
-        desktopActionRef.current?.querySelector('summary')?.focus();
+        setDesktopActionOpen(false);
+        desktopActionRef.current?.querySelector('[data-desktop-action-trigger]')?.focus();
       }
     };
     document.addEventListener('pointerdown', closeDesktopAction);
@@ -413,41 +414,45 @@ function LanguageContent({ children, currentPageName }) {
             )}
             <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
-            <details
+            <div
               ref={desktopActionRef}
               className="relative"
             >
-              <summary
-                aria-haspopup="true"
+              <button
+                type="button"
+                data-desktop-action-trigger
+                aria-haspopup="menu"
                 aria-controls="desktop-action-menu"
-                className={`${mmiqHeaderButton('from-violet-500 to-fuchsia-600')} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+                aria-expanded={desktopActionOpen}
+                onClick={() => setDesktopActionOpen((open) => !open)}
+                className={`${mmiqHeaderButton('from-violet-500 to-fuchsia-600')} cursor-pointer`}
               >
                 ♡ {t.nav.action} ▾
-              </summary>
-              {isMyMatchIQPage && (
+              </button>
+              {desktopActionOpen && isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 rounded-xl bg-white p-2 text-sm font-normal text-slate-800 shadow-xl z-50">
-                  <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => desktopActionRef.current?.removeAttribute('open')}>✦ MyMatchIQ</Link>
-                  <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🧠 Compatibility Passport</Link>
-                  <Link to="/Tokens?source=mymatchiq" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>◈ {mT.credits}</Link>
-                  <Link to="/MyMatchIQ/Meet" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🤝 Meet Intentional Members</Link>
-                  <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>✦ MyMatchIQ Dashboard</Link>
-                  <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>💌 Invite with intention</Link>
+                  <Link to="/MyMatchIQ/Actions" className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ</Link>
+                  <Link to="/MyMatchIQ/Assessment" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🧠 Compatibility Passport</Link>
+                  <Link to="/Tokens?source=mymatchiq" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>◈ {mT.credits}</Link>
+                  <Link to="/MyMatchIQ/Meet" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🤝 Meet Intentional Members</Link>
+                  <Link to="/MyMatchIQ/Dashboard" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ Dashboard</Link>
+                  <Link to="/MyMatchIQ/Invite" className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💌 Invite with intention</Link>
                 </div>
               )}
-              {!isMyMatchIQPage && (
+              {desktopActionOpen && !isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
-                  <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => desktopActionRef.current?.removeAttribute('open')}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
-                  <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>💗 {t.actionMenu.sendLoveNote}</Link>
-                  <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🌈 {t.actionMenu.lgbtqSupport}</Link>
-                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
-                  <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🎮 {t.actionMenu.games}</Link>
-                  <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🗓️ {t.actionMenu.dateIdeas}</Link>
-                  <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>🎯 {t.actionMenu.relationshipGoals}</Link>
-                  <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>📷 {t.actionMenu.memoryLane}</Link>
-                  <Link to={createPageUrl("CoupleSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => desktopActionRef.current?.removeAttribute('open')}>👥 {t.actionMenu.coupleSupport}</Link>
+                  <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
+                  <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
+                  <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
+                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
+                  <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎮 {t.actionMenu.games}</Link>
+                  <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
+                  <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}</Link>
+                  <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>📷 {t.actionMenu.memoryLane}</Link>
+                  <Link to={createPageUrl("CoupleSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>👥 {t.actionMenu.coupleSupport}</Link>
                 </div>
               )}
-            </details>
+            </div>
 
             <Link
               to="/Tokens"
