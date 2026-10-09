@@ -1,14 +1,12 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { scheduledSmsReadiness, scheduledSmsReady, smsProviderReady, sendTwilioLoveNoteSms, ensureScheduledSignatureSchema } from './scheduled-love-notes';
-import { reserveTokenCharge, reserveCreditCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
+import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
-import { CREDIT_CONFIG, resolveSmsRegion, publicPriceTable, smsBodyFor } from './credit-config';
+import { CREDIT_CONFIG, resolveSmsRegion, smsBodyFor } from './credit-config';
 import {
-  ensureCreditSchema, assertSmsBodyWithinCap, isRecipientOptedOut, assertNotOptedOut,
-  assertSendRateLimit, tryRedeemFirstFreeSend, rollbackFirstFreeSend,
-  computeWeeklyStatus, claimWeeklyFreeNote, releaseWeeklyFreeNoteClaim,
-  attachSentNoteToGrant, grantByRequestKey, promoStatus,
+  assertSmsBodyWithinCap, isRecipientOptedOut, assertNotOptedOut,
+  assertSendRateLimit,
 } from './love-note-credit';
 const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;
 
@@ -221,48 +219,28 @@ async function accountPhone(db,userId) {
 }
 
 async function usageForDate(db,userId,quotaDate) {
-  await ensureCreditSchema(db);
-  const [walletResult,sendResult,phone]=await Promise.all([
+  const [walletResult,priceResult,sendResult]=await Promise.all([
     db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId]),
+    db.query(`SELECT token_cost FROM public.o2ol_token_feature_prices
+               WHERE feature_code='love_note_send' AND active=true LIMIT 1`),
     db.query(`SELECT count(*)::int AS sent_count
                 FROM public.sent_love_notes
                WHERE user_id=$1::uuid AND recipient_type='sms'`,[userId]),
-    accountPhone(db,userId),
   ]);
-  const balance=Number(walletResult.rows[0]?.balance||0);
-  const [promo,weekly,promoRedeemed]=await Promise.all([
-    promoStatus(db),
-    computeWeeklyStatus(db,userId,phone),
-    db.query('SELECT id FROM public.o2ol_credit_promo_redemptions WHERE user_id=$1::uuid LIMIT 1',[userId]),
-  ]);
-  const promoAvailable=promo.open&&!promoRedeemed.rows[0];
   return {
-    accessModel:'credit',
-    creditMode:true,
-    creditBalance:balance,
-    creditCurrency:'Credit',
-    creditUnit:'USD_CENTS',
-    creditPrices:publicPriceTable(),
-    maxSmsBodyCharacters:CREDIT_CONFIG.maxSmsBodyCharacters,
-    promo:{...promo,availableForAccount:promoAvailable,alreadyRedeemed:Boolean(promoRedeemed.rows[0])},
-    weekly,
-    // Legacy aliases (values are Credit cents now).
+    accessModel:'free_tokens',
     tokenMode:true,
-    tokenBalance:balance,
-    tokenCost:CREDIT_CONFIG.regions.USCA.priceCents,
+    tokenBalance:Number(walletResult.rows[0]?.balance||0),
+    tokenCost:Number(priceResult.rows[0]?.token_cost||0),
     sentCount:Number(sendResult.rows[0]?.sent_count||0),
     firstMembershipSendFree:false,
-    firstSendFree:promoAvailable,
-    firstFreeAvailable:promoAvailable,
+    firstSendFree:false,
+    firstFreeAvailable:false,
     customNoteMaxCharacters:CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
     quotaDate,
     quotaMonth:monthStart(quotaDate),
   };
 }
-
-// This route records user-initiated external sharing (for example opening the
-// phone's SMS composer). It does not represent One2OneLove-delivered Twilio SMS
-// and therefore does not consume O2OL Tokens.
 async function postSent(db, auth, body) {
   const title = cleanText(body.note_title, 250, true);
   const content = validateLoveNoteBody(body.note_content);
@@ -296,17 +274,13 @@ async function postImmediateSms(db, env, auth, body) {
   const recipientPhone=String(rawPhone||'').replace(/[\s().-]/g,'');
   if(!/^\+[1-9]\d{7,14}$/.test(recipientPhone))return fail('Enter a valid phone number with country code.',400,'invalid_phone');
 
-  // Regional price by RECIPIENT country code, from the one config table.
   const region=resolveSmsRegion(recipientPhone);
   if(region.excluded){
     return fail('SMS delivery is not offered to this destination. You can still share this Love Note free by WhatsApp, email or social media.',422,'sms_region_unavailable',{country:region.country,reason:region.reason});
   }
-  // Total SMS body (title + content + footer + signature line when
-  // signed) hard cap: never over 3 segments. The signature is inside the
-  // cap, so it is resolved BEFORE the cap assertion.
+
   const {senderName,sendAnonymous}=await resolveSignature(db,auth,body);
   assertSmsBodyWithinCap(title,content,senderName);
-  // Recipient STOP/opt-out is honored before any send.
   assertNotOptedOut(await isRecipientOptedOut(db,recipientPhone));
   await assertSendRateLimit(db,auth.user.id);
 
@@ -314,44 +288,20 @@ async function postImmediateSms(db, env, auth, body) {
   const sourceId=crypto.randomUUID();
   const requestId=String(body.requestId||crypto.randomUUID()).slice(0,120);
   const requestKey=`love_note_sms:${auth.user.id}:${requestId}`;
-  await ensureCreditSchema(db);
-  const senderPhone=await accountPhone(db,auth.user.id);
 
-  // A retried send (same requestId) must never deliver or charge twice.
-  const priorGrant=await grantByRequestKey(db,requestKey);
-  if(priorGrant){
+  const reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
+    idempotencyKey:requestKey,
+    metadata:{
+      source_id:sourceId,
+      recipient_type:'sms',
+      request_id:requestId,
+      region:region.region,
+      country:region.country,
+      featureLabel:'Love Note send',
+    },
+  });
+  if(reservation.reused&&reservation.status==='consumed'){
     return fail('This Love Note was already sent.',409,'duplicate_send');
-  }
-
-  // Free paths first — eligibility is computed server-side only:
-  // 1) the first-free-send promo (one per verified phone number, monthly pot);
-  // 2) the weekly free note (running average balance + $2.50/week burn).
-  let freeKind=null;
-  let promo=null;
-  let weeklyClaim=null;
-  promo=await tryRedeemFirstFreeSend(db,env,{userId:auth.user.id,accountPhone:senderPhone,recipientRegion:region,requestKey})
-    .catch(error=>{
-      if(error?.code==='free_send_line_ineligible')return null; // VoIP/landline: promo only, send can still be paid
-      throw error;
-    });
-  if(promo)freeKind='promo';
-  if(!promo){
-    weeklyClaim=await claimWeeklyFreeNote(db,auth.user.id,senderPhone,recipientPhone,region.region,requestKey);
-    if(weeklyClaim)freeKind='weekly';
-  }
-
-  let reservation=null;
-  if(!freeKind){
-    reservation=await reserveCreditCharge(db,auth.user.id,'love_note_send',{
-      amountCents:region.priceCents,
-      idempotencyKey:requestKey,
-      metadata:{source_id:sourceId,recipient_type:'sms',request_id:requestId,region:region.region,country:region.country,price_cents:region.priceCents,featureLabel:'Love Note send'},
-    });
-    if(reservation.reused&&reservation.status==='consumed'){
-      return fail('This Love Note was already sent.',409,'duplicate_send');
-    }
-  }else{
-    reservation={id:null,tokens:0,free:true,transaction:null,balance_after:null};
   }
 
   let twilio=null;
@@ -365,15 +315,11 @@ async function postImmediateSms(db, env, auth, body) {
     twilio=await sendTwilioLoveNoteSms(env,{recipient_phone:recipientPhone,note_title:title,note_content:content,sender_name:senderName,send_anonymous:sendAnonymous});
   }catch(error){
     await db.query('DELETE FROM public.sent_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[sourceId,auth.user.id]).catch(()=>{});
-    if(promo)await rollbackFirstFreeSend(db,promo.redemptionId).catch(()=>{});
-    if(weeklyClaim)await releaseWeeklyFreeNoteClaim(db,weeklyClaim.grant.id).catch(()=>{});
     if(reservation?.id)await releaseTokenReservation(db,reservation.id,'sms_delivery_failed').catch(()=>{});
     throw error;
   }
 
   if(reservation?.id)await consumeTokenReservation(db,reservation.id);
-  const grantId=promo?.grantId||weeklyClaim?.grant?.id||null;
-  if(grantId)await attachSentNoteToGrant(db,grantId,sourceId).catch(()=>{});
   const providerCostMicros=twilio?.price==null?null:Math.round(Math.abs(Number(twilio.price))*1000000);
   await recordCostEvent(db,env,{
     userId:auth.user.id,featureCode:'love_note_send',provider:'twilio',providerProduct:'programmable_sms',
@@ -384,18 +330,16 @@ async function postImmediateSms(db, env, auth, body) {
     providerOutputUnits:Number(twilio?.numSegments||0),
     providerCostMicros,
     customerTokensCharged:Number(reservation.tokens||0),
-    metadata:{source_id:sourceId,request_id:requestId,billing:freeKind||'credit',region:region.region,country:region.country,price_cents:freeKind?0:region.priceCents,twilio_status:twilio?.status||null,twilio_price_unit:twilio?.priceUnit||'USD',cost_pending:providerCostMicros==null},
+    metadata:{source_id:sourceId,request_id:requestId,billing:'o2ol_tokens',region:region.region,country:region.country,twilio_status:twilio?.status||null,twilio_price_unit:twilio?.priceUnit||'USD',cost_pending:providerCostMicros==null},
   }).catch(error=>console.error('Love Note cost telemetry failed',error));
   maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Love Note Auto-Replenish check failed',error));
 
-  const usage=await usageForDate(db,auth.user.id,quotaDate);
   return json({
     ok:true,
     note:{id:sourceId,note_title:title,note_content:content,recipient_type:'sms',recipient_identifier:recipientPhone,sender_name:senderName,send_anonymous:sendAnonymous},
     delivery:{provider:'twilio',messageId:twilio?.messageId||null,status:twilio?.status||null},
-    credit:{charged:Number(reservation.tokens||0),balance:usage.creditBalance,priceCents:region.priceCents,region:region.region,regionLabel:region.regionLabel,free:freeKind},
-    tokens:{charged:Number(reservation.tokens||0),balance:usage.creditBalance},
-    usage,
+    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
+    usage:await usageForDate(db,auth.user.id,quotaDate),
   },201);
 }
 async function postScheduled(db, env, auth, body) {
@@ -415,9 +359,6 @@ async function postScheduled(db, env, auth, body) {
   const zone=await db.query('SELECT 1 FROM pg_timezone_names WHERE name=$1 LIMIT 1',[scheduledTimezone]);
   if(!zone.rowCount)return fail('Invalid scheduled_timezone.');
 
-  // Same Credit rules as immediate sends: regional price, total-body cap,
-  // recipient opt-out. (Free promo/weekly sends are immediate-send only;
-  // scheduled sends are paid from Credit at booking time.)
   const region=resolveSmsRegion(recipientPhone);
   if(region.excluded){
     return fail('SMS delivery is not offered to this destination. You can still share this Love Note free by WhatsApp, email or social media.',422,'sms_region_unavailable',{country:region.country,reason:region.reason});
@@ -438,12 +379,11 @@ async function postScheduled(db, env, auth, body) {
   );
   const note=result.rows[0];
   try{
-    const reservation=await reserveCreditCharge(db,auth.user.id,'love_note_send',{
-      amountCents:region.priceCents,
+    const reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
       idempotencyKey:`love_note_scheduled:${note.id}`,
-      metadata:{scheduled_note_id:note.id,scheduled_date:scheduledDate,recipient_type:'sms',region:region.region,country:region.country,price_cents:region.priceCents,featureLabel:'Love Note send'},
+      metadata:{scheduled_note_id:note.id,scheduled_date:scheduledDate,recipient_type:'sms',region:region.region,country:region.country,featureLabel:'Love Note send'},
     });
-    return json({ok:true,note,credit:{reserved:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0),priceCents:region.priceCents,region:region.region},tokens:{reserved:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+    return json({ok:true,note,tokens:{reserved:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
   }catch(error){
     await db.query('DELETE FROM public.scheduled_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[note.id,auth.user.id]).catch(()=>{});
     throw error;
@@ -505,8 +445,6 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
         return json({ ok: true, usage: await usageForDate(db, auth.user.id, quotaDate) });
       }
       if (url.pathname === '/api/love-notes/price' && request.method === 'GET') {
-        // Price is ALWAYS shown before sending: quote for a recipient number,
-        // resolved server-side from the regional config table.
         const rawPhone = String(url.searchParams.get('phone') || '').replace(/[\s().-]/g, '');
         if (!/^\+[1-9]\d{7,14}$/.test(rawPhone)) return fail('Enter a valid phone number with country code.', 400, 'invalid_phone');
         const region = resolveSmsRegion(rawPhone);
@@ -518,14 +456,11 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
             country: region.country,
             region: region.region,
             regionLabel: region.regionLabel || null,
-            priceCents: region.excluded ? null : region.priceCents,
             excluded: Boolean(region.excluded),
             reason: region.reason || null,
             freeShareAlternative: Boolean(region.excluded),
-            balanceCents: usage.creditBalance,
-            promoAvailable: usage.promo.availableForAccount,
-            weeklyFreeRemaining: usage.weekly.remaining,
-            willBeFree: !region.excluded && (usage.promo.availableForAccount || usage.weekly.remaining > 0),
+            tokenCost: region.excluded ? null : usage.tokenCost,
+            tokenBalance: usage.tokenBalance,
           },
         });
       }
@@ -545,13 +480,12 @@ export async function handleLoveNoteEntitlementRequest(request, env, url) {
           ok: true,
           delivery: {
             ...scheduledSmsReadiness(env),
-            billingMode:'o2ol_credit',
-            creditMode:true,
+            billingMode:'o2ol_tokens',
+            creditMode:false,
             tokenMode:true,
             tokenFeatureCode:'love_note_send',
             customNoteMaxCharacters:CUSTOM_LOVE_NOTE_MAX_CHARACTERS,
             maxSmsBodyCharacters:CREDIT_CONFIG.maxSmsBodyCharacters,
-            creditPrices:publicPriceTable(),
           },
         });
       }
