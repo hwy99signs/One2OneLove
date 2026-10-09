@@ -432,7 +432,10 @@ async function overview(db) {
                  AND lower(COALESCE(p.subscription_status,'inactive')) IN ('active','trial','trialing','past_due')
              )::int AS subscribed,
              count(*) FILTER (WHERE p.id IS NULL)::int AS auth_only_no_profile,
-             count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= current_date)::int AS signups_today,
+             count(*) FILTER (
+               WHERE COALESCE(p.created_at,a."createdAt") >=
+                 (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+             )::int AS signups_today,
              count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '24 hours')::int AS signups_24h,
              count(*) FILTER (
                WHERE NOT (
@@ -478,7 +481,10 @@ async function overview(db) {
         (SELECT count(*) FROM public.chat_room_reports WHERE status <> 'resolved')::int AS chat_reports_pending`),
     db.query(`
       SELECT count(*)::int AS recorded_payments,
-             count(*) FILTER (WHERE created_at >= date_trunc('month',now()))::int AS payments_this_month,
+             count(*) FILTER (
+               WHERE created_at >=
+                 (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+             )::int AS payments_this_month,
              COALESCE(sum(amount) FILTER (WHERE lower(COALESCE(status,'')) IN ('paid','succeeded','success','active')),0)::numeric AS successful_amount
         FROM public.payment_history`),
     db.query(`
@@ -584,6 +590,7 @@ async function visitorRegistry(db) {
           (array_agg(e.language ORDER BY e.created_at DESC) FILTER (WHERE e.language IS NOT NULL))[1] AS language,
           array_remove(array_agg(DISTINCT e.route),NULL) AS pages,
           array_remove(array_agg(DISTINCT e.feature),NULL) AS features,
+          (array_agg(e.route ORDER BY e.created_at DESC) FILTER (WHERE e.route IS NOT NULL))[1] AS current_route,
           (array_agg(e.user_id ORDER BY e.created_at DESC) FILTER (WHERE e.user_id IS NOT NULL))[1] AS latest_event_user_id
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" event_auth ON event_auth.id=e.user_id
@@ -607,7 +614,8 @@ async function visitorRegistry(db) {
          GROUP BY user_id
       )
       SELECT
-        r.visitor_id,r.first_seen,r.last_seen,r.visits,r.page_views,r.clicks,r.actions,
+        r.visitor_id,r.first_seen,r.last_seen,r.visits,r.page_views,r.clicks,r.actions,r.current_route,
+        (r.last_seen >= now()-interval '5 minutes') AS is_online,
         COALESCE(r.original_source,'direct') AS original_source,
         COALESCE(r.language,'en') AS language,
         r.pages,r.features,r.resolved_user_id AS user_id,r.linked_at,
@@ -637,6 +645,12 @@ async function visitorRegistry(db) {
         SELECT DISTINCT vi.visitor_id,vil.user_id
           FROM visitor_ids vi
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=vi.visitor_id
+      ), active_visitors AS (
+        SELECT DISTINCT e.visitor_id
+          FROM public.interaction_events e
+          LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+         WHERE e.created_at >= now()-interval '5 minutes'
+           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
       ), buyers AS (
         SELECT DISTINCT tt.user_id
           FROM public.o2ol_token_transactions tt
@@ -647,6 +661,7 @@ async function visitorRegistry(db) {
       )
       SELECT
         (SELECT count(*) FROM visitor_ids)::int AS total_visitors,
+        (SELECT count(*) FROM active_visitors)::int AS online_now,
         (SELECT count(*) FROM linked_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
         (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
           WHERE COALESCE(a.role,'user') <> 'admin')::int AS registered_free,
@@ -664,7 +679,7 @@ async function visitorRegistry(db) {
   return {
     visitors: visitorsResult.rows,
     funnel: funnelResult.rows[0] || {
-      total_visitors:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0
+      total_visitors:0,online_now:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0
     }
   };
 }
@@ -1341,13 +1356,31 @@ async function system(db) {
   return { migrations: migrations.rows, aiUsage30d: ai.rows, authRoles: authRoles.rows };
 }
 
+async function supportFeedback(db) {
+  const exists=(await db.query(`SELECT to_regclass('public.suggestions') IS NOT NULL AS ready`)).rows[0]?.ready === true;
+  if(!exists) return { summary:{ total:0,new_count:0,bug_count:0 }, recent:[] };
+  const [summary,recent]=await Promise.all([
+    db.query(`
+      SELECT count(*)::int AS total,
+             count(*) FILTER (WHERE status='new')::int AS new_count,
+             count(*) FILTER (WHERE suggestion_type='bug' AND status<>'closed')::int AS bug_count
+        FROM public.suggestions`),
+    db.query(`
+      SELECT id,name,email,suggestion_type,suggestion,status,created_at
+        FROM public.suggestions
+       ORDER BY created_at DESC
+       LIMIT 100`)
+  ]);
+  return { summary:summary.rows[0]||{total:0,new_count:0,bug_count:0}, recent:recent.rows };
+}
+
 async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db),supportFeedback(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData };
 }
 
 export async function handleAdminRequest(request, env, url) {
