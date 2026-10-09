@@ -518,6 +518,16 @@ async function members(db) {
     SELECT COALESCE(a.id,u.id) AS id,
            COALESCE(u.email,a.email) AS email,
            COALESCE(NULLIF(u.name,''),NULLIF(a.name,''),split_part(a.email,'@',1)) AS name,
+           u.username,
+           COALESCE(u.marketing_email_opt_in,false) AS marketing_email_opt_in,
+           u.marketing_email_opt_in_at,
+           u.signup_visitor_id,
+           EXISTS (
+             SELECT 1 FROM public.o2ol_token_transactions tt
+              WHERE tt.user_id=COALESCE(a.id,u.id)
+                AND tt.transaction_type IN ('purchase','auto_replenish')
+                AND COALESCE(tt.amount_cents,0)>0
+           ) AS token_buyer,
            COALESCE(u.user_type,'regular') AS user_type,
            u.relationship_status,u.location,
            COALESCE(u.is_active,true) AS is_active,
@@ -558,6 +568,107 @@ async function members(db) {
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
+async function visitorRegistry(db) {
+  const [visitorsResult,funnelResult] = await Promise.all([
+    db.query(`
+      WITH visitor_rollup AS (
+        SELECT
+          e.visitor_id,
+          min(e.created_at) AS first_seen,
+          max(e.created_at) AS last_seen,
+          count(DISTINCT e.session_id)::int AS visits,
+          count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
+          count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
+          count(*) FILTER (WHERE e.event_type='action')::int AS actions,
+          (array_agg(e.traffic_source ORDER BY e.created_at ASC) FILTER (WHERE e.traffic_source IS NOT NULL))[1] AS original_source,
+          (array_agg(e.language ORDER BY e.created_at DESC) FILTER (WHERE e.language IS NOT NULL))[1] AS language,
+          array_remove(array_agg(DISTINCT e.route),NULL) AS pages,
+          array_remove(array_agg(DISTINCT e.feature),NULL) AS features,
+          (array_agg(e.user_id ORDER BY e.created_at DESC) FILTER (WHERE e.user_id IS NOT NULL))[1] AS latest_event_user_id
+        FROM public.interaction_events e
+        LEFT JOIN neon_auth."user" event_auth ON event_auth.id=e.user_id
+        WHERE e.user_id IS NULL OR COALESCE(event_auth.role,'user') <> 'admin'
+        GROUP BY e.visitor_id
+      ), resolved AS (
+        SELECT vr.*,
+               COALESCE(vil.user_id,vr.latest_event_user_id) AS resolved_user_id,
+               vil.linked_at
+          FROM visitor_rollup vr
+          LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=vr.visitor_id
+      ), purchases AS (
+        SELECT user_id,
+               sum(COALESCE(amount_cents,0)) FILTER (
+                 WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0
+               )::bigint AS paid_cents,
+               count(*) FILTER (
+                 WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0
+               )::int AS purchase_count
+          FROM public.o2ol_token_transactions
+         GROUP BY user_id
+      )
+      SELECT
+        r.visitor_id,r.first_seen,r.last_seen,r.visits,r.page_views,r.clicks,r.actions,
+        COALESCE(r.original_source,'direct') AS original_source,
+        COALESCE(r.language,'en') AS language,
+        r.pages,r.features,r.resolved_user_id AS user_id,r.linked_at,
+        u.username,u.email,u.name,
+        COALESCE(u.marketing_email_opt_in,false) AS marketing_email_opt_in,
+        CASE WHEN r.resolved_user_id IS NULL THEN 'Anonymous Visitor'
+             WHEN COALESCE(p.purchase_count,0)>0 THEN 'Token Buyer'
+             ELSE 'Registered Free' END AS audience_status,
+        COALESCE(p.purchase_count,0)::int AS purchase_count,
+        COALESCE(p.paid_cents,0)::bigint AS paid_cents
+      FROM resolved r
+      LEFT JOIN public.users u ON u.id=r.resolved_user_id
+      LEFT JOIN neon_auth."user" a ON a.id=r.resolved_user_id
+      LEFT JOIN purchases p ON p.user_id=r.resolved_user_id
+      WHERE r.resolved_user_id IS NULL OR COALESCE(a.role,'user') <> 'admin'
+      ORDER BY r.last_seen DESC
+      LIMIT 500
+    `),
+    db.query(`
+      WITH visitor_ids AS (
+        SELECT DISTINCT e.visitor_id
+          FROM public.interaction_events e
+          LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
+          LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
+         WHERE COALESCE(a.role,'user') <> 'admin' OR COALESCE(e.user_id,vil.user_id) IS NULL
+      ), linked_visitors AS (
+        SELECT DISTINCT vi.visitor_id,vil.user_id
+          FROM visitor_ids vi
+          LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=vi.visitor_id
+      ), buyers AS (
+        SELECT DISTINCT tt.user_id
+          FROM public.o2ol_token_transactions tt
+          LEFT JOIN neon_auth."user" a ON a.id=tt.user_id
+         WHERE tt.transaction_type IN ('purchase','auto_replenish')
+           AND COALESCE(tt.amount_cents,0)>0
+           AND COALESCE(a.role,'user') <> 'admin'
+      )
+      SELECT
+        (SELECT count(*) FROM visitor_ids)::int AS total_visitors,
+        (SELECT count(*) FROM linked_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
+        (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
+          WHERE COALESCE(a.role,'user') <> 'admin')::int AS registered_free,
+        (SELECT count(*) FROM buyers)::int AS token_buyers,
+        (SELECT COALESCE(sum(COALESCE(tt.amount_cents,0)),0)
+           FROM public.o2ol_token_transactions tt
+           LEFT JOIN neon_auth."user" a ON a.id=tt.user_id
+          WHERE tt.transaction_type IN ('purchase','auto_replenish')
+            AND COALESCE(tt.amount_cents,0)>0
+            AND COALESCE(a.role,'user') <> 'admin')::bigint AS paid_activity_cents,
+        (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
+          WHERE COALESCE(a.role,'user') <> 'admin' AND COALESCE(u.marketing_email_opt_in,false)=true)::int AS promo_opt_ins
+    `)
+  ]);
+  return {
+    visitors: visitorsResult.rows,
+    funnel: funnelResult.rows[0] || {
+      total_visitors:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0
+    }
+  };
+}
+
 async function manageMemberAccount(db, admin, memberId, action, reason = '') {
   if (!['suspend','delete','restore'].includes(action)) {
     throw Object.assign(new Error('Unsupported member action.'), { status: 400, code: 'invalid_member_action' });
@@ -1233,10 +1344,10 @@ async function system(db) {
 async function dashboard(db, env) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData };
 }
 
 export async function handleAdminRequest(request, env, url) {
