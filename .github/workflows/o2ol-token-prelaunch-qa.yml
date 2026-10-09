@@ -168,7 +168,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -F "QuickAccountGate" src/components/launch/LaunchAccessGate.jsx
-          grep -F "feature-specific APIs/components" src/components/launch/LaunchAccessGate.jsx
+          grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx
           grep -F "Username" src/components/launch/QuickAccountGate.jsx
           grep -F "marketingEmailOptIn" src/components/launch/QuickAccountGate.jsx
           grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
