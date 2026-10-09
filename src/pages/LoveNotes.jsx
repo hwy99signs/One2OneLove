@@ -1774,7 +1774,7 @@ export default function LoveNotes() {
                 >
                   <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                     <Coins className="mr-2 h-4 w-4" />
-                    {currentUser ? 'Add Credit To Send' : openHouseCopy.unlock}
+                    {currentUser ? 'Buy Tokens To Send' : openHouseCopy.unlock}
                   </Button>
                 </Link>
                 <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
