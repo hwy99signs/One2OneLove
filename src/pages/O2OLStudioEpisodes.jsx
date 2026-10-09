@@ -12,6 +12,14 @@ const COPY={
   de:{title:'Frühere Folgen',sub:'Sieh frühere O2OL-Studio-Gespräche an, sobald sie für dein Konto verfügbar sind.',back:'Zurück zu O2OL Studio',season:'Staffel',episode:'Folge',watch:'Folge ansehen',locked:'Wiederholung noch nicht verfügbar',opens:'Öffentliche Wiederholung ab',empty:'Noch keine Studio-Folgen verfügbar.',loading:'Folgen werden geladen…'}
 };
 
+const EPISODE_TITLES={
+  en:{'season-1-episode-1':'Who Should Apologize First?','season-1-episode-2':'Who Pays for the First Date?'},
+  es:{'season-1-episode-1':'¿Quién debería disculparse primero?','season-1-episode-2':'¿Quién paga en la primera cita?'},
+  fr:{'season-1-episode-1':'Qui devrait s’excuser en premier ?','season-1-episode-2':'Qui paie au premier rendez-vous ?'},
+  it:{'season-1-episode-1':'Chi dovrebbe scusarsi per primo?','season-1-episode-2':'Chi paga al primo appuntamento?'},
+  de:{'season-1-episode-1':'Wer sollte sich zuerst entschuldigen?','season-1-episode-2':'Wer bezahlt beim ersten Date?'}
+};
+
 export default function O2OLStudioEpisodes(){
   const {currentLanguage}=useLanguage();
   const {isAuthenticated}=useAuth();
@@ -47,10 +55,10 @@ export default function O2OLStudioEpisodes(){
             const playable=Boolean(ep?.canWatch&&ep?.mediaPath&&!failedMedia[ep.id]);
             return <article key={ep.id} className="overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
               <div className="aspect-video bg-black">
-                {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster="/assets/o2ol-studio-bianca-card.webp" src={ep.mediaPath} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
+                {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||'/assets/o2ol-hero.png'} src={ep.mediaPath} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
                 <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div><LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/><p className="mt-3 font-black">{t.locked}</p>{ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>}</div></div>}
               </div>
-              <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{ep.title}</h2>{playable&&<div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-fuchsia-200"><PlayCircle className="h-5 w-5"/>{t.watch}</div>}</div>
+              <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{playable&&<div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-fuchsia-200"><PlayCircle className="h-5 w-5"/>{t.watch}</div>}</div>
             </article>;
           })}
         </div>}
