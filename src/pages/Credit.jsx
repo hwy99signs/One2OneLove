@@ -18,6 +18,14 @@ const COPY={
  de:{title:'CREDIT KAUFEN',sub:'Credit sind US-Dollar für One2OneLove-Funktionen: Ein Guthaben von $5,00 sind fünf Dollar. Keine Punkte, keine Umrechnung.',badge:'CREDIT · US-DOLLAR · $1,00 = $1,00',balance:'Credit-Guthaben',buy:'Credit Hinzufügen',buyAccess:'Credit Hinzufügen für Zugriff',packages:'Credit Hinzufügen',auto:'Automatische Aufladung',autoBody:'Optional. Wenn Ihr Guthaben auf Ihren Aufladepunkt fällt, belasten wir Ihre gespeicherte Karte einmal mit dem gewählten Betrag — damit Ihr Guthaben und Ihre wöchentliche kostenlose Liebesnachricht nie auslaufen.',enable:'Auto-Aufladung Aktivieren',threshold:'Aufladen, wenn mein Guthaben fällt auf ($)',cap:'Monatslimit Auto-Aufladung ($)',consent:'Ich stimme zu, dass One2OneLove meine gespeicherte Karte automatisch belastet, sobald mein Guthaben den Aufladepunkt erreicht, bis zu meinem Monatslimit. Ich kann dies jederzeit deaktivieren.',consentRequired:'Bitte bestätigen Sie die Einwilligung, um die Auto-Aufladung zu aktivieren.',receiptNote:'Stripe sendet Ihnen für jede Aufladung eine Quittung per E-Mail.',offNote:'Ein Tippen deaktiviert sie — danach keine Belastungen mehr.',payment:'Zahlungsmethode',addCard:'Karte Hinzufügen / Ändern',history:'Letzte Aktivität',noHistory:'Noch keine Credit-Aktivität.',cal:'Kostenkalibrierung',calBody:'Messmodus nur für Admin.',start:'Kostentest Starten',end:'Kostentest Beenden',feature:'Funktion',notes:'Notizen',signed:'Erstelle oder melde dich bei einem kostenlosen verifizierten Konto an, bevor du Credit hinzufügst.',back:'Zurück',loading:'Wird geladen…',saved:'Aufladung gespeichert.',checkout:'Sichere Zahlung wird geöffnet…',calStarted:'Kostentest gestartet.',calEnded:'Kostentest beendet.',providerCost:'Anbieterkosten',charsIn:'Zeichen rein',charsOut:'Zeichen raus',providerIn:'Provider Eingabe',providerCached:'Zwischengespeicherte Eingabe',providerOut:'Provider Ausgabe',contextChars:'Kontextzeichen',o2olTokens:'Berechneter Credit (Cent)',costPerToken:'Anbieterkosten / Cent',packageTest:'Testpaket',creditNote:'Credit ist Dienstguthaben nur für One2OneLove-Funktionen — nicht übertragbar, keine Barauszahlung.',pricesTitle:'Aktuelle Funktionspreise (Prelaunch)',regionalNote:'Preis nach Region des Empfängers — ab $0,29 (USA & Kanada)'}
 };
 
+const CUSTOM_COPY={
+ en:{title:'Custom Amount',hint:'Enter any amount from $1 to $1,000.',amount:'Amount ($)',button:'Add Custom Credit',invalid:'Enter an amount between $1.00 and $1,000.00.'},
+ es:{title:'Monto Personalizado',hint:'Ingresa cualquier monto de $1 a $1,000.',amount:'Monto ($)',button:'Agregar Crédito',invalid:'Ingresa un monto entre $1.00 y $1,000.00.'},
+ fr:{title:'Montant Personnalisé',hint:'Entrez un montant de 1 $ à 1 000 $.',amount:'Montant ($)',button:'Ajouter du Crédit',invalid:'Entrez un montant entre 1,00 $ et 1 000,00 $.'},
+ it:{title:'Importo Personalizzato',hint:'Inserisci un importo da $1 a $1.000.',amount:'Importo ($)',button:'Aggiungi Credito',invalid:'Inserisci un importo tra $1,00 e $1.000,00.'},
+ de:{title:'Eigener Betrag',hint:'Gib einen Betrag von $1 bis $1.000 ein.',amount:'Betrag ($)',button:'Credit Hinzufügen',invalid:'Gib einen Betrag zwischen $1,00 und $1.000,00 ein.'}
+};
+
 function money(cents){return '$'+(Number(cents||0)/100).toFixed(2);}
 function signedMoney(cents){const v=Number(cents||0);return (v<0?'-':'+')+money(Math.abs(v));}
 function micros(value){return '$'+(Number(value||0)/1000000).toFixed(6);}
@@ -31,6 +39,7 @@ export default function Credit(){
  const {user,isAuthenticated}=useAuth();
  const [params,setParams]=useSearchParams();
  const t=COPY[currentLanguage]||COPY.en;
+ const customText=CUSTOM_COPY[currentLanguage]||CUSTOM_COPY.en;
  const [state,setState]=useState(null);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState('');
@@ -39,6 +48,7 @@ export default function Credit(){
  const [autoConsent,setAutoConsent]=useState(false);
  const [autoPackage,setAutoPackage]=useState('credit_10');
  const [autoEnabled,setAutoEnabled]=useState(false);
+ const [customAmount,setCustomAmount]=useState('');
  const [feature,setFeature]=useState('bianca_response');
  const [calPackage,setCalPackage]=useState('starter');
  const [notes,setNotes]=useState('');
@@ -75,9 +85,10 @@ export default function Credit(){
  },[isAuthenticated]);
 
  const packages=state?.packages||[];
+ const purchasePackages=packages.filter(pkg=>!pkg.calibration_only&&['credit_5','credit_10','credit_15','credit_20'].includes(pkg.code));
  const prices=state?.featurePrices||[];
  const active=state?.activeCalibration||null;
- const selectedAutoPackage=useMemo(()=>packages.find(pkg=>pkg.code===autoPackage)||null,[packages,autoPackage]);
+ const selectedAutoPackage=useMemo(()=>purchasePackages.find(pkg=>pkg.code===autoPackage)||null,[purchasePackages,autoPackage]);
  const maxAutoTrigger=Number(selectedAutoPackage?.tokens||0)/100;
  const selectedCalibrationPackage=useMemo(()=>packages.find(pkg=>pkg.code===calPackage)||packages[0]||null,[packages,calPackage]);
  useEffect(()=>{if(packages.length&&!packages.some(pkg=>pkg.code===calPackage))setCalPackage(packages[0].code);},[packages,calPackage]);
@@ -85,6 +96,14 @@ export default function Credit(){
  const buy=async(code)=>{
   setBusy(code);
   try{const data=await startTokenCheckout(code,returnTo);if(data?.checkout?.url)window.location.assign(data.checkout.url);}
+  catch(e){toast.error(e?.message||'Unable to open checkout.');setBusy('');}
+ };
+ const buyCustom=async()=>{
+  const dollars=Number(customAmount);
+  const cents=Math.round(dollars*100);
+  if(!Number.isFinite(dollars)||cents<100||cents>100000){toast.error(customText.invalid);return;}
+  setBusy('custom_credit');
+  try{const data=await startTokenCheckout('custom_credit',returnTo,cents);if(data?.checkout?.url)window.location.assign(data.checkout.url);}
   catch(e){toast.error(e?.message||'Unable to open checkout.');setBusy('');}
  };
  const setupCard=async()=>{
@@ -137,16 +156,21 @@ export default function Credit(){
 
    <section className="mt-7">
     <h2 className="text-2xl font-black text-slate-950">{t.packages}</h2>
-    <div className="mt-4 grid gap-4 md:grid-cols-3">
-     {packages.map((pkg,i)=><div key={pkg.code} className={'rounded-[26px] border bg-white p-6 shadow-sm '+(pkg.code==='credit_10'?'border-violet-300 ring-2 ring-violet-100':'border-slate-200')}>
-      <div className="text-sm font-black uppercase tracking-wide text-violet-600">{pkg.label}</div>
-      {pkg.calibration_only
-        ? <div className="mt-2 text-4xl font-black">{pkg.tokens} <span className="text-lg text-slate-500">units</span></div>
-        : <div className="mt-2 text-4xl font-black">{money(pkg.tokens)} <span className="text-lg text-slate-500">Credit</span></div>}
-      <div className="mt-1 text-2xl font-black text-slate-800">{money(pkg.amount_cents)}</div>
-      <button onClick={()=>buy(pkg.code)} disabled={!!busy} className="mt-5 w-full rounded-2xl bg-slate-950 px-4 py-3 font-black text-white disabled:opacity-50">{busy===pkg.code?t.checkout:t.buy}</button>
-      {pkg.calibration_only&&<div className="mt-3 text-center text-[11px] font-bold text-amber-600">PRELAUNCH CALIBRATION PACKAGE</div>}
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+     {purchasePackages.map(pkg=><div key={pkg.code} className={'flex min-h-[210px] flex-col rounded-[22px] border bg-white p-4 shadow-sm '+(pkg.code==='credit_10'?'border-violet-300 ring-2 ring-violet-100':'border-slate-200')}>
+      <div className="text-xs font-black uppercase tracking-wide text-violet-600">{pkg.label}</div>
+      <div className="mt-2 text-3xl font-black">{money(pkg.tokens)}</div>
+      <div className="text-sm font-bold text-slate-500">Credit</div>
+      <button onClick={()=>buy(pkg.code)} disabled={!!busy} className="mt-auto w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-black text-white disabled:opacity-50">{busy===pkg.code?t.checkout:t.buy}</button>
      </div>)}
+     <div className="flex min-h-[210px] flex-col rounded-[22px] border border-fuchsia-300 bg-white p-4 shadow-sm ring-2 ring-fuchsia-50">
+      <div className="text-xs font-black uppercase tracking-wide text-fuchsia-700">{customText.title}</div>
+      <label className="mt-3 text-xs font-bold text-slate-600">{customText.amount}
+       <input type="number" min="1" max="1000" step="0.01" inputMode="decimal" value={customAmount} onChange={e=>setCustomAmount(e.target.value)} placeholder="25.00" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-lg font-black text-slate-900"/>
+      </label>
+      <p className="mt-2 text-[11px] leading-4 text-slate-500">{customText.hint}</p>
+      <button onClick={buyCustom} disabled={!!busy} className="mt-auto w-full rounded-xl bg-fuchsia-700 px-3 py-2.5 text-sm font-black text-white disabled:opacity-50">{busy==='custom_credit'?t.checkout:customText.button}</button>
+     </div>
     </div>
     <p className="mt-3 text-xs text-slate-500">{t.creditNote}</p>
    </section>
@@ -157,7 +181,7 @@ export default function Credit(){
      <label className="mt-5 flex items-center gap-3 font-bold"><input type="checkbox" checked={autoEnabled} onChange={e=>setAutoEnabled(e.target.checked)} className="h-5 w-5"/>{t.enable}</label>
      <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <label className="text-sm font-bold">{t.threshold}<input type="number" min="0" step="0.01" max={maxAutoTrigger||undefined} value={trigger} onChange={e=>setTrigger(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2"/></label>
-      <label className="text-sm font-bold">{t.packages}<select value={autoPackage} onChange={e=>setAutoPackage(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2">{packages.map(p=><option key={p.code} value={p.code}>{p.label} — {p.calibration_only?p.tokens+' units':money(p.tokens)}</option>)}</select></label>
+      <label className="text-sm font-bold">{t.packages}<select value={autoPackage} onChange={e=>setAutoPackage(e.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2">{purchasePackages.map(p=><option key={p.code} value={p.code}>{p.label} — {p.calibration_only?p.tokens+' units':money(p.tokens)}</option>)}</select></label>
       <label className="text-sm font-bold sm:col-span-2">{t.cap}<input type="number" min="0" step="1" value={cap} onChange={e=>setCap(e.target.value)} placeholder="50" className="mt-2 w-full rounded-xl border px-3 py-2"/></label>
      </div>
      {autoEnabled&&<label className="mt-4 flex items-start gap-3 rounded-xl bg-violet-50 p-3 text-sm font-semibold text-slate-700"><input type="checkbox" checked={autoConsent} onChange={e=>setAutoConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0"/>{t.consent}</label>}
