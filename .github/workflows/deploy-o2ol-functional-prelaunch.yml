@@ -301,31 +301,49 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          CODE=""
-          for attempt in $(seq 1 24); do
-            CODE=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/health" || true)
-            [ "$CODE" = "200" ] && break
-            sleep 5
-          done
-          test "$CODE" = "200"
-          jq -e '.ok == true and .production == false and .environment == "token-prelaunch" and .accessModel == "free_tokens"' /tmp/health.json >/dev/null
 
-          # Token purchase APIs require a verified member.
-          TOKENS_STATUS=$(curl -sS -o /tmp/tokens.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/tokens/packages" || true)
-          test "$TOKENS_STATUS" = "401"
-          grep -F 'unauthorized' /tmp/tokens.json >/dev/null
+          wait_for_probe() {
+            NAME="$1"
+            EXPECTED_STATUS="$2"
+            METHOD="$3"
+            PATHNAME="$4"
+            BODY_CHECK="$5"
 
-          # Legacy recurring checkout must never reopen.
-          LEGACY_STATUS=$(curl -sS -o /tmp/legacy.json -w '%{http_code}' --max-time 20 -X POST "$PREVIEW_URL/api/billing/checkout" -H 'content-type: application/json' --data '{}' || true)
-          test "$LEGACY_STATUS" = "401"
+            for attempt in $(seq 1 18); do
+              OUT="/tmp/$NAME.json"
+              if [ "$METHOD" = "POST" ]; then
+                STATUS=$(curl -sS -o "$OUT" -w '%{http_code}' --max-time 20 -X POST "$PREVIEW_URL$PATHNAME" -H 'content-type: application/json' --data '{}' || true)
+              else
+                STATUS=$(curl -sS -o "$OUT" -w '%{http_code}' --max-time 20 "$PREVIEW_URL$PATHNAME" || true)
+              fi
 
-          # Public Founder snapshot must advertise Token-era economics only.
-          FOUNDING_STATUS=$(curl -sS -o /tmp/founding.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/billing/founding-offer" || true)
-          test "$FOUNDING_STATUS" = "200"
-          jq -e '.offer.accessModel == "free_tokens" and .offer.recurringSubscriptionOffer == false and .offer.economicsPendingCalibration == true' /tmp/founding.json >/dev/null
+              if [ "$STATUS" = "$EXPECTED_STATUS" ] && eval "$BODY_CHECK"; then
+                echo "$NAME live check passed on attempt $attempt."
+                return 0
+              fi
 
-          # Studio/chat/profile media use only the isolated Prelaunch R2 bucket.
-          STUDIO_STATUS=$(curl -sS -o /tmp/studio.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/studio/episodes" || true)
-          test "$STUDIO_STATUS" = "200"
+              echo "$NAME not converged yet (attempt $attempt, status=$STATUS)."
+              sleep 5
+            done
+
+            echo "$NAME failed live verification after propagation window." >&2
+            cat "/tmp/$NAME.json" >&2 || true
+            return 1
+          }
+
+          wait_for_probe health 200 GET /api/health \
+            "jq -e '.ok == true and .production == false and .environment == \"token-prelaunch\" and .accessModel == \"free_tokens\"' /tmp/health.json >/dev/null"
+
+          wait_for_probe tokens 401 GET /api/tokens/packages \
+            "grep -F 'unauthorized' /tmp/tokens.json >/dev/null"
+
+          wait_for_probe legacy 401 POST /api/billing/checkout \
+            "grep -F 'unauthorized' /tmp/legacy.json >/dev/null"
+
+          wait_for_probe founding 200 GET /api/billing/founding-offer \
+            "jq -e '.offer.accessModel == \"free_tokens\" and .offer.recurringSubscriptionOffer == false and .offer.economicsPendingCalibration == true' /tmp/founding.json >/dev/null"
+
+          wait_for_probe studio 200 GET /api/studio/episodes \
+            "jq -e '.ok == true and (.episodes | type == \"array\")' /tmp/studio.json >/dev/null"
 
           echo "TOKEN_PRELAUNCH_URL=$PREVIEW_URL"
