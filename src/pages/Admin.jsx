@@ -26,6 +26,7 @@ const sections = [
   { id: 'love-notes', label: 'Love Notes', icon: Heart },
   { id: 'applications', label: 'Applications', icon: FileCheck2 },
   { id: 'moderation', label: 'Moderation', icon: MessageSquareText },
+  { id: 'support', label: 'Support & Reports', icon: MessageSquareText },
   { id: 'system', label: 'System', icon: Activity },
 ];
 
@@ -395,6 +396,7 @@ export default function Admin() {
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
   const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, clickAnalytics=data?.clickAnalytics || {};
   const visitorRegistry=data?.visitorRegistry || {}, visitorFunnel=visitorRegistry.funnel || {}, visitorRows=visitorRegistry.visitors || [];
+  const supportFeedback=data?.supportFeedback || {}, supportSummary=supportFeedback.summary || {}, supportRows=supportFeedback.recent || [];
   const clickSummary=clickAnalytics.summary || {};
   const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
@@ -707,7 +709,7 @@ export default function Admin() {
           {section==='chat-room' && <div>
             <Heading title="Chat Room Analytics" subtitle="O2OL Show voting, audience demographics and live conversation volume by topic."/>
             {isPrelaunchAdminPreview && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>Prelaunch read-only preview:</strong> Admin verification is temporarily bypassed only on this isolated preview URL. Chat comment counts come from the prelaunch R2 Chat data. Production member, billing and Admin-control data are not exposed here.</div>}
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <Metric icon={BarChart3} label="O2OL Show Votes" value={number(allPlatformsVoting.validResponses)} note="recorded responses from connected voting sources" tone="violet"/>
               <Metric icon={MessageSquareText} label="Chat Comments" value={number(totalConversationComments)} note="approved comments across tracked topics" tone="blue"/>
               <Metric icon={Users} label="Conversation Topics" value={number(conversationTopics.length)} note="rooms and member-created topics" tone="green"/>
@@ -810,11 +812,12 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Registered Free accounts remain visible here even when they have never purchased a subscription."/>
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <Metric icon={Activity} label="On Site Now" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
               <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
               <Metric icon={UserCheck} label="Registered Free" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
               <Metric icon={CreditCard} label="Token Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid token purchase" tone="violet"/>
-              <Metric icon={TrendingUp} label="Paid Activity" value={`${(Number(visitorFunnel.paid_activity_cents||0)/100).toFixed(2)}`} note="token purchases + auto-replenish" tone="green"/>
+              <Metric icon={TrendingUp} label="Paid Activity" value={money(Number(visitorFunnel.paid_activity_cents||0)/100)} note="token purchases + auto-replenish" tone="green"/>
             </div>
             <div className="mb-4 flex flex-wrap gap-2">
               <button type="button" onClick={()=>{setMemberViewFilter('all');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='all'?'border-slate-900 bg-slate-900 text-white':'border-slate-200 bg-white text-slate-700')}>All Sign-ups · {number(memberCounts.all)}</button>
@@ -911,7 +914,7 @@ export default function Admin() {
                       {v.user_id&&<div className="mt-1 text-[11px] font-semibold text-slate-500">Promo email: {v.marketing_email_opt_in?'Yes':'No'}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      <Pill tone={v.audience_status==='Token Buyer'?'violet':v.audience_status==='Registered Free'?'blue':'slate'}>{v.audience_status||'Anonymous Visitor'}</Pill>
+                      <Pill tone={v.audience_status==='Token Buyer'?'violet':v.audience_status==='Registered Free'?'blue':'slate'}>{v.audience_status||'Anonymous Visitor'}</Pill>{v.is_online&&<div className="mt-1"><Pill tone="green">On site now</Pill></div>}
                       {Number(v.paid_cents||0)>0&&<div className="mt-1 text-xs font-bold text-emerald-700">{(Number(v.paid_cents)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} paid</div>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500"><div>{date(v.first_seen)}</div><div className="mt-1 font-semibold text-slate-700">{date(v.last_seen)}</div></td>
@@ -919,7 +922,7 @@ export default function Admin() {
                     <td className="px-4 py-3 text-xs text-slate-600"><div className="font-semibold">{v.original_source||'direct'}</div><div className="mt-1 uppercase">{v.language||'en'}</div></td>
                     <td className="px-4 py-3 text-xs text-slate-600">
                       <div><strong>{number(v.page_views)}</strong> views · <strong>{number(v.clicks)}</strong> clicks · <strong>{number(v.actions)}</strong> actions</div>
-                      <div className="mt-1 max-w-md break-words text-slate-400">{(v.features||[]).slice(0,6).join(' · ') || (v.pages||[]).slice(0,6).join(' · ') || 'No labeled feature activity yet'}</div>
+                      {v.current_route&&<div className="mt-1 font-semibold text-blue-700">Current/last route: {v.current_route}</div>}<div className="mt-1 max-w-md break-words text-slate-400">{(v.features||[]).slice(0,6).join(' · ') || (v.pages||[]).slice(0,6).join(' · ') || 'No labeled feature activity yet'}</div>
                     </td>
                   </tr>)}
                 </tbody>
@@ -934,6 +937,25 @@ export default function Admin() {
           {section==='applications' && <div><Heading title="Professional Applications" subtitle="Licensed professionals, relationship professionals and contributors."/>{applications.length?<div className="grid gap-4 lg:grid-cols-2">{applications.map(item=><div key={`${item.application_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.applicant_name||'Unnamed applicant'}</p><p className="text-sm text-slate-500">{item.email||'No email'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div><div className="mt-3 text-sm text-slate-600"><div>Type: {String(item.application_type||'').replaceAll('_',' ')}</div><div>Submitted: {date(item.created_at)}</div>{item.rejection_reason&&<div className="mt-2 rounded-lg bg-rose-50 p-2 text-rose-700">{item.rejection_reason}</div>}</div></div>)}</div>:<Empty>No professional applications yet.</Empty>}</div>}
 
           {section==='moderation' && <div><Heading title="Moderation Queue" subtitle="Pending community, story and review content in one place."/>{moderation.length?<div className="space-y-3">{moderation.map(item=><div key={`${item.content_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-slate-400">{String(item.content_type||'').replaceAll('_',' ')}</p><p className="mt-1 font-bold">{item.title||'Untitled content'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div>{item.excerpt&&<p className="mt-3 text-sm leading-6 text-slate-600">{item.excerpt}</p>}<p className="mt-3 text-xs text-slate-400">Submitted {date(item.created_at)}</p></div>)}</div>:<Empty>No items waiting in moderation.</Empty>}</div>}
+
+          {section==='support' && <div>
+            <Heading title="Support & Problem Reports" subtitle="In-site support submissions and bug reports. The public support identity is support@one2onelove.com; no ERANT technical-support address is exposed to visitors."/>
+            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+              <Metric icon={MessageSquareText} label="All Reports" value={number(supportSummary.total)} note="suggestions + support + bug reports" tone="blue"/>
+              <Metric icon={AlertTriangle} label="New / Unreviewed" value={number(supportSummary.new_count)} note="status = new" tone="amber"/>
+              <Metric icon={Activity} label="Open Bug Reports" value={number(supportSummary.bug_count)} note="bug reports not closed" tone="rose"/>
+            </div>
+            {supportRows.length?<TableShell><table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Type</th><th className="px-4 py-3">From</th><th className="px-4 py-3">Message</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Received</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">{supportRows.map(item=><tr key={item.id} className="align-top hover:bg-slate-50">
+                <td className="px-4 py-3"><Pill tone={item.suggestion_type==='bug'?'red':'blue'}>{String(item.suggestion_type||'other').replaceAll('_',' ')}</Pill></td>
+                <td className="px-4 py-3"><div className="font-semibold">{item.name||'Anonymous'}</div><div className="text-xs text-slate-500">{item.email||'No email supplied'}</div></td>
+                <td className="max-w-xl whitespace-pre-wrap px-4 py-3 leading-6 text-slate-700">{item.suggestion}</td>
+                <td className="px-4 py-3"><Pill tone={statusTone(item.status)}>{item.status||'new'}</Pill></td>
+                <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{date(item.created_at)}</td>
+              </tr>)}</tbody>
+            </table></TableShell>:<Empty>No support or problem reports yet.</Empty>}
+          </div>}
 
           {section==='system' && <div><Heading title="System" subtitle="Administrator roles, AI usage and migration history. Secrets and credentials are never displayed."/><div className="grid gap-6 lg:grid-cols-3"><Panel title="AI Usage — 30 Days" className="lg:col-span-2">{(data?.system?.aiUsage30d||[]).length?<div className="space-y-2">{data.system.aiUsage30d.map(item=><div key={item.feature} className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="font-semibold">{item.feature}</span><span className="text-sm text-slate-500">{number(item.uses)} uses · {number(item.users)} users</span></div>)}</div>:<Empty>No AI usage recorded.</Empty>}</Panel><Panel title="Non-Admin Auth Roles">{(data?.system?.authRoles||[]).map(item=><div key={item.role} className="mb-2 flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="capitalize">{item.role}</span><strong>{number(item.count)}</strong></div>)}</Panel></div><Panel title="Migration History" className="mt-6">{(data?.system?.migrations||[]).length?<div className="space-y-2">{data.system.migrations.map(item=><div key={`${item.migration_key}-${item.applied_at}`} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><span className="font-mono text-sm font-semibold">{item.migration_key}</span><span className="text-xs text-slate-400">{date(item.applied_at)}</span></div>{item.notes&&<p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div>)}</div>:<Empty>No migration records found.</Empty>}</Panel></div>}
         </div>
