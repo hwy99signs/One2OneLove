@@ -118,8 +118,8 @@ const OPEN_HOUSE_COPY = {
     locked: 'LOCKED',
     membersOnly: 'Members Only',
     lockedTitle: 'There is more waiting inside',
-    lockedBody: 'This Date Idea is locked. Create a FREE account, then use O2OL Tokens to unlock it. Once unlocked, it stays unlocked for your account.',
-    unlock: 'Unlock with O2OL Tokens',
+    lockedBody: 'This Date Idea is locked. Create a FREE account, then use Credit to unlock it. Once unlocked, it stays unlocked for your account.',
+    unlock: 'Unlock with Credit',
     signIn: 'Sign In',
     saveGate: 'Create an account to save, schedule, and track Date Ideas.',
     memberAction: 'Become a Member'
@@ -162,11 +162,11 @@ const OPEN_HOUSE_COPY = {
     locked: 'GESPERRT',
     membersOnly: 'Nur für Mitglieder',
     lockedTitle: 'Es gibt noch viel mehr zu entdecken',
-    lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende O2OL Tokens zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
-    unlock: 'Mit O2OL Tokens Freischalten',
+    lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende Credit zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
+    unlock: 'Mit Credit Freischalten',
     signIn: 'Anmelden',
     saveGate: 'Erstelle ein Konto, um Date-Ideen zu speichern, zu planen und zu verfolgen.',
-    memberAction: 'Mit O2OL Tokens Freischalten'
+    memberAction: 'Mit Credit Freischalten'
   }
 };
 
@@ -798,15 +798,240 @@ export default function DateIdeas() {
                     <>
                       <Button disabled={unlockingIdea} onClick={unlockDateIdea} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
                         {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
-                        {dateIdeaTokenCost} O2OL Token{dateIdeaTokenCost === 1 ? '' : 's'} · {openHouseCopy.unlock}
+                        {' · {openHouseCopy.unlock}
                       </Button>
-                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Tokens?return=/DateIdeas" className="ml-2 font-black underline">Buy Tokens</Link></div>}
+                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit</Link></div>}
                     </>
                   ) : (
                     <>
                       <Link to="/SignUp?source=date-ideas&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
                         <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with O2OL Tokens
+                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Credit
+                        </Button>
+                      </Link>
+                      <Link to="/SignIn?source=date-ideas&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                        <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {selectedIdea && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/25 backdrop-blur-[1px] flex items-center justify-center p-4"
+              onClick={() => setSelectedIdea(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                transition={{ duration: 0.18 }}
+                className="w-full max-w-2xl"
+                onClick={(event) => event.stopPropagation()}
+                onMouseLeave={() => { if (!showScheduleForm) setSelectedIdea(null); }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="date-idea-detail-title"
+              >
+                <Card className="bg-white shadow-2xl border-2 border-pink-100 max-h-[85vh] overflow-y-auto">
+                  <CardHeader className="relative pr-14">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t.close || 'Close'}
+                      onClick={() => setSelectedIdea(null)}
+                      className="absolute right-3 top-3 rounded-full"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                    <div className="flex items-center gap-4">
+                      {(() => {
+                        const DetailIcon = selectedIdea.icon || Heart;
+                        return (
+                          <div className={`w-14 h-14 flex-shrink-0 bg-gradient-to-br ${selectedIdea.color || 'from-pink-500 to-purple-600'} rounded-2xl flex items-center justify-center shadow-lg`}>
+                            <DetailIcon className="w-7 h-7 text-white" />
+                          </div>
+                        );
+                      })()}
+                      <div>
+                        <CardTitle id="date-idea-detail-title" className="text-2xl font-bold text-gray-900">{selectedIdea.title}</CardTitle>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed mb-6">{selectedIdea.description}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-6">
+                      <div><span className="text-gray-500">{t.difficulty}:</span> <span className="font-semibold text-gray-800">{t.difficultyOptions?.[selectedIdea.difficulty] || formatDifficulty(selectedIdea.difficulty)}</span></div>
+                      <div><span className="text-gray-500">{t.duration}:</span> <span className="font-semibold text-gray-800">{selectedIdea.duration || (selectedIdea.duration_hours ? `${selectedIdea.duration_hours}h` : '')}</span></div>
+                      <div><span className="text-gray-500">{t.budget}:</span> <span className="font-semibold text-gray-800">{t.budgetOptions?.[selectedIdea.budget] || selectedIdea.budget}</span></div>
+                      <div><span className="text-gray-500">{t.locations || t.locationLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.locations || selectedIdea.location_type, t.locationOptions)}</span></div>
+                      <div className="sm:col-span-2"><span className="text-gray-500">{t.occasions || t.occasionLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.occasions || selectedIdea.occasion, t.occasionOptions)}</span></div>
+                      <div className="sm:col-span-2"><span className="text-gray-500">{t.stages || t.stageLabel}:</span> <span className="font-semibold text-gray-800">{formatOptionList(selectedIdea.stages || selectedIdea.relationship_stage, t.stageOptions)}</span></div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                      {hasMemberAccess ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSaveDate(selectedIdea)}
+                            className={selectedIdea.is_favorite ? 'bg-pink-50 border-pink-300' : ''}
+                          >
+                            <Bookmark className={`w-4 h-4 mr-2 ${selectedIdea.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
+                            {selectedIdea.is_favorite ? t.saved : t.addToSaved}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {t.shareWithPartner}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={openSchedule}>
+                            <CalendarDays className="w-4 h-4 mr-2" />
+                            {t.schedule}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCompleteDate(selectedIdea)}
+                            disabled={Boolean(selectedIdea.is_completed)}
+                            className={selectedIdea.is_completed ? 'bg-green-50 border-green-300 text-green-700' : ''}
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            {selectedIdea.is_completed ? t.done : t.markComplete}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleShareDate(selectedIdea)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {t.shareWithPartner}
+                          </Button>
+                          <Link to="/SignUp?source=open-house-date-ideas&type=individual">
+                            <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                              <Lock className="w-4 h-4 mr-2" />
+                              {openHouseCopy.memberAction}
+                            </Button>
+                          </Link>
+                          <p className="w-full text-xs text-gray-500">{openHouseCopy.saveGate}</p>
+                        </>
+                      )}
+                    </div>
+
+                    <AnimatePresence>
+                      {showScheduleForm && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="mt-4 rounded-xl border border-purple-200 bg-purple-50/60 p-4"
+                        >
+                          {!scheduledEvent ? (
+                            <>
+                              <div className="flex items-center gap-2 mb-4">
+                                <CalendarDays className="w-5 h-5 text-purple-600" />
+                                <h4 className="font-bold text-gray-900">{t.scheduleTitle}</h4>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label htmlFor="date-idea-schedule-date" className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleDate}</label>
+                                  <Input
+                                    id="date-idea-schedule-date"
+                                    type="date"
+                                    min={localToday}
+                                    value={scheduleDate}
+                                    onChange={(event) => setScheduleDate(event.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="date-idea-schedule-time" className="block text-sm font-semibold text-gray-700 mb-1">{t.scheduleTime}</label>
+                                  <div className="relative">
+                                    <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                    <Input
+                                      id="date-idea-schedule-time"
+                                      type="time"
+                                      value={scheduleTime}
+                                      onChange={(event) => setScheduleTime(event.target.value)}
+                                      className="pl-9"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-4">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowScheduleForm(false)}
+                                  disabled={isScheduling}
+                                >
+                                  {t.cancel}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={handleScheduleDate}
+                                  disabled={isScheduling || !scheduleDate || !scheduleTime}
+                                  className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                                >
+                                  <CalendarDays className="w-4 h-4 mr-2" />
+                                  {isScheduling ? t.scheduling : t.scheduleAction}
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-semibold text-gray-900 mb-1">{t.dateScheduled}</p>
+                              <p className="text-sm text-gray-700 mb-4">
+                                {t.scheduledFor}: {formatScheduledDate(scheduledEvent.date, scheduledEvent.time)}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Button type="button" size="sm" onClick={handleShareScheduledDate} className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                                  <Share2 className="w-4 h-4 mr-2" />
+                                  {t.shareSchedule}
+                                </Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setShowScheduleForm(false)}>
+                                  {t.close}
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {filteredIdeas.length === 0 && (
+          <div className="text-center py-12">
+            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">{t.noIdeasFound}</h3>
+            <p className="text-gray-500">{t.tryAdjusting}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}+(Number(dateIdeaTokenCost||0)/100).toFixed(2)+' Credit'} · {openHouseCopy.unlock}
+                      </Button>
+                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit</Link></div>}
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/SignUp?source=date-ideas&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                        <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Credit
                         </Button>
                       </Link>
                       <Link to="/SignIn?source=date-ideas&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
