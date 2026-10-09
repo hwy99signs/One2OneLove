@@ -2,6 +2,11 @@ name: Deploy O2OL Token Functional Prelaunch
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - prelaunch/final-consolidated-20261009
+    paths:
+      - ".github/deploy-o2ol-final-prelaunch-trigger"
 
 permissions:
   contents: read
@@ -35,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: prelaunch/o2ol-token-economy-20261003
+          ref: prelaunch/final-consolidated-20261009
 
       - uses: actions/setup-node@v4
         with:
@@ -48,7 +53,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          REF_API="https://api.github.com/repos/hwy99signs/One2OneLove/git/ref/heads/prelaunch/o2ol-token-economy-prelaunch-20261003"
+          REF_API="https://api.github.com/repos/hwy99signs/One2OneLove/git/ref/heads/prelaunch/final-consolidated-20261009"
           SOURCE_SHA=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$REF_API" | jq -r '.object.sha')
           test -n "$SOURCE_SHA"
           echo "AUTHORITATIVE_TOKEN_SOURCE_SHA=$SOURCE_SHA"
