@@ -69,6 +69,7 @@ const KNOWN_APP_ROUTES = new Set([
   '/mymatchiq/signup',
   '/mymatchiq/subscription',
   '/o2olstudio',
+  '/o2olstudio/episodes',
   '/payment-success',
   '/paymentsuccess',
   '/podcastssupport',
