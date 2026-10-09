@@ -163,7 +163,7 @@ function LanguageContent({ children, currentPageName }) {
   const t = translations[currentLanguage] || translations.en;
   const fT = FOOTER_COPY[currentLanguage] || FOOTER_COPY.en;
   const mT = MMIQ_FOOTER_COPY[currentLanguage] || MMIQ_FOOTER_COPY.en;
-  const closeTimeoutRef = useRef(null);
+  const desktopActionRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const mobileMenuButtonRef = useRef(null);
 
@@ -233,19 +233,6 @@ function LanguageContent({ children, currentPageName }) {
     return total + count;
   }, 0);
 
-  const handleMouseEnter = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-    }
-    setActionOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setActionOpen(false);
-    }, 300);
-  };
-
   const handleSignIn = () => {
     navigate(createPageUrl("SignIn"));
   };
@@ -291,10 +278,18 @@ function LanguageContent({ children, currentPageName }) {
   };
 
   useEffect(() => {
+    const closeDesktopAction = (event) => {
+      if (desktopActionRef.current?.contains(event.target)) return;
+      setActionOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setActionOpen(false);
+    };
+    document.addEventListener('pointerdown', closeDesktopAction);
+    document.addEventListener('keydown', closeOnEscape);
     return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
+      document.removeEventListener('pointerdown', closeDesktopAction);
+      document.removeEventListener('keydown', closeOnEscape);
     };
   }, []);
 
@@ -417,9 +412,8 @@ function LanguageContent({ children, currentPageName }) {
             <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className={mmiqHeaderButton('from-sky-400 to-blue-600')}>⌂ {t.nav.home}</Link>
             
             <div
+              ref={desktopActionRef}
               className="relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
               onBlur={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget)) setActionOpen(false);
               }}
@@ -873,15 +867,15 @@ function LanguageContent({ children, currentPageName }) {
                 </div>
               </div>
               <div><h4 className="text-xl font-black mb-4">{fT.supportCol}</h4><FooterLink onClick={() => navigate(createPageUrl("HelpCenter"))}>{fT.help}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("ContactUs"))}>{fT.contact}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("PrivacyPolicy"))}>{fT.privacy}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("TermsOfService"))}>{fT.terms}</FooterLink></div>
-              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><a href="mailto:technicalsupport@erantpropertyservices.com,support@one2onelove.com" className="block text-left py-1 hover:text-yellow-200">{fT.reportProblem}</a></div>
+              <div><h4 className="text-xl font-black mb-4">{fT.company}</h4><FooterLink onClick={() => navigate(createPageUrl("AboutUs"))}>{fT.about}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Reviews"))}>{fT.reviews}</FooterLink><FooterLink onClick={() => navigate(createPageUrl("Suggestions"))}>{fT.suggestions}</FooterLink><FooterLink onClick={() => navigate('/Suggestions?mode=problem')}>{fT.reportProblem}</FooterLink></div>
             </div>
             <div className="max-w-7xl mx-auto border-t border-white/25 mt-8 pt-4 text-center text-sm">{fT.copyright}</div>
           </footer>
         </>
       )}
-        <a href="mailto:technicalsupport@erantpropertyservices.com,support@one2onelove.com" aria-label={fT.reportProblem}
+        <button type="button" onClick={() => navigate('/Suggestions?mode=problem')} aria-label={fT.reportProblem}
           className="fixed bottom-0 right-4 z-50 rounded-t-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-red-700">
-          {fT.reportProblem}</a>
+          {fT.reportProblem}</button>
     </div>
   );
 }
