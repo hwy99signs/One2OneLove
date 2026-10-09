@@ -1,3 +1,3 @@
 deployed_run=37965991747
-qa_observer_fix=6e8aee37dde19e420ee6f0408250108ba1fad7e1
-purpose=rerun deployed final browser certification with corrected menu and hydration observations
+qa_observer_fix=8fe4525c2911bf5c081f7489c6870412a9b07a52
+purpose=final browser certification with exact desktop Action header selector
