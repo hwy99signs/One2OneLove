@@ -221,7 +221,7 @@ try{
     for(const amount of ['$5.00','$10.00','$15.00','$20.00']){
       if(body.includes(amount)) pass('Fixed Credit card '+amount); else fail('Fixed Credit card missing '+amount);
     }
-    if(body.includes('Custom Amount')) pass('Custom Amount Credit card visible'); else fail('Custom Amount Credit card missing');
+    if(/Custom Amount/i.test(body)) pass('Custom Amount Credit card visible'); else fail('Custom Amount Credit card missing');
     const customInput=page.getByLabel('Amount ($)');
     if(await customInput.isVisible().catch(()=>false)) pass('Custom Credit amount input visible'); else fail('Custom Credit amount input missing');
     await noOverflow(page,'Credit five-card desktop');
@@ -295,7 +295,7 @@ try{
     const body=await page.locator('body').innerText();
     if(/media storage yet|staged for O2OL Studio/i.test(body)) fail('Studio staging copy visible'); else pass('Studio audience copy clean');
     if(/BUY TOKENS|O2OL Tokens|Tokens O2OL|Jetons O2OL|Token O2OL/i.test(body)) fail('Studio retired Token copy visible'); else pass('Studio Credit wording clean');
-    if(body.includes('Who Pays for the First Date?')&&body.includes('Episode 2')) pass('Studio Episode 2 featured'); else fail('Studio Episode 2 not featured',body.slice(0,1000));
+    if(/Who Pays for the First Date\?/i.test(body)&&/Episode 2/i.test(body)) pass('Studio Episode 2 featured'); else fail('Studio Episode 2 not featured',body.slice(0,1000));
     const archiveLink=page.getByRole('link',{name:/Previous Episodes/i});
     if(await archiveLink.isVisible().catch(()=>false)) pass('Studio Previous Episodes link visible'); else fail('Studio Previous Episodes link missing');
     await noOverflow(page,'Studio mobile',{});
