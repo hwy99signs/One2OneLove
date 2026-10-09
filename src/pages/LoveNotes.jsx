@@ -69,7 +69,7 @@ const translations = {
     personalizedFor: "Personalized for",
     recipientPhone: "Recipient's Phone Number",
     recipientPhonePlaceholder: "(555) 123-4567",
-    recipientPhoneDesc: "One2OneLove SMS delivery uses O2OL Tokens. The Token cost is shown before sending. Recipient carrier rates may apply.",
+    recipientPhoneDesc: "One2OneLove SMS delivery uses Credit. The Token cost is shown before sending. Recipient carrier rates may apply.",
     schedulingOptions: "📅 Scheduling Options",
     sendNow: "Send Now",
     scheduleLater: "Schedule for Later",
@@ -582,7 +582,7 @@ const translations = {
     copiedTikTok: "Kopiert! In TikTok einfügen",
     openingLinkedIn: "Öffne LinkedIn...",
     openingEmail: "Öffne E-Mail...",
-    recipientPhoneDesc: "One2OneLove-SMS verwenden O2OL Tokens. Die Token-Kosten werden vor dem Senden angezeigt. Beim Empfänger können Mobilfunkgebühren anfallen.",
+    recipientPhoneDesc: "One2OneLove-SMS verwenden Credit. Die Token-Kosten werden vor dem Senden angezeigt. Beim Empfänger können Mobilfunkgebühren anfallen.",
     partnerNameDesc: 'Ersetzt "du" und "dein" in Botschaften.',
     petNameDesc: 'Hinzugefügt zu Botschaften mit "Liebe".',
     specialPlaceDesc: "Hinzugefügt zu 'Erinnerungen' Botschaften.",
@@ -832,7 +832,7 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'More Love Notes are waiting inside',
     categoryBody: 'Create a free verified One2OneLove account to unlock the complete Love Notes collection.',
     sendTitle: 'Ready to send it?',
-    sendBody: 'Create a free verified account to participate. One2OneLove SMS delivery uses O2OL Tokens; sharing through your own apps remains free.',
+    sendBody: 'Create a free verified account to participate. One2OneLove SMS delivery uses Credit; sharing through your own apps remains free.',
     unlock: 'Create FREE Account',
     signIn: 'Sign In',
   },
@@ -876,7 +876,7 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'Weitere Liebesnachrichten warten auf dich',
     categoryBody: 'Erstelle ein kostenloses verifiziertes One2OneLove-Konto, um die vollständige Liebesnachrichten-Sammlung freizuschalten.',
     sendTitle: 'Bereit zum Senden?',
-    sendBody: 'Erstelle ein kostenloses verifiziertes Konto. One2OneLove-SMS verwenden O2OL Tokens; das Teilen über deine eigenen Apps bleibt kostenlos.',
+    sendBody: 'Erstelle ein kostenloses verifiziertes Konto. One2OneLove-SMS verwenden Credit; das Teilen über deine eigenen Apps bleibt kostenlos.',
     unlock: 'KOSTENLOSES Konto Erstellen',
     signIn: 'Anmelden',
   },
@@ -1065,7 +1065,7 @@ export default function LoveNotes() {
     const info = tokenRequiredDetails(error);
     setOpenHouseLockReason('send');
     setShowOpenHouseLock(true);
-    toast.message(`Buy Tokens to send — this Love Note requires ${Number(info.required || 0)} O2OL Token(s). Your Token balance is ${Number(info.balance || 0)}.`);
+    toast.message(`Add Credit to send — this Love Note requires ${(Number(info.required || 0)/100).toFixed(2)} Credit. Your Credit balance is ${(Number(info.balance || 0)/100).toFixed(2)}.`);
     return true;
   };
 
@@ -1442,7 +1442,7 @@ export default function LoveNotes() {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">Token Balance</div>
                   <div className="mt-2 text-3xl font-black text-purple-600">{tokenBalance.toLocaleString()}</div>
-                  <Link to="/Tokens?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Buy Tokens</Link>
+                  <Link to="/Credit?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Buy Tokens</Link>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">One2OneLove SMS</div>
@@ -1468,7 +1468,7 @@ export default function LoveNotes() {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">Share from Your Apps</div>
                   <div className="mt-2 text-3xl font-black text-emerald-600">FREE</div>
-                  <div className="mt-1 text-xs text-gray-500">WhatsApp, email, social sharing and copy actions do not spend O2OL Tokens.</div>
+                  <div className="mt-1 text-xs text-gray-500">WhatsApp, email, social sharing and copy actions do not spend Credit.</div>
                 </div>
               </div>
             </CardContent>
@@ -1769,12 +1769,12 @@ export default function LoveNotes() {
               </div>
               <div className="mt-6 flex flex-col gap-2">
                 <Link
-                  to={currentUser ? '/Tokens?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
+                  to={currentUser ? '/Credit?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
                   onClick={() => setShowOpenHouseLock(false)}
                 >
                   <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                     <Coins className="mr-2 h-4 w-4" />
-                    {currentUser ? 'Buy Tokens To Send' : openHouseCopy.unlock}
+                    {currentUser ? 'Add Credit To Send' : openHouseCopy.unlock}
                   </Button>
                 </Link>
                 <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
