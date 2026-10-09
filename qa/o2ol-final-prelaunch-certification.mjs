@@ -36,18 +36,20 @@ async function installMocks(context,mode){
   ],packages:[
     {code:'credit_5',label:'Add $5 Credit',tokens:500,amount_cents:500,active:true,calibration_only:false},
     {code:'credit_10',label:'Add $10 Credit',tokens:1000,amount_cents:1000,active:true,calibration_only:false},
+    {code:'credit_15',label:'Add $15 Credit',tokens:1500,amount_cents:1500,active:true,calibration_only:false},
     {code:'credit_20',label:'Add $20 Credit',tokens:2000,amount_cents:2000,active:true,calibration_only:false}
   ],transactions:[],settings:{payment_method_saved:false,enabled:false,package_code:'credit_10',trigger_balance:500,monthly_cap_cents:5000,consent_at:null},credit:{currency:'Credit',unit:'USD_CENTS'}}));
   await context.route('**/api/tokens/packages',r=>fulfill(r,200,{ok:true,packages:[
     {code:'credit_5',label:'Add $5 Credit',amount_cents:500,tokens:500,active:true,calibration_only:false},
     {code:'credit_10',label:'Add $10 Credit',amount_cents:1000,tokens:1000,active:true,calibration_only:false},
+    {code:'credit_15',label:'Add $15 Credit',amount_cents:1500,tokens:1500,active:true,calibration_only:false},
     {code:'credit_20',label:'Add $20 Credit',amount_cents:2000,tokens:2000,active:true,calibration_only:false}
   ]}));
   await context.route('**/api/tokens/unlocks**',r=>fulfill(r,200,{ok:true,unlocks:[]}));
-  await context.route('**/api/studio/episodes',r=>fulfill(r,200,{ok:true,episodes:[{
-    id:'episode-1',title:'Who Should Apologize First?',canWatch:false,publicAvailable:false,memberAvailable:false,
-    publicAvailableAt:'2026-10-16T12:00:00Z',mediaPath:'/studio-media/season-1-episode-1.mp4'
-  }]}));
+  await context.route('**/api/studio/episodes',r=>fulfill(r,200,{ok:true,episodes:[
+    {id:'season-1-episode-2',season:1,episode:2,title:'Who Pays for the First Date?',canWatch:false,publicAvailable:false,memberAvailable:false,publicAvailableAt:'2026-10-16T22:00:00Z',mediaPath:null,chatRoom:'studio-who-pays-for-the-first-date',posterPath:'/assets/o2ol-hero.png'},
+    {id:'season-1-episode-1',season:1,episode:1,title:'Who Should Apologize First?',canWatch:true,publicAvailable:true,memberAvailable:false,publicAvailableAt:'2026-10-10T00:00:00Z',mediaPath:'/studio-media/season-1-episode-1.mp4',chatRoom:'studio-who-should-apologize-first',posterPath:'/assets/o2ol-studio-bianca-card.webp'}
+  ]}));
   await context.route('**/api/mymatchiq/**',r=>{
     const p=new URL(r.request().url()).pathname;
     if(p.endsWith('/bianca/profile')) return fulfill(r,200,{ok:true,profile:{interaction_count:3,conversation_count:1,common_phrases:[],context_depth_score:25}});
@@ -212,6 +214,20 @@ try{
     await context.close();
   }
 
+  // Credit purchase cards: four fixed dollar cards plus one Custom Amount card.
+  {
+    const {context,page}=await open(browser,'/Credit',{mode:'credit',viewport:{width:1440,height:1000}});
+    const body=await page.locator('body').innerText();
+    for(const amount of ['$5.00','$10.00','$15.00','$20.00']){
+      if(body.includes(amount)) pass('Fixed Credit card '+amount); else fail('Fixed Credit card missing '+amount);
+    }
+    if(/Custom Amount/i.test(body)) pass('Custom Amount Credit card visible'); else fail('Custom Amount Credit card missing');
+    const customInput=page.getByLabel('Amount ($)');
+    if(await customInput.isVisible().catch(()=>false)) pass('Custom Credit amount input visible'); else fail('Custom Credit amount input missing');
+    await noOverflow(page,'Credit five-card desktop');
+    await context.close();
+  }
+
   // Legacy Tokens URL is compatibility-only and must land on Credit.
   {
     const {context,page}=await open(browser,'/Tokens',{mode:'credit'});
@@ -273,13 +289,24 @@ try{
     await context.close();
   }
 
-  // Studio source-facing UI has no staging or retired Token language.
+  // Studio: Episode 2 is featured and the episode archive is reachable.
   {
     const {context,page}=await open(browser,'/O2OLStudio',{mode:'free'});
     const body=await page.locator('body').innerText();
     if(/media storage yet|staged for O2OL Studio/i.test(body)) fail('Studio staging copy visible'); else pass('Studio audience copy clean');
     if(/BUY TOKENS|O2OL Tokens|Tokens O2OL|Jetons O2OL|Token O2OL/i.test(body)) fail('Studio retired Token copy visible'); else pass('Studio Credit wording clean');
+    if(/Who Pays for the First Date\?/i.test(body)&&/Episode 2/i.test(body)) pass('Studio Episode 2 featured'); else fail('Studio Episode 2 not featured',body.slice(0,1000));
+    const archiveLink=page.getByRole('link',{name:/Previous Episodes/i});
+    if(await archiveLink.isVisible().catch(()=>false)) pass('Studio Previous Episodes link visible'); else fail('Studio Previous Episodes link missing');
     await noOverflow(page,'Studio mobile',{});
+    await context.close();
+  }
+  {
+    const {context,page}=await open(browser,'/O2OLStudio/Episodes',{mode:'free'});
+    const body=await page.locator('body').innerText();
+    if(body.includes('Previous Episodes')&&body.includes('Who Pays for the First Date?')&&body.includes('Who Should Apologize First?')) pass('Studio archive lists Episodes 1 and 2');
+    else fail('Studio archive episode list incomplete',body.slice(0,1400));
+    await noOverflow(page,'Studio archive mobile',{});
     await context.close();
   }
 } finally {

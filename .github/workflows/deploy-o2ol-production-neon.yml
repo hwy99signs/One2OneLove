@@ -131,6 +131,13 @@ jobs:
           grep -F '<Navigate to="/Credit" replace' src/pages/Subscription.jsx >/dev/null
           grep -F 'BUY CREDIT' src/pages/Layout.jsx >/dev/null
           grep -F 'CREDIT · US DOLLARS · $1.00 = $1.00' src/pages/Credit.jsx >/dev/null
+          grep -F "custom_credit" src/pages/Credit.jsx src/lib/tokenService.js worker/o2ol-tokens.ts >/dev/null
+          grep -F "lg:grid-cols-5" src/pages/Credit.jsx >/dev/null
+          grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts >/dev/null
+          grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts >/dev/null
+          grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx >/dev/null
+          grep -F 'to="/O2OLStudio/Episodes"' src/pages/O2OLStudio.jsx >/dev/null
+          grep -F "studio-who-pays-for-the-first-date" src/pages/O2OLStudio.jsx src/pages/Chat.jsx worker/community-chat.ts >/dev/null
 
           # Registered Free identity + visitor stitching.
           grep -F "'Free'" worker/launch-auth.ts >/dev/null

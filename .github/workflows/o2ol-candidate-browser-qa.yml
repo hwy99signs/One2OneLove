@@ -1,0 +1,45 @@
+name: O2OL Candidate Browser QA
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PREVIEW_URL: https://one2onelove-token-prelaunch.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build promotion candidate
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+      - name: Prepare browser
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Run responsive and role QA against isolated Prelaunch
+        run: |
+          set -euo pipefail
+          node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/o2ol-candidate-browser-qa.txt
+      - name: Upload browser QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-candidate-browser-qa
+          path: /tmp/o2ol-candidate-browser-qa.txt
+          if-no-files-found: warn

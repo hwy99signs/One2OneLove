@@ -379,11 +379,23 @@ async function recentTransactions(db,userId){
 }
 async function createCheckout(request,db,env,auth,input){
   await requireVerifiedMember(db,auth);
-  const pkg=(await db.query(
-    'SELECT * FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1',
-    [String(input?.packageCode||'')],
-  )).rows[0];
-  if(!pkg)return fail('Invalid Credit package.',400,'invalid_package');
+  const requestedPackage=String(input?.packageCode||'').trim();
+  let pkg;
+  if(requestedPackage==='custom_credit'){
+    const amountCents=Math.floor(Number(input?.customAmountCents)||0);
+    // Stripe's USD minimum is below this; the $1 floor keeps the customer-facing
+    // custom Credit control simple. The upper bound limits accidental/abusive charges.
+    if(!Number.isInteger(amountCents)||amountCents<100||amountCents>100000){
+      return fail('Custom Credit amount must be between $1.00 and $1,000.00.',400,'invalid_custom_credit_amount');
+    }
+    pkg={code:'custom_credit',label:'Custom Amount',tokens:amountCents,amount_cents:amountCents,calibration_only:false};
+  }else{
+    pkg=(await db.query(
+      'SELECT * FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1',
+      [requestedPackage],
+    )).rows[0];
+    if(!pkg)return fail('Invalid Credit package.',400,'invalid_package');
+  }
   const customer=await ensureStripeCustomer(db,env,auth);
   const origin=new URL(request.url).origin;
   const requestedReturn=String(input?.returnTo||'').trim();

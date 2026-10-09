@@ -14,6 +14,7 @@ const ROOMS = [
   { id:'10000000-0000-4000-8000-000000000005', slug:'trust-boundaries-growth', name:'Trust, Boundaries & Growth', description:'Trust, boundaries, accountability and relationship security.', icon:'🛡️' },
   { id:'10000000-0000-4000-8000-000000000006', slug:'love-intimacy-connection', name:'Love, Intimacy & Connection', description:'Affection, emotional closeness, romance and intimacy.', icon:'❤️' },
   { id:'10000000-0000-4000-8000-000000000007', slug:'studio-who-should-apologize-first', name:'O2OL Studio — Who Should Apologize First?', description:'Season 1, Episode 1 discussion. Watch the episode, then share your perspective.', icon:'🎬' },
+  { id:'10000000-0000-4000-8000-000000000009', slug:'studio-who-pays-for-the-first-date', name:'O2OL Studio — Who Pays for the First Date?', description:'Season 1, Episode 2 discussion. Watch the episode, then share your perspective.', icon:'🎬' },
   { id:'10000000-0000-4000-8000-000000000008', slug:'lgbtq-community', name:'LGBTQ+ Community Chat', description:'A dedicated LGBTQ+ community space for support, connection and respectful conversation.', icon:'🏳️‍🌈' },
 ];
 
