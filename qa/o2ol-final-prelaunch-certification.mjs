@@ -295,7 +295,7 @@ try{
     await context.close();
   }
 
-  // Studio regression guard: Episode 2 is featured, Episode 1 deep-links to itself, and the archive is reachable.
+  // Studio regression guard: Episode 2 is featured, Episode 1 deep-links to itself, and archive Watch actions stay episode-specific.
   {
     const {context,page}=await open(browser,'/O2OLStudio',{mode:'free'});
     const body=await page.locator('body').innerText();
