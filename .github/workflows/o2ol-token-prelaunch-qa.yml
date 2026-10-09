@@ -134,7 +134,7 @@ jobs:
           grep -F "plateforme réservée aux adultes" src/pages/PrivacyPolicy.jsx
           grep -F "piattaforma riservata agli adulti" src/pages/PrivacyPolicy.jsx
           grep -F "ausschließlich für Erwachsene bestimmte Plattform" src/pages/PrivacyPolicy.jsx
-          grep -F '$1.00 Credit represents $1.00 of One2OneLove service value' src/content/terms/en.js
+          grep -F '$1.00 of Credit represents $1.00 of One2OneLove service value' src/content/terms/en.js
           grep -F 'Credit balances are displayed in U.S. dollars and cents in $0.00 format' src/pages/PrivacyPolicy.jsx
           if grep -RInE 'under 13|menores? de 13|moins de 13|minori di 13|unter 13' src/pages/PrivacyPolicy.jsx src/pages/TermsOfService.jsx src/content/terms 2>/dev/null; then
             echo "Under-13/minor eligibility wording remains in active legal sources." >&2
