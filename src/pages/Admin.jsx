@@ -553,6 +553,7 @@ export default function Admin() {
         <div className="px-4 py-6 sm:px-6 lg:px-8">
           {section==='overview' && <div>
             <Heading title="Platform Overview" subtitle="A quick operating view of users, tiers, Love Notes, moderation and the features visitors and members are actually using."/>
+            <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900"><strong>Analytics rules:</strong> Administrator activity is intentionally excluded from visitor, click and feature-usage totals so your own testing does not inflate audience numbers. “Today” and “this month” use America/Chicago; rolling 24-hour and 7/30-day windows remain true elapsed-time windows.</div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Metric icon={Users} label="Total Sign-ups" value={number(users.total)} note={`${number(users.new_7d)} joined in the last 7 days`}/>
               <Metric icon={UserCheck} label="Registered Free Accounts" value={number(users.registered_free)} note="free member profiles · no paid subscription" tone="blue"/>
