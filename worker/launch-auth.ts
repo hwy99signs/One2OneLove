@@ -100,15 +100,15 @@ async function launchReadiness(env) {
             AND lower(COALESCE(subscription_status,'')) IN ('active','trial','trialing')
         ) AS legacy_entitlement_rows,
         COALESCE((
-          SELECT column_default = '''Premiere''::text'
+          SELECT column_default = '''Free''::text'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_plan'
-        ),false) AS premiere_default_ready,
+        ),false) AS free_default_ready,
         COALESCE((
-          SELECT column_default = '9.99'
+          SELECT column_default = '0'
           FROM information_schema.columns
           WHERE table_schema='public' AND table_name='users' AND column_name='subscription_price'
-        ),false) AS price_default_ready,
+        ),false) AS zero_price_default_ready,
         COALESCE((
           SELECT column_default = '''inactive''::text'
           FROM information_schema.columns
@@ -141,54 +141,80 @@ function launchIdentityReady(readiness, env) {
 }
 
 function registrationContext(body) {
-  const name = clean(body.name, 200, true);
+  const quickAccount = body.quickAccount === true;
+  const username = clean(body.username, 40, quickAccount);
+  const name = quickAccount ? username : clean(body.name, 200, true);
   const email = clean(body.email, 320, true)?.toLowerCase();
-  const country = clean(body.country, 2, true)?.toUpperCase();
-  const preferredLanguage = clean(body.preferredLanguage, 10, true)?.toLowerCase();
-  const termsVersion = clean(body.termsVersion, 100, true);
-  const termsAcceptedAt = clean(body.termsAcceptedAt, 100, true);
-  const privacyAcknowledged = body.privacyPolicyAcknowledged === true;
-  const age18Confirmed = body.age18Confirmed === true;
-  const selectedPlanRaw = clean(body.selectedPlan, 50, false) || 'Premiere';
-  const selectedPlan = selectedPlanRaw.toLowerCase() === 'exclusive'
-    ? 'Exclusive'
-    : ['premiere', 'premier'].includes(selectedPlanRaw.toLowerCase()) ? 'Premiere'
-    : null;
-  const freeAccount = body.freeAccount === true;
+  const countryRaw = clean(body.country, 2, !quickAccount);
+  const country = countryRaw ? countryRaw.toUpperCase() : null;
+  const preferredLanguage = (clean(body.preferredLanguage, 10, false) || 'en').toLowerCase();
+  const termsVersion = clean(body.termsVersion, 100, false) || (quickAccount ? '2026-10-09-quick' : '2026-10-03');
+  const termsAcceptedAt = clean(body.termsAcceptedAt, 100, false) || new Date().toISOString();
+  const privacyAcknowledged = body.privacyPolicyAcknowledged !== false;
+  const age18Confirmed = body.age18Confirmed !== false;
+  const foundingIntent = body.foundingIntent === true;
+  const marketingEmailOptIn = body.marketingEmailOptIn === true;
+  const visitorId = clean(body.visitorId, 120, false);
 
   if (!/^\S+@\S+\.\S+$/.test(email || '')) throw new Error('Please enter a valid email address.');
-  if (!/^[A-Z]{2}$/.test(country || '')) throw new Error('Please select a valid country.');
+  if (quickAccount && !/^[A-Za-z0-9._-]{3,40}$/.test(username || '')) {
+    throw new Error('Username must be 3–40 characters using letters, numbers, periods, underscores, or hyphens.');
+  }
+  if (!quickAccount && !/^[A-Z]{2}$/.test(country || '')) throw new Error('Please select a valid country.');
   if (!new Set(['en', 'es', 'fr', 'it', 'de']).has(preferredLanguage)) throw new Error('Please select one of the supported One2OneLove languages.');
   if (!privacyAcknowledged || !age18Confirmed) throw new Error('Privacy acknowledgement and 18+ confirmation are required.');
-  if (!selectedPlan) throw new Error('Please choose Premiere or Exclusive before creating an account.');
-
-  // FIRST NAME is mandatory at account creation (owner, 2026-10-08): it is
-  // the signature printed at the foot of Love Notes and messages, and —
-  // coupled with the email and phone verifications — it helps deter fake
-  // accounts. Signup collects ONE name field, so the first name is the
-  // first whitespace-delimited token of the stored name. clean() above
-  // already rejects a missing or whitespace-only name; this states the
-  // first-name rule explicitly, in the same validation pattern, so account
-  // creation fails without a first name. Sign-in is NOT affected: legacy
-  // accounts without a first name keep site access and are only blocked
-  // from sending Love Notes until a first name is on the account.
-  const firstName = String(name || '').split(/\s+/).filter(Boolean)[0] || '';
-  if (!firstName) throw new Error('Please enter your first name. A first name is required to create an account.');
 
   const acceptedDate = new Date(termsAcceptedAt);
   if (Number.isNaN(acceptedDate.getTime())) throw new Error('Terms acceptance date is invalid.');
 
   return {
+    quickAccount,
+    username,
     name,
     email,
     country,
     preferredLanguage,
     termsVersion,
     termsAcceptedAt: acceptedDate.toISOString(),
-    selectedPlan,
-    freeAccount,
-    selectedPrice: freeAccount ? 0 : selectedPlan === 'Exclusive' ? 19.99 : 9.99,
+    accessModel: 'free_tokens',
+    foundingIntent,
+    marketingEmailOptIn,
+    visitorId,
   };
+}
+
+async function reserveFoundingTokenMember(db,userId) {
+  await db.query("SELECT pg_advisory_xact_lock(hashtext('one2onelove_founding_members'))");
+  await db.query(`
+    DELETE FROM public.founding_members
+     WHERE status='reserved'
+       AND activated_at IS NULL
+       AND reservation_expires_at IS NOT NULL
+       AND reservation_expires_at<=now()
+  `);
+  const existing=(await db.query(
+    `SELECT founding_number,cohort,status,badge_retained,reservation_expires_at
+       FROM public.founding_members WHERE user_id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0]||null;
+  if(existing)return existing;
+
+  const next=(await db.query(`
+    SELECT n
+      FROM generate_series(1,200) n
+     WHERE NOT EXISTS (SELECT 1 FROM public.founding_members f WHERE f.founding_number=n)
+     ORDER BY n LIMIT 1
+  `)).rows[0]?.n;
+  if(!next)return null;
+  const foundingNumber=Number(next);
+  const cohort=foundingNumber<=100?'first100':'second100';
+  return (await db.query(
+    `INSERT INTO public.founding_members
+      (user_id,founding_number,cohort,status,badge_retained,founding_rate_forfeited,reservation_expires_at)
+     VALUES($1::uuid,$2,$3,'reserved',true,false,now()+interval '48 hours')
+     RETURNING founding_number,cohort,status,badge_retained,reservation_expires_at`,
+    [userId,foundingNumber,cohort],
+  )).rows[0];
 }
 
 async function persistRegistration(db, user, registration) {
@@ -197,29 +223,87 @@ async function persistRegistration(db, user, registration) {
     await db.query(
       `INSERT INTO public.signup_consents
         (user_id,email,country,preferred_language,terms_version,terms_accepted_at,
-         privacy_policy_acknowledged,age_18_confirmed,signup_source)
-       SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,'one2onelove_launch'
+         privacy_policy_acknowledged,age_18_confirmed,signup_source,
+         marketing_email_opt_in,marketing_email_opt_in_at)
+       SELECT id,$2,$3,$4,$5,$6::timestamptz,true,true,$7,$8,
+              CASE WHEN $8 THEN now() ELSE NULL END
        FROM neon_auth."user" WHERE id=$1::uuid AND lower(email)=lower($2)
        ON CONFLICT (user_id, terms_version) DO UPDATE SET
          country=EXCLUDED.country,
          preferred_language=EXCLUDED.preferred_language,
          terms_accepted_at=EXCLUDED.terms_accepted_at,
          privacy_policy_acknowledged=true,
-         age_18_confirmed=true`,
-      [user.id, registration.email, registration.country, registration.preferredLanguage, registration.termsVersion, registration.termsAcceptedAt],
+         age_18_confirmed=true,
+         signup_source=EXCLUDED.signup_source,
+         marketing_email_opt_in=EXCLUDED.marketing_email_opt_in,
+         marketing_email_opt_in_at=EXCLUDED.marketing_email_opt_in_at`,
+      [user.id, registration.email, registration.country, registration.preferredLanguage, registration.termsVersion, registration.termsAcceptedAt,
+       registration.quickAccount ? 'interactive_quick_signup' : 'one2onelove_free_token_launch', registration.marketingEmailOptIn],
     );
 
-    // This write is idempotent. A retry after a slow Worker/Database response
-    // repairs the member profile without creating a duplicate account.
     await db.query(
       `INSERT INTO public.users
-        (id,email,name,user_type,is_active,subscription_plan,subscription_price,subscription_status)
-       VALUES ($1::uuid,$2,$3,'regular',true,$4,$5,'inactive')
+        (id,email,name,username,user_type,is_active,subscription_plan,subscription_price,subscription_status,
+         marketing_email_opt_in,marketing_email_opt_in_at,signup_visitor_id)
+       VALUES ($1::uuid,$2,$3,$4,'regular',true,'Free',0,'inactive',$5,
+               CASE WHEN $5 THEN now() ELSE NULL END,$6)
        ON CONFLICT (id) DO UPDATE SET
          email=EXCLUDED.email,
-         name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name)`,
-      [user.id, registration.email, registration.name, registration.selectedPlan, registration.selectedPrice],
+         name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name),
+         username=COALESCE(NULLIF(public.users.username,''),EXCLUDED.username),
+         marketing_email_opt_in=EXCLUDED.marketing_email_opt_in,
+         marketing_email_opt_in_at=CASE
+           WHEN EXCLUDED.marketing_email_opt_in THEN COALESCE(public.users.marketing_email_opt_in_at,now())
+           ELSE NULL
+         END,
+         signup_visitor_id=COALESCE(public.users.signup_visitor_id,EXCLUDED.signup_visitor_id)`,
+      [user.id, registration.email, registration.name, registration.username, registration.marketingEmailOptIn, registration.visitorId],
     );
+
+    await db.query(
+      `INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid)
+       ON CONFLICT(user_id) DO NOTHING`,
+      [user.id],
+    );
+    await db.query(
+      `INSERT INTO public.o2ol_auto_replenish_settings(user_id) VALUES($1::uuid)
+       ON CONFLICT(user_id) DO NOTHING`,
+      [user.id],
+    );
+
+    if (registration.visitorId) {
+      await db.query(
+        `INSERT INTO public.visitor_identity_links(visitor_id,user_id,link_source,linked_at,updated_at)
+         VALUES($1,$2::uuid,$3,now(),now())
+         ON CONFLICT(visitor_id) DO UPDATE SET
+           user_id=EXCLUDED.user_id,
+           link_source=EXCLUDED.link_source,
+           updated_at=now()`,
+        [registration.visitorId,user.id,registration.quickAccount?'interactive_quick_signup':'account_signup'],
+      );
+    }
+
+    if (registration.foundingIntent) {
+      const founding=await reserveFoundingTokenMember(db,user.id);
+      if(founding){
+        await db.query(
+          `INSERT INTO public.o2ol_founding_token_benefits
+            (user_id,monthly_tokens,months_total,months_granted,status,metadata)
+           VALUES($1::uuid,0,6,0,'pending',$2::jsonb)
+           ON CONFLICT(user_id) DO UPDATE SET
+             metadata=public.o2ol_founding_token_benefits.metadata||EXCLUDED.metadata,
+             updated_at=now()`,
+          [user.id,JSON.stringify({
+            founding_intent:true,
+            founding_number:Number(founding.founding_number),
+            founding_cohort:founding.cohort,
+            badge_activation:'after_phone_verification',
+            economics_pending_calibration:true,
+          })],
+        );
+      }
+    }
+
     await db.query('COMMIT');
     return true;
   } catch (error) {
@@ -293,15 +377,14 @@ async function launchReadinessResponse(request, env) {
   const phoneVerificationReady = identity.phoneReady;
   const publicLaunchIdentityGateReady = identity.ready;
   const legacyEntitlementRows = Number(readiness.legacy_entitlement_rows || 0);
-  const billingDefaultsReady = Boolean(
-    readiness.premiere_default_ready &&
-    readiness.price_default_ready &&
+  const freeAccountDefaultsReady = Boolean(
+    readiness.free_default_ready &&
+    readiness.zero_price_default_ready &&
     readiness.status_default_ready
   );
-  // Legacy migrated rows may still carry historical active/$0 values. They are
-  // informational only because both browser and API access gates independently
-  // require a Stripe-backed subscription for non-admin paid access.
-  const billingDataReady = billingDefaultsReady;
+  // Paid tier state is migration history only. Free account creation depends on
+  // verified identity plus FREE/0 defaults; tokens are purchased separately.
+  const billingDataReady = freeAccountDefaultsReady;
 
   return json({
     ok: true,
@@ -318,8 +401,10 @@ async function launchReadinessResponse(request, env) {
       phoneVerificationSchemaReady,
       publicLaunchIdentityGateReady,
       legacyEntitlementRows,
-      billingDefaultsReady,
+      freeAccountDefaultsReady,
+      billingDefaultsReady: freeAccountDefaultsReady,
       billingDataReady,
+      accessModel: 'free_tokens',
     },
   });
 }
@@ -342,6 +427,17 @@ async function registerLaunchUser(request, env) {
   const password = String(body.password || '');
   if (password.length < 8) return fail('Password must contain at least 8 characters.');
 
+  if (registration.quickAccount && registration.username) {
+    const taken = await withDb(env, async db => {
+      const row = (await db.query(
+        `SELECT u.email FROM public.users u WHERE lower(u.username)=lower($1) LIMIT 1`,
+        [registration.username],
+      )).rows[0] || null;
+      return row && String(row.email || '').toLowerCase() !== registration.email ? row : null;
+    });
+    if (taken) return fail('That username is already taken. Please choose another.',409,'username_taken');
+  }
+
   const upstream = await authPost(request, env, '/sign-up/email', {
     email: registration.email,
     password,
@@ -359,12 +455,13 @@ async function registerLaunchUser(request, env) {
       return json({
         ok: true,
         success: true,
-        user: { id: resumed.user.id, email: resumed.user.email || registration.email, emailVerified: false },
+        user: { id: resumed.user.id, email: resumed.user.email || registration.email, username: registration.username || null, emailVerified: false },
         emailVerificationRequired: true,
         verificationMethod: readiness.verification_method || 'otp',
         verificationEmailExpected: true,
         openHouseBrowsingFree: true,
-        selectedPlan: registration.selectedPlan,
+        accessModel: 'free_tokens',
+        freeAccount: true,
         profileReady: resumed.profileReady,
         recoveryPending: !resumed.profileReady,
         resumed: true,
@@ -391,12 +488,13 @@ async function registerLaunchUser(request, env) {
   return json({
     ok: true,
     success: true,
-    user: { id: user.id, email: user.email || registration.email, emailVerified: user.emailVerified === true },
+    user: { id: user.id, email: user.email || registration.email, username: registration.username || null, emailVerified: user.emailVerified === true },
     emailVerificationRequired: true,
     verificationMethod: readiness.verification_method || 'otp',
     verificationEmailExpected: readiness.verification_email_on_signup === true,
     openHouseBrowsingFree: true,
-    selectedPlan: registration.selectedPlan,
+    accessModel: 'free_tokens',
+    freeAccount: true,
     profileReady,
     recoveryPending: !profileReady,
   }, profileReady ? 201 : 202);
@@ -479,7 +577,7 @@ async function verifyLaunchEmail(request, env) {
 
   if (!verified) return fail('Email verification did not complete. Request a new code and try again.', 409, 'verification_incomplete');
   if (!profileReady) return fail('Email verified, but this account is outside the 48-hour automatic recovery window. Please contact support for help.', 410, 'reinstatement_window_expired');
-  return json({ ok: true, success: true, verified: true, profileReady, recoveryPending: !profileReady }, profileReady ? 200 : 202);
+  return json({ ok: true, success: true, verified: true, profileReady, recoveryPending: !profileReady, accessModel:'free_tokens', freeAccount:true }, profileReady ? 200 : 202);
 }
 
 export async function handleLaunchAuthRequest(request, env, url) {
