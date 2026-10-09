@@ -1,0 +1,83 @@
+name: O2OL LIVE Credit Browser QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/o2ol-live-credit-browser-qa-trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PREVIEW_URL: https://one2onelove.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build current production source
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+      - name: Verify LIVE bundle matches production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCAL_JS=$(grep -oE 'src="[^"]+\.js"' dist/index.html | head -1 | sed 's/src="//;s/"//')
+          HTML=$(curl -fsS --max-time 20 "$PREVIEW_URL/")
+          REMOTE_JS=$(printf '%s' "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | sed 's/src="//;s/"//' || true)
+          echo "local=$LOCAL_JS"
+          echo "live=$REMOTE_JS"
+          test "$REMOTE_JS" = "$LOCAL_JS"
+      - name: Require LIVE backend promotion readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 "$PREVIEW_URL/api/launch-readiness" -o /tmp/readiness.json
+          jq -e '
+            .ok == true and
+            .readiness.requiredLaunchReady == true and
+            .readiness.productionPromotionReady == true and
+            .readiness.database.requiredDatabaseReady == true and
+            .readiness.identity.requiredIdentityReady == true and
+            .readiness.billing.billingProviderReady == true and
+            .readiness.billing.legacyEntitlementRows == 0
+          ' /tmp/readiness.json >/dev/null
+          curl -fsS --max-time 20 "$PREVIEW_URL/api/launch-signup/readiness" -o /tmp/signup-readiness.json
+          jq -e '
+            .ok == true and
+            .readiness.publicLaunchIdentityGateReady == true and
+            .readiness.freeAccountDefaultsReady == true and
+            .readiness.billingDefaultsReady == true and
+            .readiness.billingDataReady == true and
+            .readiness.legacyEntitlementRows == 0
+          ' /tmp/signup-readiness.json >/dev/null
+      - name: Prepare browser
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Run LIVE responsive, Credit and 18-plus QA
+        run: |
+          set -euo pipefail
+          node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/o2ol-live-credit-browser-qa.txt
+      - name: Upload LIVE browser QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-live-credit-browser-qa
+          path: /tmp/o2ol-live-credit-browser-qa.txt
+          if-no-files-found: warn
