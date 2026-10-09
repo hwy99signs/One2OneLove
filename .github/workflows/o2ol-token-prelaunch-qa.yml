@@ -1,6 +1,9 @@
 name: O2OL Credit Prelaunch QA
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - prelaunch/o2ol-token-economy-20261003
