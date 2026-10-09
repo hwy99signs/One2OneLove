@@ -367,6 +367,7 @@ jobs:
             exit 1
           fi
           grep -F "/Suggestions?mode=problem" src/pages/Layout.jsx
+          grep -F "'/suggestions'" src/components/launch/LaunchAccessGate.jsx
           grep -F "Report a Problem" src/pages/Suggestions.jsx
           grep -F "SUPPORT REQUEST" src/pages/ContactUs.jsx
           grep -F 'path="*" element={<NotFound />}' src/pages/index.jsx
