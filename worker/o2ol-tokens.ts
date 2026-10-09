@@ -447,7 +447,7 @@ async function confirmCheckout(db,env,auth,sessionId){
   const purchasedTokens=Math.max(0,Math.floor(Number(meta.tokens)||0));
   const packageCode=String(meta.package_code||'').trim();
   const amountCents=Math.max(0,Math.floor(Number(checkout.amount_total??meta.amount_cents)||0));
-  if(!packageCode||!purchasedTokens||!amountCents)throw Object.assign(new Error('Token purchase metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
+  if(!packageCode||!purchasedTokens||!amountCents)throw Object.assign(new Error('Credit purchase metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
   const tx=await creditTokens(db,auth.user.id,{
     tokens:purchasedTokens,
     transactionType:'purchase',
@@ -655,7 +655,7 @@ async function tokenWebhook(request,env){
         });
         await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.payment_intent,packageCode,purchasedTokens);
       }else{
-        throw Object.assign(new Error('Token purchase webhook metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
+        throw Object.assign(new Error('Credit purchase webhook metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
       }
     }
     if(event.type==='payment_intent.succeeded'&&meta.purpose==='o2ol_token_auto_replenish'&&meta.user_id){
