@@ -5,7 +5,7 @@ import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
-const STUDIO_IMAGE = '/assets/o2ol-hero.png';
+const STUDIO_VIDEO = '/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4';
 const MYMATCHIQ_LABELS = { en: 'Compatibility Test', es: 'Prueba de Compatibilidad', fr: 'Test de Compatibilité', it: 'Test di Compatibilità', de: 'Kompatibilitätstest' };
 const OPEN_HOUSE_COPY = {
   en:{eyebrow:'LIMITED-TIME ONE2ONELOVE OPEN HOUSE',title:'Explore One2OneLove FREE',body:'No account is required to browse. Look around first; create an account only when you want to save, post, or use protected member features.',explore:'Explore Free Tools',studio:'Watch O2OL Studio'},
@@ -24,11 +24,11 @@ const AMORA_COPY = {
 };
 
 const STUDIO_COPY = {
-  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation and explore a real relationship question from more than one point of view.',watch:'Watch Episode 2'},
-  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la conversación más reciente de O2OL Studio y explora una pregunta real de relación desde más de un punto de vista.',watch:'Ver Episodio 2'},
-  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez la conversation O2OL Studio la plus récente et explorez une vraie question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 2'},
-  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda la conversazione O2OL Studio più recente ed esplora una vera domanda relazionale da più punti di vista.',watch:'Guarda Episodio 2'},
-  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 2',title:'Wer bezahlt beim ersten Date?',body:'Sieh dir das neueste O2OL-Studio-Gespräch an und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 2 Ansehen'}
+  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation and explore a real relationship question from more than one point of view.',watch:'Watch Episode 1'},
+  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la conversación más reciente de O2OL Studio y explora una pregunta real de relación desde más de un punto de vista.',watch:'Ver Episodio 1'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez la conversation O2OL Studio la plus récente et explorez une vraie question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 1'},
+  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda la conversazione O2OL Studio più recente ed esplora una vera domanda relazionale da più punti di vista.',watch:'Guarda Episodio 1'},
+  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 2',title:'Wer bezahlt beim ersten Date?',body:'Sieh dir das neueste O2OL-Studio-Gespräch an und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
 };
 
 const COPY = {
@@ -185,24 +185,43 @@ export default function Home() {
             ))}
           </div>
           <div className="mt-12 rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 px-9 py-8 shadow-sm"><h3 className="text-3xl font-black">{t.loveNotes}</h3><p className="mt-3 text-xl leading-relaxed">{t.loveNotesBody}</p></div>
-          <button type="button" data-analytics-id="home-studio-feature" data-analytics-destination="/O2OLStudio?episode=season-1-episode-2" onClick={()=>navigate('/O2OLStudio?episode=season-1-episode-2')} aria-label={`${studio.watch}: ${studio.title}`} className="group relative mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-left text-white shadow-2xl transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(124,58,237,0.28)]">
-            <div className="relative aspect-[16/9] w-full overflow-hidden">
-              <img src={STUDIO_IMAGE} alt="O2OL Studio with Bianca in conversation" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]" />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/88 to-slate-950/68 px-5 py-4 backdrop-blur-[2px] sm:px-7 sm:py-5 lg:px-9 lg:py-6">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.18em] shadow-lg sm:text-[0.68rem]">{studio.eyebrow}</span>
-                      <span className="text-[0.64rem] font-black uppercase tracking-[0.16em] text-cyan-200 sm:text-xs">{studio.season}</span>
-                    </div>
-                    <div className="mt-2 text-xl font-black leading-tight drop-shadow sm:text-2xl lg:text-3xl">{studio.title}</div>
-                    <p className="mt-1.5 hidden max-w-3xl text-sm leading-5 text-white/80 md:block">{studio.body}</p>
+          <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
+            <div className="aspect-[16/9] w-full overflow-hidden bg-black">
+              <video
+                data-home-studio-video="season-1-episode-2"
+                aria-label="O2OL Studio Season 1 Episode 2 — Who Pays for the First Date?"
+                className="h-full w-full bg-black object-contain"
+                controls
+                playsInline
+                preload="metadata"
+                src={`${STUDIO_VIDEO}#t=0.1`}
+              >
+                Your browser does not support HTML5 video.
+              </video>
+            </div>
+            <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 px-5 py-4 sm:px-7 sm:py-5 lg:px-9 lg:py-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.18em] shadow-lg sm:text-[0.68rem]">{studio.eyebrow}</span>
+                    <span className="text-[0.64rem] font-black uppercase tracking-[0.16em] text-cyan-200 sm:text-xs">{studio.season}</span>
                   </div>
-                  <span className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg transition group-hover:brightness-110 sm:self-auto sm:px-5 sm:py-2.5 sm:text-sm">{studio.watch}<span aria-hidden="true">▶</span></span>
+                  <div className="mt-2 text-xl font-black leading-tight sm:text-2xl lg:text-3xl">{studio.title}</div>
+                  <p className="mt-1.5 hidden max-w-3xl text-sm leading-5 text-white/80 md:block">{studio.body}</p>
                 </div>
+                <button
+                  type="button"
+                  data-analytics-id="home-studio-feature"
+                  data-analytics-destination="/O2OLStudio?episode=season-1-episode-1"
+                  onClick={()=>navigate('/O2OLStudio?episode=season-1-episode-1')}
+                  aria-label={`${studio.watch}: Who Should Apologize First?`}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg transition hover:brightness-110 sm:self-auto sm:px-5 sm:py-2.5 sm:text-sm"
+                >
+                  {studio.watch}<span aria-hidden="true">▶</span>
+                </button>
               </div>
             </div>
-          </button>
+          </div>
         </div>
       </section>
     </div>
