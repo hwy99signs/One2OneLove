@@ -1,4 +1,4 @@
-name: O2OL Token Prelaunch QA
+name: O2OL Credit Prelaunch QA
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
           npx --yes esbuild@0.25.10 worker/index-v2.ts             --bundle             --platform=browser             --format=esm             --external:pg             --outfile=/tmp/o2ol-token-worker.mjs
           test -s /tmp/o2ol-token-worker.mjs
 
-      - name: Verify Token architecture contract
+      - name: Verify Credit architecture contract
         shell: bash
         run: |
           set -euo pipefail
@@ -56,9 +56,10 @@ jobs:
           grep -F "amora_response" worker/ai.ts
           grep -F "love_note_send" worker/love-note-entitlements.ts
           grep -F "like_minded_session" worker/game-access.ts
-          grep -F 'path="/Tokens"' src/pages/index.jsx
+          grep -F '<Route path="/Tokens" element={<Navigate to="/Credit" replace />} />' src/pages/index.jsx
+          grep -F '<Route path="/Credit" element={<Credit />} />' src/pages/index.jsx
           grep -F 'path="/Amora"' src/pages/index.jsx
-          grep -F '<Navigate to="/Tokens" replace' src/pages/Subscription.jsx
+          grep -F '<Navigate to="/Credit" replace' src/pages/Subscription.jsx
           grep -F 'navigate("/SignUp")' src/pages/Layout.jsx
           grep -F "legacy_subscription_model_retired" worker/billing.ts src/lib/stripeService.js
           grep -F "return false;" worker/api-entitlements.ts
@@ -68,7 +69,7 @@ jobs:
           grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
           grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
 
-      - name: Verify separate Token dashboard and burn calibration controls
+      - name: Verify separate Credit dashboard and burn calibration controls
         shell: bash
         run: |
           set -euo pipefail
@@ -76,7 +77,7 @@ jobs:
           grep -F "AdminMfaGate><TokenSystemDashboard" src/pages/index.jsx
           grep -F "Package Burn Tests" src/pages/TokenSystemDashboard.jsx
           grep -F "Auto-refresh 15 min" src/pages/TokenSystemDashboard.jsx
-          grep -F "Core Token Environment" src/pages/TokenSystemDashboard.jsx
+          grep -F "Core Credit Environment" src/pages/TokenSystemDashboard.jsx
           grep -F "FAIL-CLOSED" src/pages/TokenSystemDashboard.jsx
           grep -F "startTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
           grep -F "endTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
@@ -107,13 +108,40 @@ jobs:
           grep -F "username_taken" worker/launch-auth.ts
           grep -F "founding_intent" worker/launch-auth.ts
           grep -F "badge_activated:true" worker/phone-verification.ts
-          grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx
+          grep -F "const TERMS_VERSION = '2026-10-09';" src/components/signup/LaunchRegularUserForm.jsx
           if grep -RInE 'navigate\(["'\''"]/Subscription\?signup=1|Create Account for Premiere|Create Account for Exclusive' src --exclude='stripeService.js'; then
             echo "Active recurring-plan signup path found." >&2
             exit 1
           fi
 
-      - name: Verify MyMatchIQ uses free assessment plus O2OL Tokens
+      - name: Verify canonical legal sources, Credit model and 18+ contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "termsEn from '@/content/terms/en'" src/pages/TermsOfService.jsx
+          grep -F "termsEs from '@/content/terms/es'" src/pages/TermsOfService.jsx
+          grep -F "termsFr from '@/content/terms/fr'" src/pages/TermsOfService.jsx
+          grep -F "termsIt from '@/content/terms/it'" src/pages/TermsOfService.jsx
+          grep -F "termsDe from '@/content/terms/de'" src/pages/TermsOfService.jsx
+          grep -F "Last Updated: October 9, 2026" src/pages/TermsOfService.jsx src/pages/PrivacyPolicy.jsx
+          grep -F "1. Eligibility — Adults 18 and Older" src/content/terms/en.js
+          grep -F "1. Elegibilidad — Adultos de 18 años o más" src/content/terms/es.js
+          grep -F "1. Admissibilité — Adultes de 18 ans et plus" src/content/terms/fr.js
+          grep -F "1. Idoneità — Adulti di 18 anni o più" src/content/terms/it.js
+          grep -F "1. Teilnahmeberechtigung — Erwachsene ab 18 Jahren" src/content/terms/de.js
+          grep -F "adults-only platform intended exclusively for people age 18 or older" src/pages/PrivacyPolicy.jsx
+          grep -F "plataforma solo para adultos" src/pages/PrivacyPolicy.jsx
+          grep -F "plateforme réservée aux adultes" src/pages/PrivacyPolicy.jsx
+          grep -F "piattaforma riservata agli adulti" src/pages/PrivacyPolicy.jsx
+          grep -F "ausschließlich für Erwachsene bestimmte Plattform" src/pages/PrivacyPolicy.jsx
+          grep -F '$1.00 Credit represents $1.00 of One2OneLove service value' src/content/terms/en.js
+          grep -F 'Credit balances are displayed in U.S. dollars and cents in $0.00 format' src/pages/PrivacyPolicy.jsx
+          if grep -RInE 'under 13|menores? de 13|moins de 13|minori di 13|unter 13' src/pages/PrivacyPolicy.jsx src/pages/TermsOfService.jsx src/content/terms 2>/dev/null; then
+            echo "Under-13/minor eligibility wording remains in active legal sources." >&2
+            exit 1
+          fi
+
+      - name: Verify MyMatchIQ uses free assessment plus Credit
         shell: bash
         run: |
           set -euo pipefail
@@ -124,7 +152,7 @@ jobs:
           grep -F "reserveTokenCharge(db,auth.user.id,'bianca_report'" worker/mymatchiq-ai.ts
           grep -F "'bianca_response'" worker/mymatchiq-ai.ts
           grep -F "legacy_mymatchiq_credits_retired" worker/mymatchiq-credits.ts
-          grep -F 'to="/Tokens?source=mymatchiq-assessment"' src/pages/MyMatchIQAssessment.jsx
+          grep -F 'to="/Credit?source=mymatchiq-assessment"' src/pages/MyMatchIQAssessment.jsx
           if grep -F "requireCardAccess" worker/mymatchiq-ai.ts; then
             echo "Stale MyMatchIQ card gate remains in API." >&2
             exit 1
@@ -142,7 +170,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Love Notes uses Tokens only
+      - name: Verify Love Notes uses Credit settlement
         shell: bash
         run: |
           set -euo pipefail
@@ -155,7 +183,7 @@ jobs:
           grep -F "legacy_love_note_billing_retired" worker/love-note-billing.ts
           grep -F "'Free'::text" neon-migrations/2026-10-03-o2ol-free-love-note-categories.sql
           if grep -REn 'US\$0\.29|\$0\.29|first (One2OneLove )?SMS.*FREE|first.*SMS.*GRATUIT|first.*SMS.*GRATIS' src/pages/LoveNotes.jsx worker/love-note-entitlements.ts; then
-            echo "Stale 29-cent or first-free Love Note billing copy remains." >&2
+            echo "Hardcoded 29-cent or first-free Love Note billing copy remains outside the regional Credit pricing source." >&2
             exit 1
           fi
           if grep -REn "'Premiere'|9\.99|effectivePlan|stripe_subscription_id" worker/love-note-entitlements.ts; then
@@ -208,7 +236,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify game Token access is transactional
+      - name: Verify game Credit access is transactional
         shell: bash
         run: |
           set -euo pipefail
@@ -237,9 +265,9 @@ jobs:
           grep -F ">Input Tokens<" src/pages/TokenSystemDashboard.jsx
           grep -F ">Cached<" src/pages/TokenSystemDashboard.jsx
           grep -F ">Output Tokens<" src/pages/TokenSystemDashboard.jsx
-          grep -F ">Cost / O2OL Token<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Provider Cost / Credit Cent<" src/pages/TokenSystemDashboard.jsx
 
-      - name: Verify Token payment and Auto-Replenish safety
+      - name: Verify Credit payment and Auto-Replenish safety
         shell: bash
         run: |
           set -euo pipefail
@@ -247,9 +275,9 @@ jobs:
           grep -F 'idempotencyKey:meta.idempotency_key||`stripe_auto:' worker/o2ol-tokens.ts
           grep -F "payment_method_saved:Boolean(state.settings?.payment_method_reference)" worker/o2ol-tokens.ts
           grep -F "trigger>Number(pkg.tokens||0)" worker/o2ol-tokens.ts
-          grep -F "max={maxAutoTrigger||undefined}" src/pages/Tokens.jsx
-          grep -F "settings?.payment_method_saved" src/pages/Tokens.jsx
-          if grep -F "settings?.payment_method_reference" src/pages/Tokens.jsx; then
+          grep -F "max={maxAutoTrigger||undefined}" src/pages/Credit.jsx
+          grep -F "state?.settings?.payment_method_saved" src/pages/Credit.jsx
+          if grep -F "settings?.payment_method_reference" src/pages/Credit.jsx; then
             echo "Raw Stripe payment method reference is still exposed to the browser." >&2
             exit 1
           fi
@@ -261,7 +289,7 @@ jobs:
           grep -F "/api/token-admin/calibrations/load-package" worker/token-admin.ts src/lib/tokenAdminService.js
           grep -F "calibration_only:true" worker/token-admin.ts
           grep -F "revenue_cents:0" worker/token-admin.ts
-          grep -F "Calibration package loading requires a zero Token balance" worker/token-admin.ts
+          grep -F 'Calibration package loading requires a $0.00 Credit balance' worker/token-admin.ts
           grep -F "Disable Auto-Replenish before loading a controlled calibration package." worker/token-admin.ts
           grep -F "Disable Auto-Replenish before starting a controlled calibration session." worker/token-admin.ts
           grep -F "calibration_package_balance_mismatch" worker/token-admin.ts
@@ -274,7 +302,7 @@ jobs:
           grep -F "Completed Package Burn Comparison" src/pages/TokenSystemDashboard.jsx
           grep -F "avgCostPerBurnedToken" src/pages/TokenSystemDashboard.jsx
 
-      - name: Verify Stripe Token webhook remains retry-safe
+      - name: Verify Stripe Credit webhook remains retry-safe
         shell: bash
         run: |
           set -euo pipefail
@@ -303,7 +331,7 @@ jobs:
           grep -F "Visitor Registry / Audience Intelligence" src/pages/Admin.jsx
           grep -F "Anonymous Visitors" src/pages/Admin.jsx
           grep -F "Registered Free" src/pages/Admin.jsx
-          grep -F "Token Buyers" src/pages/Admin.jsx
+          grep -F "Credit Buyers" src/pages/Admin.jsx
           grep -F "Paid Activity" src/pages/Admin.jsx
           grep -F "async function visitorRegistry(db)" worker/admin.ts
           grep -F "marketing_email_opt_in" worker/admin.ts
@@ -311,11 +339,11 @@ jobs:
           grep -F "CREATE TABLE IF NOT EXISTS public.interaction_events" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
           grep -F "CREATE TABLE IF NOT EXISTS public.visitor_identity_links" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
 
-      - name: Verify Token dashboard is separate and MFA-protected
+      - name: Verify Credit dashboard is separate and MFA-protected
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "Token System Dashboard" src/pages/TokenSystemDashboard.jsx
+          grep -F "Credit System Dashboard" src/pages/TokenSystemDashboard.jsx
           grep -F "getTokenSystemDashboard" src/lib/tokenAdminService.js
           grep -F "handleTokenAdminRequest" worker/token-admin.ts worker/index-v2.ts
           grep -F "url.pathname.startsWith('/api/token-admin')" worker/index-v2.ts
@@ -340,12 +368,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Amora: preserved approved asset + Token experience.
+          # Amora: preserved approved asset + Credit experience.
           test -s public/assets/amora-relationship-coach-official.webp
           test "$(wc -c < public/assets/amora-relationship-coach-official.webp)" -gt 12000
           grep -F 'src="/assets/amora-relationship-coach-official.webp"' src/pages/Home.jsx
           grep -F "go('Amora')" src/pages/Home.jsx
-          grep -F "Each Amora response uses O2OL Tokens." src/pages/Amora.jsx
+          grep -F "Each Amora response uses Credit." src/pages/Amora.jsx
 
           # Owner visibility / Central-time contract.
           grep -F "America/Chicago" worker/admin.ts
@@ -396,16 +424,19 @@ jobs:
           grep -F "return String(name || '').trim() || '•••';" src/pages/LoveNotes.jsx
           grep -F "return String(title || '').trim() || '•••';" src/pages/DateIdeas.jsx
 
-          # Active customer surfaces must speak Tokens, not the abandoned Credit UI model.
-          ACTIVE_TOKEN_SURFACES=(
+          # Active customer surfaces must speak Credit, not the retired Token customer model.
+          ACTIVE_CREDIT_SURFACES=(
             src/pages/Home.jsx src/pages/Layout.jsx src/pages/O2OLStudio.jsx src/pages/Amora.jsx
             src/pages/LoveNotes.jsx src/pages/DateIdeas.jsx src/pages/MyMatchIQ.jsx
             src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx src/pages/LikeMinded.jsx
           )
-          if grep -RInE '\bCredit\b|\bCrédito(s)?\b|\bCrédit(s)?\b|\bCredito\b' "${ACTIVE_TOKEN_SURFACES[@]}" 2>/dev/null; then
-            echo "Credit-era customer copy remains on an active Token surface." >&2
+          if grep -RInE 'BUY TOKENS|COMPRAR TOKENS|ACHETER DES TOKENS|ACQUISTA TOKEN|TOKENS KAUFEN|O2OL Tokens|Tokens O2OL|Jetons O2OL|Token O2OL' "${ACTIVE_CREDIT_SURFACES[@]}" 2>/dev/null; then
+            echo "Retired Token customer copy remains on an active Credit surface." >&2
             exit 1
           fi
+          grep -F 'BUY CREDIT' src/pages/Layout.jsx >/dev/null
+          grep -F 'CREDIT · US DOLLARS · $1.00 = $1.00' src/pages/Credit.jsx >/dev/null
+          grep -F '<Route path="/Credit" element={<Credit />} />' src/pages/index.jsx >/dev/null
 
       - name: Audit shipped runtime dependencies
         shell: bash
@@ -511,6 +542,6 @@ jobs:
           fi
 
       - name: Report QA marker
-        run: echo "O2OL_TOKEN_PRELAUNCH_QA=PASS"
+        run: echo "O2OL_CREDIT_PRELAUNCH_QA=PASS"
 
-# UX routing/token-notice certification trigger 2026-10-04
+# Credit UX/legal certification 2026-10-09
