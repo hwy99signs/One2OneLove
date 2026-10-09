@@ -319,8 +319,10 @@ try{
     const body=await page.locator('body').innerText();
     if(body.includes('Previous Episodes')&&body.includes('Who Pays for the First Date?')&&body.includes('Who Should Apologize First?')) pass('Studio archive lists Episodes 1 and 2');
     else fail('Studio archive episode list incomplete',body.slice(0,1400));
-    const ep1Link=page.locator('a[href="/O2OLStudio?episode=season-1-episode-1"]');
-    if(await ep1Link.count()) pass('Episode 1 archive link targets Episode 1'); else fail('Episode 1 archive link target missing');
+    const ep1Link=page.getByRole('link',{name:/Watch Episode 1/i}).first();
+    const ep1Href=await ep1Link.getAttribute('href').catch(()=>null);
+    if(ep1Href?.includes('episode=season-1-episode-1')) pass('Episode 1 archive link targets Episode 1');
+    else fail('Episode 1 archive link target missing',String(ep1Href));
     await noOverflow(page,'Studio archive mobile',{});
     await context.close();
   }
