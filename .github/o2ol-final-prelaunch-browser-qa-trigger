@@ -1,3 +1,2 @@
-deployed_run=37967242302
-certified_source=fdae8c73ae0d42fac8f104fcd6d5ba778083c7bf
-purpose=final 39-check browser certification after deployed desktop Action stability fix
+deployed_run=37965991747
+purpose=rerun final responsive role-based browser certification after public problem-report fix
