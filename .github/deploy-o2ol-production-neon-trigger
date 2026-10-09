@@ -1,6 +1,7 @@
-o2ol-production-credit-18plus-verification-2026-10-09T20:35Z
-certified_source=082bc42a3e72c033f40c58b922ac39d142ffe485
-promotion_merge=cd4a730b92ef056f5bc3e4506afec3e68aa19634
-database_migration=dbe091ad-9c0b-47c4-9d69-3507feb0d3d3
-database_restore_branch=br-solitary-sunset-arqub52s
-git_restore_branch=restore/o2ol-production-before-credit-promotion-20261009
+o2ol-production-custom-credit-studio-episode2-2026-10-09T23:13Z
+certified_source=f4ab51884de2eca6fc5f9c3c1fb7afc2389ff383
+promotion_merge=f49581fe24c99eea4a888c6b07d388fbaafc318a
+prelaunch_deployment=cloudflare:b874f824-04a1-4ee6-b659-5c44704c0b54
+prelaunch_browser_qa=38003095564
+prelaunch_browser_result=61-passed-0-failed
+git_restore_branch=rollback/o2ol-production-before-custom-credit-studio-20261009
