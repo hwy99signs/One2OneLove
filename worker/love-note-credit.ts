@@ -36,6 +36,9 @@ async function ensureDdl(db, sql) {
 }
 
 export async function ensureCreditSchema(db) {
+  // Legacy function name retained for compatibility with the SMS safety helpers.
+  // IMPORTANT: this function is SAFETY-SCHEMA ONLY. It must never create Credit
+  // packages, change Token prices, or reinterpret the O2OL Token wallet.
   if (schemaEnsured) return;
   await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_sms_optouts (
@@ -44,67 +47,6 @@ export async function ensureCreditSchema(db) {
       source text NOT NULL DEFAULT 'twilio_inbound',
       updated_at timestamptz NOT NULL DEFAULT now()
     )`);
-  await ensureDdl(db, `
-    CREATE TABLE IF NOT EXISTS public.o2ol_credit_promo_months (
-      month_key text PRIMARY KEY,
-      pot_balance_cents integer NOT NULL CHECK (pot_balance_cents >= 0),
-      redemptions integer NOT NULL DEFAULT 0 CHECK (redemptions >= 0),
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )`);
-  await ensureDdl(db, `
-    CREATE TABLE IF NOT EXISTS public.o2ol_credit_promo_redemptions (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id uuid NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-      phone_number text NOT NULL UNIQUE,
-      month_key text NOT NULL,
-      region text,
-      estimated_cost_cents integer NOT NULL CHECK (estimated_cost_cents >= 0),
-      created_at timestamptz NOT NULL DEFAULT now()
-    )`);
-  await ensureDdl(db, `
-    CREATE TABLE IF NOT EXISTS public.o2ol_credit_free_note_grants (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-      kind text NOT NULL CHECK (kind IN ('promo','weekly')),
-      phone_number text NOT NULL,
-      region text,
-      sent_love_note_id uuid,
-      request_key text,
-      created_at timestamptz NOT NULL DEFAULT now()
-    )`);
-  await ensureDdl(db, `
-    ALTER TABLE public.o2ol_credit_free_note_grants
-      ADD COLUMN IF NOT EXISTS request_key text`);
-  await ensureDdl(db, `
-    CREATE INDEX IF NOT EXISTS idx_o2ol_credit_free_grants_user_kind_created
-      ON public.o2ol_credit_free_note_grants(user_id,kind,created_at DESC)`);
-  await ensureDdl(db, `
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_o2ol_credit_free_grants_request_key
-      ON public.o2ol_credit_free_note_grants(request_key) WHERE request_key IS NOT NULL`);
-  await ensureDdl(db, `
-    ALTER TABLE public.o2ol_auto_replenish_settings
-      ADD COLUMN IF NOT EXISTS monthly_cap_cents integer CHECK (monthly_cap_cents IS NULL OR monthly_cap_cents >= 0)`);
-  await ensureDdl(db, `
-    ALTER TABLE public.o2ol_auto_replenish_settings
-      ADD COLUMN IF NOT EXISTS consent_at timestamptz`);
-  // Credit purchase packages (mirrors the 2026-10-07 migration): pure dollar
-  // amounts; the tokens column holds credit cents granted = amount_cents.
-  await db.query(`
-    INSERT INTO public.o2ol_token_packages(code,label,tokens,amount_cents,active,calibration_only,display_order) VALUES
-      ('credit_5','Add $5 Credit',500,500,true,false,40),
-      ('credit_10','Add $10 Credit',1000,1000,true,false,50),
-      ('credit_15','Add $15 Credit',1500,1500,true,false,60),
-      ('credit_20','Add $20 Credit',2000,2000,true,false,70)
-    ON CONFLICT(code) DO UPDATE SET
-      label=EXCLUDED.label,tokens=EXCLUDED.tokens,amount_cents=EXCLUDED.amount_cents,
-      active=true,calibration_only=false,display_order=EXCLUDED.display_order,updated_at=now()`);
-  await db.query(`
-    UPDATE public.o2ol_token_feature_prices
-       SET token_cost=29,
-           metadata=COALESCE(metadata,'{}'::jsonb)||'{"regional_pricing":true,"config":"worker/credit-config.ts"}'::jsonb,
-           updated_at=now()
-     WHERE feature_code='love_note_send' AND COALESCE(metadata->>'regional_pricing','')<>'true'`);
   schemaEnsured = true;
 }
 
