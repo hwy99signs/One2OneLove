@@ -92,7 +92,7 @@ const KNOWN_APP_ROUTES = new Set([
   '/termsofservice',
   '/therapistsignup',
   '/tiktokpost',
-  '/tokens',
+  '/credit',
   '/tokensystemdashboard',
   '/verifyphone',
   '/whatshouldtheydo',
@@ -135,7 +135,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   // Registered Free is the site access identity. Feature-specific APIs/components
-  // decide whether an action is free or requires O2OL Tokens.
+  // decide whether an action is free or requires Credit.
   // Phone verification remains a feature-level requirement where applicable
   // (for example, participating in Chat), not a global browsing gate.
   return children;
