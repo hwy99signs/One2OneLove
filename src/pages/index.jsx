@@ -45,7 +45,6 @@ import Suggestions from './Suggestions';
 import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
-import Tokens from './Tokens';
 import Amora from './Amora';
 import TokenSystemDashboard from './TokenSystemDashboard';
 import VerifyPhone from './VerifyPhone';
@@ -70,7 +69,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Tokens, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
@@ -155,10 +154,10 @@ function PagesContent() {
           <Route path="/Chat" element={<Chat />} />
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/Tokens" element={<Tokens />} />
+          <Route path="/Tokens" element={<Navigate to="/Credit" replace />} />
           <Route path="/Amora" element={<Amora />} />
-          <Route path="/Subscription" element={<Navigate to="/Tokens" replace />} />
-          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Tokens?source=mymatchiq-feature" replace />} />
+          <Route path="/Subscription" element={<Navigate to="/Credit" replace />} />
+          <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Credit?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
           <Route path="/Professionals" element={<Professionals />} />
           <Route path="/ProfessionalSignup" element={<ProfessionalSignup />} />
@@ -171,8 +170,8 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
-          <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Tokens?source=mymatchiq" replace />} />
-          <Route path="/Credit" element={<Navigate to="/Tokens" replace />} />
+          <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Credit?source=mymatchiq" replace />} />
+          <Route path="/Credit" element={<Credit />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
