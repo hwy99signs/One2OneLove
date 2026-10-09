@@ -44,7 +44,7 @@ const translations = {
   },
 };
 
-export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere', freeAccount = false, foundingIntent = false }) {
+export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Free', freeAccount = true, foundingIntent = false }) {
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const t = translations[currentLanguage] || translations.en;
@@ -225,7 +225,7 @@ export default function LaunchRegularUserForm({ onBack, selectedPlan = 'Premiere
               </Button>
             </>
           ) : (
-            <Button type="button" onClick={() => navigate(foundingIntent ? '/SignIn?redirect=%2FSubscription%3Ffounding%3D1' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
+            <Button type="button" onClick={() => navigate(foundingIntent ? '/SignIn?redirect=%2FTokens' : createPageUrl('SignIn'))} className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-white">{t.signIn}</Button>
           )}
         </CardContent>
       </Card>
