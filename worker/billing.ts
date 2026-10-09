@@ -134,42 +134,41 @@ async function getBillingUser(db, userId) {
   return result.rows[0];
 }
 async function foundingOfferSnapshot(db, userId = null) {
-  const existing = userId
+  const existing=userId
     ? (await db.query(
-        `SELECT founding_number,cohort,status,badge_retained,founding_rate_forfeited,reservation_expires_at,activated_at
-           FROM public.founding_members WHERE user_id=$1::uuid`,
+        `SELECT founding_number,cohort,status,badge_retained,founding_rate_forfeited,activated_at,cancelled_at
+           FROM public.founding_members WHERE user_id=$1::uuid LIMIT 1`,
         [userId],
-      )).rows[0] || null
+      )).rows[0]||null
     : null;
-  if (existing) {
-    const offer = foundingOfferForNumber(existing.founding_number);
-    return {
-      available: existing.status === 'reserved' && existing.founding_rate_forfeited !== true,
-      existing: true,
-      foundingNumber: Number(existing.founding_number),
-      cohort: existing.cohort,
-      plan: offer?.plan || null,
-      freeDays: offer?.freeDays || FOUNDING_FREE_DAYS,
-      recurringPriceCents: offer?.recurringPriceCents || null,
-      badgeRetained: existing.badge_retained !== false,
-      rateForfeited: existing.founding_rate_forfeited === true,
-      status: existing.status,
-    };
-  }
-  const next = await db.query(`
-    SELECT n
-      FROM generate_series(1,$1::int) AS n
-     WHERE NOT EXISTS (
-       SELECT 1 FROM public.founding_members f
-        WHERE f.founding_number=n
-          AND NOT (f.status='reserved' AND f.reservation_expires_at IS NOT NULL AND f.reservation_expires_at <= now())
-     )
-     ORDER BY n
-     LIMIT 1
-  `, [FOUNDING_LIMIT]);
-  const number = Number(next.rows[0]?.n || 0);
-  const offer = foundingOfferForNumber(number);
-  return offer ? { available: true, existing: false, ...offer } : { available: false, existing: false, exhausted: true };
+  const used=(await db.query(
+    `SELECT count(*)::int AS count FROM public.founding_members
+      WHERE founding_number BETWEEN 1 AND $1
+        AND NOT (status='reserved' AND reservation_expires_at IS NOT NULL AND reservation_expires_at<=now())`,
+    [FOUNDING_LIMIT],
+  )).rows[0]?.count||0;
+  const benefit=userId
+    ? (await db.query(
+        `SELECT monthly_tokens,months_total,months_granted,next_grant_at,status,metadata
+           FROM public.o2ol_founding_token_benefits WHERE user_id=$1::uuid LIMIT 1`,
+        [userId],
+      )).rows[0]||null
+    : null;
+  return {
+    available:Number(used)<FOUNDING_LIMIT,
+    existing:Boolean(existing),
+    foundingLimit:FOUNDING_LIMIT,
+    reservedCount:Number(used),
+    remaining:Math.max(0,FOUNDING_LIMIT-Number(used)),
+    foundingNumber:existing?.founding_number?Number(existing.founding_number):null,
+    cohort:existing?.cohort||null,
+    status:existing?.status||benefit?.status||null,
+    badgeRetained:existing?.badge_retained!==false,
+    tokenBenefit:benefit,
+    economicsPendingCalibration:true,
+    recurringSubscriptionOffer:false,
+    accessModel:'free_tokens',
+  };
 }
 
 async function reserveFoundingOffer(db, userId) {
@@ -546,19 +545,29 @@ export async function handleBillingRequest(request, env, url) {
         return json({ ok: true, payments: result.rows });
       }
       if (url.pathname === '/api/billing/trial' && request.method === 'POST') {
-        return fail('The retired trial offer is no longer available. Use the current Founding Member or regular membership checkout.', 410, 'retired_trial');
+        return fail('Recurring trials are retired. One2OneLove accounts are free and metered premium services use O2OL Tokens.',410,'legacy_subscription_model_retired');
       }
       if (url.pathname === '/api/billing/checkout' && request.method === 'POST') {
-        return checkout(db, env, request, auth, await readJson(request));
+        return fail('Premiere/Exclusive recurring checkout is retired. Use the O2OL Token checkout instead.',410,'legacy_subscription_model_retired');
       }
       if (url.pathname === '/api/billing/cancel' && request.method === 'POST') {
-        return cancelSubscription(db, env, auth.user.id);
+        return fail('Legacy subscription changes are frozen in Token Prelaunch while historical value is reconciled. No Stripe subscription was changed.',423,'legacy_subscription_reconciliation_locked');
       }
       if (url.pathname === '/api/billing/reactivate' && request.method === 'POST') {
-        return reactivateSubscription(db, env, auth.user.id);
+        return fail('Legacy subscription changes are frozen in Token Prelaunch while historical value is reconciled. No Stripe subscription was changed.',423,'legacy_subscription_reconciliation_locked');
       }
       if (url.pathname === '/api/billing/config' && request.method === 'GET') {
-        return json({ ok: true, paid_checkout_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_PREMIERE && env.STRIPE_PRICE_EXCLUSIVE), webhook_ready: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET), plans: ['Premiere','Exclusive'], founding_limit: FOUNDING_LIMIT, founding_free_days: FOUNDING_FREE_DAYS, regular_prices_cents: { Premiere: regularPriceCents('Premiere'), Exclusive: regularPriceCents('Exclusive') }, love_note_sms_price_cents: 29 });
+        return json({
+          ok:true,
+          access_model:'free_tokens',
+          free_account:true,
+          recurring_checkout_ready:false,
+          legacy_subscription_mutations_locked:true,
+          token_wallet:'/api/tokens/wallet',
+          token_checkout:'/api/tokens/checkout',
+          founding_limit:FOUNDING_LIMIT,
+          founding_economics_pending_calibration:true,
+        });
       }
       return fail('Not found.', 404, 'not_found');
     });

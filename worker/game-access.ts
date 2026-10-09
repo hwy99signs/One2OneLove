@@ -1,79 +1,173 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
+import { recordCostEvent } from './o2ol-cost-ledger';
 
-const HEADERS = {
-  'content-type': 'application/json; charset=utf-8',
-  'cache-control': 'no-store',
-  'x-content-type-options': 'nosniff',
+const HEADERS={
+  'content-type':'application/json; charset=utf-8',
+  'cache-control':'no-store',
+  'x-content-type-options':'nosniff',
 };
-
-function json(data, status=200) {
-  return new Response(JSON.stringify(data), { status, headers: HEADERS });
+function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
+function fail(message,status=400,code='bad_request',extra={}){return json({ok:false,error:{code,message,...extra}},status);}
+function randomToken(bytes=32){
+  const a=new Uint8Array(bytes);crypto.getRandomValues(a);
+  return Array.from(a,b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function sha256Hex(value){
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function authSession(request,env){
+  const cookie=request.headers.get('cookie');
+  if(!cookie)return null;
+  const response=await fetch(env.NEON_AUTH_BASE_URL.replace(/\/$/,'')+'/get-session',{headers:{cookie,accept:'application/json'}});
+  if(!response.ok)return null;
+  const payload=await response.json().catch(()=>null);
+  const user=payload?.user??payload?.data?.user??null;
+  const session=payload?.session??payload?.data?.session??null;
+  return user?.id&&user?.emailVerified===true&&session?{user,session}:null;
+}
+async function withDb(env,fn){
+  const db=new Client({connectionString:env.HYPERDRIVE.connectionString});
+  await db.connect();
+  try{return await fn(db);}finally{await db.end();}
+}
+// Lazy-ensure DDL tolerance (2026-10-08): on the preview database the
+// connecting role does not own the pre-existing tables, so an ensure DDL
+// statement against an object that is already in shape can fail with 42501
+// (must be owner). The full DDL set is pre-applied by the table owner via
+// preview-schema-preapply.sql; here, skip ONLY the benign already-in-shape
+// codes (42501 insufficient_privilege, 42701 duplicate_column, 42P07
+// duplicate_table) per statement and continue. Any other error still throws,
+// and the DML that follows surfaces a genuinely missing object loudly.
+const TOLERATED_DDL_CODES = new Set(['42501', '42701', '42P07']);
+async function ensureDdl(db, sql) {
+  try { await db.query(sql); }
+  catch (err) { if (!TOLERATED_DDL_CODES.has(err?.code)) throw err; }
 }
 
-function randomToken(bytes=32) {
-  const a = new Uint8Array(bytes);
-  crypto.getRandomValues(a);
-  return Array.from(a, b => b.toString(16).padStart(2,'0')).join('');
-}
-
-async function sha256Hex(value) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2,'0')).join('');
-}
-
-async function authSession(request, env) {
-  const cookie = request.headers.get('cookie');
-  if (!cookie) return null;
-  const response = await fetch(env.NEON_AUTH_BASE_URL.replace(/\/$/, '') + '/get-session', {
-    headers: { cookie, accept: 'application/json' },
-  });
-  if (!response.ok) return null;
-  const payload = await response.json().catch(() => null);
-  const user = payload?.user ?? payload?.data?.user ?? null;
-  const session = payload?.session ?? payload?.data?.session ?? null;
-  return user?.id && user?.emailVerified === true && session ? { user, session } : null;
-}
-
-async function ensureTable(db) {
-  await db.query(`
+async function ensureScratchTable(db){
+  await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_game_launch_tickets (
       token_hash text PRIMARY KEY,
       user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
       game text NOT NULL,
       expires_at timestamptz NOT NULL,
       created_at timestamptz NOT NULL DEFAULT now()
-    )
-  `);
-  await db.query(`
-    CREATE INDEX IF NOT EXISTS idx_o2ol_game_launch_tickets_user
-      ON public.o2ol_game_launch_tickets(user_id, expires_at DESC)
-  `);
+    )`);
+  await ensureDdl(db, `CREATE INDEX IF NOT EXISTS idx_o2ol_game_launch_tickets_user
+    ON public.o2ol_game_launch_tickets(user_id,expires_at DESC)`);
+}
+async function verifiedMember(db,userId){
+  const row=(await db.query(
+    `SELECT COALESCE(is_active,true) AS is_active,COALESCE(phone_number_verified,false) AS phone_verified
+       FROM public.users WHERE id=$1::uuid LIMIT 1`,
+    [userId],
+  )).rows[0];
+  if(!row||row.is_active===false)throw Object.assign(new Error('This account is not active.'),{status:403,code:'account_inactive'});
+  if(row.phone_verified!==true)throw Object.assign(new Error('Phone verification is required.'),{status:428,code:'phone_verification_required'});
+}
+async function activeLikeMindedPass(db,userId){
+  await db.query(`UPDATE public.o2ol_game_access_passes SET status='expired'
+    WHERE user_id=$1::uuid AND game='like_minded' AND status='active' AND expires_at<=now()`,[userId]);
+  return (await db.query(
+    `SELECT id,game,tokens_charged,started_at,expires_at,metadata
+       FROM public.o2ol_game_access_passes
+      WHERE user_id=$1::uuid AND game='like_minded' AND status='active' AND expires_at>now()
+      ORDER BY expires_at DESC LIMIT 1`,
+    [userId],
+  )).rows[0]||null;
+}
+async function launchScratch(db,auth){
+  await ensureScratchTable(db);
+  await verifiedMember(db,auth.user.id);
+  await db.query('DELETE FROM public.o2ol_game_launch_tickets WHERE expires_at<now()');
+  const token=randomToken(32);
+  const tokenHash=await sha256Hex(token);
+  const expiresAt=new Date(Date.now()+5*60*1000);
+  await db.query(
+    `INSERT INTO public.o2ol_game_launch_tickets(token_hash,user_id,game,expires_at)
+     VALUES($1,$2::uuid,'scratch',$3)`,
+    [tokenHash,auth.user.id,expiresAt.toISOString()],
+  );
+  return json({ok:true,token,expiresAt:expiresAt.toISOString(),access:'free_verified_account'});
+}
+async function launchLikeMinded(db,env,auth,input){
+  await verifiedMember(db,auth.user.id);
+  const existing=await activeLikeMindedPass(db,auth.user.id);
+  if(existing)return json({ok:true,pass:existing,reused:true});
+
+  const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
+  const reservation=await reserveTokenCharge(db,auth.user.id,'like_minded_session',{
+    idempotencyKey:`like_minded:${auth.user.id}:${requestId}`,
+    metadata:{game:'like_minded',request_id:requestId},
+  });
+  const accessMinutes=120;
+  const expiresAt=new Date(Date.now()+accessMinutes*60*1000);
+  try{
+    const pass=(await db.query(
+      `INSERT INTO public.o2ol_game_access_passes
+       (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata)
+       VALUES($1::uuid,'like_minded',$2::uuid,$3,'active',$4,$5::jsonb)
+       RETURNING id,game,tokens_charged,started_at,expires_at,metadata`,
+      [
+        auth.user.id,
+        reservation.transaction?.id||reservation.transaction_id||null,
+        Number(reservation.tokens||0),
+        expiresAt.toISOString(),
+        JSON.stringify({request_id:requestId,access_minutes:accessMinutes}),
+      ],
+    )).rows[0];
+    await consumeTokenReservation(db,reservation.id);
+    await recordCostEvent(db,env,{
+      userId:auth.user.id,
+      featureCode:'like_minded_session',
+      provider:'internal',
+      providerProduct:'neon_cloudflare_game_session',
+      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+      providerCostMicros:null,
+      customerTokensCharged:Number(reservation.tokens||0),
+      metadata:{game:'like_minded',pass_id:pass.id,access_minutes:accessMinutes,internal_cost_unallocated:true},
+    }).catch(error=>console.error('Like Minded cost telemetry failed',error));
+    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Like Minded Auto-Replenish check failed',error));
+    return json({ok:true,pass,tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+  }catch(error){
+    await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed').catch(()=>{});
+    throw error;
+  }
 }
 
-export async function handleGameAccessRequest(request, env, url) {
-  if (url.pathname !== '/api/games/scratch/launch') return null;
-  if (request.method !== 'POST') return json({ ok:false, error:{ code:'method_not_allowed', message:'Method not allowed.' } },405);
+export async function handleGameAccessRequest(request,env,url){
+  if(!url.pathname.startsWith('/api/games/'))return null;
+  const auth=await authSession(request,env);
+  if(!auth)return fail('Sign in with a verified One2OneLove account.',401,'unauthorized');
 
-  const auth = await authSession(request, env);
-  if (!auth) return json({ ok:false, error:{ code:'unauthorized', message:'Sign in required.' } },401);
-
-  const token = randomToken(32);
-  const tokenHash = await sha256Hex(token);
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-  const db = new Client({ connectionString: env.HYPERDRIVE.connectionString });
-  await db.connect();
-  try {
-    await ensureTable(db);
-    await db.query('DELETE FROM public.o2ol_game_launch_tickets WHERE expires_at < now()');
-    await db.query(
-      `INSERT INTO public.o2ol_game_launch_tickets(token_hash,user_id,game,expires_at)
-       VALUES($1,$2::uuid,'scratch',$3)`,
-      [tokenHash,auth.user.id,expiresAt.toISOString()],
-    );
-    return json({ ok:true, token, expiresAt:expiresAt.toISOString() });
-  } finally {
-    await db.end();
+  try{
+    return await withDb(env,async db=>{
+      if(url.pathname==='/api/games/scratch/launch'){
+        if(request.method!=='POST')return fail('Method not allowed.',405,'method_not_allowed');
+        return launchScratch(db,auth);
+      }
+      if(url.pathname==='/api/games/like-minded/access'){
+        if(request.method==='GET'){
+          await verifiedMember(db,auth.user.id);
+          const pass=await activeLikeMindedPass(db,auth.user.id);
+          return json({ok:true,active:Boolean(pass),pass});
+        }
+        if(request.method==='POST'){
+          const input=(request.headers.get('content-type')||'').includes('application/json')
+            ? await request.json().catch(()=>({})):{};
+          return launchLikeMinded(db,env,auth,input);
+        }
+        return fail('Method not allowed.',405,'method_not_allowed');
+      }
+      return fail('Game access route not found.',404,'not_found');
+    });
+  }catch(error){
+    console.error('O2OL game access error',error);
+    return fail(error?.message||'Unable to start game.',error?.status||500,error?.code||'game_access_error',{
+      balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel,
+    });
   }
 }

@@ -2,6 +2,7 @@
 import baseWorker from './index';
 import { sendProductionSiteHealth,handlePrivateAdminHealth } from './epscie-health';
 import { handleAdminRequest } from './admin';
+import { handleTokenAdminRequest } from './token-admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest } from './feature-usage';
@@ -24,6 +25,7 @@ import { handleStoriesRequest } from './stories';
 import { handleCommunitiesRequest } from './communities';
 import { handleChatRequest } from './chat';
 import { handleCommunityChatRequest } from './community-chat';
+import { handleVotingRequest } from './voting';
 import { handleBillingRequest } from './billing';
 import { handleEngagementRequest } from './engagement';
 import { handleReviewsRequest } from './reviews';
@@ -43,6 +45,9 @@ import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest } from './game-access';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
+import { handleO2OLTokenRequest } from './o2ol-tokens';
+import { handleTwilioMessagingWebhook } from './twilio-webhooks';
+import { handleTikTokRequest } from './tiktok';
 
 
 const SOCIAL_PAGE_META = {
@@ -170,7 +175,25 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
-    if (url.pathname.startsWith('/studio-media/')) {
+    if (url.pathname === '/api/health') {
+      const prelaunch = String(env.PRELAUNCH_ENVIRONMENT || '').toLowerCase() === 'true';
+      return new Response(JSON.stringify({
+        ok:true,
+        app:'one2onelove',
+        environment:prelaunch?'token-prelaunch':'production',
+        production:!prelaunch,
+        accessModel:'free_tokens',
+      }), {
+        status:200,
+        headers:{
+          'content-type':'application/json; charset=utf-8',
+          'cache-control':'no-store',
+          'x-content-type-options':'nosniff',
+        },
+      });
+    }
+
+    if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
       const response = await handleStudioMediaRequest(request, env, url);
       if (response) return response;
     }
@@ -188,6 +211,31 @@ export default {
       if (response) return response;
     }
 
+    // Twilio inbound messaging (STOP/START opt-outs) — signature-verified, no session.
+    if (url.pathname === '/api/webhooks/twilio/messaging') {
+      return handleTwilioMessagingWebhook(request, env);
+    }
+
+    // TikTok posting has its own verified-session + OAuth-state gates inside
+    // the module (the OAuth callback is a cross-site top-level redirect).
+    if (url.pathname.startsWith('/api/tiktok')) {
+      const response = await handleTikTokRequest(request, env, url);
+      if (response) return response;
+    }
+
+    // Token purchase/webhook/calibration has its own verified-member and Stripe-signature gates.
+    if (url.pathname.startsWith('/api/tokens')) {
+      const response = await handleO2OLTokenRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/token-admin')) {
+      const gate = await enforceAdminMfa(request, env);
+      if (gate) return gate;
+      const response = await handleTokenAdminRequest(request, env, url);
+      if (response) return response;
+    }
+
     const identityGate = await enforceLaunchIdentity(request, env, url);
     if (identityGate) return identityGate;
 
@@ -199,7 +247,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname === '/api/games/scratch/launch') {
+    if (url.pathname.startsWith('/api/games/')) {
       const response = await handleGameAccessRequest(request, env, url);
       if (response) return response;
     }
@@ -313,6 +361,11 @@ export default {
       if (response) return response;
     }
 
+    if (url.pathname.startsWith('/api/voting')) {
+      const response = await handleVotingRequest(request, env, url);
+      if (response) return response;
+    }
+
     if (url.pathname.startsWith('/api/chat')) {
       const response = await handleChatRequest(request, env, url);
       if (response) return response;
@@ -390,6 +443,6 @@ export default {
     if(new Date(controller.scheduledTime || Date.now()).getUTCMinutes()%5===0){
       ctx.waitUntil(sendProductionSiteHealth(env).catch(()=>console.error('O2OL production health report delivery failed')));
     }
-    return baseWorker.scheduled(controller,env,ctx);
+    return baseWorker.scheduled(controller, env, ctx);
   },
 };

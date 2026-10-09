@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
+import { getEdgeCounts } from './cloudflare-edge.js';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -62,8 +63,7 @@ async function analytics(db, env) {
   // database session timezone (UTC): "today" on the dashboard must mean the
   // owner's today, and daily buckets must match the window filter exactly.
   const todaySql = `(now() AT TIME ZONE 'America/Chicago')::date`;
-  const windowStartSql = `((${todaySql} - 29) AT TIME ZONE 'America/Chicago')`;  
-  
+  const windowStartSql = `((${todaySql} - 29) AT TIME ZONE 'America/Chicago')`;
   const interactionSchema = await db.query(`
     SELECT
       to_regclass('public.interaction_events') IS NOT NULL AS ready,
@@ -309,7 +309,7 @@ async function analytics(db, env) {
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
      GROUP BY e.feature
      ORDER BY activity DESC,e.feature ASC
-     LIMIT 20
+     LIMIT 50
   `) : { rows:[] };
 
   const recentClicksPromise = interactionReady ? db.query(`
@@ -557,12 +557,18 @@ export async function handleAnalyticsRequest(request, env, url) {
   const mfaFallback = auth ? null : await getVerifiedAdminMfaIdentity(request, env);
   if (!auth && !mfaFallback) return fail('Authentication required.',401,'unauthorized');
 
+  // Cloudflare edge counts ride along in the same payload. The fetch is
+  // independent of the database, so it starts now and runs in parallel;
+  // it is cached ~15 minutes inside cloudflare-edge.js and never throws.
+  const edgeCountsPromise = getEdgeCounts(env).catch(() => ({ connected:false, reason:'unavailable' }));
+
   try {
     return await withDb(env, async (db) => {
       const admin = mfaFallback?.admin || await requireAdmin(db, auth.user.id);
       if (!admin) return fail('Administrator access required.',403,'forbidden');
       const data = await analytics(db, env);
-      return json({ ok:true,admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
+      const edgeCounts = await edgeCountsPromise;
+      return json({ ok:true,admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data,edgeCounts });
     });
   } catch (error) {
     console.error('One2OneLove analytics API error', error);

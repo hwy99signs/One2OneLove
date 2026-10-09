@@ -54,10 +54,12 @@ import MyMatchIQ from './MyMatchIQ';
 import MyMatchIQAssessment from './MyMatchIQAssessment';
 import MyMatchIQBianca from './MyMatchIQBianca';
 import MyMatchIQCredits from './MyMatchIQCredits';
+import Credit from './Credit';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
 import O2OLStudio from './O2OLStudio';
+import TikTokPost from './TikTokPost';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { trackPageView } from '@/lib/interactionAnalytics';
@@ -69,7 +71,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, MyMatchIQCredits, Credit, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio,
 };
 
 function _getCurrentPage(url) {
@@ -155,12 +157,14 @@ function PagesContent() {
           <Route path="/TherapistSignup" element={<TherapistSignup />} />
           <Route path="/InfluencerSignup" element={<InfluencerSignup />} />
           <Route path="/O2OLStudio" element={<O2OLStudio />} />
+          <Route path="/TikTokPost" element={<TikTokPost />} />
           <Route path="/MyMatchIQ" element={<MyMatchIQ />} />
           <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
           <Route path="/MyMatchIQ/Credits" element={<MyMatchIQCredits />} />
+          <Route path="/Credit" element={<Credit />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />

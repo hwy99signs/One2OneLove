@@ -12,10 +12,13 @@ import {
   createCommunityChatTopic,
   sendCommunityChatMessage,
   touchCommunityChatPresence,
+  beaconLeaveCommunityChatRoom,
   deleteCommunityChatMessage,
   reportCommunityChatMessage,
   muteCommunityChatUser,
 } from '@/lib/communityChatService';
+import VotingCard from '@/components/chat/VotingCard';
+import { questionForRoom } from '@/lib/votingQuestions';
 
 const lgbtqCopy = {
   en: {
@@ -253,6 +256,7 @@ export default function Chat() {
   const prompt = selectedRoom
     ? (selectedRoom.slug === 'lgbtq-community' ? lt.prompt : (t.prompts[selectedRoom.slug] || ['O2OL', t.defaultPrompt]))
     : null;
+  const votingQuestion = selectedRoom ? questionForRoom(selectedRoom.slug) : null;
 
   const loadRooms = async () => {
     try {
@@ -331,13 +335,18 @@ export default function Chat() {
     if (!selectedRoomId) return;
     loadMessages(selectedRoomId);
     if (lgbtqMode) loadTopics(selectedRoomId);
-    const messageTimer = window.setInterval(() => loadMessages(selectedRoomId, true), 3000);
-    const roomTimer = window.setInterval(loadRooms, 10000);
-    const topicTimer = lgbtqMode ? window.setInterval(() => loadTopics(selectedRoomId), 10000) : null;
+    // Poll intervals are unchanged while the tab is visible (chat still
+    // feels live), but a hidden/background tab must not poll at full rate
+    // forever — forgotten chat tabs were a top driver of the Oct 7
+    // database query burn. Polling resumes on the next tick once visible.
+    const tabHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const messageTimer = window.setInterval(() => { if (!tabHidden()) loadMessages(selectedRoomId, true); }, 3000);
+    const roomTimer = window.setInterval(() => { if (!tabHidden()) loadRooms(); }, 10000);
+    const topicTimer = lgbtqMode ? window.setInterval(() => { if (!tabHidden()) loadTopics(selectedRoomId); }, 10000) : null;
     let presenceTimer;
     if (isAuthenticated) {
       touchCommunityChatPresence(selectedRoomId).catch(() => {});
-      presenceTimer = window.setInterval(() => touchCommunityChatPresence(selectedRoomId).catch(() => {}), 45000);
+      presenceTimer = window.setInterval(() => { if (!tabHidden()) touchCommunityChatPresence(selectedRoomId).catch(() => {}); }, 45000);
     }
     return () => {
       window.clearInterval(messageTimer);
@@ -346,6 +355,25 @@ export default function Chat() {
       if (presenceTimer) window.clearInterval(presenceTimer);
     };
   }, [selectedRoomId, selectedTopicId, isAuthenticated, lgbtqMode]);
+
+  // Chat-close rule (Oct 7): stepping out of a room closes it. Presence is
+  // per-room, so this effect is keyed on the room (not the topic): when the
+  // member switches rooms, leaves the page (unmount), or the tab closes /
+  // is hidden for good (pagehide), a beacon leave deletes their presence
+  // row immediately and the room drops to empty instead of burning polls
+  // and presence until a timeout. Re-entering is a fresh join — the
+  // polling effect above re-touches presence and reloads messages.
+  // Guests hold no presence row, so there is nothing for them to leave.
+  useEffect(() => {
+    if (!selectedRoomId || !isAuthenticated) return undefined;
+    const roomId = selectedRoomId;
+    const leave = () => { beaconLeaveCommunityChatRoom(roomId); };
+    window.addEventListener('pagehide', leave);
+    return () => {
+      window.removeEventListener('pagehide', leave);
+      leave();
+    };
+  }, [selectedRoomId, isAuthenticated]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length, selectedRoomId]);
 
@@ -495,6 +523,10 @@ export default function Chat() {
                   <div className="border-b border-purple-100 bg-purple-50 p-4 sm:p-5">
                     <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white font-black text-purple-700 shadow-sm">{prompt[0] === 'Amora' ? 'A' : 'O'}</div><div><p className="text-xs font-black uppercase tracking-wide text-purple-600">{t.prompt} · {prompt[0]}</p><p className="mt-1 font-semibold leading-6 text-slate-800">{prompt[1]}</p></div></div>
                   </div>
+                )}
+
+                {votingQuestion && (
+                  <VotingCard key={votingQuestion.slug} question={votingQuestion} language={currentLanguage} isAuthenticated={isAuthenticated} />
                 )}
 
                 <div className="h-[52vh] min-h-[420px] overflow-y-auto p-4 sm:p-6">

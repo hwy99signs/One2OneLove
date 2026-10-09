@@ -72,7 +72,9 @@ export async function sendLoveNoteSms(data) {
         note_title: data.note_title,
         note_content: data.note_content,
         recipient_phone: data.recipient_phone,
+        send_anonymous: data.send_anonymous === true,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        requestId: globalThis.crypto?.randomUUID?.() || `love-note-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       },
     });
     notifyUsageChanged();
@@ -81,6 +83,14 @@ export async function sendLoveNoteSms(data) {
     notifyQuotaError(error);
     throw error;
   }
+}
+
+// Server-side price quote for a recipient number: the regional Credit price
+// is always shown before sending. Returns null when no quote is available.
+export async function getLoveNotePriceQuote(phone) {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const payload = await apiRequest(`/api/love-notes/price?phone=${encodeURIComponent(phone)}&tz=${encodeURIComponent(timezone)}`);
+  return payload?.quote || null;
 }
 
 export async function getLoveNoteDeliveryReadiness() {
@@ -107,6 +117,7 @@ export async function scheduleLoveNote(data) {
         recipient_phone: data.recipient_phone,
         delivery_method: data.delivery_method || 'sms',
         note_language: data.note_language || 'en',
+        send_anonymous: data.send_anonymous === true,
       },
     });
     notifyUsageChanged();

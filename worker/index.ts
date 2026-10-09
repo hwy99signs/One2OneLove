@@ -132,7 +132,7 @@ async function requireUser(request, env) {
       await db.query(
       `INSERT INTO public.users
         (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
-       VALUES ($1::uuid, $2, $3, 'regular', true, 'Premiere', 9.99, 'inactive')
+       VALUES ($1::uuid, $2, $3, 'regular', true, 'Free', 0, 'inactive')
        ON CONFLICT (id) DO NOTHING`,
       [auth.user.id, auth.user.email, auth.user.name || auth.user.email?.split('@')[0] || 'Member'],
       );
@@ -197,6 +197,17 @@ async function profileRoute(request, env, auth) {
         value = JSON.stringify(value.slice(0, 50));
         values.push(value);
         sets.push(`${key}=$${values.length}::jsonb`);
+      } else if (key === 'name') {
+        // Account-name guards mirror the Love Note signature rules
+        // (worker/love-note-entitlements.ts firstNameFromAccountName):
+        // the account's first name signs Love Notes and an account
+        // with no first name cannot send, so a profile save must
+        // never blank the name out or set it to an email address.
+        const name = String(rawValue ?? '').replace(/\s+/g, ' ').trim();
+        if (!name) return error("Account name can't be blank. A first name is required on your account.");
+        if (name.includes('@')) return error("Account name can't be an email address.");
+        values.push(name);
+        sets.push(`name=$${values.length}`);
       } else {
         if (typeof value === 'string' && value.length > 5000) return error(`${key} is too long.`);
         values.push(value === '' ? null : value);
@@ -396,8 +407,12 @@ export default {
       try {
         const result = await dispatchDueScheduledLoveNotes(env);
         if (!result.ready) {
-          const dueCount = await dueLoveNotesCheck(env);
-          console.log(`Scheduled Love Notes due: ${dueCount}. Scheduled SMS remains dormant until provider and launch approval are configured.`);
+          // Dormant path: do NOT touch the database here. This cron fires
+          // every minute, and the old due-count check burned 1 query/min
+          // (1,440/day) purely to write this log line — a real contributor
+          // to the Oct 7 Hyperdrive cap blowout. When SMS dispatch is
+          // enabled, dispatchDueScheduledLoveNotes does the real DB work.
+          console.log('Scheduled SMS remains dormant until provider and launch approval are configured.');
           return;
         }
         console.log('Scheduled Love Notes dispatch complete', result);

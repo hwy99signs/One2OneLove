@@ -331,22 +331,16 @@ export default function Admin() {
     let active = true;
     const refreshIfDue = () => {
       if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
       const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
       if (elapsed >= AUTO_REFRESH_MS) load(true);
     };
-    const refreshOnReturn = () => {
-      if (!active || document.visibilityState !== 'visible') return;
-      const elapsed = Date.now() - Number(lastRefreshAtRef.current || 0);
-      if (elapsed >= 60 * 1000) load(true);
-    };
     const timer = window.setInterval(refreshIfDue, AUTO_REFRESH_MS);
-    document.addEventListener('visibilitychange', refreshOnReturn);
-    window.addEventListener('focus', refreshOnReturn);
+    document.addEventListener('visibilitychange', refreshIfDue);
     return () => {
       active = false;
       window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', refreshOnReturn);
-      window.removeEventListener('focus', refreshOnReturn);
+      document.removeEventListener('visibilitychange', refreshIfDue);
     };
   }, []);
 

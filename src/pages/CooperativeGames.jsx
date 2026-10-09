@@ -10,7 +10,6 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import GameCard from "../components/activities/GameCard";
 import { getCooperativeGameHistory } from "@/lib/activityService";
-import { hasFullMemberAccess } from "@/lib/openHouseAccess";
 import OpenHouseBrowseNotice from "@/components/launch/OpenHouseBrowseNotice";
 
 const translations = {
@@ -29,7 +28,7 @@ const translations = {
     whatShouldName: "What Should They Do?",
     whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered.",
     likeMindedName: "Like Minded?",
-    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align."
+    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"CREDIT"
   },
   es: {
     title: "Juegos de Relaciones",
@@ -46,7 +45,7 @@ const translations = {
     whatShouldName: "¿Qué Deberían Hacer?",
     whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas.",
     likeMindedName: "¿Piensan Igual?",
-    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden."
+    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"CRÉDITO"
   },
   fr: {
     title: "Jeux Relationnels",
@@ -63,7 +62,7 @@ const translations = {
     whatShouldName: "Que Devraient-Ils Faire ?",
     whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres.",
     likeMindedName: "Même Longueur d’Onde ?",
-    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord."
+    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"CRÉDIT"
   },
   it: {
     title: "Giochi Relazionali",
@@ -80,7 +79,7 @@ const translations = {
     whatShouldName: "Cosa Dovrebbero Fare?",
     whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri.",
     likeMindedName: "Sulla Stessa Lunghezza d’Onda?",
-    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati."
+    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"CREDITO"
   },
   de: {
     title: "Beziehungsspiele",
@@ -97,7 +96,7 @@ const translations = {
     whatShouldName: "Was Sollten Sie Tun?",
     whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben.",
     likeMindedName: "Gleich Gesinnt?",
-    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen."
+    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"CREDIT"
   }
 };
 
@@ -107,12 +106,12 @@ export default function CooperativeGames() {
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
-  const fullMemberAccess = hasFullMemberAccess(user);
+  const freeMemberAccess = Boolean(user?.id);
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
     queryFn: async () => user?.id ? getCooperativeGameHistory() : [],
-    enabled: fullMemberAccess
+    enabled: freeMemberAccess
   });
 
   const availableGames = [
@@ -124,7 +123,8 @@ export default function CooperativeGames() {
       difficulty: 'easy-to-deep',
       icon: '🧠',
       link: 'LikeMinded',
-      playLabel: t.startGame
+      playLabel: t.startGame,
+      accessLabel: t.tokenAccess
     },
     {
       id: 'o2ol_scratch',
@@ -134,7 +134,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '💗',
       link: 'ScratchGame',
-      playLabel: t.startGame
+      playLabel: t.startGame,
+      accessLabel: t.freeAccess
     },
     {
       id: 'what_should_they_do',
@@ -144,7 +145,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '🗳️',
       link: 'WhatShouldTheyDo',
-      playLabel: t.startGame
+      playLabel: t.startGame,
+      accessLabel: t.publicAccess
     }
   ];
 
@@ -158,7 +160,7 @@ export default function CooperativeGames() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-      {!fullMemberAccess && <div className="mx-auto max-w-7xl px-4 pt-8"><OpenHouseBrowseNotice /></div>}
+      {!freeMemberAccess && <div className="mx-auto max-w-7xl px-4 pt-8"><OpenHouseBrowseNotice /></div>}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="mb-6">
           <Link to={createPageUrl("CoupleActivities")} className="inline-flex items-center text-gray-600 hover:text-green-600">

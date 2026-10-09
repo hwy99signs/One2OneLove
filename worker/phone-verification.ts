@@ -209,8 +209,43 @@ async function verifyCode(request, env, auth) {
         await db.query('ROLLBACK');
         return fail('Member profile was not found.', 409, 'profile_not_ready');
       }
+
+      // A Founder slot is only activated after the account completes the full
+      // verified identity path. The reserved number is retained as the badge;
+      // Token economics remain pending calibration.
+      const founder=(await db.query(
+        `UPDATE public.founding_members
+            SET status='active',activated_at=COALESCE(activated_at,now()),
+                reservation_expires_at=NULL,updated_at=now()
+          WHERE user_id=$1::uuid
+            AND status='reserved'
+            AND (reservation_expires_at IS NULL OR reservation_expires_at>now())
+          RETURNING founding_number,cohort,status,badge_retained`,
+        [auth.user.id],
+      )).rows[0]||null;
+      if(founder){
+        await db.query(
+          `UPDATE public.o2ol_founding_token_benefits
+              SET status='active',
+                  metadata=metadata||$2::jsonb,
+                  updated_at=now()
+            WHERE user_id=$1::uuid`,
+          [auth.user.id,JSON.stringify({
+            founding_number:Number(founder.founding_number),
+            founding_cohort:founder.cohort,
+            badge_activated:true,
+            economics_pending_calibration:true,
+          })],
+        );
+      }
+
       await db.query('COMMIT');
-      return json({ ok: true, success: true, verified: true });
+      return json({ ok: true, success: true, verified: true, founder:founder ? {
+        foundingNumber:Number(founder.founding_number),
+        cohort:founder.cohort,
+        badgeRetained:founder.badge_retained!==false,
+        tokenEconomicsPendingCalibration:true,
+      } : null });
     } catch (error) {
       await db.query('ROLLBACK').catch(() => {});
       if (error?.code === '23505') {

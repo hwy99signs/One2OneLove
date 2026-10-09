@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { getTokenWallet, startTokenCheckout, updateAutoReplenish, startPaymentMethodSetup } from './tokenService';
 
 export async function getAiConfig() {
   return apiRequest('/api/ai/config');
@@ -24,16 +25,18 @@ export async function listCoachMessages(conversationId) {
 }
 
 export async function sendCoachMessage(conversationId, message) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `amora-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return apiRequest(`/api/ai/coach/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: { message },
+    body: { message, requestId },
   });
 }
 
 export async function generateRelationshipContent(data) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `ai-content-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const payload = await apiRequest('/api/ai/content', {
     method: 'POST',
-    body: data,
+    body: { ...data, requestId },
   });
   return payload?.content || '';
 }
@@ -68,14 +71,16 @@ export async function resetBiancaPersonalization() {
 }
 
 export async function sendBiancaMessage(conversationId, message, language = 'en') {
+  const requestId = globalThis.crypto?.randomUUID?.() || `bianca-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: { message, language },
+    body: { message, language, requestId },
   });
 }
 
 export async function generateBiancaReport(language = 'en') {
-  const payload = await apiRequest('/api/mymatchiq/bianca/report', { method: 'POST', body: { language } });
+  const requestId = globalThis.crypto?.randomUUID?.() || `bianca-report-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const payload = await apiRequest('/api/mymatchiq/bianca/report', { method: 'POST', body: { language, requestId } });
   return payload?.report || null;
 }
 
@@ -90,8 +95,8 @@ export async function listBiancaReports() {
 }
 
 
-export async function createMyMatchIQAssessmentSession({ language='en', tier='Elite' }={}) {
-  const payload = await apiRequest('/api/mymatchiq/assessment/sessions', { method:'POST', body:{ language, tier } });
+export async function createMyMatchIQAssessmentSession({ language='en' }={}) {
+  const payload = await apiRequest('/api/mymatchiq/assessment/sessions', { method:'POST', body:{ language } });
   return payload?.session || null;
 }
 
@@ -118,25 +123,20 @@ export async function completeMyMatchIQAssessmentSession(sessionId, { answers=[]
 
 
 export async function getMyMatchIQCreditWallet() {
-  return apiRequest('/api/mymatchiq/credits/wallet');
+  return getTokenWallet();
 }
 
 export async function createMyMatchIQCreditCheckout(packageCode) {
-  return apiRequest('/api/mymatchiq/credits/checkout', { method:'POST', body:{ packageCode } });
+  return startTokenCheckout(packageCode);
 }
 
 export async function updateMyMatchIQAutoReplenish({ enabled, packageCode, triggerBalance }) {
-  const payload = await apiRequest('/api/mymatchiq/credits/auto-replenish', {
-    method:'PUT',
-    body:{ enabled, packageCode, triggerBalance },
-  });
-  return payload?.settings || null;
+  return updateAutoReplenish({ enabled, packageCode, triggerBalance });
 }
 
 export async function createMyMatchIQSetupIntent() {
-  return apiRequest('/api/mymatchiq/credits/setup-intent', { method:'POST', body:{} });
+  return startPaymentMethodSetup();
 }
-
 
 export async function getMyMatchIQMemberProfile() {
   const payload = await apiRequest('/api/mymatchiq/members/profile');
@@ -173,7 +173,15 @@ export async function reportMyMatchIQMember({reportedUserId,category='other',det
 
 export async function getMyMatchIQAccess() {
   const payload = await apiRequest('/api/mymatchiq/access');
-  return payload?.access || { tier:'free' };
+  return payload?.access || {
+    access_model:'free_tokens',
+    verified_member:true,
+    tier:'Free',
+    assessment_question_count:225,
+    assessment_dimension_count:15,
+    token_mode:true,
+    token_balance:0,
+  };
 }
 
 export async function getMyMatchIQLegacyMigrationStatus() {

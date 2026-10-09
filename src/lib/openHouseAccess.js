@@ -1,20 +1,16 @@
-export function adminAccessActive(user) {
-  if (!user?.subscription_end_date) return false;
-  const end = new Date(user.subscription_end_date);
-  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
+export function adminAccessActive(user){
+  return String(user?.role||'').toLowerCase()==='admin';
 }
 
-export function hasFullMemberAccess(user) {
-  if (!user) return false;
-  if (String(user.role || '').toLowerCase() === 'admin') return true;
-  const status = String(user.subscription_status || '').toLowerCase();
-  const paidOrGranted = Boolean(user.stripe_subscription_id) || adminAccessActive(user);
-  return ['active','trial','trialing'].includes(status) && paidOrGranted;
+export function hasFullMemberAccess(user){
+  if(!user?.id)return false;
+  if(String(user?.role||'').toLowerCase()==='admin')return true;
+  return user?.phone_number_verified === false ? false : true;
 }
 
-export function openHouseProtectedDestination(user, feature='feature') {
-  const encoded = encodeURIComponent(feature);
-  return user?.id
-    ? `/Subscription?open-house=${encoded}&membership=required`
-    : `/SignUp?source=open-house&feature=${encoded}`;
+export function openHouseProtectedDestination(user,feature='feature'){
+  const encoded=encodeURIComponent(feature);
+  if(!user?.id)return `/SignUp?source=open-house&feature=${encoded}&type=individual`;
+  if(user?.phone_number_verified===false)return `/VerifyPhone?source=open-house&feature=${encoded}`;
+  return `/Credit?source=open-house&feature=${encoded}`;
 }

@@ -1,0 +1,432 @@
+name: O2OL Token Prelaunch QA
+
+on:
+  push:
+    branches:
+      - prelaunch/o2ol-token-economy-20261003
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "neon-migrations/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/o2ol-token-prelaunch-qa.yml"
+      - ".github/workflows/deploy-o2ol-functional-prelaunch.yml"
+      - ".github/workflows/o2ol-token-infra-readiness.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  token-prelaunch-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Bundle-check Cloudflare Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes esbuild@0.25.10 worker/index-v2.ts             --bundle             --platform=browser             --format=esm             --external:pg             --outfile=/tmp/o2ol-token-worker.mjs
+          test -s /tmp/o2ol-token-worker.mjs
+
+      - name: Verify Token architecture contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "handleO2OLTokenRequest" worker/index-v2.ts
+          grep -F "reserveTokenCharge" worker/o2ol-tokens.ts
+          grep -F "releaseTokenReservation" worker/o2ol-tokens.ts
+          grep -F "maybeAutoReplenish" worker/o2ol-tokens.ts
+          grep -F "recordOpenAICostEvent" worker/o2ol-cost-ledger.ts
+          grep -F "bianca_response" worker/mymatchiq-ai.ts
+          grep -F "amora_response" worker/ai.ts
+          grep -F "love_note_send" worker/love-note-entitlements.ts
+          grep -F "like_minded_session" worker/game-access.ts
+          grep -F 'path="/Tokens"' src/pages/index.jsx
+          grep -F 'path="/Amora"' src/pages/index.jsx
+          grep -F '<Navigate to="/Tokens" replace' src/pages/Subscription.jsx
+          grep -F 'navigate("/SignUp")' src/pages/Layout.jsx
+          grep -F "legacy_subscription_model_retired" worker/billing.ts src/lib/stripeService.js
+          grep -F "return false;" worker/api-entitlements.ts
+          grep -F "method === 'GET' && path.startsWith('/api/community-chat')" worker/identity-gate.ts
+          grep -F "PUBLIC_DELAY_MS=7*24*60*60*1000" worker/studio-media.ts
+          grep -F "o2ol_token_wallets" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
+
+      - name: Verify separate Token dashboard and burn calibration controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
+          grep -F "AdminMfaGate><TokenSystemDashboard" src/pages/index.jsx
+          grep -F "Package Burn Tests" src/pages/TokenSystemDashboard.jsx
+          grep -F "Auto-refresh 15 min" src/pages/TokenSystemDashboard.jsx
+          grep -F "Core Token Environment" src/pages/TokenSystemDashboard.jsx
+          grep -F "FAIL-CLOSED" src/pages/TokenSystemDashboard.jsx
+          grep -F "startTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
+          grep -F "endTokenCalibration" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
+          grep -F "/api/token-admin/calibrations/start" worker/token-admin.ts
+          grep -F "/api/token-admin/calibrations/" worker/token-admin.ts
+          grep -F "Calibration must use a non-Admin test/member account." worker/token-admin.ts
+          grep -F "activeCalibrationSession" worker/o2ol-cost-ledger.ts
+          grep -F "calibration_session_id" worker/o2ol-cost-ledger.ts
+          test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
+          test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
+
+      - name: Verify stale Stripe-less memberships are normalized inactive
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Retire stale Stripe-less active/trial access labels" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "stripe_subscription_id IS NULL" neon-migrations/2026-10-03-o2ol-token-economy.sql
+          grep -F "subscription_status='inactive'" neon-migrations/2026-10-03-o2ol-token-economy.sql
+
+      - name: Verify free-account access contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "'Free'" worker/launch-auth.ts
+          grep -F "subscription_price,subscription_status" worker/launch-auth.ts
+          grep -F 'VALUES ($1::uuid,$2,$3,'\''regular'\'',true,'\''Free'\'',0,'\''inactive'\'')' worker/launch-auth.ts
+          grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts
+          grep -F "founding_intent" worker/launch-auth.ts
+          grep -F "badge_activated:true" worker/phone-verification.ts
+          grep -F "const TERMS_VERSION = '2026-10-03';" src/components/signup/LaunchRegularUserForm.jsx
+          if grep -RInE 'navigate\(["'\''"]/Subscription\?signup=1|Create Account for Premiere|Create Account for Exclusive' src --exclude='stripeService.js'; then
+            echo "Active recurring-plan signup path found." >&2
+            exit 1
+          fi
+
+      - name: Verify MyMatchIQ uses free assessment plus O2OL Tokens
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Free: { questionCount:225, dimensionCount:15 }" src/lib/mymatchiqAssessment.js
+          grep -F "return buildMyMatchIQQuestionBank(language);" src/lib/mymatchiqAssessment.js
+          grep -F "assessment_question_count:225" worker/mymatchiq-ai.ts
+          grep -F "access_model:'free_tokens'" worker/mymatchiq-ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'bianca_report'" worker/mymatchiq-ai.ts
+          grep -F "'bianca_response'" worker/mymatchiq-ai.ts
+          grep -F "legacy_mymatchiq_credits_retired" worker/mymatchiq-credits.ts
+          grep -F 'to="/Tokens?source=mymatchiq-assessment"' src/pages/MyMatchIQAssessment.jsx
+          if grep -F "requireCardAccess" worker/mymatchiq-ai.ts; then
+            echo "Stale MyMatchIQ card gate remains in API." >&2
+            exit 1
+          fi
+          if grep -F "card_on_file" src/pages/MyMatchIQAssessment.jsx; then
+            echo "Stale MyMatchIQ card gate remains in assessment UI." >&2
+            exit 1
+          fi
+          if grep -REn "questionCount:(15|45)" src/lib/mymatchiqAssessment.js; then
+            echo "Stale 15/45-question tier limit remains." >&2
+            exit 1
+          fi
+          if grep -REn "api/mymatchiq/credits/(checkout|setup-intent|auto-replenish)" src worker --exclude='mymatchiq-credits.ts'; then
+            echo "Legacy MyMatchIQ credit API is still called outside the retirement shim." >&2
+            exit 1
+          fi
+
+      - name: Verify Love Notes uses Tokens only
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "VALUES(\$1::uuid,\$2,\$3,'regular',true,'Free',0,'inactive')" worker/love-note-entitlements.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'love_note_send'" worker/love-note-entitlements.ts
+          grep -F "customerTokensCharged:Number(reservation.tokens||0)" worker/love-note-entitlements.ts
+          grep -F "plan:'Free'" worker/love-note-entitlements.ts
+          grep -F "accessModel:'free_tokens'" worker/love-note-entitlements.ts
+          grep -F "LOVE_NOTE_SEND_PRICE_CENTS=0" worker/love-note-billing.ts
+          grep -F "legacy_love_note_billing_retired" worker/love-note-billing.ts
+          grep -F "'Free'::text" neon-migrations/2026-10-03-o2ol-free-love-note-categories.sql
+          if grep -REn 'US\$0\.29|\$0\.29|first (One2OneLove )?SMS.*FREE|first.*SMS.*GRATUIT|first.*SMS.*GRATIS' src/pages/LoveNotes.jsx worker/love-note-entitlements.ts; then
+            echo "Stale 29-cent or first-free Love Note billing copy remains." >&2
+            exit 1
+          fi
+          if grep -REn "'Premiere'|9\.99|effectivePlan|stripe_subscription_id" worker/love-note-entitlements.ts; then
+            echo "Stale subscription-derived Love Note access remains." >&2
+            exit 1
+          fi
+
+      - name: Verify no active subscription-derived access survives
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Current member access is FREE after verification" src/components/launch/LaunchAccessGate.jsx
+          grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
+          grep -F "accessModel:'free_tokens'" worker/ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'ai_content_generation'" worker/ai.ts
+          grep -F "legacy_subscription_model_retired" worker/billing-plan-change.ts
+          grep -F "'Free',0,'inactive'" worker/onboarding.ts worker/member-onboarding.ts worker/index.ts
+          grep -F "'Free','inactive',0" worker/professional-signup.ts
+          grep -F "INSERT INTO public.o2ol_token_wallets" worker/professional-signup.ts
+          grep -F "accessModel:'free_tokens'" src/lib/professionalOnboardingService.js
+          grep -F "token_wallets_ready" worker/launch-readiness.ts
+          grep -F "stripeTokenCheckoutReady" worker/launch-readiness.ts
+          grep -F "column_default = '''Free''::text'" worker/launch-readiness.ts
+          if grep -REn 'PLAN_LEVEL|REQUIRED_PLAN|stripe_subscription_id|subscription_status|subscription_plan' src/components/launch/LaunchAccessGate.jsx; then
+            echo "Global browser access still depends on a subscription." >&2
+            exit 1
+          fi
+          if grep -REn 'Premiere|Exclusive|8.*month|monthly.*limit' src/components/dateideas/DateIdeasPlanAccess.jsx; then
+            echo "Date Ideas still contains a recurring-tier limit." >&2
+            exit 1
+          fi
+          if grep -REn "canonicalPlan|Premiere|Exclusive|50 AI Relationship Coach|subscription_plan|subscription_status" worker/ai.ts; then
+            echo "AI access still contains legacy tier eligibility." >&2
+            exit 1
+          fi
+          if grep -REn "selectedSignupPlan|Choose Premiere or Exclusive|selectedPlan" src/lib/professionalOnboardingService.js src/pages/ProfessionalSignup.jsx worker/professional-signup.ts; then
+            echo "Professional onboarding still depends on a paid tier." >&2
+            exit 1
+          fi
+          if grep -REn "STRIPE_PRICE_PREMIERE|STRIPE_PRICE_EXCLUSIVE|premiere_default_ready" worker/launch-readiness.ts; then
+            echo "Launch readiness still certifies old subscription prices." >&2
+            exit 1
+          fi
+          if grep -REn 'US\$0\.29|\$0\.29|firstFreeAvailable|firstMembershipSendFree' src/components/lovenotes/LoveNotesLimitAddSends.jsx; then
+            echo "Legacy Love Note add-sends billing overlay survived." >&2
+            exit 1
+          fi
+
+      - name: Verify game Token access is transactional
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "reserveTokenCharge(db,auth.user.id,'like_minded_session'" worker/game-access.ts
+          grep -F "await consumeTokenReservation(db,reservation.id)" worker/game-access.ts
+          grep -F "await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed')" worker/game-access.ts
+          grep -F "featureCode:'like_minded_session'" worker/game-access.ts
+          grep -F "access:'free_verified_account'" worker/game-access.ts
+          if grep -REn 'Premiere|Exclusive|stripe_subscription_id|subscription_status' worker/game-access.ts worker/like-minded.ts; then
+            echo "Game access still contains subscription-era gating." >&2
+            exit 1
+          fi
+
+      - name: Verify per-event calibration evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "recentCostEvents:recentCostEvents.rows" worker/token-admin.ts
+          grep -F "c.input_characters,c.context_characters,c.output_characters" worker/token-admin.ts
+          grep -F "c.provider_input_units,c.provider_cached_input_units,c.provider_output_units" worker/token-admin.ts
+          grep -F "c.provider_cost_micros,c.customer_tokens_charged" worker/token-admin.ts
+          grep -F 'title="Recent Calibration Events"' src/pages/TokenSystemDashboard.jsx
+          grep -F ">Input Chars<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Context Chars<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Output Chars<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Input Tokens<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Cached<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Output Tokens<" src/pages/TokenSystemDashboard.jsx
+          grep -F ">Cost / O2OL Token<" src/pages/TokenSystemDashboard.jsx
+
+      - name: Verify Token payment and Auto-Replenish safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "'metadata[idempotency_key]':marker" worker/o2ol-tokens.ts
+          grep -F 'idempotencyKey:meta.idempotency_key||`stripe_auto:' worker/o2ol-tokens.ts
+          grep -F "payment_method_saved:Boolean(state.settings?.payment_method_reference)" worker/o2ol-tokens.ts
+          grep -F "trigger>Number(pkg.tokens||0)" worker/o2ol-tokens.ts
+          grep -F "max={maxAutoTrigger||undefined}" src/pages/Tokens.jsx
+          grep -F "settings?.payment_method_saved" src/pages/Tokens.jsx
+          if grep -F "settings?.payment_method_reference" src/pages/Tokens.jsx; then
+            echo "Raw Stripe payment method reference is still exposed to the browser." >&2
+            exit 1
+          fi
+
+      - name: Verify calibration package loader remains non-revenue and isolated
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "/api/token-admin/calibrations/load-package" worker/token-admin.ts src/lib/tokenAdminService.js
+          grep -F "calibration_only:true" worker/token-admin.ts
+          grep -F "revenue_cents:0" worker/token-admin.ts
+          grep -F "Calibration package loading requires a zero Token balance" worker/token-admin.ts
+          grep -F "Disable Auto-Replenish before loading a controlled calibration package." worker/token-admin.ts
+          grep -F "Disable Auto-Replenish before starting a controlled calibration session." worker/token-admin.ts
+          grep -F "calibration_package_balance_mismatch" worker/token-admin.ts
+          grep -F "Calibration requires an active member with verified email and phone." worker/token-admin.ts
+          grep -F "calibration_member_not_ready" worker/token-admin.ts
+          grep -F "NOT VERIFIED/ACTIVE" src/pages/TokenSystemDashboard.jsx
+          grep -F "transaction_type,package_code,provider,metadata" worker/token-admin.ts
+          grep -F "'grant'" worker/token-admin.ts
+          grep -F "Load Test Package" src/pages/TokenSystemDashboard.jsx
+          grep -F "Completed Package Burn Comparison" src/pages/TokenSystemDashboard.jsx
+          grep -F "avgCostPerBurnedToken" src/pages/TokenSystemDashboard.jsx
+
+      - name: Verify Stripe Token webhook remains retry-safe
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "VALUES('stripe',\$1,\$2,\$3::uuid,\$4::jsonb,NULL)" worker/o2ol-tokens.ts
+          grep -F "if(existingEvent?.processed_at)return json({ok:true,duplicate:true});" worker/o2ol-tokens.ts
+          grep -F "SET processed_at=now()" worker/o2ol-tokens.ts
+          grep -F 'idempotencyKey:`stripe_checkout:${obj.id}`' worker/o2ol-tokens.ts
+          grep -F 'idempotencyKey:meta.idempotency_key||`stripe_auto:${obj.id}`' worker/o2ol-tokens.ts
+
+      - name: Verify legacy public billing is fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Premiere/Exclusive recurring checkout is retired" worker/billing.ts
+          grep -F "legacy_subscription_reconciliation_locked" worker/billing.ts
+          grep -F "Recurring One2OneLove subscriptions are retired" src/lib/stripeService.js
+          if grep -RInE 'handleSubscriptionCheckout\(' src              --exclude='stripeService.js'              --exclude='SubscriptionSelection.jsx'              --exclude='TierCard.jsx'; then
+            echo "A live customer UI still calls legacy recurring checkout." >&2
+            exit 1
+          fi
+
+      - name: Verify original Admin dashboard is untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object src/pages/Admin.jsx)" = "288e43c4593ba12abb9d21c79401eef7d513aecc"
+          test "$(git hash-object src/lib/adminService.js)" = "ecad1b59e70cdbda6ee19eb11b1b35299dd2fd7e"
+          test "$(git hash-object worker/admin.ts)" = "29c521a6ac79d212670fdbc29361571d4c39e34e"
+
+      - name: Verify Token dashboard is separate and MFA-protected
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "Token System Dashboard" src/pages/TokenSystemDashboard.jsx
+          grep -F "getTokenSystemDashboard" src/lib/tokenAdminService.js
+          grep -F "handleTokenAdminRequest" worker/token-admin.ts worker/index-v2.ts
+          grep -F "url.pathname.startsWith('/api/token-admin')" worker/index-v2.ts
+          grep -F "const gate = await enforceAdminMfa(request, env);" worker/index-v2.ts
+          TOKEN_ADMIN_LINE=$(grep -n "url.pathname.startsWith('/api/token-admin')" worker/index-v2.ts | head -1 | cut -d: -f1)
+          IDENTITY_GATE_LINE=$(grep -n "const identityGate = await enforceLaunchIdentity" worker/index-v2.ts | head -1 | cut -d: -f1)
+          test -n "$TOKEN_ADMIN_LINE"
+          test -n "$IDENTITY_GATE_LINE"
+          test "$TOKEN_ADMIN_LINE" -lt "$IDENTITY_GATE_LINE"
+          grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx
+          grep -F "<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>" src/pages/index.jsx
+          grep -F "adjustTokenWallet" src/pages/TokenSystemDashboard.jsx src/lib/tokenAdminService.js
+          grep -F "Prelaunch read-only preview" src/pages/Admin.jsx
+          grep -F "prelaunchAdminDashboard" worker/mmiq-prelaunch-preview.ts
+          if grep -F "token-admin" worker/mmiq-prelaunch-preview.ts; then
+            echo "Token System Admin API must not be exposed by the public Admin preview bypass." >&2
+            exit 1
+          fi
+
+      - name: Audit shipped runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev --audit-level=high
+          npm --prefix worker audit --audit-level=high
+
+      - name: Reject stale public recurring-price copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGETS=(
+            src/pages/Home.jsx
+            src/pages/HelpCenter.jsx
+            src/pages/AboutUs.jsx
+            src/pages/PaymentSuccess.jsx
+            src/pages/LoveNotes.jsx
+            src/pages/O2OLStudio.jsx
+            src/pages/MyMatchIQBianca.jsx
+            src/pages/Amora.jsx
+            src/components/home
+            src/components/launch
+            src/components/signup
+            src/components/subscriptions
+            src/data/subscriptionPlanCopy.js
+          )
+          if grep -RInE 'US\$(9\.99|15\.99|19\.99)(/month|/mes|/mois|/mese|/Monat)?|\$(9\.99|15\.99|19\.99).*(month|mensual|mois|mese|Monat)' "${TARGETS[@]}" 2>/dev/null; then
+            echo "Stale recurring launch pricing found on an active public surface." >&2
+            exit 1
+          fi
+          if grep -RInE 'credit or debit card on file|valid credit or debit card|tarjeta (válida|registrada)|carte (valide|enregistrée)|carta (valida|registrata)|hinterlegte (Kredit-|Debit-)?Karte' "${TARGETS[@]}" 2>/dev/null; then
+            echo "Stale card-required membership copy found on an active public surface." >&2
+            exit 1
+          fi
+          if grep -RInF '/Subscription?signup=1' "${TARGETS[@]}" 2>/dev/null; then
+            echo "Stale recurring-plan signup route found on an active public surface." >&2
+            exit 1
+          fi
+
+      - name: Verify no plaintext runtime credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE 'sk_(live|test)_[A-Za-z0-9]|sk-proj-[A-Za-z0-9]|whsec_[A-Za-z0-9]|AC[0-9a-fA-F]{32}' src worker cloudflare 2>/dev/null; then
+            echo "Plaintext credential pattern found." >&2
+            exit 1
+          fi
+
+      - name: Verify functional Token deploy is isolated and fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEPLOY=.github/workflows/deploy-o2ol-functional-prelaunch.yml
+          grep -F "name: Deploy O2OL Token Functional Prelaunch" "$DEPLOY"
+          grep -F "ref: prelaunch/o2ol-token-economy-20261003" "$DEPLOY"
+          grep -F "main\": \"\$GITHUB_WORKSPACE/worker/index-v2.ts" "$DEPLOY"
+          grep -F "EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls" "$DEPLOY"
+          grep -F "EXPECTED_NEON_ROLE: o2ol_token_hyperdrive" "$DEPLOY"
+          grep -F "Hyperdrive must use the dedicated Token Prelaunch database role." "$DEPLOY"
+          grep -F "PRODUCTION_HYPERDRIVE_ID: ef44564dbfca4e1bb13176ee568aaddf" "$DEPLOY"
+          grep -F "Production Hyperdrive is forbidden for Token Prelaunch." "$DEPLOY"
+          grep -F "TOKEN_PRELAUNCH_OPENAI_API_KEY" "$DEPLOY"
+          grep -F "TOKEN_PRELAUNCH_STRIPE_SECRET_KEY" "$DEPLOY"
+          grep -F "TOKEN_PRELAUNCH_TWILIO_ACCOUNT_SID" "$DEPLOY"
+          grep -F "feature remains fail-closed" "$DEPLOY"
+          grep -F "Install available Token Prelaunch provider secrets" "$DEPLOY"
+          grep -F "Verify any supplied provider secrets were installed" "$DEPLOY"
+          grep -F '"workers_dev": $WORKERS_DEV' "$DEPLOY"
+          grep -F "make_config /tmp/wrangler.token-bootstrap.jsonc false false" "$DEPLOY"
+          grep -F "make_config /tmp/wrangler.token-live.jsonc true true" "$DEPLOY"
+          grep -F '"PRELAUNCH_ENVIRONMENT": "true"' "$DEPLOY"
+          grep -F '"SCHEDULED_SMS_ENABLED": "false"' "$DEPLOY"
+          grep -F "TOKEN_MEDIA_BUCKET: one2onelove-token-prelaunch-media" "$DEPLOY"
+          grep -F '"bucket_name": "$TOKEN_MEDIA_BUCKET"' "$DEPLOY"
+          grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts
+          if grep -F "o2ol-password-reset-preview" "$DEPLOY"; then
+            echo "Stale preview checkout branch remains in functional deploy." >&2
+            exit 1
+          fi
+          if grep -F "ep-royal-darkness-ars10dcl" "$DEPLOY"; then
+            echo "Old Bianca Neon endpoint remains in Token deploy." >&2
+            exit 1
+          fi
+          if grep -F "one2onelove-launch" "$DEPLOY"; then
+            echo "Production Worker name leaked into Token deploy." >&2
+            exit 1
+          fi
+          if grep -F '"bucket_name": "one2onelove-media"' "$DEPLOY"; then
+            echo "Production R2 bucket must never be bound to Token Prelaunch." >&2
+            exit 1
+          fi
+
+      - name: Verify Production deployment remains untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "branches:" .github/workflows/deploy-o2ol-production-neon.yml
+          grep -F "master" .github/workflows/deploy-o2ol-production-neon.yml
+          if grep -F "prelaunch/o2ol-token-economy-20261003" .github/workflows/deploy-o2ol-production-neon.yml; then
+            echo "Production workflow must not target Token Prelaunch." >&2
+            exit 1
+          fi
+
+      - name: Report QA marker
+        run: echo "O2OL_TOKEN_PRELAUNCH_QA=PASS"
+
+# UX routing/token-notice certification trigger 2026-10-04

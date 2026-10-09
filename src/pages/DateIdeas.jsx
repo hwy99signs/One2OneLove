@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock, Lock } from "lucide-react";
+import { Heart, Coffee, Utensils, Film, Music, MapPin, Star, Sparkles, Home, TreePine, Waves, Mountain, Plus, Filter, ArrowLeft, Bookmark, Share2, Check, X, CalendarDays, Clock, Coins, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/da
 import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
 import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
+import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 
 const translations = {
   en: {
@@ -117,8 +118,8 @@ const OPEN_HOUSE_COPY = {
     locked: 'LOCKED',
     membersOnly: 'Members Only',
     lockedTitle: 'There is more waiting inside',
-    lockedBody: 'This Date Idea is hidden during the Limited-Time Open House. Become a member to unlock all 52 Date Ideas.',
-    unlock: 'Unlock All 52',
+    lockedBody: 'This Date Idea is locked. Create a FREE account, then use Credit to unlock it. Once unlocked, it stays unlocked for your account.',
+    unlock: 'Unlock with Credit',
     signIn: 'Sign In',
     saveGate: 'Create an account to save, schedule, and track Date Ideas.',
     memberAction: 'Become a Member'
@@ -128,59 +129,51 @@ const OPEN_HOUSE_COPY = {
     locked: 'BLOQUEADO',
     membersOnly: 'Solo miembros',
     lockedTitle: 'Hay mucho más por descubrir',
-    lockedBody: 'Esta idea de cita está oculta durante las Puertas Abiertas por tiempo limitado. Hazte miembro para desbloquear las 52 ideas de citas.',
-    unlock: 'Desbloquear las 52',
+    lockedBody: 'Esta idea de cita está bloqueada. Crea una cuenta GRATIS y usa Crédito para desbloquearla. Una vez desbloqueada, permanece disponible en tu cuenta.',
+    unlock: 'Desbloquear con Crédito',
     signIn: 'Iniciar sesión',
     saveGate: 'Crea una cuenta para guardar, programar y seguir tus ideas de citas.',
-    memberAction: 'Hazte miembro'
+    memberAction: 'Desbloquear con Crédito'
   },
   fr: {
     badge: 'PORTES OUVERTES',
     locked: 'VERROUILLÉ',
     membersOnly: 'Membres uniquement',
     lockedTitle: 'Il y en a encore beaucoup à découvrir',
-    lockedBody: 'Cette idée de rendez-vous est masquée pendant les Portes Ouvertes à durée limitée. Devenez membre pour débloquer les 52 idées.',
-    unlock: 'Débloquer les 52',
+    lockedBody: 'Cette idée de rendez-vous est verrouillée. Créez un compte GRATUIT puis utilisez du Crédit pour la déverrouiller. Elle restera ensuite disponible sur votre compte.',
+    unlock: 'Déverrouiller avec du Crédit',
     signIn: 'Se connecter',
     saveGate: 'Créez un compte pour enregistrer, planifier et suivre vos idées de rendez-vous.',
-    memberAction: 'Devenir membre'
+    memberAction: 'Déverrouiller avec du Crédit'
   },
   it: {
     badge: 'PORTE APERTE',
     locked: 'BLOCCATO',
     membersOnly: 'Solo membri',
     lockedTitle: 'C’è molto altro da scoprire',
-    lockedBody: 'Questa idea è nascosta durante le Porte Aperte a tempo limitato. Diventa membro per sbloccare tutte le 52 idee.',
-    unlock: 'Sblocca tutte e 52',
+    lockedBody: 'Questa idea è bloccata. Crea un account GRATUITO e usa Credito per sbloccarla. Dopo lo sblocco resterà disponibile nel tuo account.',
+    unlock: 'Sblocca con Credito',
     signIn: 'Accedi',
     saveGate: 'Crea un account per salvare, programmare e monitorare le idee per gli appuntamenti.',
-    memberAction: 'Diventa membro'
+    memberAction: 'Sblocca con Credito'
   },
   de: {
     badge: 'TAG DER OFFENEN TÜR',
     locked: 'GESPERRT',
     membersOnly: 'Nur für Mitglieder',
     lockedTitle: 'Es gibt noch viel mehr zu entdecken',
-    lockedBody: 'Diese Date-Idee bleibt während des zeitlich begrenzten Open House verborgen. Werde Mitglied, um alle 52 Date-Ideen freizuschalten.',
-    unlock: 'Alle 52 freischalten',
+    lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende Credit zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
+    unlock: 'Mit Credit Freischalten',
     signIn: 'Anmelden',
     saveGate: 'Erstelle ein Konto, um Date-Ideen zu speichern, zu planen und zu verfolgen.',
-    memberAction: 'Mitglied werden'
+    memberAction: 'Mit Credit Freischalten'
   }
 };
 
-function adminAccessActive(user) {
-  if (!user?.subscription_end_date) return false;
-  const end = new Date(user.subscription_end_date);
-  return Boolean(!Number.isNaN(end.getTime()) && end.getTime() > Date.now());
-}
-
 function hasFullDateIdeasAccess(user) {
-  if (!user) return false;
+  if (!user?.id) return false;
   if (String(user.role || '').toLowerCase() === 'admin') return true;
-  const status = String(user.subscription_status || '').toLowerCase();
-  const paidOrGranted = Boolean(user.stripe_subscription_id) || adminAccessActive(user);
-  return ['active', 'trial', 'trialing'].includes(status) && paidOrGranted;
+  return user.phone_number_verified === false || user.phoneNumberVerified === false ? false : true;
 }
 
 function mysteryTitleFragment(title) {
@@ -213,8 +206,30 @@ export default function DateIdeas() {
   const hasMemberAccess = hasFullDateIdeasAccess(currentUser);
   const openHouseCopy = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
   const [showOpenHouseLock, setShowOpenHouseLock] = useState(false);
+  const [lockedIdea, setLockedIdea] = useState(null);
+  const [unlockingIdea, setUnlockingIdea] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
 
   const dateIdeasUserKey = currentUser?.id || 'guest';
+  const isAdmin = String(currentUser?.role || '').toLowerCase() === 'admin';
+  const { data: tokenUnlockData = { unlocks: [] } } = useQuery({
+    queryKey: ['tokenUnlocks', 'date_idea_unlock', dateIdeasUserKey],
+    queryFn: () => listTokenUnlocks('date_idea_unlock'),
+    enabled: Boolean(currentUser?.id) && !isAdmin,
+  });
+  const { data: tokenWalletData = null } = useQuery({
+    queryKey: ['tokenWallet', dateIdeasUserKey],
+    queryFn: getTokenWallet,
+    enabled: Boolean(currentUser?.id) && !isAdmin,
+  });
+  const unlockedDateKeys = new Set((tokenUnlockData?.unlocks || []).map(item => String(item.content_key)));
+  const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 1);
+  const hasDateIdeaAccess = (idea) => {
+    if (!idea?.week) return hasMemberAccess;
+    if (isAdmin) return true;
+    if (OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id))) return true;
+    return unlockedDateKeys.has(String(idea.id));
+  };
 
   const { data: customDates = [] } = useQuery({
     queryKey: ['customDates', dateIdeasUserKey],
@@ -501,8 +516,10 @@ export default function DateIdeas() {
 
   const openDateIdea = (idea) => {
     const isBuiltIn = Boolean(idea?.week);
-    const isLockedForOpenHouse = !hasMemberAccess && isBuiltIn && !OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id));
+    const isLockedForOpenHouse = isBuiltIn && !hasDateIdeaAccess(idea);
     if (isLockedForOpenHouse) {
+      setLockedIdea(idea);
+      setUnlockError('');
       setShowOpenHouseLock(true);
       return;
     }
@@ -512,6 +529,37 @@ export default function DateIdeas() {
     setScheduleDate('');
     setScheduleTime('');
     setScheduledEvent(null);
+  };
+
+  const unlockDateIdea = async () => {
+    if (!currentUser?.id || !lockedIdea || unlockingIdea) return;
+    setUnlockingIdea(true);
+    setUnlockError('');
+    try {
+      const result = await unlockTokenContent({
+        featureCode: 'date_idea_unlock',
+        contentKey: String(lockedIdea.id),
+        source: 'date_ideas',
+        idempotencyKey: `date-idea:${currentUser.id}:${lockedIdea.id}`,
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tokenUnlocks', 'date_idea_unlock', dateIdeasUserKey] }),
+        queryClient.invalidateQueries({ queryKey: ['tokenWallet', dateIdeasUserKey] }),
+      ]);
+      setShowOpenHouseLock(false);
+      setSelectedIdea(lockedIdea);
+      setLockedIdea(null);
+      toast.success(`Unlocked with ${Number(result?.tokens?.charged || dateIdeaTokenCost)} O2OL Token${Number(result?.tokens?.charged || dateIdeaTokenCost) === 1 ? '' : 's'}.`);
+    } catch (error) {
+      if (isTokensRequiredError(error)) {
+        const info = tokenRequiredDetails(error);
+        setUnlockError(`You need ${info.required || dateIdeaTokenCost} O2OL Token${Number(info.required || dateIdeaTokenCost) === 1 ? '' : 's'} to unlock this Date Idea. Current balance: ${info.balance || 0}.`);
+      } else {
+        setUnlockError(error?.message || 'Unable to unlock this Date Idea.');
+      }
+    } finally {
+      setUnlockingIdea(false);
+    }
   };
 
   const localToday = (() => {
@@ -676,7 +724,7 @@ export default function DateIdeas() {
           {filteredIdeas.map((idea, index) => {
             const Icon = idea.icon || Heart;
             const isBuiltIn = Boolean(idea.week);
-            const isOpenHouseLocked = !hasMemberAccess && isBuiltIn && !OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id));
+            const isOpenHouseLocked = isBuiltIn && !hasDateIdeaAccess(idea);
             const teaser = isOpenHouseLocked ? mysteryTitleFragment(idea.title) : null;
 
             return (
@@ -749,15 +797,26 @@ export default function DateIdeas() {
                   <p className="mt-3 text-sm leading-relaxed text-gray-600">{openHouseCopy.lockedBody}</p>
                 </div>
                 <div className="mt-6 flex flex-col gap-2">
-                  <Link to="/Subscription?open-house=date-ideas" onClick={() => setShowOpenHouseLock(false)}>
-                    <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
-                      <Lock className="mr-2 h-4 w-4" />
-                      {openHouseCopy.unlock}
-                    </Button>
-                  </Link>
-                  <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
-                    <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
-                  </Link>
+                  {currentUser?.id ? (
+                    <>
+                      <Button disabled={unlockingIdea} onClick={unlockDateIdea} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                        {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
+                        {dateIdeaTokenCost} O2OL Token{dateIdeaTokenCost === 1 ? '' : 's'} · {openHouseCopy.unlock}
+                      </Button>
+                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit</Link></div>}
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/SignUp?source=date-ideas&feature=date-ideas&return=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                        <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
+                          <Coins className="mr-2 h-4 w-4" />Create FREE Account · Then Unlock with Credit
+                        </Button>
+                      </Link>
+                      <Link to="/SignIn?source=date-ideas&redirect=/DateIdeas" onClick={() => setShowOpenHouseLock(false)}>
+                        <Button variant="outline" className="w-full">{openHouseCopy.signIn}</Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </motion.div>
             </motion.div>
@@ -858,7 +917,7 @@ export default function DateIdeas() {
                             <Share2 className="w-4 h-4 mr-2" />
                             {t.shareWithPartner}
                           </Button>
-                          <Link to="/Subscription?open-house=date-ideas">
+                          <Link to="/SignUp?source=open-house-date-ideas&type=individual">
                             <Button size="sm" className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                               <Lock className="w-4 h-4 mr-2" />
                               {openHouseCopy.memberAction}

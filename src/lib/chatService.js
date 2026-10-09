@@ -105,6 +105,9 @@ function makePoller(fetcher, callback, intervalMs = 3000) {
   let last = '';
   const run = async () => {
     if (!active) return;
+    // Do not poll from a hidden/background tab (query-burn fix, Oct 7):
+    // the next scheduled tick after the tab is visible again resumes it.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     try {
       const value = await fetcher();
       const signature = JSON.stringify(value);
@@ -114,16 +117,30 @@ function makePoller(fetcher, callback, intervalMs = 3000) {
   };
   run();
   const timer = window.setInterval(run, intervalMs);
+  // Chat-close rule (Oct 7): when the page itself goes away (tab close,
+  // navigate off, app switch to a killed tab), the poller is torn down for
+  // good — pagehide is the terminal exit, not a pause. Visibility changes
+  // only pause ticks (above); pagehide unsubscribes outright, so a chat
+  // nobody is in anymore can never keep polling behind anyone's back.
+  const handlePageHide = () => subscription.unsubscribe();
   const subscription = {
     unsubscribe() {
       active = false;
       window.clearInterval(timer);
+      window.removeEventListener('pagehide', handlePageHide);
       subscriptions.delete(subscription);
     },
   };
   subscriptions.add(subscription);
+  window.addEventListener('pagehide', handlePageHide);
   return subscription;
 }
+
+// Tear down every live chat poller at once (e.g. on sign-out, where the
+// member is stepping out of every conversation simultaneously).
+export const unsubscribeAllChatPollers = () => {
+  for (const subscription of [...subscriptions]) subscription.unsubscribe();
+};
 
 export const subscribeToMessages = (conversationId, callback) => makePoller(
   () => getMessages(conversationId),
