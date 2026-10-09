@@ -1,6 +1,13 @@
 -- O2OL Token content unlock entitlements
 -- Existing locked content can be unlocked with O2OL Tokens without reintroducing subscription tiers.
 
+-- Expand the original Token pricing-unit constraint for item-level/episode unlocks.
+ALTER TABLE public.o2ol_token_feature_prices
+  DROP CONSTRAINT IF EXISTS o2ol_token_feature_prices_pricing_unit_check;
+ALTER TABLE public.o2ol_token_feature_prices
+  ADD CONSTRAINT o2ol_token_feature_prices_pricing_unit_check
+  CHECK (pricing_unit IN ('action','response','session','minute','send','report','item','episode'));
+
 CREATE TABLE IF NOT EXISTS public.o2ol_token_content_unlocks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
