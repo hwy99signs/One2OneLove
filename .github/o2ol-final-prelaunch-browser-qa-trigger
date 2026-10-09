@@ -1,3 +1,2 @@
-deployed_run=37967885087
-certified_source=5906389232e85a3692114a39be6e4d8b151a0e90
-purpose=final 39-check browser certification against deployed native desktop Action disclosure
+deployed_run=37968145629
+purpose=final browser certification after controlled desktop Action menu deployment
