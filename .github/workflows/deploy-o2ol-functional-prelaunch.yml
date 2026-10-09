@@ -47,16 +47,15 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Synchronize authoritative Token branch head
+      - name: Synchronize exact certified Token source
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          REF_API="https://api.github.com/repos/hwy99signs/One2OneLove/git/ref/heads/prelaunch/final-consolidated-20261009"
-          SOURCE_SHA=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$REF_API" | jq -r '.object.sha')
-          test -n "$SOURCE_SHA"
-          echo "AUTHORITATIVE_TOKEN_SOURCE_SHA=$SOURCE_SHA"
+          TRIGGER_FILE=".github/deploy-o2ol-final-prelaunch-trigger"
+          test -s "$TRIGGER_FILE" || { echo "Certified deployment trigger is missing." >&2; exit 1; }
+          SOURCE_SHA=$(awk -F= '$1=="certified_source"{print $2}' "$TRIGGER_FILE" | tr -d '[:space:]')
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Certified source SHA is invalid." >&2; exit 1; }
+          echo "CERTIFIED_TOKEN_SOURCE_SHA=$SOURCE_SHA"
           git fetch --no-tags --depth=1 origin "$SOURCE_SHA"
           git checkout --detach "$SOURCE_SHA"
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
