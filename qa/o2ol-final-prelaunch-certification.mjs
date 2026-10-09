@@ -108,7 +108,8 @@ try{
     }else fail('Approved Amora portrait missing');
     const action=page.getByRole('button',{name:/Action/i}).first();
     await action.click();
-    if(await page.getByText('Send A Love Note',{exact:true}).isVisible().catch(()=>false)) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open');
+    const desktopMenu=page.locator('#desktop-action-menu');
+    if(await desktopMenu.isVisible().catch(()=>false) && await desktopMenu.getByText('Send A Love Note',{exact:true}).isVisible().catch(()=>false)) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open');
     await noBrokenImages(page,'home desktop');
     await noOverflow(page,'home desktop');
     await context.close();
@@ -127,10 +128,18 @@ try{
   // Anonymous interactive feature must show lightweight account gate.
   {
     const {context,page}=await open(browser,'/LoveLanguageQuiz');
-    for(const label of ['Username','Email','Create password']){
-      if(await page.getByLabel(label,{exact:false}).count()) pass('Quick gate '+label); else fail('Quick gate missing '+label);
+    await page.getByRole('heading',{name:/Create your free One2OneLove account/i}).waitFor({state:'visible',timeout:10000}).catch(()=>undefined);
+    const quickControls=[
+      ['Username','input[autocomplete="username"]'],
+      ['Email','input[autocomplete="email"]'],
+      ['Create password','input[autocomplete="new-password"]'],
+    ];
+    for(const [label,selector] of quickControls){
+      if(await page.locator(selector).isVisible().catch(()=>false)) pass('Quick gate '+label); else fail('Quick gate missing '+label);
     }
-    if(await page.getByText(/promotional emails/i).count()) pass('Quick gate promotional-email choice'); else fail('Quick gate promo choice missing');
+    const promoLabel=page.locator('label').filter({hasText:/promotional emails/i}).first();
+    const promoCheckbox=promoLabel.locator('input[type="checkbox"]');
+    if(await promoLabel.isVisible().catch(()=>false) && await promoCheckbox.isVisible().catch(()=>false)) pass('Quick gate promotional-email choice'); else fail('Quick gate promo choice missing');
     await context.close();
   }
 
