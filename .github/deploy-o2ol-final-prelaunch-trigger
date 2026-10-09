@@ -1,2 +1,3 @@
-certified_source=2348afcdff5f5329c513c826802423e6840f86e9
-purpose=deploy isolated O2OL Token Prelaunch after repaired deploy gate and full green certification
+certified_source=d652f3b1ffe111617a0fe3210fdf6464ed377bda
+purpose=deploy isolated O2OL Token Prelaunch after exact-SHA deployment pin and full green certification
+attempt=2
