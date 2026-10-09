@@ -382,7 +382,7 @@ export default function Admin() {
       filtered=members.filter(m => m.auth_role !== 'admin' && (m.subscription_plan === 'Registered Free' || m.subscription_status === 'registered_free'));
     }
     if (!needle) return filtered;
-    return filtered.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.subscription_status,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
+    return filtered.filter(m => [m.name,m.username,m.email,m.location,m.subscription_plan,m.subscription_status,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
   },[data,query,memberViewFilter]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading One2OneLove Admin</h1><p className="mt-2 text-sm text-slate-500">Verifying administrator access and loading platform data.</p></div></div>;
@@ -394,6 +394,7 @@ export default function Admin() {
   const summary=data?.summary || {}, users=summary.users || {}, love=summary.loveNotes || {};
   const applications=data?.applications || [], moderation=data?.moderation || [], payments=data?.billing?.payments || [], movements=data?.billing?.changes || [];
   const loveNotes=data?.loveNotes || {}, featureUsage=data?.featureUsage || {}, clickAnalytics=data?.clickAnalytics || {};
+  const visitorRegistry=data?.visitorRegistry || {}, visitorFunnel=visitorRegistry.funnel || {}, visitorRows=visitorRegistry.visitors || [];
   const clickSummary=clickAnalytics.summary || {};
   const features=[...(featureUsage.features || [])].sort((a,b)=>String(a?.feature||'').localeCompare(String(b?.feature||''),undefined,{sensitivity:'base'}));
   const topFeatureActivity=data?.topFeatureActivity || {};
@@ -809,6 +810,12 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Registered Free accounts remain visible here even when they have never purchased a subscription."/>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
+              <Metric icon={UserCheck} label="Registered Free" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
+              <Metric icon={CreditCard} label="Token Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid token purchase" tone="violet"/>
+              <Metric icon={TrendingUp} label="Paid Activity" value={`${(Number(visitorFunnel.paid_activity_cents||0)/100).toFixed(2)}`} note="token purchases + auto-replenish" tone="green"/>
+            </div>
             <div className="mb-4 flex flex-wrap gap-2">
               <button type="button" onClick={()=>{setMemberViewFilter('all');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='all'?'border-slate-900 bg-slate-900 text-white':'border-slate-200 bg-white text-slate-700')}>All Sign-ups · {number(memberCounts.all)}</button>
               <button type="button" onClick={()=>{setMemberViewFilter('registered-free');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='registered-free'?'border-blue-600 bg-blue-600 text-white':'border-blue-200 bg-blue-50 text-blue-800')}>Registered Free · {number(memberCounts.registeredFree)}</button>
@@ -840,9 +847,9 @@ export default function Admin() {
                 const signupState = !m.auth_ready ? 'Authentication record missing' : !m.profile_ready ? 'Profile recovery pending' : !m.is_verified ? 'Email verification pending' : (!protectedAdmin && !m.phone_verified ? 'Phone verification pending' : null);
                 return <tr key={m.id} className={selected?'bg-rose-50/40':''}>
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
-                  <td className="px-4 py-3"><div className="font-semibold">{m.name||'Unnamed member'}</div><div className="text-xs text-slate-500">{m.email}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
+                  <td className="px-4 py-3"><div className="font-semibold">{m.username?('@'+m.username):(m.name||'Unnamed member')}</div>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
-                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Premiere'}</Pill>{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
+                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Registered Free'}</Pill>{m.token_buyer&&<div className="mt-1"><Pill tone="violet">Token Buyer</Pill></div>}{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
@@ -882,6 +889,56 @@ export default function Admin() {
                 </tr>;
               })}</tbody>
             </table></TableShell>
+
+            <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that Registered Free member." className="mt-6">
+              {visitorRows.length ? <TableShell><table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Visitor / Member</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">First / Last Seen</th>
+                    <th className="px-4 py-3 text-right">Visits</th>
+                    <th className="px-4 py-3">Source / Language</th>
+                    <th className="px-4 py-3">Activity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {visitorRows.map(v=><tr key={v.visitor_id} className="align-top hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-900">{v.username?('@'+v.username):(v.email||('Visitor '+String(v.visitor_id).slice(0,8)))}</div>
+                      {v.email&&<div className="text-xs text-slate-500">{v.email}</div>}
+                      <div className="mt-1 font-mono text-[10px] text-slate-400">{String(v.visitor_id).slice(0,24)}</div>
+                      {v.user_id&&<div className="mt-1 text-[11px] font-semibold text-slate-500">Promo email: {v.marketing_email_opt_in?'Yes':'No'}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Pill tone={v.audience_status==='Token Buyer'?'violet':v.audience_status==='Registered Free'?'blue':'slate'}>{v.audience_status||'Anonymous Visitor'}</Pill>
+                      {Number(v.paid_cents||0)>0&&<div className="mt-1 text-xs font-bold text-emerald-700">{' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
+
+          {section==='love-notes' && <div><Heading title="Love Notes Operations" subtitle="Monitor scheduler adoption, scheduled volume, successful deliveries and failures."/><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={Users} label="Scheduler Users" value={number(loveNotes.schedulers?.users_total)} note={`${number(loveNotes.schedulers?.users_30d)} in 30 days`} tone="blue"/><Metric icon={CalendarDays} label="Schedules Created" value={number(loveNotes.schedulers?.schedules_total)} note={`${number(loveNotes.schedulers?.schedules_30d)} in 30 days`} tone="violet"/><Metric icon={CheckCircle2} label="Passed" value={number(love.scheduled_passed)} note="successful scheduled sends" tone="green"/><Metric icon={AlertTriangle} label="Failed" value={number(love.scheduled_failed)} note="delivery failures" tone="rose"/><Metric icon={Clock3} label="Avg Schedules / User" value={decimal(loveNotes.schedulers?.avg_schedules_per_user)} note="all-time scheduler frequency" tone="amber"/></div><div className="mt-6 grid gap-6 xl:grid-cols-2"><Panel title="Scheduled Delivery Health"><DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/></Panel><Panel title="Direct Delivery Health"><DeliveryHealth firstLabel="Sent" firstValue={direct.sent} passed={direct.passed} failed={direct.failed} pending={direct.pending}/></Panel></div><div className="mt-6">{(loveNotes.recent||[]).length?<TableShell><table className="min-w-full text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Note</th><th className="px-4 py-3">Delivery</th><th className="px-4 py-3">Scheduled</th><th className="px-4 py-3">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{loveNotes.recent.map(item=><tr key={item.id}><td className="px-4 py-3"><div className="font-semibold">{item.note_title||'Love Note'}</div><div className="text-xs text-slate-500">{item.email||item.user_id}</div></td><td className="px-4 py-3">{item.delivery_method||'—'}{item.recipient_phone_masked&&<div className="text-xs text-slate-400">{item.recipient_phone_masked}</div>}</td><td className="whitespace-nowrap px-4 py-3 text-slate-500">{item.scheduled_date||'—'} {item.scheduled_time||''}</td><td className="px-4 py-3"><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill>{item.failure_reason&&<div className="mt-1 max-w-xs text-xs text-rose-600">{item.failure_reason}</div>}</td></tr>)}</tbody></table></TableShell>:<Empty>No scheduled Love Notes yet.</Empty>}</div></div>}
+
+          {section==='applications' && <div><Heading title="Professional Applications" subtitle="Licensed professionals, relationship professionals and contributors."/>{applications.length?<div className="grid gap-4 lg:grid-cols-2">{applications.map(item=><div key={`${item.application_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.applicant_name||'Unnamed applicant'}</p><p className="text-sm text-slate-500">{item.email||'No email'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div><div className="mt-3 text-sm text-slate-600"><div>Type: {String(item.application_type||'').replaceAll('_',' ')}</div><div>Submitted: {date(item.created_at)}</div>{item.rejection_reason&&<div className="mt-2 rounded-lg bg-rose-50 p-2 text-rose-700">{item.rejection_reason}</div>}</div></div>)}</div>:<Empty>No professional applications yet.</Empty>}</div>}
+
+          {section==='moderation' && <div><Heading title="Moderation Queue" subtitle="Pending community, story and review content in one place."/>{moderation.length?<div className="space-y-3">{moderation.map(item=><div key={`${item.content_type}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-slate-400">{String(item.content_type||'').replaceAll('_',' ')}</p><p className="mt-1 font-bold">{item.title||'Untitled content'}</p></div><Pill tone={statusTone(item.status)}>{item.status}</Pill></div>{item.excerpt&&<p className="mt-3 text-sm leading-6 text-slate-600">{item.excerpt}</p>}<p className="mt-3 text-xs text-slate-400">Submitted {date(item.created_at)}</p></div>)}</div>:<Empty>No items waiting in moderation.</Empty>}</div>}
+
+          {section==='system' && <div><Heading title="System" subtitle="Administrator roles, AI usage and migration history. Secrets and credentials are never displayed."/><div className="grid gap-6 lg:grid-cols-3"><Panel title="AI Usage — 30 Days" className="lg:col-span-2">{(data?.system?.aiUsage30d||[]).length?<div className="space-y-2">{data.system.aiUsage30d.map(item=><div key={item.feature} className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="font-semibold">{item.feature}</span><span className="text-sm text-slate-500">{number(item.uses)} uses · {number(item.users)} users</span></div>)}</div>:<Empty>No AI usage recorded.</Empty>}</Panel><Panel title="Non-Admin Auth Roles">{(data?.system?.authRoles||[]).map(item=><div key={item.role} className="mb-2 flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="capitalize">{item.role}</span><strong>{number(item.count)}</strong></div>)}</Panel></div><Panel title="Migration History" className="mt-6">{(data?.system?.migrations||[]).length?<div className="space-y-2">{data.system.migrations.map(item=><div key={`${item.migration_key}-${item.applied_at}`} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3"><span className="font-mono text-sm font-semibold">{item.migration_key}</span><span className="text-xs text-slate-400">{date(item.applied_at)}</span></div>{item.notes&&<p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div>)}</div>:<Empty>No migration records found.</Empty>}</Panel></div>}
+        </div>
+      </main>
+    </div>
+  );
+}
++(Number(v.paid_cents)/100).toFixed(2)} paid</div>}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500"><div>{date(v.first_seen)}</div><div className="mt-1 font-semibold text-slate-700">{date(v.last_seen)}</div></td>
+                    <td className="px-4 py-3 text-right font-black text-slate-900">{number(v.visits)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600"><div className="font-semibold">{v.original_source||'direct'}</div><div className="mt-1 uppercase">{v.language||'en'}</div></td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      <div><strong>{number(v.page_views)}</strong> views · <strong>{number(v.clicks)}</strong> clicks · <strong>{number(v.actions)}</strong> actions</div>
+                      <div className="mt-1 max-w-md break-words text-slate-400">{(v.features||[]).slice(0,6).join(' · ') || (v.pages||[]).slice(0,6).join(' · ') || 'No labeled feature activity yet'}</div>
+                    </td>
+                  </tr>)}
+                </tbody>
+              </table></TableShell> : <Empty>No pre-launch visitor activity has been recorded yet. The registry will populate automatically as visitors use the final pre-launch build.</Empty>}
+            </Panel>
           </div>}
 
           {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
