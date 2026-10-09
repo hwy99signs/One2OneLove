@@ -111,12 +111,16 @@ try{
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
-    if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Watch Episode 2/i.test(body)) pass('Homepage Studio card updated to Episode 2');
-    else fail('Homepage Studio card is stale',body.slice(-2200));
+    if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows Episode 2 with Episode 1 tab');
+    else fail('Homepage Studio copy is incorrect',body.slice(-2200));
+    const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-2"]');
+    const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
+    if(studioVideoSrc?.includes('/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4')) pass('Homepage embeds Episode 2 video');
+    else fail('Homepage Episode 2 video missing',String(studioVideoSrc));
     const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
     const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
-    if(studioDestination==='/O2OLStudio?episode=season-1-episode-2') pass('Homepage Episode 2 link is explicit');
-    else fail('Homepage Episode 2 link is not explicit',String(studioDestination));
+    if(studioDestination==='/O2OLStudio?episode=season-1-episode-1') pass('Homepage Watch Episode 1 targets Episode 1');
+    else fail('Homepage Watch Episode 1 target incorrect',String(studioDestination));
     const amora=page.locator('img[src*="amora-relationship-coach-official.webp"]').first();
     if(await amora.count()){
       const size=await amora.evaluate(i=>({w:i.naturalWidth,h:i.naturalHeight}));
