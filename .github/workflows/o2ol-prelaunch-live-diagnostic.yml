@@ -1,0 +1,41 @@
+name: O2OL Prelaunch Live Diagnostic
+
+on:
+  push:
+    branches:
+      - prelaunch/final-consolidated-20261009
+    paths:
+      - ".github/o2ol-prelaunch-live-diagnostic-trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe isolated prelaunch endpoints
+        shell: bash
+        env:
+          BASE: https://one2onelove-token-prelaunch.hwy99signs.workers.dev
+        run: |
+          set -u
+          probe_get() {
+            NAME="$1"; PATHNAME="$2"
+            STATUS=$(curl -sS -o "/tmp/$NAME.json" -w '%{http_code}' --max-time 20 "$BASE$PATHNAME" || true)
+            echo "=== $NAME status=$STATUS ==="
+            cat "/tmp/$NAME.json" 2>/dev/null || true
+            echo
+          }
+          probe_post() {
+            NAME="$1"; PATHNAME="$2"
+            STATUS=$(curl -sS -o "/tmp/$NAME.json" -w '%{http_code}' --max-time 20 -X POST "$BASE$PATHNAME" -H 'content-type: application/json' --data '{}' || true)
+            echo "=== $NAME status=$STATUS ==="
+            cat "/tmp/$NAME.json" 2>/dev/null || true
+            echo
+          }
+          probe_get health /api/health
+          probe_get tokens /api/tokens/packages
+          probe_post legacy /api/billing/checkout
+          probe_get founding /api/billing/founding-offer
+          probe_get studio /api/studio/episodes
