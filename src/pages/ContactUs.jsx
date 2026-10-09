@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, Globe, ArrowLeft, Send, Shield } from "lucide-react";
+import { Mail, Globe, ArrowLeft, Send, Shield, Loader2, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
+import { apiRequest } from "@/lib/apiClient";
 
 const translations = {
   en: {
@@ -111,17 +112,31 @@ export default function ContactUs() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
+  const [submitting,setSubmitting]=useState(false);
+  const [submitted,setSubmitted]=useState(false);
+  const [submitError,setSubmitError]=useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const subject = formData.subject.trim() || t.defaultSubject;
-    const body = [
-      `${t.bodyName}: ${formData.name}`,
-      `${t.bodyEmail}: ${formData.email}`,
-      "",
-      formData.message
-    ].join("\n");
-    window.location.href = `mailto:support@one2onelove.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSubmitting(true); setSubmitted(false); setSubmitError('');
+    try {
+      const subject=formData.subject.trim() || t.defaultSubject;
+      await apiRequest('/api/suggestions', {
+        method:'POST',
+        body:{
+          name:formData.name,
+          email:formData.email,
+          type:'other',
+          suggestion:`SUPPORT REQUEST — ${subject}\n\n${formData.message}`,
+        },
+      });
+      setSubmitted(true);
+      setFormData({name:'',email:'',subject:'',message:''});
+    } catch (error) {
+      setSubmitError('Your message could not be submitted. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -149,6 +164,8 @@ export default function ContactUs() {
                 <CardTitle className="text-2xl">{t.getInTouch}</CardTitle>
               </CardHeader>
               <CardContent>
+                {submitted&&<div role="status" className="mb-5 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0"/>Your message was received inside One2OneLove. The Admin team can now review it.</div>}
+                {submitError&&<div role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{submitError}</div>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-2">{t.name}</label>
@@ -166,10 +183,10 @@ export default function ContactUs() {
                     <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-2">{t.message}</label>
                     <Textarea id="contact-message" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} required className="h-32" />
                   </div>
-                  <p className="text-sm text-gray-500 leading-relaxed">{t.emailNotice}</p>
-                  <Button type="submit" className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg">
-                    <Send className="w-5 h-5 mr-2" />
-                    {t.sendMessage}
+                  <p className="text-sm text-gray-500 leading-relaxed">This message is submitted securely inside One2OneLove. You do not need a mail app. General support: <strong>support@one2onelove.com</strong>.</p>
+                  <Button type="submit" disabled={submitting} className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-lg">
+                    {submitting?<Loader2 className="w-5 h-5 mr-2 animate-spin"/>:<Send className="w-5 h-5 mr-2" />}
+                    {submitting?'Sending…':'Send Message'}
                   </Button>
                 </form>
               </CardContent>
