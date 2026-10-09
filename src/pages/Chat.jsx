@@ -87,8 +87,8 @@ const copy = {
   en: {
     title: 'One2OneLove Chat Rooms', subtitle: 'Real conversations about love, dating, marriage and relationships.', back: 'Back',
     online: 'active now', messages: 'messages', choose: 'Choose a conversation', loading: 'Loading conversations…',
-    empty: 'No messages yet. Be the first to start the conversation.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
-    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 NEW · Vote now — voting is open', featuredBadgeClosed: '💯 Voting closed · Results Fri Oct 9',
+    empty: 'The conversation starter is above. Be the first to answer and get this room talking.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
+    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 Voting closed · Results saved', featuredBadgeClosed: '💯 Voting closed · Results saved',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
     prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
@@ -104,8 +104,8 @@ const copy = {
   es: {
     title: 'Salas de Chat One2OneLove', subtitle: 'Conversaciones reales sobre amor, citas, matrimonio y relaciones.', back: 'Volver',
     online: 'activos ahora', messages: 'mensajes', choose: 'Elige una conversación', loading: 'Cargando conversaciones…',
-    empty: 'Aún no hay mensajes. Sé la primera persona en iniciar la conversación.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
-    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 NUEVO · Vota ahora — la votación sigue abierta', featuredBadgeClosed: '💯 Votación cerrada · Resultados el viernes 9 de octubre',
+    empty: 'El tema para conversar está arriba. Sé la primera persona en responder y dar vida a esta sala.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
+    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 Votación cerrada · Resultados guardados', featuredBadgeClosed: '💯 Votación cerrada · Resultados guardados',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
     prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
@@ -467,7 +467,7 @@ export default function Chat() {
               <h2 className="font-black text-slate-900">{t.choose}</h2>
               <button type="button" onClick={loadRooms} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={t.refresh}><RefreshCw size={17}/></button>
             </div>
-            {loadingRooms ? <p className="px-2 py-6 text-sm text-slate-500">{t.loading}</p> : (
+            {loadingRooms ? <p role="status" aria-live="polite" className="px-2 py-6 text-sm text-slate-500">{t.loading}</p> : (
               <div className="space-y-2">
                 <style>{`@keyframes r100Glow{0%{box-shadow:0 0 0 0 rgba(251,191,36,0)}25%{box-shadow:0 0 0 5px rgba(251,191,36,.55)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}.r100-glow{animation:r100Glow 2s ease-out 1}@media (prefers-reduced-motion: reduce){.r100-glow{animation:none}}`}</style>
                 {rooms.length === 0 && <p className="px-2 py-4 text-sm text-slate-500">{roomsError ? t.loadRoomsError : t.emptyRooms}</p>}
