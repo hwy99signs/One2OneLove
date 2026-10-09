@@ -300,7 +300,7 @@ async function loadCalibrationPackage(db,admin,{userId,packageCode}) {
       WHERE code=$1 AND active=true AND calibration_only=true LIMIT 1`,
     [String(packageCode||'')],
   )).rows[0]||null;
-  if(!pkg)throw Object.assign(new Error('Active calibration Token package not found.'),{status:400,code:'invalid_package'});
+  if(!pkg)throw Object.assign(new Error('Active calibration Credit package not found.'),{status:400,code:'invalid_package'});
 
   const active=(await db.query(
     `SELECT id FROM public.o2ol_calibration_sessions
@@ -323,7 +323,7 @@ async function loadCalibrationPackage(db,admin,{userId,packageCode}) {
       [userId],
     )).rows[0];
     if(Number(wallet.balance||0)!==0){
-      throw Object.assign(new Error('Calibration package loading requires a zero Token balance so package endurance is measured cleanly.'),{status:409,code:'calibration_balance_not_zero',balance:Number(wallet.balance||0)});
+      throw Object.assign(new Error('Calibration package loading requires a $0.00 Credit balance so package endurance is measured cleanly.'),{status:409,code:'calibration_balance_not_zero',balance:Number(wallet.balance||0)});
     }
     const qty=Number(pkg.tokens||0);
     await db.query(
@@ -385,7 +385,7 @@ async function startCalibration(db,admin,{userId,featureCode='all',packageCode=n
       `SELECT code,label,tokens,amount_cents FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1`,
       [String(packageCode)],
     )).rows[0]||null;
-    if(!packageRow)throw Object.assign(new Error('Active Token package not found.'),{status:400,code:'invalid_package'});
+    if(!packageRow)throw Object.assign(new Error('Active Credit package not found.'),{status:400,code:'invalid_package'});
   }
 
   const overlap=(await db.query(
