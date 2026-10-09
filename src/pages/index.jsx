@@ -46,6 +46,7 @@ import Chat from './Chat';
 import PaymentSuccess from './PaymentSuccess';
 import Subscription from './Subscription';
 import Tokens from './Tokens';
+import Amora from './Amora';
 import TokenSystemDashboard from './TokenSystemDashboard';
 import VerifyPhone from './VerifyPhone';
 import Professionals from './Professionals';
@@ -67,7 +68,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { trackPageView } from '@/lib/interactionAnalytics';
 
 const PAGES = {
-  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Tokens, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
+  Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Tokens, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
@@ -153,6 +154,7 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Tokens" element={<Tokens />} />
+          <Route path="/Amora" element={<Amora />} />
           <Route path="/Subscription" element={<Navigate to="/Tokens" replace />} />
           <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Tokens?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
