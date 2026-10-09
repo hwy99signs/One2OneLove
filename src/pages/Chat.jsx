@@ -93,6 +93,7 @@ const copy = {
     prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'After watching Episode 1, who do you think should apologize first — and why?'],
+      'studio-who-pays-for-the-first-date': ['O2OL Studio', 'After watching Episode 2, who should pay for the first date — and why?'],
       'general-connection': ['O2OL', 'What is one small thing that makes you feel genuinely connected to someone?'],
       'dating-new-relationships': ['Amora', 'What should two people talk about early so expectations do not become assumptions?'],
       'marriage-partnership': ['O2OL', 'What is something married couples should protect even when life gets busy?'],
@@ -110,6 +111,7 @@ const copy = {
     prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Después de ver el Episodio 1, ¿quién crees que debería disculparse primero y por qué?'],
+      'studio-who-pays-for-the-first-date': ['O2OL Studio', 'Después de ver el Episodio 2, ¿quién debería pagar en la primera cita y por qué?'],
       'general-connection': ['O2OL', '¿Qué pequeño detalle te hace sentir realmente conectado con alguien?'],
       'dating-new-relationships': ['Amora', '¿De qué deberían hablar dos personas al principio para que las expectativas no se conviertan en suposiciones?'],
       'marriage-partnership': ['O2OL', '¿Qué deberían proteger las parejas casadas incluso cuando la vida se vuelve ocupada?'],
@@ -127,6 +129,7 @@ const copy = {
     prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', emptyRooms:'Aucune conversation n’est disponible pour le moment.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Après avoir regardé l’épisode 1, qui devrait selon vous s’excuser en premier — et pourquoi ?'],
+      'studio-who-pays-for-the-first-date': ['O2OL Studio', 'Après l’épisode 2, qui devrait payer au premier rendez-vous — et pourquoi ?'],
       'general-connection': ['O2OL', 'Quel petit geste vous fait vous sentir réellement connecté à quelqu’un ?'],
       'dating-new-relationships': ['Amora', 'De quoi deux personnes devraient-elles parler tôt pour éviter que les attentes deviennent des suppositions ?'],
       'marriage-partnership': ['O2OL', 'Que devraient protéger les couples mariés même lorsque la vie devient très chargée ?'],
@@ -144,6 +147,7 @@ const copy = {
     prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', emptyRooms:'Nessuna conversazione è disponibile al momento.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Dopo aver visto l’Episodio 1, chi pensi dovrebbe scusarsi per primo — e perché?'],
+      'studio-who-pays-for-the-first-date': ['O2OL Studio', 'Dopo l’Episodio 2, chi dovrebbe pagare al primo appuntamento — e perché?'],
       'general-connection': ['O2OL', 'Qual è una piccola cosa che ti fa sentire davvero connesso a qualcuno?'],
       'dating-new-relationships': ['Amora', 'Di cosa dovrebbero parlare due persone all’inizio per evitare che le aspettative diventino supposizioni?'],
       'marriage-partnership': ['O2OL', 'Che cosa dovrebbero proteggere le coppie sposate anche quando la vita diventa frenetica?'],
@@ -161,6 +165,7 @@ const copy = {
     prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', emptyRooms:'Derzeit sind keine Gespräche verfügbar.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
       'studio-who-should-apologize-first': ['O2OL Studio', 'Wer sollte sich nach Episode 1 deiner Meinung nach zuerst entschuldigen — und warum?'],
+      'studio-who-pays-for-the-first-date': ['O2OL Studio', 'Wer sollte nach Folge 2 beim ersten Date bezahlen — und warum?'],
       'general-connection': ['O2OL', 'Welche kleine Sache lässt dich echte Verbundenheit mit jemandem spüren?'],
       'dating-new-relationships': ['Amora', 'Worüber sollten zwei Menschen früh sprechen, damit Erwartungen nicht zu Annahmen werden?'],
       'marriage-partnership': ['O2OL', 'Was sollten verheiratete Paare schützen, selbst wenn das Leben sehr beschäftigt wird?'],
@@ -175,6 +180,7 @@ const roomLabels = {
   en: {
     'lgbtq-community': [lgbtqCopy.en.title, lgbtqCopy.en.subtitle],
     'studio-who-should-apologize-first': ['O2OL Studio — Who Should Apologize First?', 'Season 1, Episode 1 discussion. Watch the episode, then share your perspective with the One2OneLove community.'],
+    'studio-who-pays-for-the-first-date': ['O2OL Studio — Who Pays for the First Date?', 'Season 1, Episode 2 discussion. Watch the episode, then share your perspective with the One2OneLove community.'],
     'general-connection': ['General Connection', 'Open conversation about relationships, love, growth and everyday connection.'],
     'dating-new-relationships': ['Dating & New Relationships', 'Expectations, pacing, trust and early relationship questions.'],
     'marriage-partnership': ['Marriage & Partnership', 'Marriage, commitment, connection and everyday partnership.'],
@@ -185,6 +191,7 @@ const roomLabels = {
   es: {
     'lgbtq-community': [lgbtqCopy.es.title, lgbtqCopy.es.subtitle],
     'studio-who-should-apologize-first': ['O2OL Studio — ¿Quién Debería Disculparse Primero?', 'Conversación sobre la Temporada 1, Episodio 1. Mira el episodio y comparte tu punto de vista con la comunidad One2OneLove.'],
+    'studio-who-pays-for-the-first-date': ['O2OL Studio — ¿Quién Paga en la Primera Cita?', 'Conversación sobre la Temporada 1, Episodio 2. Mira el episodio y comparte tu punto de vista con la comunidad One2OneLove.'],
     'general-connection': ['Conexión General', 'Conversación abierta sobre relaciones, amor, crecimiento y conexión cotidiana.'],
     'dating-new-relationships': ['Citas y Nuevas Relaciones', 'Expectativas, ritmo, confianza y preguntas de nuevas relaciones.'],
     'marriage-partnership': ['Matrimonio y Pareja', 'Matrimonio, compromiso, conexión y vida en pareja.'],
@@ -195,6 +202,7 @@ const roomLabels = {
   fr: {
     'lgbtq-community': [lgbtqCopy.fr.title, lgbtqCopy.fr.subtitle],
     'studio-who-should-apologize-first': ['O2OL Studio — Qui Devrait S’excuser en Premier ?', 'Discussion sur la Saison 1, Épisode 1. Regardez l’épisode puis partagez votre point de vue avec la communauté One2OneLove.'],
+    'studio-who-pays-for-the-first-date': ['O2OL Studio — Qui Paie au Premier Rendez-vous ?', 'Discussion sur la Saison 1, Épisode 2. Regardez l’épisode puis partagez votre point de vue avec la communauté One2OneLove.'],
     'general-connection': ['Connexion Générale', 'Conversation ouverte sur les relations, l’amour, la croissance et la connexion quotidienne.'],
     'dating-new-relationships': ['Rencontres et Nouvelles Relations', 'Attentes, rythme, confiance et débuts de relation.'],
     'marriage-partnership': ['Mariage et Partenariat', 'Mariage, engagement, connexion et vie de couple.'],
@@ -205,6 +213,7 @@ const roomLabels = {
   it: {
     'lgbtq-community': [lgbtqCopy.it.title, lgbtqCopy.it.subtitle],
     'studio-who-should-apologize-first': ['O2OL Studio — Chi Dovrebbe Scusarsi per Primo?', 'Discussione sulla Stagione 1, Episodio 1. Guarda l’episodio e condividi il tuo punto di vista con la community One2OneLove.'],
+    'studio-who-pays-for-the-first-date': ['O2OL Studio — Chi Paga al Primo Appuntamento?', 'Discussione sulla Stagione 1, Episodio 2. Guarda l’episodio e condividi il tuo punto di vista con la community One2OneLove.'],
     'general-connection': ['Connessione Generale', 'Conversazione aperta su relazioni, amore, crescita e connessione quotidiana.'],
     'dating-new-relationships': ['Incontri e Nuove Relazioni', 'Aspettative, ritmo, fiducia e domande iniziali.'],
     'marriage-partnership': ['Matrimonio e Partnership', 'Matrimonio, impegno, connessione e vita di coppia.'],
@@ -215,6 +224,7 @@ const roomLabels = {
   de: {
     'lgbtq-community': [lgbtqCopy.de.title, lgbtqCopy.de.subtitle],
     'studio-who-should-apologize-first': ['O2OL Studio — Wer Sollte Sich Zuerst Entschuldigen?', 'Diskussion zu Staffel 1, Folge 1. Schau dir die Folge an und teile anschließend deine Sicht mit der One2OneLove-Community.'],
+    'studio-who-pays-for-the-first-date': ['O2OL Studio — Wer Bezahlt beim Ersten Date?', 'Diskussion zu Staffel 1, Folge 2. Schau dir die Folge an und teile anschließend deine Sicht mit der One2OneLove-Community.'],
     'general-connection': ['Allgemeine Verbindung', 'Offenes Gespräch über Beziehungen, Liebe, Wachstum und alltägliche Verbundenheit.'],
     'dating-new-relationships': ['Dating und Neue Beziehungen', 'Erwartungen, Tempo, Vertrauen und frühe Beziehungsfragen.'],
     'marriage-partnership': ['Ehe und Partnerschaft', 'Ehe, Verbindlichkeit, Nähe und gemeinsamer Alltag.'],
