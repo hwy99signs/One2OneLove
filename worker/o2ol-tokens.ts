@@ -1,8 +1,10 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { recordCostEvent } from './o2ol-cost-ledger';
-import { CREDIT_CONFIG } from './credit-config';
-import { ensureCreditSchema } from './love-note-credit';
+
+const TOKEN_AUTO_REPLENISH_DEFAULT_PACKAGE = 'value';
+const TOKEN_AUTO_REPLENISH_DEFAULT_TRIGGER = 5;
+const TOKEN_AUTO_REPLENISH_DEFAULT_MONTHLY_CAP_CENTS = 5000;
 
 const HEADERS = {
   'content-type':'application/json; charset=utf-8',
@@ -144,7 +146,7 @@ export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,m
     const balance=Number(wallet?.balance||0);
     if(balance<price.token_cost){
       await db.query('ROLLBACK');
-      throw Object.assign(new Error('Add Credit To Access'),{
+      throw Object.assign(new Error('Buy Tokens To Access'),{
         status:402,
         code:'tokens_required',
         balance,
@@ -173,83 +175,6 @@ export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,m
        VALUES($1::uuid,$2,$3,$4,$5::uuid,$6::jsonb)
        RETURNING *`,
       [userId,featureCode,price.token_cost,key,tx.id,JSON.stringify(metadata||{})],
-    )).rows[0];
-    await db.query('COMMIT');
-    return {...reservation,balance_after:next,transaction:tx};
-  }catch(error){
-    try{await db.query('ROLLBACK');}catch(_){}
-    throw error;
-  }
-}
-
-// Reserve an explicit Credit amount (USD cents) — used by Love Note SMS,
-// whose price is regional (worker/credit-config.ts) rather than a single
-// feature-price row. Same transactional guarantees as reserveTokenCharge:
-// idempotency replay returns the original reservation, the wallet row is
-// locked FOR UPDATE, and the balance can never go below zero (the ledger's
-// balance_after CHECK is the database-level backstop).
-export async function reserveCreditCharge(db,userId,featureCode,{amountCents,idempotencyKey,metadata={}}={}){
-  const key=String(idempotencyKey||'').trim();
-  if(!key)throw Object.assign(new Error('An idempotency key is required.'),{status:400,code:'idempotency_required'});
-  const amount=Math.max(0,Math.floor(Number(amountCents)||0));
-  await db.query('BEGIN');
-  try{
-    const existing=(await db.query(
-      `SELECT r.*,t.balance_after
-         FROM public.o2ol_token_reservations r
-         LEFT JOIN public.o2ol_token_transactions t ON t.id=r.transaction_id
-        WHERE r.idempotency_key=$1 LIMIT 1`,
-      [key],
-    )).rows[0];
-    if(existing){
-      await db.query('COMMIT');
-      return {...existing,tokens:Number(existing.tokens||0),reused:true};
-    }
-    if(amount<=0){
-      await db.query('COMMIT');
-      return {id:null,user_id:userId,feature_code:featureCode,tokens:0,status:'consumed',idempotency_key:key,balance_after:null,free:true};
-    }
-    await db.query(
-      `INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid)
-       ON CONFLICT(user_id) DO NOTHING`,
-      [userId],
-    );
-    const wallet=(await db.query(
-      'SELECT * FROM public.o2ol_token_wallets WHERE user_id=$1::uuid FOR UPDATE',
-      [userId],
-    )).rows[0];
-    const balance=Number(wallet?.balance||0);
-    if(balance<amount){
-      await db.query('ROLLBACK');
-      throw Object.assign(new Error('Add Credit To Access'),{
-        status:402,
-        code:'credit_required',
-        balance,
-        required:amount,
-        featureCode,
-        featureLabel:metadata?.featureLabel||'Love Note send',
-      });
-    }
-    const next=balance-amount;
-    await db.query(
-      `UPDATE public.o2ol_token_wallets
-          SET balance=$1,lifetime_used=lifetime_used+$2,updated_at=now()
-        WHERE user_id=$3::uuid`,
-      [next,amount,userId],
-    );
-    const tx=(await db.query(
-      `INSERT INTO public.o2ol_token_transactions
-        (user_id,wallet_delta,balance_after,transaction_type,feature_code,idempotency_key,metadata)
-       VALUES($1::uuid,$2,$3,'reserve',$4,$5,$6::jsonb)
-       RETURNING *`,
-      [userId,-amount,next,featureCode,key,JSON.stringify(metadata||{})],
-    )).rows[0];
-    const reservation=(await db.query(
-      `INSERT INTO public.o2ol_token_reservations
-        (user_id,feature_code,tokens,idempotency_key,transaction_id,metadata)
-       VALUES($1::uuid,$2,$3,$4,$5::uuid,$6::jsonb)
-       RETURNING *`,
-      [userId,featureCode,amount,key,tx.id,JSON.stringify(metadata||{})],
     )).rows[0];
     await db.query('COMMIT');
     return {...reservation,balance_after:next,transaction:tx};
@@ -309,7 +234,7 @@ export async function releaseTokenReservation(db,reservationId,reason='operation
   }
 }
 
-async function creditTokens(db,userId,{tokens,transactionType='purchase',packageCode=null,amountCents=null,provider='stripe',providerReference=null,idempotencyKey=null,metadata={}}){
+async function addTokensToWallet(db,userId,{tokens,transactionType='purchase',packageCode=null,amountCents=null,provider='stripe',providerReference=null,idempotencyKey=null,metadata={}}){
   const qty=Math.max(0,Math.floor(Number(tokens)||0));
   if(!qty)return null;
   await db.query('BEGIN');
@@ -394,10 +319,10 @@ async function createCheckout(request,db,env,auth,input){
     customer,
     'line_items[0][price_data][currency]':'usd',
     'line_items[0][price_data][unit_amount]':pkg.amount_cents,
-    'line_items[0][price_data][product_data][name]':`One2OneLove — ${pkg.label}${pkg.calibration_only?' Token Package':' Credit'}`,
+    'line_items[0][price_data][product_data][name]':`One2OneLove — ${pkg.label} Token Package`,
     'line_items[0][quantity]':1,
-    success_url:`${origin}/Credit?checkout=success&session_id={CHECKOUT_SESSION_ID}&return=${encodedReturn}`,
-    cancel_url:`${origin}/Credit?checkout=cancelled&return=${encodedReturn}`,
+    success_url:`${origin}/Tokens?checkout=success&session_id={CHECKOUT_SESSION_ID}&return=${encodedReturn}`,
+    cancel_url:`${origin}/Tokens?checkout=cancelled&return=${encodedReturn}`,
     client_reference_id:auth.user.id,
     'metadata[user_id]':auth.user.id,
     'metadata[purpose]':'o2ol_token_purchase',
@@ -448,7 +373,7 @@ async function confirmCheckout(db,env,auth,sessionId){
   const packageCode=String(meta.package_code||'').trim();
   const amountCents=Math.max(0,Math.floor(Number(checkout.amount_total??meta.amount_cents)||0));
   if(!packageCode||!purchasedTokens||!amountCents)throw Object.assign(new Error('Token purchase metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
-  const tx=await creditTokens(db,auth.user.id,{
+  const tx=await addTokensToWallet(db,auth.user.id,{
     tokens:purchasedTokens,
     transactionType:'purchase',
     packageCode,
@@ -468,8 +393,8 @@ async function createSetupCheckout(request,db,env,auth){
   const checkout=await stripeRequest(env,'POST','/checkout/sessions',{
     mode:'setup',
     customer,
-    success_url:`${origin}/Credit?payment_method=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:`${origin}/Credit?payment_method=cancelled`,
+    success_url:`${origin}/Tokens?payment_method=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url:`${origin}/Tokens?payment_method=cancelled`,
     'setup_intent_data[metadata][user_id]':auth.user.id,
     'setup_intent_data[metadata][purpose]':'o2ol_token_auto_replenish',
     'metadata[user_id]':auth.user.id,
@@ -495,8 +420,7 @@ async function confirmSetupCheckout(db,env,auth,sessionId){
   )).rows[0];
 }
 async function updateAutoReplenish(db,userId,input){
-  await ensureCreditSchema(db);
-  const packageCode=String(input?.packageCode||CREDIT_CONFIG.autoReplenish.defaultPackageCode);
+  const packageCode=String(input?.packageCode||TOKEN_AUTO_REPLENISH_DEFAULT_PACKAGE);
   const pkg=(await db.query('SELECT code,tokens FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1',[packageCode])).rows[0];
   if(!pkg)throw Object.assign(new Error('Invalid auto-replenish package.'),{status:400,code:'invalid_package'});
   const state=(await ensureTokenWallet(db,userId)).settings;
@@ -507,10 +431,10 @@ async function updateAutoReplenish(db,userId,input){
   // fresh explicit consent in the request, and the consent time is stored.
   const consentGiven=input?.consentGiven===true;
   if(enabled&&!consentGiven&&!state.consent_at){
-    throw Object.assign(new Error('Please confirm the Auto-Replenish consent so we can charge your saved card when your Credit runs low.'),{status:409,code:'auto_replenish_consent_required'});
+    throw Object.assign(new Error('Please confirm the Auto-Replenish consent so we can charge your saved card when your Tokens run low.'),{status:409,code:'auto_replenish_consent_required'});
   }
   const trigger=input?.triggerBalance===undefined||input?.triggerBalance===null
-    ? CREDIT_CONFIG.autoReplenish.triggerCents
+    ? TOKEN_AUTO_REPLENISH_DEFAULT_TRIGGER
     : Math.max(0,Math.floor(Number(input?.triggerBalance)||0));
   if(trigger>Number(pkg.tokens||0)){
     throw Object.assign(new Error('Choose a refill threshold no higher than the selected package size.'),{
@@ -520,7 +444,7 @@ async function updateAutoReplenish(db,userId,input){
   let monthlyCap;
   if(input?.monthlyCapCents===undefined){
     monthlyCap=state.monthly_cap_cents===undefined||state.monthly_cap_cents===null
-      ? (enabled?CREDIT_CONFIG.autoReplenish.defaultMonthlyCapCents:null)
+      ? (enabled?TOKEN_AUTO_REPLENISH_DEFAULT_MONTHLY_CAP_CENTS:null)
       : state.monthly_cap_cents;
   }else if(input?.monthlyCapCents===null){
     monthlyCap=null;
@@ -536,7 +460,6 @@ async function updateAutoReplenish(db,userId,input){
   )).rows[0];
 }
 export async function maybeAutoReplenish(db,env,userId){
-  await ensureCreditSchema(db);
   const row=(await db.query(
     `SELECT w.balance,s.enabled,s.package_code,s.trigger_balance,s.payment_method_reference,
             s.monthly_cap_cents,s.consent_at,u.stripe_customer_id,u.email AS user_email,
@@ -551,7 +474,7 @@ export async function maybeAutoReplenish(db,env,userId){
   if(!row?.enabled||!row.payment_method_reference||!row.stripe_customer_id)return null;
   // No recorded mandate consent -> never charge off-session.
   if(!row.consent_at)return null;
-  // Trigger: fire when the balance falls TO or BELOW the trigger mark ($5).
+  // Trigger: fire when the Token balance falls to or below the configured Token threshold.
   if(Number(row.balance)>Number(row.trigger_balance))return null;
   // User-set monthly cap: never let this month's reloads exceed it.
   if(row.monthly_cap_cents!==null&&row.monthly_cap_cents!==undefined){
@@ -584,7 +507,7 @@ export async function maybeAutoReplenish(db,env,userId){
     'metadata[idempotency_key]':marker,
   },marker);
   if(intent.status!=='succeeded')throw Object.assign(new Error('Auto-Replenish payment requires attention.'),{status:402,code:'auto_replenish_payment_failed'});
-  const tx=await creditTokens(db,userId,{
+  const tx=await addTokensToWallet(db,userId,{
     tokens:Number(row.tokens),
     transactionType:'auto_replenish',
     packageCode:row.package_code,
@@ -648,7 +571,7 @@ async function tokenWebhook(request,env){
       const packageCode=String(meta.package_code||'').trim();
       const amountCents=Math.max(0,Math.floor(Number(obj.amount_total??meta.amount_cents)||0));
       if(packageCode&&purchasedTokens&&amountCents){
-        await creditTokens(db,meta.user_id,{
+        await addTokensToWallet(db,meta.user_id,{
           tokens:purchasedTokens,transactionType:'purchase',packageCode,amountCents,
           provider:'stripe',providerReference:obj.id,idempotencyKey:`stripe_checkout:${obj.id}`,
           metadata:{payment_intent:obj.payment_intent||null,webhook_event:event.id,purchased_snapshot:true},
@@ -663,7 +586,7 @@ async function tokenWebhook(request,env){
       const packageCode=String(meta.package_code||'').trim();
       const amountCents=Math.max(0,Math.floor(Number(obj.amount_received??obj.amount)||0));
       if(packageCode&&replenishedTokens&&amountCents){
-        await creditTokens(db,meta.user_id,{
+        await addTokensToWallet(db,meta.user_id,{
           tokens:replenishedTokens,transactionType:'auto_replenish',packageCode,amountCents,
           provider:'stripe',providerReference:obj.id,idempotencyKey:meta.idempotency_key||`stripe_auto:${obj.id}`,
           metadata:{webhook_event:event.id,payment_intent:obj.id,purchased_snapshot:true},
@@ -786,6 +709,11 @@ async function ensureDdl(db, sql) {
 }
 
 async function ensureContentUnlockSchema(db){
+  await ensureDdl(db, `ALTER TABLE public.o2ol_token_feature_prices
+    DROP CONSTRAINT IF EXISTS o2ol_token_feature_prices_pricing_unit_check`);
+  await ensureDdl(db, `ALTER TABLE public.o2ol_token_feature_prices
+    ADD CONSTRAINT o2ol_token_feature_prices_pricing_unit_check
+    CHECK (pricing_unit IN ('action','response','session','minute','send','report','item','episode'))`);
   await ensureDdl(db, `
     CREATE TABLE IF NOT EXISTS public.o2ol_token_content_unlocks (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -865,7 +793,6 @@ async function unlockTokenContent(db,auth,input){
 }
 
 async function walletPayload(db,userId){
-  await ensureCreditSchema(db);
   const state=await ensureTokenWallet(db,userId);
   const activeCalibration=(await db.query(
     `SELECT * FROM public.o2ol_calibration_sessions
@@ -884,8 +811,7 @@ async function walletPayload(db,userId){
     packages:await tokenPackages(db),
     featurePrices:await featurePrices(db),
     activeCalibration,
-    // The wallet unit is one US cent of Credit; balances display as dollars.
-    credit:{currency:'Credit',unit:'USD_CENTS',expires:CREDIT_CONFIG.creditExpires},
+    tokenEconomy:{currency:'O2OL Tokens',unit:'TOKENS',expires:false},
   };
 }
 
@@ -900,7 +826,7 @@ export async function handleO2OLTokenRequest(request,env,url){
     return await withDb(env,async db=>{
       await requireVerifiedMember(db,auth);
       if(url.pathname==='/api/tokens/wallet'&&request.method==='GET')return json({ok:true,...await walletPayload(db,auth.user.id)});
-      if(url.pathname==='/api/tokens/packages'&&request.method==='GET'){await ensureCreditSchema(db);return json({ok:true,packages:await tokenPackages(db),featurePrices:await featurePrices(db)});}
+      if(url.pathname==='/api/tokens/packages'&&request.method==='GET')return json({ok:true,packages:await tokenPackages(db),featurePrices:await featurePrices(db)});
       if(url.pathname==='/api/tokens/unlocks'&&request.method==='GET'){
         const featureCode=url.searchParams.get('featureCode')||'';
         return json({ok:true,unlocks:await listContentUnlocks(db,auth.user.id,featureCode)});
