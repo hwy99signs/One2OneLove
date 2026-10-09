@@ -9,22 +9,26 @@ async function parseJson(response) {
   return payload;
 }
 
-export async function getAdminDashboard() {
-  const response = await fetch('/api/admin/dashboard', {
+async function getFreshAdminJson(path) {
+  const separator = path.includes('?') ? '&' : '?';
+  const response = await fetch(`${path}${separator}_adminFresh=${Date.now()}`, {
     method: 'GET',
     credentials: 'include',
-    headers: { accept: 'application/json' },
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'cache-control': 'no-cache',
+    },
   });
   return parseJson(response);
 }
 
+export async function getAdminDashboard() {
+  return getFreshAdminJson('/api/admin/dashboard');
+}
+
 export async function getAdminAnalytics() {
-  const response = await fetch('/api/admin/analytics', {
-    method: 'GET',
-    credentials: 'include',
-    headers: { accept: 'application/json' },
-  });
-  return parseJson(response);
+  return getFreshAdminJson('/api/admin/analytics');
 }
 
 
