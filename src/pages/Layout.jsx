@@ -414,9 +414,6 @@ function LanguageContent({ children, currentPageName }) {
             <div
               ref={desktopActionRef}
               className="relative"
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) setActionOpen(false);
-              }}
             >
               <button
                 type="button"
