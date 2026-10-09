@@ -832,7 +832,7 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'More Love Notes are waiting inside',
     categoryBody: 'Create a free verified One2OneLove account to unlock the complete Love Notes collection.',
     sendTitle: 'Ready to send it?',
-    sendBody: 'Create a free verified account to participate. One2OneLove SMS delivery uses Credit; sharing through your own apps remains free.',
+    sendBody: 'Create a free verified account to participate. One2OneLove SMS delivery uses O2OL Tokens; sharing through your own apps remains free.',
     unlock: 'Create FREE Account',
     signIn: 'Sign In',
   },
@@ -843,7 +843,7 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'Hay más Notas de Amor esperando dentro',
     categoryBody: 'Crea una cuenta One2OneLove gratuita y verificada para desbloquear toda la colección de Notas de Amor.',
     sendTitle: '¿Listo para enviarla?',
-    sendBody: 'Crea una cuenta gratuita y verificada para participar. El envío SMS de One2OneLove usa Crédito; compartir desde tus propias aplicaciones sigue siendo gratis.',
+    sendBody: 'Crea una cuenta gratuita y verificada para participar. El envío SMS de One2OneLove usa Tokens O2OL; compartir desde tus propias aplicaciones sigue siendo gratis.',
     unlock: 'Crear Cuenta GRATIS',
     signIn: 'Iniciar sesión',
   },
@@ -854,7 +854,7 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'D’autres Notes d’Amour vous attendent',
     categoryBody: 'Créez un compte One2OneLove gratuit et vérifié pour débloquer toute la collection de Notes d’Amour.',
     sendTitle: 'Prêt à l’envoyer ?',
-    sendBody: 'Créez un compte gratuit et vérifié pour participer. L’envoi SMS One2OneLove utilise du Crédit; le partage via vos propres applications reste gratuit.',
+    sendBody: 'Créez un compte gratuit et vérifié pour participer. L’envoi SMS One2OneLove utilise des Tokens O2OL; le partage via vos propres applications reste gratuit.',
     unlock: 'Créer un Compte GRATUIT',
     signIn: 'Se connecter',
   },
@@ -865,7 +865,7 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'Ci sono altre Note d’Amore da scoprire',
     categoryBody: 'Crea un account One2OneLove gratuito e verificato per sbloccare l’intera raccolta di Note d’Amore.',
     sendTitle: 'Pronto a inviarla?',
-    sendBody: 'Crea un account gratuito e verificato per partecipare. L’invio SMS One2OneLove usa Credito; la condivisione tramite le tue app resta gratuita.',
+    sendBody: 'Crea un account gratuito e verificato per partecipare. L’invio SMS One2OneLove usa Token O2OL; la condivisione tramite le tue app resta gratuita.',
     unlock: 'Crea Account GRATUITO',
     signIn: 'Accedi',
   },
@@ -876,17 +876,14 @@ const OPEN_HOUSE_LOVE_NOTES_COPY = {
     categoryTitle: 'Weitere Liebesnachrichten warten auf dich',
     categoryBody: 'Erstelle ein kostenloses verifiziertes One2OneLove-Konto, um die vollständige Liebesnachrichten-Sammlung freizuschalten.',
     sendTitle: 'Bereit zum Senden?',
-    sendBody: 'Erstelle ein kostenloses verifiziertes Konto. One2OneLove-SMS verwenden Credit; das Teilen über deine eigenen Apps bleibt kostenlos.',
+    sendBody: 'Erstelle ein kostenloses verifiziertes Konto. One2OneLove-SMS verwenden O2OL Tokens; das Teilen über deine eigenen Apps bleibt kostenlos.',
     unlock: 'KOSTENLOSES Konto Erstellen',
     signIn: 'Anmelden',
   },
 };
 
 function loveNotesCategoryTeaser(name) {
-  const firstWord = String(name || '').trim().split(/\s+/)[0] || '';
-  if (!firstWord) return '•••';
-  const visible = firstWord.length <= 4 ? 2 : firstWord.length <= 7 ? 3 : 4;
-  return firstWord.slice(0, visible);
+  return String(name || '').trim() || '•••';
 }
 
 export default function LoveNotes() {
@@ -1772,7 +1769,7 @@ export default function LoveNotes() {
               </div>
               <div className="mt-6 flex flex-col gap-2">
                 <Link
-                  to={currentUser ? '/Credit?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
+                  to={currentUser ? '/Tokens?return=/LoveNotes' : '/SignUp?open-house=love-notes&type=individual'}
                   onClick={() => setShowOpenHouseLock(false)}
                 >
                   <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
