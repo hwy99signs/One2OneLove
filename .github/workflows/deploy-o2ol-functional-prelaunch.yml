@@ -31,6 +31,7 @@ jobs:
       WORKER_NAME: one2onelove-token-prelaunch
       PREVIEW_URL: https://one2onelove-token-prelaunch.hwy99signs.workers.dev
       TOKEN_MEDIA_BUCKET: one2onelove-token-prelaunch-media
+      STUDIO_MEDIA_BUCKET: one2onelove-media
       EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls
       EXPECTED_NEON_DATABASE: one2onelove
       EXPECTED_NEON_ROLE: o2ol_token_hyperdrive
@@ -173,6 +174,12 @@ jobs:
           grep -F "handleO2OLTokenRequest" worker/index-v2.ts >/dev/null || { echo "Token API routing missing." >&2; exit 1; }
           grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts >/dev/null || { echo "Token Prelaunch environment marker missing." >&2; exit 1; }
           grep -F '<Route path="/Credit" element={<Credit />} />' src/pages/index.jsx >/dev/null || { echo "Credit wallet route missing." >&2; exit 1; }
+          grep -F "custom_credit" src/pages/Credit.jsx src/lib/tokenService.js worker/o2ol-tokens.ts >/dev/null || { echo "Custom Credit checkout contract missing." >&2; exit 1; }
+          grep -F "lg:grid-cols-5" src/pages/Credit.jsx >/dev/null || { echo "Five-card Credit layout contract missing." >&2; exit 1; }
+          grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts >/dev/null || { echo "$15 Credit card contract missing." >&2; exit 1; }
+          grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts >/dev/null || { echo "Studio Episode 2 media contract missing." >&2; exit 1; }
+          grep -F '<Route path="/O2OLStudio/Episodes"' src/pages/index.jsx >/dev/null || { echo "Studio episode archive route missing." >&2; exit 1; }
+          grep -F 'to="/O2OLStudio/Episodes"' src/pages/O2OLStudio.jsx >/dev/null || { echo "Studio episode archive link missing." >&2; exit 1; }
           grep -F '<Route path="/Tokens" element={<Navigate to="/Credit" replace />} />' src/pages/index.jsx >/dev/null || { echo "Legacy Tokens compatibility redirect missing." >&2; exit 1; }
           grep -F '<Navigate to="/Credit" replace' src/pages/Subscription.jsx >/dev/null || { echo "Retired subscription route does not redirect to Credit." >&2; exit 1; }
           grep -F 'navigate("/SignUp")' src/pages/Layout.jsx >/dev/null || { echo "Free signup navigation contract missing." >&2; exit 1; }
@@ -202,6 +209,11 @@ jobs:
           test "$TOKEN_MEDIA_BUCKET" = "one2onelove-token-prelaunch-media" || { echo "Token Prelaunch R2 bucket name mismatch." >&2; exit 1; }
           if [ "$TOKEN_MEDIA_BUCKET" = "one2onelove-media" ]; then
             echo "Production R2 bucket is forbidden for Token Prelaunch." >&2
+            exit 1
+          fi
+          test "$STUDIO_MEDIA_BUCKET" = "one2onelove-media" || { echo "Published Studio media bucket mismatch." >&2; exit 1; }
+          if grep -REn 'STUDIO_MEDIA\.(put|delete)\(' worker 2>/dev/null; then
+            echo "Prelaunch Studio shared-media binding must remain read-only in application code." >&2
             exit 1
           fi
           grep -REn 'MEDIA\.(put|delete)\(' worker >/tmp/token-r2-write-sites.txt || true
@@ -244,6 +256,10 @@ jobs:
               {
                 "binding": "MEDIA",
                 "bucket_name": "$TOKEN_MEDIA_BUCKET"
+              },
+              {
+                "binding": "STUDIO_MEDIA",
+                "bucket_name": "$STUDIO_MEDIA_BUCKET"
               }
             ]
           }
@@ -345,6 +361,6 @@ jobs:
             "jq -e '.offer.accessModel == \"free_tokens\" and .offer.recurringSubscriptionOffer == false and .offer.economicsPendingCalibration == true' /tmp/founding.json >/dev/null"
 
           wait_for_probe studio 200 GET /api/studio/episodes \
-            "jq -e '.ok == true and (.episodes | type == \"array\")' /tmp/studio.json >/dev/null"
+            "jq -e '.ok == true and (.episodes | type == \"array\") and .episodes[0].id == \"season-1-episode-2\" and .episodes[0].mediaReady == true' /tmp/studio.json >/dev/null"
 
           echo "TOKEN_PRELAUNCH_URL=$PREVIEW_URL"
