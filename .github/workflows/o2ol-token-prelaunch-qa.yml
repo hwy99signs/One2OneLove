@@ -358,6 +358,10 @@ jobs:
 
           # Navigation, support identity, 404 and deferred-route behavior.
           grep -F "desktopActionRef" src/pages/Layout.jsx
+          if grep -F 'onBlur={(e) =>' src/pages/Layout.jsx; then
+            echo "Desktop Action blur auto-close survived." >&2
+            exit 1
+          fi
           if grep -F "handleMouseEnter" src/pages/Layout.jsx; then
             echo "Hover/click Action-menu conflict survived." >&2
             exit 1
