@@ -41,7 +41,7 @@ ON CONFLICT(code) DO UPDATE SET
 -- abandoned Credit packages if a prior experiment ever created them.
 UPDATE public.o2ol_token_packages
    SET active=false, updated_at=now()
- WHERE code LIKE 'credit\_%' ESCAPE '\\';
+ WHERE code LIKE 'credit#_%' ESCAPE '#';
 
 -- Exact production Token prices. Content-unlock units are enabled by the
 -- corrected 2026-10-04 migration.
