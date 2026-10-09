@@ -548,7 +548,7 @@ export async function handleBillingRequest(request, env, url) {
         return fail('Recurring trials are retired. One2OneLove accounts are free and metered premium services use O2OL Tokens.',410,'legacy_subscription_model_retired');
       }
       if (url.pathname === '/api/billing/checkout' && request.method === 'POST') {
-        return fail('Premiere/Exclusive recurring checkout is retired. Use the O2OL Token checkout instead.',410,'legacy_subscription_model_retired');
+        return fail('Premiere/Exclusive recurring checkout is retired. Use One2OneLove Credit instead.',410,'legacy_subscription_model_retired');
       }
       if (url.pathname === '/api/billing/cancel' && request.method === 'POST') {
         return fail('Legacy subscription changes are frozen in Token Prelaunch while historical value is reconciled. No Stripe subscription was changed.',423,'legacy_subscription_reconciliation_locked');
