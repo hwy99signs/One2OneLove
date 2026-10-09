@@ -107,9 +107,34 @@ try{
       if(size.w>0&&size.h>0) pass('Approved Amora portrait renders'); else fail('Approved Amora portrait broken',JSON.stringify(size));
     }else fail('Approved Amora portrait missing');
     const action=page.locator('summary[aria-controls="desktop-action-menu"]');
-    await action.click();
-    const desktopMenu=page.locator('#desktop-action-menu');
-    if(await desktopMenu.isVisible().catch(()=>false) && await desktopMenu.getByText('Send A Love Note',{exact:true}).isVisible().catch(()=>false)) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open');
+    const actionDiagnostic=await page.evaluate(async()=>{
+      const summary=document.querySelector('summary[aria-controls="desktop-action-menu"]');
+      const oldButton=document.querySelector('button[aria-controls="desktop-action-menu"]');
+      const moduleScript=[...document.scripts].find(s=>s.type==='module'&&s.src);
+      let bundleHasNativeMarker=null;
+      try{
+        if(moduleScript?.src){
+          const js=await fetch(moduleScript.src,{cache:'no-store'}).then(r=>r.text());
+          bundleHasNativeMarker=js.includes('querySelector("summary")')||js.includes("querySelector('summary')");
+        }
+      }catch{}
+      return {
+        summaryCount:document.querySelectorAll('summary[aria-controls="desktop-action-menu"]').length,
+        oldButtonCount:document.querySelectorAll('button[aria-controls="desktop-action-menu"]').length,
+        scriptSrc:moduleScript?.src||null,
+        summaryVisible:summary?Boolean(summary.getClientRects().length):false,
+        oldButtonVisible:oldButton?Boolean(oldButton.getClientRects().length):false,
+        bundleHasNativeMarker,
+      };
+    });
+    console.log('ACTION_DIAGNOSTIC',JSON.stringify(actionDiagnostic));
+    if(actionDiagnostic.summaryCount){
+      await action.click({timeout:8000});
+      const desktopMenu=page.locator('#desktop-action-menu');
+      if(await desktopMenu.isVisible().catch(()=>false) && await desktopMenu.getByText('Send A Love Note',{exact:true}).isVisible().catch(()=>false)) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open',JSON.stringify(actionDiagnostic));
+    }else{
+      fail('Desktop Action native control missing',JSON.stringify(actionDiagnostic));
+    }
     await noBrokenImages(page,'home desktop');
     await noOverflow(page,'home desktop');
     await context.close();
