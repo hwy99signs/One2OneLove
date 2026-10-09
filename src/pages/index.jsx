@@ -63,6 +63,8 @@ import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
 import O2OLStudio from './O2OLStudio';
 import TikTokPost from './TikTokPost';
+import NotFound from './NotFound';
+import FeatureUnavailable from './FeatureUnavailable';
 import LaunchAccessGate from '@/components/launch/LaunchAccessGate.jsx';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { trackPageView } from '@/lib/interactionAnalytics';
@@ -170,7 +172,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
           <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Tokens?source=mymatchiq" replace />} />
-          <Route path="/Credit" element={<Credit />} />
+          <Route path="/Credit" element={<Navigate to="/Tokens" replace />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
@@ -178,20 +180,20 @@ function PagesContent() {
           <Route path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
-          <Route path="/WinACruise" element={<Navigate to="/Home" replace />} />
-          <Route path="/CounselingSupport" element={<Navigate to="/CoupleSupport" replace />} />
-          <Route path="/InfluencersSupport" element={<Navigate to="/CoupleSupport" replace />} />
-          <Route path="/AIContentCreator" element={<Navigate to="/Home" replace />} />
-          <Route path="/RelationshipCoach" element={<Navigate to="/CoupleSupport" replace />} />
-          <Route path="/Meditation" element={<Navigate to="/CoupleSupport" replace />} />
-          <Route path="/Developer" element={<Navigate to="/Home" replace />} />
-          <Route path="/Leaderboard" element={<Navigate to="/Home" replace />} />
-          <Route path="/Achievements" element={<Navigate to="/Home" replace />} />
+          <Route path="/WinACruise" element={<FeatureUnavailable feature="Win a Cruise" />} />
+          <Route path="/CounselingSupport" element={<FeatureUnavailable feature="Counseling Support" />} />
+          <Route path="/InfluencersSupport" element={<FeatureUnavailable feature="Influencer Support" />} />
+          <Route path="/AIContentCreator" element={<FeatureUnavailable feature="AI Content Creator" />} />
+          <Route path="/RelationshipCoach" element={<Navigate to="/Amora" replace />} />
+          <Route path="/Meditation" element={<FeatureUnavailable feature="Meditation" />} />
+          <Route path="/Developer" element={<FeatureUnavailable feature="Developer" />} />
+          <Route path="/Leaderboard" element={<FeatureUnavailable feature="Leaderboard" />} />
+          <Route path="/Achievements" element={<FeatureUnavailable feature="Achievements" />} />
           <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
-          <Route path="/FindFriends" element={<Navigate to="/Community" replace />} />
-          <Route path="/FriendRequests" element={<Navigate to="/Community" replace />} />
+          <Route path="/FindFriends" element={<FeatureUnavailable feature="Find Friends" />} />
+          <Route path="/FriendRequests" element={<FeatureUnavailable feature="Friend Requests" />} />
           <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
-          <Route path="*" element={<Navigate to="/Home" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </LaunchAccessGate>
     </Layout>
