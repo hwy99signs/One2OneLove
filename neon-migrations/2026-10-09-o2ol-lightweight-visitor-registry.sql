@@ -1,5 +1,5 @@
 -- O2OL lightweight Registered Free identity + visitor stitching.
--- Additive and idempotent. Prelaunch first; production only through approved promotion.
+-- Additive and idempotent. Prelaunch first, production only through approved promotion.
 
 CREATE TABLE IF NOT EXISTS public.interaction_events (
   id bigserial PRIMARY KEY,

@@ -37,7 +37,8 @@ jobs:
           set -euo pipefail
           test -s .github/o2ol-production-schema-prepared
           grep -Fx 'o2ol-open-house-schema-v1' .github/o2ol-production-schema-prepared >/dev/null
-
+          test -s .github/o2ol-production-token-schema-prepared
+          grep -Fx 'o2ol-free-tokens-visitor-schema-v1' .github/o2ol-production-token-schema-prepared >/dev/null
       - name: Build production application
         shell: bash
         run: |
@@ -115,57 +116,157 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Open House and Founding Member launch contract
+      - name: Verify Free plus Tokens production contract
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "export const FOUNDING_LIMIT = 200;" worker/founding-rules.js >/dev/null
-          grep -F "export const FOUNDING_FIRST_COHORT_END = 100;" worker/founding-rules.js >/dev/null
-          grep -F "export const FOUNDING_FREE_DAYS = 30;" worker/founding-rules.js >/dev/null
-          grep -F "export const FOUNDING_EXCLUSIVE_RATE_CENTS = 1599;" worker/founding-rules.js >/dev/null
-          grep -F "CREATE TABLE IF NOT EXISTS public.founding_members" neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql >/dev/null
-          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_rooms" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
-          grep -F "CREATE TABLE IF NOT EXISTS public.like_minded_reports" neon-migrations/2026-10-03-like-minded-schema.sql >/dev/null
-          grep -F "ALTER TABLE public.users ALTER COLUMN subscription_price SET DEFAULT 9.99;" neon-migrations/2026-10-02-founding-members-and-billing-defaults.sql >/dev/null
-          grep -F "/api/billing/founding-offer" worker/billing.ts >/dev/null
-          grep -F "subscription_data[trial_period_days]" worker/billing.ts >/dev/null
-          grep -F "String(foundingOffer.freeDays)" worker/billing.ts >/dev/null
-          grep -F "founding_offer_unavailable" worker/billing.ts >/dev/null
-          grep -F "founding_rate_forfeited=true" worker/billing.ts >/dev/null
-          grep -F "const effectiveLevel = planLevel(row.subscription_plan);" worker/api-entitlements.ts >/dev/null
-          grep -F "const plan = storedPlan;" worker/ai.ts >/dev/null
-          grep -F "return { storedPlan: stored, effectivePlan: stored" worker/love-note-entitlements.ts >/dev/null
-          grep -F "Founding Member free-period accounts are intentionally allowed to send:" worker/love-note-billing.ts >/dev/null
-          grep -F "foundingPeriodSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "firstMembershipSendFree: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "async function loveNoteWriteAccess(db, auth)" worker/love-note-entitlements.ts >/dev/null
-          grep -F "const writeAccess = await loveNoteWriteAccess(db, auth);" worker/love-note-entitlements.ts >/dev/null
-          grep -F "reason: 'subscription_required'" worker/love-note-entitlements.ts >/dev/null
-          grep -F "OPEN HOUSE BROWSING IS FREE!" src/pages/Subscription.jsx >/dev/null
-          grep -F "Founding Members Launch Offer" src/pages/Subscription.jsx >/dev/null
-          grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx >/dev/null
-          ! grep -RInE "24-hour Guest Preview|24-Hour Guest Preview|7-day Full Access|7-day trial|guest_preview_read_only|guest_preview_expires_at|guestPreviewHours:[[:space:]]*24|trial_days:[[:space:]]*7" src worker 2>/dev/null
-          ! grep -RInE "status === 'trial' \? 'Exclusive'|\['trial', 'trialing'\].*\? 'Exclusive'" src worker 2>/dev/null
 
-      - name: Verify Love Notes launch entitlements are present
+          # Core Token economy and routes.
+          grep -F "handleO2OLTokenRequest" worker/index-v2.ts >/dev/null
+          grep -F "reserveTokenCharge" worker/o2ol-tokens.ts >/dev/null
+          grep -F "releaseTokenReservation" worker/o2ol-tokens.ts >/dev/null
+          grep -F "maybeAutoReplenish" worker/o2ol-tokens.ts >/dev/null
+          grep -F "recordOpenAICostEvent" worker/o2ol-cost-ledger.ts >/dev/null
+          grep -F 'path="/Tokens"' src/pages/index.jsx >/dev/null
+          grep -F 'path="/Amora"' src/pages/index.jsx >/dev/null
+          grep -F '<Navigate to="/Tokens" replace' src/pages/Subscription.jsx >/dev/null
+          grep -F 'navigate("/SignUp")' src/pages/Layout.jsx >/dev/null
+
+          # Registered Free identity + visitor stitching.
+          grep -F "'Free'" worker/launch-auth.ts >/dev/null
+          grep -F "'Free',0,'inactive'" worker/launch-auth.ts >/dev/null
+          grep -F "INSERT INTO public.o2ol_token_wallets" worker/launch-auth.ts >/dev/null
+          grep -F "visitor_identity_links" worker/launch-auth.ts >/dev/null
+          grep -F "marketingEmailOptIn" worker/launch-auth.ts >/dev/null
+          grep -F "username_taken" worker/launch-auth.ts >/dev/null
+          grep -F "QuickAccountGate" src/components/launch/LaunchAccessGate.jsx >/dev/null
+          grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx >/dev/null
+          grep -F "Username" src/components/launch/QuickAccountGate.jsx >/dev/null
+          grep -F "marketingEmailOptIn" src/components/launch/QuickAccountGate.jsx >/dev/null
+
+          # Subscription-era access is retired.
+          grep -F "legacy_subscription_model_retired" worker/billing.ts src/lib/stripeService.js worker/billing-plan-change.ts >/dev/null
+          grep -F "return false;" worker/api-entitlements.ts >/dev/null
+          grep -F "accessModel:'free_tokens'" worker/ai.ts >/dev/null
+          grep -F "'Free',0,'inactive'" worker/onboarding.ts worker/member-onboarding.ts worker/index.ts >/dev/null
+          grep -F "'Free','inactive',0" worker/professional-signup.ts >/dev/null
+          if grep -REn 'PLAN_LEVEL|REQUIRED_PLAN|stripe_subscription_id|subscription_status|subscription_plan' src/components/launch/LaunchAccessGate.jsx; then
+            echo "Global browser access still depends on a subscription." >&2
+            exit 1
+          fi
+          if grep -REn "canonicalPlan|Premiere|Exclusive|50 AI Relationship Coach|subscription_plan|subscription_status" worker/ai.ts; then
+            echo "AI access still contains legacy tier eligibility." >&2
+            exit 1
+          fi
+          if grep -REn "selectedSignupPlan|Choose Premiere or Exclusive|selectedPlan" src/lib/professionalOnboardingService.js src/pages/ProfessionalSignup.jsx worker/professional-signup.ts; then
+            echo "Professional onboarding still depends on a paid tier." >&2
+            exit 1
+          fi
+
+          # Required production migrations are present in source.
+          grep -F "o2ol_token_wallets" neon-migrations/2026-10-03-o2ol-token-economy.sql >/dev/null
+          grep -F "'item','episode'" neon-migrations/2026-10-03-o2ol-token-economy.sql >/dev/null
+          grep -F "o2ol_token_content_unlocks" neon-migrations/2026-10-04-o2ol-token-content-unlocks.sql >/dev/null
+          grep -F "visitor_identity_links" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql >/dev/null
+      - name: Verify transactional Token features and payment safety
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "/api/love-notes/categories" worker/love-note-entitlements.ts >/dev/null
-          grep -F "/api/love-notes/send-sms" worker/love-note-entitlements.ts >/dev/null
-          grep -F "function categoryLimit(plan)" worker/love-note-entitlements.ts >/dev/null
-          grep -F "return 18;" worker/love-note-entitlements.ts >/dev/null
-          grep -F "export const LOVE_NOTE_SEND_PRICE_CENTS = 29;" worker/love-note-billing.ts >/dev/null
-          grep -F "export const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;" worker/love-note-billing.ts >/dev/null
-          grep -F "Founding Member free-period accounts are intentionally allowed to send:" worker/love-note-billing.ts >/dev/null
-          grep -F "foundingPeriodSendsAllowed: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "firstMembershipSendFree: true" worker/love-note-entitlements.ts >/dev/null
-          grep -F "sendLoveNoteSms" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "aiPersonalizationReady" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "effectivePlan === 'Exclusive'" src/pages/LoveNotes.jsx >/dev/null
-          grep -F "code: 'email_verification_required'" worker/identity-gate.ts >/dev/null
-          grep -F "code: 'phone_verification_required'" worker/identity-gate.ts >/dev/null
-          ! grep -F "setInterval(" src/pages/Subscription.jsx >/dev/null
+
+          # MyMatchIQ remains free to assess; paid AI uses O2OL Tokens.
+          grep -F "Free: { questionCount:225, dimensionCount:15 }" src/lib/mymatchiqAssessment.js >/dev/null
+          grep -F "assessment_question_count:225" worker/mymatchiq-ai.ts >/dev/null
+          grep -F "access_model:'free_tokens'" worker/mymatchiq-ai.ts >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'bianca_report'" worker/mymatchiq-ai.ts >/dev/null
+          grep -F "'bianca_response'" worker/mymatchiq-ai.ts >/dev/null
+          grep -F 'to="/Tokens?source=mymatchiq-assessment"' src/pages/MyMatchIQAssessment.jsx >/dev/null
+
+          # Love Notes, Amora and games charge Tokens transactionally.
+          grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'love_note_send'" worker/love-note-entitlements.ts >/dev/null
+          grep -F "customerTokensCharged:Number(reservation.tokens||0)" worker/love-note-entitlements.ts >/dev/null
+          grep -F "plan:'Free'" worker/love-note-entitlements.ts >/dev/null
+          grep -F "accessModel:'free_tokens'" worker/love-note-entitlements.ts >/dev/null
+          grep -F "LOVE_NOTE_SEND_PRICE_CENTS=0" worker/love-note-billing.ts >/dev/null
+          grep -F "legacy_love_note_billing_retired" worker/love-note-billing.ts >/dev/null
+          grep -F "reserveTokenCharge(db,auth.user.id,'like_minded_session'" worker/game-access.ts >/dev/null
+          grep -F "await consumeTokenReservation(db,reservation.id)" worker/game-access.ts >/dev/null
+          grep -F "await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed')" worker/game-access.ts >/dev/null
+
+          # Payment + auto-replenish safety.
+          grep -F "'metadata[idempotency_key]':marker" worker/o2ol-tokens.ts >/dev/null
+          grep -F 'idempotencyKey:meta.idempotency_key||`stripe_auto:' worker/o2ol-tokens.ts >/dev/null
+          grep -F "payment_method_saved:Boolean(state.settings?.payment_method_reference)" worker/o2ol-tokens.ts >/dev/null
+          grep -F "trigger>Number(pkg.tokens||0)" worker/o2ol-tokens.ts >/dev/null
+          grep -F "max={maxAutoTrigger||undefined}" src/pages/Tokens.jsx >/dev/null
+          grep -F "settings?.payment_method_saved" src/pages/Tokens.jsx >/dev/null
+          if grep -F "settings?.payment_method_reference" src/pages/Tokens.jsx; then
+            echo "Raw Stripe payment method reference is exposed to the browser." >&2
+            exit 1
+          fi
+          if grep -REn 'Premiere|Exclusive|stripe_subscription_id|subscription_status' worker/game-access.ts worker/like-minded.ts; then
+            echo "Game access still contains subscription-era gating." >&2
+            exit 1
+          fi
+          if grep -REn "'Premiere'|9\.99|effectivePlan|stripe_subscription_id" worker/love-note-entitlements.ts; then
+            echo "Love Notes still contains subscription-derived access." >&2
+            exit 1
+          fi
+      - name: Verify Admin audience intelligence and final UX contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Audience intelligence / presence / support.
+          grep -F "Visitor Registry / Audience Intelligence" src/pages/Admin.jsx >/dev/null
+          grep -F "Anonymous Visitors" src/pages/Admin.jsx >/dev/null
+          grep -F "Registered Free" src/pages/Admin.jsx >/dev/null
+          grep -F "Token Buyers" src/pages/Admin.jsx >/dev/null
+          grep -F "async function visitorRegistry(db)" worker/admin.ts >/dev/null
+          grep -F "marketing_email_opt_in" worker/admin.ts >/dev/null
+          grep -F "visitor_identity_links" worker/admin.ts >/dev/null
+          grep -F "America/Chicago" worker/admin.ts >/dev/null
+          grep -F "online_now" worker/admin.ts >/dev/null
+          grep -F "Support & Problem Reports" src/pages/Admin.jsx >/dev/null
+
+          # Separate MFA-protected Token admin.
+          grep -F "Token System Dashboard" src/pages/TokenSystemDashboard.jsx >/dev/null
+          grep -F "handleTokenAdminRequest" worker/token-admin.ts worker/index-v2.ts >/dev/null
+          grep -F 'path="/TokenSystemDashboard"' src/pages/index.jsx >/dev/null
+          grep -F "<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>" src/pages/index.jsx >/dev/null
+
+          # Approved UX cleanup.
+          test -s public/assets/amora-relationship-coach-official.webp
+          test "$(wc -c < public/assets/amora-relationship-coach-official.webp)" -gt 12000
+          grep -F 'src="/assets/amora-relationship-coach-official.webp"' src/pages/Home.jsx >/dev/null
+          grep -F "data-desktop-action-trigger" src/pages/Layout.jsx >/dev/null
+          grep -F "aria-expanded={desktopActionOpen}" src/pages/Layout.jsx >/dev/null
+          grep -F "/Suggestions?mode=problem" src/pages/Layout.jsx >/dev/null
+          grep -F "'/suggestions'" src/components/launch/LaunchAccessGate.jsx >/dev/null
+          grep -F 'path="*" element={<NotFound />}' src/pages/index.jsx >/dev/null
+          grep -F 'FeatureUnavailable feature="Win a Cruise"' src/pages/index.jsx >/dev/null
+          grep -F 'preload="auto"' src/pages/O2OLStudio.jsx >/dev/null
+          if grep -F "technicalsupport@erantpropertyservices.com" src/pages/Layout.jsx; then
+            echo "ERANT technical-support address is still exposed publicly." >&2
+            exit 1
+          fi
+          if grep -F "not available from media storage yet" src/pages/O2OLStudio.jsx; then
+            echo "Public Studio staging sentence survived." >&2
+            exit 1
+          fi
+          if grep -E "Vote now|Vota ahora|Votez maintenant|Vota ora|Jetzt abstimmen|Oct 9|9 octobre|9 ottobre|9\. Oktober" src/pages/Chat.jsx; then
+            echo "Stale voting/date copy survived." >&2
+            exit 1
+          fi
+          ACTIVE_TOKEN_SURFACES=(
+            src/pages/Home.jsx src/pages/Layout.jsx src/pages/O2OLStudio.jsx src/pages/Amora.jsx
+            src/pages/LoveNotes.jsx src/pages/DateIdeas.jsx src/pages/MyMatchIQ.jsx
+            src/pages/MyMatchIQBianca.jsx src/pages/MyMatchIQAssessment.jsx src/pages/LikeMinded.jsx
+          )
+          if grep -RInE '\bCredit\b|\bCrédito(s)?\b|\bCrédit(s)?\b|\bCredito\b' "${ACTIVE_TOKEN_SURFACES[@]}" 2>/dev/null; then
+            echo "Credit-era customer copy remains on an active Token surface." >&2
+            exit 1
+          fi
 
       - name: Verify production deployment configuration
         shell: bash
