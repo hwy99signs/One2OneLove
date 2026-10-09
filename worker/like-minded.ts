@@ -143,7 +143,7 @@ async function requirePremiumGamePass(db,userId){
     `SELECT token_cost,label FROM public.o2ol_token_feature_prices
       WHERE feature_code='like_minded_session' AND active=true LIMIT 1`
   )).rows[0];
-  throw Object.assign(new Error('Buy Tokens To Access'),{
+  throw Object.assign(new Error('Add Credit To Access'),{
     status:402,code:'tokens_required',
     balance:Number(wallet?.balance||0),required:Number(price?.token_cost||2),
     featureCode:'like_minded_session',featureLabel:price?.label||'Like Minded session',
