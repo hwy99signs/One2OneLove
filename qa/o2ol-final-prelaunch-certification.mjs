@@ -111,6 +111,12 @@ try{
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
+    if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Watch Episode 2/i.test(body)) pass('Homepage Studio card updated to Episode 2');
+    else fail('Homepage Studio card is stale',body.slice(-2200));
+    const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
+    const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
+    if(studioDestination==='/O2OLStudio?episode=season-1-episode-2') pass('Homepage Episode 2 link is explicit');
+    else fail('Homepage Episode 2 link is not explicit',String(studioDestination));
     const amora=page.locator('img[src*="amora-relationship-coach-official.webp"]').first();
     if(await amora.count()){
       const size=await amora.evaluate(i=>({w:i.naturalWidth,h:i.naturalHeight}));
@@ -289,7 +295,7 @@ try{
     await context.close();
   }
 
-  // Studio: Episode 2 is featured and the episode archive is reachable.
+  // Studio regression guard: Episode 2 is featured, Episode 1 deep-links to itself, and archive Watch actions stay episode-specific.
   {
     const {context,page}=await open(browser,'/O2OLStudio',{mode:'free'});
     const body=await page.locator('body').innerText();
@@ -302,10 +308,21 @@ try{
     await context.close();
   }
   {
+    const {context,page}=await open(browser,'/O2OLStudio?episode=season-1-episode-1',{mode:'free'});
+    const body=await page.locator('body').innerText();
+    if(/Who Should Apologize First\?/i.test(body)&&/Episode 1/i.test(body)&&!/Who Pays for the First Date\?/i.test(body)) pass('Episode 1 direct link stays on Episode 1');
+    else fail('Episode 1 direct link routed to wrong episode',body.slice(0,1200));
+    await context.close();
+  }
+  {
     const {context,page}=await open(browser,'/O2OLStudio/Episodes',{mode:'free'});
     const body=await page.locator('body').innerText();
     if(body.includes('Previous Episodes')&&body.includes('Who Pays for the First Date?')&&body.includes('Who Should Apologize First?')) pass('Studio archive lists Episodes 1 and 2');
     else fail('Studio archive episode list incomplete',body.slice(0,1400));
+    const ep1Link=page.getByRole('link',{name:/Watch Episode 1/i}).first();
+    const ep1Href=await ep1Link.getAttribute('href').catch(()=>null);
+    if(ep1Href?.includes('episode=season-1-episode-1')) pass('Episode 1 archive link targets Episode 1');
+    else fail('Episode 1 archive link target missing',String(ep1Href));
     await noOverflow(page,'Studio archive mobile',{});
     await context.close();
   }
