@@ -5,6 +5,7 @@ on:
     branches:
       - prelaunch/o2ol-token-economy-20261003
       - prelaunch/final-consolidated-20261009
+      - feature/custom-credit-card-prelaunch-20261009-v2
     paths:
       - "src/**"
       - "worker/**"
@@ -65,6 +66,13 @@ jobs:
           grep -F "return false;" worker/api-entitlements.ts
           grep -F "method === 'GET' && path.startsWith('/api/community-chat')" worker/identity-gate.ts
           grep -F "PUBLIC_DELAY_MS=7*24*60*60*1000" worker/studio-media.ts
+          grep -F "custom_credit" src/pages/Credit.jsx src/lib/tokenService.js worker/o2ol-tokens.ts
+          grep -F "lg:grid-cols-5" src/pages/Credit.jsx
+          grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts
+          grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts
+          grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx
+          grep -F 'to="/O2OLStudio/Episodes"' src/pages/O2OLStudio.jsx
+          grep -F "studio-who-pays-for-the-first-date" src/pages/O2OLStudio.jsx src/pages/Chat.jsx worker/community-chat.ts worker/prelaunch-community-chat.ts
           grep -F "o2ol_token_wallets" neon-migrations/2026-10-03-o2ol-token-economy.sql
           grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
           grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
