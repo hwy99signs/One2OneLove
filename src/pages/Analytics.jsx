@@ -8,6 +8,13 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
+import { touchAdminMfa } from '../lib/adminMfaService';
+import {
+  ADMIN_AUTH_REDIRECT,
+  ADMIN_IDLE_LIMIT_MS,
+  claimAutoRedirect,
+  isIdleFor,
+} from '../lib/activityGuard';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
 
@@ -37,6 +44,7 @@ export default function Analytics() {
   const [loading,setLoading] = useState(true);
   const [refreshing,setRefreshing] = useState(false);
   const [error,setError] = useState(null);
+  const [refreshError,setRefreshError] = useState(null);
   const dataRef = useRef(null);
   const loadInFlightRef = useRef(false);
   const lastRefreshAtRef = useRef(0);
@@ -46,15 +54,33 @@ export default function Analytics() {
     loadInFlightRef.current = true;
     refresh ? setRefreshing(true) : setLoading(true);
     if (!refresh) setError(null);
+    setRefreshError(null);
     try {
       const next = await getAdminAnalytics();
       setData(next);
       dataRef.current = next;
       lastRefreshAtRef.current = Date.now();
       setError(null);
+      setRefreshError(null);
     } catch (err) {
-      if (!refresh || !dataRef.current || [401,403].includes(err?.status)) setError(err);
-      else console.warn('Analytics background refresh failed; keeping current data visible.', err);
+      if (err?.status === 428) {
+        if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
+          window.location.replace('/AdminAccess');
+        } else {
+          setError(err);
+        }
+      } else if (err?.status === 401) {
+        if (claimAutoRedirect(ADMIN_AUTH_REDIRECT.key, ADMIN_AUTH_REDIRECT.limit, ADMIN_AUTH_REDIRECT.windowMs)) {
+          window.location.replace('/SignIn');
+        } else {
+          setError(err);
+        }
+      } else if (!refresh || !dataRef.current || err?.status === 403) {
+        setError(err);
+      } else {
+        setRefreshError(err);
+        console.warn('Analytics refresh failed; displayed values may be stale.', err);
+      }
     } finally {
       loadInFlightRef.current = false;
       setLoading(false);
@@ -81,6 +107,24 @@ export default function Analytics() {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', refreshOnReturn);
       window.removeEventListener('focus', refreshOnReturn);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const keepAdminSessionAlive = () => {
+      if (!active || document.visibilityState !== 'visible') return;
+      if (isIdleFor(ADMIN_IDLE_LIMIT_MS)) return;
+      touchAdminMfa().catch(err => {
+        setRefreshError(current => current || err);
+        console.warn('Analytics Admin session heartbeat missed.', err);
+      });
+    };
+    keepAdminSessionAlive();
+    const timer = window.setInterval(keepAdminSessionAlive, 10 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
     };
   }, []);
 
@@ -140,6 +184,7 @@ export default function Analytics() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {refreshError && <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"><strong>Analytics refresh needs attention.</strong> The values below may be from the last successful refresh. Use Refresh; if Admin verification is requested, complete it and return here.</div>}
         <div className="mb-6"><h2 className="text-2xl font-black tracking-tight">30-Day Trend View</h2><p className="mt-1 text-sm text-slate-500">Graphs are built from actual One2OneLove records and feature-use events. They will become more meaningful as launch traffic grows.</p></div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
