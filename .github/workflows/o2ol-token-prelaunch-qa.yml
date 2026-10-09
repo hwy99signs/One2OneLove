@@ -107,7 +107,7 @@ jobs:
           grep -F "username_taken" worker/launch-auth.ts
           grep -F "founding_intent" worker/launch-auth.ts
           grep -F "badge_activated:true" worker/phone-verification.ts
-          grep -F "const TERMS_VERSION = '2026-10-03';" src/components/signup/LaunchRegularUserForm.jsx
+          grep -F "const TERMS_VERSION = '2026-10-02';" src/components/signup/LaunchRegularUserForm.jsx
           if grep -RInE 'navigate\(["'\''"]/Subscription\?signup=1|Create Account for Premiere|Create Account for Exclusive' src --exclude='stripeService.js'; then
             echo "Active recurring-plan signup path found." >&2
             exit 1
