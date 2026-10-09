@@ -106,7 +106,7 @@ try{
       const size=await amora.evaluate(i=>({w:i.naturalWidth,h:i.naturalHeight}));
       if(size.w>0&&size.h>0) pass('Approved Amora portrait renders'); else fail('Approved Amora portrait broken',JSON.stringify(size));
     }else fail('Approved Amora portrait missing');
-    const action=page.getByRole('button',{name:/Action/i}).first();
+    const action=page.locator('button[aria-controls="desktop-action-menu"]');
     await action.click();
     const desktopMenu=page.locator('#desktop-action-menu');
     if(await desktopMenu.isVisible().catch(()=>false) && await desktopMenu.getByText('Send A Love Note',{exact:true}).isVisible().catch(()=>false)) pass('Desktop Action menu opens by click'); else fail('Desktop Action menu did not open');
