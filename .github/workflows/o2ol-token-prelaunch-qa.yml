@@ -389,7 +389,7 @@ jobs:
           set -euo pipefail
           DEPLOY=.github/workflows/deploy-o2ol-functional-prelaunch.yml
           grep -F "name: Deploy O2OL Token Functional Prelaunch" "$DEPLOY"
-          grep -F "ref: prelaunch/o2ol-token-economy-20261003" "$DEPLOY"
+          grep -F "ref: prelaunch/final-consolidated-20261009" "$DEPLOY"
           grep -F "main\": \"\$GITHUB_WORKSPACE/worker/index-v2.ts" "$DEPLOY"
           grep -F "EXPECTED_NEON_HOST_PREFIX: ep-super-silence-arbl98ls" "$DEPLOY"
           grep -F "EXPECTED_NEON_ROLE: o2ol_token_hyperdrive" "$DEPLOY"
