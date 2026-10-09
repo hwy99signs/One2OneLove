@@ -137,7 +137,7 @@ function launchIdentityReady(readiness, env) {
     env.TWILIO_AUTH_TOKEN &&
     env.TWILIO_VERIFY_SERVICE_SID
   );
-  return { emailReady, phoneReady, ready: emailReady && phoneReady };
+  return { emailReady, phoneReady, ready: emailReady };
 }
 
 function registrationContext(body) {
