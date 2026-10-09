@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.o2ol_token_feature_prices (
   feature_code text PRIMARY KEY,
   label text NOT NULL,
   token_cost integer NOT NULL CHECK (token_cost >= 0),
-  pricing_unit text NOT NULL DEFAULT 'action' CHECK (pricing_unit IN ('action','response','session','minute','send','report','item','episode')),
+  pricing_unit text NOT NULL DEFAULT 'action' CHECK (pricing_unit IN ('action','response','session','minute','send','report')),
   active boolean NOT NULL DEFAULT true,
   calibration_only boolean NOT NULL DEFAULT true,
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,

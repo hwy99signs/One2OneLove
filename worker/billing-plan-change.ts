@@ -21,7 +21,7 @@ export async function handleBillingPlanChangeRequest(request,_env,url){
     ok:false,
     error:{
       code:'legacy_subscription_model_retired',
-      message:'Premiere/Exclusive recurring plan changes are retired. One2OneLove accounts are free and metered premium services use O2OL Tokens.',
+      message:'Premiere/Exclusive recurring plan changes are retired. One2OneLove accounts are free and metered premium services use One2OneLove Credit.',
       tokenWallet:'/api/tokens/wallet',
     },
   },410);

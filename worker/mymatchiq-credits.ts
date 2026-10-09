@@ -23,7 +23,7 @@ export async function handleMyMatchIQCreditsRequest(_request,_env,url){
     ok:false,
     error:{
       code:'legacy_mymatchiq_credits_retired',
-      message:'MyMatchIQ credits are retired. One2OneLove now uses a single O2OL Token wallet.',
+      message:'MyMatchIQ credits are retired. One2OneLove now uses a single One2OneLove Credit wallet.',
       tokenWallet:'/api/tokens/wallet',
       tokenPackages:'/api/tokens/packages',
       tokenCheckout:'/api/tokens/checkout',

@@ -1,7 +1,7 @@
 import {apiRequest} from './apiClient';
 
 // Legacy billing compatibility module. Recurring Premiere/Exclusive checkout is
-// intentionally disabled in Token Prelaunch. O2OL Token purchases live in
+// intentionally disabled in the Credit model. Credit purchases live in
 // tokenService.js and /api/tokens/*.
 export const isStripeConfigured=async()=>false;
 
@@ -10,7 +10,7 @@ function retired(){
     success:false,
     status:410,
     code:'legacy_subscription_model_retired',
-    error:'Recurring One2OneLove subscriptions are retired. Accounts are free; use O2OL Tokens for metered premium services.',
+    error:'Recurring One2OneLove subscriptions are retired. Accounts are free; use One2OneLove Credit for metered premium services.',
   };
 }
 

@@ -817,8 +817,8 @@ export default function Admin() {
               <Metric icon={Activity} label="On Site Now" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
               <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
               <Metric icon={UserCheck} label="Registered Free" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
-              <Metric icon={CreditCard} label="Token Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid token purchase" tone="violet"/>
-              <Metric icon={TrendingUp} label="Paid Activity" value={money(Number(visitorFunnel.paid_activity_cents||0)/100)} note="token purchases + auto-replenish" tone="green"/>
+              <Metric icon={CreditCard} label="Credit Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid Credit purchase" tone="violet"/>
+              <Metric icon={TrendingUp} label="Paid Activity" value={money(Number(visitorFunnel.paid_activity_cents||0)/100)} note="Credit purchases + auto-replenish" tone="green"/>
             </div>
             <div className="mb-4 flex flex-wrap gap-2">
               <button type="button" onClick={()=>{setMemberViewFilter('all');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='all'?'border-slate-900 bg-slate-900 text-white':'border-slate-200 bg-white text-slate-700')}>All Sign-ups · {number(memberCounts.all)}</button>
@@ -853,7 +853,7 @@ export default function Admin() {
                   <td className="px-4 py-3">{protectedAdmin?<span className="text-slate-300">—</span>:<input type="checkbox" aria-label={`Select ${m.email}`} checked={selected} onChange={()=>setSelectedMemberIds(current=>selected?current.filter(id=>id!==m.id):[...current,m.id])}/>}</td>
                   <td className="px-4 py-3"><div className="font-semibold">{m.username?('@'+m.username):(m.name||'Unnamed member')}</div>{m.username&&m.name&&m.name!==m.username&&<div className="text-xs text-slate-500">{m.name}</div>}<div className="text-xs text-slate-500">{m.email}</div><div className="mt-1 text-[11px] font-semibold text-slate-400">Promotional email: {m.marketing_email_opt_in?'Yes':'No'}</div>{m.location&&<div className="text-xs text-slate-400">{m.location}</div>}</td>
                   <td className="px-4 py-3 text-slate-600">{m.user_type||'user'}{protectedAdmin&&<div className="mt-1"><Pill tone="purple">Protected Admin</Pill></div>}</td>
-                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Registered Free'}</Pill>{m.token_buyer&&<div className="mt-1"><Pill tone="violet">Token Buyer</Pill></div>}{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
+                  <td className="px-4 py-3"><Pill tone="blue">{m.subscription_plan||'Registered Free'}</Pill>{m.token_buyer&&<div className="mt-1"><Pill tone="violet">Credit Buyer</Pill></div>}{m.subscription_end_date&&<div className="mt-1 text-xs font-semibold text-slate-500">{new Date(m.subscription_end_date).getUTCFullYear()>=9999?'Access: Unlimited':`Access until ${date(m.subscription_end_date)}`}</div>}</td>
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
@@ -915,7 +915,7 @@ export default function Admin() {
                       {v.user_id&&<div className="mt-1 text-[11px] font-semibold text-slate-500">Promo email: {v.marketing_email_opt_in?'Yes':'No'}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      <Pill tone={v.audience_status==='Token Buyer'?'violet':v.audience_status==='Registered Free'?'blue':'slate'}>{v.audience_status||'Anonymous Visitor'}</Pill>{v.is_online&&<div className="mt-1"><Pill tone="green">On site now</Pill></div>}
+                      <Pill tone={v.audience_status==='Credit Buyer'?'violet':v.audience_status==='Registered Free'?'blue':'slate'}>{v.audience_status==='Token Buyer'?'Credit Buyer':(v.audience_status||'Anonymous Visitor')}</Pill>{v.is_online&&<div className="mt-1"><Pill tone="green">On site now</Pill></div>}
                       {Number(v.paid_cents||0)>0&&<div className="mt-1 text-xs font-bold text-emerald-700">{(Number(v.paid_cents)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} paid</div>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500"><div>{date(v.first_seen)}</div><div className="mt-1 font-semibold text-slate-700">{date(v.last_seen)}</div></td>

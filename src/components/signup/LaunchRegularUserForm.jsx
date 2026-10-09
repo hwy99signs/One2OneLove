@@ -14,7 +14,7 @@ import termsFr from '@/content/terms/fr';
 import termsIt from '@/content/terms/it';
 import termsDe from '@/content/terms/de';
 
-const TERMS_VERSION = '2026-10-02';
+const TERMS_VERSION = '2026-10-09';
 const termsByLanguage = { en: termsEn, es: termsEs, fr: termsFr, it: termsIt, de: termsDe };
 const languageOptions = [
   { code:'en', label:'English' },

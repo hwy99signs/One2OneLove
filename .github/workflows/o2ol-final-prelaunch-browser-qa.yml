@@ -1,4 +1,4 @@
-name: O2OL Final Prelaunch Browser QA
+name: O2OL Final Credit Prelaunch Browser QA
 
 on:
   workflow_dispatch:
@@ -45,6 +45,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: o2ol-final-prelaunch-browser-qa
+          name: o2ol-final-credit-prelaunch-browser-qa
           path: /tmp/o2ol-final-prelaunch-browser-qa.txt
           if-no-files-found: warn

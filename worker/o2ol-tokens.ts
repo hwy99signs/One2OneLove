@@ -49,7 +49,7 @@ async function requireVerifiedMember(db,auth){
   return row;
 }
 async function stripeRequest(env,method,path,body=null,idempotencyKey=null){
-  if(!env.STRIPE_SECRET_KEY)throw Object.assign(new Error('Token checkout is not configured yet.'),{status:503,code:'payments_not_configured'});
+  if(!env.STRIPE_SECRET_KEY)throw Object.assign(new Error('Credit checkout is not configured yet.'),{status:503,code:'payments_not_configured'});
   const headers={authorization:`Bearer ${env.STRIPE_SECRET_KEY}`,accept:'application/json'};
   let requestBody;
   if(body){
@@ -383,7 +383,7 @@ async function createCheckout(request,db,env,auth,input){
     'SELECT * FROM public.o2ol_token_packages WHERE code=$1 AND active=true LIMIT 1',
     [String(input?.packageCode||'')],
   )).rows[0];
-  if(!pkg)return fail('Invalid token package.',400,'invalid_package');
+  if(!pkg)return fail('Invalid Credit package.',400,'invalid_package');
   const customer=await ensureStripeCustomer(db,env,auth);
   const origin=new URL(request.url).origin;
   const requestedReturn=String(input?.returnTo||'').trim();
@@ -394,7 +394,7 @@ async function createCheckout(request,db,env,auth,input){
     customer,
     'line_items[0][price_data][currency]':'usd',
     'line_items[0][price_data][unit_amount]':pkg.amount_cents,
-    'line_items[0][price_data][product_data][name]':`One2OneLove — ${pkg.label}${pkg.calibration_only?' Token Package':' Credit'}`,
+    'line_items[0][price_data][product_data][name]':`One2OneLove — ${pkg.label}${pkg.calibration_only?' Credit Package':' Credit'}`,
     'line_items[0][quantity]':1,
     success_url:`${origin}/Credit?checkout=success&session_id={CHECKOUT_SESSION_ID}&return=${encodedReturn}`,
     cancel_url:`${origin}/Credit?checkout=cancelled&return=${encodedReturn}`,
@@ -443,11 +443,11 @@ async function confirmCheckout(db,env,auth,sessionId){
   const checkout=await stripeRequest(env,'GET',`/checkout/sessions/${encodeURIComponent(sessionId)}`);
   const meta=checkout?.metadata||{};
   if(meta.purpose!=='o2ol_token_purchase'||meta.user_id!==auth.user.id)throw Object.assign(new Error('Checkout session does not belong to this account.'),{status:403,code:'checkout_mismatch'});
-  if(checkout.payment_status!=='paid')throw Object.assign(new Error('Token payment has not completed.'),{status:409,code:'payment_not_complete'});
+  if(checkout.payment_status!=='paid')throw Object.assign(new Error('Credit payment has not completed.'),{status:409,code:'payment_not_complete'});
   const purchasedTokens=Math.max(0,Math.floor(Number(meta.tokens)||0));
   const packageCode=String(meta.package_code||'').trim();
   const amountCents=Math.max(0,Math.floor(Number(checkout.amount_total??meta.amount_cents)||0));
-  if(!packageCode||!purchasedTokens||!amountCents)throw Object.assign(new Error('Token purchase metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
+  if(!packageCode||!purchasedTokens||!amountCents)throw Object.assign(new Error('Credit purchase metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
   const tx=await creditTokens(db,auth.user.id,{
     tokens:purchasedTokens,
     transactionType:'purchase',
@@ -655,7 +655,7 @@ async function tokenWebhook(request,env){
         });
         await recordStripeFeeFromPaymentIntent(db,env,meta.user_id,obj.payment_intent,packageCode,purchasedTokens);
       }else{
-        throw Object.assign(new Error('Token purchase webhook metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
+        throw Object.assign(new Error('Credit purchase webhook metadata is incomplete.'),{status:409,code:'purchase_metadata_invalid'});
       }
     }
     if(event.type==='payment_intent.succeeded'&&meta.purpose==='o2ol_token_auto_replenish'&&meta.user_id){
