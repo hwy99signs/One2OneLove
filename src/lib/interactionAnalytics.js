@@ -111,6 +111,11 @@ function sessionId() {
   return storageId(window.sessionStorage, SESSION_KEY);
 }
 
+export function getAnalyticsVisitorId() {
+  if (typeof window === 'undefined') return null;
+  return visitorId();
+}
+
 function safeText(value, max = 160) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, max) || null;
 }
