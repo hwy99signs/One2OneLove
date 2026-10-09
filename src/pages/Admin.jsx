@@ -370,13 +370,25 @@ export default function Admin() {
     };
   }, []);
 
+  const memberCounts = useMemo(() => {
+    const members=(data?.members || []).filter(m => m.auth_role !== 'admin');
+    return {
+      all: members.length,
+      registeredFree: members.filter(m => m.subscription_plan === 'Registered Free' || m.subscription_status === 'registered_free').length,
+      pendingVerification: members.filter(m => !(m.is_verified && m.phone_verified)).length,
+    };
+  },[data]);
+
   const filteredMembers = useMemo(() => {
     const members=data?.members || [], needle=query.trim().toLowerCase();
-    const byVerification = memberViewFilter === 'pending-verification'
-      ? members.filter(m => m.auth_role !== 'admin' && !(m.is_verified && m.phone_verified))
-      : members;
-    if (!needle) return byVerification;
-    return byVerification.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
+    let filtered=members;
+    if (memberViewFilter === 'pending-verification') {
+      filtered=members.filter(m => m.auth_role !== 'admin' && !(m.is_verified && m.phone_verified));
+    } else if (memberViewFilter === 'registered-free') {
+      filtered=members.filter(m => m.auth_role !== 'admin' && (m.subscription_plan === 'Registered Free' || m.subscription_status === 'registered_free'));
+    }
+    if (!needle) return filtered;
+    return filtered.filter(m => [m.name,m.email,m.location,m.subscription_plan,m.subscription_status,m.user_type].filter(Boolean).some(v => String(v).toLowerCase().includes(needle)));
   },[data,query,memberViewFilter]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 grid place-items-center p-4"><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm"><Loader2 className="mx-auto animate-spin text-rose-500" size={34}/><h1 className="mt-4 text-xl font-bold">Loading One2OneLove Admin</h1><p className="mt-2 text-sm text-slate-500">Verifying administrator access and loading platform data.</p></div></div>;
@@ -802,7 +814,13 @@ export default function Admin() {
           </div>}
 
           {section==='members' && <div>
-            <Heading title="All Sign-ups" subtitle="Live member management, including pending email verification and profile-recovery states. Suspend access, delete an account reversibly, or restore access. Administrator accounts are protected."/>
+            <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Registered Free accounts remain visible here even when they have never purchased a subscription."/>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button type="button" onClick={()=>{setMemberViewFilter('all');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='all'?'border-slate-900 bg-slate-900 text-white':'border-slate-200 bg-white text-slate-700')}>All Sign-ups · {number(memberCounts.all)}</button>
+              <button type="button" onClick={()=>{setMemberViewFilter('registered-free');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='registered-free'?'border-blue-600 bg-blue-600 text-white':'border-blue-200 bg-blue-50 text-blue-800')}>Registered Free · {number(memberCounts.registeredFree)}</button>
+              <button type="button" onClick={()=>{setMemberViewFilter('pending-verification');setQuery('');}} className={cx('rounded-xl border px-4 py-2 text-sm font-black',memberViewFilter==='pending-verification'?'border-amber-600 bg-amber-600 text-white':'border-amber-200 bg-amber-50 text-amber-800')}>Pending Verification · {number(memberCounts.pendingVerification)}</button>
+            </div>
+            {memberViewFilter==='registered-free' && <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900"><strong>Registered Free — all time.</strong><span className="ml-2 text-blue-700">These are actual accounts with stored registration records. The table shows the saved name, email, signup date and verification state.</span></div>}
             {memberViewFilter==='pending-verification' && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div><strong>Pending Verification only</strong><span className="ml-2 text-amber-700">Showing accounts missing email and/or phone verification.</span></div><button type="button" onClick={()=>setMemberViewFilter('all')} className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-black text-amber-800 hover:bg-amber-100">Show all sign-ups</button></div>}
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
