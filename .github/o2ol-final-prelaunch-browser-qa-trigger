@@ -1,2 +1,3 @@
 deployed_run=37965991747
-purpose=rerun final responsive role-based browser certification after public problem-report fix
+qa_observer_fix=6e8aee37dde19e420ee6f0408250108ba1fad7e1
+purpose=rerun deployed final browser certification with corrected menu and hydration observations
