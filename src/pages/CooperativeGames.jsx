@@ -107,6 +107,7 @@ export default function CooperativeGames() {
 
   const { user } = useAuth();
   const freeMemberAccess = Boolean(user?.id);
+  const temporaryFreeGames = Date.now() <= Date.parse('2026-10-12T04:59:59.999Z');
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
@@ -123,8 +124,8 @@ export default function CooperativeGames() {
       difficulty: 'easy-to-deep',
       icon: '🧠',
       link: 'LikeMinded',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess
     },
     {
       id: 'o2ol_scratch',
@@ -134,8 +135,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '💗',
       link: 'ScratchGame',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess
     },
     {
       id: 'what_should_they_do',
@@ -145,8 +146,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '🗳️',
       link: 'WhatShouldTheyDo',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess
     }
   ];
 
@@ -180,6 +181,13 @@ export default function CooperativeGames() {
           <h1 className="text-5xl font-bold text-gray-900 mb-4">{t.title}</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">{t.subtitle}</p>
         </motion.div>
+
+        {temporaryFreeGames && (
+          <div className="mb-10 rounded-2xl border border-emerald-300 bg-emerald-100 px-5 py-4 text-center shadow-sm">
+            <div className="text-lg font-black text-emerald-950">🎮 ALL GAMES FREE</div>
+            <div className="mt-1 text-sm font-semibold text-emerald-800">Play free through Sunday, October 11 at 11:59 PM Central Time. No Credit used.</div>
+          </div>
+        )}
 
         {games.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mb-12">
