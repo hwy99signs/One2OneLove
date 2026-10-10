@@ -1,13 +1,4 @@
-o2ol-coaching-knowledge-base-phase2-v2-2-live-promotion-2026-10-10
-certified_source=f513eaa128e4da941e061b865a486c705f81a872
-promotion_merge=b01d0960a6416d8b109089d2ff49058a82d6a780
-browser_qa_run=38034614081
-credit_qa_run=38034613937
-production_health_run=38034613998
-production_qa_pass_1=success
-production_qa_pass_2=success
-coaching_kb_version=2026-10-10-v2.2
-coaching_kb_entries=46
-muse_literature_pack_2_ingested=true
-retrieval=local_deterministic
-telemetry=kb_version_and_ids
+o2ol-live-qa-fixes-promotion-2026-10-10
+fix_merge=4fce32db02deb30d663cdae4d616f58eb13319ad
+fixes=credit-banner-copy,public-launch-readiness-minimization
+source_pr=100
