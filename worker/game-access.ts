@@ -112,6 +112,53 @@ async function launchScratch(db,env,auth,input){
     throw error;
   }
 }
+async function activeStandardGamePass(db,userId,game){
+  await db.query(`UPDATE public.o2ol_game_access_passes SET status='expired'
+    WHERE user_id=$1::uuid AND game=$2 AND status='active' AND expires_at<=now()`,[userId,game]);
+  return (await db.query(
+    `SELECT id,game,tokens_charged,started_at,expires_at,metadata
+       FROM public.o2ol_game_access_passes
+      WHERE user_id=$1::uuid AND game=$2 AND status='active' AND expires_at>now()
+      ORDER BY expires_at DESC LIMIT 1`,
+    [userId,game],
+  )).rows[0]||null;
+}
+async function launchStandardGame(db,env,auth,input){
+  await verifiedMember(db,auth.user.id);
+  const game=String(input?.game||'').trim();
+  if(!['what_should_they_do'].includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  const existing=await activeStandardGamePass(db,auth.user.id,game);
+  if(existing)return json({ok:true,pass:existing,reused:true});
+  const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
+  const reservation=await reserveTokenCharge(db,auth.user.id,'premium_game_session',{
+    idempotencyKey:`premium_game:${game}:${auth.user.id}:${requestId}`,
+    metadata:{game,request_id:requestId},
+  });
+  const expiresAt=new Date(Date.now()+120*60*1000);
+  try{
+    const pass=(await db.query(
+      `INSERT INTO public.o2ol_game_access_passes
+       (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata)
+       VALUES($1::uuid,$2,$3::uuid,$4,'active',$5,$6::jsonb)
+       RETURNING id,game,tokens_charged,started_at,expires_at,metadata`,
+      [auth.user.id,game,reservation.transaction?.id||reservation.transaction_id||null,Number(reservation.tokens||0),expiresAt.toISOString(),JSON.stringify({request_id:requestId,access_minutes:120})],
+    )).rows[0];
+    await consumeTokenReservation(db,reservation.id);
+    await recordCostEvent(db,env,{
+      userId:auth.user.id,featureCode:'premium_game_session',provider:'internal',
+      providerProduct:'o2ol_standard_game_session',
+      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+      providerCostMicros:null,customerTokensCharged:Number(reservation.tokens||0),
+      metadata:{game,pass_id:pass.id,access_minutes:120,internal_cost_unallocated:true},
+    }).catch(error=>console.error('Standard game cost telemetry failed',error));
+    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Game Auto-Replenish check failed',error));
+    return json({ok:true,pass,tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+  }catch(error){
+    await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed').catch(()=>{});
+    throw error;
+  }
+}
+
 async function launchLikeMinded(db,env,auth,input){
   await verifiedMember(db,auth.user.id);
   const existing=await activeLikeMindedPass(db,auth.user.id);
@@ -169,6 +216,21 @@ export async function handleGameAccessRequest(request,env,url){
         const input=(request.headers.get('content-type')||'').includes('application/json')
           ? await request.json().catch(()=>({})):{};
         return launchScratch(db,env,auth,input);
+      }
+      if(url.pathname==='/api/games/standard/access'){
+        const game=url.searchParams.get('game')||'';
+        if(request.method==='GET'){
+          await verifiedMember(db,auth.user.id);
+          if(!['what_should_they_do'].includes(game))return fail('This paid game is not available.',400,'game_invalid');
+          const pass=await activeStandardGamePass(db,auth.user.id,game);
+          return json({ok:true,active:Boolean(pass),pass});
+        }
+        if(request.method==='POST'){
+          const input=(request.headers.get('content-type')||'').includes('application/json')
+            ? await request.json().catch(()=>({})):{};
+          return launchStandardGame(db,env,auth,input);
+        }
+        return fail('Method not allowed.',405,'method_not_allowed');
       }
       if(url.pathname==='/api/games/like-minded/access'){
         if(request.method==='GET'){
