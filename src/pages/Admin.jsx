@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { changeMemberTier, getAdminAnalytics, getAdminDashboard, getAdminPresence, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, getAdminPresence, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 import {
   ADMIN_AUTH_REDIRECT,
@@ -464,53 +464,6 @@ export default function Admin() {
     }
   };
 
-  const handleGrantAccessTime = async (member, unit) => {
-    if (member.auth_role === 'admin' || !unit) return;
-
-    let amount = 1;
-    if (unit !== 'unlimited') {
-      const enteredAmount = window.prompt(`How many ${unit} should be added?`, '1');
-      if (enteredAmount === null) return;
-      amount = Number.parseInt(String(enteredAmount), 10);
-      if (!Number.isInteger(amount) || amount < 1 || amount > 10000) {
-        window.alert('Enter a whole number from 1 to 10,000.');
-        return;
-      }
-    } else if (!window.confirm(`Give ${member.email} unlimited membership access?`)) {
-      return;
-    }
-
-    setMemberActionId(member.id);
-    try {
-      await grantMemberAccessTime(member.id, unit, amount);
-      await load(true);
-    } catch (err) {
-      window.alert(err?.message || 'Unable to add access time to this member.');
-    } finally {
-      setMemberActionId(null);
-    }
-  };
-
-  const handleChangeTier = async (member, target) => {
-    if (member.auth_role === 'admin' || !target) return;
-
-    const current = String(member.subscription_plan || 'Premiere');
-    if (target === current) return;
-    const action = target === 'Exclusive' ? 'UPGRADE' : 'DOWNGRADE';
-
-    if (!window.confirm(`${action} ${member.email} from ${current} to ${target}?`)) return;
-
-    setMemberActionId(member.id);
-    try {
-      await changeMemberTier(member.id, target);
-      await load(true);
-    } catch (err) {
-      window.alert(err?.message || `Unable to ${action.toLowerCase()} this member.`);
-    } finally {
-      setMemberActionId(null);
-    }
-  };
-
   const handleBulkMemberAction = async (action) => {
     const selected = (data?.members || []).filter(m => selectedMemberIds.includes(m.id) && m.auth_role !== 'admin');
     if (!selected.length) return;
@@ -877,30 +830,6 @@ export default function Admin() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
-                        <select
-                          disabled={busy}
-                          defaultValue=""
-                          onChange={event=>{const unit=event.target.value;event.target.value='';if(unit)handleGrantAccessTime(m,unit);}}
-                          className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 outline-none disabled:opacity-50"
-                          aria-label={`Add access time for ${m.email}`}
-                        >
-                          <option value="" disabled>Add Time ▾</option>
-                          <option value="hours">Hours…</option>
-                          <option value="days">Days…</option>
-                          <option value="weeks">Weeks…</option>
-                          <option value="unlimited">Unlimited</option>
-                        </select>
-                        <select
-                          disabled={busy}
-                          value={m.subscription_plan==='Registered Free'?'':(m.subscription_plan==='Exclusive'?'Exclusive':'Premiere')}
-                          onChange={event=>{ if(event.target.value) handleChangeTier(m,event.target.value); }}
-                          className="rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-bold text-violet-700 outline-none disabled:opacity-50"
-                          aria-label={`Change membership tier for ${m.email}`}
-                        >
-                          <option value="" disabled>Set tier…</option>
-                          <option value="Premiere">Premiere</option>
-                          <option value="Exclusive">Exclusive</option>
-                        </select>
                         {state==='active' ? <>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
