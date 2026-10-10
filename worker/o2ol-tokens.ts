@@ -63,7 +63,10 @@ async function stripeRequest(env,method,path,body=null,idempotencyKey=null){
   if(idempotencyKey)headers['idempotency-key']=idempotencyKey;
   const response=await fetch('https://api.stripe.com/v1'+path,{method,headers,body:requestBody});
   const payload=await response.json().catch(()=>null);
-  if(!response.ok)throw Object.assign(new Error(payload?.error?.message||'Stripe request failed.'),{status:502,code:payload?.error?.code||'payment_provider_error'});
+  if(!response.ok){
+    console.error('Stripe Credit request failed',{status:response.status,code:payload?.error?.code||'payment_provider_error',type:payload?.error?.type||null});
+    throw Object.assign(new Error('Sorry, payment processing is temporarily unavailable. Please try again in a moment.'),{status:502,code:'payment_provider_error'});
+  }
   return payload;
 }
 async function ensureStripeCustomer(db,env,auth,profile=null){
@@ -144,7 +147,7 @@ export async function reserveTokenCharge(db,userId,featureCode,{idempotencyKey,m
     const balance=Number(wallet?.balance||0);
     if(balance<price.token_cost){
       await db.query('ROLLBACK');
-      throw Object.assign(new Error('Add Credit To Access'),{
+      throw Object.assign(new Error('Add Credit to Unlock'),{
         status:402,
         code:'tokens_required',
         balance,
@@ -221,7 +224,7 @@ export async function reserveCreditCharge(db,userId,featureCode,{amountCents,ide
     const balance=Number(wallet?.balance||0);
     if(balance<amount){
       await db.query('ROLLBACK');
-      throw Object.assign(new Error('Add Credit To Access'),{
+      throw Object.assign(new Error('Add Credit to Unlock'),{
         status:402,
         code:'credit_required',
         balance,
@@ -962,7 +965,7 @@ export async function handleO2OLTokenRequest(request,env,url){
     });
   }catch(error){
     console.error('O2OL token API error',error);
-    return fail(error?.message||'Unable to process token request.',error?.status||500,error?.code||'token_error',{
+    return fail(error?.message||'Sorry, this is not working right now. Please try again in a moment.',error?.status||500,error?.code||'token_error',{
       balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel,
     });
   }
