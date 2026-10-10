@@ -112,8 +112,8 @@ async function stripeRequest(env, method, path, params = null) {
   const response = await fetch(`https://api.stripe.com/v1${path}`, { method, headers, body });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = payload?.error?.message || 'Stripe request failed.';
-    throw Object.assign(new Error(message), { status: 502, code: payload?.error?.code || 'stripe_error' });
+    console.error('Stripe billing request failed', { status: response.status, code: payload?.error?.code || 'payment_provider_error', type: payload?.error?.type || null });
+    throw Object.assign(new Error('Sorry, payment processing is temporarily unavailable. Please try again in a moment.'), { status: 502, code: 'payment_provider_error' });
   }
   return payload;
 }

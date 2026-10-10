@@ -1,7 +1,17 @@
 const JSON_HEADERS = { 'content-type': 'application/json' };
 
+const SENSITIVE_PUBLIC_ERROR = /(?:sk_(?:live|test)_[A-Za-z0-9_-]+|rk_(?:live|test)_[A-Za-z0-9_-]+|whsec_[A-Za-z0-9_-]+|STRIPE_SECRET_KEY|authorization:\s*Bearer|Invalid API key|api\.stripe\.com)/i;
+
+export function sanitizePublicApiError(value, fallback = 'Sorry, this is not working right now. Please try again in a moment.') {
+  const message = typeof value === 'string' ? value.trim() : '';
+  if (!message) return fallback;
+  if (SENSITIVE_PUBLIC_ERROR.test(message)) return fallback;
+  return message;
+}
+
 function extractError(payload, fallback) {
-  return payload?.error?.message || payload?.message || payload?.error || fallback;
+  const raw = payload?.error?.message || payload?.message || payload?.error || fallback;
+  return sanitizePublicApiError(raw, fallback);
 }
 
 function wait(ms) {
@@ -207,5 +217,5 @@ export async function updateProfile(fields) {
 }
 
 export function readableApiError(error, fallback = 'Something went wrong. Please try again.') {
-  return error?.message || fallback;
+  return sanitizePublicApiError(error?.message, fallback);
 }

@@ -213,7 +213,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
                   <Button className="mt-3 w-full bg-gradient-to-r from-purple-600 to-pink-600 font-black">Create FREE Account · Then Unlock with Credit</Button>
                 </Link>
               )}
-              {unlockError&&<div className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-semibold">{unlockError}<Link to="/Credit?return=/PodcastsSupport" onClick={onClose} className="ml-2 font-black underline">Add Credit</Link></div>}
+              {unlockError&&<div className="mt-3 rounded-xl border border-amber-200 bg-white/70 p-3 text-sm font-semibold">{unlockError}<Link to="/Credit?return=/PodcastsSupport" onClick={onClose} className="ml-2 font-black underline">Add Credit to Unlock</Link></div>}
             </div>
           ) : (
             <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-6 hover:opacity-90" disabled={!selectedEpisode || isResolving} onClick={playEpisode}>
