@@ -316,5 +316,38 @@ export async function gameEconomyAdminSummary(db){
     GROUP BY p.id ORDER BY p.created_at DESC`)).rows;
   const perGame=(await db.query(`SELECT promotion_id,game,count(*)::int AS plays FROM public.o2ol_game_access_passes
     WHERE promotion_id IS NOT NULL GROUP BY promotion_id,game`)).rows;
-  return {totals:{issued:Number(totals?.issued||0),used:Number(totals?.used||0),expired:Number(totals?.expired||0),remaining:Number(totals?.remaining||0)},promotions:promotions.map(p=>({...p,players:Number(p.players||0),plays:Number(p.plays||0),perGame:perGame.filter(g=>String(g.promotion_id)===String(p.id)).map(g=>({game:g.game,plays:Number(g.plays||0)}))}))};
+  const followUps=(await db.query(`
+    WITH promo_plays AS (
+      SELECT promotion_id,user_id,min(started_at) AS first_play
+      FROM public.o2ol_game_access_passes
+      WHERE promotion_id IS NOT NULL
+      GROUP BY promotion_id,user_id
+    )
+    SELECT pp.promotion_id,
+      count(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM public.o2ol_game_access_passes later
+        WHERE later.user_id=pp.user_id
+          AND later.started_at>pp.first_play
+          AND later.started_at<=pp.first_play+interval '7 days'
+      ))::int AS returned_within_7_days,
+      count(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM public.o2ol_game_access_passes paid
+        WHERE paid.user_id=pp.user_id
+          AND paid.started_at>pp.first_play
+          AND paid.promotion_id IS NULL
+          AND COALESCE(paid.credit_cents,0)>0
+      ))::int AS became_paying_players
+    FROM promo_plays pp GROUP BY pp.promotion_id
+  `)).rows;
+  return {
+    totals:{issued:Number(totals?.issued||0),used:Number(totals?.used||0),expired:Number(totals?.expired||0),remaining:Number(totals?.remaining||0)},
+    promotions:promotions.map(p=>{
+      const follow=followUps.find(f=>String(f.promotion_id)===String(p.id))||{};
+      return {...p,players:Number(p.players||0),plays:Number(p.plays||0),
+        returnedWithin7Days:Number(follow.returned_within_7_days||0),
+        becamePayingPlayers:Number(follow.became_paying_players||0),
+        perGame:perGame.filter(g=>String(g.promotion_id)===String(p.id)).map(g=>({game:g.game,plays:Number(g.plays||0)}))
+      };
+    })
+  };
 }
