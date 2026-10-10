@@ -1443,7 +1443,7 @@ export default function LoveNotes() {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">Credit Balance</div>
                   <div className="mt-2 text-3xl font-black text-purple-600">{formatCredit(tokenBalance)}</div>
-                  <Link to="/Credit?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Add Credit</Link>
+                  <Link to="/Credit?return=/LoveNotes" className="mt-2 inline-flex text-xs font-black text-purple-700 hover:underline">Add Credit to Unlock</Link>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="text-sm font-semibold text-gray-700">One2OneLove SMS</div>
@@ -1775,7 +1775,7 @@ export default function LoveNotes() {
                 >
                   <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                     <Coins className="mr-2 h-4 w-4" />
-                    {currentUser ? 'Add Credit To Send' : openHouseCopy.unlock}
+                    {currentUser ? 'Add Credit to Unlock' : openHouseCopy.unlock}
                   </Button>
                 </Link>
                 <Link to="/SignIn" onClick={() => setShowOpenHouseLock(false)}>
