@@ -1,9 +1,10 @@
-o2ol-health-database-ready-live-promotion-2026-10-09
-certified_source=3863cf506569911fc848af5039042d5c4d367a68
-promotion_merge=17dde4fa2ec5bd071c2b97953f5c9a68a90c494f
-production_two_pass_actions=38019592656
+o2ol-bianca-amora-tiered-replies-live-promotion-2026-10-10
+certified_source=60ed35fc06696ddc75490f7e950fa7695282a901
+promotion_merge=89ae63868b573b3d5daf6f2c12eb52d6c3c7a32e
+browser_qa_run=38031567334
+credit_qa_run=38031567318
+production_health_run=38031567338
 production_qa_pass_1=success
 production_qa_pass_2=success
-real_database_ready=success
-rollback_branch=rollback/o2ol-live-before-health-database-ready-20261009
-epscie_fault=a1b7a6c9-a650-452c-af29-a93dc5bd9e4a
+bianca_amora_prices=short_10_medium_15_long_20
+response_lengths=short_50_100_medium_150_250_long_300_400
