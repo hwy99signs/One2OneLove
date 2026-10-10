@@ -56,6 +56,8 @@ import MyMatchIQ from './MyMatchIQ';
 import MyMatchIQAssessment from './MyMatchIQAssessment';
 import MyMatchIQBianca from './MyMatchIQBianca';
 import Credit from './Credit';
+import FeaturePricing from './FeaturePricing';
+import PaidFeatureGate from '@/components/pricing/PaidFeatureGate';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
@@ -75,7 +77,7 @@ const PAGES = {
   CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
-  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, Credit, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, Episodes: O2OLStudioEpisodes,
+  Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, Credit, FeaturePricing, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, Episodes: O2OLStudioEpisodes,
 };
 
 function _getCurrentPage(url) {
@@ -115,7 +117,7 @@ function PagesContent() {
           <Route path="/Admin" element={<AdminMfaGate><Admin /></AdminMfaGate>} />
           <Route path="/Analytics" element={<AdminMfaGate><Analytics /></AdminMfaGate>} />
           <Route path="/TokenSystemDashboard" element={<AdminMfaGate><TokenSystemDashboard /></AdminMfaGate>} />
-          <Route path="/MemoryLane" element={<MemoryLane />} />
+          <Route path="/MemoryLane" element={<PaidFeatureGate featureCode="memories_unlock"><MemoryLane /></PaidFeatureGate>} />
           <Route path="/LoveNotes" element={<LoveNotes />} />
           <Route path="/SendCredits" element={<SendCredits />} />
           <Route path="/CoupleSupport" element={<CoupleSupport />} />
@@ -130,8 +132,8 @@ function PagesContent() {
           <Route path="/ForgotPassword" element={<ForgotPassword />} />
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/Community" element={<Chat />} />
-          <Route path="/RelationshipMilestones" element={<RelationshipMilestones />} />
-          <Route path="/RelationshipGoals" element={<RelationshipGoals />} />
+          <Route path="/RelationshipMilestones" element={<PaidFeatureGate featureCode="milestones_unlock"><RelationshipMilestones /></PaidFeatureGate>} />
+          <Route path="/RelationshipGoals" element={<PaidFeatureGate featureCode="goals_unlock"><RelationshipGoals /></PaidFeatureGate>} />
           <Route path="/CommunicationPractice" element={<CommunicationPractice />} />
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
@@ -140,9 +142,9 @@ function PagesContent() {
           <Route path="/Games" element={<WhatShouldTheyDo />} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/LikeMinded" element={<LikeMinded />} />
-          <Route path="/SharedJournals" element={<SharedJournals />} />
+          <Route path="/SharedJournals" element={<PaidFeatureGate featureCode="journals_unlock"><SharedJournals /></PaidFeatureGate>} />
           <Route path="/CouplesDashboard" element={<CouplesDashboard />} />
-          <Route path="/CouplesCalendar" element={<CouplesCalendar />} />
+          <Route path="/CouplesCalendar" element={<PaidFeatureGate featureCode="calendar_unlock"><CouplesCalendar /></PaidFeatureGate>} />
           <Route path="/LGBTQSupport" element={<LGBTQSupport />} />
           <Route path="/HelpCenter" element={<HelpCenter />} />
           <Route path="/ContactUs" element={<ContactUs />} />
@@ -173,6 +175,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
           <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Credit?source=mymatchiq" replace />} />
           <Route path="/Credit" element={<Credit />} />
+          <Route path="/FeaturePricing" element={<FeaturePricing />} />
           <Route path="/MyMatchIQ/Actions" element={<MyMatchIQWorkspace page="actions" />} />
           <Route path="/MyMatchIQ/Dashboard" element={<MyMatchIQWorkspace page="dashboard" />} />
           <Route path="/MyMatchIQ/Invite" element={<MyMatchIQWorkspace page="invite" />} />
