@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {Coins,CreditCard,RefreshCw,ShieldCheck,Play,Square,ArrowLeft,CheckCircle2} from 'lucide-react';
+import {Coins,CreditCard,RefreshCw,ShieldCheck,Play,Square,ArrowLeft,CheckCircle2,Phone} from 'lucide-react';
 import {Link,useSearchParams} from 'react-router-dom';
 import {toast} from 'sonner';
 import {useAuth} from '@/contexts/AuthContext';
@@ -7,7 +7,8 @@ import {useLanguage} from '@/Layout';
 import {createPageUrl} from '@/utils';
 import {
   getTokenWallet,startTokenCheckout,confirmTokenCheckout,startPaymentMethodSetup,
-  confirmPaymentMethodSetup,updateAutoReplenish,startCostCalibration,endCostCalibration,getCalibrationHistory
+  confirmPaymentMethodSetup,updateAutoReplenish,startCostCalibration,endCostCalibration,getCalibrationHistory,
+  isPhoneVerificationError
 } from '@/lib/tokenService';
 
 const COPY={
@@ -26,6 +27,14 @@ const CUSTOM_COPY={
  de:{title:'Eigener Betrag',hint:'Gib einen Betrag von $1 bis $1.000 ein.',amount:'Betrag ($)',button:'Credit Hinzufügen',invalid:'Gib einen Betrag zwischen $1,00 und $1.000,00 ein.'}
 };
 
+const GATE_COPY={
+ en:{verifyTitle:'Verify Your Phone to Add Credit',verifyBody:'Buying Credit requires a verified phone number. Verify yours and you will come straight back here — your balance and the Credit packs will be waiting.',verifyButton:'Verify My Phone',failTitle:'Your Credit wallet could not be loaded',failBody:'Nothing was charged. Please try again.',retryButton:'Try Again'},
+ es:{verifyTitle:'Verifica Tu Teléfono para Agregar Crédito',verifyBody:'Comprar Crédito requiere un número de teléfono verificado. Verifica el tuyo y volverás aquí enseguida: tu saldo y los paquetes de Crédito estarán esperando.',verifyButton:'Verificar Mi Teléfono',failTitle:'No se pudo cargar tu billetera de Crédito',failBody:'No se realizó ningún cargo. Inténtalo de nuevo.',retryButton:'Intentar de Nuevo'},
+ fr:{verifyTitle:'Vérifiez Votre Téléphone pour Ajouter du Crédit',verifyBody:'L’achat de Crédit exige un numéro de téléphone vérifié. Vérifiez le vôtre et vous reviendrez ici aussitôt : votre solde et les forfaits de Crédit vous y attendront.',verifyButton:'Vérifier Mon Téléphone',failTitle:'Votre portefeuille de Crédit n’a pas pu être chargé',failBody:'Aucun débit n’a été effectué. Réessayez.',retryButton:'Réessayer'},
+ it:{verifyTitle:'Verifica il Tuo Telefono per Aggiungere Credito',verifyBody:'Per acquistare Credito serve un numero di telefono verificato. Verifica il tuo e tornerai subito qui: il tuo saldo e i pacchetti di Credito ti aspetteranno.',verifyButton:'Verifica il Mio Telefono',failTitle:'Impossibile caricare il tuo portafoglio di Credito',failBody:'Non è stato addebitato nulla. Riprova.',retryButton:'Riprova'},
+ de:{verifyTitle:'Telefon Bestätigen, um Credit Hinzuzufügen',verifyBody:'Für den Kauf von Credit ist eine bestätigte Telefonnummer erforderlich. Bestätigen Sie Ihre Nummer und Sie gelangen sofort hierher zurück — Ihr Guthaben und die Credit-Pakete warten auf Sie.',verifyButton:'Mein Telefon Bestätigen',failTitle:'Ihr Credit-Guthaben konnte nicht geladen werden',failBody:'Es wurde nichts berechnet. Bitte versuchen Sie es erneut.',retryButton:'Erneut Versuchen'}
+};
+
 function money(cents){return '$'+(Number(cents||0)/100).toFixed(2);}
 function signedMoney(cents){const v=Number(cents||0);return (v<0?'-':'+')+money(Math.abs(v));}
 function micros(value){return '$'+(Number(value||0)/1000000).toFixed(6);}
@@ -41,6 +50,11 @@ export default function Credit(){
  const t=COPY[currentLanguage]||COPY.en;
  const customText=CUSTOM_COPY[currentLanguage]||CUSTOM_COPY.en;
  const [state,setState]=useState(null);
+ const [loadError,setLoadError]=useState(null);
+ const gateText=GATE_COPY[currentLanguage]||GATE_COPY.en;
+ const verifyPhoneUrl=`/VerifyPhone?redirect=${encodeURIComponent('/Credit')}`;
+ const goVerifyPhone=()=>{window.location.assign(verifyPhoneUrl);};
+ const handleGateError=(e,fallback)=>{if(isPhoneVerificationError(e)){goVerifyPhone();return;}toast.error(e?.message||fallback);};
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState('');
  const [trigger,setTrigger]=useState('5');
@@ -61,13 +75,13 @@ export default function Credit(){
  const refresh=async()=>{
   if(!isAuthenticated){setLoading(false);return;}
   try{
-   const data=await getTokenWallet();setState(data);
+   const data=await getTokenWallet();setState(data);setLoadError(null);
    setTrigger(String(Number(data?.settings?.trigger_balance??500)/100));
    setCap(data?.settings?.monthly_cap_cents==null?'':String(Number(data.settings.monthly_cap_cents)/100));
    setAutoPackage(data?.settings?.package_code||'credit_10');
    setAutoEnabled(Boolean(data?.settings?.enabled));
    setAutoConsent(Boolean(data?.settings?.consent_at));
-  }catch(e){toast.error(e?.message||'Unable to load Credit wallet.');}
+  }catch(e){setLoadError(e);if(state)toast.error(e?.message||'Unable to load Credit wallet.');}
   finally{setLoading(false);}
  };
 
@@ -96,7 +110,7 @@ export default function Credit(){
  const buy=async(code)=>{
   setBusy(code);
   try{const data=await startTokenCheckout(code,returnTo);if(data?.checkout?.url)window.location.assign(data.checkout.url);}
-  catch(e){toast.error(e?.message||'Unable to open checkout.');setBusy('');}
+  catch(e){handleGateError(e,'Unable to open checkout.');setBusy('');}
  };
  const buyCustom=async()=>{
   const dollars=Number(customAmount);
@@ -104,12 +118,12 @@ export default function Credit(){
   if(!Number.isFinite(dollars)||cents<100||cents>100000){toast.error(customText.invalid);return;}
   setBusy('custom_credit');
   try{const data=await startTokenCheckout('custom_credit',returnTo,cents);if(data?.checkout?.url)window.location.assign(data.checkout.url);}
-  catch(e){toast.error(e?.message||'Unable to open checkout.');setBusy('');}
+  catch(e){handleGateError(e,'Unable to open checkout.');setBusy('');}
  };
  const setupCard=async()=>{
   setBusy('card');
   try{const data=await startPaymentMethodSetup();if(data?.checkout?.url)window.location.assign(data.checkout.url);}
-  catch(e){toast.error(e?.message||'Unable to set up card.');setBusy('');}
+  catch(e){handleGateError(e,'Unable to set up card.');setBusy('');}
  };
  const saveAuto=async()=>{
   if(autoEnabled&&!autoConsent&&!state?.settings?.consent_at){toast.error(t.consentRequired);return;}
@@ -124,7 +138,7 @@ export default function Credit(){
    });
    toast.success(t.saved);await refresh();
   }
-  catch(e){toast.error(e?.message||'Unable to save Auto-Replenish.');}
+  catch(e){handleGateError(e,'Unable to save Auto-Replenish.');}
   finally{setBusy('');}
  };
  const startCalibration=async()=>{
@@ -143,6 +157,13 @@ export default function Credit(){
 
  if(!isAuthenticated)return <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-rose-50 px-4 py-12"><div className="mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-xl"><Coins className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.title}</h1><p className="mt-3 text-slate-600">{t.signed}</p><div className="mt-6 flex flex-wrap justify-center gap-3"><Link to={`/SignUp?source=buy-credit&feature=credit&return=${encodeURIComponent(returnTo)}`} className="inline-flex rounded-2xl bg-slate-950 px-6 py-3 font-black text-white">Create FREE Account</Link><Link to={`/SignIn?source=buy-credit&redirect=${encodeURIComponent(returnTo)}`} className="inline-flex rounded-2xl border-2 border-slate-300 bg-white px-6 py-3 font-black text-slate-800">Sign In</Link></div></div></main>;
  if(loading)return <div className="min-h-[60vh] grid place-items-center font-bold text-slate-500">{t.loading}</div>;
+ if(!state){
+  // The wallet did not load. Never dress up empty defaults as a real wallet
+  // (a $0.00 "balance", missing packs and a dead checkout button). A phone
+  // verification failure gets the verification door; anything else gets a retry.
+  if(isPhoneVerificationError(loadError))return <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-rose-50 px-4 py-12"><div className="mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-xl"><Phone className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{gateText.verifyTitle}</h1><p className="mt-3 text-slate-600">{gateText.verifyBody}</p><button onClick={goVerifyPhone} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-3 font-black text-white">{gateText.verifyButton}</button></div></main>;
+  return <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-rose-50 px-4 py-12"><div className="mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-xl"><Coins className="mx-auto h-12 w-12 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{gateText.failTitle}</h1><p className="mt-3 text-slate-600">{gateText.failBody}</p><button onClick={()=>{setLoading(true);refresh();}} className="mt-6 inline-flex rounded-2xl bg-slate-950 px-6 py-3 font-black text-white">{gateText.retryButton}</button></div></main>;
+ }
 
  return <main className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-rose-50 px-4 py-8">
   <div className="mx-auto max-w-6xl">
