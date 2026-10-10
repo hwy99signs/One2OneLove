@@ -9,10 +9,19 @@ import { createPageUrl } from "@/utils";
 const difficultyColors = {
   easy: 'bg-green-600 text-white',
   'easy-to-deep': 'bg-violet-600 text-white',
+  'easy-to-difficult': 'bg-orange-600 text-white',
   medium: 'bg-amber-500 text-white',
   hard: 'bg-red-600 text-white'
 };
 const difficultyColor = (d) => difficultyColors[d] || 'bg-slate-900/85 text-white';
+const difficultyLabels = {
+  easy: 'Easy',
+  medium: 'Medium',
+  hard: 'Hard',
+  'easy-to-deep': 'Easy to Deep',
+  'easy-to-difficult': 'Easy - Difficult'
+};
+const difficultyLabel = (d) => difficultyLabels[d] || d;
 
 export default function GameCard({ game, index }) {
   return (
@@ -25,8 +34,8 @@ export default function GameCard({ game, index }) {
         {game.image ? (<>
           <div className="relative">
             <img src={game.image} alt={game.name} loading="lazy" className="block aspect-[1663/946] w-full object-cover" />
-            <span className={`absolute right-3 top-3 px-3 py-1 rounded-full text-xs font-semibold capitalize shadow ${difficultyColor(game.difficulty)}`}>
-              {game.difficulty}
+            <span className={`absolute right-3 top-3 px-3 py-1 rounded-full text-xs font-semibold shadow ${difficultyColor(game.difficulty)}`}>
+              {difficultyLabel(game.difficulty)}
             </span>
           </div>
           <CardHeader className="pb-0 pt-4">
@@ -36,8 +45,8 @@ export default function GameCard({ game, index }) {
         <CardHeader>
           <div className="flex items-start justify-between mb-3">
             <div className="text-4xl">{game.icon}</div>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${difficultyColor(game.difficulty)}`}>
-              {game.difficulty}
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${difficultyColor(game.difficulty)}`}>
+              {difficultyLabel(game.difficulty)}
             </span>
           </div>
           <CardTitle className="text-xl">{game.name}</CardTitle>

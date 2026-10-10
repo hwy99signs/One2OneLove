@@ -174,7 +174,7 @@ export default function CooperativeGames() {
       name: t.pestsName,
       description: t.pestsDesc,
       type: 'arcade',
-      difficulty: 'easy',
+      difficulty: 'easy-to-difficult',
       icon: '🐜',
       link: 'Pests',
       playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
