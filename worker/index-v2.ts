@@ -185,6 +185,20 @@ export default {
       if (response) return response;
     }
 
+    // Serve SPA shell explicitly for legal and problem-report routes.
+    if (['/privacypolicy','/termsofservice','/suggestions'].includes(url.pathname.toLowerCase())) {
+      if (request.method !== 'GET' && request.method !== 'HEAD')
+        return new Response('Method Not Allowed', { status: 405 });
+      const root = new URL('/', url);
+      const page = await env.ASSETS.fetch(new Request(root.toString(), { method: 'GET' }));
+      if (!page.ok || !(page.headers.get('content-type')||'').includes('text/html'))
+        return new Response('Application shell unavailable', { status: 503 });
+      const headers = new Headers(page.headers);
+      headers.set('cache-control', 'no-store');
+      headers.delete('content-length');
+      return new Response(request.method === 'HEAD' ? null : page.body, { status: 200, headers });
+    }
+
     const socialPage = await socialPageResponse(request, env, url);
     if (socialPage) return socialPage;
 
