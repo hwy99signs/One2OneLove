@@ -42,7 +42,10 @@ export default function GameCard({ game, index }) {
         </CardHeader>)}
         <CardContent>
           <p className="text-gray-600 mb-4">{game.description}</p>
-          {game.accessLabel && <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-violet-700"><LockKeyhole className="h-3.5 w-3.5"/>{game.accessLabel}</div>}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {game.accessLabel && <div className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-violet-700"><LockKeyhole className="h-3.5 w-3.5"/>{game.accessLabel}</div>}
+            {game.priceLabel && <div className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${game.priceCents===0?'bg-emerald-100 text-emerald-800':'bg-slate-100 text-slate-700'}`}>{game.priceLabel}</div>}
+          </div>
           {game.href ? (
             <a href={game.href}>
               <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
