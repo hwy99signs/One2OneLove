@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
+import ClickToVoteCard from '../components/voting/ClickToVoteCard';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
@@ -100,7 +101,6 @@ export default function Home() {
   const studioE2 = STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en;
   const studioTabs = STUDIO_TABS_COPY[currentLanguage] || STUDIO_TABS_COPY.en;
   const [studioTab, setStudioTab] = useState('new');
-  const openHouse = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
   const amora = AMORA_COPY[currentLanguage] || AMORA_COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
   const [publicStats, setPublicStats] = useState(null);
@@ -126,19 +126,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
-      <section className="border-b border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-amber-50 px-4 py-6 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-3xl border-2 border-cyan-300 bg-white/95 p-5 text-center shadow-lg sm:p-7 lg:flex-row lg:items-center lg:justify-between lg:text-left">
-          <div className="min-w-0">
-            <div className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700 sm:text-sm">{openHouse.eyebrow}</div>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{openHouse.title}</h1>
-            <p className="mx-auto mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base lg:mx-0">{openHouse.body}</p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:justify-center">
-            <button type="button" data-analytics-id="home-open-house-explore-tools" onClick={()=>document.getElementById('open-house-tools')?.scrollIntoView({behavior:'smooth',block:'start'})} className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-black text-white shadow-md transition hover:brightness-105">{openHouse.explore}</button>
-            <button type="button" data-analytics-id="home-open-house-o2ol-studio" data-analytics-destination="/O2OLStudio" onClick={()=>navigate('/O2OLStudio')} className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 shadow-sm transition hover:bg-slate-50">{openHouse.studio}</button>
-          </div>
-        </div>
-      </section>
+      {/* Click-to-Vote (owner order, 2026-10-10): replaces the expired Open
+          House banner at the top of the homepage — half the height, light
+          translucent burgundy, one tap is a vote. */}
+      <ClickToVoteCard language={currentLanguage} />
       <section className="relative flex min-h-[900px] items-end justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
         <div className="absolute inset-0 bg-black/10"/>
         <div className="relative z-10 mx-auto max-w-5xl px-6 pb-8 pt-8 text-center text-white">
