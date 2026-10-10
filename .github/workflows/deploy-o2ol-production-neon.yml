@@ -136,7 +136,8 @@ jobs:
           grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts >/dev/null
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts >/dev/null
           grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx >/dev/null
-          grep -F "/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4" src/pages/Home.jsx >/dev/null
+          grep -F "const STUDIO_VIDEO" src/pages/Home.jsx >/dev/null
+          grep -Eq "const STUDIO_VIDEO = .*/studio-media/(season-1-episode-2\\.mp4|season-1/episode-2-who-pays-for-the-first-date\\.mp4)" src/pages/Home.jsx
           grep -F 'data-analytics-destination="/O2OLStudio?episode=season-1-episode-1"' src/pages/Home.jsx >/dev/null
           grep -F "Watch Episode 1" src/pages/Home.jsx >/dev/null
           grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx >/dev/null
@@ -367,7 +368,7 @@ jobs:
             for attempt in $(seq 1 24); do
               CODE=$(curl -sS --max-time 20 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || true)
               echo "$BASE/api/health attempt $attempt -> $CODE"
-              if [ "$CODE" = "200" ] && jq -e '.ok == true and .app == "one2onelove" and .environment == "production" and .production == true' /tmp/health.json >/dev/null 2>&1; then
+              if [ "$CODE" = "200" ] && jq -e '.ok == true and .app == "one2onelove" and .environment == "production" and .production == true and .database_ready == true' /tmp/health.json >/dev/null 2>&1; then
                 PASS=yes
                 break
               fi
