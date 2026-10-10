@@ -76,6 +76,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
     return () => { active = false; };
   }, [podcast?.id, user?.id]);
 
+  const orderedEpisodes = [...(podcast?.episodes || [])].sort((a,b)=>Number(a?.tokenLocked===true)-Number(b?.tokenLocked===true));
   const selectedEpisode = podcast?.episodes?.find((episode) => episode.id === selectedEpisodeId) || null;
   const selectedIsMature = isMatureEpisode(selectedEpisode);
   const selectedUnlockKey = podcast && selectedEpisode ? `${podcast.id}:${selectedEpisode.id}` : "";
@@ -191,9 +192,9 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
               }}
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
             >
-              {podcast.episodes.map((episode) => (
+              {orderedEpisodes.map((episode) => (
                 <option key={episode.id} value={episode.id}>
-                  {isMatureEpisode(episode) ? "18+ • " : ""}{episode.title}{episode.date ? ` — ${formatEpisodeDate(episode.date, locale)}` : ""}
+                  {isMatureEpisode(episode) ? "18+ • " : ""}{episode.tokenLocked === true ? "🔒 " : "FREE • "}{episode.title}{episode.date ? ` — ${formatEpisodeDate(episode.date, locale)}` : ""}
                 </option>
               ))}
             </select>
