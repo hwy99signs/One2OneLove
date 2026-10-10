@@ -5,7 +5,7 @@ import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
-const STUDIO_VIDEO = '/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4';
+const STUDIO_VIDEO = '/studio-media/season-1-episode-2.mp4';
 const MYMATCHIQ_LABELS = { en: 'Compatibility Test', es: 'Prueba de Compatibilidad', fr: 'Test de Compatibilité', it: 'Test di Compatibilità', de: 'Kompatibilitätstest' };
 const OPEN_HOUSE_COPY = {
   en:{eyebrow:'LIMITED-TIME ONE2ONELOVE OPEN HOUSE',title:'Explore One2OneLove FREE',body:'No account is required to browse. Look around first; create an account only when you want to save, post, or use protected member features.',explore:'Explore Free Tools',studio:'Watch O2OL Studio'},
@@ -24,11 +24,11 @@ const AMORA_COPY = {
 };
 
 const STUDIO_COPY = {
-  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation and explore a real relationship question from more than one point of view.',watch:'Watch Episode 1'},
-  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la conversación más reciente de O2OL Studio y explora una pregunta real de relación desde más de un punto de vista.',watch:'Ver Episodio 1'},
-  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez la conversation O2OL Studio la plus récente et explorez une vraie question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 1'},
-  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda la conversazione O2OL Studio più recente ed esplora una vera domanda relazionale da più punti di vista.',watch:'Guarda Episodio 1'},
-  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 2',title:'Wer bezahlt beim ersten Date?',body:'Sieh dir das neueste O2OL-Studio-Gespräch an und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 Ansehen'}
+  en:{eyebrow:'O2OL STUDIO SHOW',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'Watch the latest O2OL Studio conversation and explore a real relationship question from more than one point of view.',watch:'Watch Episode 2'},
+  es:{eyebrow:'O2OL STUDIO SHOW',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'Mira la conversación más reciente de O2OL Studio y explora una pregunta real de relación desde más de un punto de vista.',watch:'Ver Episodio 2'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'Regardez la conversation O2OL Studio la plus récente et explorez une vraie question relationnelle sous plusieurs angles.',watch:'Voir l’Épisode 2'},
+  it:{eyebrow:'O2OL STUDIO SHOW',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'Guarda la conversazione O2OL Studio più recente ed esplora una vera domanda relazionale da più punti di vista.',watch:'Guarda Episodio 2'},
+  de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 2',title:'Wer bezahlt beim ersten Date?',body:'Sieh dir das neueste O2OL-Studio-Gespräch an und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 2 Ansehen'}
 };
 
 const COPY = {
