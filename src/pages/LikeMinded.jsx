@@ -661,7 +661,6 @@ export default function LikeMinded() {
       <div className="min-h-screen bg-[#f8f5ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mb-6 block w-full rounded-[24px] shadow-lg ring-1 ring-black/5" />
           <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl sm:p-8">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -918,6 +917,7 @@ export default function LikeMinded() {
         </div>
 
         <div className="flex flex-1 flex-col px-3 pb-5 pt-12 sm:px-5 sm:pb-7 sm:pt-16">
+          <div className="mx-auto w-full max-w-3xl"><img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mb-7 block w-full rounded-[24px] shadow-2xl ring-1 ring-white/15" /></div>
           <div className="mx-auto w-full max-w-5xl text-center">
             <h1 className="text-[31px] font-black leading-[1.08] tracking-tight text-white sm:text-4xl">
               {t.tagline.split('. ').map((part,i,arr) => (
@@ -947,7 +947,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':gamePromotion?.free?'🎉 FREE through Sunday · No Credit used':`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
             </div>
           </div>
 
