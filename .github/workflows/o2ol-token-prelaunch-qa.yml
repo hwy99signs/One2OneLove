@@ -527,7 +527,7 @@ jobs:
           grep -F '"SCHEDULED_SMS_ENABLED": "false"' "$DEPLOY"
           grep -F "TOKEN_MEDIA_BUCKET: one2onelove-token-prelaunch-media" "$DEPLOY"
           grep -F '"bucket_name": "$TOKEN_MEDIA_BUCKET"' "$DEPLOY"
-          grep -F "environment:prelaunch?'token-prelaunch':'production'" worker/index-v2.ts
+          grep -F "environment: prelaunch ? 'token-prelaunch' : 'production'" worker/health-response.js
           if grep -F "o2ol-password-reset-preview" "$DEPLOY"; then
             echo "Stale preview checkout branch remains in functional deploy." >&2
             exit 1
