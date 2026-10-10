@@ -1,0 +1,25 @@
+name: O2OL Health Endpoint Repair Certification
+on:
+  push:
+    branches:
+      - fix/o2ol-health-database-ready-20261009
+  pull_request:
+    paths:
+      - worker/index-v2.ts
+      - worker/health-response.js
+      - tests/health-database-ready.test.js
+permissions:
+  contents: read
+jobs:
+  health-certification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/health-database-ready.test.js
+      - run: npm ci
+      - run: npm run build
+      - run: npm --prefix worker install --no-audit --no-fund
+      - run: npx wrangler deploy --dry-run --config cloudflare/wrangler.production.jsonc

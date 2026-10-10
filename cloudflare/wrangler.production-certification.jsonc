@@ -1,26 +1,33 @@
 {
   "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
-  "name": "one2onelove-launch",
+  "name": "one2onelove-production-cert-20261009",
   "main": "../worker/index-v2.ts",
   "compatibility_date": "2026-09-11",
-  "compatibility_flags": ["nodejs_compat"],
-  "workers_dev": true,
-  "preview_urls": true,
-  "routes": [
-    {
-      "pattern": "one2onelove.com/*",
-      "zone_name": "one2onelove.com"
-    },
-    {
-      "pattern": "www.one2onelove.com/*",
-      "zone_name": "one2onelove.com"
-    }
+  "compatibility_flags": [
+    "nodejs_compat"
   ],
+  "workers_dev": true,
+  "preview_urls": false,
   "assets": {
     "directory": "../dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/studio-media/*", "/", "/Home", "/LoveNotes", "/DateIdeas", "/LGBTQSupport", "/CoupleSupport", "/PodcastsSupport", "/Professionals", "/O2OLStudio", "/PrivacyPolicy", "/TermsOfService", "/Suggestions"]
+    "run_worker_first": [
+      "/api/*",
+      "/studio-media/*",
+      "/",
+      "/Home",
+      "/LoveNotes",
+      "/DateIdeas",
+      "/LGBTQSupport",
+      "/CoupleSupport",
+      "/PodcastsSupport",
+      "/Professionals",
+      "/O2OLStudio",
+      "/PrivacyPolicy",
+      "/TermsOfService",
+      "/Suggestions"
+    ]
   },
   "vars": {
     "NEON_AUTH_BASE_URL": "https://ep-shiny-truth-ar740o0s.neonauth.c-4.us-west-2.aws.neon.tech/one2onelove/auth",
@@ -28,7 +35,10 @@
     "STRIPE_PRICE_EXCLUSIVE": "price_1UFUSKCoKDheG1ASG5zk97Ph",
     "SCHEDULED_SMS_ENABLED": "false",
     "ANALYTICS_BASELINE_AT": "2026-09-27T04:46:04.000Z",
-    "CLOUDFLARE_ZONE_ID": "449881ec0e315b87e822418a09714875"
+    "CLOUDFLARE_ZONE_ID": "449881ec0e315b87e822418a09714875",
+    "O2OL_EPSCIE_SITE_ENABLED": "false",
+    "O2OL_EPSCIE_ADMIN_ENABLED": "false",
+    "PRODUCTION_CERTIFICATION": "true"
   },
   "hyperdrive": [
     {
@@ -36,9 +46,6 @@
       "id": "ef44564dbfca4e1bb13176ee568aaddf"
     }
   ],
-  "triggers": {
-    "crons": ["* * * * *"]
-  },
   "r2_buckets": [
     {
       "binding": "MEDIA",

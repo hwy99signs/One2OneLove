@@ -1,5 +1,6 @@
 // @ts-nocheck
 import baseWorker from './index';
+import { withDatabaseHealth } from './health-response.js';
 import { sendProductionSiteHealth,handlePrivateAdminHealth } from './epscie-health';
 import { handleAdminRequest } from './admin';
 import { handleTokenAdminRequest } from './token-admin';
@@ -176,26 +177,26 @@ export default {
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
     if (url.pathname === '/api/health') {
-      const prelaunch = String(env.PRELAUNCH_ENVIRONMENT || '').toLowerCase() === 'true';
-      return new Response(JSON.stringify({
-        ok:true,
-        app:'one2onelove',
-        environment:prelaunch?'token-prelaunch':'production',
-        production:!prelaunch,
-        accessModel:'free_tokens',
-      }), {
-        status:200,
-        headers:{
-          'content-type':'application/json; charset=utf-8',
-          'cache-control':'no-store',
-          'x-content-type-options':'nosniff',
-        },
-      });
+      return withDatabaseHealth(request, env, (req, bindings) => baseWorker.fetch(req, bindings));
     }
 
     if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
       const response = await handleStudioMediaRequest(request, env, url);
       if (response) return response;
+    }
+
+    // Serve SPA shell explicitly for legal and problem-report routes.
+    if (['/privacypolicy','/termsofservice','/suggestions'].includes(url.pathname.toLowerCase())) {
+      if (request.method !== 'GET' && request.method !== 'HEAD')
+        return new Response('Method Not Allowed', { status: 405 });
+      const root = new URL('/', url);
+      const page = await env.ASSETS.fetch(new Request(root.toString(), { method: 'GET' }));
+      if (!page.ok || !(page.headers.get('content-type')||'').includes('text/html'))
+        return new Response('Application shell unavailable', { status: 503 });
+      const headers = new Headers(page.headers);
+      headers.set('cache-control', 'no-store');
+      headers.delete('content-length');
+      return new Response(request.method === 'HEAD' ? null : page.body, { status: 200, headers });
     }
 
     const socialPage = await socialPageResponse(request, env, url);

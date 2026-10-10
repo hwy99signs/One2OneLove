@@ -11,11 +11,15 @@ permissions:
 jobs:
   browser-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       PREVIEW_URL: https://one2onelove-token-prelaunch.hwy99signs.workers.dev
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -36,10 +40,69 @@ jobs:
         run: |
           set -euo pipefail
           node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/o2ol-candidate-browser-qa.txt
+      - name: Validate isolated production certification config
+        run: |
+          node --input-type=module -e "import fs from 'node:fs';const c=JSON.parse(fs.readFileSync('cloudflare/wrangler.production-certification.jsonc','utf8'));if(c.name!=='one2onelove-production-cert-20261009'||c.routes||c.triggers||c.vars?.PRELAUNCH_ENVIRONMENT==='true')process.exit(1)"
+      - name: Deploy production certification Worker without LIVE routes
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$CLOUDFLARE_API_TOKEN"
+          npm --prefix worker install --no-audit --no-fund
+          npx wrangler deploy --config cloudflare/wrangler.production-certification.jsonc
+      - name: Verify genuine production database health
+        env:
+          HEALTH_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev/api/health
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            CODE=$(curl -sS -o /tmp/o2ol-prod-cert-health.json -w '%{http_code}' --max-time 20 "$HEALTH_URL" || true)
+            if [ "$CODE" = 200 ] && jq -e '.database_ready==true and .ok==true and .environment=="production" and .production==true' /tmp/o2ol-prod-cert-health.json >/dev/null; then
+              echo "DB health validated"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Production DB health qualification failed"
+          exit 1
+      - name: Require propagated production frontend assets matching certified source
+        env:
+          CERT_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
+        run: |
+          set -euo pipefail
+          grep -F "watch:'Watch Episode 1'" src/pages/Home.jsx >/dev/null
+          for attempt in $(seq 1 18); do
+            HTML=$(curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL/?release=$GITHUB_SHA" || true)
+            ASSET=$(printf '%s' "$HTML" | grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' | head -1 || true)
+            if [ -n "$ASSET" ]; then
+              if curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL$ASSET" -o /tmp/o2ol-cert-bundle.js && grep -Fq 'Watch Episode 1' /tmp/o2ol-cert-bundle.js; then
+                echo "Certified production frontend assets match release source"
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          echo "Certification frontend asset version did not converge"
+          exit 1
+      - name: Production QA UX UI pass 1
+        env:
+          PREVIEW_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
+        run: |
+          set -euo pipefail
+          node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/o2ol-production-qa-pass-1.txt
+      - name: Production QA UX UI pass 2
+        env:
+          PREVIEW_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
+        run: |
+          set -euo pipefail
+          node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/o2ol-production-qa-pass-2.txt
       - name: Upload browser QA report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: o2ol-candidate-browser-qa
-          path: /tmp/o2ol-candidate-browser-qa.txt
+          path: |
+            /tmp/o2ol-candidate-browser-qa.txt
+            /tmp/o2ol-production-qa-pass-1.txt
+            /tmp/o2ol-production-qa-pass-2.txt
+            /tmp/o2ol-prod-cert-health.json
           if-no-files-found: warn
