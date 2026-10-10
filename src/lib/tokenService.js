@@ -33,6 +33,9 @@ export async function getCalibrationHistory(){
 export function isTokensRequiredError(error){
   return error?.status===402 && ['tokens_required','credit_required'].includes(error?.payload?.error?.code);
 }
+export function isPhoneVerificationError(error){
+  return error?.status===428 || error?.payload?.error?.code==='phone_verification_required';
+}
 export function tokenRequiredDetails(error){
   const e=error?.payload?.error||{};
   return {balance:Number(e.balance||0),required:Number(e.required||0),featureCode:e.featureCode||null,featureLabel:e.featureLabel||null};
