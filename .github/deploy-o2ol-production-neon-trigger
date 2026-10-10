@@ -1,4 +1,4 @@
-o2ol-title-only-paid-content-2026-10-10
-fix_merge=dfa8d4aa5c776f509f49438936e3b223e05e29e2
-fixes=love-notes-title-only-49c,date-ideas-title-only-49c,server-side-purchase-entitlements,frontend-paid-content-not-shipped
-source_pr=106
+o2ol-title-only-credit-hardening-2026-10-10
+fix_merge=b6cfbbf1b407cab62075e36d065d8231cb2f42c5
+fixes=remove-any-unpaid-date-idea-description-bypass,maintain-49c-server-gate
+source_pr=108
