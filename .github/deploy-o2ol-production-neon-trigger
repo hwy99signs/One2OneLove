@@ -1,4 +1,4 @@
 O2OL_PRODUCTION_DEPLOY_TRIGGER
-fix_merge=50d1363936ff1d932ff3a372ed97adad2124d665
-fixes=Amora host identity resolver (email-first, user_type ladder); Chat results panel Next arrow pages all questions.
-source_pr=116
+promotion=all_games_free_through_2026_10_11_2359_CT
+source_pr=117
+requested_by_owner=2026-10-10

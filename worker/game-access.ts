@@ -3,6 +3,17 @@ import { Client } from 'pg';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { recordCostEvent } from './o2ol-cost-ledger';
 
+const FREE_GAMES_PROMOTION = Object.freeze({
+  id:'all_games_free_2026_10_11',
+  name:'ALL GAMES FREE',
+  endsAt:'2026-10-12T04:59:59.999Z', // Sun Oct 11, 2026 11:59:59 PM America/Chicago (CDT)
+});
+function activeFreeGamesPromotion(){
+  return Date.now()<=Date.parse(FREE_GAMES_PROMOTION.endsAt)
+    ? {...FREE_GAMES_PROMOTION,active:true,free:true}
+    : null;
+}
+
 const HEADERS={
   'content-type':'application/json; charset=utf-8',
   'cache-control':'no-store',
@@ -83,7 +94,8 @@ async function launchScratch(db,env,auth,input){
   await ensureScratchTable(db);
   await verifiedMember(db,auth.user.id);
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
-  const reservation=await reserveTokenCharge(db,auth.user.id,'scratch_game_session',{
+  const promotion=activeFreeGamesPromotion();
+  const reservation=promotion?null:await reserveTokenCharge(db,auth.user.id,'scratch_game_session',{
     idempotencyKey:`scratch:${auth.user.id}:${requestId}`,
     metadata:{game:'scratch',request_id:requestId},
   });
@@ -97,18 +109,18 @@ async function launchScratch(db,env,auth,input){
        VALUES($1,$2::uuid,'scratch',$3)`,
       [tokenHash,auth.user.id,expiresAt.toISOString()],
     );
-    await consumeTokenReservation(db,reservation.id);
+    if(reservation?.id)await consumeTokenReservation(db,reservation.id);
     await recordCostEvent(db,env,{
       userId:auth.user.id,featureCode:'scratch_game_session',provider:'internal',
       providerProduct:'scratch_game_launch',
-      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
-      providerCostMicros:null,customerTokensCharged:Number(reservation.tokens||0),
-      metadata:{game:'scratch',request_id:requestId,internal_cost_unallocated:true},
+      walletTransactionId:reservation?.transaction?.id||reservation?.transaction_id||null,
+      providerCostMicros:null,customerTokensCharged:Number(reservation?.tokens||0),
+      metadata:{game:'scratch',request_id:requestId,promotion:promotion?.id||null,promo_free:Boolean(promotion),internal_cost_unallocated:true},
     }).catch(error=>console.error('Scratch cost telemetry failed',error));
-    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Scratch Auto-Replenish check failed',error));
-    return json({ok:true,token,expiresAt:expiresAt.toISOString(),access:'paid_game',tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}});
+    if(!promotion)maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Scratch Auto-Replenish check failed',error));
+    return json({ok:true,token,expiresAt:expiresAt.toISOString(),access:promotion?'promotion_free':'paid_game',promotion,tokens:{charged:Number(reservation?.tokens||0),balance:reservation?.balance_after??null}});
   }catch(error){
-    await releaseTokenReservation(db,reservation.id,'scratch_launch_failed').catch(()=>{});
+    if(reservation?.id)await releaseTokenReservation(db,reservation.id,'scratch_launch_failed').catch(()=>{});
     throw error;
   }
 }
@@ -126,11 +138,12 @@ async function activeStandardGamePass(db,userId,game){
 async function launchStandardGame(db,env,auth,input){
   await verifiedMember(db,auth.user.id);
   const game=String(input?.game||'').trim();
-  if(!['what_should_they_do'].includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  if(!['what_should_they_do','pests','scrabluko'].includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
   const existing=await activeStandardGamePass(db,auth.user.id,game);
-  if(existing)return json({ok:true,pass:existing,reused:true});
+  if(existing)return json({ok:true,pass:existing,reused:true,promotion:activeFreeGamesPromotion()});
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
-  const reservation=await reserveTokenCharge(db,auth.user.id,'premium_game_session',{
+  const promotion=activeFreeGamesPromotion();
+  const reservation=promotion?null:await reserveTokenCharge(db,auth.user.id,'premium_game_session',{
     idempotencyKey:`premium_game:${game}:${auth.user.id}:${requestId}`,
     metadata:{game,request_id:requestId},
   });
@@ -141,20 +154,20 @@ async function launchStandardGame(db,env,auth,input){
        (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata)
        VALUES($1::uuid,$2,$3::uuid,$4,'active',$5,$6::jsonb)
        RETURNING id,game,tokens_charged,started_at,expires_at,metadata`,
-      [auth.user.id,game,reservation.transaction?.id||reservation.transaction_id||null,Number(reservation.tokens||0),expiresAt.toISOString(),JSON.stringify({request_id:requestId,access_minutes:120})],
+      [auth.user.id,game,reservation?.transaction?.id||reservation?.transaction_id||null,Number(reservation?.tokens||0),expiresAt.toISOString(),JSON.stringify({request_id:requestId,access_minutes:120,promotion:promotion?.id||null,promo_free:Boolean(promotion)})],
     )).rows[0];
-    await consumeTokenReservation(db,reservation.id);
+    if(reservation?.id)await consumeTokenReservation(db,reservation.id);
     await recordCostEvent(db,env,{
       userId:auth.user.id,featureCode:'premium_game_session',provider:'internal',
       providerProduct:'o2ol_standard_game_session',
-      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
-      providerCostMicros:null,customerTokensCharged:Number(reservation.tokens||0),
-      metadata:{game,pass_id:pass.id,access_minutes:120,internal_cost_unallocated:true},
+      walletTransactionId:reservation?.transaction?.id||reservation?.transaction_id||null,
+      providerCostMicros:null,customerTokensCharged:Number(reservation?.tokens||0),
+      metadata:{game,pass_id:pass.id,access_minutes:120,promotion:promotion?.id||null,promo_free:Boolean(promotion),internal_cost_unallocated:true},
     }).catch(error=>console.error('Standard game cost telemetry failed',error));
-    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Game Auto-Replenish check failed',error));
-    return json({ok:true,pass,tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+    if(!promotion)maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Game Auto-Replenish check failed',error));
+    return json({ok:true,pass,promotion,tokens:{charged:Number(reservation?.tokens||0),balance:reservation?.balance_after??null}},201);
   }catch(error){
-    await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed').catch(()=>{});
+    if(reservation?.id)await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed').catch(()=>{});
     throw error;
   }
 }
@@ -165,7 +178,8 @@ async function launchLikeMinded(db,env,auth,input){
   if(existing)return json({ok:true,pass:existing,reused:true});
 
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
-  const reservation=await reserveTokenCharge(db,auth.user.id,'like_minded_session',{
+  const promotion=activeFreeGamesPromotion();
+  const reservation=promotion?null:await reserveTokenCharge(db,auth.user.id,'like_minded_session',{
     idempotencyKey:`like_minded:${auth.user.id}:${requestId}`,
     metadata:{game:'like_minded',request_id:requestId},
   });
@@ -179,27 +193,27 @@ async function launchLikeMinded(db,env,auth,input){
        RETURNING id,game,tokens_charged,started_at,expires_at,metadata`,
       [
         auth.user.id,
-        reservation.transaction?.id||reservation.transaction_id||null,
-        Number(reservation.tokens||0),
+        reservation?.transaction?.id||reservation?.transaction_id||null,
+        Number(reservation?.tokens||0),
         expiresAt.toISOString(),
-        JSON.stringify({request_id:requestId,access_minutes:accessMinutes}),
+        JSON.stringify({request_id:requestId,access_minutes:accessMinutes,promotion:promotion?.id||null,promo_free:Boolean(promotion)}),
       ],
     )).rows[0];
-    await consumeTokenReservation(db,reservation.id);
+    if(reservation?.id)await consumeTokenReservation(db,reservation.id);
     await recordCostEvent(db,env,{
       userId:auth.user.id,
       featureCode:'like_minded_session',
       provider:'internal',
       providerProduct:'neon_cloudflare_game_session',
-      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+      walletTransactionId:reservation?.transaction?.id||reservation?.transaction_id||null,
       providerCostMicros:null,
-      customerTokensCharged:Number(reservation.tokens||0),
-      metadata:{game:'like_minded',pass_id:pass.id,access_minutes:accessMinutes,internal_cost_unallocated:true},
+      customerTokensCharged:Number(reservation?.tokens||0),
+      metadata:{game:'like_minded',pass_id:pass.id,access_minutes:accessMinutes,promotion:promotion?.id||null,promo_free:Boolean(promotion),internal_cost_unallocated:true},
     }).catch(error=>console.error('Like Minded cost telemetry failed',error));
-    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Like Minded Auto-Replenish check failed',error));
-    return json({ok:true,pass,tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+    if(!promotion)maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Like Minded Auto-Replenish check failed',error));
+    return json({ok:true,pass,promotion,tokens:{charged:Number(reservation?.tokens||0),balance:reservation?.balance_after??null}},201);
   }catch(error){
-    await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed').catch(()=>{});
+    if(reservation?.id)await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed').catch(()=>{});
     throw error;
   }
 }
@@ -211,6 +225,10 @@ export async function handleGameAccessRequest(request,env,url){
 
   try{
     return await withDb(env,async db=>{
+      if(url.pathname==='/api/games/promotion'&&request.method==='GET'){
+        await verifiedMember(db,auth.user.id);
+        return json({ok:true,promotion:activeFreeGamesPromotion()});
+      }
       if(url.pathname==='/api/games/scratch/launch'){
         if(request.method!=='POST')return fail('Method not allowed.',405,'method_not_allowed');
         const input=(request.headers.get('content-type')||'').includes('application/json')
@@ -221,9 +239,9 @@ export async function handleGameAccessRequest(request,env,url){
         const game=url.searchParams.get('game')||'';
         if(request.method==='GET'){
           await verifiedMember(db,auth.user.id);
-          if(!['what_should_they_do'].includes(game))return fail('This paid game is not available.',400,'game_invalid');
+          if(!['what_should_they_do','pests','scrabluko'].includes(game))return fail('This paid game is not available.',400,'game_invalid');
           const pass=await activeStandardGamePass(db,auth.user.id,game);
-          return json({ok:true,active:Boolean(pass),pass});
+          return json({ok:true,active:Boolean(pass),pass,promotion:activeFreeGamesPromotion()});
         }
         if(request.method==='POST'){
           const input=(request.headers.get('content-type')||'').includes('application/json')
@@ -236,7 +254,7 @@ export async function handleGameAccessRequest(request,env,url){
         if(request.method==='GET'){
           await verifiedMember(db,auth.user.id);
           const pass=await activeLikeMindedPass(db,auth.user.id);
-          return json({ok:true,active:Boolean(pass),pass});
+          return json({ok:true,active:Boolean(pass),pass,promotion:activeFreeGamesPromotion()});
         }
         if(request.method==='POST'){
           const input=(request.headers.get('content-type')||'').includes('application/json')

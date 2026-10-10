@@ -32,15 +32,17 @@ export default function ScratchGame() {
   const [showUnlock,setShowUnlock] = useState(false);
   const [priceCents,setPriceCents] = useState(49);
   const [balanceCents,setBalanceCents] = useState(null);
+  const [promotion,setPromotion] = useState(null);
 
   useEffect(()=>{
     let active=true;
     if(!fullMemberAccess)return()=>{active=false};
-    getTokenWallet().then(data=>{
+    Promise.all([getTokenWallet(),apiRequest('/api/games/promotion')]).then(([data,promo])=>{
       if(!active)return;
+      setPromotion(promo?.promotion||null);
       setBalanceCents(Number(data?.wallet?.balance||0));
-      setPriceCents(Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
-      setShowUnlock(true);
+      setPriceCents(promo?.promotion?.free?0:Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
+      setShowUnlock(!promo?.promotion?.free);
     }).catch(()=>{if(active)setShowUnlock(true)});
     return()=>{active=false};
   },[fullMemberAccess]);
@@ -53,6 +55,7 @@ export default function ScratchGame() {
       const payload=await apiRequest('/api/games/scratch/launch',{method:'POST',body:{requestId}});
       const token=payload?.token;
       if(!token)throw new Error(t.error);
+      if(payload?.promotion)setPromotion(payload.promotion);
       if(payload?.tokens?.balance!=null)setBalanceCents(Number(payload.tokens.balance));
       setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||"en")}&ticket=${encodeURIComponent(token)}`);
       setShowUnlock(false);
@@ -78,6 +81,14 @@ export default function ScratchGame() {
           <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-slate-900">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">{t.preview}</p></div>
         ):gameUrl?(
           <iframe title="One2OneLove Scratch Game" src={gameUrl} className="w-full border-0" style={{height:"min(82vh, 980px)",minHeight:"680px"}} allow="fullscreen"/>
+        ):promotion?.free?(
+          <div className="p-10 text-center sm:p-14">
+            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">ALL GAMES FREE</div>
+            <h1 className="mt-4 text-3xl font-black text-slate-900">{t.title}</h1>
+            <p className="mx-auto mt-3 max-w-xl text-slate-600">Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.</p>
+            {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
+            <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
+          </div>
         ):(
           <div className="p-10 text-center sm:p-14">
             <LockKeyhole className="mx-auto h-12 w-12 text-pink-600"/>
