@@ -2,6 +2,12 @@
 -- Credit unit is USD cents: 49 = $0.49, 99 = $0.99, 199 = $1.99.
 -- Variable-cost features (Bianca, Amora, Love Notes, AI generation) are intentionally excluded.
 
+ALTER TABLE public.o2ol_token_feature_prices
+  DROP CONSTRAINT IF EXISTS o2ol_token_feature_prices_pricing_unit_check;
+ALTER TABLE public.o2ol_token_feature_prices
+  ADD CONSTRAINT o2ol_token_feature_prices_pricing_unit_check
+  CHECK (pricing_unit IN ('action','response','session','minute','send','report','item','episode'));
+
 INSERT INTO public.o2ol_token_feature_prices
   (feature_code,label,token_cost,pricing_unit,active,calibration_only)
 VALUES
