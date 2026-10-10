@@ -37,15 +37,23 @@ async function resetProfile(db,userId){ const r=await db.query(`INSERT INTO publ
 async function requireConversation(db,id,userId){ if(!UUID.test(String(id||'')))throw Object.assign(new Error('Invalid conversation ID.'),{status:400,code:'bad_request'}); const r=await db.query(`SELECT * FROM public.ai_coach_conversations WHERE id=$1::uuid AND user_id=$2::uuid AND product='mymatchiq' AND mode='bianca_casual'`,[id,userId]); if(!r.rows[0])throw Object.assign(new Error('Bianca conversation not found.'),{status:404,code:'not_found'}); return r.rows[0]; }
 async function listConversations(db,userId){ const r=await db.query(`SELECT c.id,c.title,c.created_at,c.updated_at,(SELECT content FROM public.ai_coach_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message FROM public.ai_coach_conversations c WHERE c.user_id=$1::uuid AND c.product='mymatchiq' AND c.mode='bianca_casual' ORDER BY c.updated_at DESC,c.created_at DESC`,[userId]); return r.rows; }
 async function listMessages(db,id,userId){ await requireConversation(db,id,userId); const r=await db.query(`SELECT id,role,content,model,created_at FROM public.ai_coach_messages WHERE conversation_id=$1::uuid AND user_id=$2::uuid ORDER BY created_at ASC,id ASC`,[id,userId]); return r.rows.map(row=>({...row,text:row.content,is_user:row.role==='user'})); }
-function instructions(name,phrases,language){ const lang=LANGUAGE_NAMES[language]||'English'; return `You are Bianca, the friendly MyMatchIQ relationship guide for ${name||'this member'}. Speak naturally in ${lang}. You are warm, perceptive, conversational and grounded—not clinical. Keep ordinary replies concise and contextual: usually 40-120 words in 1-2 short paragraphs. Prefer one clear observation, one useful suggestion, or one natural follow-up question instead of a long explanation. For genuinely complex or emotional situations, you may use up to about 180 words when needed for clarity. Do not turn ordinary chat into essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. You may laugh naturally when something is genuinely funny, apologize when appropriate, acknowledge uncertainty, and empathize without pretending to know feelings the member has not expressed. Ask useful follow-up questions and offer practical relationship coaching and self-reflection, but do not diagnose, provide therapy, or guarantee compatibility. Never manipulate, shame, pressure, or encourage surveillance. When there is abuse, coercion, self-harm, immediate danger, or an emergency, prioritize immediate safety and appropriate local professional help even if that requires a slightly longer safety-focused reply. The member commonly uses these phrases: ${phrases?.length?phrases.join(' | '):'none learned yet'}. Reuse at most one familiar phrase occasionally when it genuinely fits; never mimic excessively and never tell the member you are tracking their wording. More conversation history may improve personalization, but never claim certainty beyond the evidence.`; }
+const RESPONSE_LEVELS={
+  short:{words:'50-100',maxOutputTokens:180},
+  medium:{words:'150-250',maxOutputTokens:420},
+  long:{words:'300-400',maxOutputTokens:650},
+};
+function instructions(name,phrases,language,responseLength='medium'){ const lang=LANGUAGE_NAMES[language]||'English'; const level=RESPONSE_LEVELS[responseLength]||RESPONSE_LEVELS.medium; return `You are Bianca, the friendly MyMatchIQ relationship guide for ${name||'this member'}. Speak naturally in ${lang}. You are warm, perceptive, conversational and grounded—not clinical. The member selected a ${responseLength} response. Keep this reply within ${level.words} words. Stay focused, contextual, and useful; do not pad the answer just to reach the word range. Prefer clear conversational paragraphs over essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. You may laugh naturally when something is genuinely funny, apologize when appropriate, acknowledge uncertainty, and empathize without pretending to know feelings the member has not expressed. Ask useful follow-up questions and offer practical relationship coaching and self-reflection, but do not diagnose, provide therapy, or guarantee compatibility. Never manipulate, shame, pressure, or encourage surveillance. When there is abuse, coercion, self-harm, immediate danger, or an emergency, prioritize immediate safety and appropriate local professional help even if safety requires departing from the selected word range. The member commonly uses these phrases: ${phrases?.length?phrases.join(' | '):'none learned yet'}. Reuse at most one familiar phrase occasionally when it genuinely fits; never mimic excessively and never tell the member you are tracking their wording. More conversation history may improve personalization, but never claim certainty beyond the evidence.`; }
 async function sendMessage(db,env,auth,id,input){
   const conversation=await requireConversation(db,id,auth.user.id);
   const message=clean(input?.message,6000,true);
   const language=LANGUAGE_NAMES[input?.language]?input.language:'en';
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
-  const reservation=await reserveTokenCharge(db,auth.user.id,'bianca_response',{
+  const responseLength=['short','medium','long'].includes(String(input?.responseLength||'').toLowerCase())?String(input.responseLength).toLowerCase():'medium';
+  const billingFeatureCode=`bianca_response_${responseLength}`;
+  const responseLevel=RESPONSE_LEVELS[responseLength];
+  const reservation=await reserveTokenCharge(db,auth.user.id,billingFeatureCode,{
     idempotencyKey:`bianca:${id}:${requestId}`,
-    metadata:{conversation_id:id,request_id:requestId},
+    metadata:{conversation_id:id,request_id:requestId,response_length:responseLength},
   });
   const p=await profile(db,auth.user.id);
   const history=(await db.query(
@@ -56,11 +64,11 @@ async function sendMessage(db,env,auth,id,input){
   )).rows.reverse();
   const member=(await db.query('SELECT name FROM public.users WHERE id=$1::uuid',[auth.user.id])).rows[0];
   const transcript=history.map(x=>`${x.role==='assistant'?'Bianca':'Member'}: ${x.content}`).join('\n\n');
-  const instructionText=instructions(member?.name,p.common_phrases,language);
+  const instructionText=instructions(member?.name,p.common_phrases,language,responseLength);
   const aiInput=`${transcript?transcript+'\n\n':''}Member: ${message}\n\nBianca:`;
   let generated=null;
   try{
-    generated=await openAiText(env,{instructions:instructionText,input:aiInput,maxOutputTokens:320});
+    generated=await openAiText(env,{instructions:instructionText,input:aiInput,maxOutputTokens:responseLevel.maxOutputTokens});
   }catch(error){
     await releaseTokenReservation(db,reservation.id,'ai_provider_failed').catch(()=>{});
     throw error;
@@ -98,20 +106,20 @@ async function sendMessage(db,env,auth,id,input){
     try{await db.query('ROLLBACK');}catch(_){}
     await releaseTokenReservation(db,reservation.id,'message_persistence_failed').catch(()=>{});
     await recordOpenAICostEvent(db,env,{
-      userId:auth.user.id,featureCode:'bianca_response',payload:generated.payload,model:generated.model,
+      userId:auth.user.id,featureCode:billingFeatureCode,payload:generated.payload,model:generated.model,
       inputText:message,outputText:generated.text,contextText:instructionText+'\n\n'+aiInput,
-      customerTokensCharged:0,metadata:{conversation_id:id,request_id:requestId,delivery_failed:true},
+      customerTokensCharged:0,metadata:{conversation_id:id,request_id:requestId,response_length:responseLength,delivery_failed:true},
     }).catch(()=>{});
     throw error;
   }
 
   await consumeTokenReservation(db,reservation.id);
   await recordOpenAICostEvent(db,env,{
-    userId:auth.user.id,featureCode:'bianca_response',payload:generated.payload,model:generated.model,
+    userId:auth.user.id,featureCode:billingFeatureCode,payload:generated.payload,model:generated.model,
     inputText:message,outputText:generated.text,contextText:instructionText+'\n\n'+aiInput,
     walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
     customerTokensCharged:Number(reservation.tokens||0),
-    metadata:{conversation_id:id,request_id:requestId,history_messages:history.length},
+    metadata:{conversation_id:id,request_id:requestId,response_length:responseLength,history_messages:history.length},
   }).catch(error=>console.error('Bianca cost telemetry failed',error));
   maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Bianca Auto-Replenish check failed',error));
 
@@ -120,7 +128,7 @@ async function sendMessage(db,env,auth,id,input){
     userMessage:{...userMsg,text:userMsg.content,is_user:true},
     message:{...assistant,text:assistant.content,is_user:false},
     profile:{interaction_count:nextInteractions,conversation_count:p.conversation_count||1,common_phrases:learned.common,context_depth_score:score},
-    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
+    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0),responseLength},
   });
 }
 function parseReport(text){ const cleaned=String(text||'').replace(/^\s*```(?:json)?/i,'').replace(/```\s*$/,'').trim(); try{return JSON.parse(cleaned);}catch{return {summary:cleaned,strengths:[],growthAreas:[],dimensions:{}};} }
