@@ -16,3 +16,6 @@ CREATE TABLE IF NOT EXISTS public.coaching_consent_history (
 
 CREATE INDEX IF NOT EXISTS coaching_consent_history_user_idx
   ON public.coaching_consent_history(user_id, accepted_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS coaching_consent_history_user_version_uidx
+  ON public.coaching_consent_history(user_id, consent_version);
