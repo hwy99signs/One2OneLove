@@ -12,7 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
-import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/dateideas/dateIdeasLibrary";
+import { matchesDateIdeaFilter } from "../components/dateideas/dateIdeasFilters";
+import { apiRequest } from "@/lib/apiClient";
 import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
 import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
@@ -185,6 +186,11 @@ export default function DateIdeas() {
   const t = DATE_IDEAS_UI[currentLanguage] || DATE_IDEAS_UI.en;
   const queryClient = useQueryClient();
 
+  const { data: publicIdeaCatalog } = useQuery({queryKey:['date-idea-library',currentLanguage],queryFn:()=>apiRequest('/api/date-idea-library?lang='+encodeURIComponent(currentLanguage))});
+  const loadPrivateIdea = async (idea) => {
+    const result=await apiRequest('/api/date-idea-library/item?lang='+encodeURIComponent(currentLanguage)+'&id='+encodeURIComponent(idea.id));
+    return result.idea;
+  };
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedBudget, setSelectedBudget] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -224,7 +230,6 @@ export default function DateIdeas() {
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
     if (isAdmin) return true;
-    if (OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id))) return true;
     return unlockedDateKeys.has(String(idea.id));
   };
 
@@ -297,7 +302,7 @@ export default function DateIdeas() {
 
   const BUILTIN_DATE_STATE_PREFIX = '__o2ol_builtin_date__:';
 
-  const basePredefinedDateIdeas = getDateIdeasForLanguage(currentLanguage).map((idea, index) => ({
+  const basePredefinedDateIdeas = (publicIdeaCatalog?.ideas||[]).map((idea, index) => ({
     ...idea,
     icon: iconMap[idea.iconKey] || Heart,
     color: dateIdeaColors[index % dateIdeaColors.length]
@@ -511,7 +516,7 @@ export default function DateIdeas() {
     });
   };
 
-  const openDateIdea = (idea) => {
+  const openDateIdea = async (idea) => {
     const isBuiltIn = Boolean(idea?.week);
     const isLockedForOpenHouse = isBuiltIn && !hasDateIdeaAccess(idea);
     if (isLockedForOpenHouse) {
@@ -521,7 +526,10 @@ export default function DateIdeas() {
       return;
     }
 
-    setSelectedIdea(idea);
+    try {
+      const full=isBuiltIn?await loadPrivateIdea(idea):idea;
+      setSelectedIdea({...idea,...full});
+    }catch(e){toast.error(e?.message||'Unable to open Date Idea.');return;}
     setShowScheduleForm(false);
     setScheduleDate('');
     setScheduleTime('');
@@ -544,7 +552,8 @@ export default function DateIdeas() {
         queryClient.invalidateQueries({ queryKey: ['tokenWallet', dateIdeasUserKey] }),
       ]);
       setShowOpenHouseLock(false);
-      setSelectedIdea(lockedIdea);
+      const full=await loadPrivateIdea(lockedIdea);
+      setSelectedIdea({...lockedIdea,...full});
       setLockedIdea(null);
       toast.success(`Unlocked with $${(Number(result?.tokens?.charged || dateIdeaTokenCost)/100).toFixed(2)} Credit.`);
     } catch (error) {
@@ -722,7 +731,7 @@ export default function DateIdeas() {
             const Icon = idea.icon || Heart;
             const isBuiltIn = Boolean(idea.week);
             const isOpenHouseLocked = isBuiltIn && !hasDateIdeaAccess(idea);
-            const teaser = isOpenHouseLocked ? mysteryTitleFragment(idea.title) : null;
+            const teaser = isOpenHouseLocked ? idea.title : null;
 
             return (
               <motion.button
@@ -743,14 +752,12 @@ export default function DateIdeas() {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
 
-                {!isOpenHouseLocked && isBuiltIn && OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id)) && (
-                  <span className="absolute right-3 top-3 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>
-                )}
+
                 {isOpenHouseLocked ? (
                   <div className="min-w-0 flex-1 pr-10">
                     <div className="flex items-center gap-2 overflow-hidden">
-                      <span className="font-bold text-gray-700 leading-snug whitespace-nowrap">{teaser}</span>
-                      <span aria-hidden="true" className="h-4 w-24 sm:w-32 rounded bg-slate-300 blur-[3px] opacity-90" />
+                      <span className="font-bold text-gray-700 leading-snug">{teaser}</span>
+                      <span aria-hidden="true" className="h-3 w-10 rounded bg-slate-300 blur-[3px] opacity-90" />
                     </div>
                     <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-purple-700">
                       <Lock className="h-3.5 w-3.5" />
