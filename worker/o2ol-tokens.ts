@@ -95,6 +95,7 @@ async function ensureOwnerPricing(db){
     ['amora_response_long','Amora long reply',20,'response'],
     ['ai_content_generation','AI content generation',49,'action'],
     ['love_note_ai','Love Note AI generation',25,'action'],
+    ['love_note_template_unlock','Love Note template reveal',49,'note'],
     ['date_idea_unlock','Date Idea unlock',49,'item'],
     ['podcast_episode_unlock','Podcast episode unlock',199,'episode'],
     ['premium_content_unlock','Premium content unlock',299,'item'],
@@ -879,7 +880,7 @@ async function unlockTokenContent(db,auth,input){
   const featureCode=String(input?.featureCode||'').trim();
   const contentKey=String(input?.contentKey||'').trim().slice(0,180);
   if(!featureCode||!contentKey)throw Object.assign(new Error('Feature and content key are required.'),{status:400,code:'unlock_target_required'});
-  const allowed=new Set(['date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock','memories_unlock','journals_unlock','milestones_unlock','goals_unlock','calendar_unlock','love_language_report','compatibility_report','relationship_pattern_report','premium_report']);
+  const allowed=new Set(['love_note_template_unlock','date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock','memories_unlock','journals_unlock','milestones_unlock','goals_unlock','calendar_unlock','love_language_report','compatibility_report','relationship_pattern_report','premium_report']);
   if(!allowed.has(featureCode))throw Object.assign(new Error('This content unlock type is not available.'),{status:400,code:'unlock_feature_invalid'});
 
   const existing=(await db.query(
