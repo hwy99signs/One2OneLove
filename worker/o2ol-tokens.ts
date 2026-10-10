@@ -85,13 +85,13 @@ async function ensureStripeCustomer(db,env,auth,profile=null){
 async function ensureOwnerPricing(db){
   const rows=[
     ['bianca_response','Bianca reply (Medium legacy alias)',10,'response'],
-    ['bianca_response_short','Bianca short reply',5,'response'],
-    ['bianca_response_medium','Bianca medium reply',10,'response'],
+    ['bianca_response_short','Bianca short reply',10,'response'],
+    ['bianca_response_medium','Bianca medium reply',15,'response'],
     ['bianca_response_long','Bianca long reply',20,'response'],
     ['bianca_report','Bianca deeper report',299,'report'],
     ['amora_response','Amora reply (Medium legacy alias)',10,'response'],
-    ['amora_response_short','Amora short reply',5,'response'],
-    ['amora_response_medium','Amora medium reply',10,'response'],
+    ['amora_response_short','Amora short reply',10,'response'],
+    ['amora_response_medium','Amora medium reply',15,'response'],
     ['amora_response_long','Amora long reply',20,'response'],
     ['ai_content_generation','AI content generation',49,'action'],
     ['love_note_ai','Love Note AI generation',25,'action'],
