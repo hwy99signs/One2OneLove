@@ -38,13 +38,14 @@ export default function ScratchGame() {
   useEffect(()=>{
     let active=true;
     if(!fullMemberAccess)return()=>{active=false};
-    Promise.all([getTokenWallet(),apiRequest('/api/games/promotion?game=scratch')]).then(([data,promo])=>{
+    Promise.all([getTokenWallet(),apiRequest('/api/games/catalog')]).then(([data,catalog])=>{
       if(!active)return;
-      setPromotion(promo?.promotion||null);
+      const scratch=(catalog?.games||[]).find(g=>g.id==='scratch')||{};
+      setPromotion(scratch?.promotion||null);
       setBalanceCents(Number(data?.wallet?.balance||0));
       setGameCreditCents(Number(data?.gameCredit?.balanceCents||0));
-      setPriceCents(promo?.promotion?.free?0:Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
-      setShowUnlock(!promo?.promotion?.free);
+      setPriceCents(scratch?.priceCents!=null?Number(scratch.priceCents):Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
+      setShowUnlock(!scratch?.promotion?.free);
     }).catch(()=>{if(active)setShowUnlock(true)});
     return()=>{active=false};
   },[fullMemberAccess]);
@@ -89,9 +90,9 @@ export default function ScratchGame() {
           <iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(60vh, 720px)",minHeight:"520px"}} allow="fullscreen"/>
         ):promotion?.free?(
           <div className="p-10 text-center sm:p-14">
-            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">ALL GAMES FREE</div>
+            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{promotion?.name||'FREE GAME'}</div>
             <h1 className="mt-4 text-3xl font-black text-slate-900">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.</p>
+            <p className="mx-auto mt-3 max-w-xl text-slate-600">{promotion?.temporary?'Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.':`Free today — ${promotion?.name||'promotion'}. No credits used.`}</p>
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
             <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
           </div>
