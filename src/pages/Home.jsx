@@ -201,13 +201,17 @@ export default function Home() {
           </div>
           <div className="mt-12 rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 px-9 py-8 shadow-sm"><h3 className="text-3xl font-black">{t.loveNotes}</h3><p className="mt-3 text-xl leading-relaxed">{t.loveNotesBody}</p></div>
           <div className="mt-10 flex items-center justify-center gap-2" role="tablist" aria-label="O2OL Studio episodes">
-            <button type="button" role="tab" aria-selected={studioTab==='new'} onClick={() => setStudioTab('new')} className={`rounded-full px-5 py-2.5 text-sm font-black shadow transition ${studioTab==='new' ? 'bg-gradient-to-r from-fuchsia-500 to-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{studioTabs.newEpisode}</button>
-            <button type="button" role="tab" aria-selected={studioTab==='past'} onClick={() => setStudioTab('past')} className={`rounded-full px-5 py-2.5 text-sm font-black shadow transition ${studioTab==='past' ? 'bg-gradient-to-r from-fuchsia-500 to-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{studioTabs.pastEpisodes}</button>
+            {/* Owner color rule (2026-10-10): every NEW EPISODE element wears
+                the same fuchsia-to-blue gradient; the Past Episodes tab is
+                yellow. Active state is shown by ring + shadow so the colors
+                never swap. */}
+            <button type="button" role="tab" aria-selected={studioTab==='new'} onClick={() => setStudioTab('new')} className={`rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-5 py-2.5 text-sm font-black text-white shadow transition hover:brightness-110 ${studioTab==='new' ? 'shadow-lg ring-2 ring-fuchsia-300' : 'opacity-80'}`}>{studioTabs.newEpisode}</button>
+            <button type="button" role="tab" aria-selected={studioTab==='past'} onClick={() => setStudioTab('past')} className={`rounded-full bg-amber-300 px-5 py-2.5 text-sm font-black text-amber-950 shadow transition hover:brightness-105 ${studioTab==='past' ? 'shadow-lg ring-2 ring-amber-500' : 'opacity-80'}`}>{studioTabs.pastEpisodes}</button>
           </div>
           {studioTab === 'new' ? (
           <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
             <div className="relative flex aspect-[16/9] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 px-6 text-center">
-              <span className="rounded-full bg-amber-300 px-3.5 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.18em] text-amber-950 shadow-lg sm:text-xs">{studioE2.badge}</span>
+              <span className="rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-3.5 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.18em] text-white shadow-lg sm:text-xs">{studioE2.badge}</span>
               <div className="mt-4 text-[0.7rem] font-black uppercase tracking-[0.22em] text-cyan-200 sm:text-sm">{studioE2.season}</div>
               <div className="mt-3 max-w-4xl text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">{studioE2.title}</div>
               <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90 sm:text-sm"><span aria-hidden="true">🔒</span>{studioE2.lockNote}</div>

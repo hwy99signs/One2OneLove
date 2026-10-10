@@ -331,12 +331,25 @@ async function clickVoterLabel(db, userId) {
 }
 
 async function ensureAmoraHost(db) {
+  // Live finding (2026-10-10): the first production version of this insert
+  // carried avatar_url and omitted the subscription columns, and Amora's
+  // first room response never landed — the vote itself was unaffected, so
+  // the failure sits in this row creation. Mirror the column set the admin
+  // create-user path is proven to use against this table, and set her
+  // photo separately so a cosmetic-column surprise can never block her
+  // message again.
   await db.query(
-    `INSERT INTO public.users (id, email, name, user_type, is_active, avatar_url)
-     VALUES ($1::uuid, $2, 'Amora', 'host', true, '/assets/amora-relationship-coach-official.webp')
+    `INSERT INTO public.users (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
+     VALUES ($1::uuid, $2, 'Amora', 'host', true, NULL, NULL, NULL)
      ON CONFLICT (id) DO NOTHING`,
     [AMORA_HOST_ID, AMORA_HOST_EMAIL],
   );
+  try {
+    await db.query(
+      'UPDATE public.users SET avatar_url=$2 WHERE id=$1::uuid',
+      [AMORA_HOST_ID, '/assets/amora-relationship-coach-official.webp'],
+    );
+  } catch { /* photo is cosmetic; never block the post on it */ }
 }
 
 export async function handleVotingRequest(request, env, url) {
@@ -499,22 +512,30 @@ export async function handleVotingRequest(request, env, url) {
 
             // Amora, the rooms' host, answers first casts and changes with
             // her pre-written stance — at most once per room per 30 min.
+            // Each sub-step is isolated with its own log line so a failure
+            // names its stage instead of vanishing (2026-10-10 live miss).
             if (castOrChanged) {
-              const recent = await db.query(
-                `SELECT 1 FROM public.chat_room_messages
-                  WHERE room_id=$1::uuid AND user_id=$2::uuid
-                    AND created_at > now() - interval '30 minutes' LIMIT 1`,
-                [roomId, AMORA_HOST_ID],
-              );
-              if (!recent.rowCount) {
-                await ensureAmoraHost(db);
-                const label = await clickVoterLabel(db, auth.user.id);
-                const stance = choice === question.amoraChoice ? 'agrees' : 'disagrees';
-                await db.query(
-                  `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
-                   VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
-                  [roomId, AMORA_HOST_ID, `Amora ${stance} with ${label} — ${question.amoraReason}`],
+              try {
+                const recent = await db.query(
+                  `SELECT 1 FROM public.chat_room_messages
+                    WHERE room_id=$1::uuid AND user_id=$2::uuid
+                      AND created_at > now() - interval '30 minutes' LIMIT 1`,
+                  [roomId, AMORA_HOST_ID],
                 );
+                if (!recent.rowCount) {
+                  await ensureAmoraHost(db);
+                  let label = 'a member';
+                  try { label = await clickVoterLabel(db, auth.user.id); }
+                  catch (labelError) { console.error('Amora label stage failed:', labelError); }
+                  const stance = choice === question.amoraChoice ? 'agrees' : 'disagrees';
+                  await db.query(
+                    `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
+                     VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
+                    [roomId, AMORA_HOST_ID, `Amora ${stance} with ${label} — ${question.amoraReason}`],
+                  );
+                }
+              } catch (amoraError) {
+                console.error('Amora host post failed:', amoraError);
               }
             }
           }
