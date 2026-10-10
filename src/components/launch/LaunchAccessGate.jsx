@@ -6,6 +6,7 @@ const PUBLIC_INFORMATION_ROUTES = new Set([
   '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
   '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
+  '/lovenotes', '/dateideas',
   '/adminaccess',
   '/winacruise','/counselingsupport','/influencerssupport','/aicontentcreator','/meditation',
   '/developer','/leaderboard','/achievements','/findfriends','/friendrequests',

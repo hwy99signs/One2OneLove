@@ -12,7 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import CustomDateForm from "../components/dateideas/CustomDateForm";
-import { getDateIdeasForLanguage, matchesDateIdeaFilter } from "../components/dateideas/dateIdeasLibrary";
+import { matchesDateIdeaFilter } from "../components/dateideas/dateIdeasFilters";
+import { apiRequest } from "@/lib/apiClient";
 import { DATE_IDEAS_UI } from "../components/dateideas/dateIdeasUiCopy";
 import { createCalendarEvent } from "@/lib/calendarService";
 import { listDateIdeas, createDateIdea, updateDateIdea } from "@/lib/dateIdeasService";
@@ -96,28 +97,16 @@ const translations = {
       married: "Married",
       long_term: "Long-term"
     },
-    dateIdeas: {
-      stargazing: { title: "Stargazing Picnic", description: "Pack a basket with your favorite foods, find a quiet spot away from city lights, and spend the evening watching the stars together.", difficulty: "Easy", duration: "2-3 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      cookingClass: { title: "Cooking Class Together", description: "Take a cooking class and learn to make a new cuisine together. Then enjoy the delicious meal you created!", difficulty: "Medium", duration: "3-4 hours", location_type: "activity_center", occasion: "regular", relationship_stage: "any" },
-      coffeeHopping: { title: "Coffee Shop Hopping", description: "Visit 3-4 local coffee shops, try different drinks at each, and enjoy conversations in cozy atmospheres.", difficulty: "Easy", duration: "3-4 hours", location_type: "urban", occasion: "regular", relationship_stage: "any" },
-      movieMarathon: { title: "Movie Marathon at Home", description: "Create a cozy fort with blankets and pillows, make popcorn, and binge-watch your favorite movie series.", difficulty: "Easy", duration: "4-6 hours", location_type: "home", occasion: "regular", relationship_stage: "any" },
-      liveMusic: { title: "Live Music Night", description: "Find a local venue with live music, enjoy the performance together, and maybe even dance a little!", difficulty: "Easy", duration: "3-4 hours", location_type: "cultural", occasion: "special", relationship_stage: "any" },
-      hiking: { title: "Hiking Adventure", description: "Choose a scenic trail, pack water and snacks, and enjoy nature together while getting some exercise.", difficulty: "Medium", duration: "3-5 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      beachSunset: { title: "Beach Sunset", description: "Visit the beach in the evening, walk along the shore, and watch the sunset together.", difficulty: "Easy", duration: "2-3 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      paintSip: { title: "Paint and Sip Night", description: "Set up at home with canvases, paints, wine, and create artwork together while enjoying each other's company.", difficulty: "Easy", duration: "2-3 hours", location_type: "home", occasion: "regular", relationship_stage: "any" },
-      exploreNeighborhood: { title: "Explore a New Neighborhood", description: "Pick a neighborhood you've never been to and explore together - try local shops, cafes, and restaurants.", difficulty: "Easy", duration: "4-5 hours", location_type: "urban", occasion: "regular", relationship_stage: "any" }
-    }
   }
 };
 
-const OPEN_HOUSE_OPEN_DATE_IDS = new Set([1, 2, 4, 6, 7, 11, 15, 16, 19, 27, 34, 36, 42]);
 
 const OPEN_HOUSE_COPY = {
   en: {
-    badge: 'OPEN HOUSE',
+    badge: 'CREDIT UNLOCK',
     locked: 'LOCKED',
-    membersOnly: 'Members Only',
-    lockedTitle: 'There is more waiting inside',
+    membersOnly: '$0.49 Credit unlock',
+    lockedTitle: 'Unlock this Date Idea',
     lockedBody: 'This Date Idea is locked. Create a FREE account, then use Credit to unlock it. Once unlocked, it stays unlocked for your account.',
     unlock: 'Unlock with Credit',
     signIn: 'Sign In',
@@ -127,7 +116,7 @@ const OPEN_HOUSE_COPY = {
   es: {
     badge: 'PUERTAS ABIERTAS',
     locked: 'BLOQUEADO',
-    membersOnly: 'Solo miembros',
+    membersOnly: 'Desbloqueo: $0.49',
     lockedTitle: 'Hay mucho más por descubrir',
     lockedBody: 'Esta idea de cita está bloqueada. Crea una cuenta GRATIS y usa Crédito para desbloquearla. Una vez desbloqueada, permanece disponible en tu cuenta.',
     unlock: 'Desbloquear con Crédito',
@@ -138,7 +127,7 @@ const OPEN_HOUSE_COPY = {
   fr: {
     badge: 'PORTES OUVERTES',
     locked: 'VERROUILLÉ',
-    membersOnly: 'Membres uniquement',
+    membersOnly: 'Débloquer : 0,49 USD',
     lockedTitle: 'Il y en a encore beaucoup à découvrir',
     lockedBody: 'Cette idée de rendez-vous est verrouillée. Créez un compte GRATUIT puis utilisez du Crédit pour la déverrouiller. Elle restera ensuite disponible sur votre compte.',
     unlock: 'Déverrouiller avec du Crédit',
@@ -149,7 +138,7 @@ const OPEN_HOUSE_COPY = {
   it: {
     badge: 'PORTE APERTE',
     locked: 'BLOCCATO',
-    membersOnly: 'Solo membri',
+    membersOnly: 'Sblocco: $0.49',
     lockedTitle: 'C’è molto altro da scoprire',
     lockedBody: 'Questa idea è bloccata. Crea un account GRATUITO e usa Credito per sbloccarla. Dopo lo sblocco resterà disponibile nel tuo account.',
     unlock: 'Sblocca con Credito',
@@ -160,7 +149,7 @@ const OPEN_HOUSE_COPY = {
   de: {
     badge: 'TAG DER OFFENEN TÜR',
     locked: 'GESPERRT',
-    membersOnly: 'Nur für Mitglieder',
+    membersOnly: 'Freischalten: $0.49',
     lockedTitle: 'Es gibt noch viel mehr zu entdecken',
     lockedBody: 'Diese Date-Idee ist gesperrt. Erstelle ein KOSTENLOSES Konto und verwende Credit zum Freischalten. Danach bleibt sie für dein Konto freigeschaltet.',
     unlock: 'Mit Credit Freischalten',
@@ -185,6 +174,11 @@ export default function DateIdeas() {
   const t = DATE_IDEAS_UI[currentLanguage] || DATE_IDEAS_UI.en;
   const queryClient = useQueryClient();
 
+  const { data: publicIdeaCatalog } = useQuery({queryKey:['date-idea-library',currentLanguage],queryFn:()=>apiRequest('/api/date-idea-library?lang='+encodeURIComponent(currentLanguage))});
+  const loadPrivateIdea = async (idea) => {
+    const result=await apiRequest('/api/date-idea-library/item?lang='+encodeURIComponent(currentLanguage)+'&id='+encodeURIComponent(idea.id));
+    return result.idea;
+  };
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedBudget, setSelectedBudget] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -224,7 +218,6 @@ export default function DateIdeas() {
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
     if (isAdmin) return true;
-    if (OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id))) return true;
     return unlockedDateKeys.has(String(idea.id));
   };
 
@@ -297,7 +290,7 @@ export default function DateIdeas() {
 
   const BUILTIN_DATE_STATE_PREFIX = '__o2ol_builtin_date__:';
 
-  const basePredefinedDateIdeas = getDateIdeasForLanguage(currentLanguage).map((idea, index) => ({
+  const basePredefinedDateIdeas = (publicIdeaCatalog?.ideas||[]).map((idea, index) => ({
     ...idea,
     icon: iconMap[idea.iconKey] || Heart,
     color: dateIdeaColors[index % dateIdeaColors.length]
@@ -511,7 +504,7 @@ export default function DateIdeas() {
     });
   };
 
-  const openDateIdea = (idea) => {
+  const openDateIdea = async (idea) => {
     const isBuiltIn = Boolean(idea?.week);
     const isLockedForOpenHouse = isBuiltIn && !hasDateIdeaAccess(idea);
     if (isLockedForOpenHouse) {
@@ -521,7 +514,10 @@ export default function DateIdeas() {
       return;
     }
 
-    setSelectedIdea(idea);
+    try {
+      const full=isBuiltIn?await loadPrivateIdea(idea):idea;
+      setSelectedIdea({...idea,...full});
+    }catch(e){toast.error(e?.message||'Unable to open Date Idea.');return;}
     setShowScheduleForm(false);
     setScheduleDate('');
     setScheduleTime('');
@@ -544,7 +540,8 @@ export default function DateIdeas() {
         queryClient.invalidateQueries({ queryKey: ['tokenWallet', dateIdeasUserKey] }),
       ]);
       setShowOpenHouseLock(false);
-      setSelectedIdea(lockedIdea);
+      const full=await loadPrivateIdea(lockedIdea);
+      setSelectedIdea({...lockedIdea,...full});
       setLockedIdea(null);
       toast.success(`Unlocked with $${(Number(result?.tokens?.charged || dateIdeaTokenCost)/100).toFixed(2)} Credit.`);
     } catch (error) {
@@ -722,7 +719,7 @@ export default function DateIdeas() {
             const Icon = idea.icon || Heart;
             const isBuiltIn = Boolean(idea.week);
             const isOpenHouseLocked = isBuiltIn && !hasDateIdeaAccess(idea);
-            const teaser = isOpenHouseLocked ? mysteryTitleFragment(idea.title) : null;
+            const teaser = isOpenHouseLocked ? idea.title : null;
 
             return (
               <motion.button
@@ -732,7 +729,7 @@ export default function DateIdeas() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.015, 0.25) }}
                 onClick={() => openDateIdea(idea)}
-                aria-label={isOpenHouseLocked ? `${openHouseCopy.locked}: ${openHouseCopy.membersOnly}` : idea.title}
+                aria-label={isOpenHouseLocked ? `${idea.title} — ${openHouseCopy.membersOnly}` : idea.title}
                 className={`relative w-full min-h-[86px] rounded-xl border px-4 py-4 text-left flex items-center gap-4 transition-all duration-200 ${
                   isOpenHouseLocked
                     ? 'bg-slate-50 border-slate-300 hover:border-purple-300 hover:shadow-md'
@@ -743,14 +740,12 @@ export default function DateIdeas() {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
 
-                {!isOpenHouseLocked && isBuiltIn && OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id)) && (
-                  <span className="absolute right-3 top-3 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>
-                )}
+
                 {isOpenHouseLocked ? (
                   <div className="min-w-0 flex-1 pr-10">
                     <div className="flex items-center gap-2 overflow-hidden">
-                      <span className="font-bold text-gray-700 leading-snug whitespace-nowrap">{teaser}</span>
-                      <span aria-hidden="true" className="h-4 w-24 sm:w-32 rounded bg-slate-300 blur-[3px] opacity-90" />
+                      <span className="font-bold text-gray-700 leading-snug">{teaser}</span>
+                      <span aria-hidden="true" className="h-3 w-10 rounded bg-slate-300 blur-[3px] opacity-90" />
                     </div>
                     <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-purple-700">
                       <Lock className="h-3.5 w-3.5" />
