@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Star } from "lucide-react";
+import { Play, Star, LockKeyhole } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -31,7 +31,7 @@ export default function GameCard({ game, index }) {
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 mb-4">{game.description}</p>
-          {game.accessLabel && <div className="mb-4 inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">{game.accessLabel}</div>}
+          {game.accessLabel && <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-violet-700"><LockKeyhole className="h-3.5 w-3.5"/>{game.accessLabel}</div>}
           {game.href ? (
             <a href={game.href}>
               <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
