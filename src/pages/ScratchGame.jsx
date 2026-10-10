@@ -69,38 +69,36 @@ export default function ScratchGame() {
     }finally{setUnlocking(false);}
   };
 
-  return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-cyan-50 to-blue-50">
+  return <div className="min-h-screen" style={{backgroundColor:'#2b0813'}}>
     <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <Link to={createPageUrl("CooperativeGames")} className="inline-flex items-center text-slate-700 hover:text-pink-600 font-semibold"><ArrowLeft className="w-4 h-4 mr-2"/>{t.back}</Link>
+        <Link to={createPageUrl("CooperativeGames")} className="inline-flex items-center font-semibold text-white/85 hover:text-white"><ArrowLeft className="w-4 h-4 mr-2"/>{t.back}</Link>
         {gameUrl&&<a href={gameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="w-4 h-4"/>{t.full}</Button></a>}
       </div>
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
-      <img src="/game-cards/card-love-scratch.jpg" alt="game card" className="mx-auto mb-4 block w-full max-w-2xl rounded-2xl shadow-lg ring-1 ring-black/5" />
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-pink-100">
+      <img src="/game-cards/card-love-scratch.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         {!fullMemberAccess?(
-          <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-slate-900">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">{t.preview}</p></div>
+          <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-white">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-white/75">{t.preview}</p></div>
         ):gameUrl?(
-          <iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(60vh, 720px)",minHeight:"520px"}} allow="fullscreen"/>
+          <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(60vh, 720px)",minHeight:"520px"}} allow="fullscreen"/></div>
         ):promotion?.free?(
           <div className="p-10 text-center sm:p-14">
             <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">ALL GAMES FREE</div>
-            <h1 className="mt-4 text-3xl font-black text-slate-900">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.</p>
+            <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
+            <p className="mx-auto mt-3 max-w-xl text-white/75">Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.</p>
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
             <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
           </div>
         ):(
           <div className="p-10 text-center sm:p-14">
-            <LockKeyhole className="mx-auto h-12 w-12 text-pink-600"/>
-            <h1 className="mt-4 text-3xl font-black text-slate-900">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">{t.preview}</p>
+            <LockKeyhole className="mx-auto h-12 w-12 text-pink-400"/>
+            <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
+            <p className="mx-auto mt-3 max-w-xl text-white/75">{t.preview}</p>
             <Button onClick={()=>setShowUnlock(true)} className="mt-6 bg-pink-600 font-black hover:bg-pink-700">View price to play</Button>
           </div>
         )}
-      </div>
     </div>
     <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
-    <p className="pb-5 pt-4 text-center text-xs text-slate-500">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
+    <p className="pb-5 pt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
   </div>;
 }
