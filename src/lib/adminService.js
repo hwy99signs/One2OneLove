@@ -23,8 +23,9 @@ async function getFreshAdminJson(path) {
   return parseJson(response);
 }
 
-export async function getAdminDashboard() {
-  return getFreshAdminJson('/api/admin/dashboard');
+export async function getAdminDashboard(registryRange) {
+  const query = registryRange ? `?registryRange=${encodeURIComponent(registryRange)}` : '';
+  return getFreshAdminJson(`/api/admin/dashboard${query}`);
 }
 
 export async function getAdminAnalytics() {

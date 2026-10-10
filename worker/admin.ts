@@ -574,7 +574,7 @@ async function members(db) {
      ORDER BY COALESCE(u.created_at,a."createdAt") DESC`);
   return result.rows;
 }
-async function visitorRegistry(db) {
+async function visitorRegistry(db, rangeDays = 30) {
   const [visitorsResult,funnelResult] = await Promise.all([
     db.query(`
       WITH visitor_rollup AS (
@@ -594,7 +594,8 @@ async function visitorRegistry(db) {
           (array_agg(e.user_id ORDER BY e.created_at DESC) FILTER (WHERE e.user_id IS NOT NULL))[1] AS latest_event_user_id
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" event_auth ON event_auth.id=e.user_id
-        WHERE e.user_id IS NULL OR COALESCE(event_auth.role,'user') <> 'admin'
+        WHERE (e.user_id IS NULL OR COALESCE(event_auth.role,'user') <> 'admin')
+          AND ($1::int IS NULL OR e.created_at >= now() - make_interval(days => $1::int))
         GROUP BY e.visitor_id
       ), resolved AS (
         SELECT vr.*,
@@ -632,8 +633,7 @@ async function visitorRegistry(db) {
       LEFT JOIN purchases p ON p.user_id=r.resolved_user_id
       WHERE r.resolved_user_id IS NULL OR COALESCE(a.role,'user') <> 'admin'
       ORDER BY r.last_seen DESC
-      LIMIT 500
-    `),
+    `, [rangeDays]),
     db.query(`
       WITH visitor_ids AS (
         SELECT DISTINCT e.visitor_id
@@ -685,6 +685,7 @@ async function visitorRegistry(db) {
     `)
   ]);
   return {
+    rangeDays,
     visitors: visitorsResult.rows,
     funnel: funnelResult.rows[0] || {
       total_visitors:0,online_now:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0
@@ -1382,11 +1383,11 @@ async function supportFeedback(db) {
   return { summary:summary.rows[0]||{total:0,new_count:0,bug_count:0}, recent:recent.rows };
 }
 
-async function dashboard(db, env) {
+async function dashboard(db, env, registryRangeDays = 30) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
   const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db),supportFeedback(db),
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays),supportFeedback(db),
   ]);
   return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData };
 }
@@ -1407,7 +1408,9 @@ export async function handleAdminRequest(request, env, url) {
         return json({ ok:true, admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role } });
       }
       if (request.method === 'GET' && url.pathname === '/api/admin/dashboard') {
-        const data = await dashboard(db, env);
+        const rangeParam = String(url.searchParams.get('registryRange') || '30d').toLowerCase();
+        const rangeDays = rangeParam === 'all' ? null : ({ '7d': 7, '30d': 30, '90d': 90 }[rangeParam] ?? 30);
+        const data = await dashboard(db, env, rangeDays);
         return json({ ok:true,recovered:true,mode:'admin_management',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
       }
 
