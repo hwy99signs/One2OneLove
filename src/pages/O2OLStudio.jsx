@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { BrainCircuit, CreditCard, Film, Loader2, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 
 const COPY={
@@ -85,6 +85,13 @@ export default function O2OLStudio(){
   const [unlocking,setUnlocking]=useState(false);
   const [unlockError,setUnlockError]=useState('');
   const [showUnlockConfirm,setShowUnlockConfirm]=useState(false);
+  const [creditBalance,setCreditBalance]=useState(null);
+
+  useEffect(()=>{
+    let active=true;
+    if(isAuthenticated)getTokenWallet().then(data=>{if(active)setCreditBalance(Number(data?.wallet?.balance||0));}).catch(()=>{});
+    return()=>{active=false};
+  },[isAuthenticated,refreshKey]);
 
   useEffect(()=>{
     let active=true;
@@ -114,6 +121,7 @@ export default function O2OLStudio(){
         idempotencyKey:`studio:${user.id}:${episode.id}`,
       });
       setRefreshKey(key=>key+1);
+      getTokenWallet().then(data=>setCreditBalance(Number(data?.wallet?.balance||0))).catch(()=>{});
     }catch(error){
       if(isTokensRequiredError(error)){
         const info=tokenRequiredDetails(error);
@@ -236,7 +244,8 @@ export default function O2OLStudio(){
         open={showUnlockConfirm}
         title={episode?.title ? 'Unlock '+episode.title : 'Unlock O2OL Studio Episode'}
         priceCents={Number(episode?.unlockPriceCents||100)}
-        description="Pay once and watch anytime from this account."
+        terms="One-time unlock — yours forever."
+        balanceCents={creditBalance}
         busy={unlocking}
         error={unlockError}
         onUnlock={handleUnlock}
