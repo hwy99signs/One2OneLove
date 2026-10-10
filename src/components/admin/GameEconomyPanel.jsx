@@ -40,7 +40,7 @@ export default function GameEconomyPanel(){
       <h3 className="text-lg font-black">Promotions</h3>
       <div className="mt-4 space-y-3">{(data?.promotions||[]).map(p=>
         <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4">
-          <div><div className="font-black">{p.name}</div><div className="text-xs font-semibold text-slate-500">{p.kind+' · '+(p.recurrence==='weekly'?('weekly day '+p.recurrence_day):'one-time')+' · '+(p.games==='ALL'?'ALL games':Array.isArray(p.games)?p.games.join(', '):String(p.games))}</div><div className="mt-1 text-xs text-slate-500">{(p.players||0)+' players · '+(p.plays||0)+' plays'+((p.perGame||[]).length?' · '+p.perGame.map(g=>g.game+': '+g.plays).join(' · '):'')}</div></div>
+          <div><div className="font-black">{p.name}</div><div className="text-xs font-semibold text-slate-500">{p.kind+' · '+(p.recurrence==='weekly'?('weekly day '+p.recurrence_day):'one-time')+' · '+(p.games==='ALL'?'ALL games':Array.isArray(p.games)?p.games.join(', '):String(p.games))}</div><div className="mt-1 text-xs text-slate-500">{(p.players||0)+' players · '+(p.plays||0)+' plays · '+(p.returnedWithin7Days||0)+' returned in 7d · '+(p.becamePayingPlayers||0)+' later paid'+((p.perGame||[]).length?' · '+p.perGame.map(g=>g.game+': '+g.plays).join(' · '):'')}</div></div>
           <button onClick={()=>toggle(p)} className={'rounded-xl px-4 py-2 text-sm font-black '+(p.active?'bg-emerald-600 text-white':'bg-slate-200 text-slate-700')}>{p.active?'Enabled':'Disabled'}</button>
         </div>)}
       </div>
