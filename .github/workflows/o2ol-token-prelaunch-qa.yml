@@ -235,6 +235,17 @@ jobs:
           grep -F "attachment-related-behaviors" worker/coaching-knowledge.ts
           grep -F "choosing-each-other-daily" worker/coaching-knowledge.ts
           grep -F "quality-time-presence" worker/coaching-knowledge.ts
+          test -s neon-migrations/2026-10-10-o2ol-coaching-consent.sql
+          grep -F "coaching_consent_version" neon-migrations/2026-10-10-o2ol-coaching-consent.sql
+          grep -F "coaching_consent_history" neon-migrations/2026-10-10-o2ol-coaching-consent.sql
+          grep -F "COACHING_CONSENT_VERSION='2026-10-10-v1'" worker/consents.ts
+          grep -F "requireCurrentCoachingConsent" worker/ai.ts worker/mymatchiq-ai.ts
+          grep -F "coaching_consent_required" worker/consents.ts
+          grep -F "Before you chat with Amora or Bianca" worker/consents.ts src/components/coaching/CoachingConsentGate.jsx
+          grep -F "I agree" src/components/coaching/CoachingConsentGate.jsx
+          grep -F "Decline" src/components/coaching/CoachingConsentGate.jsx
+          grep -F 'CoachingConsentGate source="amora"' src/pages/index.jsx
+          grep -F 'CoachingConsentGate source="bianca"' src/pages/index.jsx
           grep -F "const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';" worker/ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,billingFeatureCode" worker/ai.ts
           grep -F "'love_note_ai','Love Note AI generation',25" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
