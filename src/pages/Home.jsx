@@ -31,6 +31,27 @@ const STUDIO_COPY = {
   de:{eyebrow:'O2OL STUDIO SHOW',season:'Staffel 1 • Folge 1',title:'Wer sollte sich zuerst entschuldigen?',body:'Sieh dir Folge 1 KOSTENLOS an — das O2OL-Studio-Gespräch, das die Staffel eröffnete — und betrachte eine echte Beziehungsfrage aus mehreren Perspektiven.',watch:'Folge 1 — KOSTENLOS Ansehen'}
 };
 
+// Homepage Studio feature (owner directive, 2026-10-10): the homepage
+// leads with the NEWEST episode. Season 1 Episode 2 is the feature; its
+// playback stays behind the $1 Credit unlock in the Studio (the homepage
+// never streams it). Episode 1 moves under the Past Episodes tab and
+// stays free.
+const STUDIO_E2_COPY = {
+  en:{eyebrow:'O2OL STUDIO SHOW',badge:'NEW EPISODE',season:'Season 1 • Episode 2',title:'Who Pays for the First Date?',body:'The newest O2OL Studio conversation is here. Unlock Episode 2 once with $1 Credit and watch it anytime — no subscription, ever.',watch:'Unlock Episode 2 — $1',lockNote:'$1 Credit unlock • Watch anytime'},
+  es:{eyebrow:'O2OL STUDIO SHOW',badge:'NUEVO EPISODIO',season:'Temporada 1 • Episodio 2',title:'¿Quién paga en la primera cita?',body:'La conversación más nueva de O2OL Studio ya está aquí. Desbloquea el Episodio 2 una vez con $1 de Crédito y míralo cuando quieras — sin suscripción, nunca.',watch:'Desbloquear Episodio 2 — $1',lockNote:'Desbloqueo con $1 de Crédito • Míralo cuando quieras'},
+  fr:{eyebrow:'O2OL STUDIO SHOW',badge:'NOUVEL ÉPISODE',season:'Saison 1 • Épisode 2',title:'Qui paie au premier rendez-vous ?',body:'La toute nouvelle conversation O2OL Studio est arrivée. Débloquez l’Épisode 2 une fois avec 1 $ de Crédit et regardez-le quand vous voulez — sans abonnement, jamais.',watch:'Débloquer l’Épisode 2 — $1',lockNote:'Déblocage avec 1 $ de Crédit • À regarder à tout moment'},
+  it:{eyebrow:'O2OL STUDIO SHOW',badge:'NUOVO EPISODIO',season:'Stagione 1 • Episodio 2',title:'Chi paga al primo appuntamento?',body:'La conversazione più nuova di O2OL Studio è qui. Sblocca l’Episodio 2 una volta con $1 di Credito e guardalo quando vuoi — senza abbonamento, mai.',watch:'Sblocca Episodio 2 — $1',lockNote:'Sblocco con $1 di Credito • Guardalo quando vuoi'},
+  de:{eyebrow:'O2OL STUDIO SHOW',badge:'NEUE FOLGE',season:'Staffel 1 • Folge 2',title:'Wer zahlt beim ersten Date?',body:'Das neueste O2OL-Studio-Gespräch ist da. Schalte Folge 2 einmal mit $1 Credit frei und sieh sie dir jederzeit an — kein Abo, niemals.',watch:'Folge 2 Freischalten — $1',lockNote:'$1 Credit Freischaltung • Jederzeit ansehen'}
+};
+
+const STUDIO_TABS_COPY = {
+  en:{newEpisode:'New Episode',pastEpisodes:'Past Episodes'},
+  es:{newEpisode:'Nuevo Episodio',pastEpisodes:'Episodios Anteriores'},
+  fr:{newEpisode:'Nouvel Épisode',pastEpisodes:'Épisodes Précédents'},
+  it:{newEpisode:'Nuovo Episodio',pastEpisodes:'Episodi Precedenti'},
+  de:{newEpisode:'Neue Folge',pastEpisodes:'Frühere Folgen'}
+};
+
 const COPY = {
   en: {
     slogan:'We Start Where Dating Sites Stop.', mission:'One2OneLove is for everyone pursuing, building, and nurturing love—regardless of race, creed, color, gender, or sexual orientation.', support:'Whether you’re dating, committed, engaged, married, or simply trying to better understand love and relationships, One2OneLove brings together practical tools, community, conversation, and inspiration to help you connect, grow, and build healthier relationships.', langs:'Available in 5 Languages: English • Spanish • French • Italian • German', allInclusive:'ALL-INCLUSIVE RELATIONSHIP PLATFORM', inclusiveBody:'Every race, creed, color, gender, sexual orientation, culture, and background is welcome here. One2OneLove is built to support people pursuing, building, and nurturing healthy love and relationships.', forEveryone:'For Everyone', forEveryoneBody:'LGBTQ+, interfaith, interracial, and relationships across cultures and backgrounds are welcomed and respected.', practical:'Practical Relationship Tools', practicalBody:'Use launch-ready tools designed to support communication, connection, reflection, memories, goals, and meaningful time together.', respectful:'Respectful Community', respectfulBody:'A welcoming space where people can discuss love and relationships without discrimination or judgment.', notDating:'THIS IS NOT A DATING SITE', notDatingBody:'One2OneLove does not match users for dates. It supports people as they pursue, build, understand, and nurture love and relationships.', tools:'Tools for Every Stage of Love', toolsBody:'Whether you’re pursuing love, dating, committed, engaged, married, or focused on strengthening a relationship, One2OneLove brings practical relationship tools and community together in one place.', toolLabels:{ loveNotes:'Love Notes', loveLanguage:'Love Language', dateIdeas:'Date Ideas', memoryLane:'Memory Lane', relationshipSupport:'Relationship Support', relationshipGoals:'Relationship Goals', lgbtqSupport:'LGBTQ+ Support', milestones:'Milestones', communicationPractice:'Communication Practice', chatRoom:'Chat Room', relationshipGames:'Relationship Games', professionals:'Therapists / Professionals' }, onboarding:'NOW ON-BOARDING', loveNotes:'Love Notes', loveNotesBody:'Create and share personalized love notes that help you express appreciation, affection, encouragement, and meaningful thoughts.',
@@ -76,6 +97,9 @@ export default function Home() {
   const t = COPY[currentLanguage] || COPY.en;
   const matchIQLabel = MYMATCHIQ_LABELS[currentLanguage] || MYMATCHIQ_LABELS.en;
   const studio = STUDIO_COPY[currentLanguage] || STUDIO_COPY.en;
+  const studioE2 = STUDIO_E2_COPY[currentLanguage] || STUDIO_E2_COPY.en;
+  const studioTabs = STUDIO_TABS_COPY[currentLanguage] || STUDIO_TABS_COPY.en;
+  const [studioTab, setStudioTab] = useState('new');
   const openHouse = OPEN_HOUSE_COPY[currentLanguage] || OPEN_HOUSE_COPY.en;
   const amora = AMORA_COPY[currentLanguage] || AMORA_COPY.en;
   const [selectedTool, setSelectedTool] = useState(0);
@@ -185,6 +209,42 @@ export default function Home() {
             ))}
           </div>
           <div className="mt-12 rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 px-9 py-8 shadow-sm"><h3 className="text-3xl font-black">{t.loveNotes}</h3><p className="mt-3 text-xl leading-relaxed">{t.loveNotesBody}</p></div>
+          <div className="mt-10 flex items-center justify-center gap-2" role="tablist" aria-label="O2OL Studio episodes">
+            <button type="button" role="tab" aria-selected={studioTab==='new'} onClick={() => setStudioTab('new')} className={`rounded-full px-5 py-2.5 text-sm font-black shadow transition ${studioTab==='new' ? 'bg-gradient-to-r from-fuchsia-500 to-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{studioTabs.newEpisode}</button>
+            <button type="button" role="tab" aria-selected={studioTab==='past'} onClick={() => setStudioTab('past')} className={`rounded-full px-5 py-2.5 text-sm font-black shadow transition ${studioTab==='past' ? 'bg-gradient-to-r from-fuchsia-500 to-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{studioTabs.pastEpisodes}</button>
+          </div>
+          {studioTab === 'new' ? (
+          <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
+            <div className="relative flex aspect-[16/9] w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-fuchsia-950 px-6 text-center">
+              <span className="rounded-full bg-amber-300 px-3.5 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.18em] text-amber-950 shadow-lg sm:text-xs">{studioE2.badge}</span>
+              <div className="mt-4 text-[0.7rem] font-black uppercase tracking-[0.22em] text-cyan-200 sm:text-sm">{studioE2.season}</div>
+              <div className="mt-3 max-w-4xl text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">{studioE2.title}</div>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90 sm:text-sm"><span aria-hidden="true">🔒</span>{studioE2.lockNote}</div>
+            </div>
+            <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 px-5 py-4 sm:px-7 sm:py-5 lg:px-9 lg:py-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.18em] shadow-lg sm:text-[0.68rem]">{studioE2.eyebrow}</span>
+                    <span className="text-[0.64rem] font-black uppercase tracking-[0.16em] text-cyan-200 sm:text-xs">{studioE2.season}</span>
+                  </div>
+                  <div className="mt-2 text-xl font-black leading-tight sm:text-2xl lg:text-3xl">{studioE2.title}</div>
+                  <p className="mt-1.5 hidden max-w-3xl text-sm leading-5 text-white/80 md:block">{studioE2.body}</p>
+                </div>
+                <button
+                  type="button"
+                  data-analytics-id="home-studio-feature-e2"
+                  data-analytics-destination="/O2OLStudio?episode=season-1-episode-2"
+                  onClick={()=>navigate('/O2OLStudio?episode=season-1-episode-2')}
+                  aria-label={`${studioE2.watch}: ${studioE2.title}`}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-fuchsia-500 to-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg transition hover:brightness-110 sm:self-auto sm:px-5 sm:py-2.5 sm:text-sm"
+                >
+                  {studioE2.watch}<span aria-hidden="true">▶</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          ) : (
           <div className="mt-6 w-full overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-slate-950 text-white shadow-2xl">
             <div className="aspect-[16/9] w-full overflow-hidden bg-black">
               <video
@@ -222,6 +282,7 @@ export default function Home() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </section>
     </div>
