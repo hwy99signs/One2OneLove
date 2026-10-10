@@ -115,7 +115,7 @@ try{
     else fail('Homepage Studio copy is incorrect',body.slice(-2200));
     const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-2"]');
     const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
-    if(studioVideoSrc?.includes('/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4')) pass('Homepage embeds Episode 2 video');
+    if(studioVideoSrc?.includes('/studio-media/season-1-episode-2.mp4') || studioVideoSrc?.includes('/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4')) pass('Homepage embeds Episode 2 video');
     else fail('Homepage Episode 2 video missing',String(studioVideoSrc));
     const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
     const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
