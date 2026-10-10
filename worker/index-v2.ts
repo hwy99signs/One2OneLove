@@ -1,5 +1,6 @@
 // @ts-nocheck
 import baseWorker from './index';
+import { withDatabaseHealth } from './health-response.js';
 import { sendProductionSiteHealth,handlePrivateAdminHealth } from './epscie-health';
 import { handleAdminRequest } from './admin';
 import { handleTokenAdminRequest } from './token-admin';
@@ -176,21 +177,7 @@ export default {
     if (url.pathname === '/api/epscie/admin-health') return handlePrivateAdminHealth(request,env);
 
     if (url.pathname === '/api/health') {
-      const prelaunch = String(env.PRELAUNCH_ENVIRONMENT || '').toLowerCase() === 'true';
-      return new Response(JSON.stringify({
-        ok:true,
-        app:'one2onelove',
-        environment:prelaunch?'token-prelaunch':'production',
-        production:!prelaunch,
-        accessModel:'free_tokens',
-      }), {
-        status:200,
-        headers:{
-          'content-type':'application/json; charset=utf-8',
-          'cache-control':'no-store',
-          'x-content-type-options':'nosniff',
-        },
-      });
+      return withDatabaseHealth(request, env, (req, bindings) => baseWorker.fetch(req, bindings));
     }
 
     if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
