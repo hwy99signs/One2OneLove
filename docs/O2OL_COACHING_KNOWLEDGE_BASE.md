@@ -154,7 +154,7 @@ Phase 1 uses deterministic local retrieval:
 - Record the knowledge-base version and retrieved entry IDs in cost/usage telemetry for auditability.
 
 ### Current KB version
-2026-10-10-v2
+2026-10-10-v2.1
 
 ### Phase 1 knowledge entries
 - communication-listen-before-defend
@@ -191,7 +191,21 @@ Phase 1 uses deterministic local retrieval:
 - digital-boundaries-social-media
 - ex-friendship-boundaries
 
-Current curated entry count: **31**
+Current curated entry count: **37**
+
+### Muse Literature Pack additions
+The owner-approved Muse starter literature pack was reviewed and ingested as an additive source. Overlapping briefs deepen existing doctrine rather than creating duplicate entries. New entries added from the pack:
+- love-languages-flexible
+- attachment-related-behaviors
+- choosing-each-other-daily
+- appreciation-gratitude
+- patience-with-growth
+- quality-time-presence
+
+Muse source material also deepens existing guidance for communication, conflict/repair, apology, validation, trust, and safety boundaries.
+
+Ingestion rule: Muse content is guidance for the coach, not member-facing scripts. Safety standards remain authoritative when wording overlaps or conflicts.
+
 
 ### Quality target
 Current target after Phase 1:
