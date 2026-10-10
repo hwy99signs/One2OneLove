@@ -154,9 +154,9 @@ Phase 1 uses deterministic local retrieval:
 - Record the knowledge-base version and retrieved entry IDs in cost/usage telemetry for auditability.
 
 ### Current KB version
-2026-10-10-v1
+2026-10-10-v2
 
-### Initial knowledge entries
+### Phase 1 knowledge entries
 - communication-listen-before-defend
 - conflict-repair
 - boundaries-vs-control
@@ -177,6 +177,22 @@ Phase 1 uses deterministic local retrieval:
 - self-harm-crisis
 - professional-referral
 
+### Phase 2 communication + relationship-pattern entries
+- communication-demand-withdraw-cycle
+- communication-stonewalling-flooding
+- communication-soft-startup
+- communication-emotional-bids
+- communication-unmet-expectations
+- communication-recurring-conflict
+- communication-advice-vs-listening
+- household-labor-fairness
+- values-faith-differences
+- intercultural-relationship
+- digital-boundaries-social-media
+- ex-friendship-boundaries
+
+Current curated entry count: **31**
+
 ### Quality target
 Current target after Phase 1:
 - Bianca: Good
@@ -190,7 +206,10 @@ Longer-term target:
 - Add source-confidence and citation metadata internally
 - Add multilingual approved knowledge entries
 
-### Phase 2 planned expansion
+### Phase 2 status
+Phase 2 has begun. The first release expands communication patterns, recurring conflict, household partnership, values/culture, and modern digital/ex-partner boundaries.
+
+### Remaining Phase 2 planned expansion
 - Attachment-related behaviors without clinical labeling
 - Appreciation and emotional bids
 - Communication styles
