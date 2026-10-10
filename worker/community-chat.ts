@@ -21,6 +21,53 @@ function firstNameOf(name) {
   const token = String(name || '').trim().split(/\s+/)[0] || '';
   return token.includes('@') ? '' : token;
 }
+// No first name on file -> the chatter is shown as a numbered visitor
+// (owner rule, 2026-10-09). Numbers come from a REAL COUNTER the site
+// hands out in order and stores (public.chat_visitor_numbers): the first
+// time a nameless chatter's name would display, the next number is
+// assigned and kept forever — unique per person, in handout order.
+// Existing chatters are covered because names are computed when
+// messages are read, not stored on the messages themselves.
+let visitorNumbersSchemaReady = false;
+async function ensureVisitorNumbersSchema(db) {
+  if (visitorNumbersSchemaReady) return;
+  await ensureDdl(db, `CREATE SEQUENCE IF NOT EXISTS public.chat_visitor_number_seq`);
+  await ensureDdl(db, `
+    CREATE TABLE IF NOT EXISTS public.chat_visitor_numbers (
+      user_id uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+      visitor_number bigint NOT NULL UNIQUE DEFAULT nextval('public.chat_visitor_number_seq'),
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  visitorNumbersSchemaReady = true;
+}
+async function visitorNumbersFor(db, userIds) {
+  const labels = new Map();
+  const ids = [...new Set((userIds || []).map(v => String(v || '')).filter(Boolean))];
+  if (!ids.length) return labels;
+  try {
+    await ensureVisitorNumbersSchema(db);
+    await db.query(
+      `INSERT INTO public.chat_visitor_numbers(user_id)
+         SELECT v FROM unnest($1::uuid[]) AS v
+         ON CONFLICT (user_id) DO NOTHING`,
+      [ids],
+    );
+    const found = await db.query(
+      `SELECT user_id,visitor_number FROM public.chat_visitor_numbers WHERE user_id = ANY($1::uuid[])`,
+      [ids],
+    );
+    for (const row of found.rows) labels.set(String(row.user_id), 'Visitor #' + Number(row.visitor_number));
+  } catch { /* counter store unreachable — callers use the derived fallback */ }
+  return labels;
+}
+// Emergency fallback ONLY (counter store unreachable): a stable number
+// derived from the user ID. Never stored, never the primary scheme.
+function derivedVisitorLabel(userId) {
+  const hex = String(userId || '').replace(/[^0-9a-f]/gi, '');
+  const n = hex ? parseInt(hex.slice(0, 8), 16) % 100000 : 0;
+  return 'Visitor #' + String(n).padStart(5, '0');
+}
 async function session(request, env) {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
@@ -227,11 +274,12 @@ async function listMessages(db, roomId, url, viewerId = null) {
     const mutedIds = new Set(muted.rows.map(row => String(row.muted_user_id)));
     rows = rows.filter(row => !mutedIds.has(String(row.user_id)));
   }
+  const numberLabels = await visitorNumbersFor(db, rows.filter(row => !firstNameOf(row.author_name)).map(row => row.user_id));
   return rows.map(row => ({
     id: row.id,
     roomId: row.room_id,
     userId: row.user_id,
-    authorName: firstNameOf(row.author_name) || 'One2OneLove Member',
+    authorName: firstNameOf(row.author_name) || numberLabels.get(String(row.user_id)) || derivedVisitorLabel(row.user_id),
     authorAvatar: row.author_avatar || '',
     content: row.content,
     replyToId: row.reply_to_id,
@@ -394,11 +442,14 @@ export async function handleCommunityChatRequest(request, env, url) {
           await touchPresence(db, roomId, auth.user.id);
           const profile = await db.query('SELECT name,avatar_url FROM public.users WHERE id=$1::uuid', [auth.user.id]);
           const row = inserted.rows[0];
+          const firstName = firstNameOf(profile.rows[0]?.name || auth.user.name);
+          const ownNumber = firstName ? null : await visitorNumbersFor(db, [auth.user.id]);
+          const displayName = firstName || ownNumber?.get(String(auth.user.id)) || derivedVisitorLabel(auth.user.id);
           return json({ ok: true, message: {
             id: row.id,
             roomId: row.room_id,
             userId: row.user_id,
-            authorName: firstNameOf(profile.rows[0]?.name || auth.user.name) || 'One2OneLove Member',
+            authorName: displayName,
             authorAvatar: profile.rows[0]?.avatar_url || '',
             content: row.content,
             replyToId: row.reply_to_id,
