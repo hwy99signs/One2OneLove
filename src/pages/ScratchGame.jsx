@@ -76,6 +76,7 @@ export default function ScratchGame() {
         {gameUrl&&<a href={gameUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2"><ExternalLink className="w-4 h-4"/>{t.full}</Button></a>}
       </div>
       {!fullMemberAccess&&<div className="mb-4"><OpenHouseBrowseNotice/></div>}
+      <img src="/game-cards/card-love-scratch.jpg" alt="LOVE SCRATCH GAME" className="mb-4 block w-full rounded-2xl shadow-lg ring-1 ring-black/5"/>
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-pink-100">
         {!fullMemberAccess?(
           <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-slate-900">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">{t.preview}</p></div>

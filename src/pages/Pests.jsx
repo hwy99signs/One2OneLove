@@ -24,6 +24,7 @@ export default function Pests() {
             {t.back}
           </Link>
         </div>
+        <img src="/game-cards/card-pests.jpg" alt="PEST'S" className="mb-5 block w-full rounded-2xl shadow-lg ring-1 ring-black/5" />
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-amber-100">
           <iframe title="PEST'S" src="/games-src/pests.html" className="w-full border-0" style={{ height: "min(84vh, 1000px)", minHeight: "680px" }} allow="fullscreen" />
         </div>

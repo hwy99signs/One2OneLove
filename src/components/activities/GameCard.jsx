@@ -19,7 +19,18 @@ export default function GameCard({ game, index }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-green-200">
+      <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-green-200">
+        {game.image ? (<>
+          <div className="relative">
+            <img src={game.image} alt={game.name} loading="lazy" className="block aspect-[1663/946] w-full object-cover" />
+            <span className={`absolute right-3 top-3 px-3 py-1 rounded-full text-xs font-semibold capitalize shadow ${difficultyColors[game.difficulty]}`}>
+              {game.difficulty}
+            </span>
+          </div>
+          <CardHeader className="pb-0 pt-4">
+            <CardTitle className="text-xl">{game.name}</CardTitle>
+          </CardHeader>
+        </>) : (
         <CardHeader>
           <div className="flex items-start justify-between mb-3">
             <div className="text-4xl">{game.icon}</div>
@@ -28,7 +39,7 @@ export default function GameCard({ game, index }) {
             </span>
           </div>
           <CardTitle className="text-xl">{game.name}</CardTitle>
-        </CardHeader>
+        </CardHeader>)}
         <CardContent>
           <p className="text-gray-600 mb-4">{game.description}</p>
           {game.accessLabel && <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black text-violet-700"><LockKeyhole className="h-3.5 w-3.5"/>{game.accessLabel}</div>}
