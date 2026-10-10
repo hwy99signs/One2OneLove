@@ -300,6 +300,23 @@ jobs:
             exit 1
           fi
 
+      - name: Verify one-time Credit unlock enforcement is server-side
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "contentUnlockFeature(url.pathname)" worker/api-entitlements.ts
+          grep -F "public.o2ol_token_content_unlocks" worker/api-entitlements.ts
+          grep -F "content_key='feature'" worker/api-entitlements.ts
+          grep -F "code: 'content_unlock_required'" worker/api-entitlements.ts
+          for FEATURE in memories_unlock journals_unlock milestones_unlock goals_unlock calendar_unlock; do
+            grep -F "'$FEATURE'" worker/api-entitlements.ts
+            grep -F "featureCode=\"$FEATURE\"" src/pages/index.jsx
+          done
+          if grep -REn "billing_required|plan_upgrade_required|stripe_subscription_id|subscription_plan|subscription_status" worker/api-entitlements.ts; then
+            echo "Retired paid-membership requirement reappeared in the API entitlement gate." >&2
+            exit 1
+          fi
+
       - name: Verify game Credit access is transactional
         shell: bash
         run: |

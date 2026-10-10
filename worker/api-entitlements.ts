@@ -42,6 +42,28 @@ function memberIdentityRequired(pathname) {
   return MEMBER_ONLY_PREFIXES.some(prefix => pathname.startsWith(prefix));
 }
 
+// One-time Credit purchases must be enforced at the API as well as in the
+// page's PaidFeatureGate. The Credit purchase endpoint records content_key
+// 'feature' for each of these five protected feature groups.
+const CONTENT_UNLOCK_PREFIXES = [
+  ['/api/media/memories/', 'memories_unlock'],
+  ['/api/memories', 'memories_unlock'],
+  ['/api/milestones', 'milestones_unlock'],
+  ['/api/media/milestones/', 'milestones_unlock'],
+  ['/api/journals', 'journals_unlock'],
+  ['/api/calendar-events', 'calendar_unlock'],
+  ['/api/goals', 'goals_unlock'],
+];
+
+function contentUnlockFeature(pathname) {
+  for (const [prefix, featureCode] of CONTENT_UNLOCK_PREFIXES) {
+    if (pathname === prefix || pathname.startsWith(prefix.endsWith('/') ? prefix : prefix + '/')) {
+      return featureCode;
+    }
+  }
+  return null;
+}
+
 export function requiresApiEntitlement(pathname) {
   // Compatibility name retained because identity-gate.ts imports it.
   // "Entitlement" now means member identity only; recurring tiers are retired.
@@ -99,8 +121,32 @@ export async function enforceApiEntitlement(request, env, url) {
       return json({ ok: false, error: { code: 'phone_verification_required', message: 'Phone verification is required.' } }, 428);
     }
 
-    // No recurring membership/tier check belongs here. Feature-level paid
-    // access is enforced by the Credit engine in the destination handler.
+    // The paid feature pages show the price and handle the purchase; every
+    // protected API also verifies ownership of its one-time Credit unlock.
+    // Administrators retain access for QA without customer Credit charges.
+    const unlockFeature = contentUnlockFeature(url.pathname);
+    if (unlockFeature && row.role !== 'admin') {
+      const unlocked = await db.query(
+        `SELECT EXISTS(
+           SELECT 1 FROM public.o2ol_token_content_unlocks
+            WHERE user_id=$1::uuid AND feature_code=$2 AND content_key='feature'
+         ) AS owned`,
+        [auth.user.id, unlockFeature],
+      );
+      if (unlocked.rows[0]?.owned !== true) {
+        return json({
+          ok: false,
+          error: {
+            code: 'content_unlock_required',
+            message: 'This feature uses Credit. Unlock it to continue.',
+            featureCode: unlockFeature,
+          },
+        }, 402);
+      }
+    }
+
+    // No recurring membership, Stripe-subscription or tier eligibility gate.
+    // Per-use Credit charges stay in their own feature handlers.
     return null;
   } finally {
     await db.end();
