@@ -36,6 +36,9 @@ const translations = {
       useInsight: "Use this insight to strengthen your relationship and show love in ways that truly matter",
       takeAgain: "Take Quiz Again",
       shareResults: "Share Results",
+      shareTextLead: "My top love language is",
+      shareCopied: "Result copied - share it with your partner!",
+      shareFailed: "Sharing is not available on this device.",
       saveAuth: "Please sign in to save your results.",
       saveSuccess: "Love language saved to your profile!",
       saveSuccessDesc: "Your profile completion has been updated.",
@@ -81,6 +84,9 @@ const translations = {
       useInsight: "Usa esta perspectiva para fortalecer tu relación y mostrar amor de maneras que realmente importan",
       takeAgain: "Hacer el Quiz Otra Vez",
       shareResults: "Compartir Resultados",
+      shareTextLead: "Mi lenguaje del amor principal es",
+      shareCopied: "Resultado copiado - ¡compártelo con tu pareja!",
+      shareFailed: "Compartir no está disponible en este dispositivo.",
       saveAuth: "Inicia sesión para guardar tus resultados.",
       saveSuccess: "¡Tu lenguaje del amor se guardó en tu perfil!",
       saveSuccessDesc: "Se actualizó el progreso de tu perfil.",
@@ -126,6 +132,9 @@ const translations = {
       useInsight: "Utilisez cette perspicacité pour renforcer votre relation et montrer l'amour de manières qui comptent vraiment",
       takeAgain: "Refaire le Quiz",
       shareResults: "Partager les Résultats",
+      shareTextLead: "Mon langage de l'amour principal est",
+      shareCopied: "Résultat copié - partagez-le avec votre partenaire !",
+      shareFailed: "Le partage n'est pas disponible sur cet appareil.",
       saveAuth: "Connectez-vous pour enregistrer vos résultats.",
       saveSuccess: "Votre langage de l’amour a été enregistré dans votre profil !",
       saveSuccessDesc: "La progression de votre profil a été mise à jour.",
@@ -171,6 +180,9 @@ const translations = {
       useInsight: "Usa questa intuizione per rafforzare la tua relazione e mostrare amore in modi che contano davvero",
       takeAgain: "Rifai il Quiz",
       shareResults: "Condividi Risultati",
+      shareTextLead: "Il mio linguaggio dell'amore principale è",
+      shareCopied: "Risultato copiato - condividilo con il tuo partner!",
+      shareFailed: "La condivisione non è disponibile su questo dispositivo.",
       saveAuth: "Accedi per salvare i tuoi risultati.",
       saveSuccess: "Il tuo linguaggio dell’amore è stato salvato nel profilo!",
       saveSuccessDesc: "L’avanzamento del tuo profilo è stato aggiornato.",
@@ -216,6 +228,9 @@ const translations = {
       useInsight: "Nutzen Sie diese Einsicht, um Ihre Beziehung zu stärken und Liebe auf Weisen zu zeigen, die wirklich wichtig sind",
       takeAgain: "Quiz Erneut Machen",
       shareResults: "Ergebnisse Teilen",
+      shareTextLead: "Meine wichtigste Liebessprache ist",
+      shareCopied: "Ergebnis kopiert - teile es mit deinem Partner!",
+      shareFailed: "Teilen ist auf diesem Gerät nicht verfügbar.",
       saveAuth: "Bitte melde dich an, um deine Ergebnisse zu speichern.",
       saveSuccess: "Deine Liebessprache wurde in deinem Profil gespeichert!",
       saveSuccessDesc: "Der Fortschritt deines Profils wurde aktualisiert.",
@@ -260,7 +275,10 @@ const translations = {
       encouragePartner: "Moedig je partner aan om de quiz ook te doen zodat jullie elkaar beter kunnen begrijpen",
       useInsight: "Gebruik dit inzicht om je relatie te versterken en liefde te tonen op manieren die echt tellen",
       takeAgain: "Quiz Opnieuw Doen",
-      shareResults: "Resultaten Delen"
+      shareResults: "Resultaten Delen",
+      shareTextLead: "Mijn belangrijkste liefdestaal is",
+      shareCopied: "Resultaat gekopieerd - deel het met je partner!",
+      shareFailed: "Delen is niet beschikbaar op dit apparaat.",
     },
     loveLanguages: {
       words: { name: "Bevestigende Woorden", description: "Je voelt je het meest geliefd wanneer je partner affectie uitdrukt door gesproken of geschreven woorden van waardering, aanmoediging en complimenten." },
@@ -301,7 +319,10 @@ const translations = {
       encouragePartner: "Incentive seu parceiro a fazer o quiz também para que possam se entender melhor",
       useInsight: "Use esta percepção para fortalecer seu relacionamento e mostrar amor de maneiras que realmente importam",
       takeAgain: "Fazer o Quiz Novamente",
-      shareResults: "Compartilhar Resultados"
+      shareResults: "Compartilhar Resultados",
+      shareTextLead: "Minha principal linguagem do amor é",
+      shareCopied: "Resultado copiado - compartilhe com seu parceiro!",
+      shareFailed: "O compartilhamento não está disponível neste dispositivo.",
     },
     loveLanguages: {
       words: { name: "Palavras de Afirmação", description: "Você se sente mais amado(a) quando seu parceiro expressa afeto através de palavras faladas ou escritas de apreciação, encorajamento e elogios." },
@@ -448,6 +469,33 @@ export default function LoveLanguageQuiz() {
     }
   };
 
+  // Share Results fix (2026-10-10): this button previously had no onClick
+  // handler at all, so taps did nothing. Uses the site's standard share
+  // pattern: native share sheet where available, clipboard copy otherwise.
+  const handleShareResult = async () => {
+    const topLanguage = getTopLanguage();
+    if (!topLanguage) return;
+    const url = `${window.location.origin}/lovelanguagequiz`;
+    const text = `${t.quiz.shareTextLead} ${topLanguage.name}! ${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: t.quiz.yourLoveLanguage, text });
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        toast.success(t.quiz.shareCopied);
+        return;
+      }
+      toast.error(t.quiz.shareFailed);
+    } catch (error) {
+      if (error?.name !== 'AbortError') {
+        console.error('Error sharing love language result:', error);
+        toast.error(t.quiz.shareFailed);
+      }
+    }
+  };
+
   if (showResults) {
     const topLanguage = getTopLanguage();
     const LanguageIcon = topLanguage.icon;
@@ -540,6 +588,7 @@ export default function LoveLanguageQuiz() {
                   <Button
                     variant="outline"
                     className="px-8 py-6 text-lg"
+                    onClick={handleShareResult}
                   >
                     <Share2 className="w-5 h-5 mr-2" />
                     {t.quiz.shareResults}
