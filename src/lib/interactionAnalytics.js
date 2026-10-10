@@ -433,3 +433,31 @@ export function installClickAnalytics() {
     });
   }, true);
 }
+
+let presenceInstalled = false;
+
+// Real-time presence heartbeat (owner-approved 2026-10-09): while a public
+// page is open it checks in every ~45 seconds so the Admin dashboard can
+// count people who are on the site right now — including quiet readers,
+// whom click-based activity windows miss. Admin surfaces never check in.
+export function installPresenceHeartbeat() {
+  if (typeof window === 'undefined' || presenceInstalled) return;
+  presenceInstalled = true;
+  const ping = () => {
+    try {
+      if (isAdminAnalyticsSurface(window.location.pathname)) return;
+      fetch('/api/presence/ping', {
+        method: 'POST',
+        credentials: 'include',
+        keepalive: true,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ visitorId: visitorId(), route: normalizedPath(window.location.href) }),
+      }).catch(() => {});
+    } catch {}
+  };
+  ping();
+  window.setInterval(ping, 45000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') ping();
+  });
+}

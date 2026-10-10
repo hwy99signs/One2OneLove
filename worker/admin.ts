@@ -1420,6 +1420,13 @@ export async function handleAdminRequest(request, env, url) {
         return json({ ok:true,recovered:true,mode:'admin_management',admin:{ id:admin.id,email:admin.email,name:admin.name,role:admin.role },generatedAt:new Date().toISOString(),...data });
       }
 
+      if (request.method === 'GET' && url.pathname === '/api/admin/presence') {
+        await db.query(`CREATE TABLE IF NOT EXISTS public.visitor_presence (visitor_id text PRIMARY KEY, user_id uuid, route text, last_ping_at timestamptz NOT NULL DEFAULT now())`);
+        await db.query(`DELETE FROM public.visitor_presence WHERE last_ping_at < now() - interval '7 days'`);
+        const result = await db.query(`SELECT count(*)::int AS online_now FROM public.visitor_presence WHERE last_ping_at >= now() - interval '90 seconds'`);
+        return json({ ok:true, onlineNow: result.rows[0]?.online_now || 0, generatedAt: new Date().toISOString() });
+      }
+
       if (request.method === 'POST' && url.pathname === '/api/admin/members/bulk') {
         const body = await request.json().catch(() => ({}));
         const result = await manageMemberAccountsBulk(db, admin, body?.memberIds, String(body?.action || '').toLowerCase(), body?.reason || '');

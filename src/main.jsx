@@ -6,12 +6,13 @@ import { installRuntimeLocalization } from '@/utils/runtimeLocalization'
 import { installStaticUiLocalization } from '@/utils/staticUiLocalization'
 import { installI18nFallbackLocalization } from '@/utils/i18nFallbackLocalization'
 import '@/index.css'
-import { installClickAnalytics } from '@/lib/interactionAnalytics'
+import { installClickAnalytics, installPresenceHeartbeat } from '@/lib/interactionAnalytics'
 
 installRuntimeLocalization()
 installStaticUiLocalization()
 installI18nFallbackLocalization()
 installClickAnalytics()
+installPresenceHeartbeat()
 
 const BACK_LABELS = ['back', 'volver', 'retour', 'indietro', 'zurück', 'terug', 'voltar']
 

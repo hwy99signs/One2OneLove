@@ -6,7 +6,7 @@ import { handleAdminRequest } from './admin';
 import { handleTokenAdminRequest } from './token-admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
-import { handleFeatureUsageRequest } from './feature-usage';
+import { handleFeatureUsageRequest, handlePresencePing } from './feature-usage';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
 import { handleLaunchAuthRequest } from './launch-auth';
@@ -284,6 +284,11 @@ export default {
 
     if (url.pathname === '/api/feature-usage' || url.pathname === '/api/interaction-events') {
       const response = await handleFeatureUsageRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/presence/ping') {
+      const response = await handlePresencePing(request, env);
       if (response) return response;
     }
 

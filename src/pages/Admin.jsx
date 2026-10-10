@@ -6,7 +6,7 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { changeMemberTier, getAdminAnalytics, getAdminDashboard, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { changeMemberTier, getAdminAnalytics, getAdminDashboard, getAdminPresence, grantMemberAccessTime, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
 import {
   ADMIN_AUTH_REDIRECT,
@@ -271,6 +271,20 @@ export default function Admin() {
   const dataRef = useRef(null);
   const loadInFlightRef = useRef(false);
   const lastRefreshAtRef = useRef(0);
+
+  const [presenceNow,setPresenceNow] = useState(null);
+  useEffect(() => {
+    let active = true;
+    const tick = async () => {
+      try {
+        const payload = await getAdminPresence();
+        if (active && payload?.ok) setPresenceNow(Number(payload.onlineNow || 0));
+      } catch {}
+    };
+    tick();
+    const timer = window.setInterval(tick, 20000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
 
   const load = async (refresh=false) => {
     if (loadInFlightRef.current) return;
@@ -816,8 +830,9 @@ export default function Admin() {
 
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Registered Free accounts remain visible here even when they have never purchased a subscription."/>
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-              <Metric icon={Activity} label="On Site Now" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+              <Metric icon={Activity} label="On Site Right Now" value={presenceNow === null ? '—' : number(presenceNow)} note="pages open now · updates every 20 seconds · admins excluded" tone="green"/>
+              <Metric icon={Activity} label="Active (Last 5 Min)" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
               <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
               <Metric icon={UserCheck} label="Registered Free" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
               <Metric icon={CreditCard} label="Credit Buyers" value={number(visitorFunnel.token_buyers)} note="members with a paid Credit purchase" tone="violet"/>
