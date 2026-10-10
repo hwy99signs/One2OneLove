@@ -8,10 +8,6 @@ function isAdminPath(path) {
   return ['/admin','/admin/','/analytics','/analytics/'].includes(path);
 }
 
-function isUserViewPath(path) {
-  return !isAdminPath(path) && !['/adminaccess','/adminaccess/'].includes(path);
-}
-
 export default function AdminUserModeToggle() {
   const [mount, setMount] = useState(null);
   const [mode, setMode] = useState(null);
@@ -19,31 +15,26 @@ export default function AdminUserModeToggle() {
   useEffect(() => {
     const path = window.location.pathname.toLowerCase();
     const adminPath = isAdminPath(path);
-    let adminUserView = false;
-    try {
-      adminUserView = window.sessionStorage.getItem(USER_VIEW_KEY) === '1';
-    } catch {}
 
-    if (!adminPath && !(adminUserView && isUserViewPath(path))) {
+    // The User/Admin switch belongs to the admin surface only. On public
+    // pages the Admin entry tab is the single admin control (owner call,
+    // 2026-10-09: the two side by side read as duplicated tabs).
+    if (!adminPath) {
       setMount(null);
       setMode(null);
       return undefined;
     }
 
-    setMode(adminPath ? 'admin' : 'user');
+    setMode('admin');
 
     let host = null;
     const attach = () => {
       if (host?.isConnected) return;
 
-      const header = adminPath
-        ? document.querySelector('main header')
-        : document.querySelector('header');
+      const header = document.querySelector('main header');
       if (!header) return;
 
-      const row = adminPath
-        ? (header.querySelector(':scope > div') || header.firstElementChild)
-        : header.firstElementChild;
+      const row = header.querySelector(':scope > div') || header.firstElementChild;
       if (!row) return;
 
       const existing = header.querySelector?.('[data-o2ol-admin-user-toggle="true"]');
@@ -56,14 +47,9 @@ export default function AdminUserModeToggle() {
       host = document.createElement('span');
       host.setAttribute('data-o2ol-admin-user-toggle', 'true');
 
-      if (adminPath) {
-        const actions = row.lastElementChild;
-        if (!actions) return;
-        actions.insertBefore(host, actions.firstChild || null);
-      } else {
-        host.className = 'shrink-0';
-        row.insertBefore(host, row.lastElementChild || null);
-      }
+      const actions = row.lastElementChild;
+      if (!actions) return;
+      actions.insertBefore(host, actions.firstChild || null);
 
       setMount(host);
     };
