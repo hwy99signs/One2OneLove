@@ -897,7 +897,7 @@ function showGameOver(manual, reason){
     (G.players.length===1 ? ("You solved every word and banked " + top.score + " points.") : "Every word is solved — final standings:");
   const st = $("#standings"); st.innerHTML = "";
   sorted.forEach(function(p){
-    const row = document.createElement("div"); row.className = "srow";
+    const row = document.createElement("div"); row.className = "srow" + (p===G.players[0] ? " me" : "");
     row.innerHTML = "<b>" + escapeHtml(p.name) + "</b>" + (newHigh[p.name] ? ' <span style="color:var(--amber);font-weight:900">🏆 NEW HIGH!</span>' : "") + "<span class='pts'>" + p.score + "</span>";
     st.appendChild(row);
   });

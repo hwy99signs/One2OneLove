@@ -79,3 +79,38 @@ export async function changeMemberTier(memberId, plan) {
   });
   return parseJson(response);
 }
+
+
+export async function getGameEconomyAdmin() {
+  return getFreshAdminJson('/api/admin/game-economy');
+}
+
+export async function grantMemberGameCredit(userId, amountCents, expiryDays, note = '') {
+  const response = await fetch('/api/admin/game-credits/grant', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ userId, amountCents, expiryDays, note }),
+  });
+  return parseJson(response);
+}
+
+export async function createGamePromotion(promotion) {
+  const response = await fetch('/api/admin/game-promotions', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify(promotion),
+  });
+  return parseJson(response);
+}
+
+export async function updateGamePromotion(id, promotion) {
+  const response = await fetch('/api/admin/game-promotions/'+encodeURIComponent(id), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify(promotion),
+  });
+  return parseJson(response);
+}

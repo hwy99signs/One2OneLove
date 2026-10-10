@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+import GameLeaderboard from '@/components/activities/GameLeaderboard';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -312,10 +313,12 @@ export default function LikeMinded() {
   const [gamePass,setGamePass]=useState(null);
   const [gamePromotion,setGamePromotion]=useState(null);
   const [tokenBalance,setTokenBalance]=useState(0);
+  const [gameCreditBalance,setGameCreditBalance]=useState(0);
   const [tokenCost,setTokenCost]=useState(0);
   const [tokenPrompt,setTokenPrompt]=useState(false);
   const [accessLoading,setAccessLoading]=useState(false);
   const premiumResolveRef=useRef(null);
+  const scoreSubmittedRef=useRef(new Set());
 
   const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
   const activeCanonicalCategory = CANONICAL_CATEGORIES[(categoryIndex + questionNo - 1) % CANONICAL_CATEGORIES.length];
@@ -332,7 +335,8 @@ export default function LikeMinded() {
       ]);
       setGamePromotion(access?.promotion||null);
       setTokenBalance(Number(wallet?.wallet?.balance||0));
-      setTokenCost(access?.promotion?.free?0:Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49));
+      setGameCreditBalance(Number(wallet?.gameCredit?.balanceCents||0));
+      setTokenCost(access?.priceCents!=null?Number(access.priceCents):(access?.promotion?.free?0:Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49)));
       let pass=access?.pass||null;
       if(!pass&&access?.promotion?.free){
         const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-free-${Date.now()}`;
@@ -350,7 +354,8 @@ export default function LikeMinded() {
   const handlePremiumError=(error)=>{
     if(isTokensRequiredError(error)||error?.payload?.error?.code==='tokens_required'){
       const info=tokenRequiredDetails(error);
-      setTokenBalance(Number(info.balance||tokenBalance||0));
+      setTokenBalance(Number(info.creditBalance||tokenBalance||0));
+      setGameCreditBalance(Number(info.gameCreditBalance||gameCreditBalance||0));
       if(info.required)setTokenCost(Number(info.required));
       setTokenPrompt(true);
       setApiError(`${t.buyTokens} — ${info.required||tokenCost||49} Credit cents required. Balance: ${info.balance||0}.`);
@@ -376,8 +381,8 @@ export default function LikeMinded() {
       const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const data=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
       setGamePass(data.pass||null);
-      if(data?.tokens?.balance!=null)setTokenBalance(Number(data.tokens.balance));
-      else await refreshTokenState();
+      if(data?.gameCredit?.balanceCents!=null)setGameCreditBalance(Number(data.gameCredit.balanceCents));
+      await refreshTokenState();
       setTokenPrompt(false);
       const resolve=premiumResolveRef.current; premiumResolveRef.current=null; resolve?.(true);
     }catch(error){
@@ -396,6 +401,8 @@ export default function LikeMinded() {
       priceCents={Number(tokenCost||49)}
       terms="Per game / session."
       balanceCents={Number(tokenBalance||0)}
+      gameCreditCents={Number(gameCreditBalance||0)}
+      promotion={gamePromotion}
       busy={accessLoading}
       error={apiError}
       onUnlock={confirmPremiumAccess}
@@ -649,11 +656,25 @@ export default function LikeMinded() {
     } catch (err) { handlePremiumError(err); }
   };
 
+  // like-minded-score-submit: native final multiplayer score = matches.
+  useEffect(()=>{
+    const current=roomState||room;
+    if(!gamePass?.id||!current?.code||!current?.both_locked||Number(current?.current_question_no||0)<21)return;
+    const sessionRef=gamePass.id+':'+current.code;
+    if(scoreSubmittedRef.current.has(sessionRef))return;
+    scoreSubmittedRef.current.add(sessionRef);
+    api('/api/games/scores',{method:'POST',body:JSON.stringify({game:'like_minded',score:Number(current.matches||0),sessionRef})})
+      .catch(()=>scoreSubmittedRef.current.delete(sessionRef));
+  },[roomState,room,gamePass?.id]);
+
   const modeHeader = (
-    <div className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-      <button onClick={goHome} className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> {t.back}</button>
-      <div className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black tracking-wide text-white">LIKE MINDED?</div>
-    </div>
+    <>
+      <div className="mx-auto mb-4 flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <button onClick={goHome} className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> {t.back}</button>
+        <div className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black tracking-wide text-white">LIKE MINDED?</div>
+      </div>
+      <div className="mx-auto mb-6 max-w-6xl px-4 sm:px-6"><GameLeaderboard game="like_minded"/></div>
+    </>
   );
 
   if (screen === 'solo') {

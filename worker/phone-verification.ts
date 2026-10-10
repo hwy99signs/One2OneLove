@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { grantSignupGameCreditInTx, ensureGameEconomySchema } from './game-economy';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -239,8 +240,15 @@ async function verifyCode(request, env, auth) {
         );
       }
 
+      const gameCreditBonus=await grantSignupGameCreditInTx(db,auth.user.id);
       await db.query('COMMIT');
-      return json({ ok: true, success: true, verified: true, founder:founder ? {
+      return json({ ok: true, success: true, verified: true,
+        gameCreditBonus:gameCreditBonus ? {
+          amountCents:500,
+          expiresAt:gameCreditBonus.expires_at,
+          welcome:'Welcome! You received $5.00 in FREE Game Credits. Play any One2OneLove game — your Game Credits are used first. They expire in 14 days, so come play soon.'
+        } : null,
+        founder:founder ? {
         foundingNumber:Number(founder.founding_number),
         cohort:founder.cohort,
         badgeRetained:founder.badge_retained!==false,

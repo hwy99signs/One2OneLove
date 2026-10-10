@@ -61,7 +61,9 @@ jobs:
           grep -F "bianca_response" worker/mymatchiq-ai.ts
           grep -F "amora_response" worker/ai.ts
           grep -F "love_note_send" worker/love-note-entitlements.ts
-          grep -F "like_minded_session" worker/game-access.ts
+          grep -F "GAME_REGISTRY" worker/game-economy.ts
+          grep -F "like_minded_session" worker/game-economy.ts
+          grep -F "chargeGameAndCreatePass" worker/game-access.ts
           grep -F '<Route path="/Tokens" element={<Navigate to="/Credit" replace />} />' src/pages/index.jsx
           grep -F '<Route path="/Credit" element={<Credit />} />' src/pages/index.jsx
           grep -F 'path="/Amora"' src/pages/index.jsx
@@ -413,13 +415,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F "reserveTokenCharge(db,auth.user.id,'like_minded_session'" worker/game-access.ts
-          grep -F "await consumeTokenReservation(db,reservation.id)" worker/game-access.ts
-          grep -F "await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed')" worker/game-access.ts
-          grep -F "featureCode:'like_minded_session'" worker/game-access.ts
-          grep -F "reserveTokenCharge(db,auth.user.id,'scratch_game_session'" worker/game-access.ts
-          grep -F "featureCode:'scratch_game_session'" worker/game-access.ts
-          grep -F "reserveTokenCharge(db,auth.user.id,'premium_game_session'" worker/game-access.ts
+          grep -F "GAME_REGISTRY" worker/game-economy.ts
+          grep -F "like_minded_session" worker/game-economy.ts
+          grep -F "scratch_game_session" worker/game-economy.ts
+          grep -F "premium_game_session" worker/game-economy.ts
+          grep -F "chargeGameAndCreatePass" worker/game-access.ts
+          grep -F "allocateGameCreditInTx" worker/game-economy.ts
+          grep -F "debitPaidCreditInTx" worker/game-economy.ts
+          grep -F "ORDER BY expires_at ASC NULLS LAST,created_at ASC FOR UPDATE" worker/game-economy.ts
+          grep -F "game_credit_cents" worker/game-economy.ts
+          grep -F "credit_cents" worker/game-economy.ts
+          grep -F "promotion_id" worker/game-economy.ts
           grep -F "'scratch_game_session','Scratch Game session',49" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
           grep -F "'premium_game_session','Premium game session',49" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
           if grep -REn 'Premiere|Exclusive|stripe_subscription_id|subscription_status' worker/game-access.ts worker/like-minded.ts; then
