@@ -7,7 +7,10 @@ const HEADERS = {
   'x-content-type-options': 'nosniff',
 };
 
-const PREMIERE_PREFIXES = [
+// These API areas require a verified member identity, but NOT a recurring
+// subscription/tier. Paid actions are authorized and charged by their own
+// Credit handlers (games, AI, Love Notes, Studio, etc.).
+const MEMBER_ONLY_PREFIXES = [
   '/api/games/scratch',
   '/api/love-notes',
   '/api/community-chat',
@@ -33,23 +36,16 @@ function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: HEADERS });
 }
 
-function requiredPlan(pathname) {
-  if (pathname === '/api/engagement/waitlist') return null;
-  if (pathname === '/api/engagement/contests/leaderboard' || pathname === '/api/engagement/contests/winner') return null;
-  if (pathname.startsWith('/api/ai/content')) return 'Exclusive';
-  if (PREMIERE_PREFIXES.some(prefix => pathname.startsWith(prefix))) return 'Premiere';
-  return null;
+function memberIdentityRequired(pathname) {
+  if (pathname === '/api/engagement/waitlist') return false;
+  if (pathname === '/api/engagement/contests/leaderboard' || pathname === '/api/engagement/contests/winner') return false;
+  return MEMBER_ONLY_PREFIXES.some(prefix => pathname.startsWith(prefix));
 }
 
 export function requiresApiEntitlement(pathname) {
-  return requiredPlan(pathname) !== null;
-}
-
-function planLevel(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'exclusive') return 2;
-  if (raw === 'premier' || raw === 'premiere') return 1;
-  return 0;
+  // Compatibility name retained because identity-gate.ts imports it.
+  // "Entitlement" now means member identity only; recurring tiers are retired.
+  return memberIdentityRequired(pathname);
 }
 
 async function authSession(request, env) {
@@ -66,22 +62,12 @@ async function authSession(request, env) {
   return { user, session };
 }
 
-function adminAccessActive(row) {
-  if (!row?.subscription_end_date) return false;
-  const end = new Date(row.subscription_end_date);
-  return !Number.isNaN(end.getTime()) && end.getTime() > Date.now();
-}
-
 export async function enforceApiEntitlement(request, env, url) {
-  // Community chat is a free feature (owner decision, 2026-10-06): guests
-  // may read rooms and messages, and any verified signed-in member may
-  // post. The community-chat handler enforces sign-in itself for writes,
-  // presence and moderation actions, so the entitlement gate steps aside
-  // for these paths only.
+  // Open House community-chat reads are public; writes are checked by the
+  // community-chat handler. Do not impose any paid membership requirement.
   if (url.pathname.startsWith('/api/community-chat')) return null;
-  
-  const required = requiredPlan(url.pathname);
-  if (!required) return null;
+
+  if (!memberIdentityRequired(url.pathname)) return null;
 
   const auth = await authSession(request, env);
   if (!auth) {
@@ -93,7 +79,6 @@ export async function enforceApiEntitlement(request, env, url) {
   try {
     const result = await db.query(
       `SELECT u.role,COALESCE(u.banned,false) AS banned,
-              p.subscription_plan,p.subscription_status,p.subscription_end_date,p.stripe_subscription_id,
               COALESCE((to_jsonb(p)->>'phone_number_verified')::boolean,false) AS phone_number_verified
          FROM neon_auth."user" u
          LEFT JOIN public.users p ON p.id=u.id
@@ -114,24 +99,8 @@ export async function enforceApiEntitlement(request, env, url) {
       return json({ ok: false, error: { code: 'phone_verification_required', message: 'Phone verification is required.' } }, 428);
     }
 
-    if (row.role === 'admin') return null;
-
-    const status = String(row.subscription_status || '').toLowerCase();
-    const adminAccess = adminAccessActive(row);
-    const active = ['active', 'trial', 'trialing'].includes(status);
-
-    if (!active || (!row.stripe_subscription_id && !adminAccess)) {
-      return json({ ok: false, error: { code: 'billing_required', message: 'An active One2OneLove membership is required to use this protected feature. Open House browsing remains free.' } }, 402);
-    }
-
-    // Stripe trial/trialing represents the 30-day Founding Member free period.
-    // Access always follows the stored plan for the member's Founding cohort.
-    const effectiveLevel = planLevel(row.subscription_plan);
-
-    if (effectiveLevel < planLevel(required)) {
-      return json({ ok: false, error: { code: 'plan_upgrade_required', message: `${required} membership or higher is required.` } }, 403);
-    }
-
+    // No recurring membership/tier check belongs here. Feature-level paid
+    // access is enforced by the Credit engine in the destination handler.
     return null;
   } finally {
     await db.end();
