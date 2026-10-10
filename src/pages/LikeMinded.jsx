@@ -313,6 +313,7 @@ export default function LikeMinded() {
   const [gamePass,setGamePass]=useState(null);
   const [gamePromotion,setGamePromotion]=useState(null);
   const [tokenBalance,setTokenBalance]=useState(0);
+  const [gameCreditBalance,setGameCreditBalance]=useState(0);
   const [tokenCost,setTokenCost]=useState(0);
   const [tokenPrompt,setTokenPrompt]=useState(false);
   const [accessLoading,setAccessLoading]=useState(false);
@@ -334,7 +335,8 @@ export default function LikeMinded() {
       ]);
       setGamePromotion(access?.promotion||null);
       setTokenBalance(Number(wallet?.wallet?.balance||0));
-      setTokenCost(access?.promotion?.free?0:Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49));
+      setGameCreditBalance(Number(wallet?.gameCredit?.balanceCents||0));
+      setTokenCost(access?.priceCents!=null?Number(access.priceCents):(access?.promotion?.free?0:Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49)));
       let pass=access?.pass||null;
       if(!pass&&access?.promotion?.free){
         const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-free-${Date.now()}`;
@@ -352,7 +354,8 @@ export default function LikeMinded() {
   const handlePremiumError=(error)=>{
     if(isTokensRequiredError(error)||error?.payload?.error?.code==='tokens_required'){
       const info=tokenRequiredDetails(error);
-      setTokenBalance(Number(info.balance||tokenBalance||0));
+      setTokenBalance(Number(info.creditBalance||tokenBalance||0));
+      setGameCreditBalance(Number(info.gameCreditBalance||gameCreditBalance||0));
       if(info.required)setTokenCost(Number(info.required));
       setTokenPrompt(true);
       setApiError(`${t.buyTokens} — ${info.required||tokenCost||49} Credit cents required. Balance: ${info.balance||0}.`);
@@ -378,8 +381,8 @@ export default function LikeMinded() {
       const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const data=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
       setGamePass(data.pass||null);
-      if(data?.tokens?.balance!=null)setTokenBalance(Number(data.tokens.balance));
-      else await refreshTokenState();
+      if(data?.gameCredit?.balanceCents!=null)setGameCreditBalance(Number(data.gameCredit.balanceCents));
+      await refreshTokenState();
       setTokenPrompt(false);
       const resolve=premiumResolveRef.current; premiumResolveRef.current=null; resolve?.(true);
     }catch(error){
@@ -398,6 +401,8 @@ export default function LikeMinded() {
       priceCents={Number(tokenCost||49)}
       terms="Per game / session."
       balanceCents={Number(tokenBalance||0)}
+      gameCreditCents={Number(gameCreditBalance||0)}
+      promotion={gamePromotion}
       busy={accessLoading}
       error={apiError}
       onUnlock={confirmPremiumAccess}
