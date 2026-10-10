@@ -96,6 +96,16 @@ jobs:
           grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
           grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
 
+      - name: Certify Relationship 100 room stays retired
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "UPDATE public.chat_rooms SET is_active=false" worker/community-chat.ts >/dev/null
+          grep -F "WHERE slug='relationship-100' AND is_active=true" worker/community-chat.ts >/dev/null
+          if grep -F "'💯',true,now()" worker/community-chat.ts; then
+            echo "Relationship 100 room seed reactivates the retired one-time event room." >&2
+            exit 1
+          fi
       - name: Certify title-only paid Love Note and Date Idea previews
         shell: bash
         run: |
