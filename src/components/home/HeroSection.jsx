@@ -113,15 +113,6 @@ export default function HeroSection({ stats }) {
                 {t.hero.dateIdeas}
               </Button>
             </Link>
-            <Link to={createPageUrl("WinACruise")}>
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold text-lg px-8 py-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all animate-pulse"
-              >
-                <Gift className="mr-3" size={24} />
-                {t.hero.winCruise}
-              </Button>
-            </Link>
           </div>
         </div>
 
