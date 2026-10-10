@@ -13,13 +13,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import ScheduledNotesManager from "../components/lovenotes/ScheduledNotesManager";
 import AIPersonalizationModal from "../components/lovenotes/AIPersonalizationModal";
-import { loveNotesData } from "../components/lovenotes/LoveNotesData";
-import { additionalLoveNotesData } from "../components/lovenotes/additional";
-import { subjectSupplementalNotes } from "../components/lovenotes/additional/LoveNotesSubjectSupplemental";
+
+
+
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getAiConfig } from "@/lib/aiService";
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from "@/lib/tokenService";
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
+import { apiRequest } from "@/lib/apiClient";
 
 const LOVE_NOTE_MAX_CHARACTERS = 171;
 const clampLoveNote = (value) => Array.from(String(value || '')).slice(0, LOVE_NOTE_MAX_CHARACTERS).join('');
@@ -697,87 +698,6 @@ const casualSubjectLabels = {
   de: 'Locker',
 };
 
-const standardSubjectAssignments = [
-  'romantic', 'romantic', 'romantic', 'romantic', 'romantic',
-  'family', 'family', 'family', 'family', 'family',
-  'casual', 'casual', 'casual', 'casual', 'casual',
-];
-
-const dominantSubjectByCategory = {
-  romantic: 'romantic',
-  lgbtqRomantic: 'romantic',
-  family: 'family',
-  friends: 'casual',
-  dateIdeas: 'romantic',
-};
-
-const holidaySubjectAssignments = [
-  'romantic', 'romantic', 'romantic', 'family', 'family', 'romantic', 'romantic', 'family', 'casual', 'romantic',
-  'romantic', 'romantic', 'casual', 'family', 'casual', 'romantic', 'family', 'casual', 'family', 'romantic',
-  'romantic', 'romantic', 'romantic', 'romantic', 'romantic',
-  'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family', 'family',
-  'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual', 'casual',
-];
-
-const missingYouSubjectAssignments = [
-  'romantic', 'romantic', 'romantic', 'romantic', 'romantic',
-  'family', 'family', 'family', 'family', 'family',
-  'casual', 'casual', 'casual', 'casual', 'casual',
-];
-
-const getSubjectForNote = (category, noteIndex, note) => {
-  if (note?.subject && ['romantic', 'family', 'casual'].includes(note.subject)) return note.subject;
-  if (category === 'holiday') return holidaySubjectAssignments[noteIndex] || standardSubjectAssignments[noteIndex % standardSubjectAssignments.length];
-  if (category === 'missingYou') return missingYouSubjectAssignments[noteIndex] || standardSubjectAssignments[noteIndex % standardSubjectAssignments.length];
-  if (dominantSubjectByCategory[category]) return dominantSubjectByCategory[category];
-  return standardSubjectAssignments[noteIndex % standardSubjectAssignments.length];
-};
-
-const generateNotes = (lang) => {
-  const notes = [];
-  let id = 1;
-  const baseData = loveNotesData[lang] || loveNotesData.en;
-  const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;
-  const data = { ...baseData, ...addedData, holiday: [...(baseData.holiday || []), ...(addedData.holiday || [])] };
-
-  const categoryOrder = [
-    'romantic', 'lgbtqRomantic', 'lgbtqSupport', 'lgbtqMilestone', 'sweet', 'playful', 'deep', 'appreciation',
-    'memories', 'future', 'morning', 'night', 'daily', 'special',
-    'dateIdeas', 'milestone', 'justBecause', 'encouragement', 'apology',
-    'family', 'friends', 'heartBroken', 'sick', 'goodLuck',
-    'holiday', 'missingYou', 'religious', 'service', 'workplace'
-  ];
-
-  categoryOrder.forEach(category => {
-    if (data[category] && data[category].length > 0) {
-      data[category].forEach((note, noteIndex) => {
-        notes.push({
-          id: id++,
-          ...note,
-          category: category,
-          subject: getSubjectForNote(category, noteIndex, note),
-        });
-      });
-    }
-  });
-
-  const subjectSupplements = subjectSupplementalNotes[lang] || subjectSupplementalNotes.en;
-  Object.entries(subjectSupplements).forEach(([category, bySubject]) => {
-    Object.entries(bySubject).forEach(([subject, extraNotes]) => {
-      extraNotes.forEach(note => {
-        notes.push({
-          id: id++,
-          ...note,
-          category,
-          subject,
-        });
-      });
-    });
-  });
-
-  return notes;
-};
-
 const getSearchWords = (value) =>
   String(value || '')
     .toLocaleLowerCase()
@@ -791,7 +711,6 @@ const matchesLoveNoteSearch = (note, query) => {
 
   const searchableWords = getSearchWords([
     note.title,
-    note.content,
     ...(Array.isArray(note.tags) ? note.tags : []),
   ].join(' '));
 
@@ -889,6 +808,10 @@ function loveNotesCategoryTeaser(name) {
 export default function LoveNotes() {
   const { currentLanguage } = useLanguage();
   const t = translations[currentLanguage] || translations.en;
+  const { data: publicNoteCatalog } = useQuery({
+    queryKey:['love-note-library',currentLanguage],
+    queryFn:()=>apiRequest('/api/love-note-library?lang='+encodeURIComponent(currentLanguage)),
+  });
   const allCategories = getCategoriesForLanguage(t, currentLanguage);
   const subjectTabs = [
     {
@@ -917,8 +840,47 @@ export default function LoveNotes() {
     },
   ];
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
   
-  const allNotes = useMemo(() => generateNotes(currentLanguage), [currentLanguage]);
+  const allNotes = publicNoteCatalog?.notes || [];
+  const { data: purchasedNoteData } = useQuery({
+    queryKey:['love-note-purchases',currentLanguage,currentUser?.id],
+    queryFn:()=>listTokenUnlocks('love_note_template_unlock'),
+    enabled:Boolean(currentUser?.id),
+  });
+  const purchasedNoteKeys = new Set((purchasedNoteData?.unlocks||[]).map(x=>String(x.content_key)));
+  const [noteToUnlock,setNoteToUnlock] = useState(null);
+  const [noteUnlockError,setNoteUnlockError] = useState('');
+  const [noteUnlockBusy,setNoteUnlockBusy] = useState(false);
+  const notePriceCents = 49;
+  const loadPrivateNote = async (note) => {
+    const result=await apiRequest('/api/love-note-library/item?lang='+encodeURIComponent(currentLanguage)+'&id='+encodeURIComponent(note.id));
+    return result.note;
+  };
+  const openLibraryNote = async (note, send=false) => {
+    if(!purchasedNoteKeys.has(currentLanguage+':'+note.id)){
+      setNoteToUnlock(note);setNoteUnlockError('');return;
+    }
+    try{
+      const full=await loadPrivateNote(note);
+      if(send)setSendModalNote(full);else setSelectedNote(full);
+    }catch(e){setNoteUnlockError(e?.message||'Unable to open Love Note.');setNoteToUnlock(note);}
+  };
+  const purchaseLibraryNote = async () => {
+    if(!noteToUnlock||noteUnlockBusy)return;
+    if(!currentUser?.id){window.location.href='/SignUp?return=/LoveNotes';return;}
+    setNoteUnlockBusy(true);setNoteUnlockError('');
+    try{
+      const note=noteToUnlock;
+      await unlockTokenContent({featureCode:'love_note_template_unlock',contentKey:currentLanguage+':'+note.id,source:'love_notes',idempotencyKey:'love-note:'+currentUser.id+':'+currentLanguage+':'+note.id});
+      await queryClient.invalidateQueries({queryKey:['love-note-purchases',currentLanguage,currentUser?.id]});
+      const full=await loadPrivateNote(note);
+      setNoteToUnlock(null);setSelectedNote(full);
+    }catch(e){
+      if(isTokensRequiredError(e))setNoteUnlockError('Add $0.49 Credit to unlock this Love Note.');
+      else setNoteUnlockError(e?.message||'Unable to unlock Love Note.');
+    }finally{setNoteUnlockBusy(false);}
+  };
 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
@@ -946,7 +908,6 @@ export default function LoveNotes() {
   const [specialPlace, setSpecialPlace] = useState(localStorage.getItem('specialPlace') || '');
 
   // Fetch current user
-  const { user: currentUser } = useAuth();
   const hasMemberAccess = Boolean(currentUser?.id);
 
   // Account first name — the ONLY signature source (owner, 2026-10-08).
@@ -1151,9 +1112,7 @@ export default function LoveNotes() {
   };
 
   const displayedNotes = useMemo(() => {
-    let filtered = hasMemberAccess
-      ? allNotes
-      : allNotes.filter(note => OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(note.category));
+    let filtered = allNotes;
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(note => note.category === selectedCategory);
@@ -1169,7 +1128,7 @@ export default function LoveNotes() {
       });
     }
 
-    const personalizedNotes = filtered.map(note => personalizeNote(note));
+    const personalizedNotes = filtered;
 
     if (searchQuery.trim()) {
       filtered = personalizedNotes.filter(note => matchesLoveNoteSearch(note, searchQuery));
@@ -1205,7 +1164,7 @@ export default function LoveNotes() {
     setSelectedSubject('all');
     setSearchQuery('');
     setShowRandomCategoryPicker(false);
-    setSelectedNote(randomNote);
+    openLibraryNote(randomNote);
   };
 
   const handleAIGeneratedNote = (generatedNote) => {
@@ -1544,7 +1503,7 @@ export default function LoveNotes() {
                 <CardContent>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {categories.filter(category => category.id !== 'all').map((category) => {
-                      const locked = !hasMemberAccess && !OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(category.id);
+                      const locked = false;
                       return (
                         <button
                           key={category.id}
@@ -1601,7 +1560,7 @@ export default function LoveNotes() {
         <div className="mb-8">
           <div className="flex flex-wrap gap-2 justify-center">
             {categories.map((category) => {
-              const locked = category.id !== 'all' && !hasMemberAccess && !OPEN_HOUSE_LOVE_NOTE_CATEGORIES.has(category.id);
+              const locked = false;
               return (
                 <button
                   key={category.id}
@@ -1690,15 +1649,15 @@ export default function LoveNotes() {
                 transition={{ duration: 0.2 }}
               >
                 <Card className="h-full hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-2 border-transparent hover:border-pink-200 cursor-pointer"
-                      onClick={() => setSelectedNote(note)}>
+                      onClick={() => openLibraryNote(note)}>
                   <CardHeader>
                     <CardTitle className="text-xl font-bold text-gray-900 font-kalam">
                       {note.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed mb-4 line-clamp-3">
-                      {note.content}
+                    <p className="text-gray-500 leading-relaxed mb-4">
+                      🔒 Unlock for $0.49 to read this Love Note.
                     </p>
                     <div className="flex flex-wrap gap-2 mb-4">
                       {note.tags.slice(0, 3).map((tag, index) => (
@@ -1714,7 +1673,7 @@ export default function LoveNotes() {
                       className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSendModalNote(note);
+                        openLibraryNote(note,true);
                       }}
                     >
                       <Send className="w-4 h-4 mr-2" />
@@ -1727,6 +1686,20 @@ export default function LoveNotes() {
           </AnimatePresence>
         </div>
 
+        {noteToUnlock && (
+          <div className="fixed inset-0 z-[90] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+            <div className="max-w-md w-full rounded-2xl bg-white shadow-2xl p-6">
+              <h2 className="text-2xl font-bold">{noteToUnlock.title}</h2>
+              <p className="mt-3 text-gray-500">The Love Note text is locked. Unlock this note for $0.49 Credit to read, copy, or share it. You will not be charged for viewing the title.</p>
+              <p className="mt-2 text-sm font-semibold">Each note is a one-time purchase for your account.</p>
+              {noteUnlockError && <p role="alert" className="mt-3 text-red-700">{noteUnlockError}</p>}
+              <div className="mt-5 flex gap-3">
+                <Button disabled={noteUnlockBusy} onClick={purchaseLibraryNote}>{noteUnlockBusy?'Unlocking…':'Unlock for $0.49'}</Button>
+                <Button variant="outline" onClick={()=>{setNoteToUnlock(null);setNoteUnlockError('');}}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        )}
         {displayedNotes.length === 0 && (
           <div className="text-center py-12">
             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
