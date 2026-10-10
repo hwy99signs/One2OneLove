@@ -1,4 +1,4 @@
 O2OL_PRODUCTION_DEPLOY_TRIGGER
-fix_merge=6332e93925e77b0f964a950b64706a9aa1520a40
-fixes=Amora host response fix (proven users-row columns, isolated stages); homepage Studio colors: NEW EPISODE elements share one gradient, Past Episodes tab yellow.
-source_pr=114
+fix_merge=219bb2bb453751fd409f11b01690ec11e3ac3171
+fixes=Click-to-Vote card: white strip behind the card removed, card at half height, Next tab on the comment line.
+source_pr=115
