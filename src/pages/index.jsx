@@ -58,6 +58,7 @@ import MyMatchIQBianca from './MyMatchIQBianca';
 import Credit from './Credit';
 import FeaturePricing from './FeaturePricing';
 import PaidFeatureGate from '@/components/pricing/PaidFeatureGate';
+import PaidGameSessionGate from '@/components/pricing/PaidGameSessionGate';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
@@ -138,8 +139,8 @@ function PagesContent() {
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
           <Route path="/CooperativeGames" element={<CooperativeGames />} />
-          <Route path="/WhatShouldTheyDo" element={<WhatShouldTheyDo />} />
-          <Route path="/Games" element={<WhatShouldTheyDo />} />
+          <Route path="/WhatShouldTheyDo" element={<PaidGameSessionGate game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
+          <Route path="/Games" element={<PaidGameSessionGate game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/LikeMinded" element={<LikeMinded />} />
           <Route path="/SharedJournals" element={<PaidFeatureGate featureCode="journals_unlock"><SharedJournals /></PaidFeatureGate>} />
