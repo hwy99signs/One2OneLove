@@ -161,7 +161,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <h2 className="text-center text-5xl font-black tracking-tight md:text-6xl">{t.tools}</h2>
           <p className="mx-auto mt-3 max-w-5xl text-center text-lg text-slate-600 md:text-xl">{t.toolsBody}</p>
-          <button type="button" onClick={() => go('Amora')} className="group relative mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
+          <button type="button" data-feature-status="locked" onClick={() => go('Amora')} className="group relative mx-auto mt-8 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-purple-50 text-left shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl sm:grid-cols-[190px_1fr]">
             <span className="absolute right-4 top-4 z-10 rounded-full bg-amber-300 px-2.5 py-1 text-xs font-black text-amber-950 shadow">🔒</span><div className="flex items-center justify-center bg-[#16070f] p-4">
               <img src="/assets/amora-relationship-coach-official.webp" alt="Amora — One2OneLove Relationship Coach" className="h-auto w-full max-w-[170px] rounded-2xl shadow-lg" />
             </div>
@@ -177,7 +177,7 @@ export default function Home() {
           </button>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {TOOLS.map(([icon,labelKey,page,gradient,status],index) => (
-              <button key={page} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${labelKey === 'MyMatchIQ' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
+              <button key={page} data-feature-status={status} data-analytics-id={`home-tool-${String(page).toLowerCase()}`} data-analytics-destination={`/${page}`} onClick={() => { setSelectedTool(index); go(page); }} className={`relative min-h-[86px] rounded-2xl bg-gradient-to-r ${gradient} px-5 text-xl font-extrabold text-white shadow-lg transition-transform hover:scale-[1.02] ${labelKey === 'MyMatchIQ' ? 'border-2 border-fuchsia-300 ring-2 ring-indigo-200' : ''} ${index===selectedTool?'ring-4 ring-rose-400 ring-offset-2':''}`}>
                 {status === 'free' && <span className="absolute right-2 top-2 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
                 {status === 'locked' && <span aria-label="Locked" className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-amber-300 text-sm text-amber-950 shadow">🔒</span>}
                 <span>{icon} {labelKey === 'MyMatchIQ' ? 'MyMatchIQ' : (t.toolLabels[labelKey] || COPY.en.toolLabels[labelKey])}</span>
