@@ -24,38 +24,16 @@ export default function UnlockPriceDialog({
         <div className="mt-3 text-center text-4xl font-black text-fuchsia-700">{freeToday?'$0.00':price}</div>
         {freeToday&&<div className="mt-2 text-center text-sm font-black text-emerald-700">Free today — {promotion?.name||'promotion'}</div>}
         {(terms||description)&&<p className="mx-auto mt-3 max-w-sm text-center text-sm font-bold leading-6 text-slate-600">{terms||description}</p>}
-        {!freeToday&&gameCreditCents!=null&&Number(gameCreditCents)>0&&<div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-800"><WalletCards className="h-4 w-4"/>Game Credit balance: {'
-        {error&&!shortOnCredit&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
-        <Button
-          type="button"
-          onClick={shortOnCredit?goAddCredit:onUnlock}
-          disabled={busy||(!shortOnCredit&&!onUnlock)}
-          className="mt-5 min-h-12 w-full rounded-xl bg-fuchsia-600 font-black text-white hover:bg-fuchsia-700 disabled:opacity-60"
-        >
-          <CreditCard className="mr-2 h-4 w-4"/>
-          {busy?'Unlocking…':shortOnCredit?'Add Credit':'Unlock'}
-        </Button>
-      </div>
-    </div>
-  );
-}
-+(Number(gameCreditCents)/100).toFixed(2)} (applied first)</div>}
-        {!freeToday&&balanceCents!=null&&<div className="mx-auto mt-2 flex w-fit items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-black text-slate-700"><WalletCards className="h-4 w-4"/>Credit balance: {'
-        {error&&!shortOnCredit&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
-        <Button
-          type="button"
-          onClick={shortOnCredit?goAddCredit:onUnlock}
-          disabled={busy||(!shortOnCredit&&!onUnlock)}
-          className="mt-5 min-h-12 w-full rounded-xl bg-fuchsia-600 font-black text-white hover:bg-fuchsia-700 disabled:opacity-60"
-        >
-          <CreditCard className="mr-2 h-4 w-4"/>
-          {busy?'Unlocking…':shortOnCredit?'Add Credit':'Unlock'}
-        </Button>
-      </div>
-    </div>
-  );
-}
-+(Number(balanceCents)/100).toFixed(2)}</div>}
+        {!freeToday&&gameCreditCents!=null&&Number(gameCreditCents)>0&&(
+          <div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-800">
+            <WalletCards className="h-4 w-4"/>Game Credit balance: {'$'+(Number(gameCreditCents)/100).toFixed(2)} (applied first)
+          </div>
+        )}
+        {!freeToday&&balanceCents!=null&&(
+          <div className="mx-auto mt-2 flex w-fit items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-black text-slate-700">
+            <WalletCards className="h-4 w-4"/>Credit balance: {'$'+(Number(balanceCents)/100).toFixed(2)}
+          </div>
+        )}
         {error&&!shortOnCredit&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
         <Button
           type="button"
