@@ -264,7 +264,11 @@ jobs:
           grep -F "await consumeTokenReservation(db,reservation.id)" worker/game-access.ts
           grep -F "await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed')" worker/game-access.ts
           grep -F "featureCode:'like_minded_session'" worker/game-access.ts
-          grep -F "access:'free_verified_account'" worker/game-access.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'scratch_game_session'" worker/game-access.ts
+          grep -F "featureCode:'scratch_game_session'" worker/game-access.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'premium_game_session'" worker/game-access.ts
+          grep -F "'scratch_game_session','Scratch Game session',49" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
+          grep -F "'premium_game_session','Premium game session',49" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
           if grep -REn 'Premiere|Exclusive|stripe_subscription_id|subscription_status' worker/game-access.ts worker/like-minded.ts; then
             echo "Game access still contains subscription-era gating." >&2
             exit 1
