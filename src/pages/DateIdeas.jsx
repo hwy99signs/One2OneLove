@@ -127,7 +127,7 @@ const OPEN_HOUSE_COPY = {
   fr: {
     badge: 'PORTES OUVERTES',
     locked: 'VERROUILLÉ',
-    membersOnly: 'Débloquer : 0,49 ,
+    membersOnly: 'Débloquer : 0,49 USD',
     lockedTitle: 'Il y en a encore beaucoup à découvrir',
     lockedBody: 'Cette idée de rendez-vous est verrouillée. Créez un compte GRATUIT puis utilisez du Crédit pour la déverrouiller. Elle restera ensuite disponible sur votre compte.',
     unlock: 'Déverrouiller avec du Crédit',
