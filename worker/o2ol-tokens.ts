@@ -402,8 +402,10 @@ async function createCheckout(request,db,env,auth,input){
   const customer=await ensureStripeCustomer(db,env,auth);
   const origin=new URL(request.url).origin;
   const requestedReturn=String(input?.returnTo||'').trim();
-  const safeReturn=requestedReturn.startsWith('/')&&!requestedReturn.startsWith('//')?requestedReturn:'/Home';
+  const shouldResume=requestedReturn.startsWith('/')&&!requestedReturn.startsWith('//');
+  const safeReturn=shouldResume?requestedReturn:'/Home';
   const encodedReturn=encodeURIComponent(safeReturn);
+  const resumeParam=shouldResume?'&resume=1':'';
   const checkout=await stripeRequest(env,'POST','/checkout/sessions',{
     mode:'payment',
     customer,
@@ -411,7 +413,7 @@ async function createCheckout(request,db,env,auth,input){
     'line_items[0][price_data][unit_amount]':pkg.amount_cents,
     'line_items[0][price_data][product_data][name]':`One2OneLove — ${pkg.label}${pkg.calibration_only?' Credit Package':' Credit'}`,
     'line_items[0][quantity]':1,
-    success_url:`${origin}/Credit?checkout=success&session_id={CHECKOUT_SESSION_ID}&return=${encodedReturn}`,
+    success_url:`${origin}/Credit?checkout=success&session_id={CHECKOUT_SESSION_ID}&return=${encodedReturn}${resumeParam}`,
     cancel_url:`${origin}/Credit?checkout=cancelled&return=${encodedReturn}`,
     client_reference_id:auth.user.id,
     'metadata[user_id]':auth.user.id,
