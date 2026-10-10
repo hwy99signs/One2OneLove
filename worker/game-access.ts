@@ -138,7 +138,7 @@ async function activeStandardGamePass(db,userId,game){
 async function launchStandardGame(db,env,auth,input){
   await verifiedMember(db,auth.user.id);
   const game=String(input?.game||'').trim();
-  if(!['what_should_they_do'].includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  if(!['what_should_they_do','pests','scrabluko'].includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
   const existing=await activeStandardGamePass(db,auth.user.id,game);
   if(existing)return json({ok:true,pass:existing,reused:true,promotion:activeFreeGamesPromotion()});
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
@@ -239,7 +239,7 @@ export async function handleGameAccessRequest(request,env,url){
         const game=url.searchParams.get('game')||'';
         if(request.method==='GET'){
           await verifiedMember(db,auth.user.id);
-          if(!['what_should_they_do'].includes(game))return fail('This paid game is not available.',400,'game_invalid');
+          if(!['what_should_they_do','pests','scrabluko'].includes(game))return fail('This paid game is not available.',400,'game_invalid');
           const pass=await activeStandardGamePass(db,auth.user.id,game);
           return json({ok:true,active:Boolean(pass),pass,promotion:activeFreeGamesPromotion()});
         }
