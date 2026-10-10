@@ -39,8 +39,8 @@ export default function O2OLStudioEpisodes(){
   },[isAuthenticated]);
 
   const ordered=useMemo(()=>[...episodes].sort((a,b)=>{
-    const seasonDiff=Number(b?.season||0)-Number(a?.season||0);
-    return seasonDiff||Number(b?.episode||0)-Number(a?.episode||0);
+    const seasonDiff=Number(a?.season||0)-Number(b?.season||0);
+    return seasonDiff||Number(a?.episode||0)-Number(b?.episode||0);
   }),[episodes]);
 
   return <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-12">
@@ -56,7 +56,7 @@ export default function O2OLStudioEpisodes(){
             const playable=Boolean(canOpen&&!failedMedia[ep.id]);
             return <article key={ep.id} className="overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
               <div className="aspect-video bg-black">
-                {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||'/assets/o2ol-hero.png'} src={ep.mediaPath} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
+                {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||undefined} src={ep.mediaPath+'#t=0.1'} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
                 <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div><LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/><p className="mt-3 font-black">{t.locked}</p>{ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>}</div></div>}
               </div>
               <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}</div>

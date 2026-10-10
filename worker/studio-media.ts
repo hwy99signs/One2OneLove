@@ -10,7 +10,7 @@ const EPISODES=[
     key:'studio/season-1/episode-2-who-pays-for-the-first-date.mp4',
     path:'/studio-media/season-1-episode-2.mp4',
     chatRoom:'studio-who-pays-for-the-first-date',
-    posterPath:'/assets/o2ol-hero.png',
+    posterPath:null,
     releasedAt:'2026-10-09T22:00:00.000Z',
   },
   {
