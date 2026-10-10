@@ -917,7 +917,7 @@ export default function LikeMinded() {
         </div>
 
         <div className="flex flex-1 flex-col px-3 pb-5 pt-12 sm:px-5 sm:pb-7 sm:pt-16">
-          <div className="mx-auto w-full max-w-3xl"><img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mb-7 block w-full rounded-[24px] shadow-2xl ring-1 ring-white/15" /></div>
+          <div className="mx-auto w-full max-w-3xl"><img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mb-7 block h-44 w-full rounded-[24px] object-cover object-center shadow-2xl ring-1 ring-white/15 sm:h-52" /></div>
           <div className="mx-auto w-full max-w-5xl text-center">
             <h1 className="text-[31px] font-black leading-[1.08] tracking-tight text-white sm:text-4xl">
               {t.tagline.split('. ').map((part,i,arr) => (

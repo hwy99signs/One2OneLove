@@ -226,7 +226,6 @@ export async function handleGameAccessRequest(request,env,url){
   try{
     return await withDb(env,async db=>{
       if(url.pathname==='/api/games/promotion'&&request.method==='GET'){
-        await verifiedMember(db,auth.user.id);
         return json({ok:true,promotion:activeFreeGamesPromotion()});
       }
       if(url.pathname==='/api/games/scratch/launch'){

@@ -142,10 +142,10 @@ function PagesContent() {
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
           <Route path="/CooperativeGames" element={<CooperativeGames />} />
-          <Route path="/Pests" element={<PaidGameSessionGate game="pests" title="PEST'S"><Pests /></PaidGameSessionGate>} />
-          <Route path="/Scrabluko" element={<PaidGameSessionGate game="scrabluko" title="Scrabluko"><Scrabluko /></PaidGameSessionGate>} />
-          <Route path="/WhatShouldTheyDo" element={<PaidGameSessionGate game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
-          <Route path="/Games" element={<PaidGameSessionGate game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
+          <Route path="/Pests" element={<PaidGameSessionGate image="/game-cards/card-pests.jpg" game="pests" title="PEST'S"><Pests /></PaidGameSessionGate>} />
+          <Route path="/Scrabluko" element={<PaidGameSessionGate image="/game-cards/card-scrabluko.jpg" game="scrabluko" title="Scrabluko"><Scrabluko /></PaidGameSessionGate>} />
+          <Route path="/WhatShouldTheyDo" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
+          <Route path="/Games" element={<PaidGameSessionGate image="/game-cards/card-what-should.jpg" game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
           <Route path="/LikeMinded" element={<LikeMinded />} />
           <Route path="/SharedJournals" element={<PaidFeatureGate featureCode="journals_unlock"><SharedJournals /></PaidFeatureGate>} />
