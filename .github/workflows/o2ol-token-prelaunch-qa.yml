@@ -220,7 +220,9 @@ jobs:
           grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
           grep -F "accessModel:'free_tokens'" worker/ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts
-          grep -F "reserveTokenCharge(db,auth.user.id,'ai_content_generation'" worker/ai.ts
+          grep -F "const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';" worker/ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,billingFeatureCode" worker/ai.ts
+          grep -F "'love_note_ai','Love Note AI generation',25" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
           grep -F "legacy_subscription_model_retired" worker/billing-plan-change.ts
           grep -F "'Free',0,'inactive'" worker/onboarding.ts worker/member-onboarding.ts worker/index.ts
           grep -F "'Free','inactive',0" worker/professional-signup.ts
