@@ -815,10 +815,16 @@ async function ensureContentUnlockSchema(db){
   await db.query(`
     INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,pricing_unit,active,calibration_only)
     VALUES
-      ('date_idea_unlock','Date Idea unlock',1,'item',true,true),
-      ('podcast_episode_unlock','Podcast episode unlock',1,'episode',true,true),
-      ('premium_content_unlock','Premium content unlock',1,'item',true,true)
-    ON CONFLICT(feature_code) DO NOTHING`);
+      ('date_idea_unlock','Date Idea unlock',49,'item',true,false),
+      ('podcast_episode_unlock','Podcast episode unlock',99,'episode',true,false),
+      ('premium_content_unlock','Premium content unlock',99,'item',true,false)
+    ON CONFLICT(feature_code) DO UPDATE SET
+      label=EXCLUDED.label,
+      token_cost=EXCLUDED.token_cost,
+      pricing_unit=EXCLUDED.pricing_unit,
+      active=EXCLUDED.active,
+      calibration_only=EXCLUDED.calibration_only,
+      updated_at=now()`);
 }
 
 async function listContentUnlocks(db,userId,featureCode){
