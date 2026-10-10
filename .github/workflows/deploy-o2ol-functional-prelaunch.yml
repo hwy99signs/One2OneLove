@@ -239,7 +239,7 @@ jobs:
               "directory": "$GITHUB_WORKSPACE/dist",
               "binding": "ASSETS",
               "not_found_handling": "single-page-application",
-              "run_worker_first": ["/api/*", "/studio-media/*"]
+              "run_worker_first": ["/api/*", "/studio-media/*", "/PrivacyPolicy", "/TermsOfService", "/Suggestions"]
             },
             "vars": {
               "NEON_AUTH_BASE_URL": "$NEON_AUTH_BASE_URL",
