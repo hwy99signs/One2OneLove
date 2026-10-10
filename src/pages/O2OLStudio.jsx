@@ -4,6 +4,7 @@ import { BrainCircuit, CreditCard, Film, Loader2, MessageCircle, PlayCircle, Spa
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
+import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 
 const COPY={
   en:{
@@ -83,6 +84,7 @@ export default function O2OLStudio(){
   const [refreshKey,setRefreshKey]=useState(0);
   const [unlocking,setUnlocking]=useState(false);
   const [unlockError,setUnlockError]=useState('');
+  const [showUnlockConfirm,setShowUnlockConfirm]=useState(false);
 
   useEffect(()=>{
     let active=true;
@@ -165,7 +167,7 @@ export default function O2OLStudio(){
                   <p className="mt-2 text-sm text-white/60">{t.unlockNote}</p>
                   {isAuthenticated ? (
                     <div className="mt-6">
-                      <button type="button" onClick={handleUnlock} disabled={unlocking} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white transition hover:brightness-110 disabled:opacity-60">
+                      <button type="button" onClick={()=>setShowUnlockConfirm(true)} disabled={unlocking} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white transition hover:brightness-110 disabled:opacity-60">
                         {unlocking?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlocking?t.unlocking:t.unlockBtn}
                       </button>
                       {unlockError && (
@@ -230,6 +232,16 @@ export default function O2OLStudio(){
           <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/45">{t.note}</p>
         </div>
       </section>
+      <UnlockPriceDialog
+        open={showUnlockConfirm}
+        title={episode?.title ? 'Unlock '+episode.title : 'Unlock O2OL Studio Episode'}
+        priceCents={Number(episode?.unlockPriceCents||100)}
+        description="Pay once and watch anytime from this account."
+        busy={unlocking}
+        error={unlockError}
+        onUnlock={handleUnlock}
+        onClose={()=>{setShowUnlockConfirm(false);setUnlockError('');}}
+      />
     </main>
   );
 }
