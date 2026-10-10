@@ -5,7 +5,7 @@ import { useLanguage } from './Layout';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
-const STUDIO_VIDEO = '/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4';
+const STUDIO_VIDEO = '/studio-media/season-1-episode-2.mp4';
 const MYMATCHIQ_LABELS = { en: 'Compatibility Test', es: 'Prueba de Compatibilidad', fr: 'Test de Compatibilité', it: 'Test di Compatibilità', de: 'Kompatibilitätstest' };
 const OPEN_HOUSE_COPY = {
   en:{eyebrow:'LIMITED-TIME ONE2ONELOVE OPEN HOUSE',title:'Explore One2OneLove FREE',body:'No account is required to browse. Look around first; create an account only when you want to save, post, or use protected member features.',explore:'Explore Free Tools',studio:'Watch O2OL Studio'},
