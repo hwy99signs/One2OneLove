@@ -441,15 +441,19 @@ function LanguageContent({ children, currentPageName }) {
               )}
               {desktopActionOpen && !isMyMatchIQPage && (
                 <div id="desktop-action-menu" className="absolute right-0 top-8 w-72 bg-white text-slate-800 rounded-xl shadow-xl p-2 z-50 text-sm font-normal">
-                  <Link to={createPageUrl("MyMatchIQ")} className="mb-1 flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span></Link>
-                  <Link to={createPageUrl("LoveNotes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
-                  <Link to={createPageUrl("LGBTQSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}</Link>
-                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
-                  <Link to={createPageUrl("CooperativeGames")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎮 {t.actionMenu.games}</Link>
-                  <Link to={createPageUrl("DateIdeas")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
-                  <Link to={createPageUrl("RelationshipGoals")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}</Link>
-                  <Link to={createPageUrl("MemoryLane")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>📷 {t.actionMenu.memoryLane}</Link>
-                  <Link to={createPageUrl("CoupleSupport")} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>👥 {t.actionMenu.coupleSupport}</Link>
+                  <div className="px-3 pb-1 pt-1 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Free</div>
+                  <Link to={createPageUrl("LGBTQSupport")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🌈 {t.actionMenu.lgbtqSupport}<span className="ml-auto rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black text-yellow-950">FREE</span></Link>
+                  <Link to={createPageUrl("CoupleSupport")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>👥 {t.actionMenu.coupleSupport}<span className="ml-auto rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black text-yellow-950">FREE</span></Link>
+                  <div className="mt-1 px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Free + locked items</div>
+                  <Link to={createPageUrl("MyMatchIQ")} className="flex w-full items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-950 via-violet-800 to-fuchsia-700 px-3 py-2 font-black text-white shadow-sm hover:from-indigo-900 hover:to-fuchsia-600" onClick={() => setDesktopActionOpen(false)}>✦ MyMatchIQ</Link>
+                  <Link to={createPageUrl("LoveNotes")} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💗 {t.actionMenu.sendLoveNote}</Link>
+                  <Link to={createPageUrl("RelationshipQuizzes")} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🧩 {t.actionMenu.relationshipQuizzes}</Link>
+                  <Link to={createPageUrl("DateIdeas")} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🗓️ {t.actionMenu.dateIdeas}</Link>
+                  <div className="mt-1 px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Credit</div>
+                  <Link to={createPageUrl("CooperativeGames")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎮 {t.actionMenu.games}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
+                  <Link to={createPageUrl("RelationshipMilestones")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>💗 {t.actionMenu.relationshipMilestones}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
+                  <Link to={createPageUrl("RelationshipGoals")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>🎯 {t.actionMenu.relationshipGoals}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
+                  <Link to={createPageUrl("MemoryLane")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100" onClick={() => setDesktopActionOpen(false)}>📷 {t.actionMenu.memoryLane}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
                 </div>
               )}
             </div>
@@ -567,118 +571,20 @@ function LanguageContent({ children, currentPageName }) {
                   </button>
                   
                   {mobileActionOpen && (
-                    <div className="mt-1 bg-white/10 rounded-lg overflow-hidden">
-                      <Link
-                      to={isMyMatchIQPage ? '/MyMatchIQ/Actions' : createPageUrl("MyMatchIQ")}
-                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-950/90 via-violet-800/90 to-fuchsia-700/90 px-3 py-2.5 font-black text-white transition-all hover:from-indigo-950 hover:to-fuchsia-600"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        MyMatchIQ
-                        <span className="ml-auto text-[0.62rem] font-black tracking-[0.15em] text-fuchsia-100">{({ en: 'NEW', es: 'NUEVO', fr: 'NOUVEAU', it: 'NUOVO', de: 'NEU' }[currentLanguage] || 'NEW')}</span>
-                      </Link>
-                      <Link
-                        to={createPageUrl("LoveNotes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                        {t.actionMenu.sendLoveNote}
-                      </Link>
-                      <Link
-                        to={createPageUrl("LGBTQSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Rainbow className="w-4 h-4" />
-                        {t.actionMenu.lgbtqSupport}
-                      </Link>
-                      <Link
-                        to={createPageUrl("CoupleSupport")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Users className="w-4 h-4" />
-                        {t.actionMenu.coupleSupport}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipQuizzes")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                        {t.actionMenu.relationshipQuizzes}
-                      </Link>
-                      <Link
-                        to={createPageUrl("CooperativeGames")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Gamepad2 className="w-4 h-4" />
-                        {t.actionMenu.games}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipMilestones")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                        {t.actionMenu.relationshipMilestones}
-                      </Link>
-                      <Link
-                        to={createPageUrl("RelationshipGoals")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Target className="w-4 h-4" />
-                        {t.actionMenu.relationshipGoals}
-                      </Link>
-                      <Link
-                        to={createPageUrl("DateIdeas")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                        {t.actionMenu.dateIdeas}
-                      </Link>
-                      <Link
-                        to={createPageUrl("MemoryLane")}
-                        className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2.5 transition-all"
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setMobileActionOpen(false);
-                        }}
-                      >
-                        <Heart className="w-4 h-4" />
-                        {t.actionMenu.memoryLane}
-                      </Link>
+                    <div className="mt-1 overflow-hidden rounded-lg bg-white/10">
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[.18em] text-white/60">Free</div>
+                      <Link to={createPageUrl("LGBTQSupport")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Rainbow className="h-4 w-4"/>{t.actionMenu.lgbtqSupport}<span className="ml-auto rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black text-yellow-950">FREE</span></Link>
+                      <Link to={createPageUrl("CoupleSupport")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Users className="h-4 w-4"/>{t.actionMenu.coupleSupport}<span className="ml-auto rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black text-yellow-950">FREE</span></Link>
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[.18em] text-white/60">Free + locked items</div>
+                      <Link to={isMyMatchIQPage ? '/MyMatchIQ/Actions' : createPageUrl("MyMatchIQ")} className="flex items-center gap-2 bg-gradient-to-r from-indigo-950/90 via-violet-800/90 to-fuchsia-700/90 px-3 py-2.5 font-black text-white" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Sparkles className="h-4 w-4"/>MyMatchIQ</Link>
+                      <Link to={createPageUrl("LoveNotes")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Heart className="h-4 w-4"/>{t.actionMenu.sendLoveNote}</Link>
+                      <Link to={createPageUrl("RelationshipQuizzes")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Heart className="h-4 w-4"/>{t.actionMenu.relationshipQuizzes}</Link>
+                      <Link to={createPageUrl("DateIdeas")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Heart className="h-4 w-4"/>{t.actionMenu.dateIdeas}</Link>
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[.18em] text-white/60">Credit</div>
+                      <Link to={createPageUrl("CooperativeGames")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Gamepad2 className="h-4 w-4"/>{t.actionMenu.games}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
+                      <Link to={createPageUrl("RelationshipMilestones")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Heart className="h-4 w-4"/>{t.actionMenu.relationshipMilestones}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
+                      <Link to={createPageUrl("RelationshipGoals")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Target className="h-4 w-4"/>{t.actionMenu.relationshipGoals}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
+                      <Link to={createPageUrl("MemoryLane")} className="flex items-center gap-2 px-3 py-2.5 text-white hover:bg-white/20" onClick={() => {setMobileMenuOpen(false);setMobileActionOpen(false);}}><Heart className="h-4 w-4"/>{t.actionMenu.memoryLane}<span className="ml-auto" aria-label="Locked">🔒</span></Link>
                     </div>
                   )}
                 </div>
