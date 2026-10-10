@@ -24,9 +24,9 @@ export default function Pests() {
             {t.back}
           </Link>
         </div>
-        <img src="/game-cards/card-pests.jpg" alt="PEST'S" className="mb-5 block w-full rounded-2xl shadow-lg ring-1 ring-black/5" />
+        <img src="/game-cards/card-pests.jpg" alt="game card" className="mb-4 block h-40 w-full rounded-2xl object-cover object-center shadow-lg ring-1 ring-black/5 sm:h-48" />
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-amber-100">
-          <iframe title="PEST'S" src="/games-src/pests.html" className="w-full border-0" style={{ height: "min(84vh, 1000px)", minHeight: "680px" }} allow="fullscreen" />
+          <iframe title="PEST'S" src="/games-src/pests.html" className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
         </div>
         <p className="mt-4 text-center text-xs text-slate-500">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </div>

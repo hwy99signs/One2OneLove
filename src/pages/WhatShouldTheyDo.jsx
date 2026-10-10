@@ -408,7 +408,7 @@ export default function WhatShouldTheyDo() {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-7 lg:py-9">
-        <img src="/game-cards/card-what-should.jpg" alt="What Should They Do?" className="mb-6 block w-full rounded-[24px] shadow-lg ring-1 ring-black/5" />
+        <img src="/game-cards/card-what-should.jpg" alt="What Should They Do?" className="mb-4 block h-40 w-full rounded-2xl object-cover object-center shadow-lg ring-1 ring-black/5 sm:h-48" />
         <div className="mb-6 flex items-start justify-between gap-5">
           <div>
             <h1 className="text-4xl font-black uppercase leading-[.9] tracking-[-.05em] text-[#102f60] sm:text-6xl lg:text-7xl">
