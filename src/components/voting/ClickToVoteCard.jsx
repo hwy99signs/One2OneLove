@@ -207,34 +207,39 @@ export default function ClickToVoteCard({ language = 'en' }) {
     setIndex((index + 1) % questions.length);
   };
 
+  // Compact presentation (owner clarification, 2026-10-10): the card
+  // itself stays as designed; the full-width white strip BEHIND it is
+  // gone (this section renders no background at all), and the card is
+  // roughly half its original height — the Next tab rides on the eyebrow
+  // row, the question and choices are set tighter, the comment line slim.
   if (loading) {
     return (
-      <section className="border-b border-[#7f1d2d]/20 bg-[#7f1d2d]/[.06] px-4 py-4 sm:px-6" aria-label={t.eyebrow}>
-        <div className="mx-auto max-w-7xl rounded-3xl border border-[#7f1d2d]/25 bg-white/70 px-5 py-4 text-sm font-semibold text-[#7f1d2d] shadow-sm">{t.loading}</div>
+      <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
+        <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/25 bg-white/70 px-4 py-2.5 text-[13px] font-semibold text-[#7f1d2d] shadow-sm">{t.loading}</div>
       </section>
     );
   }
 
   return (
-    <section className="border-b border-[#7f1d2d]/20 bg-[#7f1d2d]/[.06] px-4 py-4 sm:px-6" aria-label={t.eyebrow}>
-      <div className="mx-auto max-w-7xl rounded-3xl border border-[#7f1d2d]/30 bg-[#7f1d2d]/[.08] px-5 py-4 shadow-sm sm:px-7">
+    <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
+      <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/30 bg-[#7f1d2d]/[.08] px-4 py-2.5 shadow-sm sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#7f1d2d]">🗳️ {t.eyebrow}</div>
-          {!allVoted && <div className="text-xs font-bold text-[#7f1d2d]/70">{t.questionOf(index + 1, questions.length)}</div>}
+          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#7f1d2d]">🗳️ {t.eyebrow}</div>
+          {!allVoted && <div className="text-[11px] font-bold text-[#7f1d2d]/70">{t.questionOf(index + 1, questions.length)}</div>}
         </div>
 
         {allVoted ? (
-          <div className="mt-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mt-1.5 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-xl font-black tracking-tight text-[#5c0e1a] sm:text-2xl">{t.doneTitle}</h2>
-              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">{t.doneBody}</p>
+              <h2 className="text-lg font-black tracking-tight text-[#5c0e1a] sm:text-xl">{t.doneTitle}</h2>
+              <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-slate-700">{t.doneBody}</p>
             </div>
-            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-xl bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-5 py-3 text-sm font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
+            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
           </div>
         ) : question && (
           <>
-            <h2 className="mt-2 text-xl font-black leading-snug tracking-tight text-[#5c0e1a] sm:text-2xl">{pick(question.question)}</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <h2 className="mt-1.5 text-lg font-black leading-tight tracking-tight text-[#5c0e1a] sm:text-xl">{pick(question.question)}</h2>
+            <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
               {question.choices.map((choice, i) => {
                 const selected = myChoice === choice.key || pendingChoice === choice.key;
                 return (
@@ -243,49 +248,52 @@ export default function ClickToVoteCard({ language = 'en' }) {
                     type="button"
                     disabled={casting}
                     onClick={() => handleChoice(choice.key)}
-                    className={`rounded-xl border px-4 py-3 text-left text-sm font-extrabold shadow-sm transition disabled:opacity-60 ${selected ? 'border-[#7f1d2d] bg-[#7f1d2d] text-[#f7f2e7]' : 'border-[#7f1d2d]/40 bg-white/80 text-[#5c0e1a] hover:border-[#7f1d2d] hover:bg-white'}`}
+                    className={`rounded-lg border px-3 py-1.5 text-left text-[13px] font-extrabold shadow-sm transition disabled:opacity-60 ${selected ? 'border-[#7f1d2d] bg-[#7f1d2d] text-[#f7f2e7]' : 'border-[#7f1d2d]/40 bg-white/80 text-[#5c0e1a] hover:border-[#7f1d2d] hover:bg-white'}`}
                   >
-                    <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#7f1d2d]/10 text-xs font-black text-[#7f1d2d]">{String.fromCharCode(65 + i)}</span>
+                    <span className={`mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-black ${selected ? 'bg-white/20 text-[#f7f2e7]' : 'bg-[#7f1d2d]/10 text-[#7f1d2d]'}`}>{String.fromCharCode(65 + i)}</span>
                     {pick(choice.labels)}
-                    {myChoice === choice.key && <span className="ml-2 text-[11px] font-black uppercase tracking-wide opacity-80">· {t.yourPick}</span>}
+                    {myChoice === choice.key && <span className="ml-1.5 text-[10px] font-black uppercase tracking-wide opacity-80">· {t.yourPick}</span>}
                   </button>
                 );
               })}
             </div>
 
-            {isMember && !flash && (
-              <input
-                value={comment}
-                onChange={(e) => setComment(e.target.value.slice(0, 500))}
-                placeholder={t.commentPlaceholder}
-                className="mt-3 w-full rounded-xl border border-[#7f1d2d]/25 bg-white/80 px-4 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7f1d2d]/60"
-              />
-            )}
-
-            {flash && <p className="mt-3 text-sm font-black text-[#7f1d2d]" role="status">{flash}</p>}
-            {error && <p className="mt-3 text-sm font-bold text-red-700" role="alert">{error}</p>}
+            {/* Owner layout (2026-10-10): the Next voting question tab
+                rides on the SAME line as the comment line — no extra row. */}
+            <div className="mt-2 flex items-center gap-2">
+              {isMember && !flash ? (
+                <input
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value.slice(0, 500))}
+                  placeholder={t.commentPlaceholder}
+                  className="min-w-0 flex-1 rounded-lg border border-[#7f1d2d]/30 bg-white/80 px-3 py-1.5 text-[13px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7f1d2d]/60"
+                />
+              ) : flash ? (
+                <p className="min-w-0 flex-1 text-[13px] font-black text-[#7f1d2d]" role="status">{flash}</p>
+              ) : (
+                <span className="min-w-0 flex-1" />
+              )}
+              <button type="button" onClick={handleNext} className="shrink-0 rounded-t-md rounded-b-lg border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
+                {t.next} →
+              </button>
+            </div>
+            {error && <p className="mt-2 text-[13px] font-bold text-red-700" role="alert">{error}</p>}
 
             {!isMember && pendingChoice && (
-              <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-[#7f1d2d]/25 bg-white/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-2 flex flex-col gap-2 rounded-xl border border-[#7f1d2d]/25 bg-white/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-black text-[#5c0e1a]">{t.joinTitle}</p>
-                  <p className="text-sm text-slate-600">{t.joinBody}</p>
+                  <p className="text-[13px] font-black text-[#5c0e1a]">{t.joinTitle}</p>
+                  <p className="text-[13px] text-slate-600">{t.joinBody}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-xl bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-4 py-2.5 text-sm font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
-                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-xl border border-[#7f1d2d]/40 bg-white px-4 py-2.5 text-sm font-black text-[#5c0e1a]">{t.signIn}</button>
+                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
+                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#7f1d2d]/40 bg-white px-3.5 py-2 text-[13px] font-black text-[#5c0e1a]">{t.signIn}</button>
                 </div>
               </div>
             )}
             {isMember && pendingChoice && !myChoice && (
-              <p className="mt-2 text-sm font-bold text-[#7f1d2d]">{t.castNow}</p>
+              <p className="mt-1.5 text-[13px] font-bold text-[#7f1d2d]">{t.castNow}</p>
             )}
-
-            <div className="mt-3 flex justify-end">
-              <button type="button" onClick={handleNext} className="rounded-t-lg rounded-b-xl border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-4 py-2 text-xs font-black uppercase tracking-wide text-[#f7f2e7] shadow-md transition hover:brightness-110">
-                {t.next} →
-              </button>
-            </div>
           </>
         )}
       </div>
