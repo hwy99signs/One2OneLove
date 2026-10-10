@@ -75,7 +75,7 @@ jobs:
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts
           grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx
           grep -F "const STUDIO_VIDEO" src/pages/Home.jsx
-          grep -F "episode-2-who-pays-for-the-first-date.mp4" src/pages/Home.jsx
+          grep -Eq "const STUDIO_VIDEO = .*/studio-media/(season-1-episode-2\\.mp4|season-1/episode-2-who-pays-for-the-first-date\\.mp4)" src/pages/Home.jsx
           grep -F 'data-analytics-destination="/O2OLStudio?episode=season-1-episode-1"' src/pages/Home.jsx
           grep -F "Watch Episode 1" src/pages/Home.jsx
           grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx
