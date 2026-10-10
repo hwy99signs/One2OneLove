@@ -1,4 +1,4 @@
 O2OL_PRODUCTION_DEPLOY_TRIGGER
-fix_merge=219bb2bb453751fd409f11b01690ec11e3ac3171
-fixes=Click-to-Vote card: white strip behind the card removed, card at half height, Next tab on the comment line.
-source_pr=115
+fix_merge=50d1363936ff1d932ff3a372ed97adad2124d665
+fixes=Amora host identity resolver (email-first, user_type ladder); Chat results panel Next arrow pages all questions.
+source_pr=116
