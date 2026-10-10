@@ -661,6 +661,7 @@ export default function LikeMinded() {
       <div className="min-h-screen bg-[#f8f5ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mb-6 block w-full rounded-[24px] shadow-lg ring-1 ring-black/5" />
           <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl sm:p-8">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div>

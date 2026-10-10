@@ -118,6 +118,7 @@ export default function CooperativeGames() {
   const availableGames = [
     {
       id: 'like_minded',
+      image: '/game-cards/card-like-minded.jpg',
       name: t.likeMindedName,
       description: t.likeMindedDesc,
       type: 'connection',
@@ -130,6 +131,7 @@ export default function CooperativeGames() {
     },
     {
       id: 'scrabluko',
+      image: '/game-cards/card-scrabluko.jpg',
       name: t.scrablukoName,
       description: t.scrablukoDesc,
       type: 'word',
@@ -142,6 +144,7 @@ export default function CooperativeGames() {
     },
     {
       id: 'what_should_they_do',
+      image: '/game-cards/card-what-should.jpg',
       name: t.whatShouldName,
       description: t.whatShouldDesc,
       type: 'social-voting',
@@ -154,6 +157,7 @@ export default function CooperativeGames() {
     },
     {
       id: 'o2ol_scratch',
+      image: '/game-cards/card-love-scratch.jpg',
       name: t.scratchName,
       description: t.scratchDesc,
       type: 'conversation',
@@ -166,6 +170,7 @@ export default function CooperativeGames() {
     },
     {
       id: 'pests',
+      image: '/game-cards/card-pests.jpg',
       name: t.pestsName,
       description: t.pestsDesc,
       type: 'arcade',
