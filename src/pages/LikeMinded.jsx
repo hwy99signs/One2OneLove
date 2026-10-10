@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, ChevronRight, Copy, Globe2, HeartHandshake,
@@ -9,6 +9,7 @@ import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from '@/lib/tokenService';
+import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -313,6 +314,7 @@ export default function LikeMinded() {
   const [tokenCost,setTokenCost]=useState(0);
   const [tokenPrompt,setTokenPrompt]=useState(false);
   const [accessLoading,setAccessLoading]=useState(false);
+  const premiumResolveRef=useRef(null);
 
   const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
   const activeCanonicalCategory = CANONICAL_CATEGORIES[(categoryIndex + questionNo - 1) % CANONICAL_CATEGORIES.length];
@@ -354,21 +356,44 @@ export default function LikeMinded() {
       return false;
     }
     if(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())return true;
-    const cents=Number(tokenCost||49);
-    const approved=window.confirm(`Like Minded costs ${(cents/100).toFixed(2)} per game/session.\n\nPress OK to unlock and deduct Credit, or Cancel/X to leave your balance unchanged.`);
-    if(!approved)return false;
-    setAccessLoading(true);setApiError('');setTokenPrompt(false);
+    setApiError('');
+    setTokenPrompt(true);
+    return new Promise(resolve=>{premiumResolveRef.current=resolve;});
+  };
+  const confirmPremiumAccess=async()=>{
+    if(accessLoading)return;
+    setAccessLoading(true);setApiError('');
     try{
       const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const data=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
       setGamePass(data.pass||null);
       if(data?.tokens?.balance!=null)setTokenBalance(Number(data.tokens.balance));
       else await refreshTokenState();
-      return true;
+      setTokenPrompt(false);
+      const resolve=premiumResolveRef.current; premiumResolveRef.current=null; resolve?.(true);
     }catch(error){
-      handlePremiumError(error);return false;
+      handlePremiumError(error);
     }finally{setAccessLoading(false);}
   };
+  const closePremiumPrompt=()=>{
+    setTokenPrompt(false);setApiError('');
+    const resolve=premiumResolveRef.current; premiumResolveRef.current=null; resolve?.(false);
+  };
+  const withPremiumDialog=(content)=><>
+    {content}
+    <UnlockPriceDialog
+      open={Boolean(tokenPrompt)&&!(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())}
+      title="Like Minded?"
+      priceCents={Number(tokenCost||49)}
+      terms="Per game / session."
+      balanceCents={Number(tokenBalance||0)}
+      busy={accessLoading}
+      error={apiError}
+      onUnlock={confirmPremiumAccess}
+      onClose={closePremiumPrompt}
+      creditReturn="/LikeMinded"
+    />
+  </>;
 
   useEffect(() => {
     const pending=new URLSearchParams(window.location.search).get('room');
@@ -623,7 +648,7 @@ export default function LikeMinded() {
   );
 
   if (screen === 'solo') {
-    return (
+    return withPremiumDialog(
       <div className="min-h-screen bg-[#f8f5ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
@@ -691,7 +716,7 @@ export default function LikeMinded() {
   }
 
   if (screen === 'invite') {
-    return (
+    return withPremiumDialog(
       <div className="min-h-screen bg-[#f7f4ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -721,7 +746,7 @@ export default function LikeMinded() {
                   <div className="mt-3 flex gap-2"><input value={roomCode} onChange={e=>setRoomCode(e.target.value.toUpperCase())} placeholder={t.codePlaceholder} className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 font-black uppercase tracking-widest"/><button onClick={joinRoom} className="rounded-2xl bg-slate-950 px-5 py-3 font-black text-white">{t.join}</button></div>
                 </>
               )}
-              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}{tokenPrompt&&<Link to="/Credit?return=/LikeMinded" className="ml-3 inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 font-black text-amber-950"><Coins className="h-4 w-4"/>{t.buyTokens}</Link>}</div>}
+              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
             </div>
           </div>
         </div>
@@ -734,7 +759,7 @@ export default function LikeMinded() {
     const bothLocked = Boolean(current.both_locked);
     const match = current.current_match;
     const myLocked = Boolean(current.my_locked) || locked;
-    return (
+    return withPremiumDialog(
       <div className="min-h-screen bg-[#f7f4ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
@@ -775,7 +800,7 @@ export default function LikeMinded() {
                 {showTalk && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-center font-bold text-violet-950">{t.talkPrompt}</div>}
                 <div className="grid gap-3 sm:grid-cols-2"><button onClick={()=>setShowTalk(v=>!v)} className="rounded-2xl border border-slate-200 px-5 py-4 font-black text-slate-800"><MessageCircle className="mr-2 inline h-5 w-5"/>{t.talk}</button><button onClick={nextRoomQuestion} className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">{t.nextQuestion}<ChevronRight className="ml-2 inline h-5 w-5"/></button></div>
               </div>}
-            {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}{tokenPrompt&&<Link to="/Credit?return=/LikeMinded" className="ml-3 inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 font-black text-amber-950"><Coins className="h-4 w-4"/>{t.buyTokens}</Link>}</div>}
+            {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
           </div>
         </div>
       </div>
@@ -783,7 +808,7 @@ export default function LikeMinded() {
   }
 
   if (screen === 'lobby') {
-    return (
+    return withPremiumDialog(
       <div className="min-h-screen bg-[#f7f4ff] py-8">
         {modeHeader}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -794,7 +819,7 @@ export default function LikeMinded() {
               <Users className="h-10 w-10 text-violet-600"/><h1 className="mt-4 text-3xl font-black">{t.lobby}</h1><p className="mt-2 text-slate-600">{t.locationNote}</p>
               <div className="mt-6 grid gap-4"><label className="text-sm font-black">{t.city}<input value={city} onChange={e=>setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label><label className="text-sm font-black">{t.state}<input value={stateRegion} onChange={e=>setStateRegion(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label><label className="text-sm font-black">{t.country}<input value={country} onChange={e=>setCountry(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal"/></label></div>
               <button onClick={enterLobby} disabled={!city.trim() || !country.trim()} className="mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-4 font-black text-white disabled:opacity-40">{t.enterLobby}</button>
-              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}{tokenPrompt&&<Link to="/Credit?return=/LikeMinded" className="ml-3 inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 font-black text-amber-950"><Coins className="h-4 w-4"/>{t.buyTokens}</Link>}</div>}
+              {apiError && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{apiError}</div>}
             </div>
           ) : (
             <>
@@ -818,8 +843,8 @@ export default function LikeMinded() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#07112f] text-white">
+  return withPremiumDialog(
+    <div className="min-h-screen bg-[#07112f] text-white>
       <section className="relative flex min-h-[calc(100svh-96px)] flex-col overflow-hidden bg-[#07112f]">
         <div className="relative h-[40svh] min-h-[320px] max-h-[520px] overflow-hidden">
           <div className="absolute inset-0 grid grid-cols-2">
@@ -912,7 +937,7 @@ export default function LikeMinded() {
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left text-amber-50">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div><div className="inline-flex items-center gap-2 font-black"><Coins className="h-5 w-5"/>{t.premium}</div><p className="mt-1 text-xs leading-5 text-amber-50/80">{t.premiumBody}</p></div>
-              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':`${tokenCost||2} Tokens · Balance ${tokenBalance}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
+              {isAuthenticated ? <Link to="/Credit?return=/LikeMinded" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">{gamePass?'Pass Active':`🔒 ${(Number(tokenCost||49)/100).toFixed(2)} per game · Balance ${(Number(tokenBalance||0)/100).toFixed(2)}`}</Link> : <Link to="/SignUp?source=like-minded&type=individual" className="rounded-xl bg-amber-300 px-4 py-2 text-sm font-black text-amber-950">Create FREE Account</Link>}
             </div>
           </div>
 
