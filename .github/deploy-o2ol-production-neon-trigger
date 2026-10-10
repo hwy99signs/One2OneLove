@@ -1,7 +1,9 @@
-o2ol-production-home-episode2-video-episode1-tab-fix-2026-10-09T18:58-05:00
-certified_source=8af309729d43f7509486930cbe4d03ca79242fa0
-promotion_merge=9a424bb5a698d6f68c17db65cd6fa14dcf8ee08c
-prelaunch_deployment=cloudflare:7d3097af-51e0-4dee-93f7-a17838a7a603
-prelaunch_browser_qa=38007261449
-prelaunch_browser_result=66-passed-0-failed
-git_restore_branch=rollback/o2ol-production-before-home-episode2-video-tab-fix-20261009
+o2ol-health-database-ready-live-promotion-2026-10-09
+certified_source=3863cf506569911fc848af5039042d5c4d367a68
+promotion_merge=17dde4fa2ec5bd071c2b97953f5c9a68a90c494f
+production_two_pass_actions=38019592656
+production_qa_pass_1=success
+production_qa_pass_2=success
+real_database_ready=success
+rollback_branch=rollback/o2ol-live-before-health-database-ready-20261009
+epscie_fault=a1b7a6c9-a650-452c-af29-a93dc5bd9e4a
