@@ -135,7 +135,7 @@ export default function CooperativeGames() {
       icon: '💗',
       link: 'ScratchGame',
       playLabel: t.startGame,
-      accessLabel: t.freeAccess
+      accessLabel: t.tokenAccess
     },
     {
       id: 'what_should_they_do',
@@ -146,7 +146,7 @@ export default function CooperativeGames() {
       icon: '🗳️',
       link: 'WhatShouldTheyDo',
       playLabel: t.startGame,
-      accessLabel: t.publicAccess
+      accessLabel: t.tokenAccess
     }
   ];
 
