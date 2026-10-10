@@ -220,7 +220,7 @@ export default function DateIdeas() {
     enabled: Boolean(currentUser?.id) && !isAdmin,
   });
   const unlockedDateKeys = new Set((tokenUnlockData?.unlocks || []).map(item => String(item.content_key)));
-  const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 1);
+  const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
     if (isAdmin) return true;
