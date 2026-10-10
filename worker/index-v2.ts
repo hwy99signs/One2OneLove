@@ -9,6 +9,7 @@ import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest, handlePresencePing } from './feature-usage';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
 import { handleLoveNoteLibraryRequest } from './love-note-library';
+import { handleDateIdeaLibraryRequest } from './date-idea-library';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
 import { handleLaunchAuthRequest } from './launch-auth';
 import { handleProfessionalSignup } from './professional-signup';
@@ -237,6 +238,8 @@ export default {
       const response = await handleTokenAdminRequest(request, env, url);
       if (response) return response;
     }
+
+    if (url.pathname.startsWith('/api/date-idea-library')) return handleDateIdeaLibraryRequest(request,env,url);
 
     if (url.pathname.startsWith('/api/love-note-library')) {
       return handleLoveNoteLibraryRequest(request,env,url);
