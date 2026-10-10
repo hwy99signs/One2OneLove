@@ -1,4 +1,4 @@
-o2ol-live-qa-fixes-promotion-2026-10-10
-fix_merge=4fce32db02deb30d663cdae4d616f58eb13319ad
-fixes=credit-banner-copy,public-launch-readiness-minimization
-source_pr=100
+o2ol-membership-gate-removal-2026-10-10
+fix_merge=b6e044d48a368cd3dae2add141d53dad485ad0e3
+fixes=remove-retired-membership-gate,retain-verified-member-protections,add-regression-guard
+source_pr=102
