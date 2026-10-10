@@ -16,7 +16,7 @@ const translations = {
     title: "Terms of Service",
     subtitle: "Rules and conditions for using One2OneLove",
     back: "Back",
-    lastUpdated: "Last Updated: October 9, 2026",
+    lastUpdated: "Last Updated: October 10, 2026",
     translationNotice: "If a translated version differs from the English version, the English version controls to the extent permitted by applicable law.",
     ownershipNotice: "The One2One Love Platform is owned and operated by ERANT Property Services LLC (EPS LLC), its parent company. These Terms are an agreement between you and ERANT Property Services LLC relating to your use of the One2One Love Platform. References to ‘One2OneLove,’ ‘we,’ ‘us,’ or ‘our’ mean ERANT Property Services LLC operating the One2One Love Platform, unless the context requires otherwise.",
     sections: termsEn.map(([title,content])=>({title,content}))
