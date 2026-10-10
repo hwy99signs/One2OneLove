@@ -32,15 +32,17 @@ export default function ScratchGame() {
   const [showUnlock,setShowUnlock] = useState(false);
   const [priceCents,setPriceCents] = useState(49);
   const [balanceCents,setBalanceCents] = useState(null);
+  const [gameCreditCents,setGameCreditCents] = useState(null);
   const [promotion,setPromotion] = useState(null);
 
   useEffect(()=>{
     let active=true;
     if(!fullMemberAccess)return()=>{active=false};
-    Promise.all([getTokenWallet(),apiRequest('/api/games/promotion')]).then(([data,promo])=>{
+    Promise.all([getTokenWallet(),apiRequest('/api/games/promotion?game=scratch')]).then(([data,promo])=>{
       if(!active)return;
       setPromotion(promo?.promotion||null);
       setBalanceCents(Number(data?.wallet?.balance||0));
+      setGameCreditCents(Number(data?.gameCredit?.balanceCents||0));
       setPriceCents(promo?.promotion?.free?0:Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
       setShowUnlock(!promo?.promotion?.free);
     }).catch(()=>{if(active)setShowUnlock(true)});
@@ -56,13 +58,16 @@ export default function ScratchGame() {
       const token=payload?.token;
       if(!token)throw new Error(t.error);
       if(payload?.promotion)setPromotion(payload.promotion);
-      if(payload?.tokens?.balance!=null)setBalanceCents(Number(payload.tokens.balance));
+      if(payload?.gameCredit?.balanceCents!=null)setGameCreditCents(Number(payload.gameCredit.balanceCents));
+      const refreshed=await getTokenWallet().catch(()=>null);
+      if(refreshed?.wallet?.balance!=null)setBalanceCents(Number(refreshed.wallet.balance));
       setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||"en")}&ticket=${encodeURIComponent(token)}`);
       setShowUnlock(false);
     }catch(err){
       if(isTokensRequiredError(err)){
         const info=tokenRequiredDetails(err);
-        setBalanceCents(Number(info.balance||0));
+        setBalanceCents(Number(info.creditBalance||0));
+        setGameCreditCents(Number(info.gameCreditBalance||0));
         setPriceCents(Number(info.required||49));
         setError(`You need $${(Number(info.required||49)/100).toFixed(2)} Credit. Your balance is $${(Number(info.balance||0)/100).toFixed(2)}.`);
       }else setError(err?.message||t.error);
@@ -100,7 +105,7 @@ export default function ScratchGame() {
         )}
       </div>
     </div>
-    <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
+    <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} gameCreditCents={gameCreditCents} promotion={promotion} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
     <p className="pb-5 pt-4 text-center text-xs text-slate-500">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
   </div>;
 }
