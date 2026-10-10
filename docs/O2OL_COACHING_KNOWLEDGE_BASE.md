@@ -154,9 +154,9 @@ Phase 1 uses deterministic local retrieval:
 - Record the knowledge-base version and retrieved entry IDs in cost/usage telemetry for auditability.
 
 ### Current KB version
-2026-10-10-v1
+2026-10-10-v2.1
 
-### Initial knowledge entries
+### Phase 1 knowledge entries
 - communication-listen-before-defend
 - conflict-repair
 - boundaries-vs-control
@@ -177,6 +177,36 @@ Phase 1 uses deterministic local retrieval:
 - self-harm-crisis
 - professional-referral
 
+### Phase 2 communication + relationship-pattern entries
+- communication-demand-withdraw-cycle
+- communication-stonewalling-flooding
+- communication-soft-startup
+- communication-emotional-bids
+- communication-unmet-expectations
+- communication-recurring-conflict
+- communication-advice-vs-listening
+- household-labor-fairness
+- values-faith-differences
+- intercultural-relationship
+- digital-boundaries-social-media
+- ex-friendship-boundaries
+
+Current curated entry count: **37**
+
+### Muse Literature Pack additions
+The owner-approved Muse starter literature pack was reviewed and ingested as an additive source. Overlapping briefs deepen existing doctrine rather than creating duplicate entries. New entries added from the pack:
+- love-languages-flexible
+- attachment-related-behaviors
+- choosing-each-other-daily
+- appreciation-gratitude
+- patience-with-growth
+- quality-time-presence
+
+Muse source material also deepens existing guidance for communication, conflict/repair, apology, validation, trust, and safety boundaries.
+
+Ingestion rule: Muse content is guidance for the coach, not member-facing scripts. Safety standards remain authoritative when wording overlaps or conflicts.
+
+
 ### Quality target
 Current target after Phase 1:
 - Bianca: Good
@@ -190,7 +220,10 @@ Longer-term target:
 - Add source-confidence and citation metadata internally
 - Add multilingual approved knowledge entries
 
-### Phase 2 planned expansion
+### Phase 2 status
+Phase 2 has begun. The first release expands communication patterns, recurring conflict, household partnership, values/culture, and modern digital/ex-partner boundaries.
+
+### Remaining Phase 2 planned expansion
 - Attachment-related behaviors without clinical labeling
 - Appreciation and emotional bids
 - Communication styles
