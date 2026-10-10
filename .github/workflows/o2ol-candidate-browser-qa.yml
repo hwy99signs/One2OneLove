@@ -62,6 +62,25 @@ jobs:
           done
           echo "Production DB health qualification failed"
           exit 1
+      - name: Require propagated production frontend assets matching certified source
+        env:
+          CERT_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
+        run: |
+          set -euo pipefail
+          grep -F "watch:'Watch Episode 1'" src/pages/Home.jsx >/dev/null
+          for attempt in $(seq 1 18); do
+            HTML=$(curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL/?release=$GITHUB_SHA" || true)
+            ASSET=$(printf '%s' "$HTML" | grep -oE '/assets/index-[A-Za-z0-9_-]+\\.js' | head -1 || true)
+            if [ -n "$ASSET" ]; then
+              if curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL$ASSET" | grep -Fq 'Watch Episode 1'; then
+                echo "Certified production frontend assets match release source"
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          echo "Certification frontend asset version did not converge"
+          exit 1
       - name: Production QA UX UI pass 1
         env:
           PREVIEW_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
