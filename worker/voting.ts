@@ -330,24 +330,47 @@ async function clickVoterLabel(db, userId) {
   return 'Visitor #' + String(n).padStart(5, '0');
 }
 
-async function ensureAmoraHost(db) {
-  // Live finding (2026-10-10): the first production version of this insert
-  // carried avatar_url and omitted the subscription columns, and Amora's
-  // first room response never landed — the vote itself was unaffected, so
-  // the failure sits in this row creation. Mirror the column set the admin
-  // create-user path is proven to use against this table, and set her
-  // photo separately so a cosmetic-column surprise can never block her
-  // message again.
-  await db.query(
+// Resolve Amora's host identity in public.users, creating the row if
+// needed. Live findings (2026-10-10, PRs #113/#114 verifications): her
+// programmed reply failed to land twice while member vote posts landed
+// fine, and the failure sits somewhere in this identity step — a column
+// or constraint assumption that holds for member rows does not hold
+// here, and the exact constraint cannot be read from outside the
+// database. So this resolver stops assuming: an existing row under her
+// email wins (whatever id it has); otherwise it tries the admin-proven
+// column set with user_type 'host', then 'regular', then a minimal
+// column set — and returns null (Amora sits this vote out; the vote
+// itself is never affected) if the table refuses every shape.
+async function resolveAmoraHostId(db) {
+  try {
+    const found = await db.query('SELECT id FROM public.users WHERE email=$1', [AMORA_HOST_EMAIL]);
+    if (found.rows[0]?.id) return found.rows[0].id;
+  } catch (lookupError) {
+    console.error('Amora host lookup failed:', lookupError);
+  }
+  const attempts = [
     `INSERT INTO public.users (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
-     VALUES ($1::uuid, $2, 'Amora', 'host', true, NULL, NULL, NULL)
-     ON CONFLICT (id) DO NOTHING`,
-    [AMORA_HOST_ID, AMORA_HOST_EMAIL],
-  );
+     VALUES ($1::uuid, $2, 'Amora', 'host', true, NULL, NULL, NULL) ON CONFLICT (id) DO NOTHING`,
+    `INSERT INTO public.users (id, email, name, user_type, is_active, subscription_plan, subscription_price, subscription_status)
+     VALUES ($1::uuid, $2, 'Amora', 'regular', true, NULL, NULL, NULL) ON CONFLICT (id) DO NOTHING`,
+    `INSERT INTO public.users (id, email, name) VALUES ($1::uuid, $2, 'Amora') ON CONFLICT (id) DO NOTHING`,
+  ];
+  for (const sql of attempts) {
+    try {
+      await db.query(sql, [AMORA_HOST_ID, AMORA_HOST_EMAIL]);
+      return AMORA_HOST_ID;
+    } catch (insertError) {
+      console.error('Amora host insert attempt failed:', insertError?.code || insertError);
+    }
+  }
+  return null;
+}
+
+async function setAmoraAvatar(db, hostId) {
   try {
     await db.query(
       'UPDATE public.users SET avatar_url=$2 WHERE id=$1::uuid',
-      [AMORA_HOST_ID, '/assets/amora-relationship-coach-official.webp'],
+      [hostId, '/assets/amora-relationship-coach-official.webp'],
     );
   } catch { /* photo is cosmetic; never block the post on it */ }
 }
@@ -516,23 +539,28 @@ export async function handleVotingRequest(request, env, url) {
             // names its stage instead of vanishing (2026-10-10 live miss).
             if (castOrChanged) {
               try {
-                const recent = await db.query(
-                  `SELECT 1 FROM public.chat_room_messages
-                    WHERE room_id=$1::uuid AND user_id=$2::uuid
-                      AND created_at > now() - interval '30 minutes' LIMIT 1`,
-                  [roomId, AMORA_HOST_ID],
-                );
-                if (!recent.rowCount) {
-                  await ensureAmoraHost(db);
-                  let label = 'a member';
-                  try { label = await clickVoterLabel(db, auth.user.id); }
-                  catch (labelError) { console.error('Amora label stage failed:', labelError); }
-                  const stance = choice === question.amoraChoice ? 'agrees' : 'disagrees';
-                  await db.query(
-                    `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
-                     VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
-                    [roomId, AMORA_HOST_ID, `Amora ${stance} with ${label} — ${question.amoraReason}`],
+                const hostId = await resolveAmoraHostId(db);
+                if (hostId) {
+                  await setAmoraAvatar(db, hostId);
+                  const recent = await db.query(
+                    `SELECT 1 FROM public.chat_room_messages
+                      WHERE room_id=$1::uuid AND user_id=$2::uuid
+                        AND created_at > now() - interval '30 minutes' LIMIT 1`,
+                    [roomId, hostId],
                   );
+                  if (!recent.rowCount) {
+                    let label = 'a member';
+                    try { label = await clickVoterLabel(db, auth.user.id); }
+                    catch (labelError) { console.error('Amora label stage failed:', labelError); }
+                    const stance = choice === question.amoraChoice ? 'agrees' : 'disagrees';
+                    await db.query(
+                      `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
+                       VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
+                      [roomId, hostId, `Amora ${stance} with ${label} — ${question.amoraReason}`],
+                    );
+                  }
+                } else {
+                  console.error('Amora host identity could not be resolved; host reply skipped.');
                 }
               } catch (amoraError) {
                 console.error('Amora host post failed:', amoraError);
