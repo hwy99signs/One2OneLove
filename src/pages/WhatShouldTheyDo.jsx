@@ -388,7 +388,7 @@ export default function WhatShouldTheyDo() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc] text-slate-900">
+    <div className="min-h-screen bg-[#2e1020] text-slate-900">
       {browserOpen && <QuestionBrowser questions={QUESTIONS} onClose={() => setBrowserOpen(false)} onSelect={openQuestion} t={t} currentLanguage={currentLanguage} />}
 
       <div className="border-b bg-white">
@@ -408,7 +408,7 @@ export default function WhatShouldTheyDo() {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-7 lg:py-9">
-        <img src="/game-cards/card-what-should.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-2xl rounded-[24px] shadow-lg ring-1 ring-black/5" />
+        <img src="/game-cards/card-what-should.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         <div className="mb-6 flex items-start justify-between gap-5">
           <div>
             <h1 className="text-4xl font-black uppercase leading-[.9] tracking-[-.05em] text-[#102f60] sm:text-6xl lg:text-7xl">
