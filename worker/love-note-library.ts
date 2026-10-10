@@ -117,7 +117,7 @@ export async function handleLoveNoteLibraryRequest(request,env,url) {
   try {
     const member=(await db.query('SELECT COALESCE(p.is_active,true) AS active, COALESCE(u.banned,false) AS banned FROM neon_auth."user" u LEFT JOIN public.users p ON p.id=u.id WHERE u.id=$1::uuid',[user.id])).rows[0];
     if(!member||!member.active||member.banned)return json({ok:false,error:{code:'forbidden'}},403);
-    const contentKey=language+':'+id;
+    const contentKey=String(id);
     const owned=(await db.query(`SELECT EXISTS(SELECT 1 FROM public.o2ol_token_content_unlocks WHERE user_id=$1::uuid AND feature_code='love_note_template_unlock' AND content_key=$2) AS owned`,[user.id,contentKey])).rows[0]?.owned===true;
     if(!owned)return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Love Note for $0.49 Credit.',featureCode:'love_note_template_unlock'}},402);
     const note=notes.find(n=>n.id===id);
