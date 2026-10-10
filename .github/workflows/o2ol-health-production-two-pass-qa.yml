@@ -1,0 +1,67 @@
+name: O2OL Health Repair Production Two-Pass QA
+on:
+  push:
+    branches: [fix/o2ol-health-database-ready-20261009]
+    paths:
+      - .github/deploy-o2ol-health-production-cert-trigger
+permissions:
+  contents: read
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PREVIEW_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm --prefix worker install --no-audit --no-fund
+      - name: Confirm isolated target has no LIVE routes or cron
+        run: |
+          node --input-type=module -e "import fs from 'node:fs';const c=JSON.parse(fs.readFileSync('cloudflare/wrangler.production-certification.jsonc','utf8'));if(c.name!=='one2onelove-production-cert-20261009'||c.routes||c.triggers||c.vars?.PRELAUNCH_ENVIRONMENT==='true')process.exit(1)"
+      - run: npx wrangler deploy --config cloudflare/wrangler.production-certification.jsonc
+      - name: Confirm genuine production DB readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            STATUS=$(curl -sS -o /tmp/cert-health.json -w '%{http_code}' --max-time 20 "$PREVIEW_URL/api/health" || true)
+            if [ "$STATUS" = 200 ] && jq -e '.ok==true and .database_ready==true and .environment=="production" and .production==true' /tmp/cert-health.json >/dev/null; then
+              echo "PRODUCTION_CANDIDATE_DATABASE_HEALTH=PASS"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "PRODUCTION_CANDIDATE_DATABASE_HEALTH=FAIL"
+          exit 1
+      - name: Prepare browser
+        run: |
+          npm install --no-save --package-lock=false playwright-core
+          CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium)"
+          test -n "$CHROME_BIN"
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
+      - name: Production candidate QA UX UI pass 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/production-cert-pass-1.log
+      - name: Production candidate QA UX UI pass 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          node qa/o2ol-final-prelaunch-certification.mjs | tee /tmp/production-cert-pass-2.log
+      - name: Upload two QA evidence records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: o2ol-health-production-two-pass
+          path: |
+            /tmp/cert-health.json
+            /tmp/production-cert-pass-1.log
+            /tmp/production-cert-pass-2.log
