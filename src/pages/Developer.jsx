@@ -24,7 +24,6 @@ export default function Developer() {
     { name: "ArticlesSupport", icon: Code, color: "from-blue-500 to-cyan-500", description: "Articles & advice" },
     { name: "PodcastsSupport", icon: Mic, color: "from-orange-500 to-red-500", description: "Relationship podcasts" },
     { name: "Community", icon: Users, color: "from-teal-500 to-green-500", description: "Community discussions" },
-    { name: "WinACruise", icon: Ship, color: "from-yellow-500 to-orange-500", description: "Cruise giveaway" },
     { name: "TherapistSignup", icon: Briefcase, color: "from-green-500 to-teal-500", description: "Therapist signup form" },
     { name: "InfluencerSignup", icon: Mic, color: "from-pink-500 to-red-500", description: "Influencer signup form" },
     { name: "ProfessionalSignup", icon: Briefcase, color: "from-indigo-500 to-blue-500", description: "Professional signup form" },

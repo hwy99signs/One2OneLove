@@ -180,7 +180,6 @@ function PagesContent() {
           <Route path="/MyMatchIQ/SignUp" element={<Navigate to="/SignUp?source=mymatchiq-feature" replace />} />
 
           {/* Launch-deferred surfaces stay preserved in source but are not customer-facing. */}
-          <Route path="/WinACruise" element={<FeatureUnavailable feature="Win a Cruise" />} />
           <Route path="/CounselingSupport" element={<FeatureUnavailable feature="Counseling Support" />} />
           <Route path="/InfluencersSupport" element={<FeatureUnavailable feature="Influencer Support" />} />
           <Route path="/AIContentCreator" element={<FeatureUnavailable feature="AI Content Creator" />} />
