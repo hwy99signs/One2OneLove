@@ -266,6 +266,8 @@ export default function Admin() {
   const [selectedMemberIds,setSelectedMemberIds] = useState([]);
   const [bulkMemberAction,setBulkMemberAction] = useState(false);
   const [votingPlatform,setVotingPlatform] = useState('all');
+  const [registryRange,setRegistryRange] = useState('30d');
+  const registryRangeRef = useRef('30d');
   const dataRef = useRef(null);
   const loadInFlightRef = useRef(false);
   const lastRefreshAtRef = useRef(0);
@@ -275,7 +277,7 @@ export default function Admin() {
     loadInFlightRef.current = true;
     refresh ? setRefreshing(true) : setLoading(true);
     if (!refresh) setError(null);
-    const fetchBundle = async () => Promise.all([getAdminDashboard(),getAdminAnalytics()]);
+    const fetchBundle = async () => Promise.all([getAdminDashboard(registryRangeRef.current),getAdminAnalytics()]);
     try {
       let result;
       let lastError = null;
@@ -896,6 +898,14 @@ export default function Admin() {
             </table></TableShell>
 
             <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that Registered Free member." className="mt-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-slate-500">{number(visitorRows.length)} visitors · {{ '7d': 'last 7 days', '30d': 'last 30 days', '90d': 'last 90 days', all: 'all time' }[registryRange]}</p>
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Visitor Registry date range">
+                  {[['7d','7 days'],['30d','30 days'],['90d','90 days'],['all','All time']].map(([value,label]) => (
+                    <button key={value} type="button" onClick={() => { registryRangeRef.current = value; setRegistryRange(value); load(true); }} className={`rounded-full px-3 py-1.5 text-xs font-bold ${registryRange === value ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
               {visitorRows.length ? <TableShell scrollHeight={780}><table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                   <tr>
@@ -928,7 +938,7 @@ export default function Admin() {
                     </td>
                   </tr>)}
                 </tbody>
-              </table></TableShell> : <Empty>No pre-launch visitor activity has been recorded yet. The registry will populate automatically as visitors use the final pre-launch build.</Empty>}
+              </table></TableShell> : <Empty>No visitor activity in this date range yet. Try a wider range.</Empty>}
             </Panel>
           </div>}
 
