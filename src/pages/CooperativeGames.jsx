@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useLanguage } from "@/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -112,19 +112,17 @@ export default function CooperativeGames() {
 
   const { data: gameCatalog = [] } = useQuery({
     queryKey: ['gameCatalog', user?.id],
-    queryFn: async () => (await apiRequest('/api/games/catalog'))?.games || [],
+    queryFn: async () => {
+      const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if(timeZone)await apiRequest('/api/games/timezone',{method:'POST',body:{timeZone}}).catch(()=>{});
+      return (await apiRequest('/api/games/catalog'))?.games || [];
+    },
     enabled: freeMemberAccess,
     staleTime: 60_000
   });
   const catalogById = Object.fromEntries((gameCatalog||[]).map(g => [g.id,g]));
   const activePromotion = (gameCatalog||[]).map(g=>g.promotion).find(Boolean) || (launchFreeGuest ? {name:'ALL GAMES FREE',free:true} : null);
   const temporaryFreeGames = Boolean(activePromotion?.free);
-
-  useEffect(()=>{
-    if(!freeMemberAccess)return;
-    const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if(timeZone)apiRequest('/api/games/timezone',{method:'POST',body:{timeZone}}).catch(()=>{});
-  },[freeMemberAccess,user?.id]);
 
   const gamePrice = id => {
     const q=catalogById[id];
