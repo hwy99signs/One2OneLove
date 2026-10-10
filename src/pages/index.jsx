@@ -59,6 +59,7 @@ import Credit from './Credit';
 import FeaturePricing from './FeaturePricing';
 import PaidFeatureGate from '@/components/pricing/PaidFeatureGate';
 import PaidGameSessionGate from '@/components/pricing/PaidGameSessionGate';
+import CoachingConsentGate from '@/components/coaching/CoachingConsentGate.jsx';
 import MyMatchIQMeet from './MyMatchIQMeet';
 import MyMatchIQWorkspace from './MyMatchIQWorkspace';
 import MyMatchIQPassport from './MyMatchIQPassport';
@@ -158,7 +159,7 @@ function PagesContent() {
           <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/Tokens" element={<Navigate to="/Credit" replace />} />
-          <Route path="/Amora" element={<Amora />} />
+          <Route path="/Amora" element={<CoachingConsentGate source="amora" exitTo="/Home"><Amora /></CoachingConsentGate>} />
           <Route path="/Subscription" element={<Navigate to="/Credit" replace />} />
           <Route path="/MyMatchIQ/Subscription" element={<Navigate to="/Credit?source=mymatchiq-feature" replace />} />
           <Route path="/VerifyPhone" element={<VerifyPhone />} />
@@ -173,7 +174,7 @@ function PagesContent() {
           <Route path="/MyMatchIQ/Meet" element={<MyMatchIQMeet />} />
           <Route path="/MyMatchIQ/Assessment" element={<MyMatchIQAssessment />} />
           <Route path="/MyMatchIQ/Passport" element={<MyMatchIQPassport />} />
-          <Route path="/MyMatchIQ/Bianca" element={<MyMatchIQBianca />} />
+          <Route path="/MyMatchIQ/Bianca" element={<CoachingConsentGate source="bianca" exitTo="/MyMatchIQ"><MyMatchIQBianca /></CoachingConsentGate>} />
           <Route path="/MyMatchIQ/Credits" element={<Navigate to="/Credit?source=mymatchiq" replace />} />
           <Route path="/Credit" element={<Credit />} />
           <Route path="/FeaturePricing" element={<FeaturePricing />} />

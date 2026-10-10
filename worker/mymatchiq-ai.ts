@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
 import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
+import { requireCurrentCoachingConsent } from './consents';
 
 const HEADERS={ 'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff' };
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -245,6 +246,7 @@ export async function handleMyMatchIQAiRequest(request,env,url){
   const auth=await session(request,env); if(!auth)return fail('Verified MyMatchIQ sign-in is required.',401,'unauthorized');
   try{
     return await withDb(env,async db=>{
+      if(url.pathname.startsWith('/api/mymatchiq/bianca')) await requireCurrentCoachingConsent(db,auth.user.id);
       if(url.pathname==='/api/mymatchiq/access'&&request.method==='GET')return json({ok:true,access:await accessEntitlement(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/assessment/sessions/latest'&&request.method==='GET')return json({ok:true,session:await latestAssessment(db,auth.user.id)});
       if(url.pathname==='/api/mymatchiq/assessment/sessions'){
@@ -294,5 +296,5 @@ export async function handleMyMatchIQAiRequest(request,env,url){
       }
       return fail('Bianca route not found.',404,'not_found');
     });
-  }catch(error){ console.error('MyMatchIQ Bianca API error',error); return fail(error?.message||'Unable to process Bianca request.',error?.status||500,error?.code||'bianca_error',{balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel}); }
+  }catch(error){ console.error('MyMatchIQ Bianca API error',error); return fail(error?.message||'Unable to process Bianca request.',error?.status||500,error?.code||'bianca_error',{balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel,consentVersion:error?.consentVersion}); }
 }
