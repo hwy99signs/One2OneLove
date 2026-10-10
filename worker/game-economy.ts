@@ -282,8 +282,9 @@ export async function submitGameScore(db,userId,game,score,sessionRef){
   const def=gameDefinition(game);if(!def||!def.leaderboard)throw Object.assign(new Error('Leaderboard is not enabled for this game.'),{status:400,code:'leaderboard_disabled'});
   const value=Math.floor(Number(score));if(!Number.isFinite(value)||value<0||value>Number(def.scoreCap))throw Object.assign(new Error('Score is outside the accepted range.'),{status:400,code:'score_invalid'});
   const ref=String(sessionRef||'').trim();if(!ref)throw Object.assign(new Error('A play session is required.'),{status:400,code:'session_required'});
+  const passRef=ref.split(':')[0];
   const session=(await db.query(`SELECT id FROM public.o2ol_game_access_passes WHERE id::text=$1 AND user_id=$2::uuid AND game=$3
-    AND started_at>=now()-interval '6 hours' LIMIT 1`,[ref,userId,game])).rows[0];
+    AND started_at>=now()-interval '6 hours' LIMIT 1`,[passRef,userId,game])).rows[0];
   if(!session)throw Object.assign(new Error('Score is not bound to a valid recent play session.'),{status:409,code:'session_invalid'});
   const row=(await db.query(`INSERT INTO public.o2ol_game_scores(user_id,game,score,session_ref)
     VALUES($1::uuid,$2,$3,$4) ON CONFLICT(user_id,game,session_ref) DO NOTHING RETURNING *`,[userId,game,value,ref])).rows[0];
