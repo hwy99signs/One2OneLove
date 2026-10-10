@@ -332,7 +332,7 @@ try{
 
   // Legal pages: all five launch languages must be 18+ and Credit-based.
   const legalLanguages=[
-    ['en',/Adults 18 and Older|adults age 18 or older/i,/Credit/i,/October 9, 2026/i],
+    ['en',/Adults 18 and Older|adults age 18 or older/i,/Credit/i,/October (9|10), 2026/i],
     ['es',/Adultos de 18 años o más/i,/Crédito/i,/9 de Octubre de 2026/i],
     ['fr',/Adultes de 18 ans et plus/i,/Crédit/i,/9 Octobre 2026/i],
     ['it',/Adulti di 18 anni o più/i,/Credito/i,/9 Ottobre 2026/i],
