@@ -96,6 +96,35 @@ jobs:
           grep -F "o2ol_cost_events" neon-migrations/2026-10-03-o2ol-token-economy.sql
           grep -F "o2ol_game_access_passes" neon-migrations/2026-10-03-o2ol-token-economy.sql
 
+      - name: Certify title-only paid Love Note and Date Idea previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "handleLoveNoteLibraryRequest" worker/index-v2.ts worker/love-note-library.ts >/dev/null
+          grep -F "handleDateIdeaLibraryRequest" worker/index-v2.ts worker/date-idea-library.ts >/dev/null
+          grep -F "love_note_template_unlock" worker/o2ol-tokens.ts worker/love-note-library.ts src/pages/LoveNotes.jsx >/dev/null
+          grep -F "content_unlock_required" worker/love-note-library.ts worker/date-idea-library.ts >/dev/null
+          grep -F "public.o2ol_token_content_unlocks" worker/love-note-library.ts worker/date-idea-library.ts >/dev/null
+          if grep -F "m.role!=='admin'" worker/date-idea-library.ts; then
+            echo "An unpaid admin can bypass Date Idea purchase." >&2
+            exit 1
+          fi
+          if grep -F "if (isAdmin) return true;" src/pages/DateIdeas.jsx; then
+            echo "Date Ideas UI still has an unpaid admin bypass." >&2
+            exit 1
+          fi
+          grep -F "featureCode: 'date_idea_unlock'" src/pages/DateIdeas.jsx >/dev/null
+          if grep -REn "LoveNotesData|LoveNotesAdditional|LoveNotesSubjectSupplemental|dateIdeasLibrary" src/pages/LoveNotes.jsx src/pages/DateIdeas.jsx; then
+            echo "Private paid content source is still imported into public pages." >&2
+            exit 1
+          fi
+          if grep -RIlE "You are my everything, my heart, my soul|Pack a basket with your favorite foods, find a quiet spot" dist 2>/dev/null; then
+            echo "Paid Love Note or Date Idea body leaked into shipped frontend assets." >&2
+            exit 1
+          fi
+          grep -F "/api/love-note-library/item" src/pages/LoveNotes.jsx >/dev/null
+          grep -F "/api/date-idea-library/item" src/pages/DateIdeas.jsx >/dev/null
+
       - name: Verify separate Credit dashboard and burn calibration controls
         shell: bash
         run: |
@@ -343,6 +372,12 @@ jobs:
           # 2026-10-10) - the library map forces tokenLocked on all.
           grep -F "tokenLocked:true" src/data/podcastLibrary.js
           grep -F '$1.99 per episode' src/lib/featurePricing.js
+          # Homepage Studio feature: the newest episode (S1 E2) leads
+          # with a Past Episodes tab; Episode 1 stays free under it.
+          grep -F "STUDIO_E2_COPY" src/pages/Home.jsx
+          grep -F "Who Pays for the First Date?" src/pages/Home.jsx
+          grep -F "pastEpisodes" src/pages/Home.jsx
+          grep -F "/O2OLStudio?episode=season-1-episode-2" src/pages/Home.jsx
 
       - name: Verify game Credit access is transactional
         shell: bash
