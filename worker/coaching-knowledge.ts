@@ -3,7 +3,7 @@
 // Phase 1 uses deterministic topic retrieval so the exact guidance is auditable.
 // Future embedding/vector retrieval can replace the scorer without changing the content contract.
 
-export const O2OL_COACHING_KB_VERSION='2026-10-10-v1';
+export const O2OL_COACHING_KB_VERSION='2026-10-10-v2';
 
 export const COACHING_KNOWLEDGE=[
   {
@@ -213,6 +213,149 @@ export const COACHING_KNOWLEDGE=[
       'Treat possible self-harm or suicide risk as a safety issue, not ordinary relationship coaching.',
       'Encourage immediate contact with local emergency/crisis resources and a trusted person who can provide real-world support.',
       'Keep the response focused on immediate safety and do not leave the user with only relationship advice.',
+    ],
+  },
+  {
+    id:'communication-demand-withdraw-cycle',
+    topics:['communication','conflict cycle','pursue withdraw','shutdown'],
+    keywords:['shut down','shutdown','chase','chasing','pursue','pursuing','withdraw','withdrawing','keeps asking','wont talk','won\'t talk','silent treatment'],
+    source:'O2OL Coaching Standard — Communication Patterns',
+    guidance:[
+      'When one partner pursues harder and the other withdraws more, focus on the cycle rather than blaming one person as the entire problem.',
+      'Encourage a calmer re-entry plan: pause when flooded, name when the conversation will resume, and return at the agreed time.',
+      'The pursuing partner can make one clear request instead of escalating repeated demands; the withdrawing partner should avoid disappearing indefinitely.',
+      'Distinguish a healthy cooling-off period from punitive silent treatment or coercive withdrawal.',
+    ],
+  },
+  {
+    id:'communication-stonewalling-flooding',
+    topics:['communication','stonewalling','flooding','conflict'],
+    keywords:['stonewall','stonewalling','overwhelmed','flooded','flooding','blank','freeze','freezes','cant think','can\'t think','need a break'],
+    source:'O2OL Coaching Standard — Communication Patterns',
+    guidance:[
+      'Emotional flooding can make productive conversation temporarily difficult; a structured break can be healthier than forcing resolution.',
+      'A break should include reassurance and a specific plan to resume, not indefinite avoidance.',
+      'Use simple regulation steps during the pause: breathing, walking, water, quiet time, or another non-retaliatory calming activity.',
+      'If shutdown is used to punish, frighten, control, or indefinitely deny communication, address the unhealthy pattern rather than normalizing it.',
+    ],
+  },
+  {
+    id:'communication-soft-startup',
+    topics:['communication','conflict','requests','tone'],
+    keywords:['how do i bring up','start conversation','bring this up','always','never','accuse','accusing','nag','nagging','tone'],
+    source:'O2OL Coaching Standard — Communication Patterns',
+    guidance:[
+      'Encourage starting difficult conversations with the specific issue, the speaker’s experience, and a concrete request rather than global criticism.',
+      'Prefer “I felt… when… and I’d like…” over “You always…” or “You never…”.',
+      'Keep the opening narrow enough that the other person knows what problem is actually being discussed.',
+      'A softer opening is not about suppressing legitimate frustration; it is about reducing unnecessary defensiveness.',
+    ],
+  },
+  {
+    id:'communication-emotional-bids',
+    topics:['connection','emotional bids','attention','affection'],
+    keywords:['attention','ignored','notice me','small things','check in','connection','connect','affection','quality time','phone all the time'],
+    source:'O2OL Coaching Standard — Connection',
+    guidance:[
+      'Small bids for attention, affection, humor, help, or shared interest can accumulate into a sense of connection or disconnection.',
+      'Encourage partners to notice recurring bids and respond when reasonably possible rather than waiting only for major relationship talks.',
+      'A missed bid is not automatically rejection; patterns and repair matter more than one isolated moment.',
+      'Suggest specific, realistic rituals of connection rather than vague demands to “be more present.”',
+    ],
+  },
+  {
+    id:'communication-unmet-expectations',
+    topics:['expectations','needs','assumptions','communication'],
+    keywords:['expected','expectation','expectations','assumed','assumption','supposed to','should know','mind reader','mind reading','unmet needs'],
+    source:'O2OL Coaching Standard — Expectations',
+    guidance:[
+      'Unspoken expectations often become resentment when one partner assumes the other should already know.',
+      'Help convert assumptions into explicit, negotiable requests.',
+      'Separate a preference from a boundary, and a hope from an agreed commitment.',
+      'If an expectation was never discussed, focus first on clarity rather than treating the other person as though they knowingly broke an agreement.',
+    ],
+  },
+  {
+    id:'communication-recurring-conflict',
+    topics:['recurring conflict','patterns','conflict','problem solving'],
+    keywords:['same fight','same argument','keep fighting','again and again','every time','recurring','repeat','repeating','nothing changes'],
+    source:'O2OL Coaching Standard — Conflict Patterns',
+    guidance:[
+      'When the same argument repeats, identify the underlying need, fear, value, or unresolved decision rather than debating only the surface topic again.',
+      'Ask what each person is trying to protect or obtain in the conflict.',
+      'Distinguish solvable practical disagreements from enduring differences that may require ongoing compromise.',
+      'Track whether attempted solutions actually change behavior; repeated promises without follow-through are relevant information.',
+    ],
+  },
+  {
+    id:'communication-advice-vs-listening',
+    topics:['listening','support','advice','empathy'],
+    keywords:['just listen','stop giving advice','advice','vent','venting','fix it','fix everything','listen to me'],
+    source:'O2OL Communication Practice',
+    guidance:[
+      'Before problem-solving, ask whether the person wants listening, reassurance, brainstorming, or direct advice.',
+      'Jumping immediately into solutions can feel dismissive when someone is trying to feel heard.',
+      'Listening does not require passivity; after validation, practical help can be offered with permission.',
+    ],
+  },
+  {
+    id:'household-labor-fairness',
+    topics:['household labor','chores','fairness','mental load'],
+    keywords:['chores','housework','cleaning','laundry','mental load','household','does nothing','i do everything','fair share'],
+    source:'O2OL Coaching Standard — Household Partnership',
+    guidance:[
+      'Move the conversation from vague fairness complaints to a visible list of recurring tasks, planning work, and responsibility ownership.',
+      'Equal does not always mean identical; the goal is a division both partners experience as fair and sustainable.',
+      'Include invisible planning and remembering work, not only physical chores.',
+      'Avoid parent-child dynamics where one adult becomes the manager of the other adult’s responsibilities.',
+    ],
+  },
+  {
+    id:'values-faith-differences',
+    topics:['values','faith','religion','beliefs','culture'],
+    keywords:['religion','religious','faith','church','god','belief','beliefs','values','different values','spiritual','interfaith'],
+    source:'O2OL Coaching Standard — Values & Faith',
+    guidance:[
+      'Do not assume value or faith differences are automatically incompatible; explore how they affect concrete decisions and daily life.',
+      'Discuss expectations around worship, holidays, children, family involvement, finances, sexuality, and community where relevant.',
+      'Look for respectful coexistence and negotiated practice rather than pressure to convert or abandon identity.',
+      'If a difference affects a non-negotiable life goal, clarity is more useful than pretending the conflict does not exist.',
+    ],
+  },
+  {
+    id:'intercultural-relationship',
+    topics:['culture','intercultural','family expectations','communication'],
+    keywords:['culture','cultural','different culture','different country','tradition','traditions','custom','customs','family expectations'],
+    source:'O2OL Coaching Standard — Intercultural Relationships',
+    guidance:[
+      'Treat cultural differences as context to understand, not stereotypes that predict individual behavior.',
+      'Ask which traditions, family roles, communication norms, and expectations actually matter to each partner personally.',
+      'Encourage explicit discussion where one partner assumes a custom is obvious and the other does not share that assumption.',
+      'Respecting culture does not require accepting coercion, discrimination, abuse, or loss of personal autonomy.',
+    ],
+  },
+  {
+    id:'digital-boundaries-social-media',
+    topics:['digital boundaries','social media','privacy','trust'],
+    keywords:['social media','instagram','facebook','tiktok','dm','dms','texting','online','password','phone password','read my messages','likes','following'],
+    source:'O2OL Coaching Standard — Digital Boundaries',
+    guidance:[
+      'Digital boundaries should be discussed explicitly: privacy, passwords, posting, direct messages, ex-partners, flirting, and public relationship status may mean different things to different people.',
+      'Trust should not depend on forced password sharing, secret monitoring, or constant device inspection.',
+      'Focus on mutually agreed behavior rather than trying to eliminate all uncertainty through surveillance.',
+      'A hidden online behavior that violates an explicit agreement is different from a partner simply having reasonable privacy.',
+    ],
+  },
+  {
+    id:'ex-friendship-boundaries',
+    topics:['ex partners','friendships','boundaries','trust'],
+    keywords:['ex','ex girlfriend','ex boyfriend','former partner','best friend','opposite sex friend','friendship boundary','still friends with'],
+    source:'O2OL Coaching Standard — External Relationships',
+    guidance:[
+      'Discuss behavior-specific boundaries around ex-partners and friendships instead of assuming every outside relationship is a threat.',
+      'Useful questions include transparency, emotional intimacy, flirting, secrecy, history, and whether behavior conflicts with an existing agreement.',
+      'Do not recommend isolation from healthy friends or support networks as a default solution to insecurity.',
+      'If a friendship repeatedly undermines the couple’s explicit agreements, address the specific conduct and consequences.',
     ],
   },
   {
