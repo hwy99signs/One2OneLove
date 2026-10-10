@@ -672,10 +672,7 @@ const getCategoriesForLanguage = (t, lang = 'en') => {
   { id: 'workplace', name: t.categories.workplace, icon: '💼' },
 ];
   const [allCategory, ...noteCategories] = categories;
-  const baseData = loveNotesData[lang] || loveNotesData.en;
-  const addedData = additionalLoveNotesData[lang] || additionalLoveNotesData.en;
-  const availableData = { ...baseData, ...addedData, holiday: [...(baseData.holiday || []), ...(addedData.holiday || [])] };
-  const availableCategories = noteCategories.filter(category => availableData[category.id]?.length > 0);
+  const availableCategories = noteCategories;
   return [
     allCategory,
     ...availableCategories.sort((a, b) => a.name.localeCompare(b.name, lang, { sensitivity: 'base' }))
