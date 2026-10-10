@@ -197,8 +197,15 @@ async function ensureChatSafetySchema(db) {
     INSERT INTO public.chat_rooms(id,slug,name,description,icon,is_active,created_at)
     SELECT gen_random_uuid(),'relationship-100','Relationship 100 — What Matters Most in Your Relationship?',
            'What matters most in YOUR relationship? Divide 100% across money, communication, intimacy, faith and more — then see how everyone else divided theirs. Voting closes Wednesday, October 7 at midnight CT · Results revealed Friday, October 9',
-           '💯',true,now()
+           '💯',false,now()
      WHERE NOT EXISTS (SELECT 1 FROM public.chat_rooms WHERE slug='relationship-100')
+  `);
+  // Relationship 100 was a one-time event (voting closed Oct 7, results
+  // revealed Oct 9). Retired by owner order 2026-10-10: the room leaves the
+  // public rooms list; its messages and the voting results data are kept.
+  await db.query(`
+    UPDATE public.chat_rooms SET is_active=false
+     WHERE slug='relationship-100' AND is_active=true
   `);
   chatSafetySchemaReady = true;
 }
