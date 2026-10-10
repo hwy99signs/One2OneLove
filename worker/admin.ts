@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Client } from 'pg';
+import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
 const HEADERS = {
@@ -575,9 +576,9 @@ async function members(db) {
   return result.rows;
 }
 async function visitorRegistry(db, rangeDays = 30) {
-  const [visitorsResult,funnelResult] = await Promise.all([
+  const [visitorsResult,funnelResult,sweepExcludedResult] = await Promise.all([
     db.query(`
-      WITH visitor_rollup AS (
+      WITH ${SWEEP_CTES}, visitor_rollup AS (
         SELECT
           e.visitor_id,
           min(e.created_at) AS first_seen,
@@ -595,7 +596,7 @@ async function visitorRegistry(db, rangeDays = 30) {
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" event_auth ON event_auth.id=e.user_id
         WHERE (e.user_id IS NULL OR COALESCE(event_auth.role,'user') <> 'admin')
-          AND ($1::int IS NULL OR e.created_at >= now() - make_interval(days => $1::int))
+          AND ($1::int IS NULL OR e.created_at >= now() - make_interval(days => $1::int))${SWEEP_EVENT_FILTER}
         GROUP BY e.visitor_id
       ), resolved AS (
         SELECT vr.*,
@@ -635,12 +636,12 @@ async function visitorRegistry(db, rangeDays = 30) {
       ORDER BY r.last_seen DESC
     `, [rangeDays]),
     db.query(`
-      WITH visitor_ids AS (
+      WITH ${SWEEP_CTES}, visitor_ids AS (
         SELECT DISTINCT e.visitor_id
           FROM public.interaction_events e
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
           LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
-         WHERE COALESCE(a.role,'user') <> 'admin' OR COALESCE(e.user_id,vil.user_id) IS NULL
+         WHERE (COALESCE(a.role,'user') <> 'admin' OR COALESCE(e.user_id,vil.user_id) IS NULL)${SWEEP_EVENT_FILTER}
       ), resolved_visitors AS (
         -- Same identity resolution as the registry list (owner-approved
         -- 2026-10-09): a visitor counts as signed up when EITHER a formal
@@ -658,7 +659,7 @@ async function visitorRegistry(db, rangeDays = 30) {
           FROM public.interaction_events e
           LEFT JOIN neon_auth."user" a ON a.id=e.user_id
          WHERE e.created_at >= now()-interval '5 minutes'
-           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
       ), buyers AS (
         SELECT DISTINCT tt.user_id
           FROM public.o2ol_token_transactions tt
@@ -682,10 +683,15 @@ async function visitorRegistry(db, rangeDays = 30) {
             AND COALESCE(a.role,'user') <> 'admin')::bigint AS paid_activity_cents,
         (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
           WHERE COALESCE(a.role,'user') <> 'admin' AND COALESCE(u.marketing_email_opt_in,false)=true)::int AS promo_opt_ins
+    `),
+    db.query(`
+      WITH ${SWEEP_CTES}
+      SELECT count(*)::int AS excluded FROM sweep_visitors
     `)
   ]);
   return {
     rangeDays,
+    sweepExcludedVisitors: sweepExcludedResult.rows[0]?.excluded || 0,
     visitors: visitorsResult.rows,
     funnel: funnelResult.rows[0] || {
       total_visitors:0,online_now:0,anonymous_visitors:0,registered_free:0,token_buyers:0,paid_activity_cents:0,promo_opt_ins:0
