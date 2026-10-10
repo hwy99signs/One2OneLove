@@ -98,36 +98,7 @@ export async function ensureTokenWallet(db,userId){
   return {wallet,settings};
 }
 
-// Launch pricing (owner call, 2026-10-09): every fixed-price feature is
-// $1.00 (100 — wallet units are cents) and live, not calibration. Applied
-// idempotently from the charge and price-list paths so the first touch
-// after deploy sets the whole table. Deliberately NOT touched here:
-// bianca_response, bianca_report, amora_response and love_note_send —
-// their pricing is decided separately (Love Notes keep regional SMS
-// pricing from worker/credit-config.ts).
-let launchPricesReady=false;
-async function ensureLaunchPrices(db){
-  if(launchPricesReady)return;
-  await db.query(`
-    INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,pricing_unit,active,calibration_only)
-    VALUES
-      ('podcast_episode_unlock','Podcast episode unlock',100,'episode',true,false),
-      ('date_idea_unlock','Date Idea unlock',100,'item',true,false),
-      ('premium_content_unlock','Premium content unlock',100,'item',true,false),
-      ('like_minded_session','Like Minded session',100,'session',true,false),
-      ('premium_game_session','Premium game session',100,'session',true,false),
-      ('ai_content_generation','AI content generation',100,'action',true,false),
-      ('studio_episode_unlock','Studio episode unlock',100,'episode',true,false)
-    ON CONFLICT(feature_code) DO UPDATE SET
-      token_cost=EXCLUDED.token_cost,
-      pricing_unit=EXCLUDED.pricing_unit,
-      active=true,
-      calibration_only=false`);
-  launchPricesReady=true;
-}
-
 export async function getTokenFeaturePrice(db,featureCode){
-  await ensureLaunchPrices(db);
   const row=(await db.query(
     `SELECT feature_code,label,token_cost,pricing_unit,active,calibration_only,metadata
        FROM public.o2ol_token_feature_prices
@@ -392,7 +363,6 @@ async function tokenPackages(db){
   )).rows.map(x=>({...x,tokens:Number(x.tokens),amount_cents:Number(x.amount_cents)}));
 }
 async function featurePrices(db){
-  await ensureLaunchPrices(db);
   return (await db.query(
     `SELECT feature_code,label,token_cost,pricing_unit,active,calibration_only,metadata
        FROM public.o2ol_token_feature_prices WHERE active=true ORDER BY feature_code`
