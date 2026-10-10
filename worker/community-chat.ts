@@ -14,6 +14,13 @@ function json(data, status = 200) {
 function fail(message, status = 400, code = 'bad_request') {
   return json({ ok: false, error: { code, message } }, status);
 }
+// Chatrooms display FIRST NAMES ONLY (owner rule, 2026-10-09): the API
+// never sends a member's full name to other chatters. An email-shaped
+// name is not a name at all — it yields '' and callers use the fallback.
+function firstNameOf(name) {
+  const token = String(name || '').trim().split(/\s+/)[0] || '';
+  return token.includes('@') ? '' : token;
+}
 async function session(request, env) {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
@@ -224,7 +231,7 @@ async function listMessages(db, roomId, url, viewerId = null) {
     id: row.id,
     roomId: row.room_id,
     userId: row.user_id,
-    authorName: row.author_name || 'One2OneLove Member',
+    authorName: firstNameOf(row.author_name) || 'One2OneLove Member',
     authorAvatar: row.author_avatar || '',
     content: row.content,
     replyToId: row.reply_to_id,
@@ -391,7 +398,7 @@ export async function handleCommunityChatRequest(request, env, url) {
             id: row.id,
             roomId: row.room_id,
             userId: row.user_id,
-            authorName: profile.rows[0]?.name || auth.user.name || 'One2OneLove Member',
+            authorName: firstNameOf(profile.rows[0]?.name || auth.user.name) || 'One2OneLove Member',
             authorAvatar: profile.rows[0]?.avatar_url || '',
             content: row.content,
             replyToId: row.reply_to_id,
