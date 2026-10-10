@@ -800,7 +800,7 @@ export default function DateIdeas() {
                         {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
                         {(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} Credit · {openHouseCopy.unlock}
                       </Button>
-                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit</Link></div>}
+                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit to Unlock</Link></div>}
                     </>
                   ) : (
                     <>
