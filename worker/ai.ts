@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
 import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
+import { requireCurrentCoachingConsent } from './consents';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -314,6 +315,7 @@ export async function handleAiRequest(request, env, url) {
 
   try {
     return await withDb(env, async db => {
+      if (url.pathname.startsWith('/api/ai/coach')) await requireCurrentCoachingConsent(db,auth.user.id);
       if (url.pathname === '/api/ai/config' && request.method === 'GET') {
         const wallet=(await db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[auth.user.id])).rows[0];
         const coach={allowed:true,token_mode:true,token_balance:Number(wallet?.balance||0)};
@@ -362,6 +364,6 @@ export async function handleAiRequest(request, env, url) {
     });
   } catch (error) {
     console.error('One2OneLove AI API error', error);
-    return fail(error?.message || 'Unable to process AI request.', error?.status || 500, error?.code || 'ai_error',{balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel});
+    return fail(error?.message || 'Unable to process AI request.', error?.status || 500, error?.code || 'ai_error',{balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel,consentVersion:error?.consentVersion});
   }
 }
