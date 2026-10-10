@@ -33,7 +33,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
   const [unlockedEpisodeKeys, setUnlockedEpisodeKeys] = useState(new Set());
   const [unlockingEpisode, setUnlockingEpisode] = useState(false);
   const [unlockError, setUnlockError] = useState("");
-  const [podcastTokenCost, setPodcastTokenCost] = useState(1);
+  const [podcastTokenCost, setPodcastTokenCost] = useState(199);
 
   useEffect(() => {
     let active = true;
@@ -57,7 +57,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
     let active = true;
     if (!podcast || !user?.id) {
       setUnlockedEpisodeKeys(new Set());
-      setPodcastTokenCost(1);
+      setPodcastTokenCost(199);
       return undefined;
     }
     Promise.all([
@@ -66,7 +66,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
     ]).then(([unlockData,walletData]) => {
       if (!active) return;
       setUnlockedEpisodeKeys(new Set((unlockData?.unlocks || []).map(item => String(item.content_key))));
-      setPodcastTokenCost(Number(walletData?.featurePrices?.find(item => item.feature_code === 'podcast_episode_unlock')?.token_cost || 1));
+      setPodcastTokenCost(Number(walletData?.featurePrices?.find(item => item.feature_code === 'podcast_episode_unlock')?.token_cost || 199));
     }).catch(() => {});
     return () => { active = false; };
   }, [podcast?.id, user?.id]);
