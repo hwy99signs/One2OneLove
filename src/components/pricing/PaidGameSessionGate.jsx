@@ -15,8 +15,8 @@ export default function PaidGameSessionGate({game,title,children}){
       if(!live)return;
       setPrice(Number(wallet?.featurePrices?.find(x=>x.feature_code==='premium_game_session')?.token_cost||49));
       setBalance(Number(wallet?.wallet?.balance||0));
-      setActive(Boolean(access?.active));setOpen(!access?.active);setReady(true);
-    }).catch(()=>{if(live){setOpen(true);setReady(true);}});
+      setActive(Boolean(access?.active));setReady(true);
+    }).catch(()=>{if(live)setReady(true);});
     return()=>{live=false};
   },[game,user?.id,isAuthenticated]);
   const unlock=async()=>{
@@ -34,5 +34,5 @@ export default function PaidGameSessionGate({game,title,children}){
   };
   if(!ready)return <div className="min-h-[50vh] grid place-items-center font-bold text-slate-500">Checking game access…</div>;
   if(active)return children;
-  return <div className="min-h-[60vh] grid place-items-center bg-gradient-to-br from-pink-50 via-white to-sky-50 p-6 text-center"><div><div className="text-5xl">🔒</div><h1 className="mt-4 text-3xl font-black">{title}</h1><p className="mt-2 text-slate-600">This game is $0.49 per play/session. View the price before deciding.</p><button onClick={()=>setOpen(true)} className="mt-5 rounded-full bg-fuchsia-600 px-6 py-3 font-black text-white">View price to play</button></div><UnlockPriceDialog open={open} title={title} priceCents={price} description="One paid game/session. Closing this window does not charge your account." balanceCents={balance} busy={busy} error={error} onUnlock={unlock} onClose={()=>{setOpen(false);setError('')}}/></div>;
+  return <div className="min-h-[60vh] grid place-items-center bg-gradient-to-br from-pink-50 via-white to-sky-50 p-6 text-center"><div><div className="text-5xl">🔒</div><h1 className="mt-4 text-3xl font-black">{title}</h1><p className="mt-2 text-slate-600">This game is $0.49 per play/session. View the price before deciding.</p><button onClick={()=>setOpen(true)} className="mt-5 rounded-full bg-fuchsia-600 px-6 py-3 font-black text-white">View price to play</button></div><UnlockPriceDialog open={open} title={title} priceCents={price} terms="Per game / session." balanceCents={balance} busy={busy} error={error} onUnlock={unlock} onClose={()=>{setOpen(false);setError('')}}/></div>;
 }
