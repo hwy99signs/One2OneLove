@@ -69,12 +69,12 @@ jobs:
           CERT_URL: https://one2onelove-production-cert-20261009.hwy99signs.workers.dev
         run: |
           set -euo pipefail
-          grep -F "watch:'Watch Episode 1'" src/pages/Home.jsx >/dev/null
+          grep -F "One2OneLove Feature Pricing" src/pages/FeaturePricing.jsx >/dev/null
           for attempt in $(seq 1 18); do
             HTML=$(curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL/?release=$GITHUB_SHA" || true)
             ASSET=$(printf '%s' "$HTML" | grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' | head -1 || true)
             if [ -n "$ASSET" ]; then
-              if curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL$ASSET" -o /tmp/o2ol-cert-bundle.js && grep -Fq 'Watch Episode 1' /tmp/o2ol-cert-bundle.js; then
+              if curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL$ASSET" -o /tmp/o2ol-cert-bundle.js && grep -Fq 'One2OneLove Feature Pricing' /tmp/o2ol-cert-bundle.js; then
                 echo "Certified production frontend assets match release source"
                 exit 0
               fi

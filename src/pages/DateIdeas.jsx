@@ -220,7 +220,7 @@ export default function DateIdeas() {
     enabled: Boolean(currentUser?.id) && !isAdmin,
   });
   const unlockedDateKeys = new Set((tokenUnlockData?.unlocks || []).map(item => String(item.content_key)));
-  const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 1);
+  const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
     if (isAdmin) return true;
@@ -743,6 +743,9 @@ export default function DateIdeas() {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
 
+                {!isOpenHouseLocked && isBuiltIn && OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id)) && (
+                  <span className="absolute right-3 top-3 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>
+                )}
                 {isOpenHouseLocked ? (
                   <div className="min-w-0 flex-1 pr-10">
                     <div className="flex items-center gap-2 overflow-hidden">
@@ -791,16 +794,23 @@ export default function DateIdeas() {
                 <div className="text-center">
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-purple-700">{openHouseCopy.badge}</p>
                   <h3 className="text-2xl font-bold text-gray-900">{openHouseCopy.lockedTitle}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{openHouseCopy.lockedBody}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{openHouseCopy.lockedBody}</p><p className="mt-2 text-sm font-black text-purple-800">{(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} · Yours forever</p>
                 </div>
                 <div className="mt-6 flex flex-col gap-2">
                   {currentUser?.id ? (
                     <>
-                      <Button disabled={unlockingIdea} onClick={unlockDateIdea} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
-                        {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
-                        {(Number(dateIdeaTokenCost||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})} Credit · {openHouseCopy.unlock}
-                      </Button>
-                      {unlockError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}<Link to="/Credit?return=/DateIdeas" className="ml-2 font-black underline">Add Credit</Link></div>}
+                      <div className="rounded-xl bg-slate-100 px-4 py-2 text-center text-sm font-black text-slate-700">Credit balance: {((Number(tokenWalletData?.wallet?.balance||0))/100).toLocaleString('en-US',{style:'currency',currency:'USD'})}</div>
+                      {Number(tokenWalletData?.wallet?.balance||0) < Number(dateIdeaTokenCost||0) ? (
+                        <Button onClick={()=>window.location.assign('/Credit?return=/DateIdeas')} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                          <Coins className="mr-2 h-4 w-4" />Add Credit
+                        </Button>
+                      ) : (
+                        <Button disabled={unlockingIdea} onClick={unlockDateIdea} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                          {unlockingIdea ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
+                          Unlock
+                        </Button>
+                      )}
+                      {unlockError && Number(tokenWalletData?.wallet?.balance||0) >= Number(dateIdeaTokenCost||0) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{unlockError}</div>}
                     </>
                   ) : (
                     <>

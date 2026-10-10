@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Film, Loader2, LockKeyhole, PlayCircle } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
+import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 
 const COPY={
   en:{title:'Previous Episodes',sub:'Watch earlier O2OL Studio conversations anytime they are available to your account.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…',unlockBtn:'Unlock for $1 Credit',unlockPrice:'Episode unlock — $1 Credit',unlocking:'Unlocking…',needCredit:'You need {required} Credit. Balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock. Please try again.'},
@@ -31,6 +32,14 @@ export default function O2OLStudioEpisodes(){
   const [refreshKey,setRefreshKey]=useState(0);
   const [unlockingId,setUnlockingId]=useState(null);
   const [unlockErrors,setUnlockErrors]=useState({});
+  const [confirmEpisode,setConfirmEpisode]=useState(null);
+  const [creditBalance,setCreditBalance]=useState(null);
+
+  useEffect(()=>{
+    let active=true;
+    if(isAuthenticated)getTokenWallet().then(data=>{if(active)setCreditBalance(Number(data?.wallet?.balance||0));}).catch(()=>{});
+    return()=>{active=false};
+  },[isAuthenticated,refreshKey]);
 
   useEffect(()=>{
     let active=true;
@@ -49,6 +58,7 @@ export default function O2OLStudioEpisodes(){
     try{
       await unlockTokenContent({featureCode:'studio_episode_unlock',contentKey:ep.id,source:'o2ol_studio_episodes',idempotencyKey:`studio:${user.id}:${ep.id}`});
       setRefreshKey(k=>k+1);
+      getTokenWallet().then(data=>setCreditBalance(Number(data?.wallet?.balance||0))).catch(()=>{});
     }catch(error){
       if(isTokensRequiredError(error)){
         const info=tokenRequiredDetails(error);
@@ -75,7 +85,8 @@ export default function O2OLStudioEpisodes(){
           {ordered.map(ep=>{
             const canOpen=Boolean(ep?.canWatch&&ep?.mediaPath);
             const playable=Boolean(canOpen&&!failedMedia[ep.id]);
-            return <article key={ep.id} className="overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
+            return <article key={ep.id} className="relative overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-xl">
+              {canOpen && !ep?.unlockPriceCents && <span className="absolute right-3 top-3 z-10 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>}
               <div className="aspect-video bg-black">
                 {playable?<video className="h-full w-full bg-black" controls playsInline preload="metadata" poster={ep.posterPath||undefined} src={ep.mediaPath+'#t=0.1'} onError={()=>setFailedMedia(v=>({...v,[ep.id]:true}))}>Your browser does not support HTML5 video.</video>:
                 <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.32),transparent_45%),#030712] p-6 text-center"><div><LockKeyhole className="mx-auto h-11 w-11 text-amber-300"/><p className="mt-3 font-black">{t.locked}</p>{ep?.unlockPriceCents?<p className="mt-1 text-xs font-bold text-amber-200">{t.unlockPrice}</p>:(ep?.publicAvailableAt&&<p className="mt-1 text-xs text-white/55">{t.opens}: {new Date(ep.publicAvailableAt).toLocaleDateString()}</p>)}</div></div>}
@@ -83,7 +94,7 @@ export default function O2OLStudioEpisodes(){
               <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}
               {!canOpen&&ep?.unlockPriceCents&&(isAuthenticated?(
                 <span className="mt-4 block">
-                  <button type="button" disabled={unlockingId===ep.id} onClick={()=>handleUnlock(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
+                  <button type="button" disabled={unlockingId===ep.id} onClick={()=>setConfirmEpisode(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
                     {unlockingId===ep.id?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlockingId===ep.id?t.unlocking:t.unlockBtn}
                   </button>
                   {unlockErrors[ep.id]&&<span className="mt-2 block text-xs font-bold text-amber-200">{unlockErrors[ep.id]} <Link to="/Credit" className="underline">{t.addCredit}</Link></span>}
@@ -96,5 +107,16 @@ export default function O2OLStudioEpisodes(){
         </div>}
       </div>
     </section>
+    <UnlockPriceDialog
+      open={Boolean(confirmEpisode)}
+      title={confirmEpisode?.title ? 'Unlock '+confirmEpisode.title : 'Unlock O2OL Studio Episode'}
+      priceCents={Number(confirmEpisode?.unlockPriceCents||100)}
+      terms="One-time unlock — yours forever."
+      balanceCents={creditBalance}
+      busy={Boolean(confirmEpisode&&unlockingId===confirmEpisode.id)}
+      error={confirmEpisode ? (unlockErrors[confirmEpisode.id]||'') : ''}
+      onUnlock={()=>confirmEpisode&&handleUnlock(confirmEpisode)}
+      onClose={()=>setConfirmEpisode(null)}
+    />
   </main>;
 }

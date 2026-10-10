@@ -75,9 +75,9 @@ jobs:
           grep -F "lg:grid-cols-5" src/pages/Credit.jsx
           grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts
-          grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx
+          grep -F "data-home-studio-video=\"season-1-episode-1\"" src/pages/Home.jsx
           grep -F "const STUDIO_VIDEO" src/pages/Home.jsx
-          grep -Eq "const STUDIO_VIDEO = .*/studio-media/(season-1-episode-2\\.mp4|season-1/episode-2-who-pays-for-the-first-date\\.mp4)" src/pages/Home.jsx
+          grep -Eq "const STUDIO_VIDEO = .*/studio-media/season-1-episode-1\\.mp4" src/pages/Home.jsx
           # Verify navigation targets in source; browser QA validates translated labels and clicks.
           grep -F '/O2OLStudio?episode=season-1-episode-1' src/pages/Home.jsx
           grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx
@@ -220,7 +220,9 @@ jobs:
           grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
           grep -F "accessModel:'free_tokens'" worker/ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts
-          grep -F "reserveTokenCharge(db,auth.user.id,'ai_content_generation'" worker/ai.ts
+          grep -F "const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';" worker/ai.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,billingFeatureCode" worker/ai.ts
+          grep -F "'love_note_ai','Love Note AI generation',25" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
           grep -F "legacy_subscription_model_retired" worker/billing-plan-change.ts
           grep -F "'Free',0,'inactive'" worker/onboarding.ts worker/member-onboarding.ts worker/index.ts
           grep -F "'Free','inactive',0" worker/professional-signup.ts
@@ -262,7 +264,11 @@ jobs:
           grep -F "await consumeTokenReservation(db,reservation.id)" worker/game-access.ts
           grep -F "await releaseTokenReservation(db,reservation.id,'game_pass_creation_failed')" worker/game-access.ts
           grep -F "featureCode:'like_minded_session'" worker/game-access.ts
-          grep -F "access:'free_verified_account'" worker/game-access.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'scratch_game_session'" worker/game-access.ts
+          grep -F "featureCode:'scratch_game_session'" worker/game-access.ts
+          grep -F "reserveTokenCharge(db,auth.user.id,'premium_game_session'" worker/game-access.ts
+          grep -F "'scratch_game_session','Scratch Game session',49" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
+          grep -F "'premium_game_session','Premium game session',49" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
           if grep -REn 'Premiere|Exclusive|stripe_subscription_id|subscription_status' worker/game-access.ts worker/like-minded.ts; then
             echo "Game access still contains subscription-era gating." >&2
             exit 1
@@ -351,7 +357,7 @@ jobs:
           grep -F "Registered Free" src/pages/Admin.jsx
           grep -F "Credit Buyers" src/pages/Admin.jsx
           grep -F "Paid Activity" src/pages/Admin.jsx
-          grep -F "async function visitorRegistry(db)" worker/admin.ts
+          grep -F "async function visitorRegistry(db, rangeDays = 30)" worker/admin.ts
           grep -F "marketing_email_opt_in" worker/admin.ts
           grep -F "visitor_identity_links" worker/admin.ts
           grep -F "CREATE TABLE IF NOT EXISTS public.interaction_events" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
@@ -399,7 +405,7 @@ jobs:
           grep -F "current_route" worker/admin.ts
           grep -F "async function supportFeedback(db)" worker/admin.ts
           grep -F "Administrator activity is intentionally excluded" src/pages/Admin.jsx
-          grep -F "On Site Now" src/pages/Admin.jsx
+          grep -F "On Site Right Now" src/pages/Admin.jsx
           grep -F "Support & Problem Reports" src/pages/Admin.jsx
 
           # Navigation, support identity, 404 and deferred-route behavior.
@@ -424,7 +430,7 @@ jobs:
           grep -F "Report a Problem" src/pages/Suggestions.jsx
           grep -F "SUPPORT REQUEST" src/pages/ContactUs.jsx
           grep -F 'path="*" element={<NotFound />}' src/pages/index.jsx
-          grep -F 'FeatureUnavailable feature="Win a Cruise"' src/pages/index.jsx
+          grep -F 'FeatureUnavailable feature="Developer"' src/pages/index.jsx
 
           # Studio / Chat cleanup.
           grep -F 'preload="auto"' src/pages/O2OLStudio.jsx

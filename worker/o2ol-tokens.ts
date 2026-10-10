@@ -82,6 +82,45 @@ async function ensureStripeCustomer(db,env,auth,profile=null){
   return customer.id;
 }
 
+async function ensureOwnerPricing(db){
+  const rows=[
+    ['bianca_response','Bianca reply',10,'response'],
+    ['bianca_report','Bianca deeper report',299,'report'],
+    ['amora_response','Amora reply',10,'response'],
+    ['ai_content_generation','AI content generation',49,'action'],
+    ['love_note_ai','Love Note AI generation',25,'action'],
+    ['date_idea_unlock','Date Idea unlock',49,'item'],
+    ['podcast_episode_unlock','Podcast episode unlock',199,'episode'],
+    ['premium_content_unlock','Premium content unlock',299,'item'],
+    ['studio_episode_unlock','Studio episode unlock',100,'episode'],
+    ['like_minded_session','Like Minded session',49,'session'],
+    ['scratch_game_session','Scratch Game session',49,'session'],
+    ['premium_game_session','Premium game session',49,'session'],
+    ['memories_unlock','Memories & Memory Photos unlock',299,'item'],
+    ['journals_unlock','Journals unlock',299,'item'],
+    ['milestones_unlock','Milestones unlock',299,'item'],
+    ['goals_unlock','Goals Tracker unlock',299,'item'],
+    ['calendar_unlock','Calendar Events unlock',299,'item'],
+    ['love_language_report','Love Language detailed report',199,'report'],
+    ['compatibility_report','MyMatchIQ full compatibility report',299,'report'],
+    ['relationship_pattern_report','Relationship pattern report',299,'report'],
+    ['premium_report','Premium deeper report',299,'report'],
+  ];
+  for(const [featureCode,label,tokenCost,pricingUnit] of rows){
+    await db.query(
+      `INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,pricing_unit,active,calibration_only)
+       VALUES($1,$2,$3,$4,true,false)
+       ON CONFLICT(feature_code) DO UPDATE SET
+         label=EXCLUDED.label,
+         token_cost=EXCLUDED.token_cost,
+         pricing_unit=EXCLUDED.pricing_unit,
+         active=true,
+         calibration_only=false`,
+      [featureCode,label,tokenCost,pricingUnit],
+    );
+  }
+}
+
 export async function ensureTokenWallet(db,userId){
   const wallet=(await db.query(
     `INSERT INTO public.o2ol_token_wallets(user_id) VALUES($1::uuid)
@@ -99,6 +138,7 @@ export async function ensureTokenWallet(db,userId){
 }
 
 export async function getTokenFeaturePrice(db,featureCode){
+  await ensureOwnerPricing(db);
   const row=(await db.query(
     `SELECT feature_code,label,token_cost,pricing_unit,active,calibration_only,metadata
        FROM public.o2ol_token_feature_prices
@@ -812,14 +852,7 @@ async function ensureContentUnlockSchema(db){
     )`);
   await ensureDdl(db, `CREATE INDEX IF NOT EXISTS idx_o2ol_token_content_unlocks_user_feature
     ON public.o2ol_token_content_unlocks(user_id,feature_code,unlocked_at DESC)`);
-  await db.query(`
-    INSERT INTO public.o2ol_token_feature_prices(feature_code,label,token_cost,pricing_unit,active,calibration_only)
-    VALUES
-      ('date_idea_unlock','Date Idea unlock',1,'item',true,true),
-      ('podcast_episode_unlock','Podcast episode unlock',1,'episode',true,true),
-      ('premium_content_unlock','Premium content unlock',1,'item',true,true),
-      ('studio_episode_unlock','Studio episode unlock',100,'episode',true,false)
-    ON CONFLICT(feature_code) DO NOTHING`);
+  await ensureOwnerPricing(db);
 }
 
 async function listContentUnlocks(db,userId,featureCode){
@@ -840,7 +873,7 @@ async function unlockTokenContent(db,auth,input){
   const featureCode=String(input?.featureCode||'').trim();
   const contentKey=String(input?.contentKey||'').trim().slice(0,180);
   if(!featureCode||!contentKey)throw Object.assign(new Error('Feature and content key are required.'),{status:400,code:'unlock_target_required'});
-  const allowed=new Set(['date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock']);
+  const allowed=new Set(['date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock','memories_unlock','journals_unlock','milestones_unlock','goals_unlock','calendar_unlock','love_language_report','compatibility_report','relationship_pattern_report','premium_report']);
   if(!allowed.has(featureCode))throw Object.assign(new Error('This content unlock type is not available.'),{status:400,code:'unlock_feature_invalid'});
 
   const existing=(await db.query(
@@ -879,6 +912,7 @@ async function unlockTokenContent(db,auth,input){
 
 async function walletPayload(db,userId){
   await ensureCreditSchema(db);
+  await ensureOwnerPricing(db);
   const state=await ensureTokenWallet(db,userId);
   const activeCalibration=(await db.query(
     `SELECT * FROM public.o2ol_calibration_sessions
@@ -913,7 +947,7 @@ export async function handleO2OLTokenRequest(request,env,url){
     return await withDb(env,async db=>{
       await requireVerifiedMember(db,auth);
       if(url.pathname==='/api/tokens/wallet'&&request.method==='GET')return json({ok:true,...await walletPayload(db,auth.user.id)});
-      if(url.pathname==='/api/tokens/packages'&&request.method==='GET'){await ensureCreditSchema(db);return json({ok:true,packages:await tokenPackages(db),featurePrices:await featurePrices(db)});}
+      if(url.pathname==='/api/tokens/packages'&&request.method==='GET'){await ensureCreditSchema(db);await ensureOwnerPricing(db);return json({ok:true,packages:await tokenPackages(db),featurePrices:await featurePrices(db)});}
       if(url.pathname==='/api/tokens/unlocks'&&request.method==='GET'){
         const featureCode=url.searchParams.get('featureCode')||'';
         return json({ok:true,unlocks:await listContentUnlocks(db,auth.user.id,featureCode)});
