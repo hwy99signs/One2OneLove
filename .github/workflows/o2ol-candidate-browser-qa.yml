@@ -74,7 +74,7 @@ jobs:
             HTML=$(curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL/?release=$GITHUB_SHA" || true)
             ASSET=$(printf '%s' "$HTML" | grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' | head -1 || true)
             if [ -n "$ASSET" ]; then
-              if curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL$ASSET" | grep -Fq 'Watch Episode 1'; then
+              if curl -sSf --max-time 15 -H 'cache-control: no-cache' "$CERT_URL$ASSET" -o /tmp/o2ol-cert-bundle.js && grep -Fq 'Watch Episode 1' /tmp/o2ol-cert-bundle.js; then
                 echo "Certified production frontend assets match release source"
                 exit 0
               fi
