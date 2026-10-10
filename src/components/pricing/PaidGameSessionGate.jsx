@@ -40,7 +40,7 @@ export default function PaidGameSessionGate({game,title,image,children}){
       if(data?.promotion)setPromotion(data.promotion);
       setActive(true);setOpen(false);
     }catch(e){
-      if(isTokensRequiredError(e)){const info=tokenRequiredDetails(e);setBalance(Number(info.creditBalance??info.balance||0));setGameCredit(Number(info.gameCreditBalance||0));setPrice(Number(info.required||49));setError('You need 
+      if(isTokensRequiredError(e)){const info=tokenRequiredDetails(e);setBalance(Number((info.creditBalance??info.balance) || 0));setGameCredit(Number(info.gameCreditBalance||0));setPrice(Number(info.required||49));setError('You need 
       else setError(e?.message||'Unable to start this game.');
     }finally{setBusy(false);}
   };
