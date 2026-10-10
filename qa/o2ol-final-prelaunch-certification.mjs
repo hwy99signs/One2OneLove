@@ -111,16 +111,24 @@ try{
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
-    if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows Episode 2 video with Episode 1 tab');
+    if(/Season 1\s*•\s*Episode 1/i.test(body)&&/Who Should Apologize First\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows current free Episode 1');
     else fail('Homepage Studio copy is incorrect',body.slice(-2200));
-    const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-2"]');
+    const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-1"]');
     const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
-    if(studioVideoSrc?.includes('/studio-media/season-1-episode-2.mp4') || studioVideoSrc?.includes('/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4')) pass('Homepage embeds Episode 2 video');
-    else fail('Homepage Episode 2 video missing',String(studioVideoSrc));
+    if(studioVideoSrc?.includes('/studio-media/season-1-episode-1.mp4')) pass('Homepage embeds free Episode 1 video');
+    else fail('Homepage Episode 1 video missing',String(studioVideoSrc));
     const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
     const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
     if(studioDestination==='/O2OLStudio?episode=season-1-episode-1') pass('Homepage Watch Episode 1 targets Episode 1');
     else fail('Homepage Watch Episode 1 target incorrect',String(studioDestination));
+    const freeEntries=page.locator('#open-house-tools [data-feature-status="free"]');
+    const mixedEntries=page.locator('#open-house-tools [data-feature-status="mixed"]');
+    const lockedEntries=page.locator('#open-house-tools [data-feature-status="locked"]');
+    if(await freeEntries.count()===5) pass('Home groups five free-at-core feature entries first'); else fail('Home FREE entry grouping mismatch',String(await freeEntries.count()));
+    if(await mixedEntries.count()===4) pass('Mixed feature entries carry no FREE/lock corner status'); else fail('Home mixed entry grouping mismatch',String(await mixedEntries.count()));
+    if(await lockedEntries.count()===5) pass('Priced Home entry points carry lock status'); else fail('Home locked entry marker mismatch',String(await lockedEntries.count()));
+    const freeBadgeCount=await page.locator('#open-house-tools [data-feature-status="free"] span').filter({hasText:/^FREE$/}).count();
+    if(freeBadgeCount===5) pass('Free Home entry points show yellow FREE badges'); else fail('FREE badge count mismatch',String(freeBadgeCount));
     const amora=page.locator('img[src*="amora-relationship-coach-official.webp"]').first();
     if(await amora.count()){
       const size=await amora.evaluate(i=>({w:i.naturalWidth,h:i.naturalHeight}));
@@ -168,7 +176,7 @@ try{
     let x=await open(browser,'/this-page-does-not-exist');
     if((await x.page.locator('body').innerText()).includes('Page Not Found')) pass('Real 404 renders'); else fail('Real 404 missing');
     await x.context.close();
-    x=await open(browser,'/WinACruise');
+    x=await open(browser,'/Developer');
     if((await x.page.locator('body').innerText()).includes('This Feature Is Not Available Yet')) pass('Deferred route explains status'); else fail('Deferred route explanation missing');
     await x.context.close();
   }
@@ -290,7 +298,7 @@ try{
     await members.click();
     await page.waitForTimeout(100);
     const memberText=await page.locator('body').innerText();
-    if(memberText.includes('On Site Now')) pass('On Site Now visible'); else fail('On Site Now missing');
+    if(memberText.includes('On Site Right Now')) pass('On Site Right Now visible'); else fail('On Site Right Now missing');
     const support=page.getByRole('button',{name:/Support & Reports/i});
     await support.click();
     await page.waitForTimeout(100);
