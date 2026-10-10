@@ -155,13 +155,21 @@ async function listMessages(db, conversationId, userId) {
     is_user: row.role === 'user',
   }));
 }
+const COACH_RESPONSE_LEVELS={
+  short:{words:'50-100',maxOutputTokens:180},
+  medium:{words:'150-250',maxOutputTokens:420},
+  long:{words:'300-400',maxOutputTokens:650},
+};
 async function sendCoachMessage(db, env, auth, conversationId, input) {
   const conversation = await requireConversation(db, conversationId, auth.user.id);
   const text = cleanText(input?.message, 6000, true);
   const requestId = String(input?.requestId || crypto.randomUUID()).slice(0,120);
-  const reservation = await reserveTokenCharge(db,auth.user.id,'amora_response',{
+  const responseLength=['short','medium','long'].includes(String(input?.responseLength||'').toLowerCase())?String(input.responseLength).toLowerCase():'medium';
+  const responseLevel=COACH_RESPONSE_LEVELS[responseLength];
+  const billingFeatureCode=`amora_response_${responseLength}`;
+  const reservation = await reserveTokenCharge(db,auth.user.id,billingFeatureCode,{
     idempotencyKey:`amora:${conversationId}:${requestId}`,
-    metadata:{conversation_id:conversationId,request_id:requestId},
+    metadata:{conversation_id:conversationId,request_id:requestId,response_length:responseLength},
   });
 
   const historyResult = await db.query(
@@ -173,10 +181,10 @@ async function sendCoachMessage(db, env, auth, conversationId, input) {
   const history = historyResult.rows.reverse();
   const transcript = history.map(item => `${item.role === 'assistant' ? 'Amora' : 'Member'}: ${item.content}`).join('\n\n');
   const prompt = `${transcript ? `${transcript}\n\n` : ''}Member: ${text}\n\nAmora:`;
-  const instructions = 'You are Amora, the warm One2OneLove relationship coach. Speak naturally and conversationally. Keep ordinary replies concise and contextual: usually 40-120 words in 1-2 short paragraphs. Prefer one clear reflection, one practical suggestion, or one natural follow-up question instead of a long explanation. For genuinely complex or emotional situations, you may use up to about 180 words when needed for clarity. Do not turn ordinary chat into essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. Give practical relationship guidance and reflection, not diagnosis or therapy. You may laugh naturally when something is genuinely funny, apologize when appropriate, show empathy without inventing feelings, and ask useful follow-up questions. Encourage respectful communication, consent and healthy boundaries. If there is abuse, danger, self-harm, coercion or an emergency, prioritize immediate safety and appropriate local professional help even if that requires a slightly longer safety-focused reply. Never shame, manipulate, pressure, or encourage surveillance. Keep answers useful and human rather than formulaic.';
+  const instructions = `You are Amora, the warm One2OneLove relationship coach. Speak naturally and conversationally. The member selected a ${responseLength} response. Keep this reply within ${responseLevel.words} words. Stay focused, contextual, and useful; do not pad the answer just to reach the word range. Prefer clear conversational paragraphs over essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. Give practical relationship guidance and reflection, not diagnosis or therapy. You may laugh naturally when something is genuinely funny, apologize when appropriate, show empathy without inventing feelings, and ask useful follow-up questions. Encourage respectful communication, consent and healthy boundaries. If there is abuse, danger, self-harm, coercion or an emergency, prioritize immediate safety and appropriate local professional help even if safety requires departing from the selected word range. Never shame, manipulate, pressure, or encourage surveillance. Keep answers useful and human rather than formulaic.`;
   let generated=null;
   try{
-    generated=await openAiText(env,{instructions,input:prompt,maxOutputTokens:320});
+    generated=await openAiText(env,{instructions,input:prompt,maxOutputTokens:responseLevel.maxOutputTokens});
   }catch(error){
     await releaseTokenReservation(db,reservation.id,'ai_provider_failed').catch(()=>{});
     throw error;
@@ -206,20 +214,20 @@ async function sendCoachMessage(db, env, auth, conversationId, input) {
     try{await db.query('ROLLBACK');}catch(_){}
     await releaseTokenReservation(db,reservation.id,'message_persistence_failed').catch(()=>{});
     await recordOpenAICostEvent(db,env,{
-      userId:auth.user.id,featureCode:'amora_response',payload:generated.payload,model:generated.model,
+      userId:auth.user.id,featureCode:billingFeatureCode,payload:generated.payload,model:generated.model,
       inputText:text,outputText:generated.text,contextText:instructions+'\n\n'+prompt,
-      customerTokensCharged:0,metadata:{conversation_id:conversationId,request_id:requestId,delivery_failed:true},
+      customerTokensCharged:0,metadata:{conversation_id:conversationId,request_id:requestId,response_length:responseLength,delivery_failed:true},
     }).catch(()=>{});
     throw error;
   }
 
   await consumeTokenReservation(db,reservation.id);
   await recordOpenAICostEvent(db,env,{
-    userId:auth.user.id,featureCode:'amora_response',payload:generated.payload,model:generated.model,
+    userId:auth.user.id,featureCode:billingFeatureCode,payload:generated.payload,model:generated.model,
     inputText:text,outputText:generated.text,contextText:instructions+'\n\n'+prompt,
     walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
     customerTokensCharged:Number(reservation.tokens||0),
-    metadata:{conversation_id:conversationId,request_id:requestId,history_messages:history.length},
+    metadata:{conversation_id:conversationId,request_id:requestId,response_length:responseLength,history_messages:history.length},
   }).catch(error=>console.error('Amora cost telemetry failed',error));
   maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Amora Auto-Replenish check failed',error));
 
@@ -227,7 +235,7 @@ async function sendCoachMessage(db, env, auth, conversationId, input) {
     ok:true,
     userMessage:{...userMessage.rows[0],text:userMessage.rows[0].content,is_user:true},
     message:{...assistantMessage.rows[0],text:assistantMessage.rows[0].content,is_user:false},
-    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
+    tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0),responseLength},
   });
 }
 async function createContent(db, env, auth, input) {
