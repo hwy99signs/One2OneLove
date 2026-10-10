@@ -93,7 +93,8 @@ export async function handleConsentsRequest(request, env, url) {
             if(!r.rowCount) throw new Error('Member profile not found.');
             await db.query(
               `INSERT INTO public.coaching_consent_history(user_id,consent_version,accepted_at,source,user_agent)
-               VALUES($1::uuid,$2,now(),$3,$4)`,
+               VALUES($1::uuid,$2,now(),$3,$4)
+               ON CONFLICT(user_id,consent_version) DO NOTHING`,
               [auth.user.id,COACHING_CONSENT_VERSION,source,userAgent],
             );
             await db.query('COMMIT');
