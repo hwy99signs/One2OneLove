@@ -1,4 +1,4 @@
-o2ol-paid-feature-server-unlock-2026-10-10
-fix_merge=a8e4c3b0a996ec02043a63b56b37a3c1b8a8093d
-fixes=server-side-credit-unlocks-memories-journals-milestones-goals-calendar
-source_pr=104
+o2ol-title-only-paid-content-2026-10-10
+fix_merge=dfa8d4aa5c776f509f49438936e3b223e05e29e2
+fixes=love-notes-title-only-49c,date-ideas-title-only-49c,server-side-purchase-entitlements,frontend-paid-content-not-shipped
+source_pr=106
