@@ -310,6 +310,7 @@ export default function LikeMinded() {
   const [available,setAvailable] = useState(false);
   const [showTalk,setShowTalk] = useState(false);
   const [gamePass,setGamePass]=useState(null);
+  const [gamePromotion,setGamePromotion]=useState(null);
   const [tokenBalance,setTokenBalance]=useState(0);
   const [tokenCost,setTokenCost]=useState(0);
   const [tokenPrompt,setTokenPrompt]=useState(false);
@@ -329,10 +330,18 @@ export default function LikeMinded() {
         getTokenWallet(),
         api('/api/games/like-minded/access',{method:'GET',headers:{}}),
       ]);
+      setGamePromotion(access?.promotion||null);
       setTokenBalance(Number(wallet?.wallet?.balance||0));
-      setTokenCost(Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49));
-      setGamePass(access?.pass||null);
-      return access?.pass||null;
+      setTokenCost(access?.promotion?.free?0:Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49));
+      let pass=access?.pass||null;
+      if(!pass&&access?.promotion?.free){
+        const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-free-${Date.now()}`;
+        const freeAccess=await api('/api/games/like-minded/access',{method:'POST',body:JSON.stringify({requestId})});
+        pass=freeAccess?.pass||null;
+        setGamePromotion(freeAccess?.promotion||access.promotion);
+      }
+      setGamePass(pass);
+      return pass;
     }catch(error){
       if(error?.status===402||isTokensRequiredError(error)){setGamePass(null);}
       return null;
