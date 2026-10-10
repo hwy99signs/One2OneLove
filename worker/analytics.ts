@@ -2,6 +2,7 @@
 import { Client } from 'pg';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 import { getEdgeCounts } from './cloudflare-edge.js';
+import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -88,7 +89,7 @@ async function analytics(db, env) {
   `);
 
   const siteUsagePromise = interactionReady ? db.query(`
-    WITH days AS (
+    WITH ${SWEEP_CTES}, days AS (
       SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
     ), usage AS (
       SELECT (e.created_at AT TIME ZONE 'America/Chicago')::date AS day,
@@ -102,7 +103,7 @@ async function analytics(db, env) {
         FROM public.interaction_events e
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
        GROUP BY 1
     )
     SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -114,6 +115,7 @@ async function analytics(db, env) {
   `) : zeroSiteUsage();
 
   const siteUsageSummaryPromise = interactionReady ? db.query(`
+    WITH ${SWEEP_CTES}
     SELECT
       count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
       count(*) FILTER (WHERE e.event_type='click')::int AS clicks,
@@ -126,11 +128,11 @@ async function analytics(db, env) {
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
   `) : { rows:[{ page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 }] };
 
   const languageUsagePromise = interactionReady && languageReady ? db.query(`
-    WITH desired(language,label,sort_order) AS (
+    WITH ${SWEEP_CTES}, desired(language,label,sort_order) AS (
       VALUES
         ('en'::text,'English'::text,1),
         ('es'::text,'Spanish'::text,2),
@@ -153,7 +155,7 @@ async function analytics(db, env) {
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.language IN ('en','es','fr','it','de')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
        GROUP BY e.language
     )
     SELECT desired.language,desired.label,
@@ -175,7 +177,7 @@ async function analytics(db, env) {
   ] };
 
   const trafficSourcePromise = interactionReady && trafficSourceReady ? db.query(`
-    WITH desired(source,label,sort_order) AS (
+    WITH ${SWEEP_CTES}, desired(source,label,sort_order) AS (
       VALUES
         ('facebook'::text,'Facebook'::text,1),
         ('instagram'::text,'Instagram'::text,2),
@@ -201,7 +203,7 @@ async function analytics(db, env) {
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.traffic_source IN ('facebook','instagram','threads','tiktok','x','youtube','linkedin','pinterest','direct','other')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
        GROUP BY e.traffic_source
     )
     SELECT desired.source,desired.label,
@@ -313,13 +315,14 @@ async function analytics(db, env) {
   `) : { rows:[] };
 
   const recentClicksPromise = interactionReady ? db.query(`
+    WITH ${SWEEP_CTES}
     SELECT e.created_at,e.route,e.feature,e.actor_type,e.access_type,
            e.traffic_source,e.language,e.control_type,e.control_key,e.destination
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
      WHERE e.event_type='click'
        AND e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
      ORDER BY e.created_at DESC
      LIMIT 50
   `) : { rows:[] };
