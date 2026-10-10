@@ -1637,7 +1637,9 @@ export default function LoveNotes() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <AnimatePresence>
-            {displayedNotes.map((note) => (
+            {displayedNotes.map((note) => {
+              const owned = purchasedNoteKeys.has(String(note.id));
+              return (
               <motion.div
                 key={note.id}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -1645,7 +1647,7 @@ export default function LoveNotes() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="h-full hover:shadow-xl transition-all duration-300 bg-slate-100 border-2 border-slate-200 cursor-pointer"
+                <Card className={`h-full hover:shadow-xl transition-all duration-300 border-2 cursor-pointer ${owned ? 'bg-white border-pink-200' : 'bg-slate-100 border-slate-200'}`}
                       onClick={() => openLibraryNote(note)}>
                   <CardHeader>
                     <CardTitle className="text-xl font-bold text-gray-900 font-kalam">
@@ -1654,9 +1656,9 @@ export default function LoveNotes() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-500 leading-relaxed mb-4">
-                      🔒 Unlock for $0.49 to read this Love Note.
+                      {owned ? 'Purchased — select to read your note.' : '🔒 Note description hidden until purchased.'}
                     </p>
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500"><Lock className="w-4 h-4" /> Locked until $0.49 unlock</div>
+                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">{owned ? 'Unlocked for your account' : <><Lock className="w-4 h-4" /> $0.49 Credit to unlock</>}</div>
                     <Button
                       className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                       onClick={(e) => {
@@ -1664,13 +1666,14 @@ export default function LoveNotes() {
                         openLibraryNote(note,true);
                       }}
                     >
-                      <Send className="w-4 h-4 mr-2" />
-                      {t.send}
+                      {owned ? <Send className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
+                      {owned ? t.send : 'Unlock $0.49'}
                     </Button>
                   </CardContent>
                 </Card>
               </motion.div>
-            ))}
+              );
+            })}
           </AnimatePresence>
         </div>
 
