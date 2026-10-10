@@ -4,7 +4,7 @@ import { maybeAutoReplenish } from './o2ol-tokens';
 import { recordCostEvent } from './o2ol-cost-ledger';
 import {
   GAME_REGISTRY,gameDefinition,publicGameRegistry,ensureGameEconomySchema,setMemberTimezone,
-  resolveGamePromotion,chargeGameAndCreatePass,gameLeaderboard,submitGameScore,gameCreditWallet
+  resolveGamePromotion,gamePriceQuote,chargeGameAndCreatePass,gameLeaderboard,submitGameScore,gameCreditWallet
 } from './game-economy';
 
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
@@ -44,9 +44,9 @@ async function activePass(db,userId,game){
 async function accessSnapshot(db,userId,game){
   const def=gameDefinition(game);if(!def)throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
   const pass=await activePass(db,userId,game);
-  const promotion=await resolveGamePromotion(db,userId,game);
+  const quote=await gamePriceQuote(db,userId,game);
   const gameCredit=await gameCreditWallet(db,userId);
-  return {active:Boolean(pass),pass,promotion,gameCredit};
+  return {active:Boolean(pass),pass,...quote,gameCredit};
 }
 async function launchPassGame(db,env,auth,game,input){
   await verifiedMember(db,auth.user.id);
@@ -88,7 +88,10 @@ export async function handleGameAccessRequest(request,env,url){
   try{
     return await withDb(env,async db=>{
       await ensureGameEconomySchema(db);
-      if(url.pathname==='/api/games/catalog'&&request.method==='GET')return json({ok:true,games:publicGameRegistry()});
+      if(url.pathname==='/api/games/catalog'&&request.method==='GET'){
+        const games=[];for(const def of publicGameRegistry()){games.push({...def,...await gamePriceQuote(db,auth.user.id,def.id)});}
+        return json({ok:true,games});
+      }
       if(url.pathname==='/api/games/timezone'&&request.method==='POST'){
         const input=await request.json().catch(()=>({}));const timeZone=await setMemberTimezone(db,auth.user.id,input?.timeZone);
         return json({ok:true,timeZone:timeZone||'America/Chicago'});
