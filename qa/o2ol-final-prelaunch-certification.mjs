@@ -47,7 +47,7 @@ async function installMocks(context,mode){
   ]}));
   await context.route('**/api/tokens/unlocks**',r=>fulfill(r,200,{ok:true,unlocks:[]}));
   await context.route('**/api/studio/episodes',r=>fulfill(r,200,{ok:true,episodes:[
-    {id:'season-1-episode-2',season:1,episode:2,title:'Who Pays for the First Date?',canWatch:false,publicAvailable:false,memberAvailable:false,publicAvailableAt:'2026-10-16T22:00:00Z',mediaPath:null,chatRoom:'studio-who-pays-for-the-first-date',posterPath:null},
+    {id:'season-1-episode-2',season:1,episode:2,title:'Who Pays for the First Date?',canWatch:true,publicAvailable:false,memberAvailable:true,publicAvailableAt:'2026-10-16T22:00:00Z',mediaPath:'/studio-media/season-1-episode-2.mp4',chatRoom:'studio-who-pays-for-the-first-date',posterPath:null},
     {id:'season-1-episode-1',season:1,episode:1,title:'Who Should Apologize First?',canWatch:true,publicAvailable:true,memberAvailable:false,publicAvailableAt:'2026-10-10T00:00:00Z',mediaPath:'/studio-media/season-1-episode-1.mp4',chatRoom:'studio-who-should-apologize-first',posterPath:'/assets/o2ol-studio-bianca-card.webp'}
   ]}));
   await context.route('**/api/mymatchiq/**',r=>{
