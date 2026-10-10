@@ -128,8 +128,13 @@ export default function CooperativeGames() {
 
   const gamePrice = id => {
     const q=catalogById[id];
-    const cents=q?.priceCents!=null?Number(q.priceCents):(launchFreeGuest?0:49);
-    return {priceCents:cents,priceLabel:cents===0?'$0.00 / FREE today':'
+    const cents=q?.priceCents!=null ? Number(q.priceCents) : (launchFreeGuest ? 0 : 49);
+    return {
+      priceCents:cents,
+      priceLabel:cents===0 ? '$0.00 / FREE today' : '$'+(cents/100).toFixed(2),
+      free:cents===0
+    };
+  };
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
