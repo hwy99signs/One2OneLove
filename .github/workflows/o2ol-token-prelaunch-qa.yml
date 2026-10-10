@@ -105,6 +105,14 @@ jobs:
           grep -F "love_note_template_unlock" worker/o2ol-tokens.ts worker/love-note-library.ts src/pages/LoveNotes.jsx >/dev/null
           grep -F "content_unlock_required" worker/love-note-library.ts worker/date-idea-library.ts >/dev/null
           grep -F "public.o2ol_token_content_unlocks" worker/love-note-library.ts worker/date-idea-library.ts >/dev/null
+          if grep -F "m.role!=='admin'" worker/date-idea-library.ts; then
+            echo "An unpaid admin can bypass Date Idea purchase." >&2
+            exit 1
+          fi
+          if grep -F "if (isAdmin) return true;" src/pages/DateIdeas.jsx; then
+            echo "Date Ideas UI still has an unpaid admin bypass." >&2
+            exit 1
+          fi
           grep -F "featureCode: 'date_idea_unlock'" src/pages/DateIdeas.jsx >/dev/null
           if grep -REn "LoveNotesData|LoveNotesAdditional|LoveNotesSubjectSupplemental|dateIdeasLibrary" src/pages/LoveNotes.jsx src/pages/DateIdeas.jsx; then
             echo "Private paid content source is still imported into public pages." >&2

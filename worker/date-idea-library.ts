@@ -30,7 +30,7 @@ export async function handleDateIdeaLibraryRequest(request,env,url){
     const m=(await db.query('SELECT COALESCE(p.is_active,true) AS active,COALESCE(u.banned,false) AS banned,u.role FROM neon_auth."user" u LEFT JOIN public.users p ON p.id=u.id WHERE u.id=$1::uuid',[user.id])).rows[0];
     if(!m||!m.active||m.banned)return json({ok:false,error:{code:'forbidden'}},403);
     const owned=(await db.query(`SELECT EXISTS(SELECT 1 FROM public.o2ol_token_content_unlocks WHERE user_id=$1::uuid AND feature_code='date_idea_unlock' AND content_key=$2) AS owned`,[user.id,id])).rows[0]?.owned===true;
-    if(!owned && m.role!=='admin')return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Date Idea for $0.49 Credit.'}},402);
+    if(!owned)return json({ok:false,error:{code:'content_unlock_required',message:'Unlock this Date Idea for $0.49 Credit.'}},402);
     return json({ok:true,idea});
   }finally{await db.end();}
 }

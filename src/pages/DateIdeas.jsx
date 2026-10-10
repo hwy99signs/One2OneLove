@@ -206,7 +206,7 @@ export default function DateIdeas() {
   const { data: tokenUnlockData = { unlocks: [] } } = useQuery({
     queryKey: ['tokenUnlocks', 'date_idea_unlock', dateIdeasUserKey],
     queryFn: () => listTokenUnlocks('date_idea_unlock'),
-    enabled: Boolean(currentUser?.id) && !isAdmin,
+    enabled: Boolean(currentUser?.id),
   });
   const { data: tokenWalletData = null } = useQuery({
     queryKey: ['tokenWallet', dateIdeasUserKey],
@@ -217,7 +217,6 @@ export default function DateIdeas() {
   const dateIdeaTokenCost = Number(tokenWalletData?.featurePrices?.find(item => item.feature_code === 'date_idea_unlock')?.token_cost || 49);
   const hasDateIdeaAccess = (idea) => {
     if (!idea?.week) return hasMemberAccess;
-    if (isAdmin) return true;
     return unlockedDateKeys.has(String(idea.id));
   };
 
