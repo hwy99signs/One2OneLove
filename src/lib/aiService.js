@@ -24,11 +24,11 @@ export async function listCoachMessages(conversationId) {
   return payload?.messages || [];
 }
 
-export async function sendCoachMessage(conversationId, message) {
+export async function sendCoachMessage(conversationId, message, responseLength = 'short') {
   const requestId = globalThis.crypto?.randomUUID?.() || `amora-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return apiRequest(`/api/ai/coach/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: { message, requestId },
+    body: { message, responseLength, requestId },
   });
 }
 
@@ -70,11 +70,11 @@ export async function resetBiancaPersonalization() {
   return payload?.profile || null;
 }
 
-export async function sendBiancaMessage(conversationId, message, language = 'en') {
+export async function sendBiancaMessage(conversationId, message, language = 'en', responseLength = 'short') {
   const requestId = globalThis.crypto?.randomUUID?.() || `bianca-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return apiRequest(`/api/mymatchiq/bianca/conversations/${encodeURIComponent(conversationId)}/messages`, {
     method: 'POST',
-    body: { message, language, requestId },
+    body: { message, language, responseLength, requestId },
   });
 }
 

@@ -168,7 +168,7 @@ jobs:
           grep -F "assessment_question_count:225" worker/mymatchiq-ai.ts
           grep -F "access_model:'free_tokens'" worker/mymatchiq-ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,'bianca_report'" worker/mymatchiq-ai.ts
-          grep -F "'bianca_response'" worker/mymatchiq-ai.ts
+          grep -F 'bianca_response_${responseLength}' worker/mymatchiq-ai.ts
           grep -F "legacy_mymatchiq_credits_retired" worker/mymatchiq-credits.ts
           grep -F 'to="/Credit?source=mymatchiq-assessment"' src/pages/MyMatchIQAssessment.jsx
           if grep -F "requireCardAccess" worker/mymatchiq-ai.ts; then
@@ -219,7 +219,7 @@ jobs:
           grep -F "marketingEmailOptIn" src/components/launch/QuickAccountGate.jsx
           grep -F "return null;" src/components/dateideas/DateIdeasPlanAccess.jsx
           grep -F "accessModel:'free_tokens'" worker/ai.ts
-          grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts
+          grep -F 'const billingFeatureCode=`amora_response_${responseLength}`' worker/ai.ts
           grep -F "const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';" worker/ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,billingFeatureCode" worker/ai.ts
           grep -F "'love_note_ai','Love Note AI generation',25" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql

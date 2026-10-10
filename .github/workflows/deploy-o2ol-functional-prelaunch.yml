@@ -179,8 +179,8 @@ jobs:
           grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx >/dev/null || { echo "Free-account access contract missing." >&2; exit 1; }
 
           grep -F "Free: { questionCount:225, dimensionCount:15 }" src/lib/mymatchiqAssessment.js >/dev/null || { echo "Free MyMatchIQ assessment contract missing." >&2; exit 1; }
-          grep -F "reserveTokenCharge(db,auth.user.id,'bianca_response'" worker/mymatchiq-ai.ts >/dev/null || { echo "Bianca Credit metering missing." >&2; exit 1; }
-          grep -F "reserveTokenCharge(db,auth.user.id,'amora_response'" worker/ai.ts >/dev/null || { echo "Amora Credit metering missing." >&2; exit 1; }
+          grep -F 'const billingFeatureCode=`bianca_response_${responseLength}`' worker/mymatchiq-ai.ts >/dev/null || { echo "Bianca Credit metering missing." >&2; exit 1; }
+          grep -F 'const billingFeatureCode=`amora_response_${responseLength}`' worker/ai.ts >/dev/null || { echo "Amora Credit metering missing." >&2; exit 1; }
           grep -F "reserveTokenCharge(db,auth.user.id,'love_note_send'" worker/love-note-entitlements.ts >/dev/null || { echo "Love Note Credit metering missing." >&2; exit 1; }
           grep -F "reserveTokenCharge(db,auth.user.id,'like_minded_session'" worker/game-access.ts >/dev/null || { echo "Game Credit metering missing." >&2; exit 1; }
 
