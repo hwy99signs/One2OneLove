@@ -852,10 +852,10 @@ export default function LoveNotes() {
   const notePriceCents = 49;
   const loadPrivateNote = async (note) => {
     const result=await apiRequest('/api/love-note-library/item?lang='+encodeURIComponent(currentLanguage)+'&id='+encodeURIComponent(note.id));
-    return result.note;
+    return personalizeNote(result.note);
   };
   const openLibraryNote = async (note, send=false) => {
-    if(!purchasedNoteKeys.has(currentLanguage+':'+note.id)){
+    if(!purchasedNoteKeys.has(String(note.id))){
       setNoteToUnlock(note);setNoteUnlockError('');return;
     }
     try{
@@ -869,7 +869,7 @@ export default function LoveNotes() {
     setNoteUnlockBusy(true);setNoteUnlockError('');
     try{
       const note=noteToUnlock;
-      await unlockTokenContent({featureCode:'love_note_template_unlock',contentKey:currentLanguage+':'+note.id,source:'love_notes',idempotencyKey:'love-note:'+currentUser.id+':'+currentLanguage+':'+note.id});
+      await unlockTokenContent({featureCode:'love_note_template_unlock',contentKey:String(note.id),source:'love_notes',idempotencyKey:'love-note:'+currentUser.id+':'+note.id});
       await queryClient.invalidateQueries({queryKey:['love-note-purchases',currentLanguage,currentUser?.id]});
       const full=await loadPrivateNote(note);
       setNoteToUnlock(null);setSelectedNote(full);
