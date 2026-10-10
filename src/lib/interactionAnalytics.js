@@ -446,7 +446,7 @@ export function installPresenceHeartbeat() {
   const ping = () => {
     try {
       if (isAdminAnalyticsSurface(window.location.pathname)) return;
-      fetch('/api/presence/ping', {
+      fetch('/api/site-presence/ping', {
         method: 'POST',
         credentials: 'include',
         keepalive: true,
