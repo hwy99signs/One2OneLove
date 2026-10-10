@@ -28,6 +28,10 @@ export async function getAdminDashboard(registryRange) {
   return getFreshAdminJson(`/api/admin/dashboard${query}`);
 }
 
+export async function getAdminPresence() {
+  return getFreshAdminJson('/api/admin/presence');
+}
+
 export async function getAdminAnalytics() {
   return getFreshAdminJson('/api/admin/analytics');
 }

@@ -282,6 +282,54 @@ async function handleLegacyFeatureUsage(request, env) {
   });
 }
 
+
+async function ensurePresenceSchema(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS public.visitor_presence (
+      visitor_id text PRIMARY KEY,
+      user_id uuid,
+      route text,
+      last_ping_at timestamptz NOT NULL DEFAULT now()
+    )`);
+  await db.query(`CREATE INDEX IF NOT EXISTS visitor_presence_last_ping_idx ON public.visitor_presence (last_ping_at)`);
+}
+
+// Real-time presence heartbeat (owner-approved 2026-10-09): public pages
+// check in every ~45s; the Admin "On Site Right Now" card counts rows seen
+// in the last 90 seconds. Deliberately separate from interaction events
+// and from the idle-stop polling rules — staying on a page counts, even
+// when the visitor is only reading. Admin sessions never count, mirroring
+// the ingest rule that admin activity must not contaminate visitor data.
+export async function handlePresencePing(request, env) {
+  if (request.method !== 'POST') return json({ ok:false, error:{ code:'method_not_allowed', message:'Method not allowed.' } }, 405);
+  const body = await request.json().catch(() => null);
+  const visitorId = String(body?.visitorId || '').trim().slice(0, 64);
+  if (!visitorId) return json({ ok:false, error:{ code:'visitor_id_required', message:'A visitor ID is required.' } }, 400);
+  const route = String(body?.route || '').trim().slice(0, 200) || null;
+  const auth = await session(request, env, false);
+  return withDb(env, async (db) => {
+    await ensurePresenceSchema(db);
+    let userId = null;
+    if (auth?.user?.id) {
+      const identity = await db.query(
+        `SELECT id, role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+        [auth.user.id],
+      );
+      const row = identity.rows[0] || null;
+      if (String(row?.role || '').toLowerCase() === 'admin') return new Response(null, { status: 204 });
+      if (row?.id) userId = row.id;
+    }
+    await db.query(
+      `INSERT INTO public.visitor_presence (visitor_id, user_id, route, last_ping_at)
+       VALUES ($1, $2::uuid, $3, now())
+       ON CONFLICT (visitor_id) DO UPDATE
+         SET user_id = EXCLUDED.user_id, route = EXCLUDED.route, last_ping_at = now()`,
+      [visitorId, userId, route],
+    );
+    return new Response(null, { status: 204 });
+  });
+}
+
 export async function handleFeatureUsageRequest(request, env, url) {
   if (url.pathname === '/api/interaction-events') return handleInteractionEvent(request, env);
   if (url.pathname === '/api/feature-usage') return handleLegacyFeatureUsage(request, env);
