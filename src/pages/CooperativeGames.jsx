@@ -23,12 +23,12 @@ const translations = {
     featured: "Featured Games",
     allGames: "All Games",
     startGame: "Start Game",
-    scratchName: "One2OneLove Scratch Game",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Scratch, reveal, and talk through meaningful questions together.",
     whatShouldName: "What Should They Do?",
     whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered.",
     likeMindedName: "Like Minded?",
-    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"CREDIT"
+    likeMindedDesc: "Answer privately, lock your choice, reveal together, and see where you naturally align.", publicAccess:"NO ACCOUNT",freeAccess:"FREE ACCOUNT",tokenAccess:"CREDIT", pestsName:"PEST'S", pestsDesc:"The tiny pest is loose! Chase the ant, the fly and the mosquito through kitchens, porches and bedrooms \u2014 it gets faster every catch.", scrablukoName:"Scrabluko", scrablukoDesc:"Scrabble letters, crossword clues, sudoku calm. Build words, solve the clue, keep your cool.", catBrain:"Brain & Puzzle", catArcade:"Arcade & Quick Play", freeBanner:"Launch weekend \u2014 ALL GAMES FREE until Sunday, Oct 11 at 11:59 PM!"
   },
   es: {
     title: "Juegos de Relaciones",
@@ -40,12 +40,12 @@ const translations = {
     featured: "Juegos Destacados",
     allGames: "Todos los Juegos",
     startGame: "Iniciar Juego",
-    scratchName: "Juego de Rasca One2OneLove",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas.",
     whatShouldName: "¿Qué Deberían Hacer?",
     whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas.",
     likeMindedName: "¿Piensan Igual?",
-    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"CRÉDITO"
+    likeMindedDesc: "Respondan en privado, bloqueen su elección, revelen juntos y descubran dónde coinciden.", publicAccess:"SIN CUENTA",freeAccess:"CUENTA GRATIS",tokenAccess:"CRÉDITO", pestsName:"PEST'S", pestsDesc:"¡La pequeña plaga anda suelta! Persigue a la hormiga, la mosca y el mosquito por cocinas, porches y dormitorios: se acelera con cada captura.", scrablukoName:"Scrabluko", scrablukoDesc:"Letras de Scrabble, pistas de crucigrama, calma de sudoku. Forma palabras, resuelve la pista, mantén la calma.", catBrain:"Mente y lógica", catArcade:"Arcade y juego rápido", freeBanner:"Fin de semana de lanzamiento: ¡TODOS LOS JUEGOS GRATIS hasta el domingo 11 de octubre a las 11:59 PM!"
   },
   fr: {
     title: "Jeux Relationnels",
@@ -57,12 +57,12 @@ const translations = {
     featured: "Jeux en Vedette",
     allGames: "Tous les Jeux",
     startGame: "Commencer",
-    scratchName: "Jeu à Gratter One2OneLove",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives.",
     whatShouldName: "Que Devraient-Ils Faire ?",
     whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres.",
     likeMindedName: "Même Longueur d’Onde ?",
-    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"CRÉDIT"
+    likeMindedDesc: "Répondez en privé, verrouillez, révélez ensemble et découvrez vos points d’accord.", publicAccess:"SANS COMPTE",freeAccess:"COMPTE GRATUIT",tokenAccess:"CRÉDIT", pestsName:"PEST'S", pestsDesc:"Le petit nuisible est en liberté ! Poursuivez la fourmi, la mouche et le moustique dans les cuisines, les vérandas et les chambres \u2014 il accélère à chaque prise.", scrablukoName:"Scrabluko", scrablukoDesc:"Lettres de Scrabble, indices de mots croisés, calme du sudoku. Formez des mots, résolvez l'indice, gardez votre sang-froid.", catBrain:"Cerveau et casse-tête", catArcade:"Arcade et jeu rapide", freeBanner:"Week-end de lancement \u2014 TOUS LES JEUX GRATUITS jusqu'au dimanche 11 octobre à 23 h 59 !"
   },
   it: {
     title: "Giochi Relazionali",
@@ -74,12 +74,12 @@ const translations = {
     featured: "Giochi in Evidenza",
     allGames: "Tutti i Giochi",
     startGame: "Inizia Gioco",
-    scratchName: "Gioco Gratta e Scopri One2OneLove",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Grattate, scoprite e parlate insieme di domande significative.",
     whatShouldName: "Cosa Dovrebbero Fare?",
     whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri.",
     likeMindedName: "Sulla Stessa Lunghezza d’Onda?",
-    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"CREDITO"
+    likeMindedDesc: "Rispondete in privato, bloccate, rivelate insieme e scoprite dove siete allineati.", publicAccess:"SENZA ACCOUNT",freeAccess:"ACCOUNT GRATUITO",tokenAccess:"CREDITO", pestsName:"PEST'S", pestsDesc:"Il piccolo insetto è in libertà! Insegui la formica, la mosca e la zanzara tra cucine, verande e camere da letto: accelera a ogni cattura.", scrablukoName:"Scrabluko", scrablukoDesc:"Lettere dello Scarabeo, indizi da cruciverba, calma da sudoku. Componi parole, risolvi l'indizio, mantieni la calma.", catBrain:"Mente e rompicapi", catArcade:"Arcade e gioco veloce", freeBanner:"Weekend di lancio \u2014 TUTTI I GIOCHI GRATIS fino a domenica 11 ottobre alle 23:59!"
   },
   de: {
     title: "Beziehungsspiele",
@@ -91,12 +91,12 @@ const translations = {
     featured: "Empfohlene Spiele",
     allGames: "Alle Spiele",
     startGame: "Spiel Starten",
-    scratchName: "One2OneLove Rubbelspiel",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Rubbeln, aufdecken und gemeinsam über bedeutungsvolle Fragen sprechen.",
     whatShouldName: "Was Sollten Sie Tun?",
     whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben.",
     likeMindedName: "Gleich Gesinnt?",
-    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"CREDIT"
+    likeMindedDesc: "Antwortet privat, sperrt eure Wahl, deckt gemeinsam auf und entdeckt eure Übereinstimmungen.", publicAccess:"OHNE KONTO",freeAccess:"KOSTENLOSES KONTO",tokenAccess:"CREDIT", pestsName:"PEST'S", pestsDesc:"Der kleine Plagegeist ist los! Jage die Ameise, die Fliege und die Mücke durch Küchen, Veranden und Schlafzimmer \u2014 mit jedem Fang wird sie schneller.", scrablukoName:"Scrabluko", scrablukoDesc:"Scrabble-Buchstaben, Kreuzworträtsel-Hinweise, Sudoku-Ruhe. Bilde Wörter, löse den Hinweis, bleib gelassen.", catBrain:"Kopf & Puzzle", catArcade:"Arcade & schnelles Spiel", freeBanner:"Start-Wochenende \u2014 ALLE SPIELE GRATIS bis Sonntag, 11. Oktober, 23:59 Uhr!"
   }
 };
 
@@ -125,18 +125,20 @@ export default function CooperativeGames() {
       icon: '🧠',
       link: 'LikeMinded',
       playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
-      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
+      category: 'brain'
     },
     {
-      id: 'o2ol_scratch',
-      name: t.scratchName,
-      description: t.scratchDesc,
-      type: 'conversation',
-      difficulty: 'easy',
-      icon: '💗',
-      link: 'ScratchGame',
+      id: 'scrabluko',
+      name: t.scrablukoName,
+      description: t.scrablukoDesc,
+      type: 'word',
+      difficulty: 'medium',
+      icon: '🔤',
+      link: 'Scrabluko',
       playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
-      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
+      category: 'brain'
     },
     {
       id: 'what_should_they_do',
@@ -147,7 +149,32 @@ export default function CooperativeGames() {
       icon: '🗳️',
       link: 'WhatShouldTheyDo',
       playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
-      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
+      category: 'brain'
+    },
+    {
+      id: 'o2ol_scratch',
+      name: t.scratchName,
+      description: t.scratchDesc,
+      type: 'conversation',
+      difficulty: 'easy',
+      icon: '💗',
+      link: 'ScratchGame',
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
+      category: 'arcade'
+    },
+    {
+      id: 'pests',
+      name: t.pestsName,
+      description: t.pestsDesc,
+      type: 'arcade',
+      difficulty: 'easy',
+      icon: '🐜',
+      link: 'Pests',
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
+      category: 'arcade'
     }
   ];
 
@@ -183,9 +210,8 @@ export default function CooperativeGames() {
         </motion.div>
 
         {temporaryFreeGames && (
-          <div className="mb-10 rounded-2xl border border-emerald-300 bg-emerald-100 px-5 py-4 text-center shadow-sm">
-            <div className="text-lg font-black text-emerald-950">🎮 ALL GAMES FREE</div>
-            <div className="mt-1 text-sm font-semibold text-emerald-800">Play free through Sunday, October 11 at 11:59 PM Central Time. No Credit used.</div>
+          <div className="mb-10 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-6 py-4 text-center text-lg font-black text-white shadow-lg">
+            🎉 {t.freeBanner}
           </div>
         )}
 
@@ -217,9 +243,16 @@ export default function CooperativeGames() {
           </div>
         )}
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.featured}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.catBrain}</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {availableGames.filter((g) => g.category === 'brain').map((game, index) => (
+            <GameCard key={game.id} game={game} index={index} />
+          ))}
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.catArcade}</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {availableGames.map((game, index) => (
+          {availableGames.filter((g) => g.category === 'arcade').map((game, index) => (
             <GameCard key={game.id} game={game} index={index} />
           ))}
         </div>

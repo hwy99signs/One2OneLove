@@ -272,3 +272,33 @@ export async function handleGameAccessRequest(request,env,url){
     });
   }
 }
+
+// Pass-gated delivery of the self-contained game files (PEST'S, Scrabluko).
+// The files ship as static assets under /games-src/, but every request runs
+// through the worker first (run_worker_first), so the file is only served to
+// a signed-in member holding an active pass for that game, an admin, or any
+// verified member while a free-games promotion is live.
+const GAME_FILES = { pests: '/games-src/pests.html', scrabluko: '/games-src/scrabluko.html' };
+export async function handleGameFileRequest(request, env, url) {
+  const game = Object.keys(GAME_FILES).find(g => url.pathname === GAME_FILES[g]);
+  if (!game) return new Response('Game not found.', { status: 404 });
+  const auth = await authSession(request, env);
+  if (!auth) return new Response('Sign in with a verified One2OneLove account to play.', { status: 403 });
+  try {
+    const allowed = await withDb(env, async db => {
+      const roleRow = (await db.query(`SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`, [auth.user.id])).rows[0];
+      if (roleRow?.role === 'admin') return true;
+      if (activeFreeGamesPromotion()) return true;
+      const pass = await activeStandardGamePass(db, auth.user.id, game);
+      return Boolean(pass);
+    });
+    if (!allowed) return new Response('This game needs an active play pass. Open the game page to unlock it.', { status: 403 });
+    const asset = await env.ASSETS.fetch(request);
+    const headers = new Headers(asset.headers);
+    headers.set('cache-control', 'private, no-store');
+    return new Response(asset.body, { status: asset.status, headers });
+  } catch (error) {
+    console.error('O2OL game file error', error);
+    return new Response('Unable to load the game.', { status: 500 });
+  }
+}

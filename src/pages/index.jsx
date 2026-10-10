@@ -28,6 +28,8 @@ import CommunicationPractice from './CommunicationPractice';
 import CouplesProfile from './CouplesProfile';
 import CoupleActivities from './CoupleActivities';
 import CooperativeGames from './CooperativeGames';
+import Pests from './Pests';
+import Scrabluko from './Scrabluko';
 import WhatShouldTheyDo from './WhatShouldTheyDo';
 import ScratchGame from './ScratchGame';
 import LikeMinded from './LikeMinded';
@@ -76,7 +78,7 @@ const PAGES = {
   Home, AboutUs, SignIn, SignUp, AdminAccess, Admin, Analytics, TokenSystemDashboard, Amora, MemoryLane, LoveNotes, SendCredits, CoupleSupport,
   LoveLanguageQuiz, DateIdeas, Profile, Invite, PodcastsSupport, ArticlesSupport, RelationshipQuizzes,
   AnniversaryTracker, ForgotPassword, Dashboard, RelationshipMilestones, RelationshipGoals,
-  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
+  CommunicationPractice, CouplesProfile, CoupleActivities, CooperativeGames, Pests, Scrabluko, WhatShouldTheyDo, ScratchGame, LikeMinded, SharedJournals, CouplesDashboard,
   CouplesCalendar, LGBTQSupport, HelpCenter, ContactUs, PrivacyPolicy, TermsOfService, Reviews,
   LeaveReview, Suggestions, Chat, PaymentSuccess, Subscription, VerifyPhone,
   Professionals, ProfessionalSignup, TherapistSignup, InfluencerSignup, MyMatchIQ, MyMatchIQAssessment, MyMatchIQBianca, Credit, FeaturePricing, MyMatchIQMeet, MyMatchIQWorkspace, O2OLStudio, Episodes: O2OLStudioEpisodes,
@@ -140,6 +142,8 @@ function PagesContent() {
           <Route path="/CouplesProfile" element={<CouplesProfile />} />
           <Route path="/CoupleActivities" element={<CoupleActivities />} />
           <Route path="/CooperativeGames" element={<CooperativeGames />} />
+          <Route path="/Pests" element={<PaidGameSessionGate game="pests" title="PEST'S"><Pests /></PaidGameSessionGate>} />
+          <Route path="/Scrabluko" element={<PaidGameSessionGate game="scrabluko" title="Scrabluko"><Scrabluko /></PaidGameSessionGate>} />
           <Route path="/WhatShouldTheyDo" element={<PaidGameSessionGate game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/Games" element={<PaidGameSessionGate game="what_should_they_do" title="What Should They Do?"><WhatShouldTheyDo /></PaidGameSessionGate>} />
           <Route path="/ScratchGame" element={<ScratchGame />} />
