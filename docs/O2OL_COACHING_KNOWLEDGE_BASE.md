@@ -154,7 +154,7 @@ Phase 1 uses deterministic local retrieval:
 - Record the knowledge-base version and retrieved entry IDs in cost/usage telemetry for auditability.
 
 ### Current KB version
-2026-10-10-v2.1
+2026-10-10-v2.2
 
 ### Phase 1 knowledge entries
 - communication-listen-before-defend
@@ -191,7 +191,7 @@ Phase 1 uses deterministic local retrieval:
 - digital-boundaries-social-media
 - ex-friendship-boundaries
 
-Current curated entry count: **37**
+Current curated entry count: **46**
 
 ### Muse Literature Pack additions
 The owner-approved Muse starter literature pack was reviewed and ingested as an additive source. Overlapping briefs deepen existing doctrine rather than creating duplicate entries. New entries added from the pack:
@@ -270,3 +270,18 @@ The knowledge lookup is local to O2OL and does not require a second AI call. GPT
 
 ### Owner authorization
 Owner approved the O2OL Coaching Knowledge Base build and the grounding of Bianca and Amora in this curated relationship-coaching layer on 2026-10-10.
+
+
+## Muse Literature Pack 2 — Phase 2 expansion
+Owner-approved Pack 2 adds nine new entries with no duplicate IDs:
+- blended-families
+- dating-after-divorce
+- second-marriages
+- grief-relationship-stress
+- caregiving-chronic-illness
+- fertility-family-planning
+- career-relocation
+- emotional-affairs
+- premarital-engagement-coaching
+
+Editorial guardrails remain unchanged: relationship guidance and education only; never therapy or diagnosis; no medical or legal advice; children first in family topics; crisis/safety guidance overrides ordinary coaching.

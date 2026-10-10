@@ -3,7 +3,7 @@
 // Phase 1 uses deterministic topic retrieval so the exact guidance is auditable.
 // Future embedding/vector retrieval can replace the scorer without changing the content contract.
 
-export const O2OL_COACHING_KB_VERSION='2026-10-10-v2.1';
+export const O2OL_COACHING_KB_VERSION='2026-10-10-v2.2';
 
 export const COACHING_KNOWLEDGE=[
   {
@@ -428,6 +428,114 @@ export const COACHING_KNOWLEDGE=[
       'Suggest simple protected connection periods such as a shared meal, walk, or 20 minutes without phones or interruptions.',
       'Encourage questions that invite emotional context rather than only logistics, while respecting a partner who does not want to talk at that moment.',
       'Do not confuse being physically near each other with meaningful connection; focused attention is the useful distinction.',
+    ],
+  },
+  {
+    id:'blended-families',
+    topics:['blended families','stepchildren','co-parenting','loyalty','pacing'],
+    keywords:['blended family','blended families','stepchild','stepchildren','stepparent','step parent','other household','mom or dad title','choose sides'],
+    source:'Muse Literature Pack 2 / Blended families',
+    guidance:[
+      'Put children first in the framing. Children did not choose the family restructure, so their pace, loyalty, and sense of security matter.',
+      'Normalize loyalty binds: a child warming to a stepparent may fear betraying another biological parent. Do not pressure affection, titles, or instant-family language.',
+      'Early on, the biological parent should generally lead discipline while the stepparent builds connection through low-pressure, consistent presence.',
+      'Keep adult conflict adult-to-adult: never use children as messengers, spies, referees, or loyalty tests. If a child describes fear or harm in either home, prioritize child safety and qualified local help.',
+    ],
+  },
+  {
+    id:'dating-after-divorce',
+    topics:['dating after divorce','readiness','grief','pacing','new beginnings'],
+    keywords:['dating after divorce','newly divorced','divorced and dating','date after divorce','ready to date','dating again','introduce kids','introducing children'],
+    source:'Muse Literature Pack 2 / Dating after divorce',
+    guidance:[
+      'Start with readiness rather than a fixed timetable. Explore whether curiosity about a new person is stronger than the urge to numb grief, prove something, or make an ex jealous.',
+      'Help distinguish missing the former partner from missing the life, identity, routine, or family structure that came with the marriage.',
+      'Encourage slower, regular early contact rather than intense fast immersion, and honesty about being newly divorced instead of performing more healing than is true.',
+      'If children are involved, keep new dating separate from family life until the relationship is steady enough for slow, careful introductions.',
+    ],
+  },
+  {
+    id:'second-marriages',
+    topics:['second marriage','remarriage','fresh start','money','estate'],
+    keywords:['second marriage','second marriages','remarry','remarriage','new spouse','previous marriage','estate','will','stepfamily finances'],
+    source:'Muse Literature Pack 2 / Second marriages',
+    guidance:[
+      'Treat the second marriage as its own relationship. Carry forward lessons from the first marriage without using the former spouse as a comparison standard.',
+      'Separate lessons from unfinished business: old grief, anger, legal ties, financial obligations, and parenting responsibilities should be handled openly rather than leaking into the new marriage.',
+      'Encourage early conversations about money, debts, obligations to children from prior relationships, household expectations, wills, and estate wishes.',
+      'Do not improvise legal or estate guidance; recommend appropriate professionals for legal, financial, or estate specifics.',
+    ],
+  },
+  {
+    id:'grief-relationship-stress',
+    topics:['grief','bereavement','loss','relationship stress','support'],
+    keywords:['grief','grieving','bereavement','loss','died','death','funeral','mourning','lost someone','anniversary of death'],
+    source:'Muse Literature Pack 2 / Grief and relationship stress',
+    guidance:[
+      'Do not treat grief as a problem to fix or a phase to rush. Partners may grieve differently and on different timelines without either person caring less.',
+      'Ask what the loss has changed practically—sleep, energy, social appetite, affection, or desire—so the couple can respond to effects rather than judge moods.',
+      'Prefer small steady presence over grand comfort: sitting nearby, handling one concrete task, or listening without filling every silence.',
+      'If grief becomes persistent inability to function, pervasive hopelessness, or severe withdrawal, encourage grief counseling, bereavement support, or healthcare help. Self-harm thoughts require immediate crisis or emergency support.',
+    ],
+  },
+  {
+    id:'caregiving-chronic-illness',
+    topics:['caregiving','chronic illness','roles','resentment','closeness'],
+    keywords:['caregiver','caregiving','chronic illness','illness','patient','care burden','respite','disabled partner','sick partner','caring for parent'],
+    source:'Muse Literature Pack 2 / Caregiving and chronic illness',
+    guidance:[
+      'Stay strictly on the relationship side: roles, communication, fairness, closeness, and support—not diagnosis, treatment, medication, or medical decisions.',
+      'Help the couple notice when the relationship has become only caregiver-and-patient, and protect some interaction that is not about symptoms, schedules, or tasks.',
+      'Name resentment and guilt without shame. Both partners may have difficult feelings they did not choose, and unspoken sacrifice can harden into disconnection.',
+      'Encourage practical outside support where available. Caregiver exhaustion, constant dread, neglect of one’s own health, or feeling at breaking point warrants real-world professional or community support.',
+    ],
+  },
+  {
+    id:'fertility-family-planning',
+    topics:['fertility','family planning','children','timing','disagreement'],
+    keywords:['fertility','family planning','have children','want kids','dont want kids','don\'t want kids','trying to conceive','ttc','infertility','adoption','when to have kids'],
+    source:'Muse Literature Pack 2 / Fertility and family-planning disagreements',
+    guidance:[
+      'Remain neutral on the decision itself. The coaching role is to improve the conversation, not decide whether, when, or how a couple should have children.',
+      'Separate the disagreement into layers: timing, desired family size, whether to have children at all, and fears about money, health, identity, or life change.',
+      'Encourage each partner to explain the future they picture and the values beneath it, then agree on a realistic time to revisit rather than relitigating the issue constantly.',
+      'Never speculate about fertility, recommend treatments, or give medical timelines. Medical questions belong with qualified healthcare professionals; high distress may also warrant fertility-informed counseling or support organizations.',
+    ],
+  },
+  {
+    id:'career-relocation',
+    topics:['relocation','career move','sacrifice','planning','resentment'],
+    keywords:['relocation','relocate','move for job','move for work','career move','new city','new state','new country','job transfer','sacrifice career'],
+    source:'Muse Literature Pack 2 / Career relocation',
+    guidance:[
+      'Treat relocation as both a place decision and a fairness decision about whose opportunity leads this season.',
+      'Make the full cost visible: salary or career gains, but also the other partner’s losses in work, seniority, friendships, family proximity, routines, and support systems.',
+      'Encourage a concrete support agreement and a review date rather than vague promises. Where realistic, a defined trial period can reduce the pressure of a forever decision.',
+      'Name resentment early. Sacrifice that stays unspoken can later become a permanent debt ledger inside the relationship.',
+    ],
+  },
+  {
+    id:'emotional-affairs',
+    topics:['emotional affair','secrecy','boundaries','honesty','trust'],
+    keywords:['emotional affair','emotional cheating','secret messages','deleted texts','confiding in someone else','work wife','work husband','first call','outside person'],
+    source:'Muse Literature Pack 2 / Emotional affairs',
+    guidance:[
+      'Focus less on winning a label argument and more on secrecy plus displaced emotional intimacy: who gets the first call, the private confiding, longing, or relationship complaints.',
+      'Useful self-checks include whether the member would be comfortable with their partner seeing the messages and whether the outside connection has become the main place their emotional life happens.',
+      'If the outside involvement is undermining the relationship, repair requires honesty, ending or radically restructuring the involvement, stopping secrecy, and redirecting emotional investment toward the relationship or non-romantic supports.',
+      'For the betrayed partner, validate that the injury can be real even without physical contact. High distress or repeated patterns may warrant a licensed therapist experienced with betrayal.',
+    ],
+  },
+  {
+    id:'premarital-engagement-coaching',
+    topics:['premarital','engagement','preparation','expectations','planning'],
+    keywords:['premarital','engaged','engagement','before marriage','getting married','fiance','fiancé','fiancee','wedding planning','marriage preparation'],
+    source:'Muse Literature Pack 2 / Premarital and engagement coaching',
+    guidance:[
+      'Frame premarital coaching as comparing blueprints before marriage rather than testing whether the couple is “good enough.”',
+      'Encourage explicit conversations about money, children, faith and values, in-laws, conflict patterns, careers, household labor, intimacy, friendships, and expectations for married life.',
+      'Treat discovered differences as useful information, not automatic incompatibility. The goal is to replace assumptions with clear agreements and realistic compromises.',
+      'Suggest writing down key agreements and revisiting them after the wedding season, when real routines begin replacing plans and assumptions.',
     ],
   },
   {

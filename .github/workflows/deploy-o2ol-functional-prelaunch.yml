@@ -182,7 +182,7 @@ jobs:
           grep -F 'const billingFeatureCode=`bianca_response_${responseLength}`' worker/mymatchiq-ai.ts >/dev/null || { echo "Bianca Credit metering missing." >&2; exit 1; }
           grep -F 'const billingFeatureCode=`amora_response_${responseLength}`' worker/ai.ts
           test -s docs/O2OL_COACHING_KNOWLEDGE_BASE.md
-          grep -F "O2OL_COACHING_KB_VERSION='2026-10-10-v2.1'" worker/coaching-knowledge.ts
+          grep -F "O2OL_COACHING_KB_VERSION='2026-10-10-v2.2'" worker/coaching-knowledge.ts
           grep -F "retrieveCoachingKnowledge" worker/mymatchiq-ai.ts
           grep -F "retrieveCoachingKnowledge" worker/ai.ts
           grep -F "healthy-red-flags" worker/coaching-knowledge.ts
@@ -196,6 +196,15 @@ jobs:
           grep -F "attachment-related-behaviors" worker/coaching-knowledge.ts
           grep -F "choosing-each-other-daily" worker/coaching-knowledge.ts
           grep -F "quality-time-presence" worker/coaching-knowledge.ts
+          grep -F "blended-families" worker/coaching-knowledge.ts
+          grep -F "dating-after-divorce" worker/coaching-knowledge.ts
+          grep -F "second-marriages" worker/coaching-knowledge.ts
+          grep -F "grief-relationship-stress" worker/coaching-knowledge.ts
+          grep -F "caregiving-chronic-illness" worker/coaching-knowledge.ts
+          grep -F "fertility-family-planning" worker/coaching-knowledge.ts
+          grep -F "career-relocation" worker/coaching-knowledge.ts
+          grep -F "emotional-affairs" worker/coaching-knowledge.ts
+          grep -F "premarital-engagement-coaching" worker/coaching-knowledge.ts
           test -s neon-migrations/2026-10-10-o2ol-coaching-consent.sql
           grep -F "coaching_consent_version" neon-migrations/2026-10-10-o2ol-coaching-consent.sql
           grep -F "coaching_consent_history" neon-migrations/2026-10-10-o2ol-coaching-consent.sql
