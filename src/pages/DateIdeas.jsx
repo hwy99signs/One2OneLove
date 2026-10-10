@@ -97,21 +97,9 @@ const translations = {
       married: "Married",
       long_term: "Long-term"
     },
-    dateIdeas: {
-      stargazing: { title: "Stargazing Picnic", description: "Pack a basket with your favorite foods, find a quiet spot away from city lights, and spend the evening watching the stars together.", difficulty: "Easy", duration: "2-3 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      cookingClass: { title: "Cooking Class Together", description: "Take a cooking class and learn to make a new cuisine together. Then enjoy the delicious meal you created!", difficulty: "Medium", duration: "3-4 hours", location_type: "activity_center", occasion: "regular", relationship_stage: "any" },
-      coffeeHopping: { title: "Coffee Shop Hopping", description: "Visit 3-4 local coffee shops, try different drinks at each, and enjoy conversations in cozy atmospheres.", difficulty: "Easy", duration: "3-4 hours", location_type: "urban", occasion: "regular", relationship_stage: "any" },
-      movieMarathon: { title: "Movie Marathon at Home", description: "Create a cozy fort with blankets and pillows, make popcorn, and binge-watch your favorite movie series.", difficulty: "Easy", duration: "4-6 hours", location_type: "home", occasion: "regular", relationship_stage: "any" },
-      liveMusic: { title: "Live Music Night", description: "Find a local venue with live music, enjoy the performance together, and maybe even dance a little!", difficulty: "Easy", duration: "3-4 hours", location_type: "cultural", occasion: "special", relationship_stage: "any" },
-      hiking: { title: "Hiking Adventure", description: "Choose a scenic trail, pack water and snacks, and enjoy nature together while getting some exercise.", difficulty: "Medium", duration: "3-5 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      beachSunset: { title: "Beach Sunset", description: "Visit the beach in the evening, walk along the shore, and watch the sunset together.", difficulty: "Easy", duration: "2-3 hours", location_type: "nature", occasion: "regular", relationship_stage: "any" },
-      paintSip: { title: "Paint and Sip Night", description: "Set up at home with canvases, paints, wine, and create artwork together while enjoying each other's company.", difficulty: "Easy", duration: "2-3 hours", location_type: "home", occasion: "regular", relationship_stage: "any" },
-      exploreNeighborhood: { title: "Explore a New Neighborhood", description: "Pick a neighborhood you've never been to and explore together - try local shops, cafes, and restaurants.", difficulty: "Easy", duration: "4-5 hours", location_type: "urban", occasion: "regular", relationship_stage: "any" }
-    }
   }
 };
 
-const OPEN_HOUSE_OPEN_DATE_IDS = new Set([1, 2, 4, 6, 7, 11, 15, 16, 19, 27, 34, 36, 42]);
 
 const OPEN_HOUSE_COPY = {
   en: {
