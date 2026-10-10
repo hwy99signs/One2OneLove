@@ -90,7 +90,7 @@ function Metric({ icon: Icon, label, value, note, tone='rose', onClick }) {
 function Panel({ title, subtitle, children, className='' }) {
   return <section className={cx('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm',className)}><div className="mb-4"><h3 className="font-bold text-slate-900">{title}</h3>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>{children}</section>;
 }
-function TableShell({ children }) { return <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">{children}</div>; }
+function TableShell({ children, scrollHeight }) { if (!scrollHeight) return <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">{children}</div>; return <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 [&_thead_th]:bg-slate-50" style={{ maxHeight: scrollHeight }}>{children}</div>; }
 function Empty({ children='No records yet.' }) { return <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm text-slate-500">{children}</div>; }
 function Heading({ title, subtitle }) { return <div className="mb-5"><h2 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}</div>; }
 
@@ -839,7 +839,7 @@ export default function Admin() {
                 {selectedMemberIds.length>0&&<button onClick={()=>setSelectedMemberIds([])} className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
               </div>
             </div>
-            <TableShell><table className="min-w-full text-sm">
+            <TableShell scrollHeight={1000}><table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>
                 <th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all visible members" checked={allVisibleSelected} onChange={toggleVisibleSelection}/></th><th className="px-4 py-3">Member</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Plan</th><th className="px-4 py-3">Account</th><th className="px-4 py-3">Joined</th><th className="px-4 py-3 text-right">Actions</th>
               </tr></thead>
@@ -895,7 +895,7 @@ export default function Admin() {
             </table></TableShell>
 
             <Panel title="Visitor Registry / Audience Intelligence" subtitle="Persistent visitor history. Anonymous browser activity remains anonymous until the visitor voluntarily creates an account; then the existing visitor ID is linked to that Registered Free member." className="mt-6">
-              {visitorRows.length ? <TableShell><table className="min-w-full text-sm">
+              {visitorRows.length ? <TableShell scrollHeight={965}><table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-4 py-3">Visitor / Member</th>
