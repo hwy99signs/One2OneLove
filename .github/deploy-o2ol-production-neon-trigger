@@ -1,7 +1,7 @@
-o2ol-production-studio-routing-home-episode2-fix-2026-10-09T23:48Z
-certified_source=72dd0b56dbbf20538c6e6e1b690da976e0b4f411
-promotion_merge=599f131cfbc9af4cd214b97c3f05af8290027285
-prelaunch_deployment=cloudflare:7f02cf89-ca51-4bc4-9366-ad1a3d7f4eaa
-prelaunch_browser_qa=38006026268
-prelaunch_browser_result=65-passed-0-failed
-git_restore_branch=rollback/o2ol-production-before-studio-routing-home-fix-20261009
+o2ol-production-home-episode2-video-episode1-tab-fix-2026-10-09T18:58-05:00
+certified_source=8af309729d43f7509486930cbe4d03ca79242fa0
+promotion_merge=9a424bb5a698d6f68c17db65cd6fa14dcf8ee08c
+prelaunch_deployment=cloudflare:7d3097af-51e0-4dee-93f7-a17838a7a603
+prelaunch_browser_qa=38007261449
+prelaunch_browser_result=66-passed-0-failed
+git_restore_branch=rollback/o2ol-production-before-home-episode2-video-tab-fix-20261009
