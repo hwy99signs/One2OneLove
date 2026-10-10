@@ -12,6 +12,8 @@ const EPISODES=[
     chatRoom:'studio-who-pays-for-the-first-date',
     posterPath:null,
     releasedAt:'2026-10-09T22:00:00.000Z',
+    unlockFeatureCode:'studio_episode_unlock',
+    unlockPriceCents:100,
   },
   {
     id:'season-1-episode-1',
@@ -71,14 +73,50 @@ async function verifiedFreeMember(request,env){
     return Boolean(row?.is_active!==false&&row?.phone_verified===true);
   }finally{await db.end();}
 }
+async function unlockState(request,env,episode){
+  // Paywalled episodes only: has this signed-in user unlocked the episode
+  // with Credit, and is the account an admin (owner bypass)?
+  const result={unlocked:false,isAdmin:false};
+  if(!episode.unlockFeatureCode)return result;
+  const user=await sessionUser(request,env).catch(()=>null);
+  if(!user?.id||!env.HYPERDRIVE?.connectionString)return result;
+  const db=new Client({connectionString:env.HYPERDRIVE.connectionString});
+  await db.connect();
+  try{
+    try{
+      const row=(await db.query(
+        `SELECT EXISTS(SELECT 1 FROM public.o2ol_token_content_unlocks
+                        WHERE user_id=$1::uuid AND feature_code=$2 AND content_key=$3) AS unlocked`,
+        [user.id,episode.unlockFeatureCode,episode.id],
+      )).rows[0];
+      result.unlocked=Boolean(row?.unlocked);
+    }catch(_){/* unlocks table may not exist yet */}
+    try{
+      const roleRow=(await db.query(
+        `SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,
+        [user.id],
+      )).rows[0];
+      result.isAdmin=roleRow?.role==='admin';
+    }catch(_){}
+    return result;
+  }finally{await db.end();}
+}
 async function accessState(request,env,episode){
   const member=await verifiedFreeMember(request,env).catch(()=>false);
   const availableAt=publicAvailableAt(episode);
-  const publicAvailable=Date.now()>=availableAt.getTime();
+  const paywalled=Boolean(episode.unlockPriceCents);
+  // Paywalled episodes never open to the public for free — the Credit
+  // unlock is the only door (owner call, 2026-10-09).
+  const publicAvailable=!paywalled&&Date.now()>=availableAt.getTime();
+  const {unlocked,isAdmin}=await unlockState(request,env,episode).catch(()=>({unlocked:false,isAdmin:false}));
+  const canWatch=paywalled?(unlocked||isAdmin):(member||publicAvailable);
   return {
     member,
     publicAvailable,
-    canWatch:member||publicAvailable,
+    canWatch,
+    unlocked,
+    isAdmin,
+    unlockPriceCents:episode.unlockPriceCents||null,
     publicAvailableAt:availableAt.toISOString(),
     releasedAt:episode.releasedAt,
   };
@@ -114,18 +152,16 @@ export async function handleStudioMediaRequest(request,env,url){
 
   if(url.pathname==='/api/studio/episodes'){
     if(request.method!=='GET')return json({ok:false,error:{code:'method_not_allowed',message:'Method not allowed.'}},405);
-    const member=await verifiedFreeMember(request,env).catch(()=>false);
     const episodes=await Promise.all(EPISODES.map(async episode=>{
-      const availableAt=publicAvailableAt(episode);
-      const publicAvailable=Date.now()>=availableAt.getTime();
-      const canWatch=member||publicAvailable;
+      const access=await accessState(request,env,episode);
       const mediaReady=Boolean(bucket&&await bucket.head(episode.key).catch(()=>null));
       return {
         id:episode.id,season:episode.season,episode:episode.episode,title:episode.title,
-        releasedAt:episode.releasedAt,publicAvailableAt:availableAt.toISOString(),
-        publicAvailable,memberAvailable:member,
-        canWatch:canWatch&&mediaReady,mediaReady,
-        mediaPath:canWatch&&mediaReady?episode.path:null,
+        releasedAt:episode.releasedAt,publicAvailableAt:access.publicAvailableAt,
+        publicAvailable:access.publicAvailable,memberAvailable:access.member,
+        unlockPriceCents:access.unlockPriceCents,unlocked:access.unlocked,
+        canWatch:access.canWatch&&mediaReady,mediaReady,
+        mediaPath:access.canWatch&&mediaReady?episode.path:null,
         chatRoom:episode.chatRoom,
         posterPath:episode.posterPath,
       };
@@ -140,7 +176,9 @@ export async function handleStudioMediaRequest(request,env,url){
   const access=await accessState(request,env,episode);
   if(!access.canWatch){
     return error(
-      'Create a free verified One2OneLove account to watch this episode now. The public replay opens seven days after release.',
+      episode.unlockPriceCents
+        ? 'This episode is a $1 Credit unlock. Sign in and unlock it in O2OL Studio to watch — Episode 1 is always free.'
+        : 'Create a free verified One2OneLove account to watch this episode now. The public replay opens seven days after release.',
       403,
       {'x-o2ol-public-available-at':access.publicAvailableAt},
     );
@@ -159,10 +197,10 @@ export async function handleStudioMediaRequest(request,env,url){
   head.writeHttpMetadata(headers);
   headers.set('content-type',head.httpMetadata?.contentType||'video/mp4');
   headers.set('accept-ranges','bytes');
-  headers.set('cache-control',access.member?'private, max-age=300':'public, max-age=3600');
+  headers.set('cache-control',access.member||access.unlocked||access.isAdmin?'private, max-age=300':'public, max-age=3600');
   headers.set('etag',head.httpEtag);
   headers.set('x-content-type-options','nosniff');
-  headers.set('x-o2ol-access',access.member?'free-member':'public-replay');
+  headers.set('x-o2ol-access',access.isAdmin?'admin':access.unlocked?'credit-unlock':access.member?'free-member':'public-replay');
 
   if(request.method==='HEAD'){
     headers.set('content-length',String(head.size));

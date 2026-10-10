@@ -817,7 +817,8 @@ async function ensureContentUnlockSchema(db){
     VALUES
       ('date_idea_unlock','Date Idea unlock',1,'item',true,true),
       ('podcast_episode_unlock','Podcast episode unlock',1,'episode',true,true),
-      ('premium_content_unlock','Premium content unlock',1,'item',true,true)
+      ('premium_content_unlock','Premium content unlock',1,'item',true,true),
+      ('studio_episode_unlock','Studio episode unlock',100,'episode',true,false)
     ON CONFLICT(feature_code) DO NOTHING`);
 }
 
@@ -839,7 +840,7 @@ async function unlockTokenContent(db,auth,input){
   const featureCode=String(input?.featureCode||'').trim();
   const contentKey=String(input?.contentKey||'').trim().slice(0,180);
   if(!featureCode||!contentKey)throw Object.assign(new Error('Feature and content key are required.'),{status:400,code:'unlock_target_required'});
-  const allowed=new Set(['date_idea_unlock','podcast_episode_unlock','premium_content_unlock']);
+  const allowed=new Set(['date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock']);
   if(!allowed.has(featureCode))throw Object.assign(new Error('This content unlock type is not available.'),{status:400,code:'unlock_feature_invalid'});
 
   const existing=(await db.query(
