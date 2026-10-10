@@ -430,7 +430,7 @@ jobs:
           grep -F "Report a Problem" src/pages/Suggestions.jsx
           grep -F "SUPPORT REQUEST" src/pages/ContactUs.jsx
           grep -F 'path="*" element={<NotFound />}' src/pages/index.jsx
-          grep -F 'FeatureUnavailable feature="Win a Cruise"' src/pages/index.jsx
+          grep -F 'FeatureUnavailable feature="Developer"' src/pages/index.jsx
 
           # Studio / Chat cleanup.
           grep -F 'preload="auto"' src/pages/O2OLStudio.jsx
