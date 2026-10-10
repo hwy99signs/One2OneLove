@@ -238,9 +238,11 @@ async function createContent(db, env, auth, input) {
   const partnerName = cleanText(input?.partnerName, 200, false);
   const language = cleanText(input?.language || 'en', 20, true);
   const requestId = String(input?.requestId || crypto.randomUUID()).slice(0,120);
-  const reservation = await reserveTokenCharge(db,auth.user.id,'ai_content_generation',{
+  const isLoveNote = input?.purpose === 'love_note' && String(contentType).toLowerCase() === 'lovenote';
+  const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';
+  const reservation = await reserveTokenCharge(db,auth.user.id,billingFeatureCode,{
     idempotencyKey:`ai_content:${auth.user.id}:${requestId}`,
-    metadata:{request_id:requestId,content_type:contentType},
+    metadata:{request_id:requestId,content_type:contentType,purpose:isLoveNote?'love_note':'general'},
   });
 
   const lengthGuide = { short: '50-100 words', medium: '150-250 words', long: '300-400 words' }[length] || '150-250 words';
@@ -266,7 +268,7 @@ async function createContent(db, env, auth, input) {
     await consumeTokenReservation(db,reservation.id);
     await recordOpenAICostEvent(db,env,{
       userId:auth.user.id,
-      featureCode:'ai_content_generation',
+      featureCode:billingFeatureCode,
       payload:generated.payload,
       model:generated.model,
       inputText:details||'',
@@ -286,7 +288,7 @@ async function createContent(db, env, auth, input) {
   }catch(error){
     await releaseTokenReservation(db,reservation.id,'content_persistence_failed').catch(()=>{});
     await recordOpenAICostEvent(db,env,{
-      userId:auth.user.id,featureCode:'ai_content_generation',payload:generated.payload,model:generated.model,
+      userId:auth.user.id,featureCode:billingFeatureCode,payload:generated.payload,model:generated.model,
       inputText:details||'',outputText:generated.text,contextText:instructions+'\n\n'+prompt,
       customerTokensCharged:0,metadata:{request_id:requestId,content_type:contentType,delivery_failed:true},
     }).catch(()=>{});
