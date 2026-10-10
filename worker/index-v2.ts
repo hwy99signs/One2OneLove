@@ -8,6 +8,7 @@ import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest, handlePresencePing } from './feature-usage';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
+import { handleLoveNoteLibraryRequest } from './love-note-library';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
 import { handleLaunchAuthRequest } from './launch-auth';
 import { handleProfessionalSignup } from './professional-signup';
@@ -235,6 +236,10 @@ export default {
       if (gate) return gate;
       const response = await handleTokenAdminRequest(request, env, url);
       if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/love-note-library')) {
+      return handleLoveNoteLibraryRequest(request,env,url);
     }
 
     const identityGate = await enforceLaunchIdentity(request, env, url);
