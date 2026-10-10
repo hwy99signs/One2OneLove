@@ -207,39 +207,43 @@ export default function ClickToVoteCard({ language = 'en' }) {
     setIndex((index + 1) % questions.length);
   };
 
-  // Compact presentation (owner clarification, 2026-10-10): the card
-  // itself stays as designed; the full-width white strip BEHIND it is
-  // gone (this section renders no background at all), and the card is
-  // roughly half its original height — the Next tab rides on the eyebrow
-  // row, the question and choices are set tighter, the comment line slim.
+  // Owner sketch (2026-10-10): ONE slim band - no white card behind or
+  // inside the strip. The band is a dark translucent burgundy that stays
+  // legible over the hero photo. Inside it: a compact question line,
+  // then a single row in the sketch's order - choice pills A-D, the
+  // comment box, and the Next Question tab at the right end. The row
+  // wraps gracefully on narrow screens.
   if (loading) {
     return (
       <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
-        <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/25 bg-white/70 px-4 py-2.5 text-[13px] font-semibold text-[#7f1d2d] shadow-sm">{t.loading}</div>
+        <div className="mx-auto max-w-7xl rounded-xl border border-amber-300/25 bg-[#2b060e]/95 px-4 py-2 text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
       </section>
     );
   }
 
   return (
     <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
-      <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/30 bg-[#7f1d2d]/[.08] px-4 py-2.5 shadow-sm sm:px-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#7f1d2d]">🗳️ {t.eyebrow}</div>
-          {!allVoted && <div className="text-[11px] font-bold text-[#7f1d2d]/70">{t.questionOf(index + 1, questions.length)}</div>}
-        </div>
-
+      <div className="mx-auto max-w-7xl rounded-xl border border-amber-300/25 bg-gradient-to-r from-[#2b060e]/95 via-[#4a0c17]/95 to-[#2b060e]/95 px-3 py-2 shadow-md backdrop-blur-sm sm:px-4">
         {allVoted ? (
-          <div className="mt-1.5 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-lg font-black tracking-tight text-[#5c0e1a] sm:text-xl">{t.doneTitle}</h2>
-              <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-slate-700">{t.doneBody}</p>
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</div>
+              <h2 className="mt-0.5 text-base font-black tracking-tight text-[#f7f2e7] sm:text-lg">{t.doneTitle}</h2>
+              <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-[#f7f2e7]/75">{t.doneBody}</p>
             </div>
-            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
+            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#7f1d2d] to-[#9c2436] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
           </div>
         ) : question && (
           <>
-            <h2 className="mt-1.5 text-lg font-black leading-tight tracking-tight text-[#5c0e1a] sm:text-xl">{pick(question.question)}</h2>
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</span>
+              <h2 className="min-w-0 flex-1 text-[15px] font-black leading-snug tracking-tight text-[#f7f2e7] sm:text-base">{pick(question.question)}</h2>
+              <span className="text-[11px] font-bold text-[#f7f2e7]/60">{t.questionOf(index + 1, questions.length)}</span>
+            </div>
+
+            {/* Owner sketch (2026-10-10): ONE row - pills A-D, then the
+                comment box, then the Next Question tab at the right end. */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {question.choices.map((choice, i) => {
                 const selected = myChoice === choice.key || pendingChoice === choice.key;
                 return (
@@ -248,51 +252,46 @@ export default function ClickToVoteCard({ language = 'en' }) {
                     type="button"
                     disabled={casting}
                     onClick={() => handleChoice(choice.key)}
-                    className={`rounded-lg border px-3 py-1.5 text-left text-[13px] font-extrabold shadow-sm transition disabled:opacity-60 ${selected ? 'border-[#7f1d2d] bg-[#7f1d2d] text-[#f7f2e7]' : 'border-[#7f1d2d]/40 bg-white/80 text-[#5c0e1a] hover:border-[#7f1d2d] hover:bg-white'}`}
+                    className={`flex-none rounded-full border px-2.5 py-1 text-left text-xs font-extrabold shadow-sm transition disabled:opacity-60 ${selected ? 'border-amber-300 bg-amber-400 text-[#3d0a13]' : 'border-[#f7f2e7]/35 bg-white/10 text-[#f7f2e7] hover:border-amber-300/70 hover:bg-white/20'}`}
                   >
-                    <span className={`mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-black ${selected ? 'bg-white/20 text-[#f7f2e7]' : 'bg-[#7f1d2d]/10 text-[#7f1d2d]'}`}>{String.fromCharCode(65 + i)}</span>
+                    <span className={`mr-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-black ${selected ? 'bg-[#3d0a13]/15 text-[#3d0a13]' : 'bg-white/15 text-amber-200'}`}>{String.fromCharCode(65 + i)}</span>
                     {pick(choice.labels)}
                     {myChoice === choice.key && <span className="ml-1.5 text-[10px] font-black uppercase tracking-wide opacity-80">· {t.yourPick}</span>}
                   </button>
                 );
               })}
-            </div>
-
-            {/* Owner layout (2026-10-10): the Next voting question tab
-                rides on the SAME line as the comment line — no extra row. */}
-            <div className="mt-2 flex items-center gap-2">
               {isMember && !flash ? (
                 <input
                   value={comment}
                   onChange={(e) => setComment(e.target.value.slice(0, 500))}
                   placeholder={t.commentPlaceholder}
-                  className="min-w-0 flex-1 rounded-lg border border-[#7f1d2d]/30 bg-white/80 px-3 py-1.5 text-[13px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7f1d2d]/60"
+                  className="min-w-[10rem] flex-1 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[13px] text-[#f7f2e7] outline-none placeholder:text-[#f7f2e7]/45 focus:border-amber-300/70"
                 />
               ) : flash ? (
-                <p className="min-w-0 flex-1 text-[13px] font-black text-[#7f1d2d]" role="status">{flash}</p>
+                <p className="min-w-[10rem] flex-1 text-[13px] font-black text-amber-300" role="status">{flash}</p>
               ) : (
-                <span className="min-w-0 flex-1" />
+                <span className="min-w-[10rem] flex-1" />
               )}
-              <button type="button" onClick={handleNext} className="shrink-0 rounded-t-md rounded-b-lg border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
+              <button type="button" onClick={handleNext} className="flex-none rounded-t-md rounded-b-lg border border-amber-400/70 bg-gradient-to-br from-[#7f1d2d] via-[#9c2436] to-[#7f1d2d] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
                 {t.next} →
               </button>
             </div>
-            {error && <p className="mt-2 text-[13px] font-bold text-red-700" role="alert">{error}</p>}
+            {error && <p className="mt-1.5 text-[13px] font-bold text-red-300" role="alert">{error}</p>}
 
             {!isMember && pendingChoice && (
-              <div className="mt-2 flex flex-col gap-2 rounded-xl border border-[#7f1d2d]/25 bg-white/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-1.5 flex flex-col gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[13px] font-black text-[#5c0e1a]">{t.joinTitle}</p>
-                  <p className="text-[13px] text-slate-600">{t.joinBody}</p>
+                  <p className="text-[13px] font-black text-[#f7f2e7]">{t.joinTitle}</p>
+                  <p className="text-[13px] text-[#f7f2e7]/75">{t.joinBody}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
-                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#7f1d2d]/40 bg-white px-3.5 py-2 text-[13px] font-black text-[#5c0e1a]">{t.signIn}</button>
+                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#7f1d2d] to-[#9c2436] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
+                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#f7f2e7]/40 bg-transparent px-3.5 py-2 text-[13px] font-black text-[#f7f2e7]">{t.signIn}</button>
                 </div>
               </div>
             )}
             {isMember && pendingChoice && !myChoice && (
-              <p className="mt-1.5 text-[13px] font-bold text-[#7f1d2d]">{t.castNow}</p>
+              <p className="mt-1.5 text-[13px] font-bold text-amber-300">{t.castNow}</p>
             )}
           </>
         )}
