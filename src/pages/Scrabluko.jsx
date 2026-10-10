@@ -24,7 +24,7 @@ export default function Scrabluko() {
             {t.back}
           </Link>
         </div>
-        <img src="/game-cards/card-scrabluko.jpg" alt="game card" className="mb-4 block h-40 w-full rounded-2xl object-cover object-center shadow-lg ring-1 ring-black/5 sm:h-48" />
+        <img src="/game-cards/card-scrabluko.jpg" alt="game card" className="mx-auto mb-5 block w-full max-w-2xl rounded-2xl shadow-lg ring-1 ring-black/5" />
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-amber-100">
           <iframe title="Scrabluko" src="/games-src/scrabluko.html" className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
         </div>
