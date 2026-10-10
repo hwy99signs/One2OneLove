@@ -225,14 +225,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
       <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/30 bg-[#7f1d2d]/[.08] px-4 py-2.5 shadow-sm sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#7f1d2d]">🗳️ {t.eyebrow}</div>
-          <div className="flex items-center gap-3">
-            {!allVoted && <div className="text-[11px] font-bold text-[#7f1d2d]/70">{t.questionOf(index + 1, questions.length)}</div>}
-            {!allVoted && question && (
-              <button type="button" onClick={handleNext} className="rounded-t-md rounded-b-lg border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
-                {t.next} →
-              </button>
-            )}
-          </div>
+          {!allVoted && <div className="text-[11px] font-bold text-[#7f1d2d]/70">{t.questionOf(index + 1, questions.length)}</div>}
         </div>
 
         {allVoted ? (
@@ -265,16 +258,25 @@ export default function ClickToVoteCard({ language = 'en' }) {
               })}
             </div>
 
-            {isMember && !flash && (
-              <input
-                value={comment}
-                onChange={(e) => setComment(e.target.value.slice(0, 500))}
-                placeholder={t.commentPlaceholder}
-                className="mt-2 w-full rounded-lg border border-[#7f1d2d]/30 bg-white/80 px-3 py-1.5 text-[13px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7f1d2d]/60"
-              />
-            )}
-
-            {flash && <p className="mt-2 text-[13px] font-black text-[#7f1d2d]" role="status">{flash}</p>}
+            {/* Owner layout (2026-10-10): the Next voting question tab
+                rides on the SAME line as the comment line — no extra row. */}
+            <div className="mt-2 flex items-center gap-2">
+              {isMember && !flash ? (
+                <input
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value.slice(0, 500))}
+                  placeholder={t.commentPlaceholder}
+                  className="min-w-0 flex-1 rounded-lg border border-[#7f1d2d]/30 bg-white/80 px-3 py-1.5 text-[13px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7f1d2d]/60"
+                />
+              ) : flash ? (
+                <p className="min-w-0 flex-1 text-[13px] font-black text-[#7f1d2d]" role="status">{flash}</p>
+              ) : (
+                <span className="min-w-0 flex-1" />
+              )}
+              <button type="button" onClick={handleNext} className="shrink-0 rounded-t-md rounded-b-lg border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
+                {t.next} →
+              </button>
+            </div>
             {error && <p className="mt-2 text-[13px] font-bold text-red-700" role="alert">{error}</p>}
 
             {!isMember && pendingChoice && (
