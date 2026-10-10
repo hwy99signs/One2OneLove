@@ -111,7 +111,7 @@ try{
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
-    if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows Episode 2 with Episode 1 tab');
+    if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows Episode 2 video with Episode 1 tab');
     else fail('Homepage Studio copy is incorrect',body.slice(-2200));
     const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-2"]');
     const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
