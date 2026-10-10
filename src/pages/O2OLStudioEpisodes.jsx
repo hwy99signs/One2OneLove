@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Film, Loader2, LockKeyhole, PlayCircle } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
+import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 
 const COPY={
@@ -33,6 +33,13 @@ export default function O2OLStudioEpisodes(){
   const [unlockingId,setUnlockingId]=useState(null);
   const [unlockErrors,setUnlockErrors]=useState({});
   const [confirmEpisode,setConfirmEpisode]=useState(null);
+  const [creditBalance,setCreditBalance]=useState(null);
+
+  useEffect(()=>{
+    let active=true;
+    if(isAuthenticated)getTokenWallet().then(data=>{if(active)setCreditBalance(Number(data?.wallet?.balance||0));}).catch(()=>{});
+    return()=>{active=false};
+  },[isAuthenticated,refreshKey]);
 
   useEffect(()=>{
     let active=true;
@@ -51,6 +58,7 @@ export default function O2OLStudioEpisodes(){
     try{
       await unlockTokenContent({featureCode:'studio_episode_unlock',contentKey:ep.id,source:'o2ol_studio_episodes',idempotencyKey:`studio:${user.id}:${ep.id}`});
       setRefreshKey(k=>k+1);
+      getTokenWallet().then(data=>setCreditBalance(Number(data?.wallet?.balance||0))).catch(()=>{});
     }catch(error){
       if(isTokensRequiredError(error)){
         const info=tokenRequiredDetails(error);
@@ -102,7 +110,8 @@ export default function O2OLStudioEpisodes(){
       open={Boolean(confirmEpisode)}
       title={confirmEpisode?.title ? 'Unlock '+confirmEpisode.title : 'Unlock O2OL Studio Episode'}
       priceCents={Number(confirmEpisode?.unlockPriceCents||100)}
-      description="Pay once and watch anytime from this account."
+      terms="One-time unlock — yours forever."
+      balanceCents={creditBalance}
       busy={Boolean(confirmEpisode&&unlockingId===confirmEpisode.id)}
       error={confirmEpisode ? (unlockErrors[confirmEpisode.id]||'') : ''}
       onUnlock={()=>confirmEpisode&&handleUnlock(confirmEpisode)}
