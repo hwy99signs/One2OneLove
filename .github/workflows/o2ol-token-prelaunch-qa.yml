@@ -68,7 +68,16 @@ jobs:
           grep -F '<Navigate to="/Credit" replace' src/pages/Subscription.jsx
           grep -F 'navigate("/SignUp")' src/pages/Layout.jsx
           grep -F "legacy_subscription_model_retired" worker/billing.ts src/lib/stripeService.js
-          grep -F "return false;" worker/api-entitlements.ts
+          grep -F "recurring tiers are retired" worker/api-entitlements.ts
+          grep -F "member identity only" worker/api-entitlements.ts
+          if grep -REn "billing_required|plan_upgrade_required|subscription_plan|subscription_status|stripe_subscription_id|active One2OneLove membership|membership or higher is required" worker/api-entitlements.ts; then
+            echo "Legacy recurring-membership entitlement gate survived." >&2
+            exit 1
+          fi
+          if grep -RInF "An active One2OneLove membership is required to use this protected feature" src worker 2>/dev/null; then
+            echo "Retired active-membership gate copy survived in runtime source." >&2
+            exit 1
+          fi
           grep -F "method === 'GET' && path.startsWith('/api/community-chat')" worker/identity-gate.ts
           grep -F "PUBLIC_DELAY_MS=7*24*60*60*1000" worker/studio-media.ts
           grep -F "custom_credit" src/pages/Credit.jsx src/lib/tokenService.js worker/o2ol-tokens.ts
