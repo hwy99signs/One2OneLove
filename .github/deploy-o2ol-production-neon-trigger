@@ -1,4 +1,4 @@
-o2ol-voting-reminder-tab-2026-10-10
-fix_merge=78df05b3a2fcd5fc806b8cb7422e7c0ceb9a75a6
-fixes=voting-reminder-tab
-source_pr=112
+O2OL_PRODUCTION_DEPLOY_TRIGGER
+fix_merge=99fb029647b05460d99ced9dd0327e333e26a6d1
+fixes=Click-to-Vote: homepage card replaces the expired Open House banner; choice ballots post into chat rooms with Amora host responses; results in the Chat burgundy tab.
+source_pr=113
