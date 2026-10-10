@@ -221,7 +221,7 @@ jobs:
           grep -F "accessModel:'free_tokens'" worker/ai.ts
           grep -F 'const billingFeatureCode=`amora_response_${responseLength}`' worker/ai.ts
           test -s docs/O2OL_COACHING_KNOWLEDGE_BASE.md
-          grep -F "O2OL_COACHING_KB_VERSION='2026-10-10-v2'" worker/coaching-knowledge.ts
+          grep -F "O2OL_COACHING_KB_VERSION='2026-10-10-v2.1'" worker/coaching-knowledge.ts
           grep -F "retrieveCoachingKnowledge" worker/mymatchiq-ai.ts
           grep -F "retrieveCoachingKnowledge" worker/ai.ts
           grep -F "healthy-red-flags" worker/coaching-knowledge.ts
@@ -231,6 +231,10 @@ jobs:
           grep -F "communication-stonewalling-flooding" worker/coaching-knowledge.ts
           grep -F "digital-boundaries-social-media" worker/coaching-knowledge.ts
           grep -F "ex-friendship-boundaries" worker/coaching-knowledge.ts
+          grep -F "love-languages-flexible" worker/coaching-knowledge.ts
+          grep -F "attachment-related-behaviors" worker/coaching-knowledge.ts
+          grep -F "choosing-each-other-daily" worker/coaching-knowledge.ts
+          grep -F "quality-time-presence" worker/coaching-knowledge.ts
           grep -F "const billingFeatureCode = isLoveNote ? 'love_note_ai' : 'ai_content_generation';" worker/ai.ts
           grep -F "reserveTokenCharge(db,auth.user.id,billingFeatureCode" worker/ai.ts
           grep -F "'love_note_ai','Love Note AI generation',25" neon-migrations/2026-10-10-o2ol-final-payg-pricing.sql
