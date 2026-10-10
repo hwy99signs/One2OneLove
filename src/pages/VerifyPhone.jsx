@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Loader2, MessageSquareText, Phone, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Loader2, LogOut, MessageSquareText, Phone, ShieldCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,8 @@ const translations = {
     invalidPhone: 'Enter a valid mobile number with country code.',
     invalidCode: 'Enter the 6-digit code from the SMS.',
     unavailable: 'Phone verification is not available yet. Please try again after phone verification is enabled.',
+    signOut: 'Sign Out Instead',
+    doorNote: 'Member features stay locked until your phone is verified. Verify now, or sign out and browse as a guest.',
   },
   es: {
     title: 'Verifica Tu Teléfono',
@@ -43,6 +45,8 @@ const translations = {
     invalidPhone: 'Ingresa un número móvil válido con código de país.',
     invalidCode: 'Ingresa el código de 6 dígitos del SMS.',
     unavailable: 'La verificación telefónica aún no está disponible. Inténtalo cuando se habilite.',
+    signOut: 'Cerrar Sesión',
+    doorNote: 'Las funciones para miembros permanecerán bloqueadas hasta que verifiques tu teléfono. Verifícalo ahora, o cierra sesión y navega como invitado.',
   },
   fr: {
     title: 'Vérifiez Votre Téléphone',
@@ -60,6 +64,8 @@ const translations = {
     invalidPhone: 'Saisissez un numéro mobile valide avec indicatif du pays.',
     invalidCode: 'Saisissez le code à 6 chiffres du SMS.',
     unavailable: 'La vérification téléphonique n’est pas encore disponible. Réessayez lorsqu’elle sera activée.',
+    signOut: 'Se Déconnecter',
+    doorNote: 'Les fonctions pour membres restent verrouillées jusqu’à la vérification de votre téléphone. Vérifiez maintenant, ou déconnectez-vous et naviguez en invité.',
   },
   it: {
     title: 'Verifica il Tuo Telefono',
@@ -77,6 +83,8 @@ const translations = {
     invalidPhone: 'Inserisci un numero mobile valido con prefisso internazionale.',
     invalidCode: 'Inserisci il codice di 6 cifre ricevuto via SMS.',
     unavailable: 'La verifica telefonica non è ancora disponibile. Riprova quando sarà abilitata.',
+    signOut: 'Esci',
+    doorNote: 'Le funzioni per i membri restano bloccate finché il tuo telefono non è verificato. Verificalo ora, oppure esci e naviga come ospite.',
   },
   de: {
     title: 'Telefonnummer Bestätigen',
@@ -94,6 +102,8 @@ const translations = {
     invalidPhone: 'Geben Sie eine gültige Mobilnummer mit Landesvorwahl ein.',
     invalidCode: 'Geben Sie den 6-stelligen SMS-Code ein.',
     unavailable: 'Die Telefonbestätigung ist noch nicht verfügbar. Versuchen Sie es erneut, nachdem sie aktiviert wurde.',
+    signOut: 'Stattdessen Abmelden',
+    doorNote: 'Mitgliederfunktionen bleiben gesperrt, bis Ihr Telefon bestätigt ist. Bestätigen Sie jetzt, oder melden Sie sich ab und surfen Sie als Gast.',
   },
 };
 
@@ -109,7 +119,7 @@ function nextRoute(user, redirect = null) {
 }
 
 export default function VerifyPhone() {
-  const { user, isAuthenticated, isLoading, refreshUserProfile } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshUserProfile, logout } = useAuth();
   const { currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -146,6 +156,13 @@ export default function VerifyPhone() {
   const unavailable = error => {
     if ([404, 405, 503].includes(error?.status)) return t.unavailable;
     return error?.message || t.unavailable;
+  };
+
+  const signOutInstead = async () => {
+    // The honest exit from the verification door: signing out ends the
+    // member session. There is no "skip" into an unverified member account.
+    await logout();
+    navigate('/SignIn', { replace: true });
   };
 
   const sendCode = async () => {
@@ -243,6 +260,13 @@ export default function VerifyPhone() {
               <Button type="button" variant="outline" onClick={sendCode} disabled={busy} className="w-full">{t.resend}</Button>
             </form>
           )}
+
+          <div className="mt-8 border-t border-gray-100 pt-5 text-center">
+            <p className="text-sm text-gray-500">{t.doorNote}</p>
+            <Button type="button" variant="ghost" onClick={signOutInstead} className="mt-2 font-bold text-purple-700">
+              <LogOut className="mr-2 h-4 w-4" />{t.signOut}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

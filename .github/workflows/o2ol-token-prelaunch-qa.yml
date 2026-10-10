@@ -346,6 +346,39 @@ jobs:
             exit 1
           fi
 
+      - name: Verify phone-verification front door and Credit wallet honesty
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Front door: unverified signed-in members are redirected to
+          # /VerifyPhone for member routes (owner decision, 2026-10-10).
+          grep -F "Phone verification front door (owner decision, 2026-10-10)" src/components/launch/LaunchAccessGate.jsx
+          grep -F "phone_verification_required === true" src/components/launch/LaunchAccessGate.jsx
+          grep -F "/VerifyPhone?redirect=" src/components/launch/LaunchAccessGate.jsx
+          grep -F "Registered Free is the site access identity." src/components/launch/LaunchAccessGate.jsx
+          # VerifyPhone offers verify-or-sign-out only.
+          grep -F "signOutInstead" src/pages/VerifyPhone.jsx
+          # Credit page: a failed wallet load must never render as a wallet,
+          # and 428s route to phone verification instead of dead buttons.
+          grep -F "isPhoneVerificationError" src/lib/tokenService.js src/pages/Credit.jsx
+          grep -F "phone_verification_required" src/lib/tokenService.js
+          grep -F "if(!state){" src/pages/Credit.jsx
+          grep -F "Verify Your Phone to Add Credit" src/pages/Credit.jsx
+          # Love Language Quiz Share Results button must stay wired
+          # (it shipped with no onClick handler at all).
+          grep -F "handleShareResult" src/pages/LoveLanguageQuiz.jsx
+          grep -F "onClick={handleShareResult}" src/pages/LoveLanguageQuiz.jsx
+          # Podcasts: every episode is billable (owner directive,
+          # 2026-10-10) - the library map forces tokenLocked on all.
+          grep -F "tokenLocked:true" src/data/podcastLibrary.js
+          grep -F '$1.99 per episode' src/lib/featurePricing.js
+          # Homepage Studio feature: the newest episode (S1 E2) leads
+          # with a Past Episodes tab; Episode 1 stays free under it.
+          grep -F "STUDIO_E2_COPY" src/pages/Home.jsx
+          grep -F "Who Pays for the First Date?" src/pages/Home.jsx
+          grep -F "pastEpisodes" src/pages/Home.jsx
+          grep -F "/O2OLStudio?episode=season-1-episode-2" src/pages/Home.jsx
+
       - name: Verify game Credit access is transactional
         shell: bash
         run: |

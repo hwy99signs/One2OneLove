@@ -133,21 +133,51 @@ try{
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
-    if(IS_RELEASE_CERT){
-      if(/Season 1\s*•\s*Episode 1/i.test(body)&&/Who Should Apologize First\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows current free Episode 1');
-      else fail('Homepage Studio copy is incorrect',body.slice(-2200));
+    // Homepage Studio contract (owner directive, 2026-10-10): the newest
+    // episode (S1 E2) is the homepage feature; Episode 1 stays free under
+    // the Past Episodes tab. The homepage never streams Episode 2.
+    // Release-cert runs (candidate + production) REQUIRE the new contract.
+    // The shared Prelaunch baseline may still serve the previous homepage
+    // until this change promotes, so there the script certifies whichever
+    // contract the environment actually serves — at full strength either way.
+    const pastEpisodesTab=page.getByRole('tab',{name:/Past Episodes/i});
+    const hasStudioTabs=(await pastEpisodesTab.count().catch(()=>0))>0;
+    if(IS_RELEASE_CERT||hasStudioTabs){
+      if(IS_RELEASE_CERT){
+        if(/Season 1\s*•\s*Episode 2/i.test(body)&&/Who Pays for the First Date\?/i.test(body)&&/Unlock Episode 2/i.test(body)) pass('Homepage Studio shows new Episode 2 feature');
+        else fail('Homepage Studio copy is incorrect',body.slice(-2200));
+      }else{
+        if(/O2OL STUDIO SHOW/i.test(body)&&/Unlock Episode 2/i.test(body)) pass('Shared Prelaunch Studio baseline renders');
+        else fail('Shared Prelaunch Studio baseline missing',body.slice(-2200));
+      }
+      const studioFeatureE2=page.locator('[data-analytics-id="home-studio-feature-e2"]');
+      const studioDestinationE2=await studioFeatureE2.getAttribute('data-analytics-destination').catch(()=>null);
+      if(studioDestinationE2==='/O2OLStudio?episode=season-1-episode-2') pass('Homepage Episode 2 unlock targets Episode 2');
+      else fail('Homepage Episode 2 target incorrect',String(studioDestinationE2));
+      await pastEpisodesTab.click();
+      await page.waitForSelector('video[data-home-studio-video="season-1-episode-1"]',{timeout:5000}).catch(()=>null);
+      const pastBody=await page.locator('body').innerText();
+      if(/Who Should Apologize First\?/i.test(pastBody)&&/Watch Episode 1/i.test(pastBody)) pass('Past Episodes tab shows free Episode 1');
+      else fail('Past Episodes Episode 1 copy missing',pastBody.slice(-2200));
       const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-1"]');
       const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
       if(studioVideoSrc?.includes('/studio-media/season-1-episode-1.mp4')) pass('Homepage embeds free Episode 1 video');
       else fail('Homepage Episode 1 video missing',String(studioVideoSrc));
+      const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
+      const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
+      if(studioDestination==='/O2OLStudio?episode=season-1-episode-1') pass('Homepage Watch Episode 1 targets Episode 1');
+      else fail('Homepage Watch Episode 1 target incorrect',String(studioDestination));
     }else{
+      // The shared Prelaunch baseline serves its own Studio teaser variant
+      // (Episode 2 title, Episode 1 watch action, no inline homepage video
+      // element). Certify it with the original baseline assertions, verbatim.
       if(/O2OL STUDIO SHOW/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Shared Prelaunch Studio baseline renders');
       else fail('Shared Prelaunch Studio baseline missing',body.slice(-2200));
+      const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
+      const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
+      if(studioDestination==='/O2OLStudio?episode=season-1-episode-1') pass('Homepage Watch Episode 1 targets Episode 1');
+      else fail('Homepage Watch Episode 1 target incorrect',String(studioDestination));
     }
-    const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
-    const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
-    if(studioDestination==='/O2OLStudio?episode=season-1-episode-1') pass('Homepage Watch Episode 1 targets Episode 1');
-    else fail('Homepage Watch Episode 1 target incorrect',String(studioDestination));
     if(IS_RELEASE_CERT){
       const freeEntries=page.locator('#open-house-tools [data-feature-status="free"]');
       const mixedEntries=page.locator('#open-house-tools [data-feature-status="mixed"]');

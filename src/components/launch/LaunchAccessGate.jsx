@@ -1,4 +1,5 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 
@@ -138,7 +139,21 @@ export default function LaunchAccessGate({ pathname, children }) {
 
   // Registered Free is the site access identity. Feature-specific APIs/components
   // decide whether an action is free or requires Credit.
-  // Phone verification remains a feature-level requirement where applicable
-  // (for example, participating in Chat), not a global browsing gate.
+  //
+  // Phone verification front door (owner decision, 2026-10-10): phone
+  // verification is a hard requirement for the member area, not a step a
+  // signed-in member can click out of. A signed-in member whose phone is not
+  // verified may browse public information pages (Open House), but every
+  // member route redirects to /VerifyPhone until verification is completed.
+  // The only exits from that state are verifying the phone or signing out
+  // (the site header with Sign Out renders above this gate). Server-side 428
+  // phone checks remain the backstop for every protected API.
+  const phoneRequired = user?.phone_verification_required === true;
+  const phoneVerified = user?.phoneNumberVerified === true || user?.phone_number_verified === true;
+  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
+  if (phoneRequired && !phoneVerified && !isAdmin && isKnown && !isPublic && route !== '/verifyphone') {
+    return <Navigate to={`/VerifyPhone?redirect=${encodeURIComponent(pathname || '/')}`} replace />;
+  }
+
   return children;
 }
