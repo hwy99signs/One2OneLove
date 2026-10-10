@@ -192,7 +192,7 @@ function PagesContent() {
           <Route path="/Developer" element={<FeatureUnavailable feature="Developer" />} />
           <Route path="/Leaderboard" element={<FeatureUnavailable feature="Leaderboard" />} />
           <Route path="/Achievements" element={<FeatureUnavailable feature="Achievements" />} />
-          <Route path="/PremiumFeatures" element={<Navigate to="/Subscription" replace />} />
+          <Route path="/PremiumFeatures" element={<Navigate to="/Credit" replace />} />
           <Route path="/FindFriends" element={<FeatureUnavailable feature="Find Friends" />} />
           <Route path="/FriendRequests" element={<FeatureUnavailable feature="Friend Requests" />} />
           <Route path="/Blog" element={<Navigate to="/ArticlesSupport" replace />} />
