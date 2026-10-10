@@ -854,32 +854,8 @@ export default function LikeMinded() {
 
   return withPremiumDialog(
     <div className="min-h-screen bg-[#07112f] text-white">
-      <section className="relative flex min-h-[calc(100svh-96px)] flex-col overflow-hidden bg-[#07112f]">
-        <div className="relative h-[40svh] min-h-[320px] max-h-[520px] overflow-hidden">
-          <div className="absolute inset-0 grid grid-cols-2">
-            <div className="relative overflow-hidden">
-              <img
-                src="/assets/o2ol-hero.png"
-                alt=""
-                className="h-full w-full scale-[1.65] object-cover"
-                style={{objectPosition:'72% 48%'}}
-              />
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-950/25 via-blue-600/5 to-transparent" />
-            </div>
-            <div className="relative overflow-hidden">
-              <img
-                src="/assets/o2ol-hero.png"
-                alt=""
-                className="h-full w-full scale-[1.65] object-cover"
-                style={{objectPosition:'28% 48%'}}
-              />
-              <div className="absolute inset-0 bg-gradient-to-bl from-fuchsia-950/25 via-rose-500/5 to-transparent" />
-            </div>
-          </div>
-
-          <div className="pointer-events-none absolute left-1/2 top-[-12%] h-[128%] w-[4px] -translate-x-1/2 rotate-[18deg] bg-white/95 shadow-[0_0_18px_rgba(255,255,255,.65)]" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#07112f] via-[#07112f]/60 to-transparent" />
-
+      <section className="relative flex flex-col overflow-hidden bg-[#07112f]">
+        <div className="relative px-4 pb-2 pt-16">
           <Link
             to={createPageUrl('CooperativeGames')}
             aria-label={t.back}
@@ -887,37 +863,9 @@ export default function LikeMinded() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-
-          <div className="absolute inset-x-0 bottom-[-18px] z-10 flex justify-center px-4">
-            <div className="select-none text-center [filter:drop-shadow(0_10px_18px_rgba(0,0,0,.55))]">
-              <div className="leading-[.76]">
-                <span
-                  className="block text-[74px] font-black tracking-[-.07em] text-yellow-300 sm:text-[96px]"
-                  style={{WebkitTextStroke:'4px #07112f', textShadow:'0 0 0 #07112f, 0 5px 0 #f59e0b'}}
-                >
-                  Like
-                </span>
-                <span
-                  className="block text-[68px] font-black tracking-[-.065em] text-white sm:text-[90px]"
-                  style={{WebkitTextStroke:'4px #07112f', textShadow:'0 4px 0 #dbeafe'}}
-                >
-                  Minded<span className="text-yellow-300">?</span>
-                </span>
-              </div>
-              <div className="mt-3 flex justify-center gap-2">
-                <span className="relative inline-flex h-11 w-14 items-center justify-center rounded-[18px] rounded-bl-[5px] bg-cyan-400 shadow-[0_0_0_4px_#07112f]">
-                  <span className="text-xl text-[#07112f]">♥</span>
-                </span>
-                <span className="relative inline-flex h-11 w-14 items-center justify-center rounded-[18px] rounded-br-[5px] bg-pink-500 shadow-[0_0_0_4px_#07112f]">
-                  <span className="text-xl text-[#07112f]">♥</span>
-                </span>
-              </div>
-            </div>
-          </div>
+          <img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mx-auto block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
         </div>
-
-        <div className="flex flex-1 flex-col px-3 pb-5 pt-12 sm:px-5 sm:pb-7 sm:pt-16">
-          <div className="mx-auto w-full max-w-3xl"><img src="/game-cards/card-like-minded.jpg" alt="Like Minded?" className="mb-7 block h-44 w-full rounded-[24px] object-cover object-center shadow-2xl ring-1 ring-white/15 sm:h-52" /></div>
+        <div className="flex flex-1 flex-col px-3 pb-5 pt-6 sm:px-5 sm:pb-7">
           <div className="mx-auto w-full max-w-5xl text-center">
             <h1 className="text-[31px] font-black leading-[1.08] tracking-tight text-white sm:text-4xl">
               {t.tagline.split('. ').map((part,i,arr) => (
