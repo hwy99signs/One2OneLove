@@ -92,7 +92,7 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 async function identity(request,env) {
   const cookie=request.headers.get('cookie');
   if(!cookie)return null;
-  const response=await fetch(env.NEON_AUTH_BASE_URL.replace(/\\/$/,'')+'/get-session',{headers:{cookie,accept:'application/json'}});
+  const response=await fetch(env.NEON_AUTH_BASE_URL.replace(/\/$/,'')+'/get-session',{headers:{cookie,accept:'application/json'}});
   if(!response.ok)return null;
   const payload=await response.json().catch(()=>null);
   const user=payload?.user??payload?.data?.user??null;
@@ -105,7 +105,7 @@ export async function handleLoveNoteLibraryRequest(request,env,url) {
   const notes=generateNotes(language);
   if(url.pathname==='/api/love-note-library') {
     // Public response includes titles, classification and tags ONLY.
-    return json({ok:true,notes:notes.map(({id,title,category,subject,tags})=>({id,title,category,subject,tags}))});
+    return json({ok:true,notes:notes.map(({id,title,category,subject})=>({id,title,category,subject}))});
   }
   if(url.pathname!=='/api/love-note-library/item')return json({ok:false},404);
   const id=Number(url.searchParams.get('id'));
