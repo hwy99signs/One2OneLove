@@ -240,8 +240,9 @@ try{
     await context.close();
   }
 
-  // Shared Bianca/Amora coaching disclaimer: explicit acceptance before coach UI mounts.
-  {
+  // Shared Bianca/Amora coaching disclaimer: exercise only on the exact certified release Worker.
+  // The shared Prelaunch URL can intentionally lag the candidate source.
+  if(IS_RELEASE_CERT){
     const {context,page}=await open(browser,'/Amora',{mode:'free',coachingConsentAccepted:false,viewport:{width:390,height:844}});
     const gateText=await page.locator('body').innerText();
     if(/Before you chat with Amora or Bianca/i.test(gateText) && /not therapists, doctors, lawyers, or licensed counselors/i.test(gateText) && /Short \$0\.10, Medium \$0\.15, Long \$0\.20/i.test(gateText)) pass('Shared coaching disclaimer appears before Amora');
