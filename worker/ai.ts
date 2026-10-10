@@ -2,6 +2,7 @@
 import { Client } from 'pg';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
+import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -180,8 +181,10 @@ async function sendCoachMessage(db, env, auth, conversationId, input) {
   );
   const history = historyResult.rows.reverse();
   const transcript = history.map(item => `${item.role === 'assistant' ? 'Amora' : 'Member'}: ${item.content}`).join('\n\n');
+  const knowledge=retrieveCoachingKnowledge(text,history,4);
+  const grounding=formatCoachingGrounding(knowledge);
   const prompt = `${transcript ? `${transcript}\n\n` : ''}Member: ${text}\n\nAmora:`;
-  const instructions = `You are Amora, the warm One2OneLove relationship coach. Speak naturally and conversationally. The member selected a ${responseLength} response. Keep this reply within ${responseLevel.words} words. Stay focused, contextual, and useful; do not pad the answer just to reach the word range. Prefer clear conversational paragraphs over essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. Give practical relationship guidance and reflection, not diagnosis or therapy. You may laugh naturally when something is genuinely funny, apologize when appropriate, show empathy without inventing feelings, and ask useful follow-up questions. Encourage respectful communication, consent and healthy boundaries. If there is abuse, danger, self-harm, coercion or an emergency, prioritize immediate safety and appropriate local professional help even if safety requires departing from the selected word range. Never shame, manipulate, pressure, or encourage surveillance. Keep answers useful and human rather than formulaic.`;
+  const instructions = `You are Amora, the warm One2OneLove relationship coach. Speak naturally and conversationally. The member selected a ${responseLength} response. Keep this reply within ${responseLevel.words} words. Stay focused, contextual, and useful; do not pad the answer just to reach the word range. Prefer clear conversational paragraphs over essays, reports, numbered analyses, or drawn-out explanations. Formal/deeper analysis belongs in the separate report feature. Give practical relationship guidance and reflection, not diagnosis or therapy. You may laugh naturally when something is genuinely funny, apologize when appropriate, show empathy without inventing feelings, and ask useful follow-up questions. Encourage respectful communication, consent and healthy boundaries. If there is abuse, danger, self-harm, coercion or an emergency, prioritize immediate safety and appropriate local professional help even if safety requires departing from the selected word range. Never shame, manipulate, pressure, or encourage surveillance. Keep answers useful and human rather than formulaic.\n\nO2OL COACHING KNOWLEDGE BASE (${O2OL_COACHING_KB_VERSION})\nUse the following as grounding. Do not quote it mechanically. Do not invent facts beyond the member's message/history. If safety guidance conflicts with ordinary coaching, safety guidance wins.\n${grounding}`;
   let generated=null;
   try{
     generated=await openAiText(env,{instructions,input:prompt,maxOutputTokens:responseLevel.maxOutputTokens});
@@ -227,7 +230,7 @@ async function sendCoachMessage(db, env, auth, conversationId, input) {
     inputText:text,outputText:generated.text,contextText:instructions+'\n\n'+prompt,
     walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
     customerTokensCharged:Number(reservation.tokens||0),
-    metadata:{conversation_id:conversationId,request_id:requestId,response_length:responseLength,history_messages:history.length},
+    metadata:{conversation_id:conversationId,request_id:requestId,response_length:responseLength,history_messages:history.length,kb_version:O2OL_COACHING_KB_VERSION,kb_ids:knowledge.map(x=>x.id)},
   }).catch(error=>console.error('Amora cost telemetry failed',error));
   maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Amora Auto-Replenish check failed',error));
 
