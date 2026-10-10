@@ -1645,7 +1645,7 @@ export default function LoveNotes() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="h-full hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-2 border-transparent hover:border-pink-200 cursor-pointer"
+                <Card className="h-full hover:shadow-xl transition-all duration-300 bg-slate-100 border-2 border-slate-200 cursor-pointer"
                       onClick={() => openLibraryNote(note)}>
                   <CardHeader>
                     <CardTitle className="text-xl font-bold text-gray-900 font-kalam">
@@ -1656,16 +1656,7 @@ export default function LoveNotes() {
                     <p className="text-gray-500 leading-relaxed mb-4">
                       🔒 Unlock for $0.49 to read this Love Note.
                     </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {note.tags.slice(0, 3).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 rounded-full text-xs font-medium"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
+                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-500"><Lock className="w-4 h-4" /> Locked until $0.49 unlock</div>
                     <Button
                       className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
                       onClick={(e) => {
