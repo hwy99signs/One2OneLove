@@ -135,9 +135,9 @@ jobs:
           grep -F "lg:grid-cols-5" src/pages/Credit.jsx >/dev/null
           grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts >/dev/null
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts >/dev/null
-          grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx >/dev/null
+          grep -F "data-home-studio-video=\"season-1-episode-1\"" src/pages/Home.jsx >/dev/null
           grep -F "const STUDIO_VIDEO" src/pages/Home.jsx >/dev/null
-          grep -Eq "const STUDIO_VIDEO = .*/studio-media/(season-1-episode-2\\.mp4|season-1/episode-2-who-pays-for-the-first-date\\.mp4)" src/pages/Home.jsx
+          grep -Eq "const STUDIO_VIDEO = .*/studio-media/season-1-episode-1\\.mp4" src/pages/Home.jsx
           grep -F 'data-analytics-destination="/O2OLStudio?episode=season-1-episode-1"' src/pages/Home.jsx >/dev/null
           grep -F "Watch Episode 1" src/pages/Home.jsx >/dev/null
           grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx >/dev/null
