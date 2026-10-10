@@ -408,6 +408,8 @@ try{
   }
   {
     const {context,page}=await open(browser,'/O2OLStudio/Episodes',{mode:'free'});
+    // The archive fetch is async; wait for the actual episode cards, not the initial Loading… shell.
+    await page.getByRole('heading',{name:/Who Should Apologize First\?/i}).waitFor({state:'visible',timeout:30000}).catch(()=>{});
     const body=await page.locator('body').innerText();
     if(body.includes('Previous Episodes')&&body.includes('Who Pays for the First Date?')&&body.includes('Who Should Apologize First?')) pass('Studio archive lists Episodes 1 and 2');
     else fail('Studio archive episode list incomplete',body.slice(0,1400));
