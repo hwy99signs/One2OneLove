@@ -99,7 +99,7 @@ export default function AdminEntryTab() {
       type="button"
       onClick={openAdmin}
       disabled={opening}
-      className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-3 py-2 text-base font-bold text-white shadow-sm transition hover:bg-white/25 hover:text-yellow-100 disabled:opacity-60"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-white/35 bg-white/15 px-2.5 py-2 text-sm 2xl:gap-2 2xl:px-3 2xl:text-base font-bold text-white shadow-sm transition hover:bg-white/25 hover:text-yellow-100 disabled:opacity-60"
       aria-label="Open Admin"
     >
       <ShieldCheck size={18}/>{opening ? 'Opening…' : 'Admin'}

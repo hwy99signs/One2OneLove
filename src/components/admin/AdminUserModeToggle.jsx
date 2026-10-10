@@ -98,7 +98,7 @@ export default function AdminUserModeToggle() {
       <button
         type="button"
         onClick={goUser}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition ${userActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-bold transition 2xl:px-3 2xl:text-sm ${userActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}
         aria-current={userActive ? 'page' : undefined}
         aria-label={userActive ? 'User View active' : 'Switch to User View'}
       >
@@ -107,7 +107,7 @@ export default function AdminUserModeToggle() {
       <button
         type="button"
         onClick={goAdmin}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition ${adminActive ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-bold transition 2xl:px-3 2xl:text-sm ${adminActive ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}
         aria-current={adminActive ? 'page' : undefined}
         aria-label={adminActive ? 'Admin View active' : 'Switch to Admin View'}
       >
