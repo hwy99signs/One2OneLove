@@ -75,9 +75,9 @@ jobs:
           grep -F "lg:grid-cols-5" src/pages/Credit.jsx
           grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts
-          grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx
+          grep -F "data-home-studio-video=\"season-1-episode-1\"" src/pages/Home.jsx
           grep -F "const STUDIO_VIDEO" src/pages/Home.jsx
-          grep -Eq "const STUDIO_VIDEO = .*/studio-media/(season-1-episode-2\\.mp4|season-1/episode-2-who-pays-for-the-first-date\\.mp4)" src/pages/Home.jsx
+          grep -Eq "const STUDIO_VIDEO = .*/studio-media/season-1-episode-1\\.mp4" src/pages/Home.jsx
           # Verify navigation targets in source; browser QA validates translated labels and clicks.
           grep -F '/O2OLStudio?episode=season-1-episode-1' src/pages/Home.jsx
           grep -F 'path="/O2OLStudio/Episodes"' src/pages/index.jsx
