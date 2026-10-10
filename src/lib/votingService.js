@@ -22,3 +22,25 @@ export async function castBallot({ topicSlug, priorities, expenseSplit, responde
   });
   return payload?.ballot || null;
 }
+
+// --- Click-to-Vote (owner design, 2026-10-10) ------------------------------
+// Choice ballots for CLICK_VOTE_QUESTIONS. A cast vote also posts into the
+// question's chat room (server-side), and Amora may answer it there.
+
+export async function getMyClickBallots() {
+  const payload = await apiRequest('/api/voting/click/me');
+  return payload?.ballots || {};
+}
+
+export async function getClickResults() {
+  const payload = await apiRequest('/api/voting/click/results');
+  return payload?.results || {};
+}
+
+export async function castClickVote({ topicSlug, choice = '', comment = '' }) {
+  const payload = await apiRequest('/api/voting/click/ballots', {
+    method: 'POST',
+    body: { topicSlug, choice: choice || undefined, comment: comment || undefined },
+  });
+  return payload;
+}

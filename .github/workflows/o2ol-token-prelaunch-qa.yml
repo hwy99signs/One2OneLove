@@ -108,6 +108,24 @@ jobs:
           fi
           grep -F "Keep on the lookout for more votings." src/pages/Chat.jsx >/dev/null
           grep -F "t.moreVoting" src/pages/Chat.jsx >/dev/null
+      - name: Certify Click-to-Vote rails and homepage card (owner design 2026-10-10)
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "CLICK_VOTE_QUESTIONS" src/lib/votingQuestions.js >/dev/null
+          grep -F "ctv-first-date-bill" src/lib/votingQuestions.js >/dev/null
+          grep -F "'/api/voting/click/ballots'" worker/voting.ts >/dev/null
+          grep -F "'/api/voting/click/results'" worker/voting.ts >/dev/null
+          grep -F "AMORA_HOST_ID" worker/voting.ts >/dev/null
+          grep -F "castClickVote" src/lib/votingService.js >/dev/null
+          test -f src/components/voting/ClickToVoteCard.jsx
+          grep -F "ClickToVoteCard" src/pages/Home.jsx >/dev/null
+          if grep -F "home-open-house-explore-tools" src/pages/Home.jsx; then
+            echo "Expired Open House banner still on the homepage." >&2
+            exit 1
+          fi
+          grep -F "getClickResults" src/pages/Chat.jsx >/dev/null
+          echo "Click-to-Vote rails present; Open House banner removed."
       - name: Certify title-only paid Love Note and Date Idea previews
         shell: bash
         run: |

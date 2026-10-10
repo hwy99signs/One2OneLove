@@ -18,7 +18,8 @@ import {
   muteCommunityChatUser,
 } from '@/lib/communityChatService';
 import VotingCard from '@/components/chat/VotingCard';
-import { questionForRoom } from '@/lib/votingQuestions';
+import { questionForRoom, CLICK_VOTE_QUESTIONS } from '@/lib/votingQuestions';
+import { getClickResults } from '@/lib/votingService';
 
 const firstNameOf = (name) => {
   const token = String(name || '').trim().split(/\s+/)[0] || '';
@@ -92,7 +93,7 @@ const copy = {
     title: 'One2OneLove Chat Rooms', subtitle: 'Real conversations about love, dating, marriage and relationships.', back: 'Back',
     online: 'active now', messages: 'messages', choose: 'Choose a conversation', loading: 'Loading conversations…',
     empty: 'The conversation starter is above. Be the first to answer and get this room talking.', placeholder: 'Share your thoughts respectfully…', send: 'Send',
-    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 Voting closed · Results saved', featuredBadgeClosed: '💯 Voting closed · Results saved', moreVoting: 'Keep on the lookout for more votings.',
+    signIn: 'Sign in to join the conversation', readOnly: 'You can read the conversation now. Sign in to post.', featuredBadgeOpen: '💯 Voting closed · Results saved', featuredBadgeClosed: '💯 Voting closed · Results saved', moreVoting: 'Keep on the lookout for more votings.', resultsTitle: 'Latest Click-to-Vote results', votesWord: 'votes', noVotes: 'No votes yet — be the first on the homepage.', voteHome: 'Vote on the homepage',
     guidelines: 'Respect the room', guidelinesBody: 'Be kind. No harassment, threats, hate speech, explicit sexual content, personal attacks, or sharing someone else’s private information.',
     prompt: 'Conversation starter', delete: 'Delete message', refresh: 'Refresh', defaultPrompt:'What is on your mind today?', loadRoomsError:'Unable to load chat rooms.', emptyRooms:'No conversations are available right now.', loadMessagesError:'Unable to load messages.', sendError:'Unable to send message.', deleteError:'Unable to delete message.',
     prompts: {
@@ -110,7 +111,7 @@ const copy = {
     title: 'Salas de Chat One2OneLove', subtitle: 'Conversaciones reales sobre amor, citas, matrimonio y relaciones.', back: 'Volver',
     online: 'activos ahora', messages: 'mensajes', choose: 'Elige una conversación', loading: 'Cargando conversaciones…',
     empty: 'El tema para conversar está arriba. Sé la primera persona en responder y dar vida a esta sala.', placeholder: 'Comparte tus ideas con respeto…', send: 'Enviar',
-    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 Votación cerrada · Resultados guardados', featuredBadgeClosed: '💯 Votación cerrada · Resultados guardados', moreVoting: 'Mantente atento a más votaciones.',
+    signIn: 'Inicia sesión para participar', readOnly: 'Puedes leer la conversación. Inicia sesión para publicar.', featuredBadgeOpen: '💯 Votación cerrada · Resultados guardados', featuredBadgeClosed: '💯 Votación cerrada · Resultados guardados', moreVoting: 'Mantente atento a más votaciones.', resultsTitle: 'Últimos resultados de Vota con un clic', votesWord: 'votos', noVotes: 'Aún no hay votos — sé el primero en la página principal.', voteHome: 'Vota en la página principal',
     guidelines: 'Respeta la sala', guidelinesBody: 'Sé amable. No se permite acoso, amenazas, odio, contenido sexual explícito, ataques personales ni compartir información privada de otra persona.',
     prompt: 'Tema para conversar', delete: 'Eliminar mensaje', refresh: 'Actualizar', defaultPrompt:'¿Qué tienes en mente hoy?', loadRoomsError:'No se pudieron cargar las salas de chat.', emptyRooms:'No hay conversaciones disponibles en este momento.', loadMessagesError:'No se pudieron cargar los mensajes.', sendError:'No se pudo enviar el mensaje.', deleteError:'No se pudo eliminar el mensaje.',
     prompts: {
@@ -128,7 +129,7 @@ const copy = {
     title: 'Salons One2OneLove', subtitle: 'De vraies conversations sur l’amour, les rencontres, le mariage et les relations.', back: 'Retour',
     online: 'actifs maintenant', messages: 'messages', choose: 'Choisissez une conversation', loading: 'Chargement des conversations…',
     empty: 'Aucun message pour le moment. Lancez la conversation.', placeholder: 'Partagez vos pensées avec respect…', send: 'Envoyer',
-    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 Vote terminé · Résultats enregistrés', featuredBadgeClosed: '💯 Vote terminé · Résultats enregistrés', moreVoting: 'Restez à l’affût des prochains votes.',
+    signIn: 'Connectez-vous pour participer', readOnly: 'Vous pouvez lire la conversation. Connectez-vous pour publier.', featuredBadgeOpen: '💯 Vote terminé · Résultats enregistrés', featuredBadgeClosed: '💯 Vote terminé · Résultats enregistrés', moreVoting: 'Restez à l’affût des prochains votes.', resultsTitle: 'Derniers résultats du Vote en un clic', votesWord: 'votes', noVotes: 'Aucun vote pour l’instant — soyez le premier sur la page d’accueil.', voteHome: 'Votez sur la page d’accueil',
     guidelines: 'Respectez le salon', guidelinesBody: 'Soyez bienveillant. Pas de harcèlement, menaces, haine, contenu sexuel explicite, attaques personnelles ou partage d’informations privées d’autrui.',
     prompt: 'Point de départ', delete: 'Supprimer le message', refresh: 'Actualiser', defaultPrompt:'À quoi pensez-vous aujourd’hui ?', loadRoomsError:'Impossible de charger les salons.', emptyRooms:'Aucune conversation n’est disponible pour le moment.', loadMessagesError:'Impossible de charger les messages.', sendError:'Impossible d’envoyer le message.', deleteError:'Impossible de supprimer le message.',
     prompts: {
@@ -146,7 +147,7 @@ const copy = {
     title: 'Stanze Chat One2OneLove', subtitle: 'Conversazioni vere su amore, incontri, matrimonio e relazioni.', back: 'Indietro',
     online: 'attivi ora', messages: 'messaggi', choose: 'Scegli una conversazione', loading: 'Caricamento conversazioni…',
     empty: 'Lo spunto di conversazione è qui sopra. Sii la prima persona a rispondere e ad animare la stanza.', placeholder: 'Condividi i tuoi pensieri con rispetto…', send: 'Invia',
-    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 Votazione chiusa · Risultati salvati', featuredBadgeClosed: '💯 Votazione chiusa · Risultati salvati', moreVoting: 'Tieni d’occhio le prossime votazioni.',
+    signIn: 'Accedi per partecipare', readOnly: 'Puoi leggere la conversazione. Accedi per pubblicare.', featuredBadgeOpen: '💯 Votazione chiusa · Risultati salvati', featuredBadgeClosed: '💯 Votazione chiusa · Risultati salvati', moreVoting: 'Tieni d’occhio le prossime votazioni.', resultsTitle: 'Ultimi risultati di Vota con un clic', votesWord: 'voti', noVotes: 'Ancora nessun voto — sii il primo dalla pagina principale.', voteHome: 'Vota dalla pagina principale',
     guidelines: 'Rispetta la stanza', guidelinesBody: 'Sii gentile. Niente molestie, minacce, odio, contenuti sessuali espliciti, attacchi personali o condivisione di informazioni private altrui.',
     prompt: 'Spunto di conversazione', delete: 'Elimina messaggio', refresh: 'Aggiorna', defaultPrompt:'A cosa stai pensando oggi?', loadRoomsError:'Impossibile caricare le stanze di chat.', emptyRooms:'Nessuna conversazione è disponibile al momento.', loadMessagesError:'Impossibile caricare i messaggi.', sendError:'Impossibile inviare il messaggio.', deleteError:'Impossibile eliminare il messaggio.',
     prompts: {
@@ -164,7 +165,7 @@ const copy = {
     title: 'One2OneLove Chaträume', subtitle: 'Echte Gespräche über Liebe, Dating, Ehe und Beziehungen.', back: 'Zurück',
     online: 'jetzt aktiv', messages: 'Nachrichten', choose: 'Wähle ein Gespräch', loading: 'Gespräche werden geladen…',
     empty: 'Der Gesprächsimpuls steht oben. Sei die erste Person, die antwortet und den Raum ins Gespräch bringt.', placeholder: 'Teile deine Gedanken respektvoll…', send: 'Senden',
-    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', moreVoting: 'Halte Ausschau nach weiteren Abstimmungen.',
+    signIn: 'Melde dich an, um mitzuschreiben', readOnly: 'Du kannst das Gespräch lesen. Melde dich an, um zu schreiben.', featuredBadgeOpen: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', featuredBadgeClosed: '💯 Abstimmung geschlossen · Ergebnisse gespeichert', moreVoting: 'Halte Ausschau nach weiteren Abstimmungen.', resultsTitle: 'Neueste Ergebnisse der Klick-Abstimmung', votesWord: 'Stimmen', noVotes: 'Noch keine Stimmen — gib die erste auf der Startseite ab.', voteHome: 'Auf der Startseite abstimmen',
     guidelines: 'Respektiere den Raum', guidelinesBody: 'Sei freundlich. Keine Belästigung, Drohungen, Hassrede, explizit sexuelle Inhalte, persönlichen Angriffe oder Weitergabe privater Informationen anderer.',
     prompt: 'Gesprächsimpuls', delete: 'Nachricht löschen', refresh: 'Aktualisieren', defaultPrompt:'Was beschäftigt dich heute?', loadRoomsError:'Chaträume konnten nicht geladen werden.', emptyRooms:'Derzeit sind keine Gespräche verfügbar.', loadMessagesError:'Nachrichten konnten nicht geladen werden.', sendError:'Nachricht konnte nicht gesendet werden.', deleteError:'Nachricht konnte nicht gelöscht werden.',
     prompts: {
@@ -248,6 +249,12 @@ export default function Chat() {
   const lt = lgbtqCopy[currentLanguage] || lgbtqCopy.en;
   const labels = roomLabels[currentLanguage] || roomLabels.en;
   const [rooms, setRooms] = useState([]);
+  const [clickResults, setClickResults] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    getClickResults().then((r) => { if (alive) setClickResults(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [topics, setTopics] = useState([]);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
@@ -507,6 +514,38 @@ export default function Chat() {
             <div className="mt-3 rounded-b-2xl rounded-t-lg border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-4 py-3 text-center shadow-md">
               <span className="text-sm font-black uppercase tracking-wide text-[#f7f2e7]">🗳️ {t.moreVoting}</span>
             </div>
+            {/* Click-to-Vote results (owner design, 2026-10-10): the burgundy
+                tab carries the featured question's live tally. Real counts
+                only — a question with no votes says so. */}
+            {(() => {
+              const featured = CLICK_VOTE_QUESTIONS[0];
+              const tally = clickResults?.[featured.slug];
+              const pick = (table) => table?.[currentLanguage] || table?.en || '';
+              return (
+                <div className="mt-2 rounded-2xl border border-[#7f1d2d]/25 bg-[#7f1d2d]/[.05] px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-wide text-[#7f1d2d]">{t.resultsTitle}</p>
+                  <p className="mt-1 text-sm font-extrabold leading-snug text-slate-900">{pick(featured.question)}</p>
+                  {tally && tally.total > 0 ? (
+                    <div className="mt-2 space-y-1.5">
+                      {featured.choices.map((choice) => {
+                        const count = tally.counts[choice.key] || 0;
+                        const pct = Math.round((count / tally.total) * 100);
+                        return (
+                          <div key={choice.key}>
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-600"><span>{pick(choice.labels)}</span><span>{pct}% · {count}</span></div>
+                            <div className="mt-0.5 h-2 overflow-hidden rounded-full bg-[#7f1d2d]/10"><div className="h-full rounded-full bg-gradient-to-r from-[#5c0e1a] to-[#7f1d2d]" style={{ width: `${pct}%` }} /></div>
+                          </div>
+                        );
+                      })}
+                      <p className="pt-1 text-xs font-bold text-slate-500">{tally.total} {t.votesWord}</p>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{tally ? t.noVotes : '…'}</p>
+                  )}
+                  <Link to="/" className="mt-2 inline-block text-xs font-black uppercase tracking-wide text-[#7f1d2d] underline decoration-[#7f1d2d]/40 underline-offset-2 hover:decoration-[#7f1d2d]">{t.voteHome} →</Link>
+                </div>
+              );
+            })()}
           </aside>
 
           <section ref={sectionRef} className="overflow-hidden rounded-3xl border border-purple-100 bg-white shadow-sm">

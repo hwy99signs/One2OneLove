@@ -235,6 +235,110 @@ function ballotFromRow(row) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// CLICK-TO-VOTE (owner design, 2026-10-10). Mirror of CLICK_VOTE_QUESTIONS
+// in src/lib/votingQuestions.js — keep slug, roomSlug, choice keys, choice
+// labels (EN, for room lines) and Amora's choice in sync. A cast vote posts
+// into the bound chat room under the voter's first name or Visitor number;
+// Amora, the chat rooms' labeled host, may answer with her pre-written
+// stance (throttled: first cast or a change, at most once per room per
+// 30 minutes). Ballots reuse o2ol_show_vote_responses — the choice lives in
+// relationship_priorities = {"choice": key} — so the existing one-ballot-
+// per-member unique index and the admin tallies keep working.
+// ---------------------------------------------------------------------------
+
+const AMORA_HOST_ID = 'a90e0000-0000-4000-8000-0000000000a1';
+const AMORA_HOST_EMAIL = 'amora@one2onelove.com';
+
+const CHOICE_QUESTIONS = {
+  'ctv-first-date-bill': {
+    slug: 'ctv-first-date-bill', roomSlug: 'dating-new-relationships',
+    question: 'First date. Her order is $75 — yours is $25. The check lands in front of you. What do you do?',
+    choices: { a: 'Pay for both', b: 'Split it', c: 'Pay only mine', d: 'Depends on the date' },
+    amoraChoice: 'a', amoraReason: 'a first date is an invitation, not an invoice — generosity sets the tone.',
+  },
+  'ctv-dutch-switch': {
+    slug: 'ctv-dutch-switch', roomSlug: 'general-connection',
+    question: 'He said he would pay for the date. The tab comes — and he goes Dutch instead. What do you do?',
+    choices: { a: 'Pay my half, no drama', b: 'Pay — but no second date', c: 'Say something right there', d: 'It wouldn’t bother me' },
+    amoraChoice: 'b', amoraReason: 'the money is small; changing your word is not.',
+  },
+  'ctv-naked-pics': {
+    slug: 'ctv-naked-pics', roomSlug: 'communication-conflict',
+    question: 'One week of talking, hours on the phone — then they ask for naked pictures. What do you do?',
+    choices: { a: 'Send them — we’re adults', b: 'Say no, keep talking', c: 'Say no, and end it', d: 'Not yet — too soon' },
+    amoraChoice: 'b', amoraReason: 'a real connection survives a boundary — and their reaction to “no” tells you everything.',
+  },
+  'ctv-sex-exclusive': {
+    slug: 'ctv-sex-exclusive', roomSlug: 'love-intimacy-connection',
+    question: 'They say sex is a MUST before they’ll decide on being exclusive. What do you do?',
+    choices: { a: 'Agree — chemistry matters', b: 'Exclusive first, then sex', c: 'Talk it through together', d: 'Walk away' },
+    amoraChoice: 'c', amoraReason: 'exclusivity is a decision two people make out loud — not a test one person sets.',
+  },
+  'ctv-never-offers': {
+    slug: 'ctv-never-offers', roomSlug: 'marriage-partnership',
+    question: 'Two months of dates. You’ve paid every time — and your partner has never once offered. What do you do?',
+    choices: { a: 'Say something kindly', b: 'Keep paying quietly', c: 'Start splitting things', d: 'Reconsider the relationship' },
+    amoraChoice: 'a', amoraReason: 'silence about money turns into resentment — a kind word early saves a hard one later.',
+  },
+  'ctv-profile-active': {
+    slug: 'ctv-profile-active', roomSlug: 'trust-boundaries-growth',
+    question: 'You agreed to be exclusive — but their dating profile is still active. What do you do?',
+    choices: { a: 'Ask them calmly', b: 'Watch and wait', c: 'Confront them', d: 'End it' },
+    amoraChoice: 'a', amoraReason: 'ask before you accuse — but believe the answer you get.',
+  },
+};
+const CHOICE_SLUGS = Object.keys(CHOICE_QUESTIONS);
+
+async function clickResults(db) {
+  const result = await db.query(
+    `SELECT topic_slug, relationship_priorities->>'choice' AS choice, count(*)::int AS votes
+       FROM public.o2ol_show_vote_responses
+      WHERE topic_slug = ANY($1) AND relationship_priorities ? 'choice'
+      GROUP BY topic_slug, choice`,
+    [CHOICE_SLUGS],
+  );
+  const results = {};
+  for (const slug of CHOICE_SLUGS) results[slug] = { total: 0, counts: {} };
+  for (const row of result.rows) {
+    if (!results[row.topic_slug] || !row.choice) continue;
+    results[row.topic_slug].counts[row.choice] = row.votes;
+    results[row.topic_slug].total += row.votes;
+  }
+  return results;
+}
+
+// Display label for a voter in a room: first name when they have one, else
+// their stored Visitor number (same scheme as worker/community-chat.ts).
+async function clickVoterLabel(db, userId) {
+  const user = await db.query('SELECT name FROM public.users WHERE id=$1::uuid', [userId]);
+  const first = String(user.rows[0]?.name || '').trim().split(/\s+/)[0];
+  if (first) return first;
+  try {
+    await db.query(
+      'INSERT INTO public.chat_visitor_numbers(user_id) VALUES ($1::uuid) ON CONFLICT (user_id) DO NOTHING',
+      [userId],
+    );
+    const found = await db.query(
+      'SELECT visitor_number FROM public.chat_visitor_numbers WHERE user_id=$1::uuid',
+      [userId],
+    );
+    if (found.rows[0]) return 'Visitor #' + Number(found.rows[0].visitor_number);
+  } catch { /* fall through to the derived label */ }
+  const hex = String(userId || '').replace(/[^0-9a-f]/gi, '');
+  const n = hex ? parseInt(hex.slice(0, 8), 16) % 100000 : 0;
+  return 'Visitor #' + String(n).padStart(5, '0');
+}
+
+async function ensureAmoraHost(db) {
+  await db.query(
+    `INSERT INTO public.users (id, email, name, user_type, is_active, avatar_url)
+     VALUES ($1::uuid, $2, 'Amora', 'host', true, '/assets/amora-relationship-coach-official.webp')
+     ON CONFLICT (id) DO NOTHING`,
+    [AMORA_HOST_ID, AMORA_HOST_EMAIL],
+  );
+}
+
 export async function handleVotingRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/voting')) return null;
 
@@ -298,6 +402,132 @@ export async function handleVotingRequest(request, env, url) {
           [question.slug, auth.user.id],
         );
         return json({ ok: true, ballot: ballotFromRow(result.rows[0] || null) });
+      });
+    }
+
+    if (url.pathname === '/api/voting/click/results' && request.method === 'GET') {
+      return await withDb(env, async (db) => {
+        await ensureVotingSchema(db);
+        return json({ ok: true, results: await clickResults(db) });
+      });
+    }
+
+    if (url.pathname === '/api/voting/click/me' && request.method === 'GET') {
+      const auth = await session(request, env);
+      if (!auth) return fail('Sign in to see your votes.', 401, 'unauthorized');
+      return await withDb(env, async (db) => {
+        await ensureVotingSchema(db);
+        const result = await db.query(
+          `SELECT topic_slug, relationship_priorities->>'choice' AS choice
+             FROM public.o2ol_show_vote_responses
+            WHERE user_id=$1::uuid AND topic_slug = ANY($2)`,
+          [auth.user.id, CHOICE_SLUGS],
+        );
+        const ballots = {};
+        for (const row of result.rows) if (row.choice) ballots[row.topic_slug] = row.choice;
+        return json({ ok: true, ballots });
+      });
+    }
+
+    if (url.pathname === '/api/voting/click/ballots' && request.method === 'POST') {
+      const auth = await session(request, env);
+      if (!auth) return fail('Sign in to cast your vote.', 401, 'unauthorized');
+      const body = await readJson(request);
+      const question = CHOICE_QUESTIONS[String(body?.topicSlug || '')];
+      if (!question) return fail('Unknown voting question.', 404, 'not_found');
+      const choice = String(body?.choice || '');
+      const comment = String(body?.comment || '').trim().slice(0, 500);
+      if (choice && !question.choices[choice]) return fail('Unknown choice.', 400, 'invalid_ballot');
+      if (!choice && !comment) return fail('Pick a choice or write a comment.', 400, 'invalid_ballot');
+
+      return await withDb(env, async (db) => {
+        await ensureVotingSchema(db);
+        const prior = await db.query(
+          `SELECT relationship_priorities->>'choice' AS choice FROM public.o2ol_show_vote_responses
+            WHERE topic_slug=$1 AND user_id=$2::uuid`,
+          [question.slug, auth.user.id],
+        );
+        const priorChoice = prior.rows[0]?.choice || null;
+        if (!choice && !priorChoice) {
+          return fail('Cast your vote first, then add a comment.', 400, 'invalid_ballot');
+        }
+        const castOrChanged = Boolean(choice) && choice !== priorChoice;
+        if (choice) {
+          await db.query(`
+            INSERT INTO public.o2ol_show_vote_responses
+              (topic_slug, topic_title, user_id, relationship_priorities)
+            VALUES ($1,$2,$3::uuid,$4::jsonb)
+            ON CONFLICT (topic_slug, user_id) WHERE user_id IS NOT NULL
+            DO UPDATE SET relationship_priorities=EXCLUDED.relationship_priorities, updated_at=now()
+          `, [question.slug, question.question, auth.user.id, JSON.stringify({ choice })]);
+        }
+
+        // Room appearance: the vote (and any comment) posts into the bound
+        // room under the voter's own identity. Best-effort — a room hiccup
+        // never fails a cast vote.
+        let postedToRoom = false;
+        try {
+          const room = await db.query(
+            'SELECT id FROM public.chat_rooms WHERE slug=$1 AND is_active=true',
+            [question.roomSlug],
+          );
+          const roomId = room.rows[0]?.id;
+          if (roomId) {
+            if (castOrChanged) {
+              const dupe = await db.query(
+                `SELECT 1 FROM public.chat_room_messages
+                  WHERE room_id=$1::uuid AND user_id=$2::uuid AND content LIKE '🗳️ Click-to-Vote%'
+                    AND created_at > now() - interval '2 minutes' LIMIT 1`,
+                [roomId, auth.user.id],
+              );
+              if (!dupe.rowCount) {
+                await db.query(
+                  `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
+                   VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
+                  [roomId, auth.user.id, `🗳️ Click-to-Vote — I voted “${question.choices[choice]}”: ${question.question}`],
+                );
+              }
+            }
+            if (comment) {
+              await db.query(
+                `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
+                 VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
+                [roomId, auth.user.id, comment],
+              );
+            }
+            postedToRoom = true;
+
+            // Amora, the rooms' host, answers first casts and changes with
+            // her pre-written stance — at most once per room per 30 min.
+            if (castOrChanged) {
+              const recent = await db.query(
+                `SELECT 1 FROM public.chat_room_messages
+                  WHERE room_id=$1::uuid AND user_id=$2::uuid
+                    AND created_at > now() - interval '30 minutes' LIMIT 1`,
+                [roomId, AMORA_HOST_ID],
+              );
+              if (!recent.rowCount) {
+                await ensureAmoraHost(db);
+                const label = await clickVoterLabel(db, auth.user.id);
+                const stance = choice === question.amoraChoice ? 'agrees' : 'disagrees';
+                await db.query(
+                  `INSERT INTO public.chat_room_messages (room_id, user_id, content, moderation_status)
+                   VALUES ($1::uuid, $2::uuid, $3, 'approved')`,
+                  [roomId, AMORA_HOST_ID, `Amora ${stance} with ${label} — ${question.amoraReason}`],
+                );
+              }
+            }
+          }
+        } catch (roomError) {
+          console.error('Click-to-Vote room post failed:', roomError);
+        }
+
+        return json({
+          ok: true,
+          ballot: { topicSlug: question.slug, choice: choice || priorChoice },
+          postedToRoom,
+          results: (await clickResults(db))[question.slug],
+        });
       });
     }
 
