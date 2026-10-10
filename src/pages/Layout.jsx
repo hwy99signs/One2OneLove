@@ -206,7 +206,7 @@ function LanguageContent({ children, currentPageName }) {
   const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
   const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq' || normalizedShareRoute.startsWith('/mymatchiq/');
   const mmiqHeaderButton = (gradient) => isMyMatchIQPage
-    ? `inline-flex items-center whitespace-nowrap rounded-full border border-white/25 bg-gradient-to-r ${gradient} px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`
+    ? `inline-flex items-center whitespace-nowrap rounded-full border border-white/25 bg-gradient-to-r ${gradient} px-2.5 py-2 text-sm font-black text-white 2xl:px-3.5 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`
     : 'hover:text-yellow-200';
 
 
@@ -389,26 +389,26 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Header */}
       <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
-        <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-3 sm:px-5'} h-[96px] flex items-center justify-between gap-2 sm:gap-5`}>
-          <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className="w-[168px] sm:w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
+        <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-3 sm:px-5'} h-[96px] flex items-center justify-between gap-2 sm:gap-3 2xl:gap-5`}>
+          <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className="w-[168px] sm:w-[190px] 2xl:w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
               src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
               alt={isMyMatchIQPage ? 'MyMatchIQ Logo' : 'One2One Love Logo'}
               width="220"
               height="88"
-              className={isMyMatchIQPage ? 'h-[72px] w-[168px] sm:w-[220px] object-contain object-left' : 'h-[88px] w-[168px] sm:w-[220px] object-contain object-left'}
+              className={isMyMatchIQPage ? 'h-[72px] w-[168px] sm:w-[190px] 2xl:w-[220px] object-contain object-left' : 'h-[88px] w-[168px] sm:w-[190px] 2xl:w-[220px] object-contain object-left'}
               onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
             />
           </Link>
           
-          <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-6 text-lg'} font-bold shrink-0`}>
+          <nav className={`hidden lg:flex items-center ${isMyMatchIQPage ? 'gap-2' : 'gap-3 text-base 2xl:gap-6 2xl:text-lg'} font-bold shrink-0`}>
             {isMyMatchIQPage && (
-              <Link to="/Home" aria-label="One to One Love" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
+              <Link to="/Home" aria-label="One to One Love" className="mr-3 2xl:mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
                 <img src="/assets/o2ol-header-logo.png" alt="One to One Love" className="h-10 w-[76px] scale-[1.2] object-contain" />
               </Link>
             )}
             {!isMyMatchIQPage && (
-              <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.24)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
+              <Link to="/MyMatchIQ" aria-label="MyMatchIQ" className="mr-3 2xl:mr-6 inline-flex h-12 w-[86px] items-center justify-center rounded-full border border-white/25 bg-white px-2 shadow-[0_5px_15px_rgba(15,4,42,0.24)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
                 <img src="/assets/mymatchiq-official-logo.webp" alt="MyMatchIQ" className="h-10 w-[76px] scale-[1.2] object-contain" />
               </Link>
             )}
@@ -484,7 +484,7 @@ function LanguageContent({ children, currentPageName }) {
 
             <div className="relative">
               <Select value={currentLanguage} onValueChange={changeLanguage}>
-                <SelectTrigger className={isMyMatchIQPage ? 'h-auto w-36 rounded-full border border-white/25 bg-gradient-to-r from-amber-400 to-orange-500 px-3.5 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)]' : 'w-36 rounded-xl bg-white/15 border border-white/25 px-4 py-3 text-yellow-300 h-auto font-bold text-lg'}>
+                <SelectTrigger className={isMyMatchIQPage ? 'h-auto w-32 rounded-full border border-white/25 bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-2 text-sm font-black text-white shadow-[0_5px_15px_rgba(15,4,42,0.35)] 2xl:w-36 2xl:px-3.5' : 'w-32 rounded-xl bg-white/15 border border-white/25 px-3 py-2.5 text-yellow-300 h-auto font-bold text-base 2xl:w-36 2xl:px-4 2xl:py-3 2xl:text-lg'}>
                   <SelectValue placeholder={t.nav.language} />
                 </SelectTrigger>
                 <SelectContent>
