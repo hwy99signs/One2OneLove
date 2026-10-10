@@ -882,6 +882,9 @@ async function unlockTokenContent(db,auth,input){
   if(!featureCode||!contentKey)throw Object.assign(new Error('Feature and content key are required.'),{status:400,code:'unlock_target_required'});
   const allowed=new Set(['love_note_template_unlock','date_idea_unlock','podcast_episode_unlock','premium_content_unlock','studio_episode_unlock','memories_unlock','journals_unlock','milestones_unlock','goals_unlock','calendar_unlock','love_language_report','compatibility_report','relationship_pattern_report','premium_report']);
   if(!allowed.has(featureCode))throw Object.assign(new Error('This content unlock type is not available.'),{status:400,code:'unlock_feature_invalid'});
+  // Ensure owner-approved $0.49 template price exists before a new member's
+  // first unlock, even if the wallet/price listing has not been opened yet.
+  if(featureCode==='love_note_template_unlock')await ensureOwnerPricing(db);
 
   const existing=(await db.query(
     `SELECT feature_code,content_key,tokens_charged,unlocked_at,metadata
