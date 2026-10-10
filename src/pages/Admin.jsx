@@ -580,8 +580,9 @@ export default function Admin() {
             </Panel>
 
             <div className="mt-6 grid gap-6 xl:grid-cols-3">
-              <Panel title="Membership Breakdown" subtitle="Registered Free plus both paid membership tiers are always shown, including zero-count groups.">
+              <Panel title="Membership Breakdown" subtitle="Registered Free plus both paid membership tiers are always shown, including zero-count groups — plus the visitors who signed up, from the Visitor Registry.">
                 <div className="space-y-3">{(summary.plans||[]).map((plan,i)=><div key={plan.plan} className={cx('rounded-xl p-4',i===0?'bg-blue-50':i===1?'bg-violet-50':'bg-rose-50')}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{plan.plan}</p><p className="text-2xl font-black text-slate-900">{number(plan.count)}</p></div><p className="text-xs text-slate-500">accounts</p></div>)}</div>
+                <div className="mt-3 rounded-xl bg-emerald-50 p-4"><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Signed-Up Visitors</p><p className="text-2xl font-black text-slate-900">{number(Math.max(0,Number(visitorFunnel.total_visitors||0)-Number(visitorFunnel.anonymous_visitors||0)))}</p></div><p className="text-xs text-slate-500">from Visitor Registry / Audience Intelligence · of {number(visitorFunnel.total_visitors)} tracked visitors</p></div>
               </Panel>
               <Panel title="Scheduled Love Note Delivery Health" subtitle="How scheduled Love Notes are performing after they enter the scheduler.">
                 <DeliveryHealth firstLabel="Scheduled" firstValue={love.scheduled_total} passed={love.scheduled_passed} failed={love.scheduled_failed} pending={love.scheduled_pending}/>
