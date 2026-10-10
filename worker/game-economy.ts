@@ -135,13 +135,19 @@ function localWeekday(now,timeZone){
   const short=new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone}).format(now);
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(short);
 }
-function promoCoversGame(p,game){
-  const g=p.games;
-  if(g==='ALL')return true;
-  if(Array.isArray(g))return g.includes(game);
+function promoCoversGame(games,game){
+  if(games==='ALL')return true;
+  if(Array.isArray(games))return games.includes(game);
   return false;
 }
 export async function resolveGamePromotion(db,userId,game,now=new Date()){
+  // Owner-ordered launch window: every game is free through Sunday
+  // 2026-10-11 11:59:59 PM America/Chicago (CDT). This deliberately
+  // expires by absolute time and does not alter stored game prices.
+  const launchFreeEnds='2026-10-12T04:59:59.999Z';
+  if(now.getTime()<=Date.parse(launchFreeEnds)){
+    return {id:null,name:'ALL GAMES FREE',kind:'free_play',free:true,percent:100,endsAt:launchFreeEnds,timezone:'America/Chicago',temporary:true};
+  }
   await ensureGameEconomySchema(db);
   const ctx=await memberPromoContext(db,userId);
   let tz=ctx.timezone;
