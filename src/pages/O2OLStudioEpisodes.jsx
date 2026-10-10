@@ -4,6 +4,7 @@ import { ArrowLeft, CreditCard, Film, Loader2, LockKeyhole, PlayCircle } from 'l
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
+import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 
 const COPY={
   en:{title:'Previous Episodes',sub:'Watch earlier O2OL Studio conversations anytime they are available to your account.',back:'Back to O2OL Studio',season:'Season',episode:'Episode',watch:'Watch Episode',locked:'Replay not available yet',opens:'Public replay opens',empty:'No Studio episodes are available yet.',loading:'Loading episodes…',unlockBtn:'Unlock for $1 Credit',unlockPrice:'Episode unlock — $1 Credit',unlocking:'Unlocking…',needCredit:'You need {required} Credit. Balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock. Please try again.'},
@@ -31,6 +32,7 @@ export default function O2OLStudioEpisodes(){
   const [refreshKey,setRefreshKey]=useState(0);
   const [unlockingId,setUnlockingId]=useState(null);
   const [unlockErrors,setUnlockErrors]=useState({});
+  const [confirmEpisode,setConfirmEpisode]=useState(null);
 
   useEffect(()=>{
     let active=true;
@@ -83,7 +85,7 @@ export default function O2OLStudioEpisodes(){
               <div className="p-5"><p className="text-xs font-black uppercase tracking-[.16em] text-cyan-200">{t.season} {ep.season} • {t.episode} {ep.episode}</p><h2 className="mt-2 text-2xl font-black">{EPISODE_TITLES[currentLanguage]?.[ep.id]||EPISODE_TITLES.en[ep.id]||ep.title}</h2>{canOpen&&<Link to={`/O2OLStudio?episode=${encodeURIComponent(ep.id)}`} className="mt-4 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/15 px-4 py-2 text-sm font-black text-fuchsia-100 hover:bg-fuchsia-500/25"><PlayCircle className="h-5 w-5"/>{t.watch} {ep.episode}</Link>}
               {!canOpen&&ep?.unlockPriceCents&&(isAuthenticated?(
                 <span className="mt-4 block">
-                  <button type="button" disabled={unlockingId===ep.id} onClick={()=>handleUnlock(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
+                  <button type="button" disabled={unlockingId===ep.id} onClick={()=>setConfirmEpisode(ep)} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-black text-white transition hover:brightness-110 disabled:opacity-60">
                     {unlockingId===ep.id?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlockingId===ep.id?t.unlocking:t.unlockBtn}
                   </button>
                   {unlockErrors[ep.id]&&<span className="mt-2 block text-xs font-bold text-amber-200">{unlockErrors[ep.id]} <Link to="/Credit" className="underline">{t.addCredit}</Link></span>}
@@ -96,5 +98,15 @@ export default function O2OLStudioEpisodes(){
         </div>}
       </div>
     </section>
+    <UnlockPriceDialog
+      open={Boolean(confirmEpisode)}
+      title={confirmEpisode?.title ? 'Unlock '+confirmEpisode.title : 'Unlock O2OL Studio Episode'}
+      priceCents={Number(confirmEpisode?.unlockPriceCents||100)}
+      description="Pay once and watch anytime from this account."
+      busy={Boolean(confirmEpisode&&unlockingId===confirmEpisode.id)}
+      error={confirmEpisode ? (unlockErrors[confirmEpisode.id]||'') : ''}
+      onUnlock={()=>confirmEpisode&&handleUnlock(confirmEpisode)}
+      onClose={()=>setConfirmEpisode(null)}
+    />
   </main>;
 }
