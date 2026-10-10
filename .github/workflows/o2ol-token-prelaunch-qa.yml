@@ -405,7 +405,7 @@ jobs:
           grep -F "current_route" worker/admin.ts
           grep -F "async function supportFeedback(db)" worker/admin.ts
           grep -F "Administrator activity is intentionally excluded" src/pages/Admin.jsx
-          grep -F "On Site Now" src/pages/Admin.jsx
+          grep -F "On Site Right Now" src/pages/Admin.jsx
           grep -F "Support & Problem Reports" src/pages/Admin.jsx
 
           # Navigation, support identity, 404 and deferred-route behavior.
