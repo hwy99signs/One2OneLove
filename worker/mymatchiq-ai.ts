@@ -2,6 +2,7 @@
 import { Client } from 'pg';
 import { reserveTokenCharge, consumeTokenReservation, releaseTokenReservation, maybeAutoReplenish } from './o2ol-tokens';
 import { recordOpenAICostEvent } from './o2ol-cost-ledger';
+import { retrieveCoachingKnowledge, formatCoachingGrounding, O2OL_COACHING_KB_VERSION } from './coaching-knowledge';
 
 const HEADERS={ 'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff' };
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -64,7 +65,9 @@ async function sendMessage(db,env,auth,id,input){
   )).rows.reverse();
   const member=(await db.query('SELECT name FROM public.users WHERE id=$1::uuid',[auth.user.id])).rows[0];
   const transcript=history.map(x=>`${x.role==='assistant'?'Bianca':'Member'}: ${x.content}`).join('\n\n');
-  const instructionText=instructions(member?.name,p.common_phrases,language,responseLength);
+  const knowledge=retrieveCoachingKnowledge(message,history,4);
+  const grounding=formatCoachingGrounding(knowledge);
+  const instructionText=instructions(member?.name,p.common_phrases,language,responseLength)+`\n\nO2OL COACHING KNOWLEDGE BASE (${O2OL_COACHING_KB_VERSION})\nUse the following as grounding. Do not quote it mechanically. Do not invent facts beyond the member's message/history. If safety guidance conflicts with ordinary coaching, safety guidance wins.\n${grounding}`;
   const aiInput=`${transcript?transcript+'\n\n':''}Member: ${message}\n\nBianca:`;
   let generated=null;
   try{
@@ -119,7 +122,7 @@ async function sendMessage(db,env,auth,id,input){
     inputText:message,outputText:generated.text,contextText:instructionText+'\n\n'+aiInput,
     walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
     customerTokensCharged:Number(reservation.tokens||0),
-    metadata:{conversation_id:id,request_id:requestId,response_length:responseLength,history_messages:history.length},
+    metadata:{conversation_id:id,request_id:requestId,response_length:responseLength,history_messages:history.length,kb_version:O2OL_COACHING_KB_VERSION,kb_ids:knowledge.map(x=>x.id)},
   }).catch(error=>console.error('Bianca cost telemetry failed',error));
   maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Bianca Auto-Replenish check failed',error));
 
