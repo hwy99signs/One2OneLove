@@ -743,6 +743,9 @@ export default function DateIdeas() {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
 
+                {!isOpenHouseLocked && isBuiltIn && OPEN_HOUSE_OPEN_DATE_IDS.has(Number(idea.id)) && (
+                  <span className="absolute right-3 top-3 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-black tracking-wide text-yellow-950 shadow">FREE</span>
+                )}
                 {isOpenHouseLocked ? (
                   <div className="min-w-0 flex-1 pr-10">
                     <div className="flex items-center gap-2 overflow-hidden">
