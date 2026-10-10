@@ -3,11 +3,11 @@
 INSERT INTO public.o2ol_token_feature_prices
   (feature_code,label,token_cost,pricing_unit,active,calibration_only)
 VALUES
-  ('bianca_response_short','Bianca short reply',5,'response',true,false),
-  ('bianca_response_medium','Bianca medium reply',10,'response',true,false),
+  ('bianca_response_short','Bianca short reply',10,'response',true,false),
+  ('bianca_response_medium','Bianca medium reply',15,'response',true,false),
   ('bianca_response_long','Bianca long reply',20,'response',true,false),
-  ('amora_response_short','Amora short reply',5,'response',true,false),
-  ('amora_response_medium','Amora medium reply',10,'response',true,false),
+  ('amora_response_short','Amora short reply',10,'response',true,false),
+  ('amora_response_medium','Amora medium reply',15,'response',true,false),
   ('amora_response_long','Amora long reply',20,'response',true,false)
 ON CONFLICT(feature_code) DO UPDATE SET
   label=EXCLUDED.label,
