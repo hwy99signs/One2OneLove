@@ -328,7 +328,7 @@ export default function LikeMinded() {
         api('/api/games/like-minded/access',{method:'GET',headers:{}}),
       ]);
       setTokenBalance(Number(wallet?.wallet?.balance||0));
-      setTokenCost(Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||2));
+      setTokenCost(Number(wallet?.featurePrices?.find(x=>x.feature_code==='like_minded_session')?.token_cost||49));
       setGamePass(access?.pass||null);
       return access?.pass||null;
     }catch(error){
@@ -342,7 +342,7 @@ export default function LikeMinded() {
       setTokenBalance(Number(info.balance||tokenBalance||0));
       if(info.required)setTokenCost(Number(info.required));
       setTokenPrompt(true);
-      setApiError(`${t.buyTokens} — ${info.required||tokenCost||2} tokens required. Balance: ${info.balance||0}.`);
+      setApiError(`${t.buyTokens} — ${info.required||tokenCost||49} Credit cents required. Balance: ${info.balance||0}.`);
       return true;
     }
     setApiError(error?.message||t.unavailable);
