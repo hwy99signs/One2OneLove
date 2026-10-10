@@ -79,19 +79,38 @@ async function activeLikeMindedPass(db,userId){
     [userId],
   )).rows[0]||null;
 }
-async function launchScratch(db,auth){
+async function launchScratch(db,env,auth,input){
   await ensureScratchTable(db);
   await verifiedMember(db,auth.user.id);
-  await db.query('DELETE FROM public.o2ol_game_launch_tickets WHERE expires_at<now()');
-  const token=randomToken(32);
-  const tokenHash=await sha256Hex(token);
-  const expiresAt=new Date(Date.now()+5*60*1000);
-  await db.query(
-    `INSERT INTO public.o2ol_game_launch_tickets(token_hash,user_id,game,expires_at)
-     VALUES($1,$2::uuid,'scratch',$3)`,
-    [tokenHash,auth.user.id,expiresAt.toISOString()],
-  );
-  return json({ok:true,token,expiresAt:expiresAt.toISOString(),access:'free_verified_account'});
+  const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
+  const reservation=await reserveTokenCharge(db,auth.user.id,'scratch_game_session',{
+    idempotencyKey:`scratch:${auth.user.id}:${requestId}`,
+    metadata:{game:'scratch',request_id:requestId},
+  });
+  try{
+    await db.query('DELETE FROM public.o2ol_game_launch_tickets WHERE expires_at<now()');
+    const token=randomToken(32);
+    const tokenHash=await sha256Hex(token);
+    const expiresAt=new Date(Date.now()+5*60*1000);
+    await db.query(
+      `INSERT INTO public.o2ol_game_launch_tickets(token_hash,user_id,game,expires_at)
+       VALUES($1,$2::uuid,'scratch',$3)`,
+      [tokenHash,auth.user.id,expiresAt.toISOString()],
+    );
+    await consumeTokenReservation(db,reservation.id);
+    await recordCostEvent(db,env,{
+      userId:auth.user.id,featureCode:'scratch_game_session',provider:'internal',
+      providerProduct:'scratch_game_launch',
+      walletTransactionId:reservation.transaction?.id||reservation.transaction_id||null,
+      providerCostMicros:null,customerTokensCharged:Number(reservation.tokens||0),
+      metadata:{game:'scratch',request_id:requestId,internal_cost_unallocated:true},
+    }).catch(error=>console.error('Scratch cost telemetry failed',error));
+    maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Scratch Auto-Replenish check failed',error));
+    return json({ok:true,token,expiresAt:expiresAt.toISOString(),access:'paid_game',tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}});
+  }catch(error){
+    await releaseTokenReservation(db,reservation.id,'scratch_launch_failed').catch(()=>{});
+    throw error;
+  }
 }
 async function launchLikeMinded(db,env,auth,input){
   await verifiedMember(db,auth.user.id);
@@ -147,7 +166,9 @@ export async function handleGameAccessRequest(request,env,url){
     return await withDb(env,async db=>{
       if(url.pathname==='/api/games/scratch/launch'){
         if(request.method!=='POST')return fail('Method not allowed.',405,'method_not_allowed');
-        return launchScratch(db,auth);
+        const input=(request.headers.get('content-type')||'').includes('application/json')
+          ? await request.json().catch(()=>({})):{};
+        return launchScratch(db,env,auth,input);
       }
       if(url.pathname==='/api/games/like-minded/access'){
         if(request.method==='GET'){
