@@ -287,7 +287,7 @@ export default {
       if (response) return response;
     }
 
-    if (url.pathname === '/api/presence/ping') {
+    if (url.pathname === '/api/site-presence/ping') {
       const response = await handlePresencePing(request, env);
       if (response) return response;
     }
