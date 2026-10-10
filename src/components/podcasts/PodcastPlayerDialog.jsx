@@ -3,6 +3,7 @@ import { Coins, ExternalLink, Loader2, Lock, Mic, PlayCircle, ShieldCheck } from
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
+import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
 import { useAuth } from "@/contexts/AuthContext";
 import { getTokenWallet, isTokensRequiredError, listTokenUnlocks, tokenRequiredDetails, unlockTokenContent } from "@/lib/tokenService";
 import {
@@ -34,6 +35,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
   const [unlockingEpisode, setUnlockingEpisode] = useState(false);
   const [unlockError, setUnlockError] = useState("");
   const [podcastTokenCost, setPodcastTokenCost] = useState(199);
+  const [showUnlockConfirm,setShowUnlockConfirm] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -204,7 +206,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
               <div className="flex items-center gap-2 font-black"><Lock className="h-5 w-5"/>CREDIT</div>
               <p className="mt-1 text-sm font-semibold">This episode is locked. Unlock it once with Credit and it stays available for your account.</p>
               {user?.id ? (
-                <Button onClick={unlockEpisode} disabled={unlockingEpisode} className="mt-3 w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
+                <Button onClick={()=>setShowUnlockConfirm(true)} disabled={unlockingEpisode} className="mt-3 w-full bg-gradient-to-r from-amber-400 to-orange-500 font-black text-amber-950 hover:from-amber-500 hover:to-orange-600">
                   {unlockingEpisode?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Coins className="mr-2 h-4 w-4"/>}
                   {'$'+(Number(podcastTokenCost||0)/100).toFixed(2)} Credit · Unlock Episode
                 </Button>
@@ -256,6 +258,16 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
           )}
         </div>
       </DialogContent>
+      <UnlockPriceDialog
+        open={showUnlockConfirm}
+        title={selectedEpisode ? 'Unlock '+selectedEpisode.title : 'Unlock Podcast Episode'}
+        priceCents={podcastTokenCost}
+        description="Pay once and listen anytime from this account."
+        busy={unlockingEpisode}
+        error={unlockError}
+        onUnlock={async()=>{await unlockEpisode(); if(!unlockError)setShowUnlockConfirm(false);}}
+        onClose={()=>{setShowUnlockConfirm(false);setUnlockError('');}}
+      />
     </Dialog>
   );
 }
