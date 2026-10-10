@@ -1,4 +1,4 @@
 O2OL_PRODUCTION_DEPLOY_TRIGGER
-fix_merge=99fb029647b05460d99ced9dd0327e333e26a6d1
-fixes=Click-to-Vote: homepage card replaces the expired Open House banner; choice ballots post into chat rooms with Amora host responses; results in the Chat burgundy tab.
-source_pr=113
+fix_merge=6332e93925e77b0f964a950b64706a9aa1520a40
+fixes=Amora host response fix (proven users-row columns, isolated stages); homepage Studio colors: NEW EPISODE elements share one gradient, Past Episodes tab yellow.
+source_pr=114
