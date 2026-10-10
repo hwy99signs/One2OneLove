@@ -641,10 +641,18 @@ async function visitorRegistry(db) {
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=e.visitor_id
           LEFT JOIN neon_auth."user" a ON a.id=COALESCE(e.user_id,vil.user_id)
          WHERE COALESCE(a.role,'user') <> 'admin' OR COALESCE(e.user_id,vil.user_id) IS NULL
-      ), linked_visitors AS (
-        SELECT DISTINCT vi.visitor_id,vil.user_id
+      ), resolved_visitors AS (
+        -- Same identity resolution as the registry list (owner-approved
+        -- 2026-10-09): a visitor counts as signed up when EITHER a formal
+        -- signup link exists OR their signed-in activity is on record.
+        SELECT vi.visitor_id,
+               COALESCE(vil.user_id, ev.user_id) AS user_id
           FROM visitor_ids vi
           LEFT JOIN public.visitor_identity_links vil ON vil.visitor_id=vi.visitor_id
+          LEFT JOIN (SELECT visitor_id,
+                            (array_agg(user_id ORDER BY created_at DESC) FILTER (WHERE user_id IS NOT NULL))[1] AS user_id
+                       FROM public.interaction_events
+                      GROUP BY visitor_id) ev ON ev.visitor_id=vi.visitor_id
       ), active_visitors AS (
         SELECT DISTINCT e.visitor_id
           FROM public.interaction_events e
@@ -662,7 +670,7 @@ async function visitorRegistry(db) {
       SELECT
         (SELECT count(*) FROM visitor_ids)::int AS total_visitors,
         (SELECT count(*) FROM active_visitors)::int AS online_now,
-        (SELECT count(*) FROM linked_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
+        (SELECT count(DISTINCT visitor_id) FROM resolved_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
         (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
           WHERE COALESCE(a.role,'user') <> 'admin')::int AS registered_free,
         (SELECT count(*) FROM buyers)::int AS token_buyers,
