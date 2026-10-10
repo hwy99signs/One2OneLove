@@ -17,7 +17,7 @@ const USERS={
   admin:{id:'00000000-0000-4000-8000-000000000103',email:'admin.qa@example.invalid',name:'Admin QA',role:'admin'},
 };
 
-async function installMocks(context,mode){
+async function installMocks(context,mode,coachingConsentAccepted=true){
   const user=USERS[mode]||null;
   if(user){
     await context.route('**/api/auth/get-session',r=>fulfill(r,200,{user:{...user,emailVerified:true},session:{id:'qa-session-'+mode,userId:user.id}}));
@@ -25,6 +25,27 @@ async function installMocks(context,mode){
       ...user,user_type:'regular',is_active:true,is_verified:true,phone_number_verified:true,phoneNumberVerified:true,
       subscription_plan:'Free',subscription_status:'inactive',stripe_subscription_id:null,preferred_language:'en'
     }}));
+    await context.route('**/api/consents/coaching',r=>{
+      const method=r.request().method();
+      if(method==='GET') return fulfill(r,200,{
+        ok:true,version:'2026-10-10-v1',accepted:coachingConsentAccepted,
+        acceptedVersion:coachingConsentAccepted?'2026-10-10-v1':null,
+        acceptedAt:coachingConsentAccepted?new Date().toISOString():null,
+        copy:{
+          title:'Before you chat with Amora or Bianca',
+          paragraphs:[
+            'Amora and Bianca are AI guides created by One2OneLove. They are not human, and they are not therapists, doctors, lawyers, or licensed counselors.',
+            'They offer relationship guidance, education, and reflection for everyday situations. Nothing they say is medical, mental-health, or legal advice, and it is not a substitute for a qualified professional.'
+          ],
+          crisis:'If you are in danger, thinking of harming yourself, or in crisis, stop and contact your local emergency number or a crisis line (in the U.S., call or text 988) right away. Amora and Bianca are not crisis services.',
+          billing:'How billing works: conversation replies are charged to your Credit by the length you select — Short $0.10, Medium $0.15, Long $0.20 per reply. Formal reports are $2.99 each. You are charged when a reply is generated, and your balance is shown before you send.',
+          privacy:'Your conversations are saved to your account so the guides can remember context and personalize replies. You must be 18 or older to use coaching.',
+          agreement:'By tapping “I agree,” you accept this disclaimer and the One2OneLove Terms of Service.'
+        }
+      });
+      if(method==='PUT') return fulfill(r,200,{ok:true,accepted:true,version:'2026-10-10-v1',acceptedAt:new Date().toISOString()});
+      return fulfill(r,405,{ok:false,error:{code:'method_not_allowed',message:'Method not allowed.'}});
+    });
   }
   await context.route('**/api/feature-usage',r=>fulfill(r,200,{ok:true}));
   await context.route('**/api/tokens/wallet',r=>fulfill(r,200,{ok:true,wallet:{balance:mode==='credit'?500:0},featurePrices:[
@@ -81,10 +102,10 @@ async function installMocks(context,mode){
   }
 }
 
-async function open(browser,path,{mode=null,viewport={width:1440,height:900},language='en'}={}){
+async function open(browser,path,{mode=null,viewport={width:1440,height:900},language='en',coachingConsentAccepted=true}={}){
   const context=await browser.newContext({viewport});
   await context.addInitScript(lang=>localStorage.setItem('preferredLanguage',lang),language);
-  await installMocks(context,mode);
+  await installMocks(context,mode,coachingConsentAccepted);
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',e=>errors.push(String(e.message||e)));
@@ -216,6 +237,22 @@ try{
     const action=page.getByRole('button',{name:/Action/i}).last();
     await action.click();
     if(await page.getByText('Send A Love Note',{exact:true}).last().isVisible().catch(()=>false)) pass('Mobile Action menu opens'); else fail('Mobile Action menu did not open');
+    await context.close();
+  }
+
+  // Shared Bianca/Amora coaching disclaimer: explicit acceptance before coach UI mounts.
+  {
+    const {context,page}=await open(browser,'/Amora',{mode:'free',coachingConsentAccepted:false,viewport:{width:390,height:844}});
+    const gateText=await page.locator('body').innerText();
+    if(/Before you chat with Amora or Bianca/i.test(gateText) && /not therapists, doctors, lawyers, or licensed counselors/i.test(gateText) && /Short \$0\.10, Medium \$0\.15, Long \$0\.20/i.test(gateText)) pass('Shared coaching disclaimer appears before Amora');
+    else fail('Coaching disclaimer copy missing or incomplete',gateText.slice(0,1800));
+    const agree=page.getByRole('button',{name:'I agree'});
+    if(await agree.isVisible().catch(()=>false)) pass('Coaching consent requires explicit I agree'); else fail('Coaching I agree button missing');
+    await agree.click();
+    await page.waitForTimeout(250);
+    const after=await page.locator('body').innerText();
+    if(/Chat with Amora|Relationship Coach/i.test(after) && !/Before you chat with Amora or Bianca/i.test(after)) pass('Accepting coaching disclaimer opens Amora');
+    else fail('Amora did not open after coaching consent',after.slice(0,1800));
     await context.close();
   }
 
