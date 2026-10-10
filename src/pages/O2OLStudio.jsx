@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BrainCircuit, Film, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
+import { BrainCircuit, CreditCard, Film, Loader2, MessageCircle, PlayCircle, Sparkles, LockKeyhole, UserPlus } from 'lucide-react';
 import { useLanguage } from './Layout';
 import { useAuth } from '@/contexts/AuthContext';
+import { isTokensRequiredError, tokenRequiredDetails, unlockTokenContent } from '@/lib/tokenService';
 
 const COPY={
   en:{
@@ -12,8 +13,9 @@ const COPY={
     unavailable:'This episode is temporarily unavailable. Please try again shortly.',
     test:'Take the MyMatchIQ Compatibility Test',talk:'Talk with Bianca',chat:'Enter Chat Room to Comment',
     explore:'Explore MyMatchIQ',episodes:'Previous Episodes',
-    note:'Current Studio episodes are immediate for free verified O2OL accounts. Public visitors receive the replay seven days after release. Bianca and other metered premium actions use Credit.',
-    replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In'
+    note:'Episode 1 is free for everyone. Episode 2 is a one-time $1 Credit unlock — yours to keep once unlocked. Bianca and other metered premium actions use Credit.',
+    replay:'Public replay opens',freeNow:'Create a FREE account to watch now',signIn:'Sign In',
+    unlockTitle:'Unlock this episode',unlockNote:'One-time $1.00 in Credit — unlock once, watch anytime, yours to keep.',unlockBtn:'Unlock for $1 Credit',unlocking:'Unlocking…',joinToUnlock:'Create a FREE account to unlock',needCredit:'You need {required} Credit to unlock this episode. Your balance: {balance}.',addCredit:'Add Credit',unlockFailed:'Unable to unlock this episode. Please try again.'
   },
   es:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Temporada',episodeLabel:'Episodio',
@@ -22,8 +24,9 @@ const COPY={
     unavailable:'Este episodio no está disponible temporalmente. Inténtalo de nuevo en unos momentos.',
     test:'Hacer la Prueba de Compatibilidad MyMatchIQ',talk:'Hablar con Bianca',chat:'Entrar al Chat para Comentar',
     explore:'Explorar MyMatchIQ',episodes:'Episodios Anteriores',
-    note:'Los episodios actuales de Studio están disponibles de inmediato para cuentas O2OL gratuitas y verificadas. Los visitantes reciben la repetición siete días después. Bianca y otras funciones premium usan Crédito.',
-    replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión'
+    note:'El Episodio 1 es gratis para todos. El Episodio 2 se desbloquea una sola vez con $1 de Crédito — tuyo para siempre una vez desbloqueado. Bianca y otras funciones premium a consumo usan Crédito.',
+    replay:'La repetición pública abre',freeNow:'Crea una cuenta GRATIS para verlo ahora',signIn:'Iniciar Sesión',
+    unlockTitle:'Desbloquea este episodio',unlockNote:'Un solo pago de $1.00 en Crédito — desbloquea una vez y míralo cuando quieras, tuyo para siempre.',unlockBtn:'Desbloquear por $1 de Crédito',unlocking:'Desbloqueando…',joinToUnlock:'Crea una cuenta GRATIS para desbloquear',needCredit:'Necesitas {required} de Crédito para desbloquear este episodio. Tu saldo: {balance}.',addCredit:'Añadir Crédito',unlockFailed:'No se pudo desbloquear este episodio. Inténtalo de nuevo.'
   },
   fr:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Saison',episodeLabel:'Épisode',
@@ -32,8 +35,9 @@ const COPY={
     unavailable:'Cet épisode est temporairement indisponible. Veuillez réessayer dans quelques instants.',
     test:'Faire le Test de Compatibilité MyMatchIQ',talk:'Parler avec Bianca',chat:'Entrer dans le Chat pour Commenter',
     explore:'Explorer MyMatchIQ',episodes:'Épisodes Précédents',
-    note:'Les épisodes Studio actuels sont immédiats pour les comptes O2OL gratuits et vérifiés. Le public reçoit la rediffusion sept jours après. Bianca et les autres fonctions premium mesurées utilisent du Crédit.',
-    replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter'
+    note:'L’Épisode 1 est gratuit pour tout le monde. L’Épisode 2 se débloque une fois pour 1 $ de Crédit — à vous pour toujours une fois débloqué. Bianca et les autres fonctions premium mesurées utilisent du Crédit.',
+    replay:'La rediffusion publique ouvre',freeNow:'Créez un compte GRATUIT pour regarder maintenant',signIn:'Se Connecter',
+    unlockTitle:'Débloquez cet épisode',unlockNote:'Un seul paiement de 1,00 $ en Crédit — débloquez une fois, regardez quand vous voulez, à vous pour toujours.',unlockBtn:'Débloquer pour 1 $ de Crédit',unlocking:'Déblocage…',joinToUnlock:'Créez un compte GRATUIT pour débloquer',needCredit:'Il vous faut {required} de Crédit pour débloquer cet épisode. Votre solde : {balance}.',addCredit:'Ajouter du Crédit',unlockFailed:'Impossible de débloquer cet épisode. Veuillez réessayer.'
   },
   it:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Stagione',episodeLabel:'Episodio',
@@ -42,8 +46,9 @@ const COPY={
     unavailable:'Questo episodio non è temporaneamente disponibile. Riprova tra poco.',
     test:'Fai il Test di Compatibilità MyMatchIQ',talk:'Parla con Bianca',chat:'Entra nella Chat per Commentare',
     explore:'Esplora MyMatchIQ',episodes:'Episodi Precedenti',
-    note:'Gli episodi Studio attuali sono immediati per gli account O2OL gratuiti e verificati. Il pubblico riceve la replica dopo sette giorni. Bianca e le altre funzioni premium a consumo usano Credito.',
-    replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi'
+    note:'L’Episodio 1 è gratuito per tutti. L’Episodio 2 si sblocca una sola volta con $1 di Credito — tuo per sempre una volta sbloccato. Bianca e le altre funzioni premium a consumo usano Credito.',
+    replay:'La replica pubblica apre',freeNow:'Crea un account GRATUITO per guardare ora',signIn:'Accedi',
+    unlockTitle:'Sblocca questo episodio',unlockNote:'Un solo pagamento di $1,00 in Credito — sblocca una volta e guardalo quando vuoi, tuo per sempre.',unlockBtn:'Sblocca con $1 di Credito',unlocking:'Sblocco in corso…',joinToUnlock:'Crea un account GRATUITO per sbloccare',needCredit:'Ti servono {required} di Credito per sbloccare questo episodio. Il tuo saldo: {balance}.',addCredit:'Aggiungi Credito',unlockFailed:'Impossibile sbloccare questo episodio. Riprova.'
   },
   de:{
     eyebrow:'O2OL Studio Show',seasonLabel:'Staffel',episodeLabel:'Folge',
@@ -52,8 +57,9 @@ const COPY={
     unavailable:'Diese Folge ist vorübergehend nicht verfügbar. Bitte versuche es in Kürze erneut.',
     test:'MyMatchIQ-Kompatibilitätstest Starten',talk:'Mit Bianca Sprechen',chat:'Chatraum Betreten und Kommentieren',
     explore:'MyMatchIQ Entdecken',episodes:'Frühere Folgen',
-    note:'Aktuelle Studio-Folgen sind für kostenlose verifizierte O2OL-Konten sofort verfügbar. Öffentliche Besucher erhalten die Wiederholung sieben Tage später. Bianca und andere Premium-Aktionen verwenden Credit.',
-    replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden'
+    note:'Folge 1 ist für alle kostenlos. Folge 2 wird einmalig für 1 $ Credit freigeschaltet — nach der Freischaltung für immer deine. Bianca und andere Premium-Aktionen verwenden Credit.',
+    replay:'Öffentliche Wiederholung ab',freeNow:'KOSTENLOSES Konto erstellen und jetzt ansehen',signIn:'Anmelden',
+    unlockTitle:'Diese Folge freischalten',unlockNote:'Einmalig 1,00 $ in Credit — einmal freischalten, jederzeit ansehen, für immer deine.',unlockBtn:'Für 1 $ Credit freischalten',unlocking:'Wird freigeschaltet…',joinToUnlock:'KOSTENLOSES Konto erstellen zum Freischalten',needCredit:'Du brauchst {required} Credit, um diese Folge freizuschalten. Dein Guthaben: {balance}.',addCredit:'Credit hinzufügen',unlockFailed:'Diese Folge konnte nicht freigeschaltet werden. Bitte versuche es erneut.'
   }
 };
 
@@ -67,13 +73,16 @@ const EPISODE_TITLES={
 
 export default function O2OLStudio(){
   const {currentLanguage}=useLanguage();
-  const {isAuthenticated}=useAuth();
+  const {isAuthenticated,user}=useAuth();
   const [searchParams]=useSearchParams();
   const requestedEpisodeId=searchParams.get('episode');
   const t=COPY[currentLanguage]||COPY.en;
   const [videoUnavailable,setVideoUnavailable]=useState(false);
   const [episode,setEpisode]=useState(null);
   const [loading,setLoading]=useState(true);
+  const [refreshKey,setRefreshKey]=useState(0);
+  const [unlocking,setUnlocking]=useState(false);
+  const [unlockError,setUnlockError]=useState('');
 
   useEffect(()=>{
     let active=true;
@@ -89,7 +98,31 @@ export default function O2OLStudio(){
       .catch(()=>{if(active)setEpisode(null);})
       .finally(()=>{if(active)setLoading(false);});
     return()=>{active=false};
-  },[isAuthenticated,requestedEpisodeId]);
+  },[isAuthenticated,requestedEpisodeId,refreshKey]);
+
+  const handleUnlock=async()=>{
+    if(!episode||!user?.id||unlocking)return;
+    setUnlocking(true);
+    setUnlockError('');
+    try{
+      await unlockTokenContent({
+        featureCode:'studio_episode_unlock',
+        contentKey:episode.id,
+        source:'o2ol_studio',
+        idempotencyKey:`studio:${user.id}:${episode.id}`,
+      });
+      setRefreshKey(key=>key+1);
+    }catch(error){
+      if(isTokensRequiredError(error)){
+        const info=tokenRequiredDetails(error);
+        setUnlockError(t.needCredit.replace('{required}',(Number(info.required||episode.unlockPriceCents||0)/100).toFixed(2)).replace('{balance}',(Number(info.balance||0)/100).toFixed(2)));
+      }else{
+        setUnlockError(error?.message||t.unlockFailed);
+      }
+    }finally{
+      setUnlocking(false);
+    }
+  };
 
   const localizedTitle=EPISODE_TITLES[currentLanguage]?.[episode?.id]||EPISODE_TITLES.en[episode?.id]||episode?.title||'O2OL Studio';
   const chatRoom=episode?.chatRoom||'studio-who-should-apologize-first';
@@ -124,6 +157,29 @@ export default function O2OLStudio(){
               >
                 Your browser does not support HTML5 video.
               </video>
+            ) : episode?.unlockPriceCents ? (
+              <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
+                <div className="max-w-xl">
+                  <LockKeyhole className="mx-auto h-14 w-14 text-amber-300"/>
+                  <p className="mt-5 text-xl font-black text-white">{t.unlockTitle}</p>
+                  <p className="mt-2 text-sm text-white/60">{t.unlockNote}</p>
+                  {isAuthenticated ? (
+                    <div className="mt-6">
+                      <button type="button" onClick={handleUnlock} disabled={unlocking} className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white transition hover:brightness-110 disabled:opacity-60">
+                        {unlocking?<Loader2 className="h-4 w-4 animate-spin"/>:<CreditCard className="h-4 w-4"/>}{unlocking?t.unlocking:t.unlockBtn}
+                      </button>
+                      {unlockError && (
+                        <p className="mt-4 text-sm font-bold text-amber-200">{unlockError} <Link to="/Credit" className="underline">{t.addCredit}</Link></p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                      <Link to="/SignUp?source=o2ol-studio&type=individual" className="inline-flex items-center gap-2 rounded-full bg-fuchsia-600 px-5 py-3 font-black text-white"><UserPlus className="h-4 w-4"/>{t.joinToUnlock}</Link>
+                      <Link to="/SignIn?source=o2ol-studio" className="rounded-full border border-white/25 bg-white/10 px-5 py-3 font-black text-white">{t.signIn}</Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : episode && !episode.publicAvailable && !episode.memberAvailable ? (
               <div className="flex aspect-video items-center justify-center bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.35),transparent_45%),#030712] p-8 text-center">
                 <div className="max-w-xl">
