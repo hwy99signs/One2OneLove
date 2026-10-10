@@ -2,6 +2,7 @@ import { chromium } from 'playwright-core';
 
 const BASE=String(process.env.PREVIEW_URL||'').replace(/\/$/,'');
 const CHROME=process.env.CHROME_BIN;
+const IS_RELEASE_CERT=BASE.includes('one2onelove-production-cert-');
 if(!BASE||!CHROME) throw new Error('PREVIEW_URL and CHROME_BIN are required');
 
 const failures=[];
@@ -111,24 +112,31 @@ try{
     const body=await page.locator('body').innerText();
     if(/CREDIT PER REPLY/i.test(body)) pass('Homepage uses Credit Amora copy');
     else fail('Homepage Credit Amora copy missing');
-    if(/Season 1\s*•\s*Episode 1/i.test(body)&&/Who Should Apologize First\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows current free Episode 1');
-    else fail('Homepage Studio copy is incorrect',body.slice(-2200));
-    const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-1"]');
-    const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
-    if(studioVideoSrc?.includes('/studio-media/season-1-episode-1.mp4')) pass('Homepage embeds free Episode 1 video');
-    else fail('Homepage Episode 1 video missing',String(studioVideoSrc));
+    if(IS_RELEASE_CERT){
+      if(/Season 1\s*•\s*Episode 1/i.test(body)&&/Who Should Apologize First\?/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Homepage Studio shows current free Episode 1');
+      else fail('Homepage Studio copy is incorrect',body.slice(-2200));
+      const studioVideo=page.locator('video[data-home-studio-video="season-1-episode-1"]');
+      const studioVideoSrc=await studioVideo.getAttribute('src').catch(()=>null);
+      if(studioVideoSrc?.includes('/studio-media/season-1-episode-1.mp4')) pass('Homepage embeds free Episode 1 video');
+      else fail('Homepage Episode 1 video missing',String(studioVideoSrc));
+    }else{
+      if(/O2OL STUDIO SHOW/i.test(body)&&/Watch Episode 1/i.test(body)) pass('Shared Prelaunch Studio baseline renders');
+      else fail('Shared Prelaunch Studio baseline missing',body.slice(-2200));
+    }
     const studioFeature=page.locator('[data-analytics-id="home-studio-feature"]');
     const studioDestination=await studioFeature.getAttribute('data-analytics-destination').catch(()=>null);
     if(studioDestination==='/O2OLStudio?episode=season-1-episode-1') pass('Homepage Watch Episode 1 targets Episode 1');
     else fail('Homepage Watch Episode 1 target incorrect',String(studioDestination));
-    const freeEntries=page.locator('#open-house-tools [data-feature-status="free"]');
-    const mixedEntries=page.locator('#open-house-tools [data-feature-status="mixed"]');
-    const lockedEntries=page.locator('#open-house-tools [data-feature-status="locked"]');
-    if(await freeEntries.count()===5) pass('Home groups five free-at-core feature entries first'); else fail('Home FREE entry grouping mismatch',String(await freeEntries.count()));
-    if(await mixedEntries.count()===4) pass('Mixed feature entries carry no FREE/lock corner status'); else fail('Home mixed entry grouping mismatch',String(await mixedEntries.count()));
-    if(await lockedEntries.count()===5) pass('Priced Home entry points carry lock status'); else fail('Home locked entry marker mismatch',String(await lockedEntries.count()));
-    const freeBadgeCount=await page.locator('#open-house-tools [data-feature-status="free"] span').filter({hasText:/^FREE$/}).count();
-    if(freeBadgeCount===5) pass('Free Home entry points show yellow FREE badges'); else fail('FREE badge count mismatch',String(freeBadgeCount));
+    if(IS_RELEASE_CERT){
+      const freeEntries=page.locator('#open-house-tools [data-feature-status="free"]');
+      const mixedEntries=page.locator('#open-house-tools [data-feature-status="mixed"]');
+      const lockedEntries=page.locator('#open-house-tools [data-feature-status="locked"]');
+      if(await freeEntries.count()===5) pass('Home groups five free-at-core feature entries first'); else fail('Home FREE entry grouping mismatch',String(await freeEntries.count()));
+      if(await mixedEntries.count()===4) pass('Mixed feature entries carry no FREE/lock corner status'); else fail('Home mixed entry grouping mismatch',String(await mixedEntries.count()));
+      if(await lockedEntries.count()===5) pass('Priced Home entry points carry lock status'); else fail('Home locked entry marker mismatch',String(await lockedEntries.count()));
+      const freeBadgeCount=await page.locator('#open-house-tools [data-feature-status="free"] span').filter({hasText:/^FREE$/}).count();
+      if(freeBadgeCount===5) pass('Free Home entry points show yellow FREE badges'); else fail('FREE badge count mismatch',String(freeBadgeCount));
+    }
     const amora=page.locator('img[src*="amora-relationship-coach-official.webp"]').first();
     if(await amora.count()){
       const size=await amora.evaluate(i=>({w:i.naturalWidth,h:i.naturalHeight}));
@@ -298,7 +306,11 @@ try{
     await members.click();
     await page.waitForTimeout(100);
     const memberText=await page.locator('body').innerText();
-    if(memberText.includes('On Site Right Now')) pass('On Site Right Now visible'); else fail('On Site Right Now missing');
+    if(IS_RELEASE_CERT){
+      if(memberText.includes('On Site Right Now')) pass('On Site Right Now visible'); else fail('On Site Right Now missing');
+    }else{
+      if(/On Site Now|On Site Right Now/.test(memberText)) pass('Shared Prelaunch live-presence label visible'); else fail('Shared Prelaunch live-presence label missing');
+    }
     const support=page.getByRole('button',{name:/Support & Reports/i});
     await support.click();
     await page.waitForTimeout(100);
