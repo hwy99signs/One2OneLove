@@ -172,6 +172,16 @@ async function currentPrice(db,featureCode){
   const row=(await db.query(`SELECT token_cost FROM public.o2ol_token_feature_prices WHERE feature_code=$1 AND enabled=true LIMIT 1`,[featureCode])).rows[0];
   return Number(row?.token_cost||49);
 }
+export async function gamePriceQuote(db,userId,game){
+  const def=gameDefinition(game);if(!def)throw Object.assign(new Error('Unknown game.'),{status:400,code:'game_invalid'});
+  const promotion=await resolveGamePromotion(db,userId,game);
+  const normalPriceCents=await currentPrice(db,def.chargeFeatureCode);
+  const priceCents=promotion?.free?0:promotion?.kind==='percent_off'
+    ?Math.max(0,Math.round(normalPriceCents*(100-Math.max(0,Math.min(100,promotion.percent)))/100))
+    :normalPriceCents;
+  return {game,normalPriceCents,priceCents,promotion};
+}
+
 async function allocateGameCreditInTx(db,userId,amount,game,idempotencyKey){
   let remaining=Math.max(0,Number(amount)||0),used=0;
   if(!remaining)return 0;
