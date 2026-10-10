@@ -844,7 +844,7 @@ export default function LikeMinded() {
   }
 
   return withPremiumDialog(
-    <div className="min-h-screen bg-[#07112f] text-white>
+    <div className="min-h-screen bg-[#07112f] text-white">
       <section className="relative flex min-h-[calc(100svh-96px)] flex-col overflow-hidden bg-[#07112f]">
         <div className="relative h-[40svh] min-h-[320px] max-h-[520px] overflow-hidden">
           <div className="absolute inset-0 grid grid-cols-2">
