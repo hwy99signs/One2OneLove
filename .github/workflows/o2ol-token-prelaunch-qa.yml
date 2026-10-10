@@ -73,6 +73,13 @@ jobs:
           grep -F "lg:grid-cols-5" src/pages/Credit.jsx
           grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts
+          grep -F "posterPath:null" worker/studio-media.ts
+          grep -F "{...(ep.posterPath?{poster:ep.posterPath}:{})}" src/pages/O2OLStudioEpisodes.jsx
+          grep -F "{...(episode.posterPath?{poster:episode.posterPath}:{})}" src/pages/O2OLStudio.jsx
+          if grep -F "poster={ep.posterPath||'/assets/o2ol-hero.png'}" src/pages/O2OLStudioEpisodes.jsx; then
+            echo "Episode archive still falls back to the generic hero poster." >&2
+            exit 1
+          fi
           grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx
           grep -F "/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4" src/pages/Home.jsx
           grep -F 'data-analytics-destination="/O2OLStudio?episode=season-1-episode-1"' src/pages/Home.jsx
@@ -425,7 +432,7 @@ jobs:
 
           # Studio / Chat cleanup.
           grep -F 'preload="auto"' src/pages/O2OLStudio.jsx
-          grep -F 'poster={episode.posterPath||"/assets/o2ol-hero.png"}' src/pages/O2OLStudio.jsx
+          grep -F '{...(episode.posterPath?{poster:episode.posterPath}:{})}' src/pages/O2OLStudio.jsx
           if grep -F "not available from media storage yet" src/pages/O2OLStudio.jsx; then
             echo "Public Studio staging sentence survived." >&2
             exit 1

@@ -118,8 +118,8 @@ export default function O2OLStudio(){
                 controls
                 playsInline
                 preload="auto"
-                poster={episode.posterPath||"/assets/o2ol-hero.png"}
-                src={episode.mediaPath}
+                {...(episode.posterPath?{poster:episode.posterPath}:{})}
+                src={`${episode.mediaPath}#t=0.1`}
                 onError={()=>setVideoUnavailable(true)}
               >
                 Your browser does not support HTML5 video.

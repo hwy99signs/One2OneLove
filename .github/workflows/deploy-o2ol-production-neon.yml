@@ -135,6 +135,13 @@ jobs:
           grep -F "lg:grid-cols-5" src/pages/Credit.jsx >/dev/null
           grep -F "credit_15" src/pages/Credit.jsx worker/love-note-credit.ts >/dev/null
           grep -F "episode-2-who-pays-for-the-first-date.mp4" worker/studio-media.ts >/dev/null
+          grep -F "posterPath:null" worker/studio-media.ts >/dev/null
+          grep -F "{...(ep.posterPath?{poster:ep.posterPath}:{})}" src/pages/O2OLStudioEpisodes.jsx >/dev/null
+          grep -F "{...(episode.posterPath?{poster:episode.posterPath}:{})}" src/pages/O2OLStudio.jsx >/dev/null
+          if grep -F "poster={ep.posterPath||'/assets/o2ol-hero.png'}" src/pages/O2OLStudioEpisodes.jsx; then
+            echo "Episode archive still falls back to the generic hero poster." >&2
+            exit 1
+          fi
           grep -F "data-home-studio-video=\"season-1-episode-2\"" src/pages/Home.jsx >/dev/null
           grep -F "/studio-media/season-1/episode-2-who-pays-for-the-first-date.mp4" src/pages/Home.jsx >/dev/null
           grep -F 'data-analytics-destination="/O2OLStudio?episode=season-1-episode-1"' src/pages/Home.jsx >/dev/null

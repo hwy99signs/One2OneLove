@@ -47,7 +47,7 @@ async function installMocks(context,mode){
   ]}));
   await context.route('**/api/tokens/unlocks**',r=>fulfill(r,200,{ok:true,unlocks:[]}));
   await context.route('**/api/studio/episodes',r=>fulfill(r,200,{ok:true,episodes:[
-    {id:'season-1-episode-2',season:1,episode:2,title:'Who Pays for the First Date?',canWatch:false,publicAvailable:false,memberAvailable:false,publicAvailableAt:'2026-10-16T22:00:00Z',mediaPath:null,chatRoom:'studio-who-pays-for-the-first-date',posterPath:'/assets/o2ol-hero.png'},
+    {id:'season-1-episode-2',season:1,episode:2,title:'Who Pays for the First Date?',canWatch:true,publicAvailable:false,memberAvailable:true,publicAvailableAt:'2026-10-16T22:00:00Z',mediaPath:'/studio-media/season-1-episode-2.mp4',chatRoom:'studio-who-pays-for-the-first-date',posterPath:null},
     {id:'season-1-episode-1',season:1,episode:1,title:'Who Should Apologize First?',canWatch:true,publicAvailable:true,memberAvailable:false,publicAvailableAt:'2026-10-10T00:00:00Z',mediaPath:'/studio-media/season-1-episode-1.mp4',chatRoom:'studio-who-should-apologize-first',posterPath:'/assets/o2ol-studio-bianca-card.webp'}
   ]}));
   await context.route('**/api/mymatchiq/**',r=>{
@@ -327,6 +327,10 @@ try{
     const ep1Href=await ep1Link.getAttribute('href').catch(()=>null);
     if(ep1Href?.includes('episode=season-1-episode-1')) pass('Episode 1 archive link targets Episode 1');
     else fail('Episode 1 archive link target missing',String(ep1Href));
+    const ep2Video=page.locator('article').filter({hasText:'Who Pays for the First Date?'}).locator('video');
+    const ep2Poster=await ep2Video.getAttribute('poster').catch(()=>null);
+    if(!ep2Poster) pass('Episode 2 archive has no generic hero poster');
+    else fail('Episode 2 archive still uses poster',String(ep2Poster));
     await noOverflow(page,'Studio archive mobile',{});
     await context.close();
   }
