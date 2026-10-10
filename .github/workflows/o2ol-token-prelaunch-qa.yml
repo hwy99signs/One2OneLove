@@ -357,7 +357,7 @@ jobs:
           grep -F "Registered Free" src/pages/Admin.jsx
           grep -F "Credit Buyers" src/pages/Admin.jsx
           grep -F "Paid Activity" src/pages/Admin.jsx
-          grep -F "async function visitorRegistry(db)" worker/admin.ts
+          grep -F "async function visitorRegistry(db, rangeDays = 30)" worker/admin.ts
           grep -F "marketing_email_opt_in" worker/admin.ts
           grep -F "visitor_identity_links" worker/admin.ts
           grep -F "CREATE TABLE IF NOT EXISTS public.interaction_events" neon-migrations/2026-10-09-o2ol-lightweight-visitor-registry.sql
