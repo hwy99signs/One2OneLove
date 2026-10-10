@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createPageUrl } from '@/utils';
 import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails } from '@/lib/tokenService';
 import UnlockPriceDialog from '@/components/pricing/UnlockPriceDialog';
+import GameLeaderboard from '@/components/activities/GameLeaderboard';
 
 const LANGS = ['en','es','fr','it','de'];
 
@@ -316,6 +317,7 @@ export default function LikeMinded() {
   const [tokenPrompt,setTokenPrompt]=useState(false);
   const [accessLoading,setAccessLoading]=useState(false);
   const premiumResolveRef=useRef(null);
+  const scoreSubmittedRef=useRef(new Set());
 
   const categoryIndex = Math.max(0, CANONICAL_CATEGORIES.indexOf(category));
   const activeCanonicalCategory = CANONICAL_CATEGORIES[(categoryIndex + questionNo - 1) % CANONICAL_CATEGORIES.length];
@@ -649,11 +651,25 @@ export default function LikeMinded() {
     } catch (err) { handlePremiumError(err); }
   };
 
+  // like-minded-score-submit
+  useEffect(()=>{
+    const current=roomState||room;
+    if(!gamePass?.id||!current?.code||!current?.both_locked||Number(current?.current_question_no||0)<21)return;
+    const sessionRef=gamePass.id+':'+current.code;
+    if(scoreSubmittedRef.current.has(sessionRef))return;
+    scoreSubmittedRef.current.add(sessionRef);
+    api('/api/games/scores',{method:'POST',body:JSON.stringify({game:'like_minded',score:Number(current.matches||0),sessionRef})})
+      .catch(()=>scoreSubmittedRef.current.delete(sessionRef));
+  },[roomState,room,gamePass?.id]);
+
   const modeHeader = (
-    <div className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-      <button onClick={goHome} className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> {t.back}</button>
-      <div className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black tracking-wide text-white">LIKE MINDED?</div>
-    </div>
+    <>
+      <div className="mx-auto mb-4 flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <button onClick={goHome} className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> {t.back}</button>
+        <div className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black tracking-wide text-white">LIKE MINDED?</div>
+      </div>
+      <div className="mx-auto mb-6 max-w-6xl px-4 sm:px-6"><GameLeaderboard game="like_minded"/></div>
+    </>
   );
 
   if (screen === 'solo') {
