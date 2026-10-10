@@ -106,6 +106,8 @@ jobs:
             echo "Relationship 100 room seed reactivates the retired one-time event room." >&2
             exit 1
           fi
+          grep -F "Keep on the lookout for more votings." src/pages/Chat.jsx >/dev/null
+          grep -F "t.moreVoting" src/pages/Chat.jsx >/dev/null
       - name: Certify title-only paid Love Note and Date Idea previews
         shell: bash
         run: |
