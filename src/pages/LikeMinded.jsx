@@ -354,6 +354,9 @@ export default function LikeMinded() {
       return false;
     }
     if(gamePass&&new Date(gamePass.expires_at).getTime()>Date.now())return true;
+    const cents=Number(tokenCost||49);
+    const approved=window.confirm(`Like Minded costs ${(cents/100).toFixed(2)} per game/session.\n\nPress OK to unlock and deduct Credit, or Cancel/X to leave your balance unchanged.`);
+    if(!approved)return false;
     setAccessLoading(true);setApiError('');setTokenPrompt(false);
     try{
       const requestId=globalThis.crypto?.randomUUID?.()||`like-minded-${Date.now()}-${Math.random().toString(36).slice(2)}`;
