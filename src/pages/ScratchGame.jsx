@@ -14,11 +14,11 @@ import UnlockPriceDialog from "@/components/pricing/UnlockPriceDialog";
 const GAME_URL = "https://play.one2onelove.com/";
 
 const copy = {
-  en: { back:"Back to Games", full:"Open Full Screen", title:"One2OneLove Scratch Game", preview:"Scratch. Share. Grow closer. This game costs $0.49 per play.", loading:"Opening your One2OneLove game…", error:"Unable to open the Scratch Game." },
-  es: { back:"Volver a Juegos", full:"Abrir Pantalla Completa", title:"Juego de Rasca One2OneLove", preview:"Rasca. Comparte. Acérquense. Este juego cuesta $0.49 por partida.", loading:"Abriendo tu juego One2OneLove…", error:"No se pudo abrir el Juego de Rasca." },
-  fr: { back:"Retour aux Jeux", full:"Ouvrir en Plein Écran", title:"Jeu à Gratter One2OneLove", preview:"Grattez. Partagez. Rapprochez-vous. Ce jeu coûte 0,49 $ par partie.", loading:"Ouverture de votre jeu One2OneLove…", error:"Impossible d’ouvrir le Jeu à Gratter." },
-  it: { back:"Torna ai Giochi", full:"Apri a Schermo Intero", title:"Gioco Gratta One2OneLove", preview:"Gratta. Condividi. Avvicinatevi. Questo gioco costa $0.49 a partita.", loading:"Apertura del gioco One2OneLove…", error:"Impossibile aprire il Gioco Gratta." },
-  de: { back:"Zurück zu Spielen", full:"Vollbild Öffnen", title:"One2OneLove Rubbelspiel", preview:"Rubbeln. Teilen. Näher zusammenwachsen. Dieses Spiel kostet $0.49 pro Spiel.", loading:"Dein One2OneLove-Spiel wird geöffnet…", error:"Das Rubbelspiel kann nicht geöffnet werden." },
+  en: { back:"Back to Games", full:"Open Full Screen", title:"LOVE SCRATCH GAME", preview:"Scratch. Share. Grow closer. This game costs $0.49 per play.", loading:"Opening your One2OneLove game…", error:"Unable to open the Scratch Game." },
+  es: { back:"Volver a Juegos", full:"Abrir Pantalla Completa", title:"LOVE SCRATCH GAME", preview:"Rasca. Comparte. Acérquense. Este juego cuesta $0.49 por partida.", loading:"Abriendo tu juego One2OneLove…", error:"No se pudo abrir el Juego de Rasca." },
+  fr: { back:"Retour aux Jeux", full:"Ouvrir en Plein Écran", title:"LOVE SCRATCH GAME", preview:"Grattez. Partagez. Rapprochez-vous. Ce jeu coûte 0,49 $ par partie.", loading:"Ouverture de votre jeu One2OneLove…", error:"Impossible d’ouvrir le Jeu à Gratter." },
+  it: { back:"Torna ai Giochi", full:"Apri a Schermo Intero", title:"LOVE SCRATCH GAME", preview:"Gratta. Condividi. Avvicinatevi. Questo gioco costa $0.49 a partita.", loading:"Apertura del gioco One2OneLove…", error:"Impossibile aprire il Gioco Gratta." },
+  de: { back:"Zurück zu Spielen", full:"Vollbild Öffnen", title:"LOVE SCRATCH GAME", preview:"Rubbeln. Teilen. Näher zusammenwachsen. Dieses Spiel kostet $0.49 pro Spiel.", loading:"Dein One2OneLove-Spiel wird geöffnet…", error:"Das Rubbelspiel kann nicht geöffnet werden." },
 };
 
 export default function ScratchGame() {
@@ -32,15 +32,17 @@ export default function ScratchGame() {
   const [showUnlock,setShowUnlock] = useState(false);
   const [priceCents,setPriceCents] = useState(49);
   const [balanceCents,setBalanceCents] = useState(null);
+  const [promotion,setPromotion] = useState(null);
 
   useEffect(()=>{
     let active=true;
     if(!fullMemberAccess)return()=>{active=false};
-    getTokenWallet().then(data=>{
+    Promise.all([getTokenWallet(),apiRequest('/api/games/promotion')]).then(([data,promo])=>{
       if(!active)return;
+      setPromotion(promo?.promotion||null);
       setBalanceCents(Number(data?.wallet?.balance||0));
-      setPriceCents(Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
-      setShowUnlock(true);
+      setPriceCents(promo?.promotion?.free?0:Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
+      setShowUnlock(!promo?.promotion?.free);
     }).catch(()=>{if(active)setShowUnlock(true)});
     return()=>{active=false};
   },[fullMemberAccess]);
@@ -53,6 +55,7 @@ export default function ScratchGame() {
       const payload=await apiRequest('/api/games/scratch/launch',{method:'POST',body:{requestId}});
       const token=payload?.token;
       if(!token)throw new Error(t.error);
+      if(payload?.promotion)setPromotion(payload.promotion);
       if(payload?.tokens?.balance!=null)setBalanceCents(Number(payload.tokens.balance));
       setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||"en")}&ticket=${encodeURIComponent(token)}`);
       setShowUnlock(false);
@@ -66,15 +69,6 @@ export default function ScratchGame() {
     }finally{setUnlocking(false);}
   };
 
-  useEffect(()=>{
-    if(!fullMemberAccess||gameUrl)return;
-    let live=true;
-    apiRequest('/api/games/standard/access?game=pests').then(d=>{
-      if(live&&d?.freeWindow?.active){setShowUnlock(false);launchGame();}
-    }).catch(()=>{});
-    return()=>{live=false};
-  },[fullMemberAccess,gameUrl]);
-
   return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-cyan-50 to-blue-50">
     <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -86,7 +80,15 @@ export default function ScratchGame() {
         {!fullMemberAccess?(
           <div className="p-8 text-center sm:p-12"><h1 className="text-3xl font-black text-slate-900">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">{t.preview}</p></div>
         ):gameUrl?(
-          <iframe title="One2OneLove Scratch Game" src={gameUrl} className="w-full border-0" style={{height:"min(82vh, 980px)",minHeight:"680px"}} allow="fullscreen"/>
+          <iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(82vh, 980px)",minHeight:"680px"}} allow="fullscreen"/>
+        ):promotion?.free?(
+          <div className="p-10 text-center sm:p-14">
+            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">ALL GAMES FREE</div>
+            <h1 className="mt-4 text-3xl font-black text-slate-900">{t.title}</h1>
+            <p className="mx-auto mt-3 max-w-xl text-slate-600">Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.</p>
+            {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
+            <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
+          </div>
         ):(
           <div className="p-10 text-center sm:p-14">
             <LockKeyhole className="mx-auto h-12 w-12 text-pink-600"/>

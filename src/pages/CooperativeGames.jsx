@@ -23,7 +23,7 @@ const translations = {
     featured: "Featured Games",
     allGames: "All Games",
     startGame: "Start Game",
-    scratchName: "One2OneLove Scratch Game",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Scratch, reveal, and talk through meaningful questions together.",
     whatShouldName: "What Should They Do?",
     whatShouldDesc: "Vote on real-life relationship dilemmas, then see how other people answered.",
@@ -40,7 +40,7 @@ const translations = {
     featured: "Juegos Destacados",
     allGames: "Todos los Juegos",
     startGame: "Iniciar Juego",
-    scratchName: "Juego de Rasca One2OneLove",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Rasquen, revelen y conversen juntos sobre preguntas significativas.",
     whatShouldName: "¿Qué Deberían Hacer?",
     whatShouldDesc: "Vota en dilemas reales de relaciones y luego mira cómo respondieron otras personas.",
@@ -57,7 +57,7 @@ const translations = {
     featured: "Jeux en Vedette",
     allGames: "Tous les Jeux",
     startGame: "Commencer",
-    scratchName: "Jeu à Gratter One2OneLove",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Grattez, révélez et échangez ensemble autour de questions significatives.",
     whatShouldName: "Que Devraient-Ils Faire ?",
     whatShouldDesc: "Votez sur des dilemmes relationnels réels, puis découvrez les réponses des autres.",
@@ -74,7 +74,7 @@ const translations = {
     featured: "Giochi in Evidenza",
     allGames: "Tutti i Giochi",
     startGame: "Inizia Gioco",
-    scratchName: "Gioco Gratta e Scopri One2OneLove",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Grattate, scoprite e parlate insieme di domande significative.",
     whatShouldName: "Cosa Dovrebbero Fare?",
     whatShouldDesc: "Vota su dilemmi relazionali realistici e poi scopri come hanno risposto gli altri.",
@@ -91,7 +91,7 @@ const translations = {
     featured: "Empfohlene Spiele",
     allGames: "Alle Spiele",
     startGame: "Spiel Starten",
-    scratchName: "One2OneLove Rubbelspiel",
+    scratchName: "LOVE SCRATCH GAME",
     scratchDesc: "Rubbeln, aufdecken und gemeinsam über bedeutungsvolle Fragen sprechen.",
     whatShouldName: "Was Sollten Sie Tun?",
     whatShouldDesc: "Stimme über realistische Beziehungsdilemmata ab und sieh danach, wie andere geantwortet haben.",
@@ -107,6 +107,7 @@ export default function CooperativeGames() {
 
   const { user } = useAuth();
   const freeMemberAccess = Boolean(user?.id);
+  const temporaryFreeGames = Date.now() <= Date.parse('2026-10-12T04:59:59.999Z');
 
   const { data: games = [] } = useQuery({
     queryKey: ['cooperativeGames', user?.id],
@@ -123,8 +124,8 @@ export default function CooperativeGames() {
       difficulty: 'easy-to-deep',
       icon: '🧠',
       link: 'LikeMinded',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess,
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
       category: 'brain'
     },
     {
@@ -135,8 +136,8 @@ export default function CooperativeGames() {
       difficulty: 'medium',
       icon: '🔤',
       link: 'Scrabluko',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess,
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
       category: 'brain'
     },
     {
@@ -147,8 +148,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '🗳️',
       link: 'WhatShouldTheyDo',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess,
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
       category: 'brain'
     },
     {
@@ -159,8 +160,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '💗',
       link: 'ScratchGame',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess,
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
       category: 'arcade'
     },
     {
@@ -171,8 +172,8 @@ export default function CooperativeGames() {
       difficulty: 'easy',
       icon: '🐜',
       link: 'Pests',
-      playLabel: t.startGame,
-      accessLabel: t.tokenAccess,
+      playLabel: temporaryFreeGames ? 'Play FREE' : t.startGame,
+      accessLabel: temporaryFreeGames ? 'FREE THROUGH SUNDAY' : t.tokenAccess,
       category: 'arcade'
     }
   ];
@@ -208,6 +209,12 @@ export default function CooperativeGames() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">{t.subtitle}</p>
         </motion.div>
 
+        {temporaryFreeGames && (
+          <div className="mb-10 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-6 py-4 text-center text-lg font-black text-white shadow-lg">
+            🎉 {t.freeBanner}
+          </div>
+        )}
+
         {games.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mb-12">
             <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0">
@@ -233,12 +240,6 @@ export default function CooperativeGames() {
                 <div className="text-sm opacity-90">{t.avgTime}</div>
               </CardContent>
             </Card>
-          </div>
-        )}
-
-        {Date.now() < Date.parse("2026-10-12T04:59:00Z") && (
-          <div className="mb-10 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-6 py-4 text-center text-lg font-black text-white shadow-lg">
-            🎉 {t.freeBanner}
           </div>
         )}
 
