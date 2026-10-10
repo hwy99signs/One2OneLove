@@ -20,6 +20,10 @@ import {
 import VotingCard from '@/components/chat/VotingCard';
 import { questionForRoom } from '@/lib/votingQuestions';
 
+const firstNameOf = (name) => {
+  const token = String(name || '').trim().split(/\s+/)[0] || '';
+  return token.includes('@') ? '' : token;
+};
 const lgbtqCopy = {
   en: {
     title:'LGBTQ+ Community Chat',
@@ -547,7 +551,7 @@ export default function Chat() {
                         return (
                           <div key={item.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[86%] rounded-2xl px-4 py-3 sm:max-w-[74%] ${mine ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-900'}`}>
-                              <div className="mb-1 flex items-center justify-between gap-3"><span className={`text-xs font-black ${mine ? 'text-white/90' : 'text-purple-700'}`}>{mine ? (user?.name || item.authorName) : item.authorName}</span><div className="flex items-center gap-2">{mine ? <button type="button" onClick={() => removeMessage(item.id)} className="opacity-70 hover:opacity-100" aria-label={t.delete}><Trash2 size={14}/></button> : (lgbtqMode && isAuthenticated ? <><button type="button" onClick={() => reportMessage(item)} className="text-slate-400 hover:text-rose-600" aria-label={lt.report} title={lt.report}><Flag size={14}/></button><button type="button" onClick={() => muteMember(item)} className="text-slate-400 hover:text-slate-700" aria-label={lt.mute} title={lt.mute}><VolumeX size={14}/></button></> : null)}</div></div>
+                              <div className="mb-1 flex items-center justify-between gap-3"><span className={`text-xs font-black ${mine ? 'text-white/90' : 'text-purple-700'}`}>{mine ? (firstNameOf(user?.name) || item.authorName) : item.authorName}</span><div className="flex items-center gap-2">{mine ? <button type="button" onClick={() => removeMessage(item.id)} className="opacity-70 hover:opacity-100" aria-label={t.delete}><Trash2 size={14}/></button> : (lgbtqMode && isAuthenticated ? <><button type="button" onClick={() => reportMessage(item)} className="text-slate-400 hover:text-rose-600" aria-label={lt.report} title={lt.report}><Flag size={14}/></button><button type="button" onClick={() => muteMember(item)} className="text-slate-400 hover:text-slate-700" aria-label={lt.mute} title={lt.mute}><VolumeX size={14}/></button></> : null)}</div></div>
                               <p className="whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>
                               <p className={`mt-1 text-[11px] ${mine ? 'text-white/70' : 'text-slate-400'}`}>{formatTime(item.createdAt)}</p>
                             </div>
