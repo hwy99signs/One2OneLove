@@ -10,14 +10,14 @@ export default function PaidFeatureGate({ featureCode, children }) {
   const [ready,setReady]=useState(false),[unlocked,setUnlocked]=useState(false),[open,setOpen]=useState(false),[busy,setBusy]=useState(false);
   const [error,setError]=useState(''),[balance,setBalance]=useState(null),[serverPrice,setServerPrice]=useState(null);
   const refresh=async()=>{
-    if(!isAuthenticated||!user?.id){ setReady(true); setOpen(true); return; }
+    if(!isAuthenticated||!user?.id){ setReady(true); return; }
     try{
       const [u,w]=await Promise.all([listTokenUnlocks(featureCode),getTokenWallet()]);
       const has=(u?.unlocks||[]).some(x=>String(x.content_key)==='feature');
       setUnlocked(has); setBalance(Number(w?.wallet?.balance||0));
       const row=(w?.featurePrices||[]).find(x=>x.feature_code===featureCode);
-      setServerPrice(row?Number(row.token_cost):null); setOpen(!has);
-    }catch(_){ setOpen(true); }
+      setServerPrice(row?Number(row.token_cost):null);
+    }catch(_){}
     finally{ setReady(true); }
   };
   useEffect(()=>{ refresh(); },[featureCode,user?.id,isAuthenticated]);
@@ -38,7 +38,7 @@ export default function PaidFeatureGate({ featureCode, children }) {
   if(!ready) return <div className="min-h-[45vh] grid place-items-center text-slate-500 font-bold">Checking access…</div>;
   if(unlocked) return children;
   return <>
-    <div className="min-h-[60vh] grid place-items-center bg-gradient-to-br from-pink-50 via-white to-sky-50 p-6 text-center"><div><div className="text-5xl">🔒</div><h1 className="mt-4 text-3xl font-black text-slate-900">{catalog?.feature||'Premium feature'}</h1><p className="mt-2 text-slate-600">Click below to see the price. You will not be charged unless you confirm Unlock.</p><button type="button" onClick={()=>setOpen(true)} className="mt-5 rounded-full bg-fuchsia-600 px-6 py-3 font-black text-white">View unlock price</button></div></div>
-    <UnlockPriceDialog open={open} title={catalog?.feature} priceCents={serverPrice??catalog?.cents} priceLabel={catalog?.priceLabel} description={catalog?.paid} balanceCents={balance} busy={busy} error={error} onUnlock={unlock} onClose={()=>setOpen(false)} />
+    <div className="min-h-[60vh] grid place-items-center bg-gradient-to-br from-pink-50 via-white to-sky-50 p-6 text-center"><div><div className="text-5xl">🔒</div><h1 className="mt-4 text-3xl font-black text-slate-900">{catalog?.feature||'Premium feature'}</h1><p className="mt-2 text-slate-600">This feature is locked. Tap the locked feature to see its price.</p><button type="button" onClick={()=>setOpen(true)} className="mt-5 rounded-full bg-fuchsia-600 px-6 py-3 font-black text-white">View unlock price</button></div></div>
+    <UnlockPriceDialog open={open} title={catalog?.feature} priceCents={serverPrice??catalog?.cents} priceLabel={catalog?.priceLabel} terms="One-time unlock — yours forever." balanceCents={balance} busy={busy} error={error} onUnlock={unlock} onClose={()=>setOpen(false)} />
   </>;
 }
