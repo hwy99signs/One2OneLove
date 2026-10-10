@@ -87,7 +87,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
     getTokenWallet().then(data=>{
       if(cancelled)return;
       setTokenBalance(Number(data?.wallet?.balance||0));
-      setTokenCost(Number(data?.featurePrices?.find(item=>item.feature_code==='ai_content_generation')?.token_cost||0));
+      setTokenCost(Number(data?.featurePrices?.find(item=>item.feature_code==='love_note_ai')?.token_cost||0));
     }).catch(()=>{});
     return()=>{cancelled=true};
   },[]);
@@ -117,6 +117,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
 
       const response = await generateRelationshipContent({
         contentType: "loveNote",
+        purpose: "love_note",
         tone: noteStyle,
         length: "medium",
         details,
@@ -142,7 +143,7 @@ export default function AIPersonalizationModal({ onClose, onNoteGenerated, curre
       if (isTokensRequiredError(error)) {
         const info=tokenRequiredDetails(error);
         toast.error("Add Credit To Access",{
-          description:`${'$'+(Number(info.required||tokenCost||1)/100).toFixed(2)} Credit required. Current balance: ${'$'+(Number(info.balance||tokenBalance||0)/100).toFixed(2)}.`,
+          description:`${'$'+(Number(info.required||tokenCost||25)/100).toFixed(2)} Credit required. Current balance: ${'$'+(Number(info.balance||tokenBalance||0)/100).toFixed(2)}.`,
           action:{label:"Add Credit",onClick:()=>window.location.assign('/Credit?return=/LoveNotes')},
         });
       } else {
