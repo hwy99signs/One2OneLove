@@ -1005,6 +1005,7 @@ export default function LikeMinded() {
           </div>
         </div>
       </section>
+      <p className="pb-8 text-center text-xs text-slate-400">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
     </div>
   );
 }

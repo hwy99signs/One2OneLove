@@ -45,7 +45,7 @@ import { enforceLaunchIdentity } from './identity-gate';
 import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
-import { handleGameAccessRequest } from './game-access';
+import { handleGameAccessRequest, handleGameFileRequest } from './game-access';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
@@ -184,6 +184,11 @@ export default {
 
     if (url.pathname.startsWith('/studio-media/') || url.pathname.startsWith('/api/studio/')) {
       const response = await handleStudioMediaRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/games-src/')) {
+      const response = await handleGameFileRequest(request, env, url);
       if (response) return response;
     }
 

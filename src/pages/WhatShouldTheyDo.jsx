@@ -576,6 +576,7 @@ export default function WhatShouldTheyDo() {
           <MessageCircleQuestion className="h-4 w-4" />
           {t.footer(QUESTIONS.length, Object.keys(CATEGORY).length)}
         </div>
+        <p className="mt-3 text-center text-xs font-semibold text-slate-400">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </main>
     </div>
   );

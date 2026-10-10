@@ -9,6 +9,24 @@ const HEADERS={
   'x-content-type-options':'nosniff',
 };
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
+const STANDARD_GAMES=['what_should_they_do','pests','scrabluko'];
+// Owner-ordered launch free-play window: ALL games free until Sunday
+// Oct 11, 2026 11:59 PM America/Chicago (= Oct 12 04:59 UTC). Charges resume
+// automatically the moment the window passes; no prices change.
+const FREE_GAMES_UNTIL_MS=Date.UTC(2026,9,12,4,59,0);
+function freeGamesActive(){return Date.now()<FREE_GAMES_UNTIL_MS;}
+async function issueFreePass(db,userId,game){
+  const existing=await activeStandardGamePass(db,userId,game);
+  if(existing)return existing;
+  const expiresAt=new Date(Math.min(Date.now()+120*60*1000,FREE_GAMES_UNTIL_MS));
+  return (await db.query(
+    `INSERT INTO public.o2ol_game_access_passes
+     (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata)
+     VALUES($1::uuid,$2,NULL,0,'active',$3,$4::jsonb)
+     RETURNING id,game,tokens_charged,started_at,expires_at,metadata`,
+    [userId,game,expiresAt.toISOString(),JSON.stringify({access_minutes:120,promo:'launch_free_weekend',free:true})],
+  )).rows[0];
+}
 function fail(message,status=400,code='bad_request',extra={}){return json({ok:false,error:{code,message,...extra}},status);}
 function randomToken(bytes=32){
   const a=new Uint8Array(bytes);crypto.getRandomValues(a);
@@ -83,6 +101,25 @@ async function launchScratch(db,env,auth,input){
   await ensureScratchTable(db);
   await verifiedMember(db,auth.user.id);
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
+  if(freeGamesActive()){
+    await db.query('DELETE FROM public.o2ol_game_launch_tickets WHERE expires_at<now()');
+    const freeToken=randomToken(32);
+    const freeTokenHash=await sha256Hex(freeToken);
+    const freeExpiresAt=new Date(Date.now()+5*60*1000);
+    await db.query(
+      `INSERT INTO public.o2ol_game_launch_tickets(token_hash,user_id,game,expires_at)
+       VALUES($1,$2::uuid,'scratch',$3)`,
+      [freeTokenHash,auth.user.id,freeExpiresAt.toISOString()],
+    );
+    await recordCostEvent(db,env,{
+      userId:auth.user.id,featureCode:'scratch_game_session',provider:'internal',
+      providerProduct:'scratch_game_launch',
+      walletTransactionId:null,
+      providerCostMicros:null,customerTokensCharged:0,
+      metadata:{game:'scratch',request_id:requestId,internal_cost_unallocated:true,promo:'launch_free_weekend',free:true},
+    }).catch(error=>console.error('Scratch cost telemetry failed',error));
+    return json({ok:true,token:freeToken,expiresAt:freeExpiresAt.toISOString(),access:'free_promo',tokens:{charged:0}});
+  }
   const reservation=await reserveTokenCharge(db,auth.user.id,'scratch_game_session',{
     idempotencyKey:`scratch:${auth.user.id}:${requestId}`,
     metadata:{game:'scratch',request_id:requestId},
@@ -126,9 +163,13 @@ async function activeStandardGamePass(db,userId,game){
 async function launchStandardGame(db,env,auth,input){
   await verifiedMember(db,auth.user.id);
   const game=String(input?.game||'').trim();
-  if(!['what_should_they_do'].includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
+  if(!STANDARD_GAMES.includes(game))throw Object.assign(new Error('This paid game is not available.'),{status:400,code:'game_invalid'});
   const existing=await activeStandardGamePass(db,auth.user.id,game);
   if(existing)return json({ok:true,pass:existing,reused:true});
+  if(freeGamesActive()){
+    const pass=await issueFreePass(db,auth.user.id,game);
+    return json({ok:true,pass,freeWindow:true,tokens:{charged:0}});
+  }
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
   const reservation=await reserveTokenCharge(db,auth.user.id,'premium_game_session',{
     idempotencyKey:`premium_game:${game}:${auth.user.id}:${requestId}`,
@@ -163,6 +204,10 @@ async function launchLikeMinded(db,env,auth,input){
   await verifiedMember(db,auth.user.id);
   const existing=await activeLikeMindedPass(db,auth.user.id);
   if(existing)return json({ok:true,pass:existing,reused:true});
+  if(freeGamesActive()){
+    const pass=await issueFreePass(db,auth.user.id,'like_minded');
+    return json({ok:true,pass,freeWindow:true,tokens:{charged:0}});
+  }
 
   const requestId=String(input?.requestId||crypto.randomUUID()).slice(0,120);
   const reservation=await reserveTokenCharge(db,auth.user.id,'like_minded_session',{
@@ -221,8 +266,9 @@ export async function handleGameAccessRequest(request,env,url){
         const game=url.searchParams.get('game')||'';
         if(request.method==='GET'){
           await verifiedMember(db,auth.user.id);
-          if(!['what_should_they_do'].includes(game))return fail('This paid game is not available.',400,'game_invalid');
+          if(!STANDARD_GAMES.includes(game))return fail('This paid game is not available.',400,'game_invalid');
           const pass=await activeStandardGamePass(db,auth.user.id,game);
+          if(freeGamesActive())return json({ok:true,active:true,freeWindow:{active:true,endsAt:new Date(FREE_GAMES_UNTIL_MS).toISOString()},pass});
           return json({ok:true,active:Boolean(pass),pass});
         }
         if(request.method==='POST'){
@@ -236,6 +282,7 @@ export async function handleGameAccessRequest(request,env,url){
         if(request.method==='GET'){
           await verifiedMember(db,auth.user.id);
           const pass=await activeLikeMindedPass(db,auth.user.id);
+          if(freeGamesActive())return json({ok:true,active:true,freeWindow:{active:true,endsAt:new Date(FREE_GAMES_UNTIL_MS).toISOString()},pass});
           return json({ok:true,active:Boolean(pass),pass});
         }
         if(request.method==='POST'){
@@ -252,5 +299,34 @@ export async function handleGameAccessRequest(request,env,url){
     return fail(error?.message||'Unable to start game.',error?.status||500,error?.code||'game_access_error',{
       balance:error?.balance,required:error?.required,featureCode:error?.featureCode,featureLabel:error?.featureLabel,
     });
+  }
+}
+
+// Pass-gated delivery of the self-contained game files (PEST'S, Scrabluko).
+// The files ship as static assets under /games-src/, but every request runs
+// through the worker first (run_worker_first), so the file is only served to
+// a signed-in member holding an active pass for that game (or an admin).
+const GAME_FILES = { pests: '/games-src/pests.html', scrabluko: '/games-src/scrabluko.html' };
+export async function handleGameFileRequest(request, env, url) {
+  const game = Object.keys(GAME_FILES).find(g => url.pathname === GAME_FILES[g]);
+  if (!game) return new Response('Game not found.', { status: 404 });
+  const auth = await authSession(request, env);
+  if (!auth) return new Response('Sign in with a verified One2OneLove account to play.', { status: 403 });
+  try {
+    const allowed = await withDb(env, async db => {
+      const roleRow = (await db.query(`SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`, [auth.user.id])).rows[0];
+      if (roleRow?.role === 'admin') return true;
+      if (freeGamesActive()) return true;
+      const pass = await activeStandardGamePass(db, auth.user.id, game);
+      return Boolean(pass);
+    });
+    if (!allowed) return new Response('This game needs an active play pass. Open the game page to unlock it.', { status: 403 });
+    const asset = await env.ASSETS.fetch(request);
+    const headers = new Headers(asset.headers);
+    headers.set('cache-control', 'private, no-store');
+    return new Response(asset.body, { status: asset.status, headers });
+  } catch (error) {
+    console.error('O2OL game file error', error);
+    return new Response('Unable to load the game.', { status: 500 });
   }
 }

@@ -66,6 +66,15 @@ export default function ScratchGame() {
     }finally{setUnlocking(false);}
   };
 
+  useEffect(()=>{
+    if(!fullMemberAccess||gameUrl)return;
+    let live=true;
+    apiRequest('/api/games/standard/access?game=pests').then(d=>{
+      if(live&&d?.freeWindow?.active){setShowUnlock(false);launchGame();}
+    }).catch(()=>{});
+    return()=>{live=false};
+  },[fullMemberAccess,gameUrl]);
+
   return <div className="min-h-screen bg-gradient-to-br from-pink-50 via-cyan-50 to-blue-50">
     <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -89,5 +98,6 @@ export default function ScratchGame() {
       </div>
     </div>
     <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
+    <p className="pb-5 pt-4 text-center text-xs text-slate-500">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
   </div>;
 }

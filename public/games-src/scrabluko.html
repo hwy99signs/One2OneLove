@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SCRABLUKO</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --paper:#faf7ef; --sage:#dde5d8; --sage-deep:#b9c8ae; --ink:#44506b; --ink-soft:#7a8199;
+    --gold1:#f6d492; --gold2:#eebd6a; --gold-ink:#6b4a12; --amber:#d9a441;
+    --teal-bg:#c3ddd6; --teal-ink:#2f5d55; --plum-bg:#ddcfe8; --plum-ink:#5d4470;
+    --green-bg:#b5d3a5; --green-ink:#2f4d24; --taupe:#b3ac9c; --card:#fffdf6; --line:#d8cfb4;
+    --score:#7a9422;
+  }
+  html,body{ background:#eef1e6; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  body{ max-width:560px; margin:0 auto; padding:14px 12px 30px; }
+  h1.logo{ text-align:center; font-size:31px; letter-spacing:4px; font-weight:900; color:var(--ink); }
+  h1.logo span{ color:var(--amber); }
+  .tagline{ text-align:center; font-size:12.5px; color:var(--ink-soft); margin:2px 0 14px; letter-spacing:.4px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(120,110,70,.08); }
+  .label{ font-size:10.5px; font-weight:800; letter-spacing:1px; color:var(--ink-soft); margin:14px 0 7px; }
+  .label:first-child{ margin-top:0; }
+  .dd{ width:100%; padding:11px 12px; font-size:15px; font-weight:700; font-family:inherit; color:var(--ink); background:#fffdf6; border:1.5px solid var(--line); border-radius:10px; margin-bottom:4px; }
+  .dd:disabled{ opacity:.4; }
+  .pill.sel{ border-color:var(--amber); background:rgba(244,197,90,.20); color:var(--ink); }
+  .note{ font-size:12px; color:var(--ink-soft); margin-top:7px; line-height:1.5; }
+  .name-input{ width:100%; border:none; border-bottom:1.5px dashed var(--line); background:transparent; font:inherit; font-size:15px; font-weight:700; color:var(--ink); padding:5px 2px; margin-bottom:8px; outline:none; }
+  .name-input:focus{ border-bottom-color:var(--amber); }
+  .big-btn{ display:block; width:100%; margin-top:18px; border:none; cursor:pointer; background:linear-gradient(145deg,var(--gold1),var(--gold2)); color:var(--gold-ink); font-weight:900; font-size:16px; letter-spacing:1.2px; border-radius:11px; padding:13px 0; font-family:inherit; box-shadow:0 3px 0 #cfa14f; }
+  .big-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #cfa14f; }
+  /* scoreboard */
+  #scoreboard{ display:grid; gap:7px; margin-bottom:10px; }
+  #scoreboard.n1{ grid-template-columns:1fr; } #scoreboard.n2{ grid-template-columns:1fr 1fr; }
+  #scoreboard.n3{ grid-template-columns:1fr 1fr 1fr; } #scoreboard.n4{ grid-template-columns:1fr 1fr; }
+  .pcard{ background:var(--card); border:1.5px solid var(--line); border-radius:10px; padding:7px 11px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .pcard.active{ border-color:var(--amber); box-shadow:0 0 0 1.5px var(--amber) inset; }
+  .pcard .nm{ font-weight:800; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pcard .held{ font-size:10px; color:var(--ink-soft); font-weight:600; }
+  .pcard .sc{ font-size:19px; font-weight:900; color:var(--score); white-space:nowrap; }
+  .pcard .sc small{ font-size:8.5px; color:var(--ink-soft); letter-spacing:.5px; }
+  /* clue */
+  #cluebar{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px; line-height:1.5; margin-bottom:10px; min-height:44px; }
+  #cluebar b{ letter-spacing:.6px; }
+  #cluebar .dim{ color:var(--ink-soft); }
+  .clue-row{ padding:7px 9px; border:1.5px solid var(--line); border-radius:8px; margin-top:6px; cursor:pointer; }
+  .clue-row.active{ border-color:var(--amber); background:rgba(244,197,90,.16); }
+  #timerow{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  #turnwho{ font-size:13px; font-weight:800; }
+  #clock{ font-size:15px; font-weight:900; font-variant-numeric:tabular-nums; }
+  #clock.low{ color:#c0452f; }
+  /* board */
+  #board{ display:grid; grid-template-columns:repeat(13,1fr); gap:2px; background:var(--sage); padding:6px; border-radius:12px; user-select:none; }
+  .cell{ position:relative; aspect-ratio:1/1; background:var(--paper); border-radius:3px; display:flex; align-items:center; justify-content:center; }
+  .cell.hl{ box-shadow:inset 2px 0 0 rgba(140,155,120,.55); } .cell.ht{ box-shadow:inset 0 2px 0 rgba(140,155,120,.55); }
+  .cell.hl.ht{ box-shadow:inset 2px 0 0 rgba(140,155,120,.55), inset 0 2px 0 rgba(140,155,120,.55); }
+  .cell.black{ background:var(--taupe); box-shadow:inset 0 0 0 1px #a29b8a; }
+  .cell .prem{ font-size:7.5px; font-weight:800; letter-spacing:.2px; }
+  .cell.pl{ background:var(--teal-bg); color:var(--teal-ink); } .cell.pw{ background:var(--plum-bg); color:var(--plum-ink); }
+  .cell .ltr{ font-size:15px; font-weight:800; line-height:1; }
+  .cell .val{ position:absolute; right:2px; bottom:1px; font-size:7px; font-weight:700; opacity:.7; }
+  .cell .ptag{ position:absolute; left:1px; bottom:1px; font-size:6px; font-weight:800; opacity:.85; }
+  .cell.seed{ background:linear-gradient(145deg,var(--gold1),var(--gold2)); color:var(--gold-ink); cursor:pointer; }
+  .cell.filled{ background:var(--card); color:var(--ink); box-shadow:inset 0 0 0 1px var(--line); }
+  .cell.inword{ box-shadow:inset 0 0 0 2px rgba(217,164,65,.75); }
+  .cell.opt{ background:rgba(244,197,90,.18); border:1.5px dashed var(--amber); cursor:pointer; }
+  .cell.done{ background:var(--green-bg); color:var(--green-ink); box-shadow:inset 0 0 0 1px #93bd7f; }
+  .cell.revealed{ background:#e9e3f4 !important; color:#6a5a8f; font-style:italic; }
+  #beatLine{ font-size:12.5px; font-weight:800; color:var(--gold-ink); background:rgba(244,197,90,.18); border:1px dashed var(--amber); border-radius:8px; padding:6px 10px; margin-bottom:10px; display:none; }
+  .vertag{ text-align:center; font-size:10.5px; color:var(--ink-soft); margin-top:12px; letter-spacing:.6px; }
+  .cell.shake{ animation:shk .3s; }
+  @keyframes shk{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+  /* tray */
+  #traylabel{ font-size:11px; font-weight:800; letter-spacing:.7px; color:var(--ink-soft); margin:14px 0 7px; }
+  #tray{ display:flex; gap:6px; flex-wrap:wrap; min-height:52px; }
+  .tile{ width:44px; height:50px; background:var(--card); border:1px solid var(--line); border-radius:7px; box-shadow:0 3px 0 var(--line); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; color:var(--ink); position:relative; cursor:grab; touch-action:none; user-select:none; }
+  .tile .val{ position:absolute; right:4px; bottom:3px; font-size:9px; font-weight:700; color:#8a7f5f; }
+  .tile.sel{ outline:3px solid var(--amber); }
+  .tile.fresh{ border-color:var(--amber); background:#fdf3d0; animation:freshPulse 1.1s ease 3; }
+  @keyframes freshPulse{ 0%,100%{ box-shadow:0 3px 0 var(--line); } 50%{ box-shadow:0 3px 0 var(--amber), 0 0 12px rgba(217,164,65,.8); } }
+  .tile.marked{ outline:3px solid #c0452f; opacity:.75; }
+  .drag-ghost{ position:fixed; z-index:60; width:48px; height:54px; margin:-24px 0 0 -27px; background:var(--card); border:1.5px solid var(--amber); border-radius:7px; box-shadow:0 10px 22px rgba(90,80,40,.35); display:flex; align-items:center; justify-content:center; font-size:23px; font-weight:800; color:var(--ink); pointer-events:none; }
+  /* controls */
+  #controls{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .ctl{ flex:1; min-width:100px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); border-radius:10px; padding:11px 6px; font-size:13.5px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .ctl.primary{ background:linear-gradient(145deg,var(--gold1),var(--gold2)); color:var(--gold-ink); border-color:#cfa14f; }
+  .ctl.danger{ color:#c0452f; }
+  .ctl:disabled{ opacity:.45; }
+  #toast{ text-align:center; font-size:13.5px; font-weight:700; min-height:20px; margin-top:11px; color:var(--ink); }
+  /* overlays */
+  .overlay{ position:fixed; inset:0; background:rgba(58,62,44,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:18px; }
+  .overlay.show{ display:flex; }
+  .sheet{ background:var(--card); border-radius:16px; padding:24px 20px; max-width:420px; width:100%; text-align:center; box-shadow:0 14px 40px rgba(60,55,30,.3); }
+  .sheet h2{ font-size:21px; margin-bottom:8px; }
+  .sheet p{ font-size:14px; color:var(--ink-soft); line-height:1.55; }
+  .standings{ text-align:left; margin:14px 0 4px; }
+  .standings .srow{ display:flex; justify-content:space-between; padding:7px 4px; border-bottom:1px dashed var(--line); font-size:15px; }
+  .standings .srow b{ font-weight:800; } .standings .srow .pts{ font-weight:900; color:var(--score); }
+  .hidden{ display:none !important; }
+  #rules{ margin-top:14px; font-size:12px; color:var(--ink-soft); line-height:1.6; }
+  /* compact setup: name on top, settings in a 3-wide grid — everything + START visible at once on a phone */
+  .setup-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:14px; }
+  .setup-grid .label{ margin:0 0 5px; font-size:9.5px; }
+  .setup-grid .dd{ padding:8px 5px; font-size:13.5px; margin-bottom:0; border-radius:9px; }
+  #nameFields{ display:flex; gap:12px; }
+  #nameFields .name-input{ flex:1; min-width:0; margin-bottom:0; }
+  #setup .big-btn{ margin-top:14px; }
+  #hsLabel{ margin-top:10px; }
+</style>
+</head>
+<body>
+<h1 class="logo">SCRA<span>B</span>LUKO</h1>
+<div class="tagline">Scrabble letters &middot; crossword clues &middot; sudoku calm</div>
+
+<!-- SETUP -->
+<div id="setup" class="card">
+  <div class="label">PLAYER NAME</div>
+  <div id="nameFields"></div>
+  <div class="setup-grid">
+    <div>
+      <div class="label"># PLAYERS</div>
+      <select id="selPlayers" class="dd">
+        <option value="1">Solo</option>
+        <option value="2" selected>2 players</option>
+        <option value="3">3 players</option>
+        <option value="4">4 players</option>
+      </select>
+    </div>
+    <div>
+      <div class="label">LEVEL</div>
+      <select id="selLevel" class="dd">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+    <div>
+      <div class="label"># ROUNDS</div>
+      <select id="selRounds" class="dd">
+        <option value="5">5 rounds</option>
+        <option value="10" selected>10 rounds</option>
+        <option value="15">15 rounds</option>
+        <option value="20">20 rounds</option>
+      </select>
+    </div>
+    <div>
+      <div class="label">PRESSURE</div>
+      <select id="selPressure" class="dd">
+        <option value="timed" selected>Timed</option>
+        <option value="untimed">Untimed</option>
+      </select>
+    </div>
+    <div>
+      <div class="label">WORD #</div>
+      <select id="selWords" class="dd">
+        <option value="8">8 words</option>
+        <option value="10" selected>10 words</option>
+        <option value="12">12 words</option>
+        <option value="14">14 words</option>
+        <option value="16">16 words</option>
+        <option value="18">18 words</option>
+        <option value="20">20 words</option>
+      </select>
+    </div>
+    <div>
+      <div class="label">TURN TIMER</div>
+      <select id="selTimer" class="dd">
+        <option value="1" selected>1 min</option>
+        <option value="2">2 mins</option>
+        <option value="3">3 mins</option>
+        <option value="4">4 mins</option>
+        <option value="5">5 mins</option>
+        <option value="10">10 mins</option>
+        <option value="15">15 mins</option>
+      </select>
+    </div>
+  </div>
+  <div class="note" id="setupSummary"></div>
+  <div class="label" id="hsLabel">HIGH SCORES — SAVED BY NAME</div>
+  <div id="hsList" class="note">No high scores yet — be the first.</div>
+  <button class="big-btn" id="startBtn">START GAME</button>
+  <div id="rules">
+    The computer plants secret words across the board, crossword-style — only each word's first letter (gold) shows.
+    Tap any letter on the board and the game reveals the word it can make — both words, if the letter makes two (one across, one down). Pick the one you want, then drag your tiles onto the dotted squares to spell it.
+    Wrong letters slide back. Points come only from completed words — whoever places the last letter banks the word.
+    Stuck? Exchange tiles for fresh ones, but it costs your turn.
+  </div>
+  <div class="vertag">SCRABLUKO · BUILD v11<br>Copyright © 2026 EPS Venture Group. All rights reserved.</div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="hidden">
+  <div id="scoreboard"></div>
+  <div id="beatLine"></div>
+  <div id="overBar" class="hidden" style="gap:8px;margin-bottom:10px">
+    <button class="ctl primary" id="overNewBtn" style="flex:1">↺ New game</button>
+    <button class="ctl" id="overSetupBtn" style="flex:1">Change setup</button>
+  </div>
+  <div id="cluebar"><span class="dim">Tap any letter on the board to see the word — or both words — it can make.</span></div>
+  <div id="timerow"><div id="turnwho"></div><div id="clock"></div></div>
+  <div id="board"></div>
+  <div id="traylabel"></div>
+  <div id="tray"></div>
+  <div id="controls">
+    <button class="ctl" id="exchangeBtn">Exchange tiles</button>
+    <button class="ctl primary" id="doneBtn">Done ✓</button>
+    <button class="ctl" id="newBtn">↺ New game</button>
+    <button class="ctl danger" id="endBtn">End game</button>
+  </div>
+  <div id="toast"></div>
+  <div class="vertag">SCRABLUKO · BUILD v11<br>Copyright © 2026 EPS Venture Group. All rights reserved.</div>
+</div>
+
+<!-- PASS DEVICE -->
+<div class="overlay" id="passOverlay">
+  <div class="sheet">
+    <h2 id="passTitle">Your turn</h2>
+    <p>Pass the device — your letters are hidden until you tap below.</p>
+    <p id="passNote" style="font-weight:700;color:var(--ink);margin-top:6px"></p>
+    <button class="big-btn" id="passBtn">Show my letters</button>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="overOverlay">
+  <div class="sheet">
+    <h2 id="overTitle">Game over</h2>
+    <p id="overSub"></p>
+    <div class="standings" id="standings"></div>
+    <button class="big-btn" id="againBtn">Play again</button>
+    <button class="ctl" id="revealBtn" style="margin-top:9px;width:100%">See the revealed board</button>
+    <button class="ctl" id="setupBtn" style="margin-top:9px;width:100%">Change setup</button>
+  </div>
+</div>
+
+<script>
+// === CORE START ===
+const VALUE = {A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10};
+const DIST = {E:12,A:9,I:9,O:8,N:6,R:6,T:6,L:4,S:4,U:4,D:4,G:3,B:2,C:2,M:2,P:2,F:2,H:2,V:2,W:2,Y:2,K:1,J:1,X:1,Q:1,Z:1};
+const PREM = {}; // "r,c" -> {lm, wm, tag}
+function setPrem(r,c,lm,wm,tag){ PREM[r+","+c]={lm:lm,wm:wm,tag:tag}; }
+[[0,6],[6,0],[6,12],[12,6]].forEach(function(p){ setPrem(p[0],p[1],1,3,"3W"); });
+[[2,2],[2,10],[10,2],[10,10],[6,6]].forEach(function(p){ setPrem(p[0],p[1],1,2,"2W"); });
+[[4,8],[8,4]].forEach(function(p){ setPrem(p[0],p[1],3,1,"3L"); });
+[[1,4],[1,8],[3,6],[5,1],[5,11],[6,3],[6,9],[7,1],[7,11],[9,6],[11,4],[11,8]].forEach(function(p){ setPrem(p[0],p[1],2,1,"2L"); });
+
+const BANK_RAW = [
+"APPLE|Fruit that keeps the doctor away","BREAD|You slice it for sandwiches","CHAIR|You sit on it","TABLE|Dinner is served on it",
+"WATER|You drink it every day","RIVER|It flows to the sea","OCEAN|The largest body of water","BEACH|Sand meets the sea here",
+"STONE|It can be carved, or skipped on water","MUSIC|Tunes you listen to","DANCE|Move to the rhythm","HAPPY|How you feel on your birthday",
+"SMILE|It lights up a face","HEART|It beats in your chest","HOUSE|Where a family lives","HORSE|You can ride this animal",
+"MOUSE|Small animal that loves cheese","SNAKE|Slithering reptile","TIGER|Striped big cat","LION|King of the jungle",
+"BEAR|It hibernates all winter","WOLF|Wild cousin of the dog","FROG|It croaks by the pond","BIRD|It flies and sings",
+"FISH|It swims in the sea","DUCK|It quacks","CAKE|Birthday dessert with candles","PIZZA|Cheesy Italian favorite",
+"PASTA|Spaghetti is one kind","SALAD|A healthy bowl of greens","SOUP|Hot bowl on a cold day","EGGS|Breakfast food in a shell",
+"MILK|White drink from cows","CHEESE|A mouse's favorite food","HONEY|Bees make it","LEMON|Sour yellow fruit",
+"GRAPE|Small fruit that wine comes from","PEACH|Soft, fuzzy fruit","PEAR|Fruit shaped like a bell","PLUM|Small purple fruit",
+"MELON|Big juicy summer fruit","CORN|Yellow kernels on a cob","BEAN|Small seed found in chili","RICE|Grain served with stir-fry",
+"COFFEE|Morning pick-me-up drink","TEA|Hot drink made with a bag","JUICE|Squeezed fruit drink","SODA|Fizzy drink",
+"RAIN|It falls from clouds","SNOW|White winter flakes","WIND|It blows through the trees","CLOUD|White shape in the sky",
+"STORM|Thunder and lightning","RAINBOW|Colors that follow rain","THUNDER|The loud sound in a storm","SUMMER|The hottest season",
+"WINTER|The coldest season","SPRING|Flowers bloom in this season","AUTUMN|Leaves fall in this season","BOOK|You read its pages",
+"READ|What you do with a book","WRITE|What an author does","SING|Use your voice like a bird","SONG|It has a melody",
+"PLAY|What children do at recess","GAME|Chess is one","BALL|A toy you can throw and catch","KITE|It flies on a string",
+"JUMP|Leap into the air","WALK|Move on foot, slowly","SWIM|Move through water","TREE|A plant with a trunk",
+"LEAF|It falls from a tree in autumn","FLOWER|It blooms in a garden","ROSE|A red flower for romance","GARDEN|Where flowers grow",
+"PARK|A green place to relax","ROAD|Cars drive on it","CITY|A big town","TOWN|Smaller than a city",
+"FARM|Where crops and animals are raised","BARN|A farm building","DOOR|You open it to enter","WINDOW|You look through it",
+"KEY|It unlocks a door","CLOCK|It tells the time","WATCH|Time worn on a wrist","PHONE|You call people on it",
+"LIGHT|A lamp gives it","LAMP|It brightens a room","STAR|It twinkles at night","MOON|It glows in the night sky",
+"SUN|It rises in the east","SKY|Clouds float in it","SEA|A large body of salty water","SAND|Tiny grains on the beach",
+"SHELL|Found on the beach, from the sea","BOAT|It floats on water","SHIP|A very large boat","TRAIN|It runs on rails",
+"CAR|It has four wheels","BUS|It carries many passengers","BIKE|Two wheels you pedal","PLANE|It flies passengers",
+"KING|He wears a crown","QUEEN|She wears a crown","BABY|A very young child","MOTHER|She raised you",
+"FATHER|He raised you","SISTER|A female sibling","BROTHER|A male sibling","FRIEND|Someone you trust and like",
+"SCHOOL|Where children learn","TEACHER|They lead the classroom","DOCTOR|They help the sick","NURSE|They care for patients",
+"COOK|They prepare meals","FIRE|It's hot and it burns","EARTH|The planet we live on","WORLD|Every country is part of it",
+"DAY|The opposite of night","NIGHT|When it is dark outside","MORNING|The start of the day","WEEK|It has seven days",
+"YEAR|It has twelve months","TIME|Clocks measure it","HAND|It has five fingers","FOOT|You wear a shoe on it",
+"EYE|You see with it","EAR|You hear with it","NOSE|You smell with it","HAIR|It grows on your head",
+"LAUGH|The sound of joy","LOVE|Deep affection","DREAM|It visits you in sleep","WISH|You make one on a star",
+"HOPE|Looking forward to good","PEACE|The opposite of war","BRAVE|Not afraid","KIND|Nice to others",
+"SWEET|Like sugar","QUICK|Fast","SLOW|Not fast","GOLD|Precious yellow metal",
+"SILVER|Precious gray metal","MONEY|You spend it in shops","SHOP|Another word for a store","MARKET|Where vendors sell goods",
+"KITCHEN|Where meals are cooked","PILLOW|You rest your head on it","BLANKET|It keeps you warm in bed","TOWEL|You dry off with it",
+"SOAP|It makes bubbles in the bath","MIRROR|You see yourself in it","PICTURE|A photograph or drawing","CAMERA|It takes photographs",
+"GUITAR|Six-stringed instrument","PIANO|Instrument with black and white keys","DRUM|You beat it for rhythm","CANDLE|It gives light with a flame",
+"BRIDGE|It crosses a river","MOUNTAIN|Very tall land","VALLEY|Low land between hills","FOREST|Many trees together",
+"ISLAND|Land surrounded by water","DESERT|Hot, dry, sandy land","VILLAGE|A small town","CASTLE|Home of a king",
+"TOWER|A tall, narrow building","STAIRS|Steps between floors","GARDEN2|skip"
+];
+const BANK = BANK_RAW.filter(function(s){ return s.indexOf("GARDEN2")!==0; }).map(function(s){
+  const i = s.indexOf("|"); return { w: s.slice(0,i), clue: s.slice(i+1) };
+}).filter(function(e){ return e.w.length>=3 && e.w.length<=9; });
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function key(r,c){ return r+","+c; }
+
+function generatePuzzle(count){
+  for(let attempt=0; attempt<120; attempt++){
+    const cells = new Map(); // key -> {letter, words:[wordIdx]}
+    const words = [];
+    const used = new Set();
+    const order = shuffle(BANK.slice());
+    // first word across, covering the center
+    let first = null;
+    for(const e of order){ if(e.w.length>=4 && e.w.length<=8){ first = e; break; } }
+    if(!first) continue;
+    placeWord(first, 6, 6 - Math.floor(first.w.length/2), "A", cells, words, used);
+    let guard = 0;
+    while(words.length < count && guard++ < 400){
+      let progressed = false;
+      for(const e of order){
+        if(words.length >= count) break;
+        if(used.has(e.w)) continue;
+        const spot = findSpot(e.w, cells, words);
+        if(spot){ placeWord(e, spot.r, spot.c, spot.dir, cells, words, used); progressed = true; }
+      }
+      if(!progressed) break;
+    }
+    if(words.length === count) return { words: words, cells: cells };
+  }
+  return null;
+}
+function placeWord(entry, r, c, dir, cells, words, used){
+  const idx = words.length;
+  const coords = [];
+  for(let k=0;k<entry.w.length;k++){
+    const rr = dir==="A" ? r : r+k, cc = dir==="A" ? c+k : c;
+    coords.push({r:rr, c:cc, letter: entry.w[k], seed: k===0});
+    const kk = key(rr,cc);
+    if(cells.has(kk)){ cells.get(kk).words.push(idx); }
+    else cells.set(kk, { letter: entry.w[k], words: [idx] });
+  }
+  words.push({ word: entry.w, clue: entry.clue, dir: dir, cells: coords, done: false });
+  used.add(entry.w);
+}
+function findSpot(w, cells, words){
+  const options = [];
+  for(const pk of cells.keys()){
+    const cell = cells.get(pk);
+    const parts = pk.split(","); const r = +parts[0], c = +parts[1];
+    const pw = words[cell.words[0]];
+    const ndir = pw.dir === "A" ? "D" : "A";
+    for(let i=0;i<w.length;i++){
+      if(w[i] !== cell.letter) continue;
+      const sr = ndir==="A" ? r : r-i, sc = ndir==="A" ? c-i : c;
+      options.push({r:sr, c:sc, dir:ndir});
+    }
+  }
+  shuffle(options);
+  for(const o of options){ if(canPlace(w, o.r, o.c, o.dir, cells)) return o; }
+  return null;
+}
+function canPlace(w, r, c, dir, cells){
+  const dr = dir==="A" ? 0 : 1, dc = dir==="A" ? 1 : 0;
+  // end caps
+  const br = r-dr, bc = c-dc, ar = r+dr*w.length, ac = c+dc*w.length;
+  if(br>=0&&br<13&&bc>=0&&bc<13&&cells.has(key(br,bc))) return false;
+  if(ar>=0&&ar<13&&ac>=0&&ac<13&&cells.has(key(ar,ac))) return false;
+  let crossings = 0;
+  for(let k=0;k<w.length;k++){
+    const rr = r+dr*k, cc = c+dc*k;
+    if(rr<0||rr>12||cc<0||cc>12) return false;
+    const ex = cells.get(key(rr,cc));
+    if(ex){
+      if(ex.letter !== w[k]) return false;
+      if(ex.words.length >= 2) return false;
+      crossings++;
+    } else {
+      // perpendicular neighbours must be empty (no accidental parallel words)
+      const p1 = key(rr+dc, cc+dr), p2 = key(rr-dc, cc-dr);
+      if(cells.has(p1) || cells.has(p2)) return false;
+    }
+  }
+  return crossings >= 1;
+}
+function wordScore(word){
+  let sum = 0, wm = 1;
+  for(const cell of word.cells){
+    const p = PREM[key(cell.r, cell.c)];
+    const lm = p ? p.lm : 1; if(p && p.wm>1) wm *= p.wm;
+    sum += VALUE[cell.letter] * lm;
+  }
+  return sum * wm;
+}
+function buildPool(){
+  const pool = [];
+  for(const L in DIST){ for(let i=0;i<DIST[L];i++) pool.push(L); }
+  return shuffle(pool);
+}
+// === CORE END ===
+</script>
+<script>
+/* ================= UI ================= */
+const $ = function(s){ return document.querySelector(s); };
+const PRESETS = {
+  easy:   { words:8,  timerMin:2, label:"Easy" },
+  medium: { words:10, timerMin:1, label:"Medium" },
+  hard:   { words:14, timerMin:1, label:"Hard" }
+};
+const setupState = { count:2, level:"medium", rounds:10, timed:true, words:10, timerMin:1 };
+function syncSetup(){
+  $("#selPlayers").value = String(setupState.count);
+  $("#selLevel").value = setupState.level;
+  $("#selRounds").value = String(setupState.rounds);
+  $("#selPressure").value = setupState.timed ? "timed" : "untimed";
+  $("#selWords").value = String(setupState.words);
+  $("#selTimer").value = String(setupState.timerMin);
+  $("#selRounds").disabled = !setupState.timed;
+  $("#selTimer").disabled = !setupState.timed;
+  $("#setupSummary").textContent = setupState.timed
+    ? (PRESETS[setupState.level].label + " · " + setupState.words + " words on the board · " + fmt(setupState.timerMin*60) + " per turn · " + setupState.rounds + " rounds. A round = every player takes one turn; when the rounds run out, the highest score wins and the unfinished words are revealed.")
+    : (PRESETS[setupState.level].label + " · " + setupState.words + " words on the board · no clock, no round limit — play at your own pace.");
+}
+let G = null;
+/* high scores, saved by player name on this device */
+const HS_KEY = "scrabluko_highscores_v1";
+let HS = {};
+try { HS = JSON.parse(localStorage.getItem(HS_KEY) || "{}"); } catch(e){ HS = {}; }
+function saveHS(){ try { localStorage.setItem(HS_KEY, JSON.stringify(HS)); } catch(e){} }
+function topHS(){
+  const es = Object.entries(HS).filter(function(e){ return e[1] > 0; }).sort(function(a,b){ return b[1]-a[1]; });
+  return es.length ? { name: es[0][0], score: es[0][1] } : null;
+}
+function renderHS(){
+  const el = document.getElementById("hsList"); if(!el) return;
+  const es = Object.entries(HS).filter(function(e){ return e[1] > 0; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+  if(!es.length){ el.textContent = "No high scores yet — be the first."; return; }
+  el.innerHTML = es.map(function(e, i){ return (i+1) + ". <b>" + escapeHtml(e[0]) + "</b> — " + e[1] + " pts"; }).join("<br>");
+}
+
+function renderNameFields(){
+  const wrap = $("#nameFields"); wrap.innerHTML = "";
+  for(let i=0;i<setupState.count;i++){
+    const inp = document.createElement("input");
+    inp.className = "name-input"; inp.maxLength = 16;
+    inp.placeholder = setupState.count===1 ? "Your name" : ("Player " + (i+1) + " name");
+    if(i===0) inp.value = "Eisenhower";
+    inp.id = "name" + i;
+    wrap.appendChild(inp);
+  }
+}
+$("#selPlayers").addEventListener("change", function(e){ setupState.count = +e.target.value; renderNameFields(); syncSetup(); });
+$("#selLevel").addEventListener("change", function(e){
+  setupState.level = e.target.value;
+  const p = PRESETS[setupState.level];
+  setupState.words = p.words; setupState.timerMin = p.timerMin;
+  syncSetup();
+});
+$("#selRounds").addEventListener("change", function(e){ setupState.rounds = +e.target.value; syncSetup(); });
+$("#selPressure").addEventListener("change", function(e){ setupState.timed = (e.target.value === "timed"); syncSetup(); });
+$("#selWords").addEventListener("change", function(e){ setupState.words = +e.target.value; syncSetup(); });
+$("#selTimer").addEventListener("change", function(e){ setupState.timerMin = +e.target.value; syncSetup(); });
+renderNameFields();
+syncSetup();
+renderHS();
+$("#startBtn").addEventListener("click", startGame);
+
+function startGame(){
+  const names = [];
+  for(let i=0;i<setupState.count;i++){
+    const v = (document.getElementById("name"+i).value || "").trim();
+    names.push(v || ("Player " + (i+1)));
+  }
+  let puzzle = null, bestPuzzle = null;
+  for(let t=0;t<30 && !puzzle;t++){
+    const p = generatePuzzle(setupState.words);
+    if(!bestPuzzle || p.words.length > bestPuzzle.words.length) bestPuzzle = p;
+    if(p.words.length === setupState.words) puzzle = p;
+  }
+  puzzle = puzzle || bestPuzzle;
+  if(!puzzle){ toast("Could not build a board — tap START again."); return; }
+  // cell info
+  const cellInfo = new Map();
+  puzzle.words.forEach(function(w, wi){
+    w.cells.forEach(function(cell){
+      const k = key(cell.r, cell.c);
+      if(!cellInfo.has(k)) cellInfo.set(k, { letter: cell.letter, words: [], seedOf: -1, seeds: [], filled: false });
+      const info = cellInfo.get(k);
+      info.words.push(wi);
+      if(cell.seed){ info.seedOf = wi; info.seeds.push(wi); info.filled = true; }
+    });
+  });
+  // blacked-out squares: unused cells not touching any word
+  const blacks = new Set();
+  for(let r=0;r<13;r++) for(let c=0;c<13;c++){
+    const k = key(r,c);
+    if(cellInfo.has(k)) continue;
+    let touches = false;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ if(cellInfo.has(key(r+d[0], c+d[1]))) touches = true; });
+    if(!touches && Math.random() < 0.55) blacks.add(k);
+  }
+  const pool = buildPool();
+  const players = names.map(function(nm){
+    return { name: nm, score: 0, rack: pool.splice(0,8) };
+  });
+  G = { players: players, current: 0, words: puzzle.words, cellInfo: cellInfo, blacks: blacks,
+        pool: pool, discard: [], activeWord: -1, timed: setupState.timed,
+        secsPerTurn: setupState.timerMin*60, timeLeft: setupState.timerMin*60, timerId: null,
+        exchangeMode: false, marked: new Set(), selectedTile: -1, over: false, placedThisTurn: 0,
+        round: 1, roundsMax: setupState.timed ? setupState.rounds : Infinity, reveal: false, offered: [] };
+  $("#setup").classList.add("hidden");
+  $("#game").classList.remove("hidden");
+  $("#overBar").classList.add("hidden"); $("#overBar").style.display = "none";
+  renderAll();
+  toast(names[0] + " starts — tap a gold seed letter to open a word.");
+  startTimer();
+}
+
+function cur(){ return G.players[G.current]; }
+function filledCount(w){
+  return w.cells.filter(function(cell){ return G.cellInfo.get(key(cell.r,cell.c)).filled; }).length;
+}
+function scrollClues(){
+  try {
+    const el = document.getElementById("cluebar");
+    if(el && el.scrollIntoView) el.scrollIntoView({ behavior:"smooth", block:"center" });
+  } catch(e){}
+}
+function renderAll(){ renderScoreboard(); renderBeat(); renderClue(); renderBoard(); renderTray(); renderControls(); renderClock(); }
+function renderBeat(){
+  const el = $("#beatLine"); const t = topHS();
+  if(t){ el.textContent = "🏆 High score to beat: " + t.name + " · " + t.score + " pts"; el.style.display = "block"; }
+  else el.style.display = "none";
+}
+function renderScoreboard(){
+  const sb = $("#scoreboard");
+  sb.className = "n" + G.players.length; sb.id = "scoreboard";
+  sb.innerHTML = "";
+  G.players.forEach(function(p, i){
+    const d = document.createElement("div");
+    d.className = "pcard" + (i===G.current && !G.over ? " active" : "");
+    const held = G.players.length===1 ? "" : ('<div class="held">' + p.rack.length + ' tiles held</div>');
+    d.innerHTML = '<div><div class="nm">' + escapeHtml(p.name) + '</div>' + held + '</div><div class="sc">' + p.score + ' <small>PTS</small></div>';
+    sb.appendChild(d);
+  });
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, function(ch){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]; }); }
+function renderClue(){
+  const bar = $("#cluebar");
+  const offered = (G.offered || []).filter(function(wi){ return !G.words[wi].done; });
+  if(!offered.length || G.activeWord < 0){
+    bar.innerHTML = '<span class="dim">Tap any letter on the board to see the word — or both words — it can make. Words left: ' +
+      G.words.filter(function(w){ return !w.done; }).length + '.</span>';
+    return;
+  }
+  function rowHtml(wi){
+    const w = G.words[wi];
+    const pattern = w.cells.map(function(cell){
+      return G.cellInfo.get(key(cell.r,cell.c)).filled ? cell.letter : "_";
+    }).join(" ");
+    return "<b>" + (w.dir==="A" ? "ACROSS" : "DOWN") + "</b> · " + w.word.length + " letters — “" +
+      escapeHtml(w.clue) + "”" + ' <span class="dim">(' + filledCount(w) + " of " + w.word.length + " placed · " + pattern + ")</span>";
+  }
+  if(offered.length === 1){ bar.innerHTML = rowHtml(offered[0]); return; }
+  bar.innerHTML = '<span class="dim">This letter makes ' + offered.length + ' words — tap one to play it:</span>' +
+    offered.map(function(wi){
+      return '<div class="clue-row' + (wi===G.activeWord ? " active" : "") + '" data-wi="' + wi + '">' + rowHtml(wi) + '</div>';
+    }).join("");
+  bar.querySelectorAll(".clue-row").forEach(function(row){
+    row.addEventListener("click", function(){
+      G.activeWord = +row.dataset.wi; G.selectedTile = -1; renderAll();
+    });
+  });
+}
+function renderBoard(){
+  const B = $("#board"); B.innerHTML = "";
+  for(let r=0;r<13;r++) for(let c=0;c<13;c++){
+    const k = key(r,c);
+    const d = document.createElement("div");
+    d.className = "cell"; d.dataset.key = k;
+    if(c%3===0 && c>0) d.classList.add("hl");
+    if(r%3===0 && r>0) d.classList.add("ht");
+    const info = G.cellInfo.get(k);
+    const p = PREM[k];
+    if(G.blacks.has(k)){ d.classList.add("black"); }
+    else if(info){
+      const wordDone = info.words.every(function(wi){ return G.words[wi].done; });
+      const inActive = (!G.over && (G.offered || []).some(function(wi){ return info.words.indexOf(wi)>=0 && !G.words[wi].done; }));
+      if(wordDone) d.classList.add("done");
+      else if(info.seeds.some(function(wi){ return !G.words[wi].done; })) d.classList.add("seed");
+      else if(info.filled) d.classList.add("filled");
+      if(inActive) d.classList.add("inword");
+      if(inActive && !info.filled) d.classList.add("opt");
+      if(info.filled || (info.seedOf>=0 && !wordDone)){
+        d.innerHTML = '<span class="ltr">' + info.letter + '</span><span class="val">' + VALUE[info.letter] + '</span>' +
+          (p ? '<span class="ptag">' + p.tag + '</span>' : '');
+      } else if(G.reveal){
+        d.classList.add("revealed");
+        d.innerHTML = '<span class="ltr">' + info.letter + '</span><span class="val">' + VALUE[info.letter] + '</span>' +
+          (p ? '<span class="ptag">' + p.tag + '</span>' : '');
+      } else if(p){ d.innerHTML = '<span class="ptag">' + p.tag + '</span>'; }
+    }
+    else if(p){ d.classList.add(p.wm>1 ? "pw" : "pl"); d.innerHTML = '<span class="prem">' + p.tag + '</span>'; }
+    d.addEventListener("click", function(){ onCellTap(k, d); });
+    B.appendChild(d);
+  }
+}
+function renderTray(){
+  $("#traylabel").textContent = (G.players.length===1 ? "YOUR TRAY — 8 LETTERS" : (cur().name.toUpperCase() + "'S TRAY — DRAG A TILE TO THE BOARD"));
+  const T = $("#tray"); T.innerHTML = "";
+  cur().rack.forEach(function(L, i){
+    const t = document.createElement("div");
+    t.className = "tile" + (G.selectedTile===i ? " sel" : "") + (G.marked.has(i) ? " marked" : "") + (cur().freshIdx && cur().freshIdx.has(i) ? " fresh" : "");
+    t.dataset.idx = i;
+    t.innerHTML = L + '<span class="val">' + VALUE[L] + '</span>';
+    attachTileGestures(t, i);
+    T.appendChild(t);
+  });
+}
+function renderControls(){
+  const ex = $("#exchangeBtn");
+  if(G.exchangeMode){
+    ex.textContent = G.marked.size>0 ? ("Swap marked (" + G.marked.size + ") — costs your turn") : "Tap tiles to mark · tap here to cancel";
+    $("#doneBtn").textContent = "Cancel exchange";
+  } else {
+    ex.textContent = "Exchange tiles";
+    $("#doneBtn").textContent = G.players.length===1 ? "End turn ✓" : "Done ✓";
+  }
+  $("#turnwho").textContent = G.over ? "" :
+    ((G.timed ? ("Round " + G.round + " of " + G.roundsMax + " · ") : "") +
+     (G.players.length===1 ? "Your move" : (cur().name + "'s turn")));
+}
+function fmt(s){ s = Math.max(0, Math.ceil(s)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+function renderClock(){
+  const ck = $("#clock");
+  if(!G.timed){ ck.textContent = "Untimed"; ck.classList.remove("low"); return; }
+  ck.textContent = "⏱ " + fmt(Math.max(0, G.timeLeft));
+  ck.classList.toggle("low", G.timeLeft<=10);
+}
+let toastTimer = null;
+function toast(msg, ms){
+  const t = $("#toast"); t.textContent = msg;
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ if($("#toast").textContent===msg) $("#toast").textContent = ""; }, ms || 3400);
+}
+/* ---------- play ---------- */
+/* which offered word a cell can be played into right now (-1 = none) */
+function offeredWordFor(info){
+  if(!info || info.filled) return -1;
+  const off = (G.offered || []).filter(function(wi){ return !G.words[wi].done; });
+  if(off.indexOf(G.activeWord) >= 0 && info.words.indexOf(G.activeWord) >= 0) return G.activeWord;
+  for(let i=0;i<off.length;i++){ if(info.words.indexOf(off[i]) >= 0) return off[i]; }
+  return -1;
+}
+function onCellTap(k, el){
+  if(!G || G.over) return;
+  const info = G.cellInfo.get(k);
+  if(G.exchangeMode) return;
+  if(G.selectedTile >= 0){
+    const tw = offeredWordFor(info);
+    if(tw >= 0){ G.activeWord = tw; attemptPlace(G.selectedTile, k, el); return; }
+  }
+  if(info && info.filled){
+    const open = info.words.filter(function(wi){ return !G.words[wi].done; });
+    if(open.length){
+      G.offered = open;
+      if(open.indexOf(G.activeWord) < 0) G.activeWord = open[0];
+      G.selectedTile = -1;
+      renderAll();
+      scrollClues();
+    }
+  }
+}
+function attemptPlace(rackIdx, k, cellEl){
+  const info = G.cellInfo.get(k);
+  const letter = cur().rack[rackIdx];
+  if(!info || info.filled) return;
+  if(letter !== info.letter){
+    if(cellEl){ cellEl.classList.remove("shake"); void cellEl.offsetWidth; cellEl.classList.add("shake"); }
+    toast(letter + " doesn't go there — it slides back to " + cur().name + "'s tray.");
+    G.selectedTile = -1; renderTray(); return;
+  }
+  info.filled = true;
+  cur().rack.splice(rackIdx, 1);
+  if(cur().freshIdx) cur().freshIdx.clear();
+  G.placedThisTurn++;
+  G.selectedTile = -1;
+  // completion check for every word touching this cell
+  let completedAny = false;
+  info.words.slice().forEach(function(wi){
+    const w = G.words[wi];
+    if(!w.done && w.cells.every(function(cell){ return G.cellInfo.get(key(cell.r,cell.c)).filled; })){
+      w.done = true; completedAny = true;
+      const pts = wordScore(w);
+      cur().score += pts;
+      toast("🎉 " + cur().name + " completed " + w.word + " — +" + pts + " points!");
+      G.offered = (G.offered || []).filter(function(x){ return !G.words[x].done; });
+      if(G.activeWord === wi) G.activeWord = G.offered.length ? G.offered[0] : -1;
+    }
+  });
+  renderAll();
+  if(G.words.every(function(w){ return w.done; })){
+    G.over = true; stopTimer();
+    setTimeout(function(){ showGameOver(false); }, 900);
+  }
+}
+/* ---------- tiles: drag + tap ---------- */
+function attachTileGestures(tileEl, idx){
+  let startX=0, startY=0, dragging=false, ghost=null, moved=false;
+  tileEl.addEventListener("pointerdown", function(ev){
+    if(!G || G.over) return;
+    ev.preventDefault();
+    startX = ev.clientX; startY = ev.clientY; dragging = true; moved = false;
+    tileEl.setPointerCapture(ev.pointerId);
+  });
+  tileEl.addEventListener("pointermove", function(ev){
+    if(!dragging) return;
+    const dx = ev.clientX-startX, dy = ev.clientY-startY;
+    if(!moved && Math.hypot(dx,dy) > 9){
+      moved = true;
+      if(!G.exchangeMode){
+        ghost = document.createElement("div");
+        ghost.className = "drag-ghost"; ghost.textContent = cur().rack[idx];
+        document.body.appendChild(ghost);
+      }
+    }
+    if(ghost){ ghost.style.left = ev.clientX + "px"; ghost.style.top = ev.clientY + "px"; }
+  });
+  tileEl.addEventListener("pointerup", function(ev){
+    if(!dragging) return;
+    dragging = false;
+    if(ghost){
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const cellEl = under ? under.closest(".cell") : null;
+      const fromRect = tileEl.getBoundingClientRect();
+      const g = ghost; ghost = null;
+      const finish = function(){
+        g.remove();
+        if(cellEl && cellEl.dataset.key){
+          const info = G.cellInfo.get(cellEl.dataset.key);
+          const tw = offeredWordFor(info);
+          if(tw >= 0){ G.activeWord = tw; attemptPlace(idx, cellEl.dataset.key, cellEl); return; }
+        }
+        renderTray();
+      };
+      if(cellEl && cellEl.dataset.key){
+        const info = G.cellInfo.get(cellEl.dataset.key);
+        if(offeredWordFor(info) >= 0 && cur().rack[idx] === info.letter){ finish(); return; }
+      }
+      // slide back home
+      g.style.transition = "left .28s ease, top .28s ease";
+      g.style.left = (fromRect.left + fromRect.width/2) + "px";
+      g.style.top = (fromRect.top + fromRect.height/2) + "px";
+      setTimeout(function(){
+        if(cellEl && cellEl.dataset.key){ const info2 = G.cellInfo.get(cellEl.dataset.key);
+          const tw2 = offeredWordFor(info2);
+          if(tw2 >= 0){ G.activeWord = tw2; attemptPlace(idx, cellEl.dataset.key, cellEl); g.remove(); return; } }
+        g.remove();
+      }, 290);
+      return;
+    }
+    // plain tap
+    if(G.exchangeMode){
+      if(G.marked.has(idx)) G.marked.delete(idx); else G.marked.add(idx);
+      renderTray(); renderControls(); return;
+    }
+    G.selectedTile = (G.selectedTile===idx ? -1 : idx);
+    renderTray();
+  });
+  tileEl.addEventListener("pointercancel", function(){
+    dragging = false; if(ghost){ ghost.remove(); ghost = null; }
+  });
+}
+/* ---------- exchange / turns ---------- */
+$("#exchangeBtn").addEventListener("click", function(){
+  if(!G || G.over) return;
+  if(!G.exchangeMode){
+    if(G.placedThisTurn > 0){
+      toast("You already placed letters this turn — exchange is only before you play, and it costs the turn.");
+      return;
+    }
+    G.exchangeMode = true; G.marked = new Set(); G.selectedTile = -1;
+    toast("Tap the tiles to swap, then tap the Exchange button again. Swapping costs your turn.");
+    renderTray(); renderControls(); return;
+  }
+  if(G.marked.size === 0){ G.exchangeMode = false; renderTray(); renderControls(); return; }
+  const idxs = Array.from(G.marked).sort(function(a,b){ return b-a; });
+  const out = [];
+  idxs.forEach(function(i){ out.push(cur().rack.splice(i,1)[0]); });
+  out.forEach(function(L){ G.discard.push(L); });
+  drawUp();
+  G.exchangeMode = false; G.marked = new Set();
+  toast(cur().name + " exchanged " + out.length + " tile" + (out.length>1?"s":"") + " — turn passes.");
+  endTurn(true);
+});
+$("#doneBtn").addEventListener("click", function(){
+  if(!G || G.over) return;
+  if(G.exchangeMode){ G.exchangeMode = false; G.marked = new Set(); renderTray(); renderControls(); return; }
+  endTurn(false);
+});
+$("#endBtn").addEventListener("click", function(){
+  if(!G || G.over) return;
+  G.over = true; G.reveal = true; stopTimer();
+  renderAll();
+  showGameOver(true);
+});
+let newArm = false, newArmTimer = null;
+$("#newBtn").addEventListener("click", function(){
+  if(!G || G.over) return;
+  if(!newArm){
+    newArm = true; this.textContent = "Tap again — reset board ↺";
+    newArmTimer = setTimeout(function(){ newArm = false; document.getElementById("newBtn").textContent = "↺ New game"; }, 3000);
+    return;
+  }
+  clearTimeout(newArmTimer); newArm = false; this.textContent = "↺ New game";
+  startGame();
+  toast("Fresh board — same players, level, clock and rounds. Good luck!");
+});
+$("#revealBtn").addEventListener("click", function(){
+  $("#overOverlay").classList.remove("show");
+  const bar = $("#overBar");
+  bar.classList.remove("hidden"); bar.style.display = "flex";
+});
+$("#overNewBtn").addEventListener("click", function(){ startGame(); });
+$("#overSetupBtn").addEventListener("click", function(){
+  $("#overBar").classList.add("hidden"); $("#overBar").style.display = "none";
+  $("#game").classList.add("hidden");
+  $("#setup").classList.remove("hidden");
+});
+function drawUp(){
+  while(cur().rack.length < 8){
+    if(G.pool.length === 0){
+      if(G.discard.length === 0) break;
+      G.pool = shuffle(G.discard); G.discard = [];
+    }
+    cur().rack.push(G.pool.pop());
+  }
+}
+function endTurn(fromExchange){
+  stopTimer();
+  const p = cur();
+  const before = p.rack.length;
+  drawUp();
+  p.freshIdx = new Set();
+  for(let i=before;i<p.rack.length;i++) p.freshIdx.add(i);
+  const drawn = p.rack.length - before;
+  G.activeWord = -1; G.selectedTile = -1; G.exchangeMode = false; G.marked = new Set(); G.placedThisTurn = 0; G.offered = [];
+  const wrapped = (G.current === G.players.length - 1);
+  if(wrapped){
+    G.round++;
+    if(G.round > G.roundsMax){ finishByRounds(); return; }
+  }
+  if(G.players.length > 1){
+    G.current = (G.current + 1) % G.players.length;
+    renderAll();
+    $("#passTitle").textContent = cur().name + "'s turn";
+    $("#passNote").textContent = drawn > 0 ? (p.name + " drew " + drawn + " fresh tile" + (drawn>1?"s":"") + " — back to a full tray of 8.") : "";
+    $("#passOverlay").classList.add("show");
+  } else {
+    G.timeLeft = G.secsPerTurn;
+    renderAll(); startTimer();
+    if(!fromExchange) toast("New turn — tray refilled.");
+  }
+}
+function finishByRounds(){
+  G.over = true; G.reveal = true;
+  renderAll();
+  showGameOver(false, "rounds");
+}
+$("#passBtn").addEventListener("click", function(){
+  $("#passOverlay").classList.remove("show");
+  G.timeLeft = G.secsPerTurn;
+  renderAll(); startTimer();
+});
+/* ---------- timer ---------- */
+function startTimer(){
+  stopTimer();
+  if(!G.timed || G.over) { renderClock(); return; }
+  G.timeLeft = G.secsPerTurn; renderClock();
+  G.timerId = setInterval(function(){
+    G.timeLeft -= 0.5; renderClock();
+    if(G.timeLeft <= 0){
+      toast("⏱ Time! Turn passes.");
+      endTurn(false);
+    }
+  }, 500);
+}
+function stopTimer(){ if(G && G.timerId){ clearInterval(G.timerId); G.timerId = null; } }
+/* ---------- game over ---------- */
+function showGameOver(manual, reason){
+  // save high scores by name first, flag fresh records
+  const newHigh = {};
+  G.players.forEach(function(p){
+    if(p.score > 0 && p.score > (HS[p.name] || 0)){ newHigh[p.name] = true; HS[p.name] = p.score; }
+  });
+  saveHS(); renderHS();
+  const sorted = G.players.slice().sort(function(a,b){ return b.score - a.score; });
+  const top = sorted[0];
+  $("#overTitle").textContent = (manual && G.players.length===1) ? "Game over" :
+    G.players.length===1 ? "Board complete!" :
+    (sorted.length>1 && sorted[1].score === top.score ? "It's a tie!" : ("🏆 " + top.name + " wins!"));
+  $("#overSub").textContent =
+    reason === "rounds" ? "The rounds are done — final standings. The unfinished words are revealed on the board:" :
+    manual ? "Game ended early — the unfinished words are revealed on the board. Final standings:" :
+    (G.players.length===1 ? ("You solved every word and banked " + top.score + " points.") : "Every word is solved — final standings:");
+  const st = $("#standings"); st.innerHTML = "";
+  sorted.forEach(function(p){
+    const row = document.createElement("div"); row.className = "srow";
+    row.innerHTML = "<b>" + escapeHtml(p.name) + "</b>" + (newHigh[p.name] ? ' <span style="color:var(--amber);font-weight:900">🏆 NEW HIGH!</span>' : "") + "<span class='pts'>" + p.score + "</span>";
+    st.appendChild(row);
+  });
+  $("#overOverlay").classList.add("show");
+}
+$("#againBtn").addEventListener("click", function(){
+  $("#overOverlay").classList.remove("show");
+  startGame();
+});
+$("#setupBtn").addEventListener("click", function(){
+  $("#overOverlay").classList.remove("show");
+  $("#game").classList.add("hidden");
+  $("#setup").classList.remove("hidden");
+});
+</script>
+</body>
+</html>
