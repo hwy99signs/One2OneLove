@@ -177,7 +177,12 @@ jobs:
 
           # Subscription-era access is retired.
           grep -F "legacy_subscription_model_retired" worker/billing.ts src/lib/stripeService.js worker/billing-plan-change.ts >/dev/null
-          grep -F "return false;" worker/api-entitlements.ts >/dev/null
+          grep -F "recurring tiers are retired" worker/api-entitlements.ts >/dev/null
+          grep -F "member identity only" worker/api-entitlements.ts >/dev/null
+          if grep -REn "billing_required|plan_upgrade_required|subscription_plan|subscription_status|stripe_subscription_id|active One2OneLove membership|membership or higher is required" worker/api-entitlements.ts; then
+            echo "Legacy recurring-membership entitlement gate survived in Production candidate." >&2
+            exit 1
+          fi
           grep -F "accessModel:'free_tokens'" worker/ai.ts >/dev/null
           if grep -REn 'PLAN_LEVEL|REQUIRED_PLAN|stripe_subscription_id|subscription_status|subscription_plan' src/components/launch/LaunchAccessGate.jsx; then
             echo "Global browser access still depends on a subscription." >&2
