@@ -35,6 +35,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
   const [unlockingEpisode, setUnlockingEpisode] = useState(false);
   const [unlockError, setUnlockError] = useState("");
   const [podcastTokenCost, setPodcastTokenCost] = useState(199);
+  const [creditBalance,setCreditBalance]=useState(null);
   const [showUnlockConfirm,setShowUnlockConfirm] = useState(false);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
     if (!podcast || !user?.id) {
       setUnlockedEpisodeKeys(new Set());
       setPodcastTokenCost(199);
+      setCreditBalance(null);
       return undefined;
     }
     Promise.all([
@@ -69,6 +71,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
       if (!active) return;
       setUnlockedEpisodeKeys(new Set((unlockData?.unlocks || []).map(item => String(item.content_key))));
       setPodcastTokenCost(Number(walletData?.featurePrices?.find(item => item.feature_code === 'podcast_episode_unlock')?.token_cost || 199));
+      setCreditBalance(Number(walletData?.wallet?.balance||0));
     }).catch(() => {});
     return () => { active = false; };
   }, [podcast?.id, user?.id]);
@@ -91,6 +94,7 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
       });
       setUnlockedEpisodeKeys(current => new Set([...current, selectedUnlockKey]));
       if (result?.tokens?.charged != null) setPodcastTokenCost(Number(result.tokens.charged || podcastTokenCost));
+      if (result?.tokens?.balance != null) setCreditBalance(Number(result.tokens.balance));
     } catch (error) {
       if (isTokensRequiredError(error)) {
         const info=tokenRequiredDetails(error);
@@ -262,7 +266,8 @@ export default function PodcastPlayerDialog({ podcast, onClose, t, locale }) {
         open={showUnlockConfirm}
         title={selectedEpisode ? 'Unlock '+selectedEpisode.title : 'Unlock Podcast Episode'}
         priceCents={podcastTokenCost}
-        description="Pay once and listen anytime from this account."
+        terms="One-time unlock — yours forever."
+        balanceCents={creditBalance}
         busy={unlockingEpisode}
         error={unlockError}
         onUnlock={async()=>{await unlockEpisode(); if(!unlockError)setShowUnlockConfirm(false);}}
