@@ -2,7 +2,7 @@
 import baseWorker from './index';
 import { withDatabaseHealth } from './health-response.js';
 import { sendProductionSiteHealth,handlePrivateAdminHealth } from './epscie-health';
-import { handleAdminRequest } from './admin';
+import { handleAdminRequest, handleAdminReportRequest } from './admin';
 import { handleTokenAdminRequest } from './token-admin';
 import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
@@ -274,6 +274,11 @@ export default {
 
     if (url.pathname === '/api/billing/change-plan') {
       const response = await handleBillingPlanChangeRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname === '/api/admin/report') {
+      const response = await handleAdminReportRequest(request, env, url);
       if (response) return response;
     }
 
