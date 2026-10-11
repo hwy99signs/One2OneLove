@@ -261,6 +261,8 @@ export default function Admin() {
   const [loading,setLoading] = useState(true);
   const [refreshing,setRefreshing] = useState(false);
   const [error,setError] = useState(null);
+  const [refreshError,setRefreshError] = useState(null);
+  const [lastUpdatedAt,setLastUpdatedAt] = useState(null);
   const [query,setQuery] = useState('');
   const [memberViewFilter,setMemberViewFilter] = useState('all');
   const [mobileNav,setMobileNav] = useState(false);
@@ -315,6 +317,8 @@ export default function Admin() {
       setAnalytics(analyticsData);
       lastRefreshAtRef.current = Date.now();
       setError(null);
+      setRefreshError(null);
+      setLastUpdatedAt(new Date());
     } catch (err) {
       if (!refresh || !dataRef.current) {
         setError(err);
@@ -334,6 +338,7 @@ export default function Admin() {
           setError(err);
         }
       } else {
+        setRefreshError(err);
         console.warn('Admin background refresh failed; keeping the current dashboard visible.', err);
       }
     } finally {
@@ -539,11 +544,12 @@ export default function Admin() {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:flex-nowrap sm:gap-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3"><button className="rounded-lg border border-slate-200 p-2 lg:hidden" onClick={()=>setMobileNav(true)}><Menu size={18}/></button><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Operations Dashboard</p><h1 className="text-lg font-bold text-slate-900">{visibleSections.find(s=>s.id===section)?.label}</h1></div></div>
-            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Production'}</Pill><span className="hidden md:inline-flex"><Pill tone="green">Auto-refresh · 15 min</Pill></span><button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">{!isPrelaunchAdminPreview && <button onClick={openAnalytics} className="hidden items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:inline-flex"><TrendingUp size={15}/>Analytics</button>}<Pill tone={isPrelaunchAdminPreview?'amber':'blue'}>{isPrelaunchAdminPreview?'Read-only Prelaunch':'Production'}</Pill><span className="hidden md:inline-flex"><Pill tone="green">Auto-refresh · 15 min</Pill></span>{lastUpdatedAt && <span className="hidden text-xs font-medium text-slate-400 xl:inline">Updated {lastUpdatedAt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</span>}<button onClick={()=>load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={15} className={refreshing?'animate-spin':''}/><span className="hidden sm:inline">Refresh</span></button></div>
           </div>
         </header>
 
         <div className="px-4 py-6 sm:px-6 lg:px-8">
+          {refreshError && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900"><span>Couldn&rsquo;t refresh just now &mdash; you&rsquo;re seeing the last data that loaded{lastUpdatedAt ? ` (updated ${lastUpdatedAt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})})` : ''}. The site itself is fine; the dashboard keeps retrying on its own.</span><button onClick={()=>load(true)} className="rounded-lg bg-amber-600 px-3 py-1.5 font-bold text-white hover:bg-amber-700">Retry now</button></div>}
           {section==='overview' && <div>
             <Heading title="Platform Overview" subtitle="A quick operating view of users, tiers, Love Notes, moderation and the features visitors and members are actually using."/>
             <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900"><strong>Analytics rules:</strong> Administrator activity is intentionally excluded from visitor, click and feature-usage totals so your own testing does not inflate audience numbers. “Today” and “this month” use America/Chicago; rolling 24-hour and 7/30-day windows remain true elapsed-time windows.</div>
@@ -553,7 +559,7 @@ export default function Admin() {
               <Metric icon={Clock3} label="Pending Verification" value={number(users.pending_verification)} note="Click to view the accounts and missing verification step" tone="amber" onClick={openPendingVerificationMembers}/>
               <Metric icon={Heart} label="Love Notes Sent" value={number(love.sent_total)} note={`${number(love.sent_30d)} in the last 30 days`} tone="violet"/>
               <Metric icon={CalendarDays} label="People Using Scheduler" value={number(love.scheduler_users)} note={`${number(love.scheduler_users_30d)} in the last 30 days`} tone="blue"/>
-              <Metric icon={TrendingUp} label="Feature Activity — 30 Days" value={number(features.reduce((sum,f)=>sum+Number(f.activity_30d||0),0))} note={`${features.filter(f=>Number(f.activity_30d||0)>0).length} features used · all visitors`} tone="green"/>
+              <Metric icon={TrendingUp} label="Feature Activity — 30 Days" value={number(features.reduce((sum,f)=>sum+Number(f.activity_30d||0),0))} note={`${features.filter(f=>Number(f.activity_30d||0)>0).length} features used · opens only · all visitors`} tone="green"/>
               <Metric icon={FileCheck2} label="Pending Applications" value={number(summary.applications?.pending_total)} note="Professional and contributor applications" tone="blue"/>
               <Metric icon={MessageSquareText} label="Moderation Queue" value={number(summary.moderation?.pending_total)} note="Posts, comments, stories and reviews" tone="amber"/>
               <Metric icon={CreditCard} label="Payments Recorded" value={number(summary.payments?.recorded_payments)} note={`${number(summary.payments?.payments_this_month)} this month`} tone="violet"/>
@@ -595,8 +601,8 @@ export default function Admin() {
                   windows={featureWindows}
                   rows={[
                     {label:'Page accesses',values:topFeatureActivity.subscriptionBilling?.accesses},
-                    {label:'With CC',values:topFeatureActivity.subscriptionBilling?.withCard},
-                    {label:'Without CC',values:topFeatureActivity.subscriptionBilling?.withoutCard},
+                    {label:'With Stripe customer',values:topFeatureActivity.subscriptionBilling?.withCard},
+                    {label:'No Stripe customer',values:topFeatureActivity.subscriptionBilling?.withoutCard},
                   ]}
                 />
                 <FeatureActivityCard
@@ -656,7 +662,7 @@ export default function Admin() {
             <Heading title="Feature & Click Analytics" subtitle="Tracks normal UI clicks from non-registered Open House visitors, registered users without a paid subscription, and subscribed members. Administrator activity is excluded."/>
             <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Metric icon={Activity} label="All Clicks" value={number(clickSummary.clicks_30d)} note={`${number(clickSummary.total_clicks)} since analytics baseline`} tone="blue"/>
-              <Metric icon={Users} label="Non-Registered Clicks" value={number(clickSummary.anonymous_30d)} note={`${number(clickSummary.unique_anonymous_30d)} unique anonymous visitors · 30 days`} tone="violet"/>
+              <Metric icon={Users} label="Non-Registered Clicks" value={number(clickSummary.anonymous_30d)} note={`${number(clickSummary.unique_anonymous_30d)} unique anonymous visitors in click records · 30 days`} tone="violet"/>
               <Metric icon={UserCheck} label="Registered Free Clicks" value={number(clickSummary.registered_free_30d)} note={`${number(clickSummary.unique_registered_free_30d)} unique registered-free users · 30 days`} tone="amber"/>
               <Metric icon={CreditCard} label="Subscribed Clicks" value={number(clickSummary.subscribed_30d)} note={`${number(clickSummary.unique_subscribed_30d)} unique subscribed users · 30 days`} tone="green"/>
             </div>

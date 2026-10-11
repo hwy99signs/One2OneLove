@@ -501,13 +501,15 @@ async function overview(db) {
         (SELECT count(*) FROM public.reviews WHERE COALESCE(is_published,false)=false)::int AS reviews_unpublished,
         (SELECT count(*) FROM public.chat_room_reports WHERE status <> 'resolved')::int AS chat_reports_pending`),
     db.query(`
-      SELECT count(*)::int AS recorded_payments,
-             count(*) FILTER (
-               WHERE created_at >=
-                 (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
-             )::int AS payments_this_month,
-             COALESCE(sum(amount) FILTER (WHERE lower(COALESCE(status,'')) IN ('paid','succeeded','success','active')),0)::numeric AS successful_amount
-        FROM public.payment_history`),
+      SELECT
+        ((SELECT count(*) FROM public.payment_history)
+         + (SELECT count(*) FROM public.o2ol_token_transactions WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0))::int AS recorded_payments,
+        ((SELECT count(*) FROM public.payment_history WHERE created_at >=
+            (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago'))
+         + (SELECT count(*) FROM public.o2ol_token_transactions WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0 AND created_at >=
+            (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')))::int AS payments_this_month,
+        ((SELECT COALESCE(sum(amount) FILTER (WHERE lower(COALESCE(status,'')) IN ('paid','succeeded','success','active')),0) FROM public.payment_history)
+         + (SELECT COALESCE(sum(amount_cents),0)/100.0 FROM public.o2ol_token_transactions WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0))::numeric AS successful_amount`),
     db.query(`
       SELECT
         (SELECT count(*) FROM public.scheduled_love_notes)::int AS scheduled_total,
@@ -1023,7 +1025,11 @@ async function moderation(db) {
 
 async function billing(db) {
   const [payments, changes] = await Promise.all([
-    db.query(`SELECT p.id,p.user_id,u.email,p.amount,p.currency,p.status,p.subscription_plan,p.payment_method,p.created_at FROM public.payment_history p LEFT JOIN public.users u ON u.id=p.user_id ORDER BY p.created_at DESC LIMIT 100`),
+    db.query(`SELECT * FROM (
+      SELECT p.id,p.user_id,u.email,p.amount,p.currency,p.status,p.subscription_plan,p.payment_method,p.created_at FROM public.payment_history p LEFT JOIN public.users u ON u.id=p.user_id
+      UNION ALL
+      SELECT tt.id,tt.user_id,u.email,(tt.amount_cents/100.0)::numeric(12,2) AS amount,'usd' AS currency,'completed' AS status,'Credit purchase' AS subscription_plan,tt.provider AS payment_method,tt.created_at FROM public.o2ol_token_transactions tt LEFT JOIN public.users u ON u.id=tt.user_id WHERE tt.transaction_type IN ('purchase','auto_replenish') AND COALESCE(tt.amount_cents,0)>0
+    ) q ORDER BY created_at DESC LIMIT 100`),
     db.query(`SELECT c.id,c.user_id,u.email,c.from_plan,c.to_plan,c.change_type,c.effective_date,c.created_at FROM public.subscription_changes c LEFT JOIN public.users u ON u.id=c.user_id ORDER BY c.created_at DESC LIMIT 100`),
   ]);
   return { payments: payments.rows, changes: changes.rows };
