@@ -585,6 +585,7 @@ async function members(db) {
   return result.rows;
 }
 async function visitorRegistry(db, rangeDays = 30) {
+  await db.query(`CREATE TABLE IF NOT EXISTS public.visitor_presence (visitor_id text PRIMARY KEY, user_id uuid, route text, last_ping_at timestamptz NOT NULL DEFAULT now())`);
   const [visitorsResult,funnelResult,sweepExcludedResult] = await Promise.all([
     db.query(`
       WITH ${SWEEP_CTES}, visitor_rollup AS (
@@ -626,7 +627,7 @@ async function visitorRegistry(db, rangeDays = 30) {
       )
       SELECT
         r.visitor_id,r.first_seen,r.last_seen,r.visits,r.page_views,r.clicks,r.actions,r.current_route,
-        (r.last_seen >= now()-interval '5 minutes') AS is_online,
+        COALESCE(vp.last_ping_at >= now()-interval '90 seconds', false) AS is_online,
         COALESCE(r.original_source,'direct') AS original_source,
         COALESCE(r.language,'en') AS language,
         r.pages,r.features,r.resolved_user_id AS user_id,r.linked_at,
@@ -641,6 +642,7 @@ async function visitorRegistry(db, rangeDays = 30) {
       LEFT JOIN public.users u ON u.id=r.resolved_user_id
       LEFT JOIN neon_auth."user" a ON a.id=r.resolved_user_id
       LEFT JOIN purchases p ON p.user_id=r.resolved_user_id
+      LEFT JOIN public.visitor_presence vp ON vp.visitor_id=r.visitor_id
       WHERE r.resolved_user_id IS NULL OR COALESCE(a.role,'user') <> 'admin'
       ORDER BY r.last_seen DESC
     `, [rangeDays]),
@@ -1493,8 +1495,16 @@ export async function handleAdminRequest(request, env, url) {
       if (request.method === 'GET' && url.pathname === '/api/admin/presence') {
         await db.query(`CREATE TABLE IF NOT EXISTS public.visitor_presence (visitor_id text PRIMARY KEY, user_id uuid, route text, last_ping_at timestamptz NOT NULL DEFAULT now())`);
         await db.query(`DELETE FROM public.visitor_presence WHERE last_ping_at < now() - interval '7 days'`);
-        const result = await db.query(`SELECT count(*)::int AS online_now FROM public.visitor_presence WHERE last_ping_at >= now() - interval '90 seconds'`);
-        return json({ ok:true, onlineNow: result.rows[0]?.online_now || 0, generatedAt: new Date().toISOString() });
+        const result = await db.query(`
+          WITH ${SWEEP_CTES}
+          SELECT count(*)::int AS online_now,
+                 count(*) FILTER (WHERE user_id IS NOT NULL)::int AS members_online,
+                 count(*) FILTER (WHERE user_id IS NULL)::int AS guests_online
+            FROM public.visitor_presence
+           WHERE last_ping_at >= now() - interval '90 seconds'
+             AND visitor_id NOT IN (SELECT visitor_id FROM sweep_visitors)`);
+        const presenceRow = result.rows[0] || {};
+        return json({ ok:true, onlineNow: presenceRow.online_now || 0, membersOnline: presenceRow.members_online || 0, guestsOnline: presenceRow.guests_online || 0, generatedAt: new Date().toISOString() });
       }
 
       if (request.method === 'POST' && url.pathname === '/api/admin/members/bulk') {
