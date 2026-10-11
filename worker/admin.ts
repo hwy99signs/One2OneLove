@@ -1428,13 +1428,38 @@ async function supportFeedback(db) {
   return { summary:summary.rows[0]||{total:0,new_count:0,bug_count:0}, recent:recent.rows };
 }
 
+// Member age-range breakdown (owner, 2026-10-11): sign-up collects an age
+// RANGE, never a birthdate. Aggregate counts only; admin accounts excluded,
+// matching the dashboard's other member counts.
+async function ageRanges(db) {
+  const order = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+  const empty = { ranges: order.map(range => ({ range, users: 0 })), notProvided: 0, total: 0 };
+  try {
+    await db.query('ALTER TABLE public.users ADD COLUMN IF NOT EXISTS age_range text');
+    const rows = (await db.query(
+      `SELECT age_range, COUNT(*)::int AS users
+         FROM public.users
+        WHERE COALESCE(role,'user') <> 'admin'
+        GROUP BY age_range`
+    )).rows;
+    const counts = new Map(rows.map(row => [row.age_range || '', Number(row.users || 0)]));
+    return {
+      ranges: order.map(range => ({ range, users: counts.get(range) || 0 })),
+      notProvided: counts.get('') || 0,
+      total: rows.reduce((sum, row) => sum + Number(row.users || 0), 0),
+    };
+  } catch {
+    return empty;
+  }
+}
+
 async function dashboard(db, env, registryRangeDays = 30) {
   await ensureChatModerationSchema(db);
   await ensureO2OLShowVotingSchema(db);
-  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData] = await Promise.all([
-    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays),supportFeedback(db),
+  const [summary,userRows,applicationRows,moderationRows,billingData,loveNoteData,featureData,clickData,topFeatureData,chatRoomData,systemData,visitorData,supportData,ageRangeData] = await Promise.all([
+    overview(db),members(db),applications(db),moderation(db),billing(db),loveNotes(db),featureUsage(db,env),clickAnalytics(db,env),topFeatureActivity(db,env),chatRoomAnalytics(db),system(db),visitorRegistry(db,registryRangeDays),supportFeedback(db),ageRanges(db),
   ]);
-  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData };
+  return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData,ageRanges:ageRangeData };
 }
 
 function reportKeyMatches(provided, expected) {

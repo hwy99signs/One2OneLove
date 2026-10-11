@@ -7,6 +7,8 @@ import { useLanguage } from '@/Layout';
 import { getAnalyticsVisitorId } from '@/lib/interactionAnalytics';
 import { registerQuickUser, resendLaunchVerification, verifyLaunchEmail } from '@/lib/launchSignupService';
 
+const AGE_RANGES = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+
 const copy = {
   en:{
     eyebrow:'Registered Free',
@@ -26,6 +28,7 @@ const copy = {
     resend:'Send a new code',resent:'A new code was sent.',
     invalid:'Enter the 6-digit code.',
     usernameError:'Use 3–40 letters, numbers, periods, underscores, or hyphens.',
+    ageRange:'Age range',ageRangePh:'Select your age range',ageRangeError:'Please select your age range.',
     passwordError:'Password must be at least 8 characters.',
   },
   es:{
@@ -34,7 +37,8 @@ const copy = {
     password:'Crear contraseña',passwordPh:'8 caracteres o más',promo:'Sí, envíame correos promocionales y novedades de One2OneLove.',
     continue:'Crear Cuenta Gratis y Continuar',creating:'Creando tu cuenta…',noCard:'No se requiere tarjeta. Tu acceso gratuito actual sigue siendo gratuito.',
     terms:'Al continuar, confirmas que tienes 18+ y aceptas los Términos y la Política de Privacidad de One2OneLove.',signIn:'¿Ya tienes cuenta? Inicia sesión',
-    verifyTitle:'Verifica tu correo',verifyBody:'Enviamos un código de 6 dígitos a',code:'Código de verificación',verify:'Verificar y Continuar',verifying:'Verificando…',resend:'Enviar otro código',resent:'Se envió un nuevo código.',invalid:'Ingresa el código de 6 dígitos.',usernameError:'Usa 3–40 letras, números, puntos, guiones bajos o guiones.',passwordError:'La contraseña debe tener al menos 8 caracteres.',
+    verifyTitle:'Verifica tu correo',verifyBody:'Enviamos un código de 6 dígitos a',code:'Código de verificación',verify:'Verificar y Continuar',verifying:'Verificando…',resend:'Enviar otro código',resent:'Se envió un nuevo código.',invalid:'Ingresa el código de 6 dígitos.',usernameError:'Usa 3–40 letras, números, puntos, guiones bajos o guiones.',
+    ageRange:'Rango de edad',ageRangePh:'Selecciona tu rango de edad',ageRangeError:'Selecciona tu rango de edad.',passwordError:'La contraseña debe tener al menos 8 caracteres.',
   },
   fr:{
     eyebrow:'Inscription Gratuite',title:'Créez votre compte One2OneLove gratuit',body:'Choisissez un nom d’utilisateur, saisissez votre e-mail et créez un mot de passe pour continuer.',
@@ -42,7 +46,8 @@ const copy = {
     password:'Créer un mot de passe',passwordPh:'8 caractères ou plus',promo:'Oui, envoyez-moi des e-mails promotionnels et les actualités One2OneLove.',
     continue:'Créer un Compte Gratuit et Continuer',creating:'Création du compte…',noCard:'Aucune carte bancaire requise. Votre accès gratuit reste gratuit.',
     terms:'En continuant, vous confirmez avoir 18+ et accepter les Conditions et la Politique de confidentialité de One2OneLove.',signIn:'Vous avez déjà un compte ? Connectez-vous',
-    verifyTitle:'Vérifiez votre e-mail',verifyBody:'Nous avons envoyé un code à 6 chiffres à',code:'Code de vérification',verify:'Vérifier et Continuer',verifying:'Vérification…',resend:'Renvoyer un code',resent:'Un nouveau code a été envoyé.',invalid:'Saisissez le code à 6 chiffres.',usernameError:'Utilisez 3 à 40 lettres, chiffres, points, tirets bas ou tirets.',passwordError:'Le mot de passe doit contenir au moins 8 caractères.',
+    verifyTitle:'Vérifiez votre e-mail',verifyBody:'Nous avons envoyé un code à 6 chiffres à',code:'Code de vérification',verify:'Vérifier et Continuer',verifying:'Vérification…',resend:'Renvoyer un code',resent:'Un nouveau code a été envoyé.',invalid:'Saisissez le code à 6 chiffres.',usernameError:'Utilisez 3 à 40 lettres, chiffres, points, tirets bas ou tirets.',
+    ageRange:'Tranche d’âge',ageRangePh:'Sélectionnez votre tranche d’âge',ageRangeError:'Veuillez sélectionner votre tranche d’âge.',passwordError:'Le mot de passe doit contenir au moins 8 caractères.',
   },
   it:{
     eyebrow:'Registrazione Gratuita',title:'Crea il tuo account One2OneLove gratuito',body:'Scegli un nome utente, inserisci la tua email e crea una password per continuare.',
@@ -50,7 +55,8 @@ const copy = {
     password:'Crea password',passwordPh:'8 o più caratteri',promo:'Sì, inviami email promozionali e aggiornamenti One2OneLove.',
     continue:'Crea Account Gratuito e Continua',creating:'Creazione account…',noCard:'Nessuna carta richiesta. Il tuo accesso gratuito resta gratuito.',
     terms:'Continuando, confermi di avere 18+ anni e di accettare Termini e Privacy di One2OneLove.',signIn:'Hai già un account? Accedi',
-    verifyTitle:'Verifica la tua email',verifyBody:'Abbiamo inviato un codice di 6 cifre a',code:'Codice di verifica',verify:'Verifica e Continua',verifying:'Verifica…',resend:'Invia un nuovo codice',resent:'È stato inviato un nuovo codice.',invalid:'Inserisci il codice di 6 cifre.',usernameError:'Usa 3–40 lettere, numeri, punti, underscore o trattini.',passwordError:'La password deve contenere almeno 8 caratteri.',
+    verifyTitle:'Verifica la tua email',verifyBody:'Abbiamo inviato un codice di 6 cifre a',code:'Codice di verifica',verify:'Verifica e Continua',verifying:'Verifica…',resend:'Invia un nuovo codice',resent:'È stato inviato un nuovo codice.',invalid:'Inserisci il codice di 6 cifre.',usernameError:'Usa 3–40 lettere, numeri, punti, underscore o trattini.',
+    ageRange:'Fascia di età',ageRangePh:'Seleziona la tua fascia di età',ageRangeError:'Seleziona la tua fascia di età.',passwordError:'La password deve contenere almeno 8 caratteri.',
   },
   de:{
     eyebrow:'Kostenlos Registriert',title:'Erstellen Sie Ihr kostenloses One2OneLove-Konto',body:'Wählen Sie einen Benutzernamen, geben Sie Ihre E-Mail ein und erstellen Sie ein Passwort.',
@@ -58,7 +64,8 @@ const copy = {
     password:'Passwort erstellen',passwordPh:'8 oder mehr Zeichen',promo:'Ja, senden Sie mir Werbe-E-Mails und One2OneLove-Updates.',
     continue:'Kostenloses Konto Erstellen & Weiter',creating:'Konto wird erstellt…',noCard:'Keine Kreditkarte erforderlich. Ihr aktueller kostenloser Zugang bleibt kostenlos.',
     terms:'Mit dem Fortfahren bestätigen Sie, dass Sie 18+ sind und den One2OneLove-Bedingungen und der Datenschutzrichtlinie zustimmen.',signIn:'Schon ein Konto? Anmelden',
-    verifyTitle:'E-Mail bestätigen',verifyBody:'Wir haben einen 6-stelligen Code gesendet an',code:'Bestätigungscode',verify:'Bestätigen & Weiter',verifying:'Bestätigung…',resend:'Neuen Code senden',resent:'Ein neuer Code wurde gesendet.',invalid:'Geben Sie den 6-stelligen Code ein.',usernameError:'3–40 Buchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche verwenden.',passwordError:'Das Passwort muss mindestens 8 Zeichen haben.',
+    verifyTitle:'E-Mail bestätigen',verifyBody:'Wir haben einen 6-stelligen Code gesendet an',code:'Bestätigungscode',verify:'Bestätigen & Weiter',verifying:'Bestätigung…',resend:'Neuen Code senden',resent:'Ein neuer Code wurde gesendet.',invalid:'Geben Sie den 6-stelligen Code ein.',usernameError:'3–40 Buchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche verwenden.',
+    ageRange:'Altersgruppe',ageRangePh:'Wählen Sie Ihre Altersgruppe',ageRangeError:'Bitte wählen Sie Ihre Altersgruppe.',passwordError:'Das Passwort muss mindestens 8 Zeichen haben.',
   },
 };
 
@@ -69,6 +76,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
   const language = copy[currentLanguage] ? currentLanguage : 'en';
 
   const [username,setUsername]=useState('');
+  const [ageRange,setAgeRange]=useState('');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [promo,setPromo]=useState(false);
@@ -92,6 +100,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
     marketingEmailOptIn:promo,
     visitorId,
     foundingIntent:false,
+    ageRange:ageRange || null,
   });
 
   const submit=async e=>{
@@ -99,6 +108,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
     setError('');
     if(!/^[A-Za-z0-9._-]{3,40}$/.test(username.trim())) return setError(t.usernameError);
     if(password.length<8) return setError(t.passwordError);
+    if(!AGE_RANGES.includes(ageRange)) return setError(t.ageRangeError);
     setBusy(true);
     const result=await registerQuickUser({
       username:username.trim(),
@@ -107,6 +117,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
       marketingEmailOptIn:promo,
       visitorId,
       preferredLanguage:language,
+      ageRange,
     });
     setBusy(false);
     if(!result?.success) return setError(result?.error||'Account creation failed.');
@@ -155,6 +166,12 @@ export default function QuickAccountGate({ intendedPath='/' }) {
         </label>
         <label className="block text-sm font-bold text-slate-700">{t.password}
           <Input type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={t.passwordPh} className="mt-1.5" required/>
+        </label>
+        <label className="block text-sm font-bold text-slate-700">{t.ageRange}
+          <select value={ageRange} onChange={e=>setAgeRange(e.target.value)} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
+            <option value="">{t.ageRangePh}</option>
+            {AGE_RANGES.map(range=><option key={range} value={range}>{range.replace('-','–').replace('65+','65+')}</option>)}
+          </select>
         </label>
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
           <input type="checkbox" checked={promo} onChange={e=>setPromo(e.target.checked)} className="mt-1 h-4 w-4"/>

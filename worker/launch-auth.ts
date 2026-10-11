@@ -153,6 +153,12 @@ function registrationContext(body) {
   const privacyAcknowledged = body.privacyPolicyAcknowledged !== false;
   const age18Confirmed = body.age18Confirmed !== false;
   const foundingIntent = body.foundingIntent === true;
+  // Age range (owner, 2026-10-11): sign-up collects a RANGE, never a
+  // birthdate. Invalid or missing values store null (older/resumed flows
+  // keep working); the forms require a selection client-side.
+  const AGE_RANGES = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+  const ageRangeRaw = clean(body.ageRange, 10, false);
+  const ageRange = AGE_RANGES.includes(ageRangeRaw) ? ageRangeRaw : null;
   const marketingEmailOptIn = body.marketingEmailOptIn === true;
   const visitorId = clean(body.visitorId, 120, false);
 
@@ -180,6 +186,7 @@ function registrationContext(body) {
     foundingIntent,
     marketingEmailOptIn,
     visitorId,
+    ageRange,
   };
 }
 
@@ -218,6 +225,7 @@ async function reserveFoundingTokenMember(db,userId) {
 }
 
 async function persistRegistration(db, user, registration) {
+  await db.query('ALTER TABLE public.users ADD COLUMN IF NOT EXISTS age_range text');
   await db.query('BEGIN');
   try {
     await db.query(
@@ -244,9 +252,9 @@ async function persistRegistration(db, user, registration) {
     await db.query(
       `INSERT INTO public.users
         (id,email,name,username,user_type,is_active,subscription_plan,subscription_price,subscription_status,
-         marketing_email_opt_in,marketing_email_opt_in_at,signup_visitor_id)
+         marketing_email_opt_in,marketing_email_opt_in_at,signup_visitor_id,age_range)
        VALUES ($1::uuid,$2,$3,$4,'regular',true,'Free',0,'inactive',$5,
-               CASE WHEN $5 THEN now() ELSE NULL END,$6)
+               CASE WHEN $5 THEN now() ELSE NULL END,$6,$7)
        ON CONFLICT (id) DO UPDATE SET
          email=EXCLUDED.email,
          name=COALESCE(NULLIF(public.users.name,''),EXCLUDED.name),
@@ -256,8 +264,9 @@ async function persistRegistration(db, user, registration) {
            WHEN EXCLUDED.marketing_email_opt_in THEN COALESCE(public.users.marketing_email_opt_in_at,now())
            ELSE NULL
          END,
-         signup_visitor_id=COALESCE(public.users.signup_visitor_id,EXCLUDED.signup_visitor_id)`,
-      [user.id, registration.email, registration.name, registration.username, registration.marketingEmailOptIn, registration.visitorId],
+         signup_visitor_id=COALESCE(public.users.signup_visitor_id,EXCLUDED.signup_visitor_id),
+         age_range=COALESCE(public.users.age_range,EXCLUDED.age_range)`,
+      [user.id, registration.email, registration.name, registration.username, registration.marketingEmailOptIn, registration.visitorId, registration.ageRange],
     );
 
     await db.query(
