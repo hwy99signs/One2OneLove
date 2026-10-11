@@ -3,12 +3,15 @@ import { Client } from 'pg';
 import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
-// Registered Free (unified 2026-10-10, owner scrub): a member is Registered
-// Free exactly when they hold no active paid subscription status. This one
-// predicate is used identically by the overview counts, the plan breakdown,
-// the member list, and the visitor-funnel count — the four places that
-// previously carried three conflicting definitions.
-const REGISTERED_FREE_SQL = (alias) => `lower(COALESCE(${alias}.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')`;
+// Credit-era member state (owner rules, 2026-10-10): there are no plans or
+// tiers. A signup is a username+password credential account in
+// neon_auth."user" (created by worker/launch-auth.ts), and a member's paid
+// state is whether they have completed a Credit purchase. This one predicate
+// is used identically by the overview counts, the member list, and the
+// visitor-funnel count. The legacy users.subscription_plan /
+// subscription_status columns are written only by the retired subscription
+// webhook in worker/billing.ts, so no admin number reads them anymore.
+const CREDIT_PURCHASE_SQL = (userIdExpr) => `EXISTS (SELECT 1 FROM public.o2ol_token_transactions t WHERE t.user_id=${userIdExpr} AND t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0)`;
 
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -434,31 +437,34 @@ async function chatRoomAnalytics(db) {
 }
 
 async function overview(db) {
-  const [users, plans, applications, moderation, payments, loveNotes, communities] = await Promise.all([
+  const [users, applications, moderation, payments, loveNotes, communities] = await Promise.all([
+    // Signup counting (owner rule, 2026-10-10): every username+password
+    // signup is a credential account in neon_auth."user", so sign-ups are
+    // counted from the auth table anchored on account creation — profile
+    // rows without a credential account are not signups, and an account
+    // counts from the moment it is created, profile or not. The
+    // registered_free / subscribed payload keys are retained, but their
+    // meaning is now Credit-era truth: registered_free = accounts with no
+    // completed Credit purchase; subscribed = accounts with one (Credit
+    // buyers).
     db.query(`
       SELECT count(*)::int AS total,
-             count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '7 days')::int AS new_7d,
-             count(*) FILTER (WHERE p.id IS NOT NULL AND COALESCE(p.is_active,true)=false)::int AS inactive,
+             count(*) FILTER (WHERE a."createdAt" >= now()-interval '7 days')::int AS new_7d,
+             count(*) FILTER (WHERE COALESCE(a.banned,false)=true OR COALESCE(p.is_active,true)=false)::int AS inactive,
              count(*) FILTER (WHERE (COALESCE(p.is_verified,false)=true OR COALESCE(a."emailVerified",false)=true))::int AS email_verified,
              count(*) FILTER (WHERE COALESCE(p.phone_number_verified,false)=true)::int AS phone_verified,
              count(*) FILTER (
                WHERE (COALESCE(p.is_verified,false)=true OR COALESCE(a."emailVerified",false)=true)
                  AND COALESCE(p.phone_number_verified,false)=true
              )::int AS verified,
-             count(*) FILTER (
-               WHERE p.id IS NOT NULL
-                 AND ${REGISTERED_FREE_SQL('p')}
-             )::int AS registered_free,
-             count(*) FILTER (
-               WHERE p.id IS NOT NULL
-                 AND lower(COALESCE(p.subscription_status,'inactive')) IN ('active','trial','trialing','past_due')
-             )::int AS subscribed,
+             count(*) FILTER (WHERE NOT ${CREDIT_PURCHASE_SQL('a.id')})::int AS registered_free,
+             count(*) FILTER (WHERE ${CREDIT_PURCHASE_SQL('a.id')})::int AS subscribed,
              count(*) FILTER (WHERE p.id IS NULL)::int AS auth_only_no_profile,
              count(*) FILTER (
-               WHERE COALESCE(p.created_at,a."createdAt") >=
+               WHERE a."createdAt" >=
                  (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
              )::int AS signups_today,
-             count(*) FILTER (WHERE COALESCE(p.created_at,a."createdAt") >= now()-interval '24 hours')::int AS signups_24h,
+             count(*) FILTER (WHERE a."createdAt" >= now()-interval '24 hours')::int AS signups_24h,
              count(*) FILTER (
                WHERE NOT (
                  (COALESCE(p.is_verified,false)=true OR COALESCE(a."emailVerified",false)=true)
@@ -466,28 +472,8 @@ async function overview(db) {
                )
              )::int AS pending_verification
         FROM neon_auth."user" a
-        FULL OUTER JOIN public.users p ON p.id=a.id
+        LEFT JOIN public.users p ON p.id=a.id
        WHERE COALESCE(a.role,'user') <> 'admin'`),
-    db.query(`
-      WITH desired(plan,sort_order) AS (
-        VALUES ('Registered Free'::text,1),('Premiere'::text,2),('Exclusive'::text,3)
-      ), counts AS (
-        SELECT CASE
-                 WHEN ${REGISTERED_FREE_SQL('u')}
-                   THEN 'Registered Free'
-                 WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
-                 WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
-                 ELSE 'Registered Free'
-               END AS plan,
-               count(*)::int AS count
-          FROM public.users u
-          LEFT JOIN neon_auth."user" a ON a.id=u.id
-         WHERE COALESCE(a.role,'user') <> 'admin'
-         GROUP BY 1
-      )
-      SELECT desired.plan,COALESCE(counts.count,0)::int AS count
-        FROM desired LEFT JOIN counts USING(plan)
-       ORDER BY desired.sort_order`),
     db.query(`
       SELECT
         (SELECT count(*) FROM public.therapist_profiles WHERE status='pending')::int AS licensed_pending,
@@ -500,16 +486,26 @@ async function overview(db) {
         (SELECT count(*) FROM public.post_comments WHERE moderation_status <> 'approved')::int AS comments_pending,
         (SELECT count(*) FROM public.reviews WHERE COALESCE(is_published,false)=false)::int AS reviews_unpublished,
         (SELECT count(*) FROM public.chat_room_reports WHERE status <> 'resolved')::int AS chat_reports_pending`),
+    // Payment totals read Credit purchases only. public.payment_history is
+    // written solely by the retired subscription webhook in
+    // worker/billing.ts; no current product flow writes it. Admin accounts
+    // are excluded, matching the Credit page aggregates in billing().
     db.query(`
       SELECT
-        ((SELECT count(*) FROM public.payment_history)
-         + (SELECT count(*) FROM public.o2ol_token_transactions WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0))::int AS recorded_payments,
-        ((SELECT count(*) FROM public.payment_history WHERE created_at >=
-            (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago'))
-         + (SELECT count(*) FROM public.o2ol_token_transactions WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0 AND created_at >=
-            (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')))::int AS payments_this_month,
-        ((SELECT COALESCE(sum(amount) FILTER (WHERE lower(COALESCE(status,'')) IN ('paid','succeeded','success','active')),0) FROM public.payment_history)
-         + (SELECT COALESCE(sum(amount_cents),0)/100.0 FROM public.o2ol_token_transactions WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0))::numeric AS successful_amount`),
+        (SELECT count(*) FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
+            AND COALESCE(a.role,'user')<>'admin')::int AS recorded_payments,
+        (SELECT count(*) FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
+            AND COALESCE(a.role,'user')<>'admin'
+            AND t.created_at >=
+            (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago'))::int AS payments_this_month,
+        (SELECT COALESCE(sum(t.amount_cents),0)/100.0 FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
+            AND COALESCE(a.role,'user')<>'admin')::numeric AS successful_amount`),
     db.query(`
       SELECT
         (SELECT count(*) FROM public.scheduled_love_notes)::int AS scheduled_total,
@@ -533,7 +529,6 @@ async function overview(db) {
   const mod = moderation.rows[0] || {};
   return {
     users: users.rows[0] || {},
-    plans: plans.rows,
     applications: { ...app, pending_total: Number(app.licensed_pending || 0) + Number(app.professional_pending || 0) + Number(app.contributor_pending || 0) },
     moderation: { ...mod, pending_total: Number(mod.stories_pending || 0) + Number(mod.posts_pending || 0) + Number(mod.comments_pending || 0) + Number(mod.reviews_unpublished || 0) + Number(mod.chat_reports_pending || 0) },
     payments: payments.rows[0] || {},
@@ -564,20 +559,14 @@ async function members(db) {
            COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
            CASE
              WHEN u.id IS NULL THEN 'Signup Pending'
-             WHEN ${REGISTERED_FREE_SQL('u')}
-               THEN 'Registered Free'
-             WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
-             WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
-             ELSE 'Registered Free'
+             WHEN ${CREDIT_PURCHASE_SQL('COALESCE(a.id,u.id)')} THEN 'Credit Buyer'
+             ELSE 'Member'
            END AS subscription_plan,
            CASE
              WHEN u.id IS NULL THEN 'signup_pending'
-             WHEN ${REGISTERED_FREE_SQL('u')}
-               THEN 'registered_free'
-             ELSE COALESCE(u.subscription_status,'inactive')
+             WHEN ${CREDIT_PURCHASE_SQL('COALESCE(a.id,u.id)')} THEN 'credit_buyer'
+             ELSE 'member'
            END AS subscription_status,
-           u.subscription_price,
-           u.subscription_end_date,
            COALESCE(u.created_at,a."createdAt") AS created_at,
            COALESCE(u.updated_at,a."updatedAt",a."createdAt") AS updated_at,
            COALESCE(a.role,'user') AS auth_role,
@@ -645,7 +634,7 @@ async function visitorRegistry(db, rangeDays = 30) {
         COALESCE(u.marketing_email_opt_in,false) AS marketing_email_opt_in,
         CASE WHEN r.resolved_user_id IS NULL THEN 'Anonymous Visitor'
              WHEN COALESCE(p.purchase_count,0)>0 THEN 'Credit Buyer'
-             ELSE 'Registered Free' END AS audience_status,
+             ELSE 'Member' END AS audience_status,
         COALESCE(p.purchase_count,0)::int AS purchase_count,
         COALESCE(p.paid_cents,0)::bigint AS paid_cents
       FROM resolved r
@@ -692,9 +681,9 @@ async function visitorRegistry(db, rangeDays = 30) {
         (SELECT count(*) FROM visitor_ids)::int AS total_visitors,
         (SELECT count(*) FROM active_visitors)::int AS online_now,
         (SELECT count(DISTINCT visitor_id) FROM resolved_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
-        (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
+        (SELECT count(*) FROM neon_auth."user" a
           WHERE COALESCE(a.role,'user') <> 'admin'
-            AND ${REGISTERED_FREE_SQL('u')})::int AS registered_free,
+            AND NOT ${CREDIT_PURCHASE_SQL('a.id')})::int AS registered_free,
         (SELECT count(*) FROM buyers)::int AS token_buyers,
         (SELECT COALESCE(sum(COALESCE(tt.amount_cents,0)),0)
            FROM public.o2ol_token_transactions tt
@@ -973,17 +962,17 @@ async function applications(db) {
     SELECT * FROM (
       SELECT 'licensed_professional'::text AS application_type,
              p.id,p.user_id,p.status,p.rejection_reason,p.reviewed_at,p.reviewed_by,p.created_at,p.updated_at,
-             concat_ws(' ',p.first_name,p.last_name) AS applicant_name,u.email,
+             concat_ws(' ',p.first_name,p.last_name) AS applicant_name,u.email,u.username,
              jsonb_build_object('license_number',p.license_number,'licensed_countries',p.licensed_countries,'licensed_states',p.licensed_states,'specializations',p.specializations,'years_experience',p.years_experience,'consultation_fee',p.consultation_fee) AS details
         FROM public.therapist_profiles p LEFT JOIN public.users u ON u.id=p.user_id
       UNION ALL
       SELECT 'professional'::text,p.id,p.user_id,p.status,p.rejection_reason,p.reviewed_at,p.reviewed_by,p.created_at,p.updated_at,
-             concat_ws(' ',p.first_name,p.last_name),u.email,
+             concat_ws(' ',p.first_name,p.last_name),u.email,u.username,
              jsonb_build_object('organization_name',p.organization_name,'practice_type',p.practice_type,'website_url',p.website_url)
         FROM public.professional_profiles p LEFT JOIN public.users u ON u.id=p.user_id
       UNION ALL
       SELECT 'contributor'::text,p.id,p.user_id,p.status,p.rejection_reason,p.reviewed_at,p.reviewed_by,p.created_at,p.updated_at,
-             concat_ws(' ',p.first_name,p.last_name),u.email,
+             concat_ws(' ',p.first_name,p.last_name),u.email,u.username,
              jsonb_build_object('total_follower_count',p.total_follower_count,'content_categories',p.content_categories,'collaboration_types',p.collaboration_types)
         FROM public.influencer_profiles p LEFT JOIN public.users u ON u.id=p.user_id
     ) applications
@@ -1025,11 +1014,11 @@ async function moderation(db) {
 
 async function billing(db) {
   const [payments, changes, credit, creditActivity] = await Promise.all([
-    db.query(`SELECT * FROM (
-      SELECT p.id,p.user_id,u.email,p.amount,p.currency,p.status,p.subscription_plan,p.payment_method,p.created_at FROM public.payment_history p LEFT JOIN public.users u ON u.id=p.user_id
-      UNION ALL
-      SELECT tt.id,tt.user_id,u.email,(tt.amount_cents/100.0)::numeric(12,2) AS amount,'usd' AS currency,'completed' AS status,'Credit purchase' AS subscription_plan,tt.provider AS payment_method,tt.created_at FROM public.o2ol_token_transactions tt LEFT JOIN public.users u ON u.id=tt.user_id WHERE tt.transaction_type IN ('purchase','auto_replenish') AND COALESCE(tt.amount_cents,0)>0
-    ) q ORDER BY created_at DESC LIMIT 100`),
+    // Recent Payments lists Credit purchases only. The legacy
+    // public.payment_history branch was removed: that table is written
+    // solely by the retired subscription webhook in worker/billing.ts,
+    // while every current purchase writes o2ol_token_transactions.
+    db.query(`SELECT tt.id,tt.user_id,u.email,u.username,(tt.amount_cents/100.0)::numeric(12,2) AS amount,'usd' AS currency,'completed' AS status,'Credit purchase' AS subscription_plan,tt.provider AS payment_method,tt.created_at FROM public.o2ol_token_transactions tt LEFT JOIN public.users u ON u.id=tt.user_id WHERE tt.transaction_type IN ('purchase','auto_replenish') AND COALESCE(tt.amount_cents,0)>0 ORDER BY tt.created_at DESC LIMIT 100`),
     db.query(`SELECT c.id,c.user_id,u.email,c.from_plan,c.to_plan,c.change_type,c.effective_date,c.created_at FROM public.subscription_changes c LEFT JOIN public.users u ON u.id=c.user_id ORDER BY c.created_at DESC LIMIT 100`),
     // Credit economy aggregates (Credit page). Wallet amounts are USD cents of
     // Credit — the same unit worker/token-admin.ts declares (creditUnit
@@ -1060,7 +1049,7 @@ async function billing(db) {
     // Recent Credit ledger activity — same columns worker/token-admin.ts exposes,
     // with the same admin exclusion as the aggregates above.
     db.query(`
-      SELECT t.id,t.user_id,u.email,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,t.package_code,
+      SELECT t.id,t.user_id,u.email,u.username,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,t.package_code,
              t.amount_cents,t.provider,t.created_at,fp.label AS feature_label
         FROM public.o2ol_token_transactions t
         LEFT JOIN public.users u ON u.id=t.user_id
@@ -1076,7 +1065,7 @@ async function loveNotes(db) {
   const [statusCounts, recent, sent, schedulers] = await Promise.all([
     db.query(`SELECT COALESCE(status,'unknown') AS status,count(*)::int AS count FROM public.scheduled_love_notes GROUP BY 1 ORDER BY count DESC,status ASC`),
     db.query(`
-      SELECT n.id,n.user_id,u.email,n.note_title,n.scheduled_date,n.scheduled_time,n.scheduled_timezone,
+      SELECT n.id,n.user_id,u.email,u.username,n.note_title,n.scheduled_date,n.scheduled_time,n.scheduled_timezone,
              n.delivery_method,n.note_language,n.status,n.attempts,n.last_attempt_at,n.sent_at,n.failure_reason,
              CASE WHEN n.recipient_phone IS NULL THEN NULL WHEN length(n.recipient_phone)<=4 THEN '••••' ELSE '••••'||right(n.recipient_phone,4) END AS recipient_phone_masked,
              n.created_at,n.updated_at
@@ -1219,8 +1208,6 @@ async function featureUsage(db, env) {
       UNION ALL SELECT 'Community Chat','u:'||sender_id::text,created_at FROM public.messages WHERE sender_id IS NOT NULL AND COALESCE(is_deleted,false)=false
       UNION ALL SELECT 'Community Chat','u:'||from_user_id::text,created_at FROM public.buddy_requests WHERE from_user_id IS NOT NULL
       UNION ALL SELECT 'Community Chat','u:'||user_id::text,created_at FROM public.buddy_matches WHERE user_id IS NOT NULL
-      UNION ALL SELECT 'Subscription / Billing','u:'||user_id::text,created_at FROM public.payment_history WHERE user_id IS NOT NULL
-      UNION ALL SELECT 'Subscription / Billing','u:'||user_id::text,created_at FROM public.subscription_changes WHERE user_id IS NOT NULL
     )
     SELECT feature,
            count(DISTINCT actor_key)::int AS unique_users,
@@ -1273,22 +1260,6 @@ async function topFeatureActivity(db, env) {
     const row = result.rows[0] || {};
     return Object.fromEntries(windows.map(days => [days, Number(row[`d${days}`] || 0)]));
   };
-
-  const subscriptionRows = await db.query(`
-    SELECT
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '7 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc7,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '7 days') AND u.stripe_subscription_id IS NULL)::int AS no7,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '14 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc14,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '14 days') AND u.stripe_subscription_id IS NULL)::int AS no14,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '21 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc21,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '21 days') AND u.stripe_subscription_id IS NULL)::int AS no21,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '30 days') AND u.stripe_subscription_id IS NOT NULL)::int AS cc30,
-      count(*) FILTER (WHERE u.created_at >= GREATEST($1::timestamptz,now()-interval '30 days') AND u.stripe_subscription_id IS NULL)::int AS no30
-    FROM public.users u
-    LEFT JOIN neon_auth."user" a ON a.id=u.id
-    WHERE COALESCE(a.role,'user') <> 'admin'
-  `, [baseline]);
-  const s=subscriptionRows.rows[0]||{};
 
   const dateUse = await windowCounts(`
     WITH ${SWEEP_CTES}
@@ -1419,8 +1390,6 @@ async function topFeatureActivity(db, env) {
     windows,
     subscriptionBilling:{
       accesses:subscriptionViews,
-      withCard:Object.fromEntries(windows.map(d=>[d,Number(s[`cc${d}`]||0)])),
-      withoutCard:Object.fromEntries(windows.map(d=>[d,Number(s[`no${d}`]||0)])),
     },
     dateIdeas:{ used:dateUse, saved:dateSaved, top:mapTop(dateTop.rows) },
     lgbtq:{ accesses:lgbtqViews, top:mapTop(lgbtqTop) },
