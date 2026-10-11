@@ -38,6 +38,8 @@ export default function ScratchGame() {
   useEffect(()=>{
     let active=true;
     if(!fullMemberAccess)return()=>{active=false};
+    const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if(timeZone)apiRequest('/api/games/timezone',{method:'POST',body:{timeZone}}).catch(()=>{});
     Promise.all([getTokenWallet(),apiRequest('/api/games/catalog')]).then(([data,catalog])=>{
       if(!active)return;
       const scratch=(catalog?.games||[]).find(g=>g.id==='scratch')||{};
@@ -91,7 +93,7 @@ export default function ScratchGame() {
           <div className="p-10 text-center sm:p-14">
             <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{promotion?.name||'FREE GAME'}</div>
             <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary?'Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.':`Free today — ${promotion?.name||'promotion'}. No credits used.`}</p>
+            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary?'Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.':`${promotion?.name||'Promotion'} — every game is FREE today. No credits used.`}</p>
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
             <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
           </div>

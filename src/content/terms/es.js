@@ -88,23 +88,27 @@ export default [
     "El Crédito es un saldo prepagado de servicio de la plataforma, denominado en dólares, para servicios medidos como respuestas de IA, SMS enviados por One2OneLove, determinados juegos premium u otras funciones que muestren un costo en Crédito. Los saldos se muestran en dólares y centavos estadounidenses con formato $0.00; $1.00 de Crédito representa $1.00 de valor de servicio One2OneLove, sin puntos ni conversión a tokens. Comprar Crédito es opcional. El Crédito se descuenta solo por la acción mostrada y, si una operación pagada falla y el servicio no se entrega, el Crédito reservado puede devolverse. Los paquetes de Crédito no son depósitos bancarios, moneda ni inversiones; no tienen valor en efectivo fuera de One2OneLove y no pueden transferirse entre usuarios salvo que One2OneLove habilite expresamente esa función. La Recarga Automática es opcional y puede desactivarse. Si se activa, usa el paquete y el saldo mínimo que elijas y cobra al método de pago autorizado mediante el procesador de pagos. Compartir mediante tus propias aplicaciones sigue siendo gratis salvo que se revele claramente otro cargo. Los cuerpos personalizados de SMS de Notas de Amor siguen limitados a 171 caracteres y el pie de SMS de One2OneLove puede incluir el símbolo ❤️."
   ],
   [
-    "23. Compras, Reembolsos, Recarga Automática y Suscripciones Anteriores",
+    "23. Créditos de Juego",
+    "Los Créditos de Juego son una función promocional de One2OneLove. Los Créditos de Juego solo pueden usarse para jugar juegos en One2OneLove. Los Créditos de Juego no tienen valor en efectivo, no son dinero y no pueden retirarse, transferirse, canjearse ni reembolsarse por dinero. Los Créditos de Juego promocionales pueden tener una fecha de vencimiento, después de la cual quedan sin validez. One2OneLove puede modificar o descontinuar el programa de Créditos de Juego en cualquier momento."
+  ],
+  [
+    "24. Compras, Reembolsos, Recarga Automática y Suscripciones Anteriores",
     "Las compras de Crédito y otras compras únicas se cobran por el importe mostrado antes de confirmar. Los cargos de Recarga Automática ocurren solo si la activaste y el saldo alcanza el umbral configurado. Puedes desactivarla para cargos futuros en cualquier momento. Salvo que la ley exija lo contrario o se indique expresamente, el Crédito ya consumido por un servicio completado no es reembolsable. El tratamiento del Crédito no utilizado, reembolsos, contracargos y disputas de pago se rige por la ley aplicable y los términos mostrados al comprar. Los registros históricos de Premiere, Exclusive, períodos de prueba o suscripciones Fundadoras pueden conservarse para contabilidad, insignias, conciliación o migración, pero esos nombres de nivel anteriores no conceden por sí solos acceso actual a funciones bajo el modelo de Crédito."
   ],
   [
-    "24. Cambios en estos Términos",
+    "25. Cambios en estos Términos",
     "Podemos actualizar estos Términos cuando cambie la plataforma o evolucionen los requisitos legales, operativos o de seguridad. La versión vigente se publicará dentro de One2OneLove. El uso continuado después de que una versión actualizada entre en vigor constituye la aceptación de los Términos actualizados cuando la ley lo permita."
   ],
   [
-    "25. Ley aplicable",
+    "26. Ley aplicable",
     "Estos Términos se rigen por la legislación aplicable de los Estados Unidos y, cuando corresponda, por las leyes del Estado de Texas, sin tener en cuenta los principios sobre conflicto de leyes, salvo que otra ley deba aplicarse obligatoriamente."
   ],
   [
-    "26. Divisibilidad",
+    "27. Divisibilidad",
     "Si una disposición de estos Términos se considera inaplicable, las disposiciones restantes seguirán vigentes en la máxima medida permitida por la ley."
   ],
   [
-    "27. Contacto",
+    "28. Contacto",
     "Las preguntas sobre estos Términos o la plataforma pueden enviarse a support@one2onelove.com."
   ]
 ];

@@ -105,6 +105,15 @@ export async function createGamePromotion(promotion) {
   return parseJson(response);
 }
 
+export async function deleteGamePromotion(id) {
+  const response = await fetch('/api/admin/game-promotions/'+encodeURIComponent(id), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+  });
+  return parseJson(response);
+}
+
 export async function updateGamePromotion(id, promotion) {
   const response = await fetch('/api/admin/game-promotions/'+encodeURIComponent(id), {
     method: 'PUT',

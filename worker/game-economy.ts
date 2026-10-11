@@ -304,6 +304,10 @@ export async function adminGrantGameCredit(db,adminId,input){
 }
 export async function gameEconomyAdminSummary(db){
   await ensureGameEconomySchema(db);
+  const lapsed=(await db.query(`SELECT DISTINCT user_id FROM public.o2ol_game_credit_ledger
+    WHERE kind IN ('signup_bonus','admin_grant','promo_grant') AND COALESCE(remaining_cents,0)>0
+      AND expires_at IS NOT NULL AND expires_at<=now() LIMIT 1000`)).rows;
+  for(const row of lapsed){ await expireGameCreditsInTx(db,row.user_id); }
   const totals=(await db.query(`SELECT
     COALESCE(sum(amount_cents) FILTER (WHERE kind IN ('signup_bonus','admin_grant','promo_grant')),0)::int AS issued,
     COALESCE(-sum(amount_cents) FILTER (WHERE kind='spend'),0)::int AS used,
