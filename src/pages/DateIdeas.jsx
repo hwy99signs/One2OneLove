@@ -111,7 +111,7 @@ const OPEN_HOUSE_COPY = {
     unlock: 'Unlock with Credit',
     signIn: 'Sign In',
     saveGate: 'Create an account to save, schedule, and track Date Ideas.',
-    memberAction: 'Become a Member'
+    memberAction: 'Unlock with Credit'
   },
   es: {
     badge: 'PUERTAS ABIERTAS',
