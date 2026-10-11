@@ -241,7 +241,9 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
     if(replay){await db.query('COMMIT');return {pass:replay,reused:true,promotion:replay.promotion_id?{id:replay.promotion_id,free:replay.promo_free}:null,gameCreditCents:Number(replay.game_credit_cents||0),creditCents:Number(replay.credit_cents||0)};}
     const promo=await resolveGamePromotion(db,userId,game);
     const normal=await currentPrice(db,def.chargeFeatureCode);
-    const price=promo?.free?0:promo?.kind==='percent_off'?Math.max(0,Math.round(normal*(100-Math.max(0,Math.min(100,promo.percent)))/100)):normal;
+    const roleRow=(await db.query(`SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,[userId])).rows[0];
+    const isAdmin=roleRow?.role==='admin';
+    const price=isAdmin?0:promo?.free?0:promo?.kind==='percent_off'?Math.max(0,Math.round(normal*(100-Math.max(0,Math.min(100,promo.percent)))/100)):normal;
     let gameCreditCents=0,creditCents=0,paid=null;
     if(price>0){
       const gc=(await db.query(`SELECT COALESCE(sum(remaining_cents),0)::int AS cents FROM public.o2ol_game_credit_ledger
@@ -258,7 +260,7 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
       (user_id,game,token_transaction_id,tokens_charged,status,expires_at,metadata,promotion_id,game_credit_cents,credit_cents,promo_free)
       VALUES($1::uuid,$2,$3::uuid,$4,'active',$5,$6::jsonb,$7::uuid,$8,$9,$10)
       RETURNING id,game,tokens_charged,started_at,expires_at,metadata,promotion_id,game_credit_cents,credit_cents,promo_free`,
-      [userId,game,paid?.transaction?.id||paid?.transaction_id||null,creditCents,expiresAt,JSON.stringify({request_id:requestId,charge_key:key,normal_price_cents:normal,charged_price_cents:price}),promo?.id||null,gameCreditCents,creditCents,Boolean(promo?.free)])).rows[0];
+      [userId,game,paid?.transaction?.id||paid?.transaction_id||null,creditCents,expiresAt,JSON.stringify({request_id:requestId,charge_key:key,normal_price_cents:normal,charged_price_cents:price,admin_bypass:isAdmin}),promo?.id||null,gameCreditCents,creditCents,Boolean(promo?.free)])).rows[0];
     await db.query('COMMIT');
     return {pass,promotion:promo,gameCreditCents,creditCents,priceCents:price,normalPriceCents:normal};
   }catch(e){await db.query('ROLLBACK').catch(()=>{});throw e;}
