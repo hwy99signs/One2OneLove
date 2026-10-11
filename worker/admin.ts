@@ -1024,15 +1024,39 @@ async function moderation(db) {
 }
 
 async function billing(db) {
-  const [payments, changes] = await Promise.all([
+  const [payments, changes, credit, creditActivity] = await Promise.all([
     db.query(`SELECT * FROM (
       SELECT p.id,p.user_id,u.email,p.amount,p.currency,p.status,p.subscription_plan,p.payment_method,p.created_at FROM public.payment_history p LEFT JOIN public.users u ON u.id=p.user_id
       UNION ALL
       SELECT tt.id,tt.user_id,u.email,(tt.amount_cents/100.0)::numeric(12,2) AS amount,'usd' AS currency,'completed' AS status,'Credit purchase' AS subscription_plan,tt.provider AS payment_method,tt.created_at FROM public.o2ol_token_transactions tt LEFT JOIN public.users u ON u.id=tt.user_id WHERE tt.transaction_type IN ('purchase','auto_replenish') AND COALESCE(tt.amount_cents,0)>0
     ) q ORDER BY created_at DESC LIMIT 100`),
     db.query(`SELECT c.id,c.user_id,u.email,c.from_plan,c.to_plan,c.change_type,c.effective_date,c.created_at FROM public.subscription_changes c LEFT JOIN public.users u ON u.id=c.user_id ORDER BY c.created_at DESC LIMIT 100`),
+    // Credit economy aggregates (Credit page). Wallet amounts are USD cents of
+    // Credit — the same unit worker/token-admin.ts declares (creditUnit
+    // 'USD_CENTS': one wallet unit = one US cent, balances display as dollars).
+    db.query(`
+      SELECT
+        (SELECT COALESCE(sum(amount_cents),0) FROM public.o2ol_token_transactions
+          WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0
+            AND created_at >= now()-interval '30 days')::bigint AS sold_cents_30d,
+        (SELECT COALESCE(sum(amount_cents),0) FROM public.o2ol_token_transactions
+          WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0)::bigint AS sold_cents_total,
+        (SELECT COALESCE(sum(balance),0) FROM public.o2ol_token_wallets)::bigint AS outstanding_cents,
+        (SELECT count(DISTINCT user_id) FROM public.o2ol_token_transactions
+          WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0)::int AS buyers,
+        (SELECT COALESCE(sum(-wallet_delta),0) FROM public.o2ol_token_transactions
+          WHERE transaction_type='reserve' AND wallet_delta<0
+            AND created_at >= now()-interval '30 days')::bigint AS spent_cents_30d`),
+    // Recent Credit ledger activity — same columns worker/token-admin.ts exposes.
+    db.query(`
+      SELECT t.id,t.user_id,u.email,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,t.package_code,
+             t.amount_cents,t.provider,t.created_at,fp.label AS feature_label
+        FROM public.o2ol_token_transactions t
+        LEFT JOIN public.users u ON u.id=t.user_id
+        LEFT JOIN public.o2ol_token_feature_prices fp ON fp.feature_code=t.feature_code
+       ORDER BY t.created_at DESC LIMIT 50`),
   ]);
-  return { payments: payments.rows, changes: changes.rows };
+  return { payments: payments.rows, changes: changes.rows, credit: credit.rows[0] || {}, creditActivity: creditActivity.rows };
 }
 
 async function loveNotes(db) {
