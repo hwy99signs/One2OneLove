@@ -148,6 +148,15 @@ export default function ClickToVoteCard({ language = 'en' }) {
         if (pIdx >= 0 && !map[pending.slug]) {
           setIndex(pIdx);
           setPendingChoice(pending.choice || null);
+          // Comment-saving (owner approval, 2026-10-10): a comment
+          // saved with the pending pick comes back into the box, so
+          // the Join / Sign-in trip doesn't cost the guest their
+          // words. Older records have no comment field — treated as
+          // empty. Only fills an empty box; the pending slug IS the
+          // displayed topic in this branch.
+          if (typeof pending.comment === 'string' && pending.comment) {
+            setComment((cur) => (cur ? cur : pending.comment.slice(0, 500)));
+          }
         }
       }
       if (!pending?.slug) {
@@ -178,7 +187,9 @@ export default function ClickToVoteCard({ language = 'en' }) {
     setError('');
     if (!isMember) {
       setPendingChoice(choiceKey);
-      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ slug: question.slug, choice: choiceKey })); } catch { /* private mode */ }
+      // The comment rides in the same record (same 500-char cap) so
+      // it survives the Join / Sign-in trip alongside the pick.
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ slug: question.slug, choice: choiceKey, comment: comment.slice(0, 500) })); } catch { /* private mode */ }
       return;
     }
     setCasting(true);
@@ -199,6 +210,26 @@ export default function ClickToVoteCard({ language = 'en' }) {
       setCasting(false);
     }
   };
+
+  // Comment-saving freshness (owner approval, 2026-10-10): while a
+  // pending pick for the question on screen sits in storage, keep
+  // its saved comment in step with the box — covers pick first, type
+  // second (and edits after a restore). Gated on !loading so the
+  // init restore above lands before this can write anything; it
+  // only ever rewrites the comment field of an existing record.
+  useEffect(() => {
+    if (loading || !question) return;
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+      if (pending?.slug !== question.slug) return;
+      const capped = comment.slice(0, 500);
+      if (pending.comment !== capped) {
+        localStorage.setItem(PENDING_KEY, JSON.stringify({ ...pending, comment: capped }));
+      }
+    } catch { /* private mode */ }
+  }, [comment, loading, question]);
 
   const handleNext = () => {
     setFlash('');
