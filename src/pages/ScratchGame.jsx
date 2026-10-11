@@ -32,17 +32,20 @@ export default function ScratchGame() {
   const [showUnlock,setShowUnlock] = useState(false);
   const [priceCents,setPriceCents] = useState(49);
   const [balanceCents,setBalanceCents] = useState(null);
+  const [gameCreditCents,setGameCreditCents] = useState(null);
   const [promotion,setPromotion] = useState(null);
 
   useEffect(()=>{
     let active=true;
     if(!fullMemberAccess)return()=>{active=false};
-    Promise.all([getTokenWallet(),apiRequest('/api/games/promotion')]).then(([data,promo])=>{
+    Promise.all([getTokenWallet(),apiRequest('/api/games/catalog')]).then(([data,catalog])=>{
       if(!active)return;
-      setPromotion(promo?.promotion||null);
+      const scratch=(catalog?.games||[]).find(g=>g.id==='scratch')||{};
+      setPromotion(scratch?.promotion||null);
       setBalanceCents(Number(data?.wallet?.balance||0));
-      setPriceCents(promo?.promotion?.free?0:Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
-      setShowUnlock(!promo?.promotion?.free);
+      setGameCreditCents(Number(data?.gameCredit?.balanceCents||0));
+      setPriceCents(scratch?.priceCents!=null?Number(scratch.priceCents):Number(data?.featurePrices?.find(x=>x.feature_code==='scratch_game_session')?.token_cost||49));
+      setShowUnlock(!scratch?.promotion?.free);
     }).catch(()=>{if(active)setShowUnlock(true)});
     return()=>{active=false};
   },[fullMemberAccess]);
@@ -56,13 +59,16 @@ export default function ScratchGame() {
       const token=payload?.token;
       if(!token)throw new Error(t.error);
       if(payload?.promotion)setPromotion(payload.promotion);
-      if(payload?.tokens?.balance!=null)setBalanceCents(Number(payload.tokens.balance));
+      if(payload?.gameCredit?.balanceCents!=null)setGameCreditCents(Number(payload.gameCredit.balanceCents));
+      const refreshed=await getTokenWallet().catch(()=>null);
+      if(refreshed?.wallet?.balance!=null)setBalanceCents(Number(refreshed.wallet.balance));
       setGameUrl(`${GAME_URL}?lang=${encodeURIComponent(currentLanguage||"en")}&ticket=${encodeURIComponent(token)}`);
       setShowUnlock(false);
     }catch(err){
       if(isTokensRequiredError(err)){
         const info=tokenRequiredDetails(err);
-        setBalanceCents(Number(info.balance||0));
+        setBalanceCents(Number(info.creditBalance||0));
+        setGameCreditCents(Number(info.gameCreditBalance||0));
         setPriceCents(Number(info.required||49));
         setError(`You need $${(Number(info.required||49)/100).toFixed(2)} Credit. Your balance is $${(Number(info.balance||0)/100).toFixed(2)}.`);
       }else setError(err?.message||t.error);
@@ -83,9 +89,9 @@ export default function ScratchGame() {
           <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15"><iframe title="LOVE SCRATCH GAME" src={gameUrl} className="w-full border-0" style={{height:"min(60vh, 720px)",minHeight:"520px"}} allow="fullscreen"/></div>
         ):promotion?.free?(
           <div className="p-10 text-center sm:p-14">
-            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">ALL GAMES FREE</div>
+            <div className="mx-auto w-fit rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">{promotion?.name||'FREE GAME'}</div>
             <h1 className="mt-4 text-3xl font-black text-white">{t.title}</h1>
-            <p className="mx-auto mt-3 max-w-xl text-white/75">Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.</p>
+            <p className="mx-auto mt-3 max-w-xl text-white/75">{promotion?.temporary?'Free through Sunday, October 11 at 11:59 PM Central Time. No Credit will be used.':`Free today — ${promotion?.name||'promotion'}. No credits used.`}</p>
             {error&&<div className="mx-auto mt-4 max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
             <Button onClick={launchGame} disabled={unlocking} className="mt-6 bg-emerald-600 font-black hover:bg-emerald-700">{unlocking?'Opening…':'Play FREE'}</Button>
           </div>
@@ -98,7 +104,7 @@ export default function ScratchGame() {
           </div>
         )}
     </div>
-    <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
+    <UnlockPriceDialog open={showUnlock&&fullMemberAccess&&!gameUrl} title={t.title} priceCents={priceCents} description="One paid play/session. You are not charged for viewing this price." balanceCents={balanceCents} gameCreditCents={gameCreditCents} promotion={promotion} busy={unlocking} error={error} onUnlock={launchGame} onClose={()=>{setShowUnlock(false);setError('')}}/>
     <p className="pb-5 pt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
   </div>;
 }

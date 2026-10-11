@@ -38,7 +38,7 @@ export function isPhoneVerificationError(error){
 }
 export function tokenRequiredDetails(error){
   const e=error?.payload?.error||{};
-  return {balance:Number(e.balance||0),required:Number(e.required||0),featureCode:e.featureCode||null,featureLabel:e.featureLabel||null};
+  return {balance:Number(e.balance||0),required:Number(e.required||0),shortfall:Number(e.shortfall||0),gameCreditBalance:Number(e.gameCreditBalance||0),creditBalance:Number((e.creditBalance??e.balance)||0),featureCode:e.featureCode||null,featureLabel:e.featureLabel||null};
 }
 
 export async function listTokenUnlocks(featureCode){

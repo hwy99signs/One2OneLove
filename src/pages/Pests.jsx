@@ -1,8 +1,11 @@
-import React from "react";
+import React,{useEffect,useRef} from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { useLanguage } from "@/Layout";
+import { apiRequest, beaconJson } from "@/lib/apiClient";
+import GameLeaderboard from "@/components/activities/GameLeaderboard";
+import { useQueryClient } from "@tanstack/react-query";
 
 const copy = {
   en: { back: "Back to Games" },
@@ -12,9 +15,46 @@ const copy = {
   de: { back: "Zurück zu Spielen" },
 };
 
-export default function Pests() {
+export default function Pests({gameSessionRef}) {
   const { currentLanguage } = useLanguage();
   const t = copy[currentLanguage] || copy.en;
+  const iframeRef=useRef(null);
+  const runRef=useRef(null);
+  const queryClient=useQueryClient();
+
+  useEffect(()=>{
+    const frame=iframeRef.current;
+    if(!frame||!gameSessionRef)return;
+    let doc=null,cleanup=[];
+    const newRun=()=>{runRef.current=gameSessionRef+':'+(globalThis.crypto?.randomUUID?.()||String(Date.now()));};
+    const readScore=()=>Number(doc?.getElementById('catches')?.textContent||0);
+    const submit=(beacon=false)=>{
+      const score=readScore(),sessionRef=runRef.current;
+      if(!sessionRef||score<=0)return;
+      runRef.current=null;
+      const body={game:'pests',score,sessionRef};
+      if(beacon){beaconJson('/api/games/scores',body);return;}
+      apiRequest('/api/games/scores',{method:'POST',body}).then(()=>queryClient.invalidateQueries({queryKey:['gameLeaderboard','pests']})).catch(()=>{});
+    };
+    const bind=()=>{
+      try{
+        doc=frame.contentDocument;
+        if(!doc)return;
+        const play=doc.getElementById('playBtn'),menu=doc.getElementById('resetBtn');
+        const onPlay=()=>newRun();
+        const onMenu=()=>submit(false);
+        play?.addEventListener('click',onPlay,true);
+        menu?.addEventListener('click',onMenu,true);
+        cleanup.push(()=>play?.removeEventListener('click',onPlay,true),()=>menu?.removeEventListener('click',onMenu,true));
+      }catch(_){}
+    };
+    frame.addEventListener('load',bind);
+    if(frame.contentDocument?.readyState==='complete')bind();
+    const onHide=()=>submit(true);
+    window.addEventListener('pagehide',onHide);
+    return()=>{submit(true);window.removeEventListener('pagehide',onHide);frame.removeEventListener('load',bind);cleanup.forEach(fn=>fn());};
+  },[gameSessionRef,queryClient]);
+
   return (
     <div className="min-h-screen" style={{backgroundColor:'#0b2e1d'}}>
       <div className="max-w-[1500px] mx-auto px-3 md:px-5 py-4">
@@ -25,8 +65,9 @@ export default function Pests() {
           </Link>
         </div>
         <img src="/game-cards/card-pests.jpg" alt="game card" className="mx-auto mb-6 block w-full max-w-3xl rounded-[24px] shadow-2xl ring-1 ring-white/15" />
+        <GameLeaderboard game="pests" className="mb-4"/>
         <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
-          <iframe title="PEST'S" src="/games-src/pests.html" className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
+          <iframe ref={iframeRef} title="PEST'S" src="/games-src/pests.html" className="w-full border-0" style={{ height: "min(62vh, 760px)", minHeight: "520px" }} allow="fullscreen" />
         </div>
         <p className="mt-4 text-center text-xs text-white/50">Copyright © 2026 EPS Venture Group. All rights reserved.</p>
       </div>

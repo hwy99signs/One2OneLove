@@ -332,7 +332,7 @@ try{
 
   // Legal pages: all five launch languages must be 18+ and Credit-based.
   const legalLanguages=[
-    ['en',/Adults 18 and Older|adults age 18 or older/i,/Credit/i,/October 9, 2026/i],
+    ['en',/Adults 18 and Older|adults age 18 or older/i,/Credit/i,/October (9|10), 2026/i],
     ['es',/Adultos de 18 años o más/i,/Crédito/i,/9 de Octubre de 2026/i],
     ['fr',/Adultes de 18 ans et plus/i,/Crédit/i,/9 Octobre 2026/i],
     ['it',/Adulti di 18 anni o più/i,/Credito/i,/9 Ottobre 2026/i],
@@ -408,6 +408,8 @@ try{
   }
   {
     const {context,page}=await open(browser,'/O2OLStudio/Episodes',{mode:'free'});
+    // The archive fetch is async; wait for the actual episode cards, not the initial Loading… shell.
+    await page.getByRole('heading',{name:/Who Should Apologize First\?/i}).waitFor({state:'visible',timeout:30000}).catch(()=>{});
     const body=await page.locator('body').innerText();
     if(body.includes('Previous Episodes')&&body.includes('Who Pays for the First Date?')&&body.includes('Who Should Apologize First?')) pass('Studio archive lists Episodes 1 and 2');
     else fail('Studio archive episode list incomplete',body.slice(0,1400));

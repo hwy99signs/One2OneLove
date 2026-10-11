@@ -185,9 +185,9 @@ export default function VerifyPhone() {
     if (!/^\d{6}$/.test(code)) return toast.error(t.invalidCode);
     setBusy(true);
     try {
-      await verifyPhoneNumberOtp(normalized, code);
+      const verification = await verifyPhoneNumberOtp(normalized, code);
       const refreshed = await refreshUserProfile();
-      toast.success(t.success);
+      toast.success(verification?.gameCreditBonus?.welcome || t.success,{duration:8000});
       navigate(nextRoute(refreshed || user, safeRedirect), { replace: true });
     } catch (error) {
       toast.error(error?.message || t.invalidCode);

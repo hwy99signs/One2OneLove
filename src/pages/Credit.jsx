@@ -37,6 +37,11 @@ const GATE_COPY={
 
 function money(cents){return '$'+(Number(cents||0)/100).toFixed(2);}
 function signedMoney(cents){const v=Number(cents||0);return (v<0?'-':'+')+money(Math.abs(v));}
+function gameCreditExpiryText(at){
+ if(!at)return '';
+ const ms=Math.max(0,new Date(at).getTime()-Date.now()),d=Math.floor(ms/86400000),h=Math.floor((ms%86400000)/3600000);
+ return `Game Credits expire in ${d} days, ${h} hours.`;
+}
 function micros(value){return '$'+(Number(value||0)/1000000).toFixed(6);}
 function txLabel(tx){
  const map={purchase:'Credit purchase',reserve:'Paid with Credit',release:'Credit returned',refund:'Refund',grant:'Credit grant',founding_bonus:'Founding Member bonus',migration_credit:'Membership conversion credit',auto_replenish:'Auto-Replenish',admin_adjustment:'Admin adjustment'};
@@ -172,6 +177,16 @@ export default function Credit(){
     <div className="flex flex-wrap items-center justify-between gap-6">
      <div><div className="text-xs font-black uppercase tracking-[.2em] text-fuchsia-200">One2OneLove</div><h1 className="mt-2 text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mt-3 max-w-2xl text-white/70">{t.sub}</p><div className="mt-4 inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-black text-amber-200">{t.badge}</div></div>
      <div className="min-w-[190px] rounded-3xl border border-white/15 bg-white/10 p-5 text-center backdrop-blur"><div className="text-xs font-black uppercase tracking-wider text-white/60">{t.balance}</div><div className="mt-1 text-5xl font-black">{money(state?.wallet?.balance)}</div><div className="mt-1 text-sm text-fuchsia-200">CREDIT</div></div>
+    </div>
+   </div>
+   <div className="mt-6 rounded-[26px] border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-4">
+     <div>
+      <div className="text-xs font-black uppercase tracking-[.18em] text-emerald-700">GAME CREDIT — games only</div>
+      <div className="mt-1 text-4xl font-black text-emerald-950">{money(state?.gameCredit?.balanceCents)}</div>
+      <p className="mt-2 max-w-2xl text-sm font-semibold text-emerald-800">Promotional Game Credit is applied before paid Credit when you play a One2OneLove game. It cannot be purchased, transferred, withdrawn, or used for non-game features.</p>
+     </div>
+     {state?.gameCredit?.nextExpiryAt&&<div className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-emerald-900 shadow-sm">{gameCreditExpiryText(state.gameCredit.nextExpiryAt)}<div className="mt-1 text-xs font-semibold text-emerald-700">{money(state?.gameCredit?.nextExpiryCents)} expires next</div></div>}
     </div>
    </div>
 

@@ -6,8 +6,9 @@ import {
   Menu, MessageSquareText, RefreshCw, Search, ShieldCheck, TrendingUp,
   UserCheck, UserX, Trash2, RotateCcw, Users, X,
 } from 'lucide-react';
-import { getAdminAnalytics, getAdminDashboard, getAdminPresence, manageMemberAccount, manageMemberAccountsBulk } from '../lib/adminService';
+import { getAdminAnalytics, getAdminDashboard, getAdminPresence, manageMemberAccount, manageMemberAccountsBulk, grantMemberGameCredit } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
+import GameEconomyPanel from '../components/admin/GameEconomyPanel';
 import {
   ADMIN_AUTH_REDIRECT,
   ADMIN_IDLE_LIMIT_MS,
@@ -22,6 +23,7 @@ const sections = [
   { id: 'feature-usage', label: 'Feature Usage', icon: Gauge },
   { id: 'chat-room', label: 'Chat Room', icon: MessageSquareText },
   { id: 'members', label: 'Members', icon: Users },
+  { id: 'games', label: 'Games & Promotions', icon: Gauge },
   { id: 'plans', label: 'Plans & Billing', icon: CreditCard },
   { id: 'love-notes', label: 'Love Notes', icon: Heart },
   { id: 'applications', label: 'Applications', icon: FileCheck2 },
@@ -464,6 +466,28 @@ export default function Admin() {
     }
   };
 
+  const handleGrantGameCredit = async (member) => {
+    if (member.auth_role === 'admin') return;
+    const amountText = window.prompt('Game Credit amount in dollars (maximum $100.00):', '5.00');
+    if (amountText === null) return;
+    const amountCents = Math.round(Number(amountText) * 100);
+    if (!Number.isFinite(amountCents) || amountCents <= 0 || amountCents > 10000) return window.alert('Enter an amount from $0.01 to $100.00.');
+    const expiryText = window.prompt('Expires in how many days?', '14');
+    if (expiryText === null) return;
+    const expiryDays = Math.round(Number(expiryText));
+    if (!Number.isFinite(expiryDays) || expiryDays <= 0) return window.alert('Enter a valid number of days.');
+    const note = window.prompt('Grant note (optional):', '') ?? '';
+    setMemberActionId(member.id);
+    try {
+      const result = await grantMemberGameCredit(member.id, amountCents, expiryDays, note);
+      window.alert('Game Credit granted. New balance: $' + (Number(result?.gameCredit?.balanceCents || 0) / 100).toFixed(2));
+    } catch (err) {
+      window.alert(err?.message || 'Unable to grant Game Credit.');
+    } finally {
+      setMemberActionId(null);
+    }
+  };
+
   const handleBulkMemberAction = async (action) => {
     const selected = (data?.members || []).filter(m => selectedMemberIds.includes(m.id) && m.auth_role !== 'admin');
     if (!selected.length) return;
@@ -828,8 +852,9 @@ export default function Admin() {
                   <td className="px-4 py-3"><Pill tone={state==='active'?'green':state==='deleted'?'red':'amber'}>{state}</Pill>{signupState&&<div className="mt-1 max-w-xs text-xs font-semibold text-amber-700">{signupState}</div>}{m.ban_reason&&state!=='active'&&<div className="mt-1 max-w-xs text-xs text-slate-400">{String(m.ban_reason).replace(/^O2OL_(?:DELETED|SUSPENDED):\s*/,'')}</div>}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{date(m.created_at)}</td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                       {protectedAdmin ? <span className="text-xs font-semibold text-slate-400">Protected</span> : <>
+                        <button disabled={busy} onClick={()=>handleGrantGameCredit(m)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 disabled:opacity-50">Grant Game Credit</button>
                         {state==='active' ? <>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'suspend')} className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-700 disabled:opacity-50"><UserX size={14}/>Suspend</button>
                           <button disabled={busy} onClick={()=>handleMemberAction(m,'delete')} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 size={14}/>Delete</button>
@@ -885,6 +910,8 @@ export default function Admin() {
               </table></TableShell> : <Empty>No visitor activity in this date range yet. Try a wider range.</Empty>}
             </Panel>
           </div>}
+
+          {section==='games' && <GameEconomyPanel />}
 
           {section==='plans' && <div><Heading title="Plans & Billing" subtitle="Tier distribution, plan changes and payment records. Stripe remains the source of truth for sensitive billing actions."/><div className="mb-6 grid gap-4 sm:grid-cols-3">{(summary.plans||[]).map((p,i)=><Metric key={p.plan} icon={CreditCard} label={p.plan} value={number(p.count)} note="members" tone={i===0?'blue':i===1?'violet':'rose'}/>)}</div><div className="grid gap-6 xl:grid-cols-2"><Panel title="Tier Movements">{movements.length?<div className="space-y-2">{movements.slice(0,25).map(item=><div key={item.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="font-semibold">{item.email||item.user_id}</div><div className="mt-1 text-slate-600">{item.from_plan||'—'} → {item.to_plan||'—'} · {item.change_type||'change'}</div><div className="mt-1 text-xs text-slate-400">{date(item.effective_date||item.created_at)}</div></div>)}</div>:<Empty>No plan movements recorded yet.</Empty>}</Panel><Panel title="Recent Payments">{payments.length?<div className="space-y-2">{payments.slice(0,25).map(item=><div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><div><div className="font-semibold">{item.email||item.user_id}</div><div className="text-xs text-slate-400">{date(item.created_at)}</div></div><div className="text-right"><div className="font-bold">{money(item.amount,item.currency)}</div><Pill tone={statusTone(item.status)}>{item.status||'unknown'}</Pill></div></div>)}</div>:<Empty>No payment records yet.</Empty>}</Panel></div></div>}
 

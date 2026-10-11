@@ -88,23 +88,27 @@ export default [
     "Credit is prepaid, dollar-denominated platform service credit used for designated metered services such as AI responses, One2OneLove-delivered SMS, selected premium games, or other features labeled with a Credit cost. Credit balances are displayed in U.S. dollars and cents in $0.00 format; $1.00 of Credit represents $1.00 of One2OneLove service value, with no points or token conversion. Buying Credit is optional. Credit is deducted only for the action shown to you, and a failed paid operation may cause reserved Credit to be returned when the service was not delivered. Credit packages are not bank deposits, currency, or investments; they have no cash value outside One2OneLove and cannot be transferred between users unless One2OneLove expressly enables a transfer feature. Auto-Replenish is optional and can be turned off. If enabled, it uses the package and balance threshold you select and charges the payment method you authorize through the payment processor. Sharing through your own apps remains free unless a separate charge is clearly disclosed. Custom Love Note SMS bodies remain limited to 171 characters, and the One2OneLove branded SMS footer may include the ❤️ symbol."
   ],
   [
-    "23. Purchases, Refunds, Auto-Replenish, and Legacy Subscriptions",
+    "23. Game Credits",
+    "Game Credits are a promotional feature of One2OneLove. Game Credits may be used only to play games on One2OneLove. Game Credits have no cash value, are not money, and cannot be withdrawn, transferred, exchanged, or refunded for money. Promotional Game Credits may carry an expiration date, after which they are void. One2OneLove may modify or discontinue the Game Credit program at any time."
+  ],
+  [
+    "24. Purchases, Refunds, Auto-Replenish, and Legacy Subscriptions",
     "Credit purchases and other one-time purchases are charged at the amount displayed before confirmation. Auto-Replenish charges occur only when you have enabled it and the configured wallet threshold is reached. You may disable Auto-Replenish for future charges at any time. Except where required by law or expressly stated otherwise, Credit already consumed for a completed service is not refundable. Unused Credit treatment, refunds, chargebacks, and payment disputes are handled according to applicable law and the checkout terms shown at purchase. Historical Premiere, Exclusive, trial, or Founding subscription records may remain in One2OneLove for accounting, badge, reconciliation, or migration purposes, but those legacy tier names do not by themselves grant current feature access under the Credit model."
   ],
   [
-    "24. Changes to These Terms",
+    "25. Changes to These Terms",
     "We may update these Terms as the platform changes or as legal, operational, or security requirements evolve. The current version will be posted within One2OneLove. Continued use after an updated version becomes effective constitutes acceptance of the updated Terms where permitted by law."
   ],
   [
-    "25. Governing Law",
+    "26. Governing Law",
     "These Terms are governed by applicable United States law and, where applicable, the laws of the State of Texas, without regard to conflict-of-law principles, except where another law is required to apply."
   ],
   [
-    "26. Severability",
+    "27. Severability",
     "If a provision of these Terms is found unenforceable, the remaining provisions will remain in effect to the fullest extent permitted by law."
   ],
   [
-    "27. Contact",
+    "28. Contact",
     "Questions about these Terms or the platform may be sent to support@one2onelove.com."
   ]
 ];
