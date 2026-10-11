@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfilePicture, updateUserProfile } from "@/lib/profileService";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
+import FoundingPerkNotice from "@/components/profile/FoundingPerkNotice";
 import goalsService from "@/lib/goalsService";
 
 const translations = {
@@ -1300,7 +1301,9 @@ export default function Profile() {
             {user?.name || user?.email?.split('@')[0] || t.profile.userFallback} 💕
           </h1>
           <p className="text-gray-600 mb-6">{t.profile.memberSince} {joinDate}</p>
-          
+
+          <FoundingPerkNotice currentLanguage={currentLanguage} />
+
           {/* Profile Completion */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
