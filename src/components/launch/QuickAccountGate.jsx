@@ -168,7 +168,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
           <Input type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={t.passwordPh} className="mt-1.5" required/>
         </label>
         <label className="block text-sm font-bold text-slate-700">{t.ageRange}
-          <select value={ageRange} onChange={e=>setAgeRange(e.target.value)} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
+          <select value={ageRange} onChange={e=>setAgeRange(e.target.value)} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
             <option value="">{t.ageRangePh}</option>
             {AGE_RANGES.map(range=><option key={range} value={range}>{range === '60+' ? '60+' : range.replace('-', '–')}</option>)}
           </select>
