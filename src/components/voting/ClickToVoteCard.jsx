@@ -217,8 +217,8 @@ export default function ClickToVoteCard({ language = 'en' }) {
   // empty spacer at the right; the pills row is also three zones — a
   // spacer, the A-D pills centered, and the "Question n of N" counter
   // at the far right; the comment box + Next Question tab share the row
-  // beneath. Spacing is kept tight so the band hugs its content (in the
-  // guest state the empty comment spacer collapses entirely). Rows wrap
+  // beneath. Spacing is kept tight so the band hugs its content (the
+  // comment box shows for members and guests alike). Rows wrap
   // gracefully on narrow screens. Presentation only — every handler,
   // the copy tables, and the i18n wiring above are unchanged.
   if (loading) {
@@ -278,22 +278,20 @@ export default function ClickToVoteCard({ language = 'en' }) {
               <span className="flex-1 whitespace-nowrap text-right text-[11px] font-bold text-[#f7f2e7]/60">{t.questionOf(index + 1, questions.length)}</span>
             </div>
 
-            {/* Row beneath: the comment box (flex-grows) and the Next
-                Question tab at its right end. In the guest state there
-                is no input, so the spacer collapses and the row is only
-                as tall as the Next tab — no dead space. */}
+            {/* Row beneath: the comment box (flex-grows, shown to
+                everyone — members and guests alike) and the Next
+                Question tab at its right end. While a flash message is
+                showing, the flash takes the box's place. */}
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              {isMember && !flash ? (
+              {!flash ? (
                 <input
                   value={comment}
                   onChange={(e) => setComment(e.target.value.slice(0, 500))}
                   placeholder={t.commentPlaceholder}
                   className="min-w-[10rem] flex-1 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[13px] text-[#f7f2e7] outline-none placeholder:text-[#f7f2e7]/45 focus:border-amber-300/70"
                 />
-              ) : flash ? (
-                <p className="min-w-[10rem] flex-1 text-[13px] font-black text-amber-300" role="status">{flash}</p>
               ) : (
-                <span className="flex-1" aria-hidden="true" />
+                <p className="min-w-[10rem] flex-1 text-[13px] font-black text-amber-300" role="status">{flash}</p>
               )}
               <button type="button" onClick={handleNext} className="flex-none rounded-t-md rounded-b-lg border border-amber-400/70 bg-gradient-to-br from-[#8e2fc9] via-[#ad2a93] to-[#c2255c] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
                 {t.next} →
