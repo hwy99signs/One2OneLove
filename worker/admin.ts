@@ -1034,26 +1034,39 @@ async function billing(db) {
     // Credit economy aggregates (Credit page). Wallet amounts are USD cents of
     // Credit — the same unit worker/token-admin.ts declares (creditUnit
     // 'USD_CENTS': one wallet unit = one US cent, balances display as dollars).
+    // Admin accounts are excluded, mirroring token-admin.ts: LEFT JOIN
+    // neon_auth."user" ON id=user_id with COALESCE(role,'user') <> 'admin'.
     db.query(`
       SELECT
-        (SELECT COALESCE(sum(amount_cents),0) FROM public.o2ol_token_transactions
-          WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0
-            AND created_at >= now()-interval '30 days')::bigint AS sold_cents_30d,
-        (SELECT COALESCE(sum(amount_cents),0) FROM public.o2ol_token_transactions
-          WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0)::bigint AS sold_cents_total,
-        (SELECT COALESCE(sum(balance),0) FROM public.o2ol_token_wallets)::bigint AS outstanding_cents,
-        (SELECT count(DISTINCT user_id) FROM public.o2ol_token_transactions
-          WHERE transaction_type IN ('purchase','auto_replenish') AND COALESCE(amount_cents,0)>0)::int AS buyers,
-        (SELECT COALESCE(sum(-wallet_delta),0) FROM public.o2ol_token_transactions
-          WHERE transaction_type='reserve' AND wallet_delta<0
-            AND created_at >= now()-interval '30 days')::bigint AS spent_cents_30d`),
-    // Recent Credit ledger activity — same columns worker/token-admin.ts exposes.
+        (SELECT COALESCE(sum(t.amount_cents),0) FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
+            AND t.created_at >= now()-interval '30 days' AND COALESCE(a.role,'user')<>'admin')::bigint AS sold_cents_30d,
+        (SELECT COALESCE(sum(t.amount_cents),0) FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
+            AND COALESCE(a.role,'user')<>'admin')::bigint AS sold_cents_total,
+        (SELECT COALESCE(sum(w.balance),0) FROM public.o2ol_token_wallets w
+           LEFT JOIN neon_auth."user" a ON a.id=w.user_id
+          WHERE COALESCE(a.role,'user')<>'admin')::bigint AS outstanding_cents,
+        (SELECT count(DISTINCT t.user_id) FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type IN ('purchase','auto_replenish') AND COALESCE(t.amount_cents,0)>0
+            AND COALESCE(a.role,'user')<>'admin')::int AS buyers,
+        (SELECT COALESCE(sum(-t.wallet_delta),0) FROM public.o2ol_token_transactions t
+           LEFT JOIN neon_auth."user" a ON a.id=t.user_id
+          WHERE t.transaction_type='reserve' AND t.wallet_delta<0
+            AND t.created_at >= now()-interval '30 days' AND COALESCE(a.role,'user')<>'admin')::bigint AS spent_cents_30d`),
+    // Recent Credit ledger activity — same columns worker/token-admin.ts exposes,
+    // with the same admin exclusion as the aggregates above.
     db.query(`
       SELECT t.id,t.user_id,u.email,t.wallet_delta,t.balance_after,t.transaction_type,t.feature_code,t.package_code,
              t.amount_cents,t.provider,t.created_at,fp.label AS feature_label
         FROM public.o2ol_token_transactions t
         LEFT JOIN public.users u ON u.id=t.user_id
+        LEFT JOIN neon_auth."user" a ON a.id=t.user_id
         LEFT JOIN public.o2ol_token_feature_prices fp ON fp.feature_code=t.feature_code
+       WHERE COALESCE(a.role,'user')<>'admin'
        ORDER BY t.created_at DESC LIMIT 50`),
   ]);
   return { payments: payments.rows, changes: changes.rows, credit: credit.rows[0] || {}, creditActivity: creditActivity.rows };
