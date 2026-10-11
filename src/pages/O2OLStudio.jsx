@@ -140,7 +140,7 @@ export default function O2OLStudio(){
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-12">
       <section className="mx-auto max-w-6xl">
-        <div className="rounded-[2rem] border border-fuchsia-300/30 bg-[radial-gradient(circle_at_15%_0%,rgba(236,72,153,0.28),transparent_32%),radial-gradient(circle_at_85%_10%,rgba(59,130,246,0.26),transparent_30%),linear-gradient(145deg,#090514,#10163a)] p-5 shadow-2xl sm:p-8">
+        <div className="rounded-[2rem] border border-fuchsia-300/30 bg-[linear-gradient(90deg,#5d2ea8_0%,#9b10b2_18%,#a812c5_58%,#b01cc9_100%)] p-5 shadow-2xl sm:p-8">
           <div className="text-center">
             <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-fuchsia-100">
               <Sparkles className="h-4 w-4"/>{t.eyebrow}
@@ -237,7 +237,7 @@ export default function O2OLStudio(){
             <Link to="/O2OLStudio/Episodes" className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/30 bg-fuchsia-500/15 px-5 py-3 text-sm font-black text-white hover:bg-fuchsia-500/25"><Film className="h-4 w-4"/>{t.episodes}</Link>
             <Link to="/MyMatchIQ" className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white hover:bg-white/15">{t.explore}</Link>
           </div>
-          <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/45">{t.note}</p>
+          <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-white/70">{t.note}</p>
         </div>
       </section>
       <UnlockPriceDialog

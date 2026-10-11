@@ -148,6 +148,15 @@ export default function ClickToVoteCard({ language = 'en' }) {
         if (pIdx >= 0 && !map[pending.slug]) {
           setIndex(pIdx);
           setPendingChoice(pending.choice || null);
+          // Comment-saving (owner approval, 2026-10-10): a comment
+          // saved with the pending pick comes back into the box, so
+          // the Join / Sign-in trip doesn't cost the guest their
+          // words. Older records have no comment field — treated as
+          // empty. Only fills an empty box; the pending slug IS the
+          // displayed topic in this branch.
+          if (typeof pending.comment === 'string' && pending.comment) {
+            setComment((cur) => (cur ? cur : pending.comment.slice(0, 500)));
+          }
         }
       }
       if (!pending?.slug) {
@@ -178,7 +187,9 @@ export default function ClickToVoteCard({ language = 'en' }) {
     setError('');
     if (!isMember) {
       setPendingChoice(choiceKey);
-      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ slug: question.slug, choice: choiceKey })); } catch { /* private mode */ }
+      // The comment rides in the same record (same 500-char cap) so
+      // it survives the Join / Sign-in trip alongside the pick.
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ slug: question.slug, choice: choiceKey, comment: comment.slice(0, 500) })); } catch { /* private mode */ }
       return;
     }
     setCasting(true);
@@ -200,6 +211,26 @@ export default function ClickToVoteCard({ language = 'en' }) {
     }
   };
 
+  // Comment-saving freshness (owner approval, 2026-10-10): while a
+  // pending pick for the question on screen sits in storage, keep
+  // its saved comment in step with the box — covers pick first, type
+  // second (and edits after a restore). Gated on !loading so the
+  // init restore above lands before this can write anything; it
+  // only ever rewrites the comment field of an existing record.
+  useEffect(() => {
+    if (loading || !question) return;
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+      if (pending?.slug !== question.slug) return;
+      const capped = comment.slice(0, 500);
+      if (pending.comment !== capped) {
+        localStorage.setItem(PENDING_KEY, JSON.stringify({ ...pending, comment: capped }));
+      }
+    } catch { /* private mode */ }
+  }, [comment, loading, question]);
+
   const handleNext = () => {
     setFlash('');
     setError('');
@@ -207,39 +238,57 @@ export default function ClickToVoteCard({ language = 'en' }) {
     setIndex((index + 1) % questions.length);
   };
 
-  // Compact presentation (owner clarification, 2026-10-10): the card
-  // itself stays as designed; the full-width white strip BEHIND it is
-  // gone (this section renders no background at all), and the card is
-  // roughly half its original height — the Next tab rides on the eyebrow
-  // row, the question and choices are set tighter, the comment line slim.
+  // Header presentation (owner directives, 2026-10-10): the voting lives
+  // in the widened site header on the homepage, as its own distinct row
+  // directly under the locked header row — one slim band in the banner
+  // gradient (purple to pink), framed by a clear gold outline. Inside
+  // it, per the owner's annotated screenshot: the question line is a
+  // three-zone row — the CLICK-TO-VOTE label at the far left, the
+  // question genuinely centered (equal-flex zones either side), an
+  // empty spacer at the right; the pills row is also three zones — a
+  // spacer, the A-D pills centered, and the "Question n of N" counter
+  // at the far right; the comment box + Next Question tab share the row
+  // beneath. Spacing is kept tight so the band hugs its content (the
+  // comment box shows for members and guests alike). Rows wrap
+  // gracefully on narrow screens. Presentation only — every handler,
+  // the copy tables, and the i18n wiring above are unchanged.
   if (loading) {
     return (
-      <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
-        <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/25 bg-white/70 px-4 py-2.5 text-[13px] font-semibold text-[#7f1d2d] shadow-sm">{t.loading}</div>
+      <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
+        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-4 py-1.5 text-center text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
       </section>
     );
   }
 
   return (
-    <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
-      <div className="mx-auto max-w-7xl rounded-2xl border border-[#7f1d2d]/30 bg-[#7f1d2d]/[.08] px-4 py-2.5 shadow-sm sm:px-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#7f1d2d]">🗳️ {t.eyebrow}</div>
-          {!allVoted && <div className="text-[11px] font-bold text-[#7f1d2d]/70">{t.questionOf(index + 1, questions.length)}</div>}
-        </div>
-
+    <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
+      <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-3 py-1.5 shadow-md sm:px-4">
         {allVoted ? (
-          <div className="mt-1.5 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div>
-              <h2 className="text-lg font-black tracking-tight text-[#5c0e1a] sm:text-xl">{t.doneTitle}</h2>
-              <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-slate-700">{t.doneBody}</p>
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</div>
+              <h2 className="mt-0.5 text-base font-black tracking-tight text-[#f7f2e7] sm:text-lg">{t.doneTitle}</h2>
+              <p className="mx-auto mt-0.5 max-w-3xl text-[13px] leading-5 text-[#f7f2e7]/75">{t.doneBody}</p>
             </div>
-            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
+            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#8e2fc9] to-[#c2255c] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
           </div>
         ) : question && (
           <>
-            <h2 className="mt-1.5 text-lg font-black leading-tight tracking-tight text-[#5c0e1a] sm:text-xl">{pick(question.question)}</h2>
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Question line — three zones (owner's annotated
+                screenshot): the label at the far left, the question
+                genuinely centered between equal-flex zones, and an
+                empty spacer at the far right. */}
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <span className="flex-1 whitespace-nowrap text-left text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</span>
+              <h2 className="min-w-0 text-center text-[15px] font-black leading-snug tracking-tight text-[#f7f2e7] sm:text-base">{pick(question.question)}</h2>
+              <span className="flex-1" aria-hidden="true" />
+            </div>
+
+            {/* Pills row — three zones: a spacer, the A-D pills centered
+                as a group, and the "Question n of N" counter far right. */}
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="flex-1" aria-hidden="true" />
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
               {question.choices.map((choice, i) => {
                 const selected = myChoice === choice.key || pendingChoice === choice.key;
                 return (
@@ -248,51 +297,53 @@ export default function ClickToVoteCard({ language = 'en' }) {
                     type="button"
                     disabled={casting}
                     onClick={() => handleChoice(choice.key)}
-                    className={`rounded-lg border px-3 py-1.5 text-left text-[13px] font-extrabold shadow-sm transition disabled:opacity-60 ${selected ? 'border-[#7f1d2d] bg-[#7f1d2d] text-[#f7f2e7]' : 'border-[#7f1d2d]/40 bg-white/80 text-[#5c0e1a] hover:border-[#7f1d2d] hover:bg-white'}`}
+                    className={`flex-none rounded-full border px-2.5 py-1 text-left text-xs font-extrabold shadow-sm transition disabled:opacity-60 ${selected ? 'border-amber-300 bg-amber-400 text-[#3d0a13]' : 'border-[#f7f2e7]/35 bg-white/10 text-[#f7f2e7] hover:border-amber-300/70 hover:bg-white/20'}`}
                   >
-                    <span className={`mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-black ${selected ? 'bg-white/20 text-[#f7f2e7]' : 'bg-[#7f1d2d]/10 text-[#7f1d2d]'}`}>{String.fromCharCode(65 + i)}</span>
+                    <span className={`mr-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-black ${selected ? 'bg-[#3d0a13]/15 text-[#3d0a13]' : 'bg-white/15 text-amber-200'}`}>{String.fromCharCode(65 + i)}</span>
                     {pick(choice.labels)}
                     {myChoice === choice.key && <span className="ml-1.5 text-[10px] font-black uppercase tracking-wide opacity-80">· {t.yourPick}</span>}
                   </button>
                 );
               })}
+              </div>
+              <span className="flex-1 whitespace-nowrap text-right text-[11px] font-bold text-[#f7f2e7]/60">{t.questionOf(index + 1, questions.length)}</span>
             </div>
 
-            {/* Owner layout (2026-10-10): the Next voting question tab
-                rides on the SAME line as the comment line — no extra row. */}
-            <div className="mt-2 flex items-center gap-2">
-              {isMember && !flash ? (
+            {/* Row beneath: the comment box (flex-grows, shown to
+                everyone — members and guests alike) and the Next
+                Question tab at its right end. While a flash message is
+                showing, the flash takes the box's place. */}
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              {!flash ? (
                 <input
                   value={comment}
                   onChange={(e) => setComment(e.target.value.slice(0, 500))}
                   placeholder={t.commentPlaceholder}
-                  className="min-w-0 flex-1 rounded-lg border border-[#7f1d2d]/30 bg-white/80 px-3 py-1.5 text-[13px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7f1d2d]/60"
+                  className="min-w-[10rem] flex-1 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[13px] text-[#f7f2e7] outline-none placeholder:text-[#f7f2e7]/45 focus:border-amber-300/70"
                 />
-              ) : flash ? (
-                <p className="min-w-0 flex-1 text-[13px] font-black text-[#7f1d2d]" role="status">{flash}</p>
               ) : (
-                <span className="min-w-0 flex-1" />
+                <p className="min-w-[10rem] flex-1 text-[13px] font-black text-amber-300" role="status">{flash}</p>
               )}
-              <button type="button" onClick={handleNext} className="shrink-0 rounded-t-md rounded-b-lg border border-amber-400/60 bg-gradient-to-br from-[#5c0e1a] via-[#7f1d2d] to-[#5c0e1a] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
+              <button type="button" onClick={handleNext} className="flex-none rounded-t-md rounded-b-lg border border-amber-400/70 bg-gradient-to-br from-[#8e2fc9] via-[#ad2a93] to-[#c2255c] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
                 {t.next} →
               </button>
             </div>
-            {error && <p className="mt-2 text-[13px] font-bold text-red-700" role="alert">{error}</p>}
+            {error && <p className="mt-1 text-center text-[13px] font-bold text-red-300" role="alert">{error}</p>}
 
             {!isMember && pendingChoice && (
-              <div className="mt-2 flex flex-col gap-2 rounded-xl border border-[#7f1d2d]/25 bg-white/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-1 flex flex-col gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[13px] font-black text-[#5c0e1a]">{t.joinTitle}</p>
-                  <p className="text-[13px] text-slate-600">{t.joinBody}</p>
+                  <p className="text-[13px] font-black text-[#f7f2e7]">{t.joinTitle}</p>
+                  <p className="text-[13px] text-[#f7f2e7]/75">{t.joinBody}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg bg-gradient-to-br from-[#5c0e1a] to-[#7f1d2d] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
-                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#7f1d2d]/40 bg-white px-3.5 py-2 text-[13px] font-black text-[#5c0e1a]">{t.signIn}</button>
+                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#8e2fc9] to-[#c2255c] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
+                  <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#f7f2e7]/40 bg-transparent px-3.5 py-2 text-[13px] font-black text-[#f7f2e7]">{t.signIn}</button>
                 </div>
               </div>
             )}
             {isMember && pendingChoice && !myChoice && (
-              <p className="mt-1.5 text-[13px] font-bold text-[#7f1d2d]">{t.castNow}</p>
+              <p className="mt-1 text-center text-[13px] font-bold text-amber-300">{t.castNow}</p>
             )}
           </>
         )}
