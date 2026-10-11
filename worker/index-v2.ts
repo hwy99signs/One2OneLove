@@ -8,6 +8,7 @@ import { handleAnalyticsRequest } from './analytics';
 import { handleAdminMfaRequest, enforceAdminMfa } from './admin-mfa';
 import { handleFeatureUsageRequest, handlePresencePing } from './feature-usage';
 import { handleLoveNoteEntitlementRequest } from './love-note-entitlements';
+import { handleFoundingPerksRequest } from './founding-perks';
 import { handleLoveNoteLibraryRequest } from './love-note-library';
 import { handleDateIdeaLibraryRequest } from './date-idea-library';
 import { handleBillingPlanChangeRequest } from './billing-plan-change';
@@ -269,6 +270,11 @@ export default {
 
     if (url.pathname.startsWith('/api/love-notes/')) {
       const response = await handleLoveNoteEntitlementRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/founding-perks')) {
+      const response = await handleFoundingPerksRequest(request, env, url);
       if (response) return response;
     }
 
