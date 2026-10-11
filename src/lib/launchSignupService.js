@@ -26,7 +26,7 @@ export async function registerLaunchUser({
   termsVersion,
   privacyPolicyAcknowledged,
   age18Confirmed,
-  selectedPlan = 'Premiere',
+  selectedPlan = 'Free',
   freeAccount = false,
   username = null,
   quickAccount = false,

@@ -398,10 +398,6 @@ export default function Analytics() {
           <Panel title="Payment Activity" subtitle="Daily billing records created during the last 30 days.">
             <ChartFrame><ResponsiveContainer width="100%" height="100%"><LineChart data={data?.payments||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="date" tickFormatter={shortDate} minTickGap={24}/><YAxis allowDecimals={false}/><Tooltip labelFormatter={shortDate} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="payments" name="Payments" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></ChartFrame>
           </Panel>
-
-          <Panel title="Current Account / Tier Distribution" subtitle="Registered Free, Premiere and Exclusive accounts right now.">
-            <ChartFrame><ResponsiveContainer width="100%" height="100%"><BarChart data={data?.tiers||[]} margin={{ top: 10,right: 15,left: -10,bottom: 0 }}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="plan"/><YAxis allowDecimals={false}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="count" name="Accounts"/></BarChart></ResponsiveContainer></ChartFrame>
-          </Panel>
         </div>
 
         <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-900"><div className="flex items-start gap-3"><CreditCard className="mt-0.5 shrink-0" size={18}/><div><strong>Direct-send delivery status:</strong> Sent is already measurable. Passed, Failed and Pending will start reflecting carrier delivery receipts when the SMS provider callback is connected. Until then, those values remain zero rather than guessing.</div></div></div>

@@ -3,6 +3,13 @@ import { Client } from 'pg';
 import { SWEEP_CTES, SWEEP_EVENT_FILTER } from './sweep-exclusion.js';
 import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
+// Registered Free (unified 2026-10-10, owner scrub): a member is Registered
+// Free exactly when they hold no active paid subscription status. This one
+// predicate is used identically by the overview counts, the plan breakdown,
+// the member list, and the visitor-funnel count — the four places that
+// previously carried three conflicting definitions.
+const REGISTERED_FREE_SQL = (alias) => `lower(COALESCE(${alias}.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')`;
+
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store',
@@ -242,34 +249,48 @@ function identityBreakdown(rows, allowNotPartnered=false) {
 
 async function chatRoomAnalytics(db) {
   const voteSummaryResult = await db.query(`
+    WITH ballots AS (
+      SELECT *,
+        (COALESCE(NULLIF(relationship_priorities->>'money','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'religion','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'politics','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'family','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'communication','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric,0)
+        + COALESCE(NULLIF(relationship_priorities->>'help_around_home','')::numeric,0)) AS ballot_total
+      FROM public.o2ol_show_vote_responses
+      WHERE topic_slug=$1
+    )
     SELECT
-      count(*)::int AS total_responses,
+      count(*) FILTER (WHERE ballot_total BETWEEN 99 AND 101)::int AS total_responses,
+      count(*) FILTER (WHERE NOT (ballot_total BETWEEN 99 AND 101))::int AS excluded_responses,
       max(topic_title) AS topic_title,
       max(created_at) AS last_response_at,
-      round(avg(NULLIF(relationship_priorities->>'money','')::numeric),1) AS money,
-      round(avg(NULLIF(relationship_priorities->>'religion','')::numeric),1) AS religion,
-      round(avg(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric),1) AS sex_intimacy,
-      round(avg(NULLIF(relationship_priorities->>'politics','')::numeric),1) AS politics,
-      round(avg(NULLIF(relationship_priorities->>'family','')::numeric),1) AS family,
-      round(avg(NULLIF(relationship_priorities->>'communication','')::numeric),1) AS communication,
-      round(avg(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric),1) AS looks_physical_appearance,
-      round(avg(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric),1) AS therapy_when_needed,
-      round(avg(NULLIF(relationship_priorities->>'help_around_home','')::numeric),1) AS help_around_home,
-      round(avg(NULLIF(expense_split->>'man','')::numeric),1) AS bills_man,
-      round(avg(NULLIF(expense_split->>'woman','')::numeric),1) AS bills_woman,
-      COALESCE(sum(NULLIF(relationship_priorities->>'money','')::numeric),0) AS sum_money,
-      COALESCE(sum(NULLIF(relationship_priorities->>'religion','')::numeric),0) AS sum_religion,
-      COALESCE(sum(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric),0) AS sum_sex_intimacy,
-      COALESCE(sum(NULLIF(relationship_priorities->>'politics','')::numeric),0) AS sum_politics,
-      COALESCE(sum(NULLIF(relationship_priorities->>'family','')::numeric),0) AS sum_family,
-      COALESCE(sum(NULLIF(relationship_priorities->>'communication','')::numeric),0) AS sum_communication,
-      COALESCE(sum(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric),0) AS sum_looks_physical_appearance,
-      COALESCE(sum(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric),0) AS sum_therapy_when_needed,
-      COALESCE(sum(NULLIF(relationship_priorities->>'help_around_home','')::numeric),0) AS sum_help_around_home,
-      COALESCE(sum(NULLIF(expense_split->>'man','')::numeric),0) AS sum_bills_man,
-      COALESCE(sum(NULLIF(expense_split->>'woman','')::numeric),0) AS sum_bills_woman
-    FROM public.o2ol_show_vote_responses
-    WHERE topic_slug=$1
+      round(avg(NULLIF(relationship_priorities->>'money','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS money,
+      round(avg(NULLIF(relationship_priorities->>'religion','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS religion,
+      round(avg(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS sex_intimacy,
+      round(avg(NULLIF(relationship_priorities->>'politics','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS politics,
+      round(avg(NULLIF(relationship_priorities->>'family','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS family,
+      round(avg(NULLIF(relationship_priorities->>'communication','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS communication,
+      round(avg(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS looks_physical_appearance,
+      round(avg(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS therapy_when_needed,
+      round(avg(NULLIF(relationship_priorities->>'help_around_home','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS help_around_home,
+      round(avg(NULLIF(expense_split->>'man','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS bills_man,
+      round(avg(NULLIF(expense_split->>'woman','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),1) AS bills_woman,
+      COALESCE(sum(NULLIF(relationship_priorities->>'money','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_money,
+      COALESCE(sum(NULLIF(relationship_priorities->>'religion','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_religion,
+      COALESCE(sum(NULLIF(relationship_priorities->>'sex_intimacy','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_sex_intimacy,
+      COALESCE(sum(NULLIF(relationship_priorities->>'politics','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_politics,
+      COALESCE(sum(NULLIF(relationship_priorities->>'family','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_family,
+      COALESCE(sum(NULLIF(relationship_priorities->>'communication','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_communication,
+      COALESCE(sum(NULLIF(relationship_priorities->>'looks_physical_appearance','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_looks_physical_appearance,
+      COALESCE(sum(NULLIF(relationship_priorities->>'therapy_when_needed','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_therapy_when_needed,
+      COALESCE(sum(NULLIF(relationship_priorities->>'help_around_home','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_help_around_home,
+      COALESCE(sum(NULLIF(expense_split->>'man','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_bills_man,
+      COALESCE(sum(NULLIF(expense_split->>'woman','')::numeric) FILTER (WHERE ballot_total BETWEEN 99 AND 101),0) AS sum_bills_woman
+    FROM ballots
   `,[O2OL_SHOW_TOPIC.slug]);
   const voteSummary=voteSummaryResult.rows[0]||{};
 
@@ -367,7 +388,7 @@ async function chatRoomAnalytics(db) {
       id,label,
       connected:isChat,
       validResponses:isChat?Number(voteSummary.total_responses||0):0,
-      excludedResponses:0,
+      excludedResponses:isChat?Number(voteSummary.excluded_responses||0):0,
       excludedReasons:[],
       commentCount:isChat?chatComments:0,
       lastUpdated:isChat?(voteSummary.last_response_at||null):null,
@@ -426,7 +447,7 @@ async function overview(db) {
              )::int AS verified,
              count(*) FILTER (
                WHERE p.id IS NOT NULL
-                 AND lower(COALESCE(p.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+                 AND ${REGISTERED_FREE_SQL('p')}
              )::int AS registered_free,
              count(*) FILTER (
                WHERE p.id IS NOT NULL
@@ -452,8 +473,7 @@ async function overview(db) {
         VALUES ('Registered Free'::text,1),('Premiere'::text,2),('Exclusive'::text,3)
       ), counts AS (
         SELECT CASE
-                 WHEN u.stripe_subscription_id IS NULL
-                   AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+                 WHEN ${REGISTERED_FREE_SQL('u')}
                    THEN 'Registered Free'
                  WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
                  WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
@@ -542,8 +562,7 @@ async function members(db) {
            COALESCE((to_jsonb(u)->>'phone_number_verified')::boolean,false) AS phone_verified,
            CASE
              WHEN u.id IS NULL THEN 'Signup Pending'
-             WHEN u.stripe_subscription_id IS NULL
-               AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+             WHEN ${REGISTERED_FREE_SQL('u')}
                THEN 'Registered Free'
              WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
              WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
@@ -551,8 +570,7 @@ async function members(db) {
            END AS subscription_plan,
            CASE
              WHEN u.id IS NULL THEN 'signup_pending'
-             WHEN u.stripe_subscription_id IS NULL
-               AND lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
+             WHEN ${REGISTERED_FREE_SQL('u')}
                THEN 'registered_free'
              ELSE COALESCE(u.subscription_status,'inactive')
            END AS subscription_status,
@@ -673,7 +691,8 @@ async function visitorRegistry(db, rangeDays = 30) {
         (SELECT count(*) FROM active_visitors)::int AS online_now,
         (SELECT count(DISTINCT visitor_id) FROM resolved_visitors WHERE user_id IS NULL)::int AS anonymous_visitors,
         (SELECT count(*) FROM public.users u LEFT JOIN neon_auth."user" a ON a.id=u.id
-          WHERE COALESCE(a.role,'user') <> 'admin')::int AS registered_free,
+          WHERE COALESCE(a.role,'user') <> 'admin'
+            AND ${REGISTERED_FREE_SQL('u')})::int AS registered_free,
         (SELECT count(*) FROM buyers)::int AS token_buyers,
         (SELECT COALESCE(sum(COALESCE(tt.amount_cents,0)),0)
            FROM public.o2ol_token_transactions tt
@@ -1053,6 +1072,7 @@ async function clickAnalytics(db, env) {
   const baseline = analyticsBaselineDate(env);
   const [summary, routes, features] = await Promise.all([
     db.query(`
+      WITH ${SWEEP_CTES}
       SELECT
         count(*) FILTER (WHERE event_type='click')::int AS total_clicks,
         count(*) FILTER (WHERE event_type='click' AND created_at>=GREATEST($1::timestamptz,now()-interval '30 days'))::int AS clicks_30d,
@@ -1067,9 +1087,10 @@ async function clickAnalytics(db, env) {
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
       WHERE e.created_at >= $1::timestamptz
-        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
     `,[baseline]),
     db.query(`
+      WITH ${SWEEP_CTES}
       SELECT route,
              count(*)::int AS clicks,
              count(*) FILTER (WHERE actor_type='anonymous')::int AS anonymous,
@@ -1079,12 +1100,13 @@ async function clickAnalytics(db, env) {
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
        WHERE e.event_type='click'
          AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
        GROUP BY route
        ORDER BY clicks DESC,route ASC
        LIMIT 15
     `,[baseline]),
     db.query(`
+      WITH ${SWEEP_CTES}
       SELECT COALESCE(feature,'Unclassified') AS feature,
              count(*)::int AS clicks,
              count(*) FILTER (WHERE actor_type='anonymous')::int AS anonymous,
@@ -1094,7 +1116,7 @@ async function clickAnalytics(db, env) {
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
        WHERE e.event_type='click'
          AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
        GROUP BY COALESCE(feature,'Unclassified')
        ORDER BY clicks DESC,feature ASC
        LIMIT 15
@@ -1131,12 +1153,12 @@ async function featureUsage(db, env) {
       WHERE e.feature IS NOT NULL
         AND e.event_type IN ('page_view','action')
         AND e.created_at >= $1::timestamptz
-        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
       UNION ALL
   ` : '';
 
   const activity = await db.query(`
-    WITH activity(feature,actor_key,occurred_at) AS (
+    WITH ${interactionReady ? `${SWEEP_CTES}, ` : ''}activity(feature,actor_key,occurred_at) AS (
       ${publicInteractionSql}
       SELECT 'Love Note Scheduler'::text,'u:'||user_id::text,created_at FROM public.scheduled_love_notes WHERE user_id IS NOT NULL
       UNION ALL SELECT 'Love Notes','u:'||user_id::text,COALESCE(sent_date,created_at) FROM public.sent_love_notes WHERE user_id IS NOT NULL
@@ -1226,6 +1248,7 @@ async function topFeatureActivity(db, env) {
   const s=subscriptionRows.rows[0]||{};
 
   const dateUse = await windowCounts(`
+    WITH ${SWEEP_CTES}
     SELECT
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
@@ -1235,7 +1258,7 @@ async function topFeatureActivity(db, env) {
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
     WHERE e.feature='Date Ideas'
       AND e.event_type='page_view'
-      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
   `);
   const dateSaved = await windowCounts(`
     SELECT
@@ -1257,6 +1280,7 @@ async function topFeatureActivity(db, env) {
   `,[baseline]);
 
   const pageViews = async feature => windowCounts(`
+    WITH ${SWEEP_CTES}
     SELECT
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
@@ -1266,19 +1290,19 @@ async function topFeatureActivity(db, env) {
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
     WHERE e.feature=$2
       AND e.event_type='page_view'
-      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
   `,[feature]);
 
   const routedTop = async (feature,prefix) => {
     const result=await db.query(`
-      WITH actions(name,created_at) AS (
+      WITH ${SWEEP_CTES}, actions(name,created_at) AS (
         SELECT substring(e.control_key from $3) AS name,e.created_at
           FROM public.interaction_events e
           LEFT JOIN neon_auth."user" a ON a.id=e.user_id
          WHERE e.feature=$2
            AND e.event_type='action'
            AND e.control_key LIKE $4
-           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+           AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
         UNION ALL
         SELECT substring(e.route from $3) AS name,e.created_at
           FROM public.feature_usage_events e
@@ -1328,6 +1352,7 @@ async function topFeatureActivity(db, env) {
   ]);
 
   const relationshipTopResult = await db.query(`
+    WITH ${SWEEP_CTES}
     SELECT feature AS name,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '7 days'))::int AS d7,
       count(*) FILTER (WHERE created_at>=GREATEST($1::timestamptz,now()-interval '14 days'))::int AS d14,
@@ -1337,7 +1362,7 @@ async function topFeatureActivity(db, env) {
     LEFT JOIN neon_auth."user" a ON a.id=e.user_id
     WHERE e.event_type='page_view'
       AND e.feature IN ('Communication Practice','Podcasts','Articles','LGBTQ+ Support','Couple Activities','Relationship Quizzes')
-      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+      AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
       AND e.created_at>=GREATEST($1::timestamptz,now()-interval '30 days')
     GROUP BY e.feature ORDER BY d30 DESC,name ASC LIMIT 5
   `,[baseline]);
@@ -1431,20 +1456,6 @@ export async function handleAdminRequest(request, env, url) {
         const body = await request.json().catch(() => ({}));
         const result = await manageMemberAccountsBulk(db, admin, body?.memberIds, String(body?.action || '').toLowerCase(), body?.reason || '');
         return json({ ok:true, ...result });
-      }
-
-      const tierMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/tier$/i);
-      if (request.method === 'POST' && tierMatch) {
-        const body = await request.json().catch(() => ({}));
-        const result = await changeMemberTier(db, env, admin, tierMatch[1], body?.plan);
-        return json({ ok:true, member:result });
-      }
-
-      const accessMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/access$/i);
-      if (request.method === 'POST' && accessMatch) {
-        const body = await request.json().catch(() => ({}));
-        const result = await grantMemberAccessTime(db, admin, accessMatch[1], body?.unit, body?.amount);
-        return json({ ok:true, member:result });
       }
 
       const memberMatch = url.pathname.match(/^\/api\/admin\/members\/([0-9a-f-]{36})\/(suspend|delete|restore)$/i);

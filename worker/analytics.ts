@@ -258,7 +258,7 @@ async function analytics(db, env) {
   `) : { rows:[{ events:0 }] };
 
   const featureDailyAllPromise = interactionReady ? db.query(`
-    WITH days AS (
+    WITH ${SWEEP_CTES}, days AS (
       SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
     ), activity AS (
       SELECT (e.created_at AT TIME ZONE 'America/Chicago')::date AS day,
@@ -274,7 +274,7 @@ async function analytics(db, env) {
         LEFT JOIN neon_auth."user" a ON a.id=e.user_id
        WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
          AND e.feature IS NOT NULL
-         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+         AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
        GROUP BY 1
     )
     SELECT to_char(days.day,'YYYY-MM-DD') AS date,
@@ -293,6 +293,7 @@ async function analytics(db, env) {
   `);
 
   const featureRankAllPromise = interactionReady ? db.query(`
+    WITH ${SWEEP_CTES}
     SELECT e.feature,
            count(*)::int AS activity,
            count(*) FILTER (WHERE e.event_type='page_view')::int AS page_views,
@@ -308,7 +309,7 @@ async function analytics(db, env) {
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
      WHERE e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND e.feature IS NOT NULL
-       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')
+       AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
      GROUP BY e.feature
      ORDER BY activity DESC,e.feature ASC
      LIMIT 50
@@ -327,7 +328,7 @@ async function analytics(db, env) {
      LIMIT 50
   `) : { rows:[] };
 
-  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, tiers, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown, trafficSources, trafficSourceUnknown, featureDailyAll, featureRankAll, recentClicks] = await Promise.all([
+  const [signups, loveNotes, scheduledHealth, featureDaily, featureRank, community, payments, directSummary, siteUsage, siteUsageSummary, languageUsage, languageUnknown, trafficSources, trafficSourceUnknown, featureDailyAll, featureRankAll, recentClicks] = await Promise.all([
     db.query(`
       WITH days AS (
         SELECT generate_series(${todaySql}-29,${todaySql},interval '1 day')::date AS day
@@ -444,25 +445,6 @@ async function analytics(db, env) {
         FROM days LEFT JOIN counts USING(day)
        ORDER BY days.day`),
     db.query(`
-      WITH desired(plan,sort_order) AS (
-        VALUES ('Registered Free'::text,1),('Premiere'::text,2),('Exclusive'::text,3)
-      ), counts AS (
-        SELECT CASE
-                 WHEN lower(COALESCE(u.subscription_status,'inactive')) NOT IN ('active','trial','trialing','past_due')
-                   THEN 'Registered Free'
-                 WHEN lower(COALESCE(u.subscription_plan,'premiere')) IN ('basic','premiere','premier') THEN 'Premiere'
-                 WHEN lower(COALESCE(u.subscription_plan,''))='exclusive' THEN 'Exclusive'
-                 ELSE 'Registered Free'
-               END AS plan,count(*)::int AS count
-          FROM public.users u
-          LEFT JOIN neon_auth."user" a ON a.id=u.id
-         WHERE COALESCE(a.role,'user') <> 'admin'
-         GROUP BY 1
-      )
-      SELECT desired.plan,COALESCE(counts.count,0)::int AS count
-        FROM desired LEFT JOIN counts USING(plan)
-       ORDER BY desired.sort_order`),
-    db.query(`
       SELECT count(*)::int AS sent,
              0::int AS passed,
              0::int AS failed,
@@ -489,7 +471,6 @@ async function analytics(db, env) {
     featureRank: featureRank.rows,
     community: community.rows,
     payments: payments.rows,
-    tiers: tiers.rows,
     siteUsage: siteUsage.rows,
     siteUsageSummary: siteUsageSummary.rows[0] || { page_views:0,clicks:0,unique_visitors:0,anonymous_visitors:0,registered_users:0 },
     languageUsage: languageUsage.rows,
