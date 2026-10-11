@@ -163,7 +163,7 @@ async function profileRoute(request, env, auth) {
   if (request.method === 'GET') {
     return withDb(env, async (db) => {
       const result = await db.query(
-        `SELECT u.id,u.email,u.name,u.user_type,u.relationship_status,u.anniversary_date,u.partner_email,
+        `SELECT u.id,u.email,u.name,u.username,u.user_type,u.relationship_status,u.anniversary_date,u.partner_email,
                 u.avatar_url,u.bio,u.is_verified,u.is_active,u.location,u.interests,u.love_language,
                 u.date_frequency,u.communication_style,u.conflict_resolution,u.partner_name,
                 u.profile_completion_percentage,u.profile_completed_fields,u.profile_total_fields,
