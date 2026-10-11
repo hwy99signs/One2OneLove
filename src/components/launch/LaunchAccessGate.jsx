@@ -3,14 +3,19 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 
+// Site locked behind sign-up (owner decision, 2026-10-11): guests may open
+// only the entry pages (sign in / sign up / invite / recovery / admin entry)
+// and the public information pages a person needs BEFORE joining (About,
+// Reviews, Help, Contact, Suggestions, Terms, Privacy, professional
+// application funnels). Every other known route - the homepage included -
+// shows the QuickAccountGate sign-up wall to guests, with a return to the
+// page they asked for after they join. Unknown routes stay public by the
+// isKnown rule below (SPA not-found handling + the certification canary).
 const PUBLIC_INFORMATION_ROUTES = new Set([
-  '/', '/home', '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
+  '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
   '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
-  '/lovenotes', '/dateideas',
   '/adminaccess',
-  '/counselingsupport','/influencerssupport','/aicontentcreator','/meditation',
-  '/developer','/leaderboard','/achievements','/findfriends','/friendrequests',
 ]);
 
 const KNOWN_APP_ROUTES = new Set([
