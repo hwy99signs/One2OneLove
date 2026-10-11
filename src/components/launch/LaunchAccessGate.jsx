@@ -9,7 +9,7 @@ const PUBLIC_INFORMATION_ROUTES = new Set([
   '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
   '/lovenotes', '/dateideas',
   '/adminaccess',
-  '/winacruise','/counselingsupport','/influencerssupport','/aicontentcreator','/meditation',
+  '/counselingsupport','/influencerssupport','/aicontentcreator','/meditation',
   '/developer','/leaderboard','/achievements','/findfriends','/friendrequests',
 ]);
 
@@ -99,7 +99,6 @@ const KNOWN_APP_ROUTES = new Set([
   '/tokensystemdashboard',
   '/verifyphone',
   '/whatshouldtheydo',
-  '/winacruise',
 ]);
 
 const LOADING_COPY = {

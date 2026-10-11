@@ -72,7 +72,6 @@ const FEATURE_BY_ROUTE = {
   '/mymatchiq/dashboard': 'MyMatchIQ',
   '/mymatchiq/invite': 'MyMatchIQ',
   '/mymatchiq/subscription': 'MyMatchIQ',
-  '/winacruise': 'Win A Cruise',
   '/counselingsupport': 'Relationship Support',
   '/influencerssupport': 'Professionals',
   '/aicontentcreator': 'AI Content Creator',

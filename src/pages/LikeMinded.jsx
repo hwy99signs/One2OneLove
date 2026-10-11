@@ -93,7 +93,7 @@ const UI = {
     locationNote:'Seuls votre prénom et votre localisation générale sont visibles. Jamais votre adresse précise.',
     inviteToPlay:'Inviter à Jouer', block:'Bloquer', report:'Signaler', score:'Score Like-Minded', matches:'accords',
     talk:'En Parler', talkPrompt:'Pourquoi chacun de vous a-t-il choisi cette réponse ?', difference:'Réponses différentes', match:'Vous êtes d’accord', back:'Retour aux Jeux',
-    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'Jeu Premium à Jetons',premiumBody:'Like Minded utilise des Crédit. Un achat ouvre une session de jeu limitée dans le temps; aucun nouveau débit tant que le pass reste actif.',buyTokens:'Ajouter du Crédit pour Accéder',startPremium:'Démarrer la Session',
+    category:'Catégorie', questionDepth:'Profondeur', reset:'Recommencer', unavailable:'Le service multijoueur n’est pas encore disponible dans cet aperçu.', premium:'Jeu Premium à Crédit',premiumBody:'Like Minded utilise des Crédit. Un achat ouvre une session de jeu limitée dans le temps; aucun nouveau débit tant que le pass reste actif.',buyTokens:'Ajouter du Crédit pour Accéder',startPremium:'Démarrer la Session Crédit',
     categoriesList:['Objectifs Relationnels','Communication','Valeurs','Famille','Style de Vie','Argent & Ambition','Limites','Priorités Futures','Scénarios Amusants','Humour','Activités','Cuisine & Voyage','Divertissement','Préférences Quotidiennes','Joker']
   },
   it: {
@@ -120,7 +120,7 @@ const UI = {
     locationNote:'Vengono mostrati solo nome e posizione generale. Mai indirizzo o posizione precisa.',
     inviteToPlay:'Invita a Giocare', block:'Blocca', report:'Segnala', score:'Punteggio Like-Minded', matches:'corrispondenze',
     talk:'Parlatene', talkPrompt:'Cosa ha portato ciascuno di voi a scegliere quella risposta?', difference:'Risposte diverse', match:'Corrispondenza', back:'Torna ai Giochi',
-    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'Gioco Premium a Token',premiumBody:'Like Minded usa Credito. Un acquisto apre una sessione temporanea; nessun nuovo addebito finché il pass resta attivo.',buyTokens:'Aggiungi Credito per Accedere',startPremium:'Avvia Sessione Token',
+    category:'Categoria', questionDepth:'Profondità', reset:'Ricomincia', unavailable:'Il servizio multigiocatore non è ancora disponibile in questa anteprima.', premium:'Gioco Premium a Credito',premiumBody:'Like Minded usa Credito. Un acquisto apre una sessione temporanea; nessun nuovo addebito finché il pass resta attivo.',buyTokens:'Aggiungi Credito per Accedere',startPremium:'Avvia Sessione Credito',
     categoriesList:['Obiettivi di Coppia','Comunicazione','Valori','Famiglia','Stile di Vita','Denaro & Ambizione','Confini','Priorità Future','Scenari Divertenti','Umorismo','Attività','Cibo & Viaggi','Intrattenimento','Preferenze Quotidiane','Jolly']
   },
   de: {
@@ -147,7 +147,7 @@ const UI = {
     locationNote:'Nur Vorname und allgemeiner Standort werden gezeigt. Niemals Straße oder genauer Standort.',
     inviteToPlay:'Zum Spielen Einladen', block:'Blockieren', report:'Melden', score:'Like-Minded Score', matches:'Treffer',
     talk:'Darüber Reden', talkPrompt:'Was hat euch jeweils zu dieser Antwort gebracht?', difference:'Unterschiedliche Antworten', match:'Ihr stimmt überein', back:'Zurück zu Spielen',
-    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'Premium-Credit-Spiel',premiumBody:'Like Minded verwendet Credit. Ein Kauf öffnet eine zeitlich begrenzte Spielsitzung; solange der Pass aktiv ist, wird nicht erneut berechnet.',buyTokens:'Credit Hinzufügen für Zugriff',startPremium:'Token-Sitzung Starten',
+    category:'Kategorie', questionDepth:'Tiefe', reset:'Neu Starten', unavailable:'Der Mehrspieler-Dienst ist in dieser Vorschau noch nicht verfügbar.', premium:'Premium-Credit-Spiel',premiumBody:'Like Minded verwendet Credit. Ein Kauf öffnet eine zeitlich begrenzte Spielsitzung; solange der Pass aktiv ist, wird nicht erneut berechnet.',buyTokens:'Credit Hinzufügen für Zugriff',startPremium:'Credit-Sitzung Starten',
     categoriesList:['Beziehungsziele','Kommunikation','Werte','Familie','Lebensstil','Geld & Ehrgeiz','Grenzen','Zukunftsprioritäten','Spaßszenarien','Humor','Aktivitäten','Essen & Reisen','Unterhaltung','Alltagsvorlieben','Wildcard']
   }
 };
