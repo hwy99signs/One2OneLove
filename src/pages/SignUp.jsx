@@ -29,7 +29,7 @@ const COPY = {
   },
   fr: {
     title:"Créez Votre Compte One2OneLove",subtitle:"Commencez avec un compte Inscrit Gratuit. Aucune carte bancaire requise.",account:"Compte",
-    free:"Inscrit Gratuit — compte GRATUIT · sans carte",founding:"Votre intention de Membre Fondateur est conservée avec le modèle Gratuit + Tokens.",
+    free:"Inscrit Gratuit — compte GRATUIT · sans carte",founding:"Votre intention de Membre Fondateur est conservée avec le modèle Gratuit + Crédit.",
     individual:"Membre Particulier",individualBody:"Créez un compte personnel pour les outils relationnels, la communauté, les activités et les fonctions membres.",
     professional:"Professionnel / Contributeur",professionalBody:"Candidatez comme thérapeute ou conseiller agréé, coach ou éducateur, créateur, contributeur média, organisation ou partenaire professionnel.",
     continue:"Continuer",back:"Retour à One2OneLove",
@@ -43,7 +43,7 @@ const COPY = {
   },
   de: {
     title:"Erstellen Sie Ihr One2OneLove-Konto",subtitle:"Starten Sie mit einem Kostenlos Registrierten Konto. Keine Kreditkarte erforderlich.",account:"Konto",
-    free:"Kostenlos Registriert — GRATIS Konto · keine Karte",founding:"Ihre Gründungsmitglied-Absicht bleibt im Gratis + Tokens-Modell erhalten.",
+    free:"Kostenlos Registriert — GRATIS Konto · keine Karte",founding:"Ihre Gründungsmitglied-Absicht bleibt im Gratis + Credit-Modell erhalten.",
     individual:"Privatmitglied",individualBody:"Erstellen Sie ein persönliches Konto für Beziehungstools, Community, Aktivitäten und Mitgliederfunktionen.",
     professional:"Fachkraft / Contributor",professionalBody:"Bewerben Sie sich als lizenzierter Therapeut oder Berater, Beziehungscoach oder Pädagoge, Creator, Medien-Contributor, Organisation oder professioneller Partner.",
     continue:"Weiter",back:"Zurück zu One2OneLove",
