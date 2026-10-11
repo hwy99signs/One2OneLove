@@ -288,12 +288,13 @@ export default function Admin() {
   const lastRefreshAtRef = useRef(0);
 
   const [presenceNow,setPresenceNow] = useState(null);
+  const [presenceSplit,setPresenceSplit] = useState(null);
   useEffect(() => {
     let active = true;
     const tick = async () => {
       try {
         const payload = await getAdminPresence();
-        if (active && payload?.ok) setPresenceNow(Number(payload.onlineNow || 0));
+        if (active && payload?.ok) { setPresenceNow(Number(payload.onlineNow || 0)); setPresenceSplit({ members: Number(payload.membersOnline || 0), guests: Number(payload.guestsOnline || 0) }); }
       } catch {}
     };
     tick();
@@ -824,7 +825,7 @@ export default function Admin() {
           {section==='members' && <div>
             <Heading title="All Sign-ups" subtitle="Every stored O2OL registration from the beginning to now. Members remain visible here whether or not they have purchased Credit."/>
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-              <Metric icon={Activity} label="On Site Right Now" value={presenceNow === null ? '—' : number(presenceNow)} note="pages open now · updates every 20 seconds · admins excluded" tone="green"/>
+              <Metric icon={Activity} label="On Site Right Now" value={presenceNow === null ? '—' : number(presenceNow)} note={presenceSplit ? `${number(presenceSplit.members)} members · ${number(presenceSplit.guests)} guests · automated checks excluded · last 90 seconds` : 'pages open now · updates every 20 seconds · admins excluded'} tone="green"/>
               <Metric icon={Activity} label="Active (Last 5 Min)" value={number(visitorFunnel.online_now)} note="visitor IDs active in the last 5 minutes · admins excluded" tone="green"/>
               <Metric icon={Users} label="Anonymous Visitors" value={number(visitorFunnel.anonymous_visitors)} note={`${number(visitorFunnel.total_visitors)} visitor IDs tracked`} tone="slate"/>
               <Metric icon={UserCheck} label="Members · No Credit Purchase" value={number(visitorFunnel.registered_free)} note={`${number(visitorFunnel.promo_opt_ins)} promotional email opt-ins`} tone="blue"/>
@@ -905,7 +906,7 @@ export default function Admin() {
                 <tbody className="divide-y divide-slate-100">
                   {visitorRows.map(v=><tr key={v.visitor_id} className="align-top hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900">{v.username?('@'+v.username):(v.email||('Visitor '+String(v.visitor_id).slice(0,8)))}</div>
+                      <div className="font-semibold text-slate-900">{v.username?('@'+v.username):(v.email||'Anonymous Visitor')}</div>
                       {v.email&&<div className="text-xs text-slate-500">{v.email}</div>}
                       <div className="mt-1 font-mono text-[10px] text-slate-400">{String(v.visitor_id).slice(0,24)}</div>
                       {v.user_id&&<div className="mt-1 text-[11px] font-semibold text-slate-500">Promo email: {v.marketing_email_opt_in?'Yes':'No'}</div>}
