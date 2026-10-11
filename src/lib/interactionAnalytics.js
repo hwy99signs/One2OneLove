@@ -120,6 +120,78 @@ function safeText(value, max = 160) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, max) || null;
 }
 
+// Mirrors worker/click-labels.js cleanAnalyticsUsername — keep in sync.
+function cleanAnalyticsUsername(value) {
+  const text = String(value || '').trim().replace(/^@+/, '');
+  return /^[A-Za-z0-9._-]{3,40}$/.test(text) ? text : null;
+}
+
+// Signed-in member identity for click attribution (owner rule, 2026-10-10:
+// a member's clicks carry their username; "Anonymous" is only for true
+// guests). AuthContext publishes the member here on sign-in and clears it
+// on sign-out. Guests publish nothing, so their events carry no identity.
+// The server still verifies every claim before storing it (session, or a
+// visitor-identity link for this browser) — this holder only decides what
+// the client offers.
+let analyticsIdentity = null;
+
+export function setAnalyticsIdentity(identity) {
+  const userId = typeof identity?.userId === 'string' && identity.userId.trim()
+    ? identity.userId.trim().slice(0, 64)
+    : null;
+  analyticsIdentity = userId
+    ? { userId, username: cleanAnalyticsUsername(identity?.username) }
+    : null;
+}
+
+export function getAnalyticsIdentity() {
+  return analyticsIdentity;
+}
+
+// Admin "Recent Click Details" AUDIENCE cell: a member's events show their
+// username; a member event without a stored username shows "Member"; only
+// an event with no member identity at all shows "Anonymous".
+// Mirrors worker/click-labels.js clickAudienceLabel — keep in sync.
+export function clickAudienceLabel(row = {}) {
+  const username = cleanAnalyticsUsername(row.username);
+  if (username) return `@${username}`;
+  if (row.user_id || row.userId || row.actor_type === 'registered' || row.actorType === 'registered') return 'Member';
+  return 'Anonymous';
+}
+
+// Password-visibility toggles are pure local UI state — they navigate
+// nowhere, submit nothing, and change no data — so they are not engagement
+// clicks and are never recorded. Identification is by label pattern across
+// the site's five languages (a show/hide verb together with the word for
+// "password"; mirrors worker/click-labels.js isPasswordVisibilityLabel) or,
+// structurally, an icon-only non-submit button sharing a field wrapper
+// with a password input.
+const PASSWORD_WORDS = ['password', 'contraseña', 'contrasena', 'mot de passe', 'passwort'];
+const SHOW_HIDE_VERBS = ['show', 'hide', 'mostrar', 'ocultar', 'afficher', 'masquer', 'mostra', 'nascondi', 'anzeigen', 'ausblenden', 'verbergen'];
+
+export function isPasswordVisibilityLabel(label) {
+  const text = String(label || '').trim().toLowerCase();
+  if (!text) return false;
+  return PASSWORD_WORDS.some((word) => text.includes(word))
+    && SHOW_HIDE_VERBS.some((verb) => text.includes(verb));
+}
+
+function isPasswordVisibilityToggle(control) {
+  if (!control || control.tagName !== 'BUTTON') return false;
+  const label = control.getAttribute('aria-label') || control.getAttribute('title') || '';
+  if (isPasswordVisibilityLabel(label)) return true;
+  if (control.getAttribute('type') === 'submit') return false;
+  if (String(control.textContent || '').trim()) return false;
+  let node = control.parentElement;
+  for (let depth = 0; node && depth < 2; depth += 1, node = node.parentElement) {
+    if (typeof node.querySelector === 'function'
+      && node.querySelector('input[type="password"],input[autocomplete="current-password"],input[autocomplete="new-password"]')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function normalizedPath(value) {
   try {
     const url = new URL(value, window.location.origin);
@@ -266,6 +338,14 @@ function send(payload) {
     sessionId: sessionId(),
     language: activeLanguage(),
     trafficSource: trafficSource(),
+    // Member identity is captured into the body at send time, so an event
+    // queued offline keeps the identity (or guest state) it truly had.
+    ...(analyticsIdentity
+      ? {
+          memberId: analyticsIdentity.userId,
+          ...(analyticsIdentity.username ? { memberUsername: analyticsIdentity.username } : {}),
+        }
+      : {}),
     ...payload,
   };
 
@@ -378,6 +458,9 @@ export function installClickAnalytics() {
       }
     }
     if (!control) return;
+
+    // Pure-UI toggles (password show/hide) are not engagement clicks.
+    if (isPasswordVisibilityToggle(control)) return;
 
     const currentRoute = window.location.pathname || '/';
     const explicitDestination = safeText(control.getAttribute('data-analytics-destination'), 300);
