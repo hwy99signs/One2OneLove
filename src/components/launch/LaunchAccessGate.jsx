@@ -11,12 +11,18 @@ import QuickAccountGate from '@/components/launch/QuickAccountGate.jsx';
 // shows the QuickAccountGate sign-up wall to guests, with a return to the
 // page they asked for after they join. Unknown routes stay public by the
 // isKnown rule below (SPA not-found handling + the certification canary).
-const PUBLIC_INFORMATION_ROUTES = new Set([
+export const PUBLIC_INFORMATION_ROUTES = new Set([
   '/aboutus', '/signin', '/login', '/signup', '/forgotpassword',
   '/helpcenter', '/contactus', '/privacypolicy', '/termsofservice', '/reviews', '/suggestions',
   '/invite', '/professionals', '/professionalsignup', '/therapistsignup', '/influencersignup',
   '/adminaccess',
 ]);
+
+// View-only routes (owner, 2026-10-11): guests may OPEN and SCROLL these
+// pages - the homepage is the shop window - but every action tab, button,
+// card and menu item on them is locked: GuestHomepageGate intercepts the
+// tap and opens the sign-up panel instead. Members are unaffected.
+export const VIEW_ONLY_ROUTES = new Set(['/', '/home']);
 
 const KNOWN_APP_ROUTES = new Set([
   '/',
@@ -126,6 +132,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   const route=String(pathname||'/').toLowerCase().replace(/\/$/,'')||'/';
   const isKnown=KNOWN_APP_ROUTES.has(route);
   const isPublic=PUBLIC_INFORMATION_ROUTES.has(route) || !isKnown;
+  const isViewOnly=VIEW_ONLY_ROUTES.has(route);
 
   if(isLoading && !isPublic){
     const language=preferredLanguage();
@@ -138,7 +145,7 @@ export default function LaunchAccessGate({ pathname, children }) {
   }
 
   if(!isAuthenticated || !user){
-    return isPublic ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
+    return (isPublic || isViewOnly) ? children : <QuickAccountGate intendedPath={pathname||'/'} />;
   }
 
   // Registered Free is the site access identity. Feature-specific APIs/components
