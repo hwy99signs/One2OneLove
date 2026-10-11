@@ -608,7 +608,7 @@ export default function Admin() {
 
             <Panel title="Member Age Ranges" subtitle="Age ranges collected at sign-up — ranges only, no birthdates are stored. Admin accounts excluded." className="mt-6">
               <div className="flex flex-wrap gap-2 text-xs">
-                {(data?.ageRanges?.ranges || []).map(row => <Pill key={row.range} tone="blue">{row.range === '60+' ? '60+' : row.range.replace('-', '–')} · {number(row.users)}</Pill>)}
+                {(data?.ageRanges?.ranges || []).map(row => <Pill key={row.range} tone="blue">{row.range === '65+' ? '65+' : row.range.replace('-', '–')} · {number(row.users)}</Pill>)}
                 <Pill tone="slate">Not provided · {number(data?.ageRanges?.notProvided)}</Pill>
                 <Pill tone="purple">{number(data?.ageRanges?.total)} members counted</Pill>
               </div>

@@ -7,7 +7,7 @@ import { useLanguage } from '@/Layout';
 import { getAnalyticsVisitorId } from '@/lib/interactionAnalytics';
 import { registerQuickUser, resendLaunchVerification, verifyLaunchEmail } from '@/lib/launchSignupService';
 
-const AGE_RANGES = ['18-29', '30-49', '50-59', '60+'];
+const AGE_RANGES = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
 const copy = {
   en:{
@@ -170,7 +170,7 @@ export default function QuickAccountGate({ intendedPath='/' }) {
         <label className="block text-sm font-bold text-slate-700">{t.ageRange}
           <select value={ageRange} onChange={e=>setAgeRange(e.target.value)} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
             <option value="">{t.ageRangePh}</option>
-            {AGE_RANGES.map(range=><option key={range} value={range}>{range === '60+' ? '60+' : range.replace('-', '–')}</option>)}
+            {AGE_RANGES.map(range=><option key={range} value={range}>{range === '65+' ? '65+' : range.replace('-', '–')}</option>)}
           </select>
         </label>
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
