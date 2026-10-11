@@ -216,14 +216,14 @@ export default function ClickToVoteCard({ language = 'en' }) {
   if (loading) {
     return (
       <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
-        <div className="mx-auto max-w-7xl rounded-xl border border-amber-300/25 bg-[#2b060e]/95 px-4 py-2 text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
+        <div className="mx-auto max-w-7xl rounded-xl border border-amber-300/25 bg-[#7f1d2d]/90 px-4 py-2 text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
       </section>
     );
   }
 
   return (
     <section className="px-4 py-2 sm:px-6" aria-label={t.eyebrow}>
-      <div className="mx-auto max-w-7xl rounded-xl border border-amber-300/25 bg-gradient-to-r from-[#2b060e]/95 via-[#4a0c17]/95 to-[#2b060e]/95 px-3 py-2 shadow-md backdrop-blur-sm sm:px-4">
+      <div className="mx-auto max-w-7xl rounded-xl border border-amber-300/25 bg-gradient-to-r from-[#7f1d2d]/90 via-[#9c2436]/90 to-[#7f1d2d]/90 px-3 py-2 shadow-md backdrop-blur-sm sm:px-4">
         {allVoted ? (
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
