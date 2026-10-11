@@ -207,18 +207,19 @@ export default function ClickToVoteCard({ language = 'en' }) {
     setIndex((index + 1) % questions.length);
   };
 
-  // Header presentation (owner directive, 2026-10-10): the voting lives
+  // Header presentation (owner directives, 2026-10-10): the voting lives
   // in the widened site header on the homepage, as its own distinct row
-  // directly under the locked header row — one slim burgundy band framed
-  // by a clear gold outline. Inside it: a compact question line, then a
-  // single row in the owner's sketch order — choice pills A-D, the
-  // comment box, and the Next Question tab at the right end. The row
-  // wraps gracefully on narrow screens. Presentation only — every
-  // handler, the copy tables, and the i18n wiring above are unchanged.
+  // directly under the locked header row — one slim band in the banner
+  // gradient (purple to pink), framed by a clear gold outline. Inside
+  // it: the question line is center-justified, the choice pills A-D sit
+  // centered on their own row, and the comment box + Next Question tab
+  // share the row beneath. Rows wrap gracefully on narrow screens.
+  // Presentation only — every handler, the copy tables, and the i18n
+  // wiring above are unchanged.
   if (loading) {
     return (
       <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
-        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-4 py-2 text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
+        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-4 py-2 text-center text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
       </section>
     );
   }
@@ -227,25 +228,24 @@ export default function ClickToVoteCard({ language = 'en' }) {
     <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
       <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-3 py-2 shadow-md sm:px-4">
         {allVoted ? (
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div>
               <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</div>
               <h2 className="mt-0.5 text-base font-black tracking-tight text-[#f7f2e7] sm:text-lg">{t.doneTitle}</h2>
-              <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-[#f7f2e7]/75">{t.doneBody}</p>
+              <p className="mx-auto mt-0.5 max-w-3xl text-[13px] leading-5 text-[#f7f2e7]/75">{t.doneBody}</p>
             </div>
             <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#8e2fc9] to-[#c2255c] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
           </div>
         ) : question && (
           <>
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-0.5 text-center">
               <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</span>
-              <h2 className="min-w-0 flex-1 text-[15px] font-black leading-snug tracking-tight text-[#f7f2e7] sm:text-base">{pick(question.question)}</h2>
+              <h2 className="min-w-0 text-[15px] font-black leading-snug tracking-tight text-[#f7f2e7] sm:text-base">{pick(question.question)}</h2>
               <span className="text-[11px] font-bold text-[#f7f2e7]/60">{t.questionOf(index + 1, questions.length)}</span>
             </div>
 
-            {/* ONE row: pills A-D, then the comment box, then the Next
-                Question tab at the right end. */}
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {/* Pills A-D: center-justified as a group on their own row. */}
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
               {question.choices.map((choice, i) => {
                 const selected = myChoice === choice.key || pendingChoice === choice.key;
                 return (
@@ -262,6 +262,11 @@ export default function ClickToVoteCard({ language = 'en' }) {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Row beneath: the comment box (flex-grows) and the Next
+                Question tab at its right end. */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               {isMember && !flash ? (
                 <input
                   value={comment}
@@ -278,7 +283,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
                 {t.next} →
               </button>
             </div>
-            {error && <p className="mt-1.5 text-[13px] font-bold text-red-300" role="alert">{error}</p>}
+            {error && <p className="mt-1.5 text-center text-[13px] font-bold text-red-300" role="alert">{error}</p>}
 
             {!isMember && pendingChoice && (
               <div className="mt-1.5 flex flex-col gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
@@ -293,7 +298,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
               </div>
             )}
             {isMember && pendingChoice && !myChoice && (
-              <p className="mt-1.5 text-[13px] font-bold text-amber-300">{t.castNow}</p>
+              <p className="mt-1.5 text-center text-[13px] font-bold text-amber-300">{t.castNow}</p>
             )}
           </>
         )}
