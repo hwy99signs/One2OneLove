@@ -46,6 +46,7 @@ import { handleLaunchReadinessRequest } from './launch-readiness';
 import { handleSuggestionsRequest } from './suggestions';
 import { handlePhoneVerificationRequest } from './phone-verification';
 import { handleGameAccessRequest, handleGameFileRequest } from './game-access';
+import { handleGameAdminRequest } from './game-admin';
 import { handleLikeMindedRequest } from './like-minded';
 import { handleStudioMediaRequest } from './studio-media';
 import { handleO2OLTokenRequest } from './o2ol-tokens';
@@ -278,6 +279,13 @@ export default {
 
     if (url.pathname.startsWith('/api/admin/mfa')) {
       const response = await handleAdminMfaRequest(request, env, url);
+      if (response) return response;
+    }
+
+    if (url.pathname.startsWith('/api/admin/game-')) {
+      const gate = await enforceAdminMfa(request, env);
+      if (gate) return gate;
+      const response = await handleGameAdminRequest(request, env, url);
       if (response) return response;
     }
 

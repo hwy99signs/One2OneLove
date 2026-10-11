@@ -88,23 +88,27 @@ export default [
     "Il Credito è credito di servizio prepagato della piattaforma, denominato in dollari, usato per servizi misurati designati, come risposte IA, SMS inviati da One2OneLove, alcuni giochi premium o altre funzioni che mostrano un costo in Credito. I saldi sono mostrati in dollari e centesimi USA nel formato $0.00; $1.00 di Credito rappresenta $1.00 di valore di servizio One2OneLove, senza punti o conversione in token. L’acquisto di Credito è facoltativo. Il Credito viene detratto solo per l’azione mostrata e, se un’operazione a pagamento fallisce senza erogazione del servizio, il Credito riservato può essere restituito. I pacchetti di Credito non sono depositi bancari, valuta o investimenti; non hanno valore in contanti fuori da One2OneLove e non possono essere trasferiti tra utenti salvo espressa abilitazione della funzione. La Ricarica Automatica è facoltativa e può essere disattivata. Se attiva, usa il pacchetto e la soglia di saldo scelti e addebita il metodo di pagamento autorizzato tramite il processore di pagamenti. La condivisione tramite le proprie app rimane gratuita salvo chiara indicazione di un costo separato. I corpi SMS personalizzati delle Note d’Amore restano limitati a 171 caratteri e il footer SMS One2OneLove può includere il simbolo ❤️."
   ],
   [
-    "23. Acquisti, Rimborsi, Ricarica Automatica e Abbonamenti Precedenti",
+    "23. Crediti di Gioco",
+    "I Crediti di Gioco sono una funzione promozionale di One2OneLove. I Crediti di Gioco possono essere utilizzati solo per giocare ai giochi su One2OneLove. I Crediti di Gioco non hanno valore in denaro, non sono denaro e non possono essere prelevati, trasferiti, scambiati o rimborsati in denaro. I Crediti di Gioco promozionali possono avere una data di scadenza, dopo la quale sono nulli. One2OneLove può modificare o interrompere il programma Crediti di Gioco in qualsiasi momento."
+  ],
+  [
+    "24. Acquisti, Rimborsi, Ricarica Automatica e Abbonamenti Precedenti",
     "Gli acquisti di Credito e gli altri acquisti una tantum vengono addebitati per l’importo mostrato prima della conferma. Gli addebiti di Ricarica Automatica avvengono solo se l’hai attivata e quando il saldo raggiunge la soglia configurata. Puoi disattivarla per gli addebiti futuri in qualsiasi momento. Salvo quanto richiesto dalla legge o espressamente indicato, il Credito già consumato per un servizio completato non è rimborsabile. Il trattamento del Credito inutilizzato, rimborsi, storni e controversie di pagamento è regolato dalla legge applicabile e dai termini mostrati all’acquisto. I registri storici Premiere, Exclusive, di prova o degli abbonamenti Fondatore possono essere conservati per contabilità, badge, riconciliazione o migrazione, ma tali vecchi nomi di livello non concedono da soli l’accesso attuale alle funzioni nel modello a Credito."
   ],
   [
-    "24. Modifiche ai presenti Termini",
+    "25. Modifiche ai presenti Termini",
     "Possiamo aggiornare i presenti Termini quando la piattaforma cambia o evolvono requisiti legali, operativi o di sicurezza. La versione vigente sarà pubblicata all’interno di One2OneLove. L’uso continuato dopo l’entrata in vigore di una versione aggiornata costituisce accettazione dei Termini aggiornati ove consentito dalla legge."
   ],
   [
-    "25. Legge applicabile",
+    "26. Legge applicabile",
     "I presenti Termini sono regolati dalla legge applicabile degli Stati Uniti e, ove pertinente, dalle leggi dello Stato del Texas, senza riguardo ai principi sui conflitti di legge, salvo che un’altra legge debba obbligatoriamente applicarsi."
   ],
   [
-    "26. Separabilità",
+    "27. Separabilità",
     "Se una disposizione dei presenti Termini viene ritenuta inapplicabile, le restanti disposizioni rimarranno in vigore nella massima misura consentita dalla legge."
   ],
   [
-    "27. Contatti",
+    "28. Contatti",
     "Le domande sui presenti Termini o sulla piattaforma possono essere inviate a support@one2onelove.com."
   ]
 ];

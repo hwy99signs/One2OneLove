@@ -88,23 +88,27 @@ export default [
     "Le Crédit est un crédit de service prépayé de la plateforme, libellé en dollars, utilisé pour des services mesurés désignés, tels que les réponses d’IA, les SMS envoyés par One2OneLove, certains jeux premium ou d’autres fonctions affichant un coût en Crédit. Les soldes sont affichés en dollars et cents américains au format $0.00 ; 1,00 $ de Crédit représente 1,00 $ de valeur de service One2OneLove, sans points ni conversion en jetons. L’achat de Crédit est facultatif. Le Crédit est déduit uniquement pour l’action affichée et, si une opération payante échoue sans livraison du service, le Crédit réservé peut être restitué. Les forfaits de Crédit ne sont ni des dépôts bancaires, ni une monnaie, ni des investissements; ils n’ont aucune valeur monétaire en dehors de One2OneLove et ne peuvent pas être transférés entre utilisateurs sauf si One2OneLove active expressément cette fonction. La Recharge Automatique est facultative et peut être désactivée. Lorsqu’elle est activée, elle utilise le forfait et le seuil de solde choisis et débite le moyen de paiement autorisé via le prestataire de paiement. Le partage via vos propres applications reste gratuit sauf indication claire d’un frais distinct. Le texte personnalisé d’une Note d’Amour par SMS reste limité à 171 caractères et le pied SMS One2OneLove peut inclure le symbole ❤️."
   ],
   [
-    "23. Achats, Remboursements, Recharge Automatique et Anciens Abonnements",
+    "23. Crédits de Jeu",
+    "Les Crédits de Jeu sont une fonctionnalité promotionnelle de One2OneLove. Les Crédits de Jeu peuvent être utilisés uniquement pour jouer à des jeux sur One2OneLove. Les Crédits de Jeu n'ont aucune valeur en espèces, ne sont pas de l'argent et ne peuvent pas être retirés, transférés, échangés ou remboursés contre de l'argent. Les Crédits de Jeu promotionnels peuvent comporter une date d'expiration, après laquelle ils sont annulés. One2OneLove peut modifier ou interrompre le programme de Crédits de Jeu à tout moment."
+  ],
+  [
+    "24. Achats, Remboursements, Recharge Automatique et Anciens Abonnements",
     "Les achats de Crédit et autres achats ponctuels sont facturés au montant affiché avant confirmation. Les débits de Recharge Automatique n’ont lieu que si vous l’avez activée et lorsque le solde atteint le seuil configuré. Vous pouvez la désactiver pour les futurs débits à tout moment. Sauf obligation légale contraire ou indication expresse, le Crédit déjà consommé pour un service achevé n’est pas remboursable. Le traitement du Crédit inutilisé, remboursements, rétrofacturations et litiges de paiement est régi par la loi applicable et les conditions affichées lors de l’achat. Les anciens enregistrements Premiere, Exclusive, d’essai ou d’abonnement Fondateur peuvent être conservés à des fins comptables, de badge, de rapprochement ou de migration, mais ces anciens noms de formule n’accordent pas à eux seuls un accès actuel aux fonctions selon le modèle de Crédit."
   ],
   [
-    "24. Modifications des présentes Conditions",
+    "25. Modifications des présentes Conditions",
     "Nous pouvons mettre à jour les présentes Conditions lorsque la plateforme évolue ou lorsque les exigences juridiques, opérationnelles ou de sécurité changent. La version en vigueur sera publiée dans One2OneLove. L’utilisation continue après l’entrée en vigueur d’une version mise à jour vaut acceptation des Conditions mises à jour lorsque la loi le permet."
   ],
   [
-    "25. Droit applicable",
+    "26. Droit applicable",
     "Les présentes Conditions sont régies par le droit applicable des États-Unis et, le cas échéant, par les lois de l’État du Texas, sans tenir compte des principes de conflit de lois, sauf lorsqu’une autre loi doit obligatoirement s’appliquer."
   ],
   [
-    "26. Divisibilité",
+    "27. Divisibilité",
     "Si une disposition des présentes Conditions est jugée inapplicable, les autres dispositions restent en vigueur dans toute la mesure permise par la loi."
   ],
   [
-    "27. Contact",
+    "28. Contact",
     "Les questions concernant les présentes Conditions ou la plateforme peuvent être envoyées à support@one2onelove.com."
   ]
 ];

@@ -3,6 +3,7 @@ import { Client } from 'pg';
 import { recordCostEvent } from './o2ol-cost-ledger';
 import { CREDIT_CONFIG } from './credit-config';
 import { ensureCreditSchema } from './love-note-credit';
+import { gameCreditWallet } from './game-economy';
 
 const HEADERS = {
   'content-type':'application/json; charset=utf-8',
@@ -941,7 +942,8 @@ async function walletPayload(db,userId){
     packages:await tokenPackages(db),
     featurePrices:await featurePrices(db),
     activeCalibration,
-    // The wallet unit is one US cent of Credit; balances display as dollars.
+    gameCredit:await gameCreditWallet(db,userId),
+    // The paid wallet unit is one US cent of Credit; balances display as dollars.
     credit:{currency:'Credit',unit:'USD_CENTS',expires:CREDIT_CONFIG.creditExpires},
   };
 }
