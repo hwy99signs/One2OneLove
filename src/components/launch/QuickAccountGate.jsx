@@ -9,7 +9,7 @@ import { registerQuickUser, resendLaunchVerification, verifyLaunchEmail } from '
 
 const copy = {
   en:{
-    eyebrow:'Registered Free',
+    eyebrow:'Free Account',
     title:'Create your free One2OneLove account',
     body:'Choose a username, enter your email, and create a password to continue.',
     username:'Username',usernamePh:'Choose a username',
@@ -29,7 +29,7 @@ const copy = {
     passwordError:'Password must be at least 8 characters.',
   },
   es:{
-    eyebrow:'Registro Gratis',title:'Crea tu cuenta gratuita de One2OneLove',body:'Elige un nombre de usuario, ingresa tu correo y crea una contraseña para continuar.',
+    eyebrow:'Cuenta Gratuita',title:'Crea tu cuenta gratuita de One2OneLove',body:'Elige un nombre de usuario, ingresa tu correo y crea una contraseña para continuar.',
     username:'Nombre de usuario',usernamePh:'Elige un nombre de usuario',email:'Correo electrónico',emailPh:'Ingresa tu correo',
     password:'Crear contraseña',passwordPh:'8 caracteres o más',promo:'Sí, envíame correos promocionales y novedades de One2OneLove.',
     continue:'Crear Cuenta Gratis y Continuar',creating:'Creando tu cuenta…',noCard:'No se requiere tarjeta. Tu acceso gratuito actual sigue siendo gratuito.',
@@ -37,7 +37,7 @@ const copy = {
     verifyTitle:'Verifica tu correo',verifyBody:'Enviamos un código de 6 dígitos a',code:'Código de verificación',verify:'Verificar y Continuar',verifying:'Verificando…',resend:'Enviar otro código',resent:'Se envió un nuevo código.',invalid:'Ingresa el código de 6 dígitos.',usernameError:'Usa 3–40 letras, números, puntos, guiones bajos o guiones.',passwordError:'La contraseña debe tener al menos 8 caracteres.',
   },
   fr:{
-    eyebrow:'Inscription Gratuite',title:'Créez votre compte One2OneLove gratuit',body:'Choisissez un nom d’utilisateur, saisissez votre e-mail et créez un mot de passe pour continuer.',
+    eyebrow:'Compte Gratuit',title:'Créez votre compte One2OneLove gratuit',body:'Choisissez un nom d’utilisateur, saisissez votre e-mail et créez un mot de passe pour continuer.',
     username:'Nom d’utilisateur',usernamePh:'Choisissez un nom d’utilisateur',email:'E-mail',emailPh:'Saisissez votre e-mail',
     password:'Créer un mot de passe',passwordPh:'8 caractères ou plus',promo:'Oui, envoyez-moi des e-mails promotionnels et les actualités One2OneLove.',
     continue:'Créer un Compte Gratuit et Continuer',creating:'Création du compte…',noCard:'Aucune carte bancaire requise. Votre accès gratuit reste gratuit.',
@@ -45,7 +45,7 @@ const copy = {
     verifyTitle:'Vérifiez votre e-mail',verifyBody:'Nous avons envoyé un code à 6 chiffres à',code:'Code de vérification',verify:'Vérifier et Continuer',verifying:'Vérification…',resend:'Renvoyer un code',resent:'Un nouveau code a été envoyé.',invalid:'Saisissez le code à 6 chiffres.',usernameError:'Utilisez 3 à 40 lettres, chiffres, points, tirets bas ou tirets.',passwordError:'Le mot de passe doit contenir au moins 8 caractères.',
   },
   it:{
-    eyebrow:'Registrazione Gratuita',title:'Crea il tuo account One2OneLove gratuito',body:'Scegli un nome utente, inserisci la tua email e crea una password per continuare.',
+    eyebrow:'Account Gratuito',title:'Crea il tuo account One2OneLove gratuito',body:'Scegli un nome utente, inserisci la tua email e crea una password per continuare.',
     username:'Nome utente',usernamePh:'Scegli un nome utente',email:'Email',emailPh:'Inserisci la tua email',
     password:'Crea password',passwordPh:'8 o più caratteri',promo:'Sì, inviami email promozionali e aggiornamenti One2OneLove.',
     continue:'Crea Account Gratuito e Continua',creating:'Creazione account…',noCard:'Nessuna carta richiesta. Il tuo accesso gratuito resta gratuito.',
@@ -53,7 +53,7 @@ const copy = {
     verifyTitle:'Verifica la tua email',verifyBody:'Abbiamo inviato un codice di 6 cifre a',code:'Codice di verifica',verify:'Verifica e Continua',verifying:'Verifica…',resend:'Invia un nuovo codice',resent:'È stato inviato un nuovo codice.',invalid:'Inserisci il codice di 6 cifre.',usernameError:'Usa 3–40 lettere, numeri, punti, underscore o trattini.',passwordError:'La password deve contenere almeno 8 caratteri.',
   },
   de:{
-    eyebrow:'Kostenlos Registriert',title:'Erstellen Sie Ihr kostenloses One2OneLove-Konto',body:'Wählen Sie einen Benutzernamen, geben Sie Ihre E-Mail ein und erstellen Sie ein Passwort.',
+    eyebrow:'Kostenloses Konto',title:'Erstellen Sie Ihr kostenloses One2OneLove-Konto',body:'Wählen Sie einen Benutzernamen, geben Sie Ihre E-Mail ein und erstellen Sie ein Passwort.',
     username:'Benutzername',usernamePh:'Benutzernamen wählen',email:'E-Mail',emailPh:'E-Mail eingeben',
     password:'Passwort erstellen',passwordPh:'8 oder mehr Zeichen',promo:'Ja, senden Sie mir Werbe-E-Mails und One2OneLove-Updates.',
     continue:'Kostenloses Konto Erstellen & Weiter',creating:'Konto wird erstellt…',noCard:'Keine Kreditkarte erforderlich. Ihr aktueller kostenloser Zugang bleibt kostenlos.',
