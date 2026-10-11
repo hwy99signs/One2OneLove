@@ -1435,6 +1435,39 @@ async function dashboard(db, env, registryRangeDays = 30) {
   return { summary,members:userRows,applications:applicationRows,moderation:moderationRows,billing:billingData,loveNotes:loveNoteData,featureUsage:featureData,clickAnalytics:clickData,topFeatureActivity:topFeatureData,chatRoom:chatRoomData,system:systemData,visitorRegistry:visitorData,supportFeedback:supportData };
 }
 
+function reportKeyMatches(provided, expected) {
+  if (!provided || !expected || provided.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i += 1) diff |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
+}
+
+// Read-only reporting door (owner-approved 2026-10-11): returns the same
+// payload the admin dashboard loads, authenticated by a dedicated key in the
+// x-o2ol-report-key header (Worker secret O2OL_REPORT_KEY) instead of the
+// interactive admin login + MFA. GET only - no admin action is reachable here.
+// Fail-closed: when no key is configured, every request is rejected.
+export async function handleAdminReportRequest(request, env, url) {
+  if (url.pathname !== '/api/admin/report') return null;
+  if (request.method !== 'GET') return fail('Method not allowed.',405,'method_not_allowed');
+  const expected = String(env.O2OL_REPORT_KEY || '');
+  const provided = request.headers.get('x-o2ol-report-key') || '';
+  if (expected.length < 16 || !reportKeyMatches(provided, expected)) {
+    return fail('Report key required.',401,'unauthorized');
+  }
+  try {
+    return await withDb(env, async (db) => {
+      const rangeParam = String(url.searchParams.get('registryRange') || '30d').toLowerCase();
+      const rangeDays = rangeParam === 'all' ? null : ({ '7d': 7, '30d': 30, '90d': 90 }[rangeParam] ?? 30);
+      const data = await dashboard(db, env, rangeDays);
+      return json({ ok:true, mode:'admin_report_readonly', generatedAt:new Date().toISOString(), ...data });
+    });
+  } catch (error) {
+    console.error('One2OneLove admin report error', error);
+    return fail(error?.message || 'Unable to build the admin report.',error?.status || 500,error?.code || 'admin_report_error');
+  }
+}
+
 export async function handleAdminRequest(request, env, url) {
   if (!url.pathname.startsWith('/api/admin')) return null;
 
