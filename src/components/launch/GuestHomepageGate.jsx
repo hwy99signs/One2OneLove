@@ -38,6 +38,9 @@ export default function GuestHomepageGate({ pathname }) {
   useEffect(() => {
     if (!active) return undefined;
     const onClick = (event) => {
+      // Elements marked data-guest-allow (the header Sign In / Sign Up
+      // buttons, which navigate by onClick rather than by link) always act.
+      if (event.target.closest('[data-guest-allow]')) return;
       const modal = document.getElementById('guest-homepage-gate-modal');
       if (modal && modal.contains(event.target)) return;
       const interactive = event.target.closest('a,button,[role="button"],input,select,textarea,summary,video,[data-analytics-destination],[class*="cursor-pointer"]');

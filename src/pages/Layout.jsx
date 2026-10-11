@@ -491,8 +491,8 @@ function LanguageContent({ children, currentPageName }) {
             ) : (
               <>
                 <Link to={isMyMatchIQPage ? '/MyMatchIQ/Invite' : createPageUrl("Invite")} className={mmiqHeaderButton('from-emerald-400 to-cyan-600')}>{t.nav.invite}</Link>
-                <button onClick={handleSignIn} aria-label={`${t.nav.signIn} — navigation`} className={mmiqHeaderButton('from-blue-500 to-indigo-700')}>{t.nav.signIn}</button>
-                <button onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>
+                <button data-guest-allow onClick={handleSignIn} aria-label={`${t.nav.signIn} — navigation`} className={mmiqHeaderButton('from-blue-500 to-indigo-700')}>{t.nav.signIn}</button>
+                <button data-guest-allow onClick={handleSignUp} className={isMyMatchIQPage ? mmiqHeaderButton('from-rose-500 to-fuchsia-600') : 'text-yellow-300 text-xl hover:text-yellow-100'}>{t.nav.signUp}</button>
               </>
             )}
 
@@ -681,6 +681,7 @@ function LanguageContent({ children, currentPageName }) {
                       {t.nav.invite}
                     </Link>
                     <button
+                      data-guest-allow
                       onClick={() => {
                         handleSignUp();
                         setMobileMenuOpen(false);
@@ -691,6 +692,7 @@ function LanguageContent({ children, currentPageName }) {
                       {t.nav.signUp}
                     </button>
                     <button
+                      data-guest-allow
                       aria-label={`${t.nav.signIn} — navigation`}
                       onClick={() => {
                         handleSignIn();
