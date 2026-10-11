@@ -399,7 +399,7 @@ function LanguageContent({ children, currentPageName }) {
 
       {/* Header */}
       <header className={`${isMyMatchIQPage ? 'bg-gradient-to-r from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500'} text-white shadow-md sticky top-0 z-50`}>
-        <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-3 sm:px-5'} h-[96px] flex items-center justify-between gap-2 sm:gap-3 2xl:gap-5`}>
+        <div className={`${isMyMatchIQPage ? 'mx-auto max-w-[1840px] px-3 sm:px-5' : 'max-w-[1400px] mx-auto px-3 sm:px-5'} relative h-[96px] flex items-center justify-between gap-2 sm:gap-3 2xl:gap-5`}>
           <Link to={isMyMatchIQPage ? '/MyMatchIQ' : createPageUrl("Home")} className="w-[168px] sm:w-[190px] 2xl:w-[220px] h-[88px] shrink-0 hover:opacity-90 transition-opacity flex items-center">
             <img 
               src={isMyMatchIQPage ? '/assets/mymatchiq-official-logo.webp' : '/assets/o2ol-header-logo.png'}
@@ -548,7 +548,7 @@ function LanguageContent({ children, currentPageName }) {
               id="responsive-navigation-menu"
               ref={mobileMenuRef}
               onMouseLeave={closeResponsiveMenuOnHoverAway}
-              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[240px] sm:w-[260px] max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-2.5 py-2.5 shadow-2xl max-h-[calc(100vh-7.5rem)] overflow-y-auto overscroll-contain`}
+              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[240px] sm:w-[260px] max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-2.5 py-2.5 shadow-2xl max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain`}
             >
               <nav className="flex flex-col gap-1 text-[15px] leading-5">
                 {isMyMatchIQPage && (
