@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { getMyConversations } from "@/lib/chatService";
+import ClickToVoteCard from "@/components/voting/ClickToVoteCard";
 import {
   Select,
   SelectContent,
@@ -205,6 +206,9 @@ function LanguageContent({ children, currentPageName }) {
   const normalizedShareRoute = String(location.pathname || '/').toLowerCase().replace(/\/$/,'') || '/';
   const showPageShare = !SHARE_EXCLUDED_ROUTES.has(normalizedShareRoute);
   const isMyMatchIQPage = normalizedShareRoute === '/mymatchiq' || normalizedShareRoute.startsWith('/mymatchiq/');
+  // Homepage only ('/' and its '/Home' alias): the header widens to carry
+  // the Click-to-Vote row under the locked header row (owner, 2026-10-10).
+  const isHomeRoute = normalizedShareRoute === '/' || normalizedShareRoute === '/home';
   const mmiqHeaderButton = (gradient) => isMyMatchIQPage
     ? `inline-flex items-center whitespace-nowrap rounded-full border border-white/25 bg-gradient-to-r ${gradient} px-2.5 py-2 text-sm font-black text-white 2xl:px-3.5 shadow-[0_5px_15px_rgba(15,4,42,0.35)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white`
     : 'hover:text-yellow-200';
@@ -698,6 +702,14 @@ function LanguageContent({ children, currentPageName }) {
             </div>
           )}
         </div>
+
+        {/* Click-to-Vote row (owner directive, 2026-10-10): on the
+            homepage the header widens — the header row above stays
+            locked exactly as-is, and the voting renders as its own
+            outlined band directly beneath it, inside the header block. */}
+        {isHomeRoute && (
+          <ClickToVoteCard language={currentLanguage} />
+        )}
       </header>
 
       {/* Shareable page promotion */}

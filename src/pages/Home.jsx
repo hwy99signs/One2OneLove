@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useLanguage } from './Layout';
-import ClickToVoteCard from '../components/voting/ClickToVoteCard';
 
 const LOGO = '/assets/o2ol-approved-logo.png';
 const HERO = '/assets/o2ol-hero.png';
@@ -126,10 +125,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
-      {/* Click-to-Vote (owner order, 2026-10-10): replaces the expired Open
-          House banner at the top of the homepage — half the height, light
-          translucent burgundy, one tap is a vote. */}
-      <ClickToVoteCard language={currentLanguage} />
+      {/* Click-to-Vote moved into the widened site header (owner
+          directive, 2026-10-10) — Layout renders it as an outlined row
+          under the header row on the homepage. */}
       <section className="relative flex min-h-[900px] items-end justify-center bg-cover bg-center" style={{backgroundImage:`url(${HERO})`}}>
         <div className="absolute inset-0 bg-black/10"/>
         <div className="relative z-10 mx-auto max-w-5xl px-6 pb-8 pt-8 text-center text-white">
