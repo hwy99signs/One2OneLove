@@ -218,14 +218,14 @@ export default function ClickToVoteCard({ language = 'en' }) {
   if (loading) {
     return (
       <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
-        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[#7f1d2d]/90 px-4 py-2 text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
+        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-4 py-2 text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
       </section>
     );
   }
 
   return (
     <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
-      <div className="w-full rounded-xl border-2 border-amber-300/80 bg-gradient-to-r from-[#7f1d2d]/90 via-[#9c2436]/90 to-[#7f1d2d]/90 px-3 py-2 shadow-md sm:px-4">
+      <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-3 py-2 shadow-md sm:px-4">
         {allVoted ? (
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -233,7 +233,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
               <h2 className="mt-0.5 text-base font-black tracking-tight text-[#f7f2e7] sm:text-lg">{t.doneTitle}</h2>
               <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-[#f7f2e7]/75">{t.doneBody}</p>
             </div>
-            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#7f1d2d] to-[#9c2436] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
+            <button type="button" onClick={() => navigate('/Chat')} className="shrink-0 rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#8e2fc9] to-[#c2255c] px-4 py-2 text-[13px] font-black text-[#f7f2e7] shadow-md transition hover:brightness-110">{t.openChat}</button>
           </div>
         ) : question && (
           <>
@@ -274,7 +274,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
               ) : (
                 <span className="min-w-[10rem] flex-1" />
               )}
-              <button type="button" onClick={handleNext} className="flex-none rounded-t-md rounded-b-lg border border-amber-400/70 bg-gradient-to-br from-[#7f1d2d] via-[#9c2436] to-[#7f1d2d] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
+              <button type="button" onClick={handleNext} className="flex-none rounded-t-md rounded-b-lg border border-amber-400/70 bg-gradient-to-br from-[#8e2fc9] via-[#ad2a93] to-[#c2255c] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
                 {t.next} →
               </button>
             </div>
@@ -287,7 +287,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
                   <p className="text-[13px] text-[#f7f2e7]/75">{t.joinBody}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#7f1d2d] to-[#9c2436] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
+                  <button type="button" onClick={() => navigate('/SignUp')} className="rounded-lg border border-amber-400/60 bg-gradient-to-br from-[#8e2fc9] to-[#c2255c] px-3.5 py-2 text-[13px] font-black text-[#f7f2e7] shadow-sm">{t.join}</button>
                   <button type="button" onClick={() => navigate('/SignIn')} className="rounded-lg border border-[#f7f2e7]/40 bg-transparent px-3.5 py-2 text-[13px] font-black text-[#f7f2e7]">{t.signIn}</button>
                 </div>
               </div>
