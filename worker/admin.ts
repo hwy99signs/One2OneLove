@@ -1432,7 +1432,7 @@ async function supportFeedback(db) {
 // RANGE, never a birthdate. Aggregate counts only; admin accounts excluded,
 // matching the dashboard's other member counts.
 async function ageRanges(db) {
-  const order = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+  const order = ['18-29', '30-49', '50-59', '60+'];
   const empty = { ranges: order.map(range => ({ range, users: 0 })), notProvided: 0, total: 0 };
   try {
     await db.query('ALTER TABLE public.users ADD COLUMN IF NOT EXISTS age_range text');
