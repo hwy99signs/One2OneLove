@@ -8,6 +8,11 @@ import {
   assertSmsBodyWithinCap, isRecipientOptedOut, assertNotOptedOut,
   assertSendRateLimit,
 } from './love-note-credit';
+import {
+  tryConsumeFoundingFreeSend, restoreFoundingFreeSend,
+  restoreFoundingFreeSendForReservation, attachFoundingFreeSendNote,
+  createFoundingFreeReservation, foundingFreeSendsRemaining,
+} from './founding-perks';
 const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;
 
 const HEADERS = {
@@ -219,19 +224,21 @@ async function accountPhone(db,userId) {
 }
 
 async function usageForDate(db,userId,quotaDate) {
-  const [walletResult,priceResult,sendResult]=await Promise.all([
+  const [walletResult,priceResult,sendResult,foundingFree]=await Promise.all([
     db.query('SELECT balance FROM public.o2ol_token_wallets WHERE user_id=$1::uuid',[userId]),
     db.query(`SELECT token_cost FROM public.o2ol_token_feature_prices
                WHERE feature_code='love_note_send' AND active=true LIMIT 1`),
     db.query(`SELECT count(*)::int AS sent_count
                 FROM public.sent_love_notes
                WHERE user_id=$1::uuid AND recipient_type='sms'`,[userId]),
+    foundingFreeSendsRemaining(db,userId).catch(()=>0),
   ]);
   return {
     accessModel:'free_tokens',
     tokenMode:true,
     tokenBalance:Number(walletResult.rows[0]?.balance||0),
     tokenCost:Number(priceResult.rows[0]?.token_cost||0),
+    foundingFreeSendsRemaining:Number(foundingFree||0),
     sentCount:Number(sendResult.rows[0]?.sent_count||0),
     firstMembershipSendFree:false,
     firstSendFree:false,
@@ -289,19 +296,47 @@ async function postImmediateSms(db, env, auth, body) {
   const requestId=String(body.requestId||crypto.randomUUID()).slice(0,120);
   const requestKey=`love_note_sms:${auth.user.id}:${requestId}`;
 
-  const reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
-    idempotencyKey:requestKey,
-    metadata:{
-      source_id:sourceId,
-      recipient_type:'sms',
-      request_id:requestId,
-      region:region.region,
-      country:region.country,
-      featureLabel:'Love Note send',
-    },
-  });
-  if(reservation.reused&&reservation.status==='consumed'){
+  // Founding Member free sends are consumed AHEAD of any Credit charge
+  // (owner giveaway, 2026-10-10). All gates above (signature, opt-out,
+  // rate limit, region) have already run, exactly as for a paid send.
+  const foundingUse=await tryConsumeFoundingFreeSend(db,auth.user.id,requestKey);
+  if(foundingUse?.reused){
     return fail('This Love Note was already sent.',409,'duplicate_send');
+  }
+  let reservation=null;
+  if(foundingUse){
+    try{
+      reservation=await createFoundingFreeReservation(db,auth.user.id,'love_note_send',{
+        idempotencyKey:requestKey,
+        useId:foundingUse.use.id,
+        metadata:{
+          source_id:sourceId,
+          recipient_type:'sms',
+          request_id:requestId,
+          region:region.region,
+          country:region.country,
+          featureLabel:'Love Note send',
+        },
+      });
+    }catch(error){
+      await restoreFoundingFreeSend(db,foundingUse.use.id).catch(()=>{});
+      throw error;
+    }
+  }else{
+    reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
+      idempotencyKey:requestKey,
+      metadata:{
+        source_id:sourceId,
+        recipient_type:'sms',
+        request_id:requestId,
+        region:region.region,
+        country:region.country,
+        featureLabel:'Love Note send',
+      },
+    });
+    if(reservation.reused&&reservation.status==='consumed'){
+      return fail('This Love Note was already sent.',409,'duplicate_send');
+    }
   }
 
   let twilio=null;
@@ -316,10 +351,12 @@ async function postImmediateSms(db, env, auth, body) {
   }catch(error){
     await db.query('DELETE FROM public.sent_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[sourceId,auth.user.id]).catch(()=>{});
     if(reservation?.id)await releaseTokenReservation(db,reservation.id,'sms_delivery_failed').catch(()=>{});
+    if(foundingUse)await restoreFoundingFreeSend(db,foundingUse.use.id).catch(()=>{});
     throw error;
   }
 
   if(reservation?.id)await consumeTokenReservation(db,reservation.id);
+  if(foundingUse)await attachFoundingFreeSendNote(db,foundingUse.use.id,sourceId).catch(()=>{});
   const providerCostMicros=twilio?.price==null?null:Math.round(Math.abs(Number(twilio.price))*1000000);
   await recordCostEvent(db,env,{
     userId:auth.user.id,featureCode:'love_note_send',provider:'twilio',providerProduct:'programmable_sms',
@@ -330,7 +367,7 @@ async function postImmediateSms(db, env, auth, body) {
     providerOutputUnits:Number(twilio?.numSegments||0),
     providerCostMicros,
     customerTokensCharged:Number(reservation.tokens||0),
-    metadata:{source_id:sourceId,request_id:requestId,billing:'o2ol_tokens',region:region.region,country:region.country,twilio_status:twilio?.status||null,twilio_price_unit:twilio?.priceUnit||'USD',cost_pending:providerCostMicros==null},
+    metadata:{source_id:sourceId,request_id:requestId,billing:foundingUse?'founding_free_send':'o2ol_tokens',region:region.region,country:region.country,twilio_status:twilio?.status||null,twilio_price_unit:twilio?.priceUnit||'USD',cost_pending:providerCostMicros==null},
   }).catch(error=>console.error('Love Note cost telemetry failed',error));
   maybeAutoReplenish(db,env,auth.user.id).catch(error=>console.error('Love Note Auto-Replenish check failed',error));
 
@@ -338,6 +375,7 @@ async function postImmediateSms(db, env, auth, body) {
     ok:true,
     note:{id:sourceId,note_title:title,note_content:content,recipient_type:'sms',recipient_identifier:recipientPhone,sender_name:senderName,send_anonymous:sendAnonymous},
     delivery:{provider:'twilio',messageId:twilio?.messageId||null,status:twilio?.status||null},
+    foundingFreeSend:Boolean(foundingUse),
     tokens:{charged:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)},
     usage:await usageForDate(db,auth.user.id,quotaDate),
   },201);
@@ -378,14 +416,26 @@ async function postScheduled(db, env, auth, body) {
     [auth.user.id,title,content,scheduledDate,scheduledTime,scheduledTimezone,recipientPhone,deliveryMethod,language,senderName,sendAnonymous],
   );
   const note=result.rows[0];
+  // Founding Member free sends are consumed at booking, ahead of any
+  // Credit charge; the booking still gets a (zero-token) reservation row
+  // because the scheduled dispatcher resolves bookings by reservation.
+  let foundingUse=null;
   try{
-    const reservation=await reserveTokenCharge(db,auth.user.id,'love_note_send',{
-      idempotencyKey:`love_note_scheduled:${note.id}`,
-      metadata:{scheduled_note_id:note.id,scheduled_date:scheduledDate,recipient_type:'sms',region:region.region,country:region.country,featureLabel:'Love Note send'},
-    });
-    return json({ok:true,note,tokens:{reserved:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
+    foundingUse=await tryConsumeFoundingFreeSend(db,auth.user.id,`love_note_scheduled:${note.id}`);
+    const reservation=foundingUse
+      ? await createFoundingFreeReservation(db,auth.user.id,'love_note_send',{
+          idempotencyKey:`love_note_scheduled:${note.id}`,
+          useId:foundingUse.use.id,
+          metadata:{scheduled_note_id:note.id,scheduled_date:scheduledDate,recipient_type:'sms',region:region.region,country:region.country,featureLabel:'Love Note send'},
+        })
+      : await reserveTokenCharge(db,auth.user.id,'love_note_send',{
+          idempotencyKey:`love_note_scheduled:${note.id}`,
+          metadata:{scheduled_note_id:note.id,scheduled_date:scheduledDate,recipient_type:'sms',region:region.region,country:region.country,featureLabel:'Love Note send'},
+        });
+    return json({ok:true,note,foundingFreeSend:Boolean(foundingUse),tokens:{reserved:Number(reservation.tokens||0),balance:Number(reservation.balance_after??0)}},201);
   }catch(error){
     await db.query('DELETE FROM public.scheduled_love_notes WHERE id=$1::uuid AND user_id=$2::uuid',[note.id,auth.user.id]).catch(()=>{});
+    if(foundingUse)await restoreFoundingFreeSend(db,foundingUse.use.id).catch(()=>{});
     throw error;
   }
 }
@@ -397,10 +447,13 @@ async function cancelScheduled(db, auth, noteId) {
   )).rows[0];
   if(!note||!['scheduled','failed'].includes(note.status))return fail('Scheduled note not found or cannot be cancelled.',404,'not_found');
   const reservation=(await db.query(
-    'SELECT id FROM public.o2ol_token_reservations WHERE idempotency_key=$1 LIMIT 1',
+    'SELECT id,metadata FROM public.o2ol_token_reservations WHERE idempotency_key=$1 LIMIT 1',
     [`love_note_scheduled:${noteId}`],
   )).rows[0];
-  if(reservation?.id)await releaseTokenReservation(db,reservation.id,'scheduled_note_cancelled');
+  if(reservation?.id){
+    await releaseTokenReservation(db,reservation.id,'scheduled_note_cancelled');
+    await restoreFoundingFreeSendForReservation(db,reservation).catch(()=>{});
+  }
   const updated=(await db.query(
     `UPDATE public.scheduled_love_notes SET status='cancelled',updated_at=now()
       WHERE id=$1::uuid AND user_id=$2::uuid RETURNING id,status,updated_at`,
