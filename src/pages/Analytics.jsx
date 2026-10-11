@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { getAdminAnalytics } from '../lib/adminService';
 import { touchAdminMfa } from '../lib/adminMfaService';
-import { featureForPath, prettifyRoute, controlTypeName } from '../lib/interactionAnalytics';
+import { featureForPath, prettifyRoute, controlTypeName, clickAudienceLabel } from '../lib/interactionAnalytics';
 import { ADMIN_IDLE_LIMIT_MS, isIdleFor } from '../lib/activityGuard';
 
 const AUTO_REFRESH_MS = 15 * 60 * 1000;
@@ -363,7 +363,7 @@ export default function Analytics() {
             <div className="overflow-auto" style={{ maxHeight: 561 }}>
               <table className="min-w-full text-sm">
                 <thead><tr className="border-b border-slate-200 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Time</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Audience</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Source</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Page</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Clicked</th><th className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2">Feature / Destination</th></tr></thead>
-                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{row.actor_type==='anonymous'?'Anonymous':(row.access_type==='subscribed'?'Subscribed':'Registered free')}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{clickDisplayName(row)}</td><td className="px-3 py-3">{clickFeatureDestination(row)}</td></tr>)}</tbody>
+                <tbody className="divide-y divide-slate-100">{(data?.recentClicks||[]).map((row,index)=><tr key={`${row.created_at}-${index}`}><td className="whitespace-nowrap px-3 py-3">{shortDateTime(row.created_at)}</td><td className="px-3 py-3">{clickAudienceLabel(row)}</td><td className="px-3 py-3">{row.traffic_source||'Unclassified'}</td><td className="px-3 py-3 font-medium">{row.route||'—'}</td><td className="px-3 py-3 font-semibold">{clickDisplayName(row)}</td><td className="px-3 py-3">{clickFeatureDestination(row)}</td></tr>)}</tbody>
               </table>
               {!(data?.recentClicks||[]).length && <div className="py-8 text-center text-sm text-slate-500">No non-admin clicks have been recorded in this 30-day window yet.</div>}
             </div>
