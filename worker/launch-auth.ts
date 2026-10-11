@@ -156,7 +156,7 @@ function registrationContext(body) {
   // Age range (owner, 2026-10-11): sign-up collects a RANGE, never a
   // birthdate. Invalid or missing values store null (older/resumed flows
   // keep working); the forms require a selection client-side.
-  const AGE_RANGES = ['18-29', '30-49', '50-59', '60+'];
+  const AGE_RANGES = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
   const ageRangeRaw = clean(body.ageRange, 10, false);
   const ageRange = AGE_RANGES.includes(ageRangeRaw) ? ageRangeRaw : null;
   const marketingEmailOptIn = body.marketingEmailOptIn === true;
