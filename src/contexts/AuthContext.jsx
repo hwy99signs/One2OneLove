@@ -12,6 +12,7 @@ import {
   onResumeFromIdle,
   USER_IDLE_LIMIT_MS,
 } from '@/lib/activityGuard';
+import { setAnalyticsIdentity } from '@/lib/interactionAnalytics';
 
 const AuthContext = createContext(null);
 
@@ -66,6 +67,16 @@ export function AuthProvider({ children }) {
       return undefined;
     }
   };
+
+  // Click identity (2026-10-10): publish the signed-in member to the click
+  // tracker so member clicks carry their username into the admin feeds;
+  // signing out clears it, and guests publish nothing. The profile spread
+  // in mergeUser carries username when /api/profile provides one; when it
+  // does not, the id alone is published and the server fills the username
+  // from the account record.
+  useEffect(() => {
+    setAnalyticsIdentity(user ? { userId: user.id, username: user.username || null } : null);
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
