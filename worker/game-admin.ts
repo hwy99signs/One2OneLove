@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { ensureGameEconomySchema,adminGrantGameCredit,gameEconomyAdminSummary,publicGameRegistry } from './game-economy';
+import { getVerifiedAdminMfaIdentity } from './admin-mfa';
 
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
@@ -31,19 +32,32 @@ function normalizePromotion(input){
   };
 }
 
+async function adminIdentity(db,userId){
+  const result=await db.query(
+    `SELECT id,email,name,role,COALESCE(banned,false) AS banned
+       FROM neon_auth."user"
+      WHERE id=$1::uuid`,[userId]);
+  const row=result.rows[0]||null;
+  if(!row||row.role!=='admin'||row.banned)return null;
+  return row;
+}
+
 export async function handleGameAdminRequest(request,env,url){
   if(!url.pathname.startsWith('/api/admin/game-'))return null;
   const auth=await adminSession(request,env);
-  if(!auth)return fail('Administrator access required.',403,'admin_required');
+  const mfaFallback=auth?null:await getVerifiedAdminMfaIdentity(request,env);
+  if(!auth&&!mfaFallback)return fail('Administrator access required.',403,'admin_required');
   try{
     return await withDb(env,async db=>{
+      const admin=mfaFallback?.admin||await adminIdentity(db,auth.user.id);
+      if(!admin)return fail('Administrator access required.',403,'admin_required');
       await ensureGameEconomySchema(db);
       if(url.pathname==='/api/admin/game-economy'&&request.method==='GET'){
         return json({ok:true,...await gameEconomyAdminSummary(db),registry:publicGameRegistry()});
       }
       if(url.pathname==='/api/admin/game-credits/grant'&&request.method==='POST'){
         const input=await request.json().catch(()=>({}));
-        return json({ok:true,gameCredit:await adminGrantGameCredit(db,auth.user.id,input)},201);
+        return json({ok:true,gameCredit:await adminGrantGameCredit(db,admin.id,input)},201);
       }
       if(url.pathname==='/api/admin/game-promotions'&&request.method==='GET'){
         const rows=(await db.query('SELECT * FROM public.o2ol_game_promotions ORDER BY created_at DESC')).rows;
@@ -55,7 +69,7 @@ export async function handleGameAdminRequest(request,env,url){
         const row=(await db.query(`INSERT INTO public.o2ol_game_promotions
           (name,kind,percent,grant_cents,grant_expiry_days,starts_at,ends_at,recurrence,recurrence_day,timezone_basis,games,audience,active,created_by)
           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'member_local',$10::jsonb,$11,$12,$13)
-          RETURNING *`,[p.name,p.kind,p.percent,p.grantCents,p.grantExpiryDays,p.startsAt,p.endsAt,p.recurrence,p.recurrenceDay,JSON.stringify(p.games),p.audience,p.active,String(auth.user.id)])).rows[0];
+          RETURNING *`,[p.name,p.kind,p.percent,p.grantCents,p.grantExpiryDays,p.startsAt,p.endsAt,p.recurrence,p.recurrenceDay,JSON.stringify(p.games),p.audience,p.active,String(admin.id)])).rows[0];
         return json({ok:true,promotion:row},201);
       }
       const match=url.pathname.match(/^\/api\/admin\/game-promotions\/([0-9a-f-]{36})$/i);

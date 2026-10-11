@@ -144,8 +144,8 @@ export default function CooperativeGames() {
 
   const availableGames = [
     { id:'like_minded', image:'/game-cards/card-like-minded.jpg', name:t.likeMindedName, description:t.likeMindedDesc, type:'connection', difficulty:'easy-to-deep', icon:'🧠', link:'LikeMinded', ...gamePrice('like_minded'), playLabel:gamePrice('like_minded').free?'Play FREE':t.startGame, accessLabel:gamePrice('like_minded').free?'FREE TODAY':t.tokenAccess, category:'brain' },
-    { id:'what_should_they_do', image:'/game-cards/card-what-should.jpg', name:t.whatShouldName, description:t.whatShouldDesc, type:'social-voting', difficulty:'easy', icon:'🗳️', link:'WhatShouldTheyDo', ...gamePrice('what_should_they_do'), playLabel:gamePrice('what_should_they_do').free?'Play FREE':t.startGame, accessLabel:gamePrice('what_should_they_do').free?'FREE TODAY':t.tokenAccess, category:'brain' },
     { id:'scrabluko', image:'/game-cards/card-scrabluko.jpg', name:t.scrablukoName, description:t.scrablukoDesc, type:'word', difficulty:'easy-to-difficult', icon:'🔤', link:'Scrabluko', ...gamePrice('scrabluko'), playLabel:gamePrice('scrabluko').free?'Play FREE':t.startGame, accessLabel:gamePrice('scrabluko').free?'FREE TODAY':t.tokenAccess, category:'brain' },
+    { id:'what_should_they_do', image:'/game-cards/card-what-should.jpg', name:t.whatShouldName, description:t.whatShouldDesc, type:'social-voting', difficulty:'easy', icon:'🗳️', link:'WhatShouldTheyDo', ...gamePrice('what_should_they_do'), playLabel:gamePrice('what_should_they_do').free?'Play FREE':t.startGame, accessLabel:gamePrice('what_should_they_do').free?'FREE TODAY':t.tokenAccess, category:'brain' },
     { id:'scratch', image:'/game-cards/card-love-scratch.jpg', name:t.scratchName, description:t.scratchDesc, type:'conversation', difficulty:'easy', icon:'💗', link:'ScratchGame', ...gamePrice('scratch'), playLabel:gamePrice('scratch').free?'Play FREE':t.startGame, accessLabel:gamePrice('scratch').free?'FREE TODAY':t.tokenAccess, category:'arcade' },
     { id:'pests', image:'/game-cards/card-pests.jpg', name:t.pestsName, description:t.pestsDesc, type:'arcade', difficulty:'easy-to-difficult', icon:'🐜', link:'Pests', ...gamePrice('pests'), playLabel:gamePrice('pests').free?'Play FREE':t.startGame, accessLabel:gamePrice('pests').free?'FREE TODAY':t.tokenAccess, category:'arcade' }
   ];
@@ -183,7 +183,7 @@ export default function CooperativeGames() {
 
         {temporaryFreeGames && (
           <div className="mb-10 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-6 py-4 text-center text-lg font-black text-white shadow-lg">
-            🎉 {activePromotion?.name ? `${activePromotion.name} — all games FREE today. No credits used.` : t.freeBanner}
+            🎉 {activePromotion?.name ? `${activePromotion.name} — every game is FREE today. No credits used.` : t.freeBanner}
           </div>
         )}
 

@@ -88,23 +88,27 @@ export default [
     "Credit ist vorausbezahltes, in US-Dollar geführtes Serviceguthaben der Plattform für ausgewiesene nutzungsabhängige Dienste, etwa KI-Antworten, von One2OneLove zugestellte SMS, bestimmte Premium-Spiele oder andere Funktionen mit ausgewiesenen Credit-Kosten. Guthaben werden in US-Dollar und Cent im Format $0.00 angezeigt; $1.00 Credit entspricht $1.00 One2OneLove-Servicewert, ohne Punkte- oder Token-Umrechnung. Der Kauf von Credit ist optional. Credit wird nur für die angezeigte Aktion abgezogen; schlägt eine kostenpflichtige Aktion fehl und wird der Dienst nicht erbracht, kann reservierter Credit zurückgegeben werden. Credit-Pakete sind keine Bankeinlagen, Währung oder Investitionen; sie haben außerhalb von One2OneLove keinen Barwert und können nicht zwischen Nutzern übertragen werden, sofern One2OneLove diese Funktion nicht ausdrücklich aktiviert. Automatische Aufladung ist optional und kann deaktiviert werden. Wenn sie aktiviert ist, verwendet sie das gewählte Paket und den gewählten Guthabenschwellenwert und belastet die über den Zahlungsdienst autorisierte Zahlungsmethode. Das Teilen über eigene Apps bleibt kostenlos, sofern keine separate Gebühr klar offengelegt wird. Benutzerdefinierte SMS-Liebesnachrichten bleiben auf 171 Zeichen begrenzt; die One2OneLove-SMS-Fußzeile kann das Symbol ❤️ enthalten."
   ],
   [
-    "23. Käufe, Rückerstattungen, Automatische Aufladung und Frühere Abonnements",
+    "23. Spielguthaben",
+    "Spielguthaben ist eine Werbefunktion von One2OneLove. Spielguthaben darf nur zum Spielen von Spielen auf One2OneLove verwendet werden. Spielguthaben hat keinen Barwert, ist kein Geld und kann nicht ausgezahlt, übertragen, umgetauscht oder gegen Geld erstattet werden. Werbe-Spielguthaben kann ein Ablaufdatum haben, nach dem es verfällt. One2OneLove kann das Spielguthaben-Programm jederzeit ändern oder einstellen."
+  ],
+  [
+    "24. Käufe, Rückerstattungen, Automatische Aufladung und Frühere Abonnements",
     "Credit-Käufe und andere Einmalkäufe werden mit dem vor Bestätigung angezeigten Betrag berechnet. Automatische Aufladungen erfolgen nur, wenn sie aktiviert wurden und das Guthaben den konfigurierten Schwellenwert erreicht. Sie können die automatische Aufladung für zukünftige Belastungen jederzeit deaktivieren. Sofern gesetzlich nichts anderes vorgeschrieben oder ausdrücklich angegeben ist, ist Credit, der bereits für einen abgeschlossenen Dienst verbraucht wurde, nicht erstattungsfähig. Die Behandlung ungenutzten Credits, Rückerstattungen, Rückbuchungen und Zahlungsstreitigkeiten richtet sich nach anwendbarem Recht und den beim Kauf angezeigten Bedingungen. Historische Premiere-, Exclusive-, Test- oder Gründungsabonnement-Datensätze können für Buchhaltung, Abzeichen, Abgleich oder Migration aufbewahrt werden, aber diese früheren Tarifnamen gewähren nach dem Credit-Modell nicht allein den aktuellen Funktionszugang."
   ],
   [
-    "24. Änderungen dieser Bedingungen",
+    "25. Änderungen dieser Bedingungen",
     "Wir können diese Bedingungen aktualisieren, wenn sich die Plattform oder rechtliche, betriebliche oder sicherheitsbezogene Anforderungen ändern. Die aktuelle Version wird innerhalb von One2OneLove veröffentlicht. Die fortgesetzte Nutzung nach Inkrafttreten einer aktualisierten Version gilt, soweit gesetzlich zulässig, als Zustimmung zu den aktualisierten Bedingungen."
   ],
   [
-    "25. Anwendbares Recht",
+    "26. Anwendbares Recht",
     "Diese Bedingungen unterliegen dem anwendbaren Recht der Vereinigten Staaten und, soweit einschlägig, den Gesetzen des Bundesstaates Texas, ohne Berücksichtigung kollisionsrechtlicher Grundsätze, sofern nicht zwingend ein anderes Recht anzuwenden ist."
   ],
   [
-    "26. Salvatorische Klausel",
+    "27. Salvatorische Klausel",
     "Sollte eine Bestimmung dieser Bedingungen nicht durchsetzbar sein, bleiben die übrigen Bestimmungen im größtmöglichen gesetzlich zulässigen Umfang wirksam."
   ],
   [
-    "27. Kontakt",
+    "28. Kontakt",
     "Fragen zu diesen Bedingungen oder zur Plattform können an support@one2onelove.com gesendet werden."
   ]
 ];
