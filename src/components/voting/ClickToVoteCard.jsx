@@ -211,22 +211,27 @@ export default function ClickToVoteCard({ language = 'en' }) {
   // in the widened site header on the homepage, as its own distinct row
   // directly under the locked header row — one slim band in the banner
   // gradient (purple to pink), framed by a clear gold outline. Inside
-  // it: the question line is center-justified, the choice pills A-D sit
-  // centered on their own row, and the comment box + Next Question tab
-  // share the row beneath. Rows wrap gracefully on narrow screens.
-  // Presentation only — every handler, the copy tables, and the i18n
-  // wiring above are unchanged.
+  // it, per the owner's annotated screenshot: the question line is a
+  // three-zone row — the CLICK-TO-VOTE label at the far left, the
+  // question genuinely centered (equal-flex zones either side), an
+  // empty spacer at the right; the pills row is also three zones — a
+  // spacer, the A-D pills centered, and the "Question n of N" counter
+  // at the far right; the comment box + Next Question tab share the row
+  // beneath. Spacing is kept tight so the band hugs its content (in the
+  // guest state the empty comment spacer collapses entirely). Rows wrap
+  // gracefully on narrow screens. Presentation only — every handler,
+  // the copy tables, and the i18n wiring above are unchanged.
   if (loading) {
     return (
       <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
-        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-4 py-2 text-center text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
+        <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-4 py-1.5 text-center text-[13px] font-semibold text-[#f7f2e7] shadow-md">{t.loading}</div>
       </section>
     );
   }
 
   return (
     <section className="mx-auto w-full max-w-[1400px] px-3 pb-3 sm:px-5" aria-label={t.eyebrow}>
-      <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-3 py-2 shadow-md sm:px-4">
+      <div className="w-full rounded-xl border-2 border-amber-300/80 bg-[linear-gradient(90deg,#a23be6_0%,#c630ca_55%,#db2a6e_100%)] px-3 py-1.5 shadow-md sm:px-4">
         {allVoted ? (
           <div className="flex flex-col items-center gap-2 text-center">
             <div>
@@ -238,14 +243,21 @@ export default function ClickToVoteCard({ language = 'en' }) {
           </div>
         ) : question && (
           <>
-            <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-0.5 text-center">
-              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</span>
-              <h2 className="min-w-0 text-[15px] font-black leading-snug tracking-tight text-[#f7f2e7] sm:text-base">{pick(question.question)}</h2>
-              <span className="text-[11px] font-bold text-[#f7f2e7]/60">{t.questionOf(index + 1, questions.length)}</span>
+            {/* Question line — three zones (owner's annotated
+                screenshot): the label at the far left, the question
+                genuinely centered between equal-flex zones, and an
+                empty spacer at the far right. */}
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <span className="flex-1 whitespace-nowrap text-left text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">🗳️ {t.eyebrow}</span>
+              <h2 className="min-w-0 text-center text-[15px] font-black leading-snug tracking-tight text-[#f7f2e7] sm:text-base">{pick(question.question)}</h2>
+              <span className="flex-1" aria-hidden="true" />
             </div>
 
-            {/* Pills A-D: center-justified as a group on their own row. */}
-            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
+            {/* Pills row — three zones: a spacer, the A-D pills centered
+                as a group, and the "Question n of N" counter far right. */}
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="flex-1" aria-hidden="true" />
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
               {question.choices.map((choice, i) => {
                 const selected = myChoice === choice.key || pendingChoice === choice.key;
                 return (
@@ -262,11 +274,15 @@ export default function ClickToVoteCard({ language = 'en' }) {
                   </button>
                 );
               })}
+              </div>
+              <span className="flex-1 whitespace-nowrap text-right text-[11px] font-bold text-[#f7f2e7]/60">{t.questionOf(index + 1, questions.length)}</span>
             </div>
 
             {/* Row beneath: the comment box (flex-grows) and the Next
-                Question tab at its right end. */}
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                Question tab at its right end. In the guest state there
+                is no input, so the spacer collapses and the row is only
+                as tall as the Next tab — no dead space. */}
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
               {isMember && !flash ? (
                 <input
                   value={comment}
@@ -277,16 +293,16 @@ export default function ClickToVoteCard({ language = 'en' }) {
               ) : flash ? (
                 <p className="min-w-[10rem] flex-1 text-[13px] font-black text-amber-300" role="status">{flash}</p>
               ) : (
-                <span className="min-w-[10rem] flex-1" />
+                <span className="flex-1" aria-hidden="true" />
               )}
               <button type="button" onClick={handleNext} className="flex-none rounded-t-md rounded-b-lg border border-amber-400/70 bg-gradient-to-br from-[#8e2fc9] via-[#ad2a93] to-[#c2255c] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[#f7f2e7] shadow transition hover:brightness-110">
                 {t.next} →
               </button>
             </div>
-            {error && <p className="mt-1.5 text-center text-[13px] font-bold text-red-300" role="alert">{error}</p>}
+            {error && <p className="mt-1 text-center text-[13px] font-bold text-red-300" role="alert">{error}</p>}
 
             {!isMember && pendingChoice && (
-              <div className="mt-1.5 flex flex-col gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-1 flex flex-col gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[13px] font-black text-[#f7f2e7]">{t.joinTitle}</p>
                   <p className="text-[13px] text-[#f7f2e7]/75">{t.joinBody}</p>
@@ -298,7 +314,7 @@ export default function ClickToVoteCard({ language = 'en' }) {
               </div>
             )}
             {isMember && pendingChoice && !myChoice && (
-              <p className="mt-1.5 text-center text-[13px] font-bold text-amber-300">{t.castNow}</p>
+              <p className="mt-1 text-center text-[13px] font-bold text-amber-300">{t.castNow}</p>
             )}
           </>
         )}
