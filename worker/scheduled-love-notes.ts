@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { consumeTokenReservation, releaseTokenReservation } from './o2ol-tokens';
+import { restoreFoundingFreeSendForReservation } from './founding-perks';
 import { countCharacters, recordCostEvent } from './o2ol-cost-ledger';
 import { smsBodyFor } from './credit-config';
 import { isRecipientOptedOut } from './love-note-credit';
@@ -158,7 +159,10 @@ async function cancelIneligibleDue(db) {
   let cancelled=0;
   for(const note of due.rows){
     const reservation=await tokenReservationForScheduledNote(db,note.id);
-    if(reservation?.id)await releaseTokenReservation(db,reservation.id,'member_no_longer_verified');
+    if(reservation?.id){
+      await releaseTokenReservation(db,reservation.id,'member_no_longer_verified');
+      await restoreFoundingFreeSendForReservation(db,reservation).catch(()=>{});
+    }
     const result=await db.query(
       `UPDATE public.scheduled_love_notes
           SET status='cancelled',failure_reason='Account is no longer eligible for verified-member SMS delivery.',updated_at=now()
@@ -246,7 +250,10 @@ async function markFailed(db,note,error){
   );
   if(!retry){
     const reservation=await tokenReservationForScheduledNote(db,note.id);
-    if(reservation?.id)await releaseTokenReservation(db,reservation.id,'scheduled_sms_final_failure');
+    if(reservation?.id){
+      await releaseTokenReservation(db,reservation.id,'scheduled_sms_final_failure');
+      await restoreFoundingFreeSendForReservation(db,reservation).catch(()=>{});
+    }
   }
   return {retry};
 }
@@ -264,7 +271,10 @@ export async function dispatchDueScheduledLoveNotes(env) {
       // before the opt-out arrived. The Credit reservation is released.
       if(await isRecipientOptedOut(db,note.recipient_phone).catch(()=>false)){
         const reservation=await tokenReservationForScheduledNote(db,note.id);
-        if(reservation?.id)await releaseTokenReservation(db,reservation.id,'recipient_opted_out').catch(()=>{});
+        if(reservation?.id){
+          await releaseTokenReservation(db,reservation.id,'recipient_opted_out').catch(()=>{});
+          await restoreFoundingFreeSendForReservation(db,reservation).catch(()=>{});
+        }
         await db.query(
           `UPDATE public.scheduled_love_notes
               SET status='cancelled',failure_reason='Recipient opted out of text messages (STOP).',updated_at=now()
