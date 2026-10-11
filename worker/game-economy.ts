@@ -19,7 +19,7 @@ export async function ensureGameEconomySchema(db){
   await ddl(db,`CREATE TABLE IF NOT EXISTS public.o2ol_game_credit_ledger(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    kind text NOT NULL CHECK(kind IN ('signup_bonus','admin_grant','promo_grant','spend','expire')),
+    kind text NOT NULL CHECK(kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly','spend','expire')),
     amount_cents integer NOT NULL,
     remaining_cents integer,
     game text,
@@ -88,7 +88,7 @@ export async function grantSignupGameCreditInTx(db,userId){
 
 async function expireGameCreditsInTx(db,userId){
   const rows=(await db.query(`SELECT id,remaining_cents FROM public.o2ol_game_credit_ledger
-    WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant')
+    WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly')
       AND COALESCE(remaining_cents,0)>0 AND expires_at IS NOT NULL AND expires_at<=now()
     ORDER BY expires_at ASC,created_at ASC FOR UPDATE`,[userId])).rows;
   for(const row of rows){
@@ -111,13 +111,13 @@ export async function gameCreditWallet(db,userId){
       COALESCE(sum(remaining_cents),0)::int AS balance_cents,
       min(expires_at) FILTER (WHERE remaining_cents>0 AND expires_at IS NOT NULL) AS next_expiry_at
       FROM public.o2ol_game_credit_ledger
-      WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant')
+      WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly')
         AND COALESCE(remaining_cents,0)>0 AND (expires_at IS NULL OR expires_at>now())`,[userId])).rows[0]||{};
     let nextExpiryCents=0;
     if(row.next_expiry_at){
       const n=(await db.query(`SELECT COALESCE(sum(remaining_cents),0)::int AS cents
         FROM public.o2ol_game_credit_ledger WHERE user_id=$1::uuid
-        AND kind IN ('signup_bonus','admin_grant','promo_grant') AND remaining_cents>0 AND expires_at=$2`,
+        AND kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly') AND remaining_cents>0 AND expires_at=$2`,
         [userId,row.next_expiry_at])).rows[0];
       nextExpiryCents=Number(n?.cents||0);
     }
@@ -187,7 +187,7 @@ async function allocateGameCreditInTx(db,userId,amount,game,idempotencyKey){
   if(!remaining)return 0;
   await expireGameCreditsInTx(db,userId);
   const grants=(await db.query(`SELECT id,remaining_cents FROM public.o2ol_game_credit_ledger
-    WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant')
+    WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly')
       AND COALESCE(remaining_cents,0)>0 AND (expires_at IS NULL OR expires_at>now())
     ORDER BY expires_at ASC NULLS LAST,created_at ASC FOR UPDATE`,[userId])).rows;
   for(const grant of grants){
@@ -247,7 +247,7 @@ export async function chargeGameAndCreatePass(db,userId,game,requestId){
     let gameCreditCents=0,creditCents=0,paid=null;
     if(price>0){
       const gc=(await db.query(`SELECT COALESCE(sum(remaining_cents),0)::int AS cents FROM public.o2ol_game_credit_ledger
-        WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant') AND remaining_cents>0 AND (expires_at IS NULL OR expires_at>now())`,[userId])).rows[0];
+        WHERE user_id=$1::uuid AND kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly') AND remaining_cents>0 AND (expires_at IS NULL OR expires_at>now())`,[userId])).rows[0];
       const gcAvail=Number(gc?.cents||0);
       const paidAvail=await paidBalanceInTx(db,userId);
       if(gcAvail+paidAvail<price)throw Object.assign(new Error('Add Credit To Access'),{status:402,code:'tokens_required',balance:gcAvail+paidAvail,required:price,shortfall:price-gcAvail-paidAvail,gameCreditBalance:gcAvail,creditBalance:paidAvail,featureCode:def.chargeFeatureCode});
@@ -307,14 +307,14 @@ export async function adminGrantGameCredit(db,adminId,input){
 export async function gameEconomyAdminSummary(db){
   await ensureGameEconomySchema(db);
   const lapsed=(await db.query(`SELECT DISTINCT user_id FROM public.o2ol_game_credit_ledger
-    WHERE kind IN ('signup_bonus','admin_grant','promo_grant') AND COALESCE(remaining_cents,0)>0
+    WHERE kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly') AND COALESCE(remaining_cents,0)>0
       AND expires_at IS NOT NULL AND expires_at<=now() LIMIT 1000`)).rows;
   for(const row of lapsed){ await expireGameCreditsInTx(db,row.user_id); }
   const totals=(await db.query(`SELECT
-    COALESCE(sum(amount_cents) FILTER (WHERE kind IN ('signup_bonus','admin_grant','promo_grant')),0)::int AS issued,
+    COALESCE(sum(amount_cents) FILTER (WHERE kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly')),0)::int AS issued,
     COALESCE(-sum(amount_cents) FILTER (WHERE kind='spend'),0)::int AS used,
     COALESCE(-sum(amount_cents) FILTER (WHERE kind='expire'),0)::int AS expired,
-    COALESCE(sum(remaining_cents) FILTER (WHERE kind IN ('signup_bonus','admin_grant','promo_grant') AND (expires_at IS NULL OR expires_at>now())),0)::int AS remaining
+    COALESCE(sum(remaining_cents) FILTER (WHERE kind IN ('signup_bonus','admin_grant','promo_grant','founding_monthly') AND (expires_at IS NULL OR expires_at>now())),0)::int AS remaining
     FROM public.o2ol_game_credit_ledger`)).rows[0];
   const promotions=(await db.query(`SELECT p.*,
     count(DISTINCT a.user_id)::int AS players,count(a.id)::int AS plays
