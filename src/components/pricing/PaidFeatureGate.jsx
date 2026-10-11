@@ -11,10 +11,16 @@ export default function PaidFeatureGate({ featureCode, children }) {
   const [error,setError]=useState(''),[balance,setBalance]=useState(null),[serverPrice,setServerPrice]=useState(null);
   const refresh=async()=>{
     if(!isAuthenticated||!user?.id){ setReady(true); return; }
+    // Fetch unlock state and wallet independently: one failing must not cost
+    // the other, or the unlock dialog loses the member's balance and price.
     try{
-      const [u,w]=await Promise.all([listTokenUnlocks(featureCode),getTokenWallet()]);
+      const u=await listTokenUnlocks(featureCode);
       const has=(u?.unlocks||[]).some(x=>String(x.content_key)==='feature');
-      setUnlocked(has); setBalance(Number(w?.wallet?.balance||0));
+      setUnlocked(has);
+    }catch(_){}
+    try{
+      const w=await getTokenWallet();
+      setBalance(Number(w?.wallet?.balance||0));
       const row=(w?.featurePrices||[]).find(x=>x.feature_code===featureCode);
       setServerPrice(row?Number(row.token_cost):null);
     }catch(_){}

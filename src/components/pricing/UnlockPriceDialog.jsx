@@ -34,6 +34,11 @@ export default function UnlockPriceDialog({
             <WalletCards className="h-4 w-4"/>Credit balance: {'$'+(Number(balanceCents)/100).toFixed(2)}
           </div>
         )}
+        {!freeToday&&balanceCents==null&&(
+          <div className="mx-auto mt-2 flex w-fit items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-black text-slate-700">
+            <WalletCards className="h-4 w-4"/>Credit balance: sign in to see yours
+          </div>
+        )}
         {error&&!shortOnCredit&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{error}</div>}
         <Button
           type="button"
