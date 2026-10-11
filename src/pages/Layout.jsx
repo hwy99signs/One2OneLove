@@ -513,7 +513,7 @@ function LanguageContent({ children, currentPageName }) {
           </nav>
           
           {/* Mobile header controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+          <div className="relative flex items-center gap-1.5 sm:gap-2 lg:hidden">
             <Select value={currentLanguage} onValueChange={changeLanguage}>
               <SelectTrigger aria-label={t.nav.language} className="w-[76px] sm:w-[112px] rounded-xl bg-white/15 border border-white/30 px-2.5 sm:px-3 py-2 text-yellow-300 h-auto font-black text-sm sm:text-base">
                 <SelectValue placeholder={t.nav.language} />
@@ -540,7 +540,6 @@ function LanguageContent({ children, currentPageName }) {
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-          </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
@@ -548,7 +547,7 @@ function LanguageContent({ children, currentPageName }) {
               id="responsive-navigation-menu"
               ref={mobileMenuRef}
               onMouseLeave={closeResponsiveMenuOnHoverAway}
-              className={`lg:hidden absolute right-2 sm:right-4 top-[calc(100%+0.5rem)] z-[70] w-[240px] sm:w-[260px] max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-2.5 py-2.5 shadow-2xl max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain`}
+              className={`lg:hidden absolute right-0 top-[calc(100%+0.5rem)] z-[70] w-[240px] sm:w-[260px] max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 ${isMyMatchIQPage ? 'bg-gradient-to-br from-[#250334] via-[#5d146f] to-[#1b2c72]' : 'bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600'} px-2.5 py-2.5 shadow-2xl max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain`}
             >
               <nav className="flex flex-col gap-1 text-[15px] leading-5">
                 {isMyMatchIQPage && (
@@ -707,6 +706,7 @@ function LanguageContent({ children, currentPageName }) {
               </nav>
             </div>
           )}
+          </div>
         </div>
 
         {/* Click-to-Vote row (owner directive, 2026-10-10): on the
