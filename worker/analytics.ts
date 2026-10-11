@@ -75,11 +75,20 @@ async function analytics(db, env) {
       EXISTS (
         SELECT 1 FROM information_schema.columns
          WHERE table_schema='public' AND table_name='interaction_events' AND column_name='traffic_source'
-      ) AS traffic_source_ready
+      ) AS traffic_source_ready,
+      EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema='public' AND table_name='interaction_events' AND column_name='username'
+      ) AS username_ready
   `);
   const interactionReady = Boolean(interactionSchema.rows[0]?.ready);
   const languageReady = Boolean(interactionSchema.rows[0]?.language_ready);
   const trafficSourceReady = Boolean(interactionSchema.rows[0]?.traffic_source_ready);
+  // The username snapshot column arrives with the click-identity ingest
+  // (lazy ALTER in worker/feature-usage.ts). Until the first post-deploy
+  // event lands it, the recent-clicks query falls back to the live
+  // account record so the feed never breaks.
+  const usernameReady = Boolean(interactionSchema.rows[0]?.username_ready);
 
   const zeroSiteUsage = () => db.query(`
     SELECT to_char(day,'YYYY-MM-DD') AS date,
@@ -318,9 +327,11 @@ async function analytics(db, env) {
   const recentClicksPromise = interactionReady ? db.query(`
     WITH ${SWEEP_CTES}
     SELECT e.created_at,e.route,e.feature,e.actor_type,e.access_type,
-           e.traffic_source,e.language,e.control_type,e.control_key,e.destination
+           e.traffic_source,e.language,e.control_type,e.control_key,e.destination,
+           e.user_id,${usernameReady ? 'COALESCE(e.username,p.username)' : 'p.username'} AS username
       FROM public.interaction_events e
       LEFT JOIN neon_auth."user" a ON a.id=e.user_id
+      LEFT JOIN public.users p ON p.id=e.user_id
      WHERE e.event_type='click'
        AND e.created_at>=GREATEST(${windowStartSql}, ${baselineSql})
        AND (e.user_id IS NULL OR COALESCE(a.role,'user') <> 'admin')${SWEEP_EVENT_FILTER}
