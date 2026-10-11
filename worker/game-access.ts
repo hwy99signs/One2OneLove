@@ -32,7 +32,13 @@ async function ensureScratchTable(db){
 async function verifiedMember(db,userId){
   const row=(await db.query(`SELECT COALESCE(is_active,true) AS is_active,COALESCE(phone_number_verified,false) AS phone_verified FROM public.users WHERE id=$1::uuid LIMIT 1`,[userId])).rows[0];
   if(!row||row.is_active===false)throw Object.assign(new Error('This account is not active.'),{status:403,code:'account_inactive'});
-  if(row.phone_verified!==true)throw Object.assign(new Error('Phone verification is required.'),{status:428,code:'phone_verification_required'});
+  if(row.phone_verified!==true){
+    // Administrators retain QA access without the member phone requirement —
+    // the same admin treatment as game-file serving (below) and the API
+    // entitlement gate.
+    const roleRow=(await db.query(`SELECT role FROM neon_auth."user" WHERE id=$1::uuid LIMIT 1`,[userId])).rows[0];
+    if(roleRow?.role!=='admin')throw Object.assign(new Error('Phone verification is required.'),{status:428,code:'phone_verification_required'});
+  }
 }
 async function activePass(db,userId,game){
   await ensureGameEconomySchema(db);
