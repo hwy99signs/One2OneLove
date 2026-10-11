@@ -77,10 +77,10 @@ export default function O2OLStudioEpisodes(){
   return <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-12">
     <section className="mx-auto max-w-6xl">
       <Link to="/O2OLStudio" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black hover:bg-white/15"><ArrowLeft className="h-4 w-4"/>{t.back}</Link>
-      <div className="mt-6 rounded-[2rem] border border-fuchsia-300/25 bg-[radial-gradient(circle_at_12%_0%,rgba(236,72,153,0.2),transparent_30%),radial-gradient(circle_at_88%_10%,rgba(59,130,246,0.2),transparent_28%),linear-gradient(145deg,#090514,#10163a)] p-6 shadow-2xl sm:p-8">
+      <div className="mt-6 rounded-[2rem] border border-fuchsia-300/25 bg-[linear-gradient(90deg,#5d2ea8_0%,#9b10b2_18%,#a812c5_58%,#b01cc9_100%)] p-6 shadow-2xl sm:p-8">
         <div className="text-center"><Film className="mx-auto h-10 w-10 text-fuchsia-200"/><h1 className="mt-3 text-4xl font-black sm:text-5xl">{t.title}</h1><p className="mx-auto mt-3 max-w-2xl text-white/70">{t.sub}</p></div>
-        {loading?<div className="py-16 text-center text-white/60">{t.loading}</div>:
-        ordered.length===0?<div className="py-16 text-center text-white/60">{t.empty}</div>:
+        {loading?<div className="py-16 text-center text-white/70">{t.loading}</div>:
+        ordered.length===0?<div className="py-16 text-center text-white/70">{t.empty}</div>:
         <div className="mt-8 grid gap-5 md:grid-cols-2">
           {ordered.map(ep=>{
             const canOpen=Boolean(ep?.canWatch&&ep?.mediaPath);
