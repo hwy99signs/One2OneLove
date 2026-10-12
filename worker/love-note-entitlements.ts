@@ -8,6 +8,7 @@ import {
   assertSmsBodyWithinCap, isRecipientOptedOut, assertNotOptedOut,
   assertSendRateLimit,
 } from './love-note-credit';
+import { loveNoteAccessDecision } from './love-note-access.js';
 const CUSTOM_LOVE_NOTE_MAX_CHARACTERS = 171;
 
 const HEADERS = {
@@ -162,10 +163,9 @@ async function loveNoteWriteAccess(db, auth) {
        FROM public.users WHERE id=$1::uuid LIMIT 1`,
     [auth.user.id],
   );
-  const row=result.rows[0]||{};
-  if(row.is_active===false)return {allowed:false,reason:'account_inactive',message:'This One2OneLove account is not active.'};
-  if(row.phone_verified!==true)return {allowed:false,reason:'phone_verification_required',message:'Phone verification is required before sending Love Notes.'};
-  return {allowed:true,reason:'free_verified_member'};
+  // Decision lives in worker/love-note-access.js (pure + unit-tested):
+  // active account AND a verified phone on file, or the write is refused.
+  return loveNoteAccessDecision(result.rows[0]||{});
 }
 async function categoryPreferenceForDate(db, userId, quotaDate) {
   const quotaMonth=monthStart(quotaDate);
