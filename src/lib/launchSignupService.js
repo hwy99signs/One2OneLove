@@ -68,7 +68,14 @@ export async function registerLaunchUser({
       resumed: payload?.resumed === true,
     };
   } catch (error) {
-    return { success: false, error: error?.message || 'Account creation failed.' };
+    return {
+      success: false,
+      error: error?.message || 'Account creation failed.',
+      // Server error code (e.g. 'username_taken') so forms can pin the
+      // failure to the exact field instead of a generic message.
+      code: error?.payload?.error?.code || null,
+      status: error?.status || null,
+    };
   }
 }
 
