@@ -19,7 +19,7 @@ import AIPersonalizationModal from "../components/lovenotes/AIPersonalizationMod
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getAiConfig } from "@/lib/aiService";
-import { getTokenWallet, isTokensRequiredError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
+import { getTokenWallet, isTokensRequiredError, isPhoneVerificationError, tokenRequiredDetails, listTokenUnlocks, unlockTokenContent } from "@/lib/tokenService";
 import { apiRequest } from "@/lib/apiClient";
 
 const LOVE_NOTE_MAX_CHARACTERS = 171;
@@ -90,6 +90,7 @@ const translations = {
     signatureSignedAs: "Signed with your account first name:",
     signatureSourceNote: "Your note is signed with the first name on your account — not a username.",
     signatureFirstNameRequired: "You need a first name on your account before you can send Love Notes.",
+    phoneVerifyRequired: "Sending Love Notes needs a verified phone number on your account. Verify yours once — it is saved to your account — then come back and send.",
     signatureOverLimit: "With your name, this note is over the 201-character limit. Check Send Anonymous to send it without a signature.",
     shareViaSocial: "📱 Or Share Via Social Media",
     pleaseEnterPhone: "Please enter recipient phone number",
@@ -209,6 +210,7 @@ const translations = {
     signatureSignedAs: "Firmado con el primer nombre de tu cuenta:",
     signatureSourceNote: "Tu nota se firma con el primer nombre de tu cuenta, no con un nombre de usuario.",
     signatureFirstNameRequired: "Necesitas un primer nombre en tu cuenta antes de poder enviar Notas de Amor.",
+    phoneVerifyRequired: "Para enviar Notas de Amor necesitas un número de teléfono verificado en tu cuenta. Verifícalo una vez — queda guardado en tu cuenta — y luego vuelve para enviar.",
     signatureOverLimit: "Con tu nombre, esta nota supera el límite de 201 caracteres. Marca Enviar como anónimo para enviarla sin firma.",
     shareViaSocial: "📱 O Comparte por Redes Sociales",
     openingText: "Nota de Amor enviada por One2OneLove.",
@@ -330,6 +332,7 @@ const translations = {
     signatureSignedAs: "Signé avec le prénom de votre compte :",
     signatureSourceNote: "Votre note est signée avec le prénom figurant sur votre compte — pas un nom d’utilisateur.",
     signatureFirstNameRequired: "Vous devez avoir un prénom sur votre compte avant de pouvoir envoyer des Notes d’Amour.",
+    phoneVerifyRequired: "L’envoi de Notes d’Amour nécessite un numéro de téléphone vérifié sur votre compte. Vérifiez-le une fois — il est enregistré sur votre compte — puis revenez pour envoyer.",
     signatureOverLimit: "Avec votre nom, cette note dépasse la limite de 201 caractères. Cochez Envoyer anonymement pour l’envoyer sans signature.",
     shareViaSocial: "📱 Ou Partager via Réseaux Sociaux",
     openingText: "Note d’Amour envoyée par One2OneLove.",
@@ -451,6 +454,7 @@ const translations = {
     signatureSignedAs: "Firmato con il nome del tuo account:",
     signatureSourceNote: "La tua nota viene firmata con il nome presente sul tuo account, non con un nome utente.",
     signatureFirstNameRequired: "Devi avere un nome sul tuo account prima di poter inviare Note d’amore.",
+    phoneVerifyRequired: "Per inviare Note d’Amore serve un numero di telefono verificato sul tuo account. Verificalo una volta — resta salvato sul tuo account — poi torna per inviare.",
     signatureOverLimit: "Con il tuo nome, questa nota supera il limite di 201 caratteri. Seleziona Invia in forma anonima per inviarla senza firma.",
     shareViaSocial: "📱 O Condividi Tramite Social Media",
     openingText: "Nota d’Amore inviata da One2OneLove.",
@@ -572,6 +576,7 @@ const translations = {
     signatureSignedAs: "Signiert mit dem Vornamen deines Kontos:",
     signatureSourceNote: "Deine Botschaft wird mit dem Vornamen auf deinem Konto signiert — nicht mit einem Benutzernamen.",
     signatureFirstNameRequired: "Du brauchst einen Vornamen auf deinem Konto, bevor du Liebesbotschaften senden kannst.",
+    phoneVerifyRequired: "Zum Senden von Liebesbotschaften brauchen Sie eine bestätigte Telefonnummer auf Ihrem Konto. Bestätigen Sie sie einmal — sie wird gespeichert — und kommen Sie dann zum Senden zurück.",
     signatureOverLimit: "Mit deinem Namen überschreitet diese Botschaft das Limit von 201 Zeichen. Aktiviere Anonym senden, um sie ohne Signatur zu senden.",
     shareViaSocial: "📱 Oder Teilen über Social Media",
     openingText: "Liebesnachricht von One2OneLove gesendet.",
@@ -1027,6 +1032,17 @@ export default function LoveNotes() {
     toast.message(`Add Credit to send — this Love Note requires ${formatCredit(info.required)} Credit. Your Credit balance is ${formatCredit(info.balance)}.`);
     return true;
   };
+  const phoneVerificationError = (error) => {
+    if (!isPhoneVerificationError(error)) return false;
+    // The server refuses every Love Note send until the account carries a
+    // verified phone number (the sender's FROM number; see
+    // worker/love-note-access.js). Route through the existing phone
+    // verification door once — the number is saved to the account — and
+    // land back here so the send can be completed.
+    toast.message(t.phoneVerifyRequired);
+    window.location.assign(`/VerifyPhone?redirect=${encodeURIComponent('/LoveNotes')}`);
+    return true;
+  };
 
 
 
@@ -1074,7 +1090,7 @@ export default function LoveNotes() {
       setScheduleTime('');
     },
     onError: (error) => {
-      if (!tokenAccessError(error)) toast.error(error?.message || t.limitSMS);
+      if (!tokenAccessError(error) && !phoneVerificationError(error)) toast.error(error?.message || t.limitSMS);
     }
   });
 
@@ -1282,21 +1298,28 @@ export default function LoveNotes() {
         setSendModalNote(null);
         setRecipientPhone('');
       } catch (error) {
-        if (!tokenAccessError(error)) toast.error(error?.message || t.limitSMS);
+        if (!tokenAccessError(error) && !phoneVerificationError(error)) toast.error(error?.message || t.limitSMS);
       }
       return;
     }
 
     if (currentUser) {
-      await sendNoteMutation.mutateAsync({
-        note_title: note.title,
-        note_content: note.content,
-        recipient_type: limitCheckResult.type,
-        recipient_identifier: limitCheckResult.identifier,
-        social_platform: limitCheckResult.social_platform,
-        sent_date: new Date().toISOString(),
-        created_by: currentUser.id,
-      });
+      try {
+        await sendNoteMutation.mutateAsync({
+          note_title: note.title,
+          note_content: note.content,
+          recipient_type: limitCheckResult.type,
+          recipient_identifier: limitCheckResult.identifier,
+          social_platform: limitCheckResult.social_platform,
+          sent_date: new Date().toISOString(),
+          created_by: currentUser.id,
+        });
+      } catch (error) {
+        // Share records are Love Note writes too: the same verified-phone
+        // gate applies, so route to verification instead of dying silently.
+        if (phoneVerificationError(error)) return;
+        throw error;
+      }
       trackFeatureAction('Love Notes', `love-note-category:${note.category || 'uncategorized'}`);
     }
 
