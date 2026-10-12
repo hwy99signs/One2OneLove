@@ -106,6 +106,61 @@ function visitorId() {
   return storageId(window.localStorage, VISITOR_KEY);
 }
 
+// Owner/agent tracking exclusion (owner-directed, 2026-10-12): activity by
+// Eisenhower (admin) or by Muse / agent test accounts must NEVER be
+// recorded or counted — it was inflating the visitor numbers he reads as
+// business truth. Once any admin signs in on a browser, that browser is
+// excluded PERMANENTLY (localStorage survives sign-out), and any events
+// still sitting in the retry queue are dropped rather than delivered.
+// The same flag can be set deliberately by visiting any page with
+// ?o2ol_exclude=1. Server-side, worker/tracking-exclusion.js applies the
+// matching identity rule at ingest and in the admin reads, so an excluded
+// browser is dropped even if this client check is bypassed.
+const TRACKING_EXCLUDED_KEY = 'o2ol_tracking_excluded';
+let publishedIdentityIsAdmin = false;
+
+function readTrackingExcludedFlag() {
+  try {
+    return window.localStorage.getItem(TRACKING_EXCLUDED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeTrackingExcludedFlag() {
+  try {
+    window.localStorage.setItem(TRACKING_EXCLUDED_KEY, '1');
+  } catch {}
+}
+
+function urlRequestsTrackingExclusion() {
+  try {
+    return new URLSearchParams(window.location.search || '').get('o2ol_exclude') === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function isTrackingExcluded() {
+  if (typeof window === 'undefined') return false;
+  if (publishedIdentityIsAdmin) return true;
+  if (urlRequestsTrackingExclusion()) {
+    writeTrackingExcludedFlag();
+    return true;
+  }
+  return readTrackingExcludedFlag();
+}
+
+// AuthContext publishes the signed-in identity here on every auth change.
+// An admin sign-in permanently excludes this browser (see above); a
+// non-admin or signed-out identity NEVER clears an exclusion already set.
+export function setAnalyticsIdentity(identity) {
+  if (String(identity?.role || '').trim().toLowerCase() !== 'admin') return;
+  publishedIdentityIsAdmin = true;
+  writeTrackingExcludedFlag();
+  saveQueue([]);
+}
+
 function sessionId() {
   return storageId(window.sessionStorage, SESSION_KEY);
 }
@@ -250,6 +305,12 @@ function deliver(body, requeueOnFailure) {
 
 function flushQueue() {
   if (flushingQueue || typeof window === 'undefined') return;
+  // An excluded browser (owner / agent) never delivers queued events:
+  // drop whatever accumulated before the exclusion took effect.
+  if (isTrackingExcluded()) {
+    saveQueue([]);
+    return;
+  }
   const items = loadQueue();
   if (!items.length) return;
   flushingQueue = true;
@@ -259,6 +320,7 @@ function flushQueue() {
 }
 
 function send(payload) {
+  if (isTrackingExcluded()) return;
   if (isAdminAnalyticsSurface()) return;
   const body = {
     visitorId: visitorId(),
@@ -444,6 +506,7 @@ export function installPresenceHeartbeat() {
   presenceInstalled = true;
   const ping = () => {
     try {
+      if (isTrackingExcluded()) return;
       if (isAdminAnalyticsSurface(window.location.pathname)) return;
       fetch('/api/site-presence/ping', {
         method: 'POST',
