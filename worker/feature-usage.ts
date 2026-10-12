@@ -1,6 +1,11 @@
 // @ts-nocheck
 import { Client } from 'pg';
 import { deriveClickControlKey, deriveClickFeature } from './click-labels.js';
+import {
+  isExcludedAccountIdentity,
+  resolveIdentityExcluded,
+  runTrackingExclusionCleanupOnce,
+} from './tracking-exclusion.js';
 
 const TRACKABLE_FEATURES = new Set([
   'Home',
@@ -194,6 +199,11 @@ async function handleInteractionEvent(request, env) {
   return withDb(env, async (db) => {
     await ensureInteractionSchema(db);
 
+    // One-time historic cleanup of owner/agent events recorded before
+    // this exclusion existed (guarded + idempotent; see
+    // worker/tracking-exclusion.js). Never blocks or breaks ingest.
+    await runTrackingExclusionCleanupOnce(db);
+
     if (route === '/__analytics-smoke' && request.headers.get('x-o2ol-analytics-smoke') === 'schema') {
       return json({ ok:true, smoke:true, storageReady:true });
     }
@@ -206,7 +216,7 @@ async function handleInteractionEvent(request, env) {
 
     if (auth?.user?.id) {
       const identity = await db.query(
-        `SELECT a.id,a.role,p.subscription_plan,p.subscription_status,p.stripe_subscription_id
+        `SELECT a.id,a.role,a.email,p.subscription_plan,p.subscription_status,p.stripe_subscription_id
            FROM neon_auth."user" a
            LEFT JOIN public.users p ON p.id=a.id
           WHERE a.id=$1::uuid
@@ -220,6 +230,13 @@ async function handleInteractionEvent(request, env) {
         return new Response(null,{ status:204 });
       }
 
+      // The Muse test account (owner-directed exclusion, 2026-10-12):
+      // its activity is agent testing, not a visitor. Store nothing and
+      // answer with the normal success response.
+      if (isExcludedAccountIdentity({ role: row?.role, email: row?.email })) {
+        return json({ ok:true });
+      }
+
       if (row?.id) {
         userId = row.id;
         actorType = 'registered';
@@ -228,6 +245,22 @@ async function handleInteractionEvent(request, env) {
         const activeMembership = ['active','trial','trialing','past_due'].includes(String(row.subscription_status || '').toLowerCase());
         accessType = activeMembership ? 'subscribed' : 'registered_free';
       }
+    }
+
+    // Owner/agent exclusion by visitor link or claimed identity
+    // (owner-directed, 2026-10-12): a browser that ever signed in as an
+    // admin or as the Muse test account is linked in
+    // visitor_identity_links, so its events are dropped even when it is
+    // currently signed out — and even when a client claims a member
+    // identity for an excluded account. Store nothing; answer with the
+    // normal success response. Fully defensive: any resolution failure
+    // resolves to "not excluded" so real-visitor ingest never breaks.
+    const claimedMemberId = clean(body?.memberId || body?.userId || body?.member_id, 100);
+    if (await resolveIdentityExcluded(db, {
+      visitorId,
+      userId: auth?.user?.id || claimedMemberId,
+    })) {
+      return json({ ok:true });
     }
 
     await db.query(
@@ -318,6 +351,14 @@ export async function handlePresencePing(request, env) {
       const row = identity.rows[0] || null;
       if (String(row?.role || '').toLowerCase() === 'admin') return new Response(null, { status: 204 });
       if (row?.id) userId = row.id;
+    }
+    // Owner/agent exclusion (2026-10-12): the Muse test account and any
+    // visitor browser linked to an excluded account never count as
+    // "on site right now" either.
+    if (userId || visitorId) {
+      if (await resolveIdentityExcluded(db, { visitorId, userId })) {
+        return new Response(null, { status: 204 });
+      }
     }
     await db.query(
       `INSERT INTO public.visitor_presence (visitor_id, user_id, route, last_ping_at)
