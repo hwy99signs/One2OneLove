@@ -12,6 +12,7 @@ import {
   onResumeFromIdle,
   USER_IDLE_LIMIT_MS,
 } from '@/lib/activityGuard';
+import { setAnalyticsIdentity } from '@/lib/interactionAnalytics';
 
 const AuthContext = createContext(null);
 
@@ -35,6 +36,14 @@ function mergeUser(authUser, profile) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Publish the signed-in identity to the interaction tracker so an
+  // admin sign-in permanently excludes this browser from visitor
+  // recording (owner-directed, 2026-10-12). Signing out does not clear
+  // the exclusion — see setAnalyticsIdentity in interactionAnalytics.js.
+  useEffect(() => {
+    setAnalyticsIdentity(user ? { role: user.role } : null);
+  }, [user]);
 
   const refreshUserProfile = async ({ preserveOnNull = false } = {}) => {
     try {
